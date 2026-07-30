@@ -37,11 +37,22 @@ npm install
 npm run dev
 ```
 
-3. Sign up as a therapist at `/signup`. Promote an admin in SQL:
+3. Sign up as a therapist at `/signup`, or use the seeded demo accounts:
+
+| Email | Password | Role |
+|-------|----------|------|
+| `therapist@vpsych.test` | `therapist123` | therapist |
+| `admin@vpsych.test` | `admin12345` | admin |
+
+Promote additional admins in SQL:
 
 ```sql
 update public.profiles set role = 'admin' where id = '<user-uuid>';
 ```
+
+## Demo verification
+
+RLS check: therapists can create session reports via RPC but **cannot SELECT** `session_reports`; admins can. Confirmed against the live Supabase project.
 
 ## Security notes
 
