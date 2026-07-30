@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
@@ -199,6 +200,7 @@ export function VoiceSession({
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
+      {ending && <AiAnalysisOverlay />}
       <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href="/avatars" className="flex items-center gap-3">
           <Image
