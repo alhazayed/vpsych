@@ -28,7 +28,16 @@ Required:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `REPORT_WRITE_KEY` **or** `SUPABASE_SERVICE_ROLE_KEY` (server-only; required to finalize session reports)
 - `AI_GATEWAY_API_KEY` (optional but recommended for realistic patient replies + assessments)
+
+`REPORT_WRITE_KEY` must match the Supabase Vault secret `report_write_key`:
+
+```sql
+select decrypted_secret from vault.decrypted_secrets where name = 'report_write_key';
+```
+
+Set the same value in Vercel project env (Production + Preview) as `REPORT_WRITE_KEY`.
 
 2. Install and run:
 
@@ -37,7 +46,7 @@ npm install
 npm run dev
 ```
 
-3. Sign up as a therapist at `/signup`.
+3. Sign up as a therapist at `/signup` (password min 8 chars).
 
 Promote admins in SQL (do **not** commit demo passwords for shared/prod projects):
 
@@ -45,16 +54,13 @@ Promote admins in SQL (do **not** commit demo passwords for shared/prod projects
 update public.profiles set role = 'admin' where id = '<user-uuid>';
 ```
 
-## Demo verification
-
-RLS check: therapists can create session reports via RPC but **cannot SELECT** `session_reports`; admins can. Confirmed against the live Supabase project.
-
 ## Security notes
 
 - Session reports are not exposed on therapist-facing APIs.
-- `create_session_report` is a security-definer RPC that writes reports; only `is_admin()` policies allow reading `session_reports`.
+- Report writes require a server HMAC (`REPORT_WRITE_KEY`) or `service_role` insert; unsigned RPC calls are rejected.
+- Session timer fields and reopen are blocked by a DB trigger; therapists may only insert `user` messages directly.
 - Do not put authorization in `user_metadata` — roles live in `profiles.role`.
-- See `docs/AUDIT.md` for the latest security audit, known gaps (report forge via RPC, session timer bypass), and remediation migrations under `supabase/migrations/`.
+- See `docs/AUDIT.md` for the audit and remediation status.
 
 ## Scripts
 

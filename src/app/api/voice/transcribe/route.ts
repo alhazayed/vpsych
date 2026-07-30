@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+
+const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -8,6 +11,14 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(`stt:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const form = await request.formData();
@@ -19,6 +30,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "No audio provided. Use browser speech recognition." },
       { status: 400 },
+    );
+  }
+
+  if (audio.size > MAX_AUDIO_BYTES) {
+    return NextResponse.json(
+      { error: "Audio too large (max 5MB)" },
+      { status: 413 },
     );
   }
 

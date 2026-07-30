@@ -170,23 +170,20 @@ No retention/deletion UX, no admin access audit log. Voice primarily uses browse
 
 ## Priority remediation order
 
-1. Rotate/disable demo accounts; scrub passwords from README.
-2. Harden `create_session_report` (insert-once + prefer service-role-only writes).
-3. Fix `/end` idempotency without therapist SELECT.
-4. Restrict `sessions` UPDATE columns / timer fields.
-5. Sanitize `next` redirects (done in app code this PR).
-6. Strip sensitive avatar columns from client payloads (done this PR); tighten RLS/views.
-7. Rate-limit + message length caps; constrain message `role` on insert.
-8. Version SQL in-repo; enable HIBP / stronger passwords.
+1. ~~Rotate/disable demo accounts; scrub passwords from README.~~ **Done** (accounts banned; admin demoted)
+2. ~~Harden `create_session_report` (insert-once + signed writes).~~ **Done** (vault HMAC; service_role path supported)
+3. ~~Fix `/end` idempotency without therapist SELECT.~~ **Done** (`session_has_report`)
+4. ~~Restrict `sessions` UPDATE columns / timer fields.~~ **Done** (trigger)
+5. ~~Sanitize `next` redirects.~~ **Done**
+6. ~~Strip sensitive avatar columns from client payloads.~~ **Done** (RLS still allows column SELECT via PostgREST)
+7. ~~Rate-limit + message length caps; constrain message `role` on insert.~~ **Done**
+8. Version SQL in-repo — **Done**. Enable HIBP in Supabase Auth dashboard — **still manual**.
 
 ---
 
-## Changes shipped with this audit PR
+## Remediation shipped
 
-- `docs/AUDIT.md` (this file)
-- Safe `next` redirect helper used by auth callback + login
-- Client session page no longer receives `persona_prompt` / `rubric`
-- Message length cap on `/api/sessions/[id]/message`
-- `endSession` checks HTTP status before navigating
-- README: remove live demo passwords; point to ops seeding
-- `supabase/migrations/20260730_harden_session_reports.sql` — **not applied** to production from this PR; apply after review
+- Applied live migration `harden_session_reports` (signed insert-once reports, session update guard, message role policies, demo ban)
+- App: signed `/end`, `session_has_report` short-circuit, assistant/system via definer RPCs, rate limits, API JSON 401, middleware `/admin` role gate
+- **Ops required:** set `REPORT_WRITE_KEY` (or `SUPABASE_SERVICE_ROLE_KEY`) on Vercel — value is vault secret `report_write_key`
+- **Ops recommended:** enable leaked-password protection in Supabase Auth

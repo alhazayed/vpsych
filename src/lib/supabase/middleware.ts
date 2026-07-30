@@ -30,12 +30,16 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  const isApi = path.startsWith("/api/");
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
   const isPublic =
     path === "/" || isAuthPage || path.startsWith("/auth/");
 
   if (!user && !isPublic) {
+    if (isApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
@@ -46,6 +50,23 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/avatars";
     return NextResponse.redirect(url);
+  }
+
+  if (user && path.startsWith("/admin")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.role !== "admin") {
+      if (isApi) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/avatars";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
