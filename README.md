@@ -61,6 +61,7 @@ update public.profiles set role = 'admin' where id = '<user-uuid>';
 - Session timer fields and reopen are blocked by a DB trigger; therapists may only insert `user` messages directly.
 - Do not put authorization in `user_metadata` — roles live in `profiles.role`.
 - See `docs/AUDIT.md` for the audit and remediation status.
+- Platform wiring (Vercel / GitHub / Supabase): `docs/PLATFORM_ALIGNMENT.md`.
 
 ## Scripts
 
