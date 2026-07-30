@@ -11,60 +11,81 @@ export default async function SessionsListPage() {
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
 
+  const list =
+    (sessions as
+      | (Pick<TherapySession, "id" | "status" | "started_at" | "ended_at"> & {
+          avatars: { name: string; disorder: string };
+        })[]
+      | null) ?? [];
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">
-        My sessions
-      </h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        Transcripts are visible to you; assessment reports are admin-only.
-      </p>
-      <ul className="mt-8 divide-y divide-[var(--line)] border-y border-[var(--line)]">
-        {(
-          sessions as
-            | (Pick<
-                TherapySession,
-                "id" | "status" | "started_at" | "ended_at"
-              > & {
-                avatars: { name: string; disorder: string };
-              })[]
-            | null
-        )?.map((s) => (
-          <li
-            key={s.id}
-            className="flex flex-wrap items-center justify-between gap-3 py-4"
-          >
-            <div>
-              <p className="font-medium">
-                {s.avatars?.name} · {s.avatars?.disorder}
-              </p>
-              <p className="text-sm text-[var(--muted)]">
-                {format(new Date(s.started_at), "MMM d, yyyy · HH:mm")} ·{" "}
-                {s.status}
-              </p>
-            </div>
-            <Link
-              href={
-                s.status === "active"
-                  ? `/sessions/${s.id}`
-                  : `/sessions/${s.id}/complete`
-              }
-              className="text-sm text-[var(--accent)] underline"
+    <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
+      <section className="mb-8 fade-in-up">
+        <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
+          My Sessions
+        </h1>
+        <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+          Transcripts stay with you. Assessment reports remain admin-only.
+        </p>
+      </section>
+
+      <section className="clinical-card overflow-hidden">
+        <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+            Session history
+          </p>
+        </div>
+        <ul className="divide-y divide-[var(--surface-container-low)]">
+          {list.map((s) => (
+            <li
+              key={s.id}
+              className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-[var(--surface-container-low)]"
             >
-              {s.status === "active" ? "Resume" : "Details"}
-            </Link>
-          </li>
-        ))}
-        {!sessions?.length && (
-          <li className="py-8 text-sm text-[var(--muted)]">
-            No sessions yet.{" "}
-            <Link href="/avatars" className="text-[var(--accent)] underline">
-              Start one
-            </Link>
-            .
-          </li>
-        )}
-      </ul>
+              <div className="min-w-0">
+                <p className="font-medium text-[var(--on-surface)]">
+                  {s.avatars?.name} · {s.avatars?.disorder}
+                </p>
+                <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+                  {format(new Date(s.started_at), "MMM d, yyyy · HH:mm")}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`status-chip ${
+                    s.status === "active"
+                      ? "status-chip-warn"
+                      : "status-chip-done"
+                  }`}
+                >
+                  {s.status}
+                </span>
+                <Link
+                  href={
+                    s.status === "active"
+                      ? `/sessions/${s.id}`
+                      : `/sessions/${s.id}/complete`
+                  }
+                  className="text-sm font-medium text-[var(--primary)] hover:underline"
+                >
+                  {s.status === "active" ? "Resume" : "Details"}
+                </Link>
+              </div>
+            </li>
+          ))}
+          {!list.length && (
+            <li className="px-6 py-10 text-sm text-[var(--on-surface-variant)]">
+              No sessions yet.{" "}
+              <Link
+                href="/avatars"
+                className="font-medium text-[var(--primary)] underline"
+              >
+                Start one from the patient library
+              </Link>
+              .
+            </li>
+          )}
+        </ul>
+      </section>
     </main>
   );
 }

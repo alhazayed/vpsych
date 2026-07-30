@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -43,60 +44,70 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
-      <Link
-        href="/"
-        className="mb-8 font-[family-name:var(--font-display)] text-2xl"
-      >
-        vpsych
+      <Link href="/" className="mb-8 flex items-center gap-3">
+        <Image
+          src="/vpsych-logo.png"
+          alt="VPsych"
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-lg object-cover"
+        />
+        <span className="font-[family-name:var(--font-headline)] text-2xl font-bold text-[var(--primary)]">
+          VPsych
+        </span>
       </Link>
-      <h1 className="text-2xl text-[var(--ink)]">Create therapist account</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
+      <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
+        Create therapist account
+      </h1>
+      <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
         New accounts start as therapists. Admins are promoted in Supabase.
       </p>
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+      <form onSubmit={onSubmit} className="clinical-card mt-8 space-y-4 p-6">
         <label className="block text-sm">
-          <span className="text-[var(--muted)]">Display name</span>
+          <span className="mb-1 block text-[var(--on-surface-variant)]">
+            Display name
+          </span>
           <input
             required
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 outline-none ring-[var(--accent)] focus:ring-2"
+            className="field-input"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-[var(--muted)]">Email</span>
+          <span className="mb-1 block text-[var(--on-surface-variant)]">
+            Email
+          </span>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 outline-none ring-[var(--accent)] focus:ring-2"
+            className="field-input"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-[var(--muted)]">Password</span>
+          <span className="mb-1 block text-[var(--on-surface-variant)]">
+            Password
+          </span>
           <input
             type="password"
             required
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 outline-none ring-[var(--accent)] focus:ring-2"
+            className="field-input"
           />
         </label>
-        {error && <p className="text-sm text-[var(--warn)]">{error}</p>}
-        {info && <p className="text-sm text-[var(--accent)]">{info}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-full bg-[var(--accent)] py-3 text-sm text-white disabled:opacity-50"
-        >
+        {error && <p className="text-sm text-[var(--error)]">{error}</p>}
+        {info && <p className="text-sm text-[var(--primary)]">{info}</p>}
+        <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? "Creating…" : "Create account"}
         </button>
       </form>
-      <p className="mt-6 text-sm text-[var(--muted)]">
+      <p className="mt-6 text-sm text-[var(--on-surface-variant)]">
         Already registered?{" "}
-        <Link href="/login" className="text-[var(--accent)] underline">
+        <Link href="/login" className="font-medium text-[var(--primary)] underline">
           Sign in
         </Link>
       </p>

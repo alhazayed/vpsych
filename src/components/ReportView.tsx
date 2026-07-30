@@ -5,75 +5,94 @@ export function ReportView({ report }: { report: SessionReport }) {
   const overall = report.scores?.overall ?? 0;
 
   return (
-    <article className="space-y-8">
+    <article className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--outline)]">
             Confidential assessment
           </p>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--ink)]">
+          <h1 className="mt-1 font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
             Session report
           </h1>
         </div>
-        <div className="rounded-2xl bg-[var(--accent-soft)] px-5 py-3 text-center">
-          <p className="text-xs uppercase tracking-wider text-[var(--muted)]">
+        <div className="clinical-card px-5 py-3 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
             Overall
           </p>
-          <p className="font-[family-name:var(--font-display)] text-3xl text-[var(--ink)]">
+          <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
             {overall}
-            <span className="text-base text-[var(--muted)]">/100</span>
+            <span className="text-base font-semibold text-[var(--on-surface-variant)]">
+              /100
+            </span>
           </p>
         </div>
       </div>
 
-      <p className="max-w-3xl text-base leading-relaxed text-[var(--ink)]">
-        {report.narrative}
-      </p>
-
-      <div className="space-y-4">
-        <h2 className="text-sm font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-          Rubric
+      <section className="clinical-card p-5">
+        <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+          Clinical narrative
         </h2>
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="font-medium text-[var(--ink)]">{item.label}</p>
-                <p className="font-mono text-sm text-[var(--ink)]">
-                  {item.score}/{item.max}
-                  <span className="ml-2 text-[var(--muted)]">
-                    w{item.weight}
-                  </span>
+        <p className="text-base leading-7 text-[var(--on-surface)]">
+          {report.narrative}
+        </p>
+      </section>
+
+      <section className="clinical-card overflow-hidden">
+        <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-5 py-3">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+            Competency rubric
+          </h2>
+        </div>
+        <ul className="divide-y divide-[var(--surface-container-low)]">
+          {items.map((item) => {
+            const pct = item.max ? Math.round((item.score / item.max) * 100) : 0;
+            return (
+              <li key={item.id} className="px-5 py-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="font-medium text-[var(--on-surface)]">
+                    {item.label}
+                  </p>
+                  <p className="font-mono text-sm text-[var(--primary)]">
+                    {item.score}/{item.max}
+                    <span className="ml-2 text-[var(--on-surface-variant)]">
+                      w{item.weight}
+                    </span>
+                  </p>
+                </div>
+                <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--surface-container)]">
+                  <div
+                    className="h-1.5 rounded-full bg-[var(--primary)]"
+                    style={{ width: `${Math.min(100, pct)}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+                  {item.feedback}
                 </p>
-              </div>
-              <p className="mt-1 text-sm text-[var(--muted)]">{item.feedback}</p>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
-      </div>
+      </section>
 
       {report.excerpts?.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+        <section className="clinical-card p-5">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
             Key excerpts
           </h2>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {report.excerpts.map((ex, i) => (
               <li
                 key={`${i}-${ex.slice(0, 12)}`}
-                className="border-l-2 border-[var(--accent)] pl-3 text-sm italic text-[var(--ink)]"
+                className="border-l-2 border-[var(--primary)] pl-3 text-sm italic text-[var(--on-surface)]"
               >
                 {ex}
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
-      <p className="text-xs text-[var(--muted)]">
+      <p className="text-xs text-[var(--on-surface-variant)]">
         Admin-only. Not shared with the trainee or external parties.
       </p>
     </article>

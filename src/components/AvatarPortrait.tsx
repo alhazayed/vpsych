@@ -12,32 +12,37 @@ export function AvatarPortrait({
   speaking: boolean;
 }) {
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-full bg-[var(--wash)] ring-1 ring-[var(--line)]">
-      {src ? (
-        <Image
-          src={src}
-          alt={name}
-          fill
-          className={`object-cover transition duration-500 ${
-            speaking ? "scale-[1.03] brightness-110" : "scale-100"
-          }`}
-          priority
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center text-4xl text-[var(--muted)]">
-          {name.slice(0, 1)}
-        </div>
-      )}
+    <div className="relative mx-auto flex aspect-square w-full max-w-[18rem] items-center justify-center">
+      <div className="absolute -z-10 h-[120%] w-[120%] rounded-full bg-gradient-to-b from-[color-mix(in_srgb,var(--primary)_8%,transparent)] via-[var(--background)] to-[var(--background)] opacity-60 blur-3xl" />
       <div
-        className={`pointer-events-none absolute inset-0 rounded-full transition ${
-          speaking
-            ? "shadow-[inset_0_0_40px_rgba(15,118,110,0.35)]"
-            : "shadow-none"
+        className={`relative h-full w-full overflow-hidden rounded-full border-4 border-[color-mix(in_srgb,var(--primary)_12%,transparent)] bg-[var(--surface-container-lowest)] shadow-2xl transition duration-500 ${
+          speaking ? "scale-[1.02]" : "scale-100"
         }`}
-      />
-      <p className="absolute bottom-3 left-0 right-0 text-center text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-        {speaking ? "Speaking" : "Listening"}
-      </p>
+      >
+        {src ? (
+          <Image
+            src={src}
+            alt={name}
+            fill
+            className={`object-cover transition duration-500 ${
+              speaking ? "brightness-110" : "brightness-100"
+            }`}
+            priority
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center font-[family-name:var(--font-headline)] text-5xl font-bold text-[var(--primary)]">
+            {name.slice(0, 1)}
+          </div>
+        )}
+        <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_85%,transparent)] px-3 py-1 backdrop-blur-sm">
+          <span className="material-symbols-outlined text-[14px] text-white">
+            {speaking ? "record_voice_over" : "hearing"}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+            {speaking ? "Speaking" : "Listening"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

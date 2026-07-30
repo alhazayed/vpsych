@@ -36,14 +36,15 @@ export default async function AdminReportDetailPage({ params }: Props) {
   } | null;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-8 md:px-8">
       <Link
         href="/admin/reports"
-        className="text-sm text-[var(--accent)] underline"
+        className="inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:underline"
       >
-        ← All reports
+        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+        All reports
       </Link>
-      <p className="mt-4 text-sm text-[var(--muted)]">
+      <p className="mt-4 text-sm text-[var(--on-surface-variant)]">
         Therapist: {session?.profiles?.display_name ?? "—"} · Patient:{" "}
         {session?.avatars?.name ?? "—"} ({session?.avatars?.disorder ?? "—"})
       </p>

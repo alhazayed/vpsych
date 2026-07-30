@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/AppHeader";
+import { AppShell } from "@/components/AppShell";
 import { requireProfile } from "@/lib/auth";
 
 export default async function AppShellLayout({
@@ -7,10 +7,5 @@ export default async function AppShellLayout({
   children: React.ReactNode;
 }) {
   const { profile } = await requireProfile();
-  return (
-    <div className="min-h-screen">
-      <AppHeader profile={profile} />
-      {children}
-    </div>
-  );
+  return <AppShell profile={profile}>{children}</AppShell>;
 }
