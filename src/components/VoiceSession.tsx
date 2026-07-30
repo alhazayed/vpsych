@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
-import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import type { SessionMessage, TherapySession } from "@/lib/types";
+
+type ClientAvatar = {
+  id: string;
+  name: string;
+  disorder: string;
+  age: number | null;
+  gender: string | null;
+  portrait_url: string | null;
+};
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -33,7 +42,7 @@ export function VoiceSession({
   initialMessages,
 }: {
   session: TherapySession;
-  avatar: Avatar;
+  avatar: ClientAvatar;
   initialMessages: SessionMessage[];
 }) {
   const router = useRouter();
@@ -59,7 +68,18 @@ export function VoiceSession({
     try {
       recognitionRef.current?.stop();
       window.speechSynthesis?.cancel();
-      await fetch(`/api/sessions/${session.id}/end`, { method: "POST" });
+      const res = await fetch(`/api/sessions/${session.id}/end`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setStatus(data?.error ?? "Failed to end session. Try again.");
+        endingRef.current = false;
+        setEnding(false);
+        return;
+      }
       router.push(`/sessions/${session.id}/complete`);
       router.refresh();
     } catch {

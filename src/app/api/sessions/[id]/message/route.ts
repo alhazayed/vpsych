@@ -21,6 +21,12 @@ export async function POST(request: Request, { params }: Params) {
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
+  if (message.length > 4000) {
+    return NextResponse.json(
+      { error: "message too long (max 4000 characters)" },
+      { status: 400 },
+    );
+  }
 
   const { data: session, error: sessionError } = await supabase
     .from("sessions")

@@ -49,6 +49,9 @@ export async function POST(_request: Request, { params }: Params) {
     }
   }
 
+  // Therapists cannot SELECT reports (admin-only RLS), so this check only
+  // short-circuits for admins. Prefer insert-once RPC (see supabase/migrations)
+  // so repeated /end calls do not overwrite scores.
   const { data: existing } = await supabase
     .from("session_reports")
     .select("id")
@@ -63,7 +66,6 @@ export async function POST(_request: Request, { params }: Params) {
     });
   }
 
-  // Therapists cannot SELECT reports (admin-only RLS). Check via RPC attempt.
   const { data: messages } = await supabase
     .from("session_messages")
     .select("role, content, created_at")

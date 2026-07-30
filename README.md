@@ -37,14 +37,9 @@ npm install
 npm run dev
 ```
 
-3. Sign up as a therapist at `/signup`, or use the seeded demo accounts:
+3. Sign up as a therapist at `/signup`.
 
-| Email | Password | Role |
-|-------|----------|------|
-| `therapist@vpsych.test` | `therapist123` | therapist |
-| `admin@vpsych.test` | `admin12345` | admin |
-
-Promote additional admins in SQL:
+Promote admins in SQL (do **not** commit demo passwords for shared/prod projects):
 
 ```sql
 update public.profiles set role = 'admin' where id = '<user-uuid>';
@@ -59,6 +54,7 @@ RLS check: therapists can create session reports via RPC but **cannot SELECT** `
 - Session reports are not exposed on therapist-facing APIs.
 - `create_session_report` is a security-definer RPC that writes reports; only `is_admin()` policies allow reading `session_reports`.
 - Do not put authorization in `user_metadata` — roles live in `profiles.role`.
+- See `docs/AUDIT.md` for the latest security audit, known gaps (report forge via RPC, session timer bypass), and remediation migrations under `supabase/migrations/`.
 
 ## Scripts
 

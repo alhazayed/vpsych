@@ -47,9 +47,8 @@ export async function POST(request: Request) {
   );
 
   if (!dgRes.ok) {
-    const detail = await dgRes.text();
     return NextResponse.json(
-      { error: "Deepgram transcription failed", detail },
+      { error: "Deepgram transcription failed" },
       { status: 502 },
     );
   }
