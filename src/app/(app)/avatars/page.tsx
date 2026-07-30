@@ -13,62 +13,92 @@ export default async function AvatarsPage() {
     .eq("is_active", true)
     .order("name");
 
+  const list =
+    (avatars as
+      | Omit<
+          Avatar,
+          "persona_prompt" | "rubric" | "created_at" | "updated_at"
+        >[]
+      | null) ?? [];
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-10 max-w-2xl">
-        <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">
-          Welcome, {profile.display_name}
+    <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
+      <section className="mb-8 fade-in-up">
+        <p className="mb-1 text-sm font-medium uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+          Welcome back
         </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[var(--ink)]">
-          Choose a patient avatar
+        <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)] md:text-[32px] md:leading-10">
+          {profile.display_name}
         </h1>
-        <p className="mt-3 text-[var(--muted)]">
-          Each avatar is preset with a disorder and ideal-session guidelines.
-          Sessions are voice-first and capped at 40 minutes. Reports go to
-          admins only.
+        <p className="mt-2 max-w-2xl text-base leading-6 text-[var(--on-surface-variant)]">
+          Choose a virtual patient to begin a timed voice assessment. Each
+          persona includes disorder context and ideal-session guidelines.
+          Performance reports are generated for administrators only.
         </p>
+      </section>
+
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
+            Virtual Patient Library
+          </h2>
+          <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+            {list.length} active {list.length === 1 ? "persona" : "personas"}
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        {(avatars as Omit<Avatar, "persona_prompt" | "rubric" | "created_at" | "updated_at">[] | null)?.map(
-          (avatar) => (
-            <article
-              key={avatar.id}
-              className="overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--surface)]/80"
-            >
-              <div className="relative h-48 bg-[var(--wash)]">
-                {avatar.portrait_url && (
-                  <Image
-                    src={avatar.portrait_url}
-                    alt={avatar.name}
-                    fill
-                    className="object-cover object-top"
-                  />
-                )}
-              </div>
-              <div className="space-y-3 p-5">
+      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        {list.map((avatar, index) => (
+          <article
+            key={avatar.id}
+            className="clinical-card clinical-card-interactive fade-in-up overflow-hidden"
+            style={{ animationDelay: `${0.05 * (index + 1)}s` }}
+          >
+            <div className="relative h-48 bg-[var(--surface-container)]">
+              {avatar.portrait_url ? (
+                <Image
+                  src={avatar.portrait_url}
+                  alt={avatar.name}
+                  fill
+                  className="object-cover object-top"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center font-[family-name:var(--font-headline)] text-4xl font-bold text-[var(--primary)]">
+                  {avatar.name.slice(0, 1)}
+                </div>
+              )}
+            </div>
+            <div className="space-y-4 p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                  <h3 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
                     {avatar.name}
-                  </h2>
-                  <p className="text-sm text-[var(--muted)]">
+                  </h3>
+                  <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                     {avatar.disorder}
                     {avatar.age ? ` · ${avatar.age}` : ""}
                     {avatar.gender ? ` · ${avatar.gender}` : ""}
                   </p>
                 </div>
-                <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--muted)]">
-                  {(avatar.ideal_guidelines?.session_goals ?? [])
-                    .slice(0, 3)
-                    .map((goal) => (
-                      <li key={goal}>{goal}</li>
-                    ))}
-                </ul>
-                <StartSessionButton avatarId={avatar.id} />
+                <span className="status-chip status-chip-active">Active</span>
               </div>
-            </article>
-          ),
-        )}
+              <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
+                {(avatar.ideal_guidelines?.session_goals ?? [])
+                  .slice(0, 3)
+                  .map((goal) => (
+                    <li key={goal} className="flex gap-2">
+                      <span className="material-symbols-outlined mt-0.5 text-[18px] text-[var(--primary)]">
+                        check_circle
+                      </span>
+                      <span>{goal}</span>
+                    </li>
+                  ))}
+              </ul>
+              <StartSessionButton avatarId={avatar.id} />
+            </div>
+          </article>
+        ))}
       </div>
     </main>
   );

@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
@@ -14,7 +17,13 @@ type SpeechRecognitionLike = {
   start: () => void;
   stop: () => void;
   onresult: ((event: {
-    results: { [index: number]: { [index: number]: { transcript: string }; isFinal: boolean }; length: number };
+    results: {
+      [index: number]: {
+        [index: number]: { transcript: string };
+        isFinal: boolean;
+      };
+      length: number;
+    };
   }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
@@ -47,6 +56,7 @@ export function VoiceSession({
   const [draft, setDraft] = useState("");
   const [status, setStatus] = useState("Ready — hold the mic or type a turn.");
   const [ending, setEnding] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const endingRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -186,106 +196,192 @@ export function VoiceSession({
     setStatus("Listening — speak now.");
   }
 
+  const goals = avatar.ideal_guidelines?.session_goals ?? [];
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <section className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">
-              Live session
-            </p>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--ink)]">
-              {avatar.name}
-            </h1>
-            <p className="mt-1 text-[var(--muted)]">{avatar.disorder}</p>
-          </div>
-          <div className="text-right">
-            <p className="mb-1 text-xs uppercase tracking-wider text-[var(--muted)]">
-              Time left
-            </p>
-            <SessionTimer remaining={remaining} />
-          </div>
-        </div>
-
-        <AvatarPortrait
-          name={avatar.name}
-          src={avatar.portrait_url}
-          speaking={speaking}
-        />
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={toggleListen}
-            disabled={pending || ending}
-            className={`rounded-full px-5 py-3 text-sm font-medium transition ${
-              listening
-                ? "bg-[var(--accent)] text-white"
-                : "bg-[var(--ink)] text-[var(--paper)] hover:opacity-90"
-            } disabled:opacity-50`}
-          >
-            {listening ? "Stop mic" : "Hold to talk"}
-          </button>
+    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+      {ending && <AiAnalysisOverlay />}
+      <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
+        <Link href="/avatars" className="flex items-center gap-3">
+          <Image
+            src="/vpsych-logo.png"
+            alt="VPsych"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded object-cover"
+          />
+          <span className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
+            VPsych
+          </span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <SessionTimer remaining={remaining} />
           <button
             type="button"
             onClick={() => void endSession()}
             disabled={ending}
-            className="rounded-full border border-[var(--line)] px-5 py-3 text-sm text-[var(--ink)] hover:bg-[var(--wash)] disabled:opacity-50"
+            className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] disabled:opacity-50"
           >
-            {ending ? "Ending…" : "End session"}
+            {ending ? "Ending…" : "End"}
           </button>
         </div>
-        <p className="text-sm text-[var(--muted)]">{status}</p>
-      </section>
+      </header>
 
-      <section className="flex min-h-[28rem] flex-col rounded-2xl border border-[var(--line)] bg-[var(--surface)]/70 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-          Transcript
-        </h2>
-        <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-          {messages
-            .filter((m) => m.role !== "system")
-            .map((m) => (
-              <div
-                key={m.id}
-                className={`max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                  m.role === "user"
-                    ? "ml-auto bg-[var(--accent-soft)] text-[var(--ink)]"
-                    : "bg-[var(--wash)] text-[var(--ink)]"
-                }`}
-              >
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-[var(--muted)]">
-                  {m.role === "user" ? "You" : avatar.name}
+      <main className="relative flex flex-1 flex-col pt-16 lg:flex-row">
+        <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6 lg:pb-12">
+          <div className="absolute left-4 right-4 top-4 flex justify-between gap-3 pointer-events-none md:left-6 md:right-6">
+            <div className="flex flex-col gap-2">
+              <div className="pointer-events-auto rounded-xl border border-[var(--outline-variant)] bg-white/90 px-4 py-2 shadow-sm backdrop-blur-md">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                  Patient
                 </p>
-                {m.content}
+                <p className="text-sm font-bold text-[var(--primary)]">
+                  {avatar.name}
+                </p>
               </div>
-            ))}
-          <div ref={bottomRef} />
-        </div>
+              <div className="pointer-events-auto rounded-xl border border-[var(--outline-variant)] bg-white/90 px-4 py-2 shadow-sm backdrop-blur-md">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                  Presentation
+                </p>
+                <p className="text-sm font-bold text-[var(--secondary)]">
+                  {avatar.disorder}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNotes((v) => !v)}
+              className="pointer-events-auto h-fit rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 shadow-sm transition hover:bg-[var(--surface-container)]"
+            >
+              <span className="flex items-center gap-2 text-sm text-[var(--on-surface-variant)]">
+                <span className="material-symbols-outlined text-[20px]">
+                  description
+                </span>
+                Referral Notes
+              </span>
+            </button>
+          </div>
 
-        <form
-          className="mt-4 flex gap-2 border-t border-[var(--line)] pt-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void sendMessage(draft);
-          }}
-        >
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Type a turn if mic is unavailable…"
-            className="flex-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-sm outline-none ring-[var(--accent)] focus:ring-2"
-            disabled={pending || ending}
-          />
-          <button
-            type="submit"
-            disabled={pending || ending || !draft.trim()}
-            className="rounded-xl bg-[var(--ink)] px-4 py-2.5 text-sm text-[var(--paper)] disabled:opacity-40"
+          {showNotes && (
+            <div className="absolute right-4 top-24 z-20 w-72 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 shadow-[var(--clinical-shadow-hover)] md:right-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+                Ideal session goals
+              </p>
+              <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
+                {goals.length ? (
+                  goals.map((g) => <li key={g}>• {g}</li>)
+                ) : (
+                  <li>No referral notes for this persona.</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-28 w-full max-w-md lg:mt-16">
+            <AvatarPortrait
+              name={avatar.name}
+              src={avatar.portrait_url}
+              speaking={speaking}
+            />
+          </div>
+
+          <div className="mt-8 flex h-8 items-center justify-center gap-0.5">
+            {[0.1, 0.3, 0.5, 0.2, 0.4, 0.15, 0.35].map((delay, i) => (
+              <div
+                key={i}
+                className="audio-bar"
+                style={{
+                  animationDelay: `${delay}s`,
+                  height: listening || speaking ? undefined : "4px",
+                  animationPlayState:
+                    listening || speaking ? "running" : "paused",
+                }}
+              />
+            ))}
+          </div>
+
+          <p className="mt-4 max-w-md text-center text-sm text-[var(--on-surface-variant)]">
+            {status}
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={toggleListen}
+              disabled={pending || ending}
+              className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
+                listening
+                  ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"
+                  : "bg-[var(--primary)] text-[var(--on-primary)]"
+              } disabled:opacity-50`}
+              aria-label={listening ? "Stop microphone" : "Start microphone"}
+            >
+              <span className="material-symbols-outlined text-[28px]">
+                {listening ? "stop" : "mic"}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void endSession()}
+              disabled={ending}
+              className="btn-secondary"
+            >
+              {ending ? "Ending…" : "End session"}
+            </button>
+          </div>
+        </section>
+
+        <section className="flex min-h-[22rem] flex-col border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] lg:w-[26rem] lg:border-l lg:border-t-0 xl:w-[30rem]">
+          <div className="border-b border-[var(--outline-variant)] px-4 py-3">
+            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+              Transcript
+            </h2>
+          </div>
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {messages
+              .filter((m) => m.role !== "system")
+              .map((m) => (
+                <div
+                  key={m.id}
+                  className={`max-w-[92%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "ml-auto bg-[var(--primary-fixed)] text-[var(--on-surface)]"
+                      : "bg-[var(--surface-container)] text-[var(--on-surface)]"
+                  }`}
+                >
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                    {m.role === "user" ? "You" : avatar.name}
+                  </p>
+                  {m.content}
+                </div>
+              ))}
+            <div ref={bottomRef} />
+          </div>
+
+          <form
+            className="flex gap-2 border-t border-[var(--outline-variant)] p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void sendMessage(draft);
+            }}
           >
-            Send
-          </button>
-        </form>
-      </section>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a turn if mic is unavailable…"
+              className="field-input flex-1"
+              disabled={pending || ending}
+            />
+            <button
+              type="submit"
+              disabled={pending || ending || !draft.trim()}
+              className="btn-primary px-4"
+            >
+              Send
+            </button>
+          </form>
+        </section>
+      </main>
     </div>
   );
 }

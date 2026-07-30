@@ -23,50 +23,121 @@ export default async function AdminReportsPage() {
     )
     .order("created_at", { ascending: false });
 
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">
-        Session reports
-      </h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        Confidential. Visible to admins only via row-level security.
-      </p>
+  const list = reports ?? [];
+  const avg =
+    list.length > 0
+      ? Math.round(
+          list.reduce((sum, r) => {
+            const overall =
+              (r.scores as { overall?: number } | null)?.overall ?? 0;
+            return sum + overall;
+          }, 0) / list.length,
+        )
+      : 0;
 
-      <ul className="mt-8 space-y-3">
-        {(reports ?? []).map((report) => {
-          const session = report.sessions as unknown as {
-            started_at: string;
-            status: string;
-            profiles: { display_name: string } | null;
-            avatars: { name: string; disorder: string } | null;
-          } | null;
-          const overall =
-            (report.scores as { overall?: number } | null)?.overall ?? "—";
-          return (
-            <li key={report.id}>
-              <Link
-                href={`/admin/reports/${report.session_id}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 hover:border-[var(--accent)]"
-              >
-                <div>
-                  <p className="font-medium">
-                    {session?.profiles?.display_name ?? "Therapist"} ·{" "}
-                    {session?.avatars?.name ?? "Avatar"}
+  return (
+    <main className="mx-auto max-w-[1280px] space-y-8 px-4 py-8 md:px-8">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="clinical-card flex flex-col justify-between p-6">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+              Total assessments
+            </p>
+            <h3 className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
+              {list.length}
+            </h3>
+          </div>
+          <p className="mt-4 flex items-center gap-1 text-xs font-semibold text-[var(--on-surface-variant)]">
+            <span className="material-symbols-outlined text-sm">analytics</span>
+            Stored securely with RLS
+          </p>
+        </div>
+        <div className="clinical-card flex flex-col justify-between p-6">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+              Avg. competency score
+            </p>
+            <h3 className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--secondary)]">
+              {list.length ? avg : "—"}
+              {list.length ? (
+                <span className="text-lg text-[var(--on-surface-variant)]">
+                  /100
+                </span>
+              ) : null}
+            </h3>
+          </div>
+          <p className="mt-4 flex items-center gap-1 text-xs font-semibold text-[var(--on-surface-variant)]">
+            <span className="material-symbols-outlined text-sm">monitoring</span>
+            Across completed reports
+          </p>
+        </div>
+        <div className="clinical-card flex flex-col justify-between p-6 sm:col-span-2 lg:col-span-1">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+              Access
+            </p>
+            <h3 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
+              Admin-only
+            </h3>
+          </div>
+          <p className="mt-4 text-xs text-[var(--on-surface-variant)]">
+            Therapists cannot select session reports via row-level security.
+          </p>
+        </div>
+      </section>
+
+      <section className="clinical-card overflow-hidden">
+        <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
+          <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--on-surface)]">
+            Reports Library
+          </h2>
+          <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+            Confidential. Visible to admins only.
+          </p>
+        </div>
+        <ul className="divide-y divide-[var(--surface-container-low)]">
+          {list.map((report) => {
+            const session = report.sessions as unknown as {
+              started_at: string;
+              status: string;
+              profiles: { display_name: string } | null;
+              avatars: { name: string; disorder: string } | null;
+            } | null;
+            const overall =
+              (report.scores as { overall?: number } | null)?.overall ?? "—";
+            return (
+              <li key={report.id}>
+                <Link
+                  href={`/admin/reports/${report.session_id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-[var(--surface-container-low)]"
+                >
+                  <div>
+                    <p className="font-medium text-[var(--on-surface)]">
+                      {session?.profiles?.display_name ?? "Therapist"} ·{" "}
+                      {session?.avatars?.name ?? "Avatar"}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+                      {session?.avatars?.disorder} ·{" "}
+                      {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}
+                    </p>
+                  </div>
+                  <p className="font-[family-name:var(--font-headline)] text-xl font-bold text-[var(--primary)]">
+                    {overall}
+                    <span className="text-sm font-medium text-[var(--on-surface-variant)]">
+                      /100
+                    </span>
                   </p>
-                  <p className="text-sm text-[var(--muted)]">
-                    {session?.avatars?.disorder} ·{" "}
-                    {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}
-                  </p>
-                </div>
-                <p className="font-mono text-lg">{overall}/100</p>
-              </Link>
+                </Link>
+              </li>
+            );
+          })}
+          {!list.length && (
+            <li className="px-6 py-10 text-sm text-[var(--on-surface-variant)]">
+              No reports yet.
             </li>
-          );
-        })}
-        {!reports?.length && (
-          <li className="text-sm text-[var(--muted)]">No reports yet.</li>
-        )}
-      </ul>
+          )}
+        </ul>
+      </section>
     </main>
   );
 }

@@ -10,18 +10,9 @@ export default async function AdminAvatarsPage() {
     )
     .order("name");
 
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">
-        Avatar presets
-      </h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        Presets include disorder persona prompts and ideal-session guidelines.
-        Editing UI can expand in a later phase; manage seed data via Supabase
-        for now.
-      </p>
-      <ul className="mt-8 space-y-4">
-        {(avatars as Pick<
+  const list =
+    (avatars as
+      | Pick<
           Avatar,
           | "id"
           | "name"
@@ -31,36 +22,59 @@ export default async function AdminAvatarsPage() {
           | "is_active"
           | "ideal_guidelines"
           | "rubric"
-        >[] | null)?.map((avatar) => (
-          <li
-            key={avatar.id}
-            className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5"
-          >
+        >[]
+      | null) ?? [];
+
+  return (
+    <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
+      <section className="mb-8 fade-in-up">
+        <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
+          Avatar presets
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
+          Presets include disorder persona prompts and ideal-session guidelines.
+          Full avatar builder editing can expand in a later phase; manage seed
+          data via Supabase for now.
+        </p>
+      </section>
+
+      <ul className="space-y-4">
+        {list.map((avatar) => (
+          <li key={avatar.id} className="clinical-card p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl">
+              <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
                 {avatar.name}
               </h2>
-              <span className="text-xs uppercase tracking-wider text-[var(--muted)]">
+              <span
+                className={`status-chip ${
+                  avatar.is_active ? "status-chip-active" : "status-chip-warn"
+                }`}
+              >
                 {avatar.is_active ? "Active" : "Inactive"}
               </span>
             </div>
-            <p className="text-sm text-[var(--muted)]">
+            <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
               {avatar.disorder}
               {avatar.age ? ` · ${avatar.age}` : ""}
               {avatar.gender ? ` · ${avatar.gender}` : ""}
             </p>
-            <h3 className="mt-4 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+            <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
               Ideal session goals
             </h3>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+            <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
               {(avatar.ideal_guidelines?.session_goals ?? []).map((g) => (
-                <li key={g}>{g}</li>
+                <li key={g} className="flex gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-[var(--primary)]">
+                    check_circle
+                  </span>
+                  {g}
+                </li>
               ))}
             </ul>
-            <h3 className="mt-4 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+            <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
               Rubric
             </h3>
-            <ul className="mt-2 space-y-1 text-sm text-[var(--muted)]">
+            <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
               {(avatar.rubric ?? []).map((r) => (
                 <li key={r.id}>
                   {r.label} (max {r.max}, weight {r.weight})

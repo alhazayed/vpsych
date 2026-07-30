@@ -36,11 +36,14 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         type="button"
         onClick={() => void start()}
         disabled={loading}
-        className="rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+        className="btn-primary w-full"
       >
+        <span className="material-symbols-outlined text-[20px]">mic</span>
         {loading ? "Starting…" : "Start 40-min voice session"}
       </button>
-      {error && <p className="text-sm text-[var(--warn)]">{error}</p>}
+      {error && (
+        <p className="text-sm text-[var(--error)]">{error}</p>
+      )}
     </div>
   );
 }

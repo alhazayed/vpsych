@@ -3,7 +3,7 @@ import LoginPage from "./page-client";
 
 export default function Page() {
   return (
-    <Suspense fallback={<main className="p-8 text-[var(--muted)]">Loading…</main>}>
+    <Suspense fallback={<main className="p-8 text-[var(--on-surface-variant)]">Loading…</main>}>
       <LoginPage />
     </Suspense>
   );
