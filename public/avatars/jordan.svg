@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Jordan Hale">
+  <defs>
+    <linearGradient id="bg2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d7e3ef"/>
+      <stop offset="100%" stop-color="#e7ebe3"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg2)"/>
+  <ellipse cx="200" cy="315" rx="115" ry="42" fill="#8ea0b0" opacity="0.3"/>
+  <circle cx="200" cy="168" r="80" fill="#c99574"/>
+  <path d="M118 150c8-65 45-98 82-98 38 0 74 33 82 98-18-20-48-28-82-28s-64 8-82 28z" fill="#2b2f36"/>
+  <rect x="150" y="118" width="100" height="14" rx="4" fill="#f0ebe3" opacity="0.7"/>
+  <circle cx="170" cy="166" r="6" fill="#1f2328"/>
+  <circle cx="230" cy="166" r="6" fill="#1f2328"/>
+  <path d="M180 205c12 8 28 8 40 0" fill="none" stroke="#9a6a4e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M125 248c22 78 128 78 150 0" fill="#355f6b"/>
+</svg>

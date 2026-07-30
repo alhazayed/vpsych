@@ -1,0 +1,42 @@
+import { notFound, redirect } from "next/navigation";
+import { VoiceSession } from "@/components/VoiceSession";
+import { requireProfile } from "@/lib/auth";
+import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+
+type Props = { params: Promise<{ id: string }> };
+
+export default async function SessionPage({ params }: Props) {
+  const { id } = await params;
+  const { supabase, user } = await requireProfile();
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("*, avatars(*)")
+    .eq("id", id)
+    .single();
+
+  if (!session) notFound();
+
+  const typed = session as TherapySession & { avatars: Avatar };
+  if (typed.therapist_id !== user.id) {
+    redirect("/avatars");
+  }
+
+  if (typed.status !== "active") {
+    redirect(`/sessions/${id}/complete`);
+  }
+
+  const { data: messages } = await supabase
+    .from("session_messages")
+    .select("*")
+    .eq("session_id", id)
+    .order("created_at", { ascending: true });
+
+  return (
+    <VoiceSession
+      session={typed}
+      avatar={typed.avatars}
+      initialMessages={(messages ?? []) as SessionMessage[]}
+    />
+  );
+}
