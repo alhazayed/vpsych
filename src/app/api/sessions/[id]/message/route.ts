@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .select("*, avatars(*)")
+    .select("*, avatars(*, voice_profile:voice_profiles(*))")
     .eq("id", sessionId)
     .single();
 
@@ -123,5 +123,7 @@ export async function POST(request: Request, { params }: Params) {
     userMessage: userMsg,
     assistantMessage: assistantMsg,
     remainingSeconds: remainingSeconds(typed.started_at, typed.max_duration_sec),
+    // Additive: session language used for this turn (AR/EN pipeline).
+    locale: typed.language ?? resolved.language,
   });
 }

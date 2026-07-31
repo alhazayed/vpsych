@@ -139,10 +139,25 @@ export type SafetyModule = {
 export type PersonalityVoice = {
   provider?: string;
   voice_id?: string;
+  /** Optional FK into voice_profiles (registry). */
+  voice_profile_id?: string;
   stt_lang: string;
   tts_lang: string;
   rate?: number;
   pitch?: number;
+};
+
+/** Row shape for `public.voice_profiles` (ElevenLabs voice registry). */
+export type VoiceProfile = {
+  id: string;
+  provider: string;
+  voice_name: string;
+  voice_id: string;
+  language: PreferredLanguage | (string & {});
+  dialect: string | null;
+  gender: string | null;
+  is_active: boolean;
+  created_at: string;
 };
 
 /** Module 2 — natively authored personality for one locale. */
@@ -194,9 +209,13 @@ export type Avatar = {
   rubric: RubricItem[];
   language?: string | null;
   dialect?: string | null;
-  /** ElevenLabs voice id for English / primary TTS */
+  /** FK to voice_profiles — preferred TTS resolution path */
+  voice_profile_id?: string | null;
+  /** Joined voice_profiles row when selected with embed */
+  voice_profile?: VoiceProfile | null;
+  /** ElevenLabs voice id for English / primary TTS (legacy / cache) */
   voice_id?: string | null;
-  /** ElevenLabs voice id for Arabic TTS */
+  /** ElevenLabs voice id for Arabic TTS (legacy / cache) */
   voice_id_ar?: string | null;
   schema_version?: number;
   slug?: string | null;
@@ -228,7 +247,12 @@ export type ResolvedAvatar = {
   };
   rubric: RubricItem[];
   dialect: string | null;
+  /** Assigned registry profile id when present */
+  voice_profile_id?: string | null;
+  /** Active joined profile used for synthesis (null if inactive / missing) */
+  voice_profile?: VoiceProfile | null;
   voice_id: string | null;
+  voice_id_ar?: string | null;
   stt_lang: string;
   tts_lang: string;
   tts_rate?: number;

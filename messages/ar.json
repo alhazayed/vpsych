@@ -32,6 +32,7 @@
       "mySessions": "جلساتي",
       "reportsLibrary": "مكتبة التقارير",
       "avatarPresets": "نماذج الشخصيات",
+      "voiceManagement": "إدارة الأصوات",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -41,6 +42,7 @@
     "mySessions": "جلساتي",
     "reportsLibrary": "مكتبة التقارير",
     "avatarPresets": "نماذج الشخصيات",
+    "voiceManagement": "إدارة الأصوات",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح"
   },
@@ -363,7 +365,15 @@
       "captured": "تم التقاط الكلام — جارٍ الإرسال…",
       "listening": "جارٍ الاستماع…",
       "speakNow": "جارٍ الاستماع — تحدث الآن.",
-      "micError": "خطأ في الميكروفون: {error}. يمكنك الكتابة بدلًا من ذلك."
+      "micError": "خطأ في الميكروفون: {error}. يمكنك الكتابة بدلًا من ذلك.",
+      "listeningOpenAI": "جارٍ الاستماع (OpenAI · {language}) — اضغط الميكروفون مجددًا للإرسال.",
+      "transcribing": "جارٍ التحويل إلى نص عبر OpenAI…",
+      "sttUnavailable": "تعرّف OpenAI غير متاح — التبديل إلى ميكروفون المتصفح…",
+      "noSpeech": "لم يُلتقط كلام — حاول مجددًا أو اكتب.",
+      "transcribeFailed": "فشل التحويل إلى نص. اكتب دورك.",
+      "micTranscribeError": "خطأ في الميكروفون/التحويل — اكتب دورك أدناه.",
+      "textOnly": "وضع النص فقط — اكتب أدوارك أدناه.",
+      "textReady": "جاهز لدورك المكتوب التالي."
     },
     "end": "إنهاء",
     "ending": "جارٍ الإنهاء…",
@@ -378,7 +388,14 @@
     "transcript": "النص",
     "you": "أنت",
     "inputPlaceholder": "اكتب دورك إذا كان الميكروفون غير متاح…",
+    "inputPlaceholderText": "اكتب دور المعالج…",
     "send": "إرسال",
+    "voiceMode": "صوت",
+    "textMode": "نص",
+    "voiceOn": "وضع الصوت مفعّل — ميكروفون + كلام المريض",
+    "voiceOff": "وضع النص فقط — الكتابة فقط",
+    "pipelineVoice": "مسار الصوت",
+    "pipelineText": "نص فقط",
     "start": {
       "failed": "تعذر بدء الجلسة",
       "networkError": "خطأ في الشبكة",
@@ -454,7 +471,32 @@
       "subtitle": "تتضمن النماذج مطالبات الشخصية والاضطراب وإرشادات الجلسة المثالية ومقاييس التقييم.",
       "goals": "أهداف الجلسة المثالية",
       "rubric": "المقياس",
-      "rubricItem": "{label} (الحد الأقصى {max}، الوزن {weight})"
+      "rubricItem": "{label} (الحد الأقصى {max}، الوزن {weight})",
+      "voiceProfile": "ملف الصوت",
+      "voiceLegacyNote": "تُحدَّث أعمدة voice_id القديمة للتوافق"
+    },
+    "voices": {
+      "title": "إدارة الأصوات",
+      "subtitle": "سجل أصوات ElevenLabs. تتحدث الشخصيات عبر ملف صوت مُعيَّن.",
+      "columns": {
+        "gender": "الجنس",
+        "language": "اللغة",
+        "dialect": "اللهجة",
+        "provider": "المزوّد"
+      },
+      "preview": "معاينة الصوت",
+      "enable": "تفعيل",
+      "disable": "تعطيل",
+      "assignTitle": "تعيين لشخصية",
+      "assignAvatar": "تعيين {name}",
+      "unassignAvatar": "إلغاء تعيين {name}",
+      "assignedTo": "مُعيَّن لـ: {names}",
+      "unassigned": "غير مُعيَّن لأي شخصية بعد.",
+      "empty": "لا توجد ملفات صوت. شغّل ترحيل سجل الأصوات.",
+      "errors": {
+        "toggle": "تعذّر تحديث حالة الصوت.",
+        "assign": "تعذّر تعيين الصوت للشخصية."
+      }
     },
     "integrations": {
       "title": "تكاملات واجهة البرمجة",

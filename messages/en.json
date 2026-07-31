@@ -32,6 +32,7 @@
       "mySessions": "My Sessions",
       "reportsLibrary": "Reports Library",
       "avatarPresets": "Avatar Presets",
+      "voiceManagement": "Voice Management",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -41,6 +42,7 @@
     "mySessions": "My Sessions",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
+    "voiceManagement": "Voice Management",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -363,7 +365,15 @@
       "captured": "Captured speech — sending…",
       "listening": "Listening…",
       "speakNow": "Listening — speak now.",
-      "micError": "Mic error: {error}. You can type instead."
+      "micError": "Mic error: {error}. You can type instead.",
+      "listeningOpenAI": "Listening (OpenAI · {language}) — tap mic again to send.",
+      "transcribing": "Transcribing with OpenAI…",
+      "sttUnavailable": "OpenAI STT unavailable — switching to browser mic…",
+      "noSpeech": "No speech detected — try again or type.",
+      "transcribeFailed": "Transcription failed. Type your turn.",
+      "micTranscribeError": "Mic/transcription error — type your turn below.",
+      "textOnly": "Text-only mode — type your turns below.",
+      "textReady": "Ready for your next typed turn."
     },
     "end": "End",
     "ending": "Ending…",
@@ -378,7 +388,14 @@
     "transcript": "Transcript",
     "you": "You",
     "inputPlaceholder": "Type a turn if mic is unavailable…",
+    "inputPlaceholderText": "Type your therapist turn…",
     "send": "Send",
+    "voiceMode": "Voice",
+    "textMode": "Text",
+    "voiceOn": "Voice mode on — mic + patient speech",
+    "voiceOff": "Text-only mode — typing only",
+    "pipelineVoice": "Voice pipeline",
+    "pipelineText": "Text only",
     "start": {
       "failed": "Could not start session",
       "networkError": "Network error",
@@ -454,7 +471,32 @@
       "subtitle": "Presets include disorder persona prompts, ideal-session guidelines, and scoring rubrics.",
       "goals": "Ideal session goals",
       "rubric": "Rubric",
-      "rubricItem": "{label} (max {max}, weight {weight})"
+      "rubricItem": "{label} (max {max}, weight {weight})",
+      "voiceProfile": "Voice profile",
+      "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility"
+    },
+    "voices": {
+      "title": "Voice Management",
+      "subtitle": "ElevenLabs voice registry. Avatars speak through an assigned voice profile.",
+      "columns": {
+        "gender": "Gender",
+        "language": "Language",
+        "dialect": "Dialect",
+        "provider": "Provider"
+      },
+      "preview": "Preview voice",
+      "enable": "Enable",
+      "disable": "Disable",
+      "assignTitle": "Assign to avatar",
+      "assignAvatar": "Assign {name}",
+      "unassignAvatar": "Unassign {name}",
+      "assignedTo": "Assigned to: {names}",
+      "unassigned": "Not assigned to any avatar yet.",
+      "empty": "No voice profiles found. Run the voice registry migration.",
+      "errors": {
+        "toggle": "Could not update voice status.",
+        "assign": "Could not assign voice to avatar."
+      }
     },
     "integrations": {
       "title": "API Integrations",

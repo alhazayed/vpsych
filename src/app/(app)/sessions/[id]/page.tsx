@@ -12,7 +12,7 @@ export default async function SessionPage({ params }: Props) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("*, avatars(*)")
+    .select("*, avatars(*, voice_profile:voice_profiles(*))")
     .eq("id", id)
     .single();
 

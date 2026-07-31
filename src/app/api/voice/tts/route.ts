@@ -1,22 +1,36 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
-  hasElevenLabs,
   normalizeSpeechLocale,
   previewSampleText,
-  resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import {
+  elevenLabsService,
+  ElevenLabsError,
+} from "@/lib/voice/elevenlabs";
+import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
 
 type TtsBody = {
   text?: string;
   locale?: string;
+  /** Legacy direct ElevenLabs ids (still supported). */
   voiceId?: string;
   voiceIdAr?: string;
+  /** Preferred: resolve Avatar → voice_profile → voice_id */
+  voiceProfileId?: string;
+  avatarId?: string;
   preview?: boolean;
+  /** Request streaming synthesis (default true). */
+  stream?: boolean;
 };
 
+/**
+ * ElevenLabs TTS — streams audio/mpeg when available.
+ * Contract preserved: JSON body in, audio/mpeg (or JSON error) out.
+ * Clients that cannot stream still receive a complete MPEG response body.
+ */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -34,80 +48,62 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!hasElevenLabs()) {
-    return NextResponse.json(
-      {
-        error: "ElevenLabs not configured. Set ELEVENLABS_API_KEY.",
-        code: "TTS_UNAVAILABLE",
-      },
-      { status: 501 },
-    );
-  }
-
   const body = (await request.json().catch(() => ({}))) as TtsBody;
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
   const text = (body.text?.trim() ||
     (body.preview ? previewSampleText(locale) : "")) as string;
 
-  if (!text) {
-    return NextResponse.json({ error: "text required" }, { status: 400 });
-  }
-  if (text.length > 2500) {
-    return NextResponse.json(
-      { error: "text too long (max 2500 characters)" },
-      { status: 400 },
-    );
-  }
+  try {
+    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
+    const resolved = await resolveTtsVoice({
+      locale,
+      voiceProfileId: body.voiceProfileId,
+      avatarId: body.avatarId,
+      voiceId: body.voiceId,
+      voiceIdAr: body.voiceIdAr,
+    });
 
-  const voiceId = resolveElevenLabsVoiceId({
-    locale,
-    voiceId: body.voiceId,
-    voiceIdAr: body.voiceIdAr,
-  });
+    // Resolved id already accounts for profile + legacy + env defaults.
+    const result = await elevenLabsService.synthesize({
+      text,
+      locale,
+      voiceId: resolved.voiceId,
+      voiceIdAr: resolved.voiceId,
+      stream: body.stream !== false,
+    });
 
-  const modelId =
-    process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
-
-  const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
-      method: "POST",
+    return new NextResponse(result.body, {
+      status: 200,
       headers: {
-        "xi-api-key": process.env.ELEVENLABS_API_KEY!,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
+        "Content-Type": result.contentType,
+        "Cache-Control": result.cached
+          ? "private, max-age=60"
+          : "no-store",
+        "X-Voice-Id": result.voiceId,
+        "X-Voice-Locale": result.locale,
+        "X-Voice-Model": result.modelId,
+        "X-Voice-Cached": result.cached ? "1" : "0",
+        "X-Voice-Streamed": result.streamed ? "1" : "0",
+        "X-Voice-Source": resolved.source,
+        ...(resolved.voiceProfileId
+          ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
+          : {}),
       },
-      body: JSON.stringify({
-        text,
-        model_id: modelId,
-        voice_settings: {
-          stability: 0.4,
-          similarity_boost: 0.75,
+    });
+  } catch (error) {
+    if (error instanceof ElevenLabsError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          detail: error.detail,
         },
-      }),
-    },
-  );
-
-  if (!res.ok) {
-    const detail = await res.text();
+        { status: error.status },
+      );
+    }
     return NextResponse.json(
-      {
-        error: "ElevenLabs TTS failed",
-        detail: detail.slice(0, 500),
-        voiceId,
-      },
+      { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502 },
     );
   }
-
-  const audio = await res.arrayBuffer();
-  return new NextResponse(audio, {
-    status: 200,
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Cache-Control": "no-store",
-      "X-Voice-Id": voiceId,
-      "X-Voice-Locale": locale,
-    },
-  });
 }

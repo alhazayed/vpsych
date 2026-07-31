@@ -11,10 +11,11 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
-  sessionLocaleFrom,
-  speakWithBrowser,
-  synthesizeSpeech,
-} from "@/lib/voice/client";
+  playPatientSpeech,
+  resolvePipelineLocale,
+  runVoiceConversationTurn,
+  submitConversationTurn,
+} from "@/lib/voice/conversation-pipeline";
 import {
   startMicWavRecording,
   type MicRecorder,
@@ -51,6 +52,25 @@ declare global {
   }
 }
 
+function formatMessageTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Multilingual conversation UI.
+ *
+ * Voice pipeline (optional):
+ *   Therapist Speech → OpenAI STT → GPT-5 Patient → ElevenLabs → Browser Audio
+ *
+ * Text-only mode uses the same message API (persist + GPT-5) without mic/TTS.
+ */
 export function VoiceSession({
   session,
   avatar,
@@ -62,13 +82,12 @@ export function VoiceSession({
 }) {
   const router = useRouter();
   const t = useTranslations("session");
-  // Speech locale ("en" | "ar") for TTS/provider selection. The precise
-  // dialect for STT comes from the resolved personality (avatar.stt_lang).
-  const locale = sessionLocaleFrom(session.language, avatar.language);
+  const locale = resolvePipelineLocale(session.language, avatar.language);
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>
     remainingSeconds(session.started_at, session.max_duration_sec),
   );
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [pending, setPending] = useState(false);
@@ -152,56 +171,36 @@ export function VoiceSession({
 
   const speak = useCallback(
     async (text: string) => {
+      if (!voiceEnabled) return;
       stopPlayback();
       setSpeaking(true);
-      const result = await synthesizeSpeech({
+      await playPatientSpeech({
         text,
         locale,
-        voiceId: locale === "ar" ? undefined : avatar.voice_id,
-        voiceIdAr: locale === "ar" ? avatar.voice_id : undefined,
-      });
-
-      if (result.mode === "elevenlabs" && result.objectUrl) {
-        const audio = new Audio(result.objectUrl);
-        audioRef.current = audio;
-        audio.onended = () => {
-          URL.revokeObjectURL(result.objectUrl!);
-          setSpeaking(false);
-          audioRef.current = null;
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(result.objectUrl!);
-          setSpeaking(false);
-          audioRef.current = null;
-          speakWithBrowser(text, locale, {
-            onstart: () => setSpeaking(true),
-            onend: () => setSpeaking(false),
-            onerror: () => setSpeaking(false),
-          });
-        };
-        try {
-          await audio.play();
-        } catch {
-          URL.revokeObjectURL(result.objectUrl);
-          setSpeaking(false);
-          speakWithBrowser(text, locale, {
-            onstart: () => setSpeaking(true),
-            onend: () => setSpeaking(false),
-            onerror: () => setSpeaking(false),
-          });
-        }
-        return;
-      }
-
-      speakWithBrowser(text, locale, {
-        onstart: () => setSpeaking(true),
-        onend: () => setSpeaking(false),
-        onerror: () => setSpeaking(false),
+        voiceId: avatar.voice_id,
+        voiceIdAr: avatar.voice_id_ar,
+        voiceProfileId: avatar.voice_profile_id,
+        avatarId: avatar.id,
+        audioRef,
+        handlers: {
+          onstart: () => setSpeaking(true),
+          onend: () => setSpeaking(false),
+          onerror: () => setSpeaking(false),
+        },
       });
     },
-    [avatar.voice_id, locale, stopPlayback],
+    [
+      avatar.id,
+      avatar.voice_id,
+      avatar.voice_id_ar,
+      avatar.voice_profile_id,
+      locale,
+      stopPlayback,
+      voiceEnabled,
+    ],
   );
 
+  /** Text or post-STT turn — always persists messages + timestamps server-side. */
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -210,92 +209,119 @@ export function VoiceSession({
       setStatus(t("status.patientResponding"));
       setDraft("");
       try {
-        const res = await fetch(`/api/sessions/${session.id}/message`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed }),
+        const turn = await submitConversationTurn({
+          sessionId: session.id,
+          message: trimmed,
         });
-        const data = await res.json();
-        if (!res.ok) {
-          if (data.expired) {
+        if (!turn.ok) {
+          if (turn.expired) {
             await endSession();
             return;
           }
-          setStatus(data.error ?? t("status.sendFailed"));
+          setStatus(turn.error || t("status.sendFailed"));
           return;
         }
         setMessages((prev) => [
           ...prev,
-          data.userMessage as SessionMessage,
-          data.assistantMessage as SessionMessage,
+          turn.data.userMessage,
+          turn.data.assistantMessage,
         ]);
-        void speak((data.assistantMessage as SessionMessage).content);
-        setStatus(t("status.listeningNext"));
+        if (voiceEnabled) {
+          void speak(turn.data.assistantMessage.content);
+        }
+        setStatus(
+          voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
+        );
       } catch {
         setStatus(t("status.networkError"));
       } finally {
         setPending(false);
       }
     },
-    [endSession, pending, session.id, speak, t],
+    [endSession, pending, session.id, speak, t, voiceEnabled],
   );
 
-  async function stopAzureListen() {
+  async function stopOpenAIListen() {
     const recorder = micRecorderRef.current;
     micRecorderRef.current = null;
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
     setListening(false);
     if (!recorder) return;
 
-    setStatus("Transcribing…");
+    setStatus(t("status.transcribing"));
+    setPending(true);
+
     try {
       const wav = await recorder.stop();
-      const form = new FormData();
-      form.append("audio", wav, "turn.wav");
-      form.append("locale", locale);
-      const res = await fetch("/api/voice/transcribe", {
-        method: "POST",
-        body: form,
+      const result = await runVoiceConversationTurn({
+        sessionId: session.id,
+        audio: wav,
+        sessionLanguage: session.language ?? locale,
+        locale,
+        voiceEnabled,
+        voiceId: avatar.voice_id,
+        voiceIdAr: avatar.voice_id_ar,
+        voiceProfileId: avatar.voice_profile_id,
+        avatarId: avatar.id,
+        audioRef,
+        onTranscript: (transcript) => setDraft(transcript),
+        onMessages: (userMessage, assistantMessage) => {
+          setMessages((prev) => [...prev, userMessage, assistantMessage]);
+        },
+        speakHandlers: {
+          onstart: () => setSpeaking(true),
+          onend: () => setSpeaking(false),
+          onerror: () => setSpeaking(false),
+        },
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        transcript?: string;
-        error?: string;
-        code?: string;
-      };
 
-      if (!res.ok) {
-        if (data.code === "STT_UNAVAILABLE" || res.status === 501) {
-          setStatus("Server STT unavailable — switching to browser mic…");
-          startBrowserListen();
+      if (!result.ok) {
+        if (result.stage === "stt" && result.unavailable) {
+          setStatus(t("status.sttUnavailable"));
+          startBrowserListen({ autoSend: true });
           return;
         }
-        setStatus(data.error ?? "Transcription failed. Type your turn.");
+        if (result.expired) {
+          await endSession();
+          return;
+        }
+        if (result.stage === "stt" && result.error === "No speech detected") {
+          setStatus(t("status.noSpeech"));
+          return;
+        }
+        setStatus(result.error || t("status.transcribeFailed"));
         return;
       }
 
-      const transcript = data.transcript?.trim() ?? "";
-      if (!transcript) {
-        setStatus("No speech detected — try again or type.");
-        return;
-      }
-      setDraft(transcript);
-      setStatus("Captured speech — sending…");
-      void sendMessage(transcript);
+      setDraft("");
+      setStatus(
+        voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
+      );
     } catch {
-      setStatus("Mic/transcription error — type your turn below.");
+      setStatus(t("status.micTranscribeError"));
+    } finally {
+      setPending(false);
     }
   }
 
-  function startBrowserListen() {
+  function startBrowserListen(options?: {
+    autoSend?: boolean;
+    interimOnly?: boolean;
+  }) {
+    const autoSend = options?.autoSend ?? true;
+    const interimOnly = options?.interimOnly ?? false;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      setStatus(t("status.speechUnavailable"));
+      if (!interimOnly) setStatus(t("status.speechUnavailable"));
       return;
     }
 
     const recognition = new SR();
-    recognition.continuous = false;
+    recognition.continuous = interimOnly;
     recognition.interimResults = true;
-    recognition.lang = avatar.stt_lang;
+    recognition.lang =
+      avatar.stt_lang || (locale === "ar" ? "ar-SA" : "en-US");
     recognitionRef.current = recognition;
 
     recognition.onresult = (event) => {
@@ -307,32 +333,43 @@ export function VoiceSession({
         if (result.isFinal) finalText += piece;
         else interim += piece;
       }
-      if (finalText) {
+      const live = (finalText || interim).trim();
+      if (live) {
+        setDraft(live);
+        setStatus(t("status.listening"));
+      }
+      if (finalText && autoSend && !interimOnly) {
         setDraft(finalText);
         setStatus(t("status.captured"));
         void sendMessage(finalText);
-      } else if (interim) {
-        setDraft(interim);
-        setStatus(t("status.listening"));
       }
     };
     recognition.onerror = (event) => {
+      if (interimOnly) return;
       setListening(false);
       setStatus(t("status.micError", { error: event.error }));
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (!interimOnly) setListening(false);
+    };
 
-    recognition.start();
-    setListening(true);
-    setStatus(t("status.speakNow"));
+    try {
+      recognition.start();
+      if (!interimOnly) {
+        setListening(true);
+        setStatus(t("status.speakNow"));
+      }
+    } catch {
+      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+    }
   }
 
   async function toggleListen() {
-    if (pending || ending) return;
+    if (pending || ending || !voiceEnabled) return;
 
     if (listening) {
       if (micRecorderRef.current) {
-        await stopAzureListen();
+        await stopOpenAIListen();
         return;
       }
       recognitionRef.current?.stop();
@@ -340,15 +377,34 @@ export function VoiceSession({
       return;
     }
 
-    // Prefer Azure STT via recorded WAV; fall back to browser Web Speech.
     try {
-      const recorder = await startMicWavRecording(12000);
+      const recorder = await startMicWavRecording(20000);
       micRecorderRef.current = recorder;
       setListening(true);
-      setStatus("Listening (Azure) — tap mic again to send.");
+      setDraft("");
+      setStatus(
+        t("status.listeningOpenAI", {
+          language: locale === "ar" ? "العربية" : "English",
+        }),
+      );
+      startBrowserListen({ autoSend: false, interimOnly: true });
     } catch {
-      startBrowserListen();
+      startBrowserListen({ autoSend: true });
     }
+  }
+
+  function toggleVoiceMode() {
+    if (listening) {
+      recognitionRef.current?.stop();
+      micRecorderRef.current?.cancel();
+      micRecorderRef.current = null;
+      setListening(false);
+    }
+    stopPlayback();
+    setSpeaking(false);
+    const next = !voiceEnabled;
+    setVoiceEnabled(next);
+    setStatus(next ? t("status.ready") : t("status.textOnly"));
   }
 
   const goals = avatar.ideal_guidelines?.session_goals ?? [];
@@ -369,17 +425,31 @@ export function VoiceSession({
             VPsych
           </span>
         </Link>
-        <div className="flex items-center gap-3">
-          <LanguageSwitcher compact />
-          <span className="hidden rounded-full bg-[var(--surface-container-high)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] sm:inline">
-            {locale === "ar" ? "AR voice" : "EN voice"}
-          </span>
+        <div className="flex items-center gap-2 md:gap-3">
           <SessionTimer remaining={remaining} />
+          <LanguageSwitcher compact />
+          <button
+            type="button"
+            onClick={toggleVoiceMode}
+            disabled={pending || ending}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition ${
+              voiceEnabled
+                ? "bg-[var(--primary-fixed)] text-[var(--on-surface)]"
+                : "bg-[var(--surface-container)] text-[var(--on-surface-variant)]"
+            }`}
+            aria-pressed={voiceEnabled}
+            title={voiceEnabled ? t("voiceOn") : t("voiceOff")}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {voiceEnabled ? "graphic_eq" : "keyboard"}
+            </span>
+            {voiceEnabled ? t("voiceMode") : t("textMode")}
+          </button>
           <button
             type="button"
             onClick={() => void endSession()}
             disabled={ending}
-            className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] disabled:opacity-50"
+            className="btn-secondary h-9 px-3 text-xs"
           >
             {ending ? t("ending") : t("end")}
           </button>
@@ -388,7 +458,7 @@ export function VoiceSession({
 
       <main className="relative flex flex-1 flex-col pt-16 lg:flex-row">
         <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6 lg:pb-12">
-          <div className="absolute start-4 end-4 top-4 flex justify-between gap-3 pointer-events-none md:start-6 md:end-6">
+          <div className="pointer-events-none absolute inset-x-4 top-4 flex justify-between gap-3 md:inset-x-6">
             <div className="flex flex-col gap-2">
               <div className="pointer-events-auto rounded-xl border border-[var(--outline-variant)] bg-white/90 px-4 py-2 shadow-sm backdrop-blur-md">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
@@ -462,23 +532,30 @@ export function VoiceSession({
           <p className="mt-4 max-w-md text-center text-sm text-[var(--on-surface-variant)]">
             {status}
           </p>
+          <p className="mt-1 text-[11px] uppercase tracking-wider text-[var(--outline)]">
+            {locale === "ar" ? "العربية" : "English"}
+            {" · "}
+            {voiceEnabled ? t("pipelineVoice") : t("pipelineText")}
+          </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => void toggleListen()}
-              disabled={pending || ending}
-              className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
-                listening
-                  ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"
-                  : "bg-[var(--primary)] text-[var(--on-primary)]"
-              } disabled:opacity-50`}
-              aria-label={listening ? t("stopMic") : t("startMic")}
-            >
-              <span className="material-symbols-outlined text-[28px]">
-                {listening ? "stop" : "mic"}
-              </span>
-            </button>
+            {voiceEnabled && (
+              <button
+                type="button"
+                onClick={() => void toggleListen()}
+                disabled={pending || ending}
+                className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
+                  listening
+                    ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"
+                    : "bg-[var(--primary)] text-[var(--on-primary)]"
+                } disabled:opacity-50`}
+                aria-label={listening ? t("stopMic") : t("startMic")}
+              >
+                <span className="material-symbols-outlined text-[28px]">
+                  {listening ? "stop" : "mic"}
+                </span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void endSession()}
@@ -508,9 +585,19 @@ export function VoiceSession({
                       : "bg-[var(--surface-container)] text-[var(--on-surface)]"
                   }`}
                 >
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                    {m.role === "user" ? t("you") : avatar.name}
-                  </p>
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                      {m.role === "user" ? t("you") : avatar.name}
+                    </p>
+                    {m.created_at && (
+                      <time
+                        dateTime={m.created_at}
+                        className="text-[10px] tabular-nums text-[var(--outline)]"
+                      >
+                        {formatMessageTime(m.created_at)}
+                      </time>
+                    )}
+                  </div>
                   {m.content}
                 </div>
               ))}
@@ -527,7 +614,9 @@ export function VoiceSession({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={t("inputPlaceholder")}
+              placeholder={
+                voiceEnabled ? t("inputPlaceholder") : t("inputPlaceholderText")
+              }
               className="field-input flex-1"
               disabled={pending || ending}
             />
@@ -544,3 +633,4 @@ export function VoiceSession({
     </div>
   );
 }
+
