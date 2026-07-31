@@ -1,4 +1,5 @@
 import { generateText } from "ai";
+import { openAIService, hasOpenAIApiKey } from "@/lib/ai/openai";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
 const DEFAULT_FALLBACK_REPLIES = [
@@ -9,14 +10,30 @@ const DEFAULT_FALLBACK_REPLIES = [
   "It's hard to put into words, but I'll try.",
 ];
 
-function hasAiKey() {
-  return Boolean(
-    process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
-  );
+function hasGatewayKey() {
+  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
 }
 
-function modelId() {
+function hasAnyAiKey() {
+  return hasGatewayKey() || hasOpenAIApiKey();
+}
+
+function gatewayModelId() {
   return process.env.AI_MODEL || "openai/gpt-4o-mini";
+}
+
+/**
+ * Prefer Vercel AI Gateway when configured (backward compatible).
+ * Otherwise use the official OpenAI SDK (GPT-5 chat).
+ */
+function preferOpenAiSdk(): boolean {
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
+    return hasOpenAIApiKey();
+  }
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
+    return false;
+  }
+  return hasOpenAIApiKey() && !hasGatewayKey();
 }
 
 /**
@@ -42,7 +59,7 @@ export async function generatePatientReply(params: {
       ? avatar.fallback_replies
       : DEFAULT_FALLBACK_REPLIES;
 
-  if (!hasAiKey()) {
+  if (!hasAnyAiKey()) {
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
@@ -50,7 +67,7 @@ export async function generatePatientReply(params: {
     return fallbacks[idx]!;
   }
 
-  const messages = history
+  const prior = history
     .filter((m) => m.role === "user" || m.role === "assistant")
     .slice(-20)
     .map((m) => ({
@@ -62,10 +79,24 @@ export async function generatePatientReply(params: {
   const reinforced = avatar.per_turn_reinforcement
     ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
     : userMessage;
-  messages.push({ role: "user", content: reinforced });
+
+  if (preferOpenAiSdk()) {
+    const result = await openAIService.chat({
+      messages: [
+        { role: "system", content: avatar.system_prompt },
+        ...prior,
+        { role: "user", content: reinforced },
+      ],
+      temperature: 0.85,
+      maxCompletionTokens: 220,
+    });
+    return result.text.trim() || fallbacks[0]!;
+  }
+
+  const messages = [...prior, { role: "user" as const, content: reinforced }];
 
   const { text } = await generateText({
-    model: modelId(),
+    model: gatewayModelId(),
     system: avatar.system_prompt,
     messages,
     temperature: 0.85,

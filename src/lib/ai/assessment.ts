@@ -6,6 +6,7 @@ import {
   localizeRubricLabel,
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
+import { hasOpenAIApiKey, openAIService } from "@/lib/ai/openai";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -25,14 +26,26 @@ const assessmentSchema = z.object({
   excerpts: z.array(z.string()).max(5),
 });
 
-function hasAiKey() {
-  return Boolean(
-    process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
-  );
+function hasGatewayKey() {
+  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
 }
 
-function modelId() {
+function hasAiKey() {
+  return hasGatewayKey() || hasOpenAIApiKey();
+}
+
+function gatewayModelId() {
   return process.env.AI_MODEL || "openai/gpt-4o-mini";
+}
+
+function preferOpenAiSdk(): boolean {
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
+    return hasOpenAIApiKey();
+  }
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
+    return false;
+  }
+  return hasOpenAIApiKey() && !hasGatewayKey();
 }
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
@@ -197,26 +210,48 @@ export async function assessSession(params: {
   const goals = avatar.ideal_guidelines?.session_goals?.join("; ") ?? "";
   const approach = avatar.ideal_guidelines?.ideal_approach ?? "";
   const rubricLines = rubric.map((r) => `${r.id} — ${r.label}`).join("; ");
+  const systemPrompt = buildExaminerSystemPrompt({
+    language,
+    patientName: avatar.name,
+    disorder: avatar.disorder,
+    approach,
+    goals,
+    durationSec,
+    rubricLines,
+  });
+  const userPrompt =
+    language === "ar"
+      ? `نص المحادثة:\n${transcript || "(فارغ)"}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
+      : `Transcript:\n${transcript || "(empty)"}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
 
   try {
-    const { output } = await generateText({
-      model: modelId(),
-      output: Output.object({ schema: assessmentSchema }),
-      system: buildExaminerSystemPrompt({
-        language,
-        patientName: avatar.name,
-        disorder: avatar.disorder,
-        approach,
-        goals,
-        durationSec,
-        rubricLines,
-      }),
-      prompt:
-        language === "ar"
-          ? `نص المحادثة:\n${transcript || "(فارغ)"}`
-          : `Transcript:\n${transcript || "(empty)"}`,
-      temperature: 0.3,
-    });
+    let output: z.infer<typeof assessmentSchema> | null = null;
+
+    if (preferOpenAiSdk()) {
+      const result = await openAIService.chat({
+        messages: [
+          {
+            role: "system",
+            content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown).`,
+          },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.3,
+        maxCompletionTokens: 1200,
+      });
+      const parsed = JSON.parse(result.text) as unknown;
+      const validated = assessmentSchema.safeParse(parsed);
+      output = validated.success ? validated.data : null;
+    } else {
+      const generated = await generateText({
+        model: gatewayModelId(),
+        output: Output.object({ schema: assessmentSchema }),
+        system: systemPrompt,
+        prompt: userPrompt,
+        temperature: 0.3,
+      });
+      output = generated.output ?? null;
+    }
 
     if (!output) {
       return heuristicAssessment(rubric, messages, language);

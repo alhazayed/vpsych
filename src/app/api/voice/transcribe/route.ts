@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  openAIService,
+  hasOpenAIApiKey,
+  OpenAIServiceError,
+} from "@/lib/ai/openai";
+import {
   azureSpeechLocale,
   hasAzureSpeech,
   normalizeSpeechLocale,
@@ -55,6 +60,40 @@ async function transcribeAzure(
   return { transcript: json.DisplayText?.trim() ?? "" };
 }
 
+async function transcribeOpenAI(
+  audio: Blob,
+  locale: string,
+): Promise<{ transcript: string; model: string } | { error: string; status: number }> {
+  try {
+    const ext =
+      audio.type.includes("wav")
+        ? "wav"
+        : audio.type.includes("mpeg") || audio.type.includes("mp3")
+          ? "mp3"
+          : audio.type.includes("webm")
+            ? "webm"
+            : "wav";
+    const result = await openAIService.speechToText({
+      audio,
+      filename: `speech.${ext}`,
+      language: locale,
+    });
+    return { transcript: result.transcript, model: result.model };
+  } catch (error) {
+    const mapped =
+      error instanceof OpenAIServiceError
+        ? error
+        : new OpenAIServiceError(
+            error instanceof Error ? error.message : "OpenAI STT failed",
+            { code: "OPENAI_UNKNOWN", status: 502 },
+          );
+    return {
+      error: mapped.message,
+      status: mapped.status && mapped.status >= 400 ? mapped.status : 502,
+    };
+  }
+}
+
 async function transcribeDeepgram(
   audio: Blob,
 ): Promise<{ transcript: string } | { error: string; status: number }> {
@@ -62,7 +101,7 @@ async function transcribeDeepgram(
   if (!deepgramKey) {
     return {
       error:
-        "Server STT not configured. Set AZURE_SPEECH_KEY + AZURE_SPEECH_REGION (preferred) or DEEPGRAM_API_KEY.",
+        "Server STT not configured. Set AZURE_SPEECH_KEY + AZURE_SPEECH_REGION (preferred), OPENAI_API_KEY, or DEEPGRAM_API_KEY.",
       status: 501,
     };
   }
@@ -120,20 +159,36 @@ export async function POST(request: Request) {
     );
   }
 
-  // Prefer Azure AI Speech; fall back to Deepgram if configured.
+  // Prefer Azure AI Speech; then official OpenAI STT; then Deepgram.
+  // Response shape remains { transcript, provider?, locale? }.
   if (hasAzureSpeech()) {
     const result = await transcribeAzure(audio, locale);
-    if ("error" in result) {
+    if (!("error" in result)) {
+      return NextResponse.json({
+        transcript: result.transcript,
+        provider: "azure",
+        locale: azureSpeechLocale(normalizeSpeechLocale(locale)),
+      });
+    }
+    // Fall through to OpenAI / Deepgram when Azure fails.
+  }
+
+  if (hasOpenAIApiKey()) {
+    const oi = await transcribeOpenAI(audio, locale);
+    if (!("error" in oi)) {
+      return NextResponse.json({
+        transcript: oi.transcript,
+        provider: "openai",
+        model: oi.model,
+        locale: azureSpeechLocale(normalizeSpeechLocale(locale)),
+      });
+    }
+    if (!process.env.DEEPGRAM_API_KEY) {
       return NextResponse.json(
-        { error: result.error, code: "AZURE_STT_FAILED" },
-        { status: result.status },
+        { error: oi.error, code: "OPENAI_STT_FAILED" },
+        { status: oi.status },
       );
     }
-    return NextResponse.json({
-      transcript: result.transcript,
-      provider: "azure",
-      locale: azureSpeechLocale(normalizeSpeechLocale(locale)),
-    });
   }
 
   const dg = await transcribeDeepgram(audio);
