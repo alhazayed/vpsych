@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_SESSION_SECONDS } from "@/lib/types";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -9,6 +10,14 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(`start:${user.id}`, 30, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const body = (await request.json()) as { avatarId?: string };
@@ -44,11 +53,14 @@ export async function POST(request: Request) {
     );
   }
 
-  await supabase.from("session_messages").insert({
-    session_id: session.id,
-    role: "system",
-    content: "Session started. Speak with the patient avatar.",
+  const { error: sysErr } = await supabase.rpc("insert_system_message", {
+    p_session_id: session.id,
+    p_content: "Session started. Speak with the patient avatar.",
   });
+
+  if (sysErr) {
+    return NextResponse.json({ error: sysErr.message }, { status: 500 });
+  }
 
   return NextResponse.json({ sessionId: session.id });
 }

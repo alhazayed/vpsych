@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { assessSession } from "@/lib/ai/assessment";
+import { rateLimit } from "@/lib/rate-limit";
+import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -13,6 +16,14 @@ export async function POST(_request: Request, { params }: Params) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(`end:${user.id}`, 20, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const { data: session, error: sessionError } = await supabase
@@ -47,23 +58,21 @@ export async function POST(_request: Request, { params }: Params) {
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+    typed.status = expired ? "expired" : "completed";
+    typed.ended_at = now.toISOString();
   }
 
-  const { data: existing } = await supabase
-    .from("session_reports")
-    .select("id")
-    .eq("session_id", sessionId)
-    .maybeSingle();
-
-  if (existing) {
-    return NextResponse.json({
-      ok: true,
-      reportId: existing.id,
-      alreadyExists: true,
-    });
+  const { data: alreadyHasReport, error: hasErr } = await supabase.rpc(
+    "session_has_report",
+    { p_session_id: sessionId },
+  );
+  if (hasErr) {
+    return NextResponse.json({ error: hasErr.message }, { status: 500 });
+  }
+  if (alreadyHasReport) {
+    return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
-  // Therapists cannot SELECT reports (admin-only RLS). Check via RPC attempt.
   const { data: messages } = await supabase
     .from("session_messages")
     .select("role, content, created_at")
@@ -84,13 +93,70 @@ export async function POST(_request: Request, { params }: Params) {
     durationSec,
   });
 
+  const scoresJson = JSON.stringify(assessment.scores);
+  const excerptsJson = JSON.stringify(assessment.excerpts);
+  const narrative = assessment.narrative;
+
+  const admin = createServiceClient();
+  if (admin) {
+    const { data: inserted, error: insertError } = await admin
+      .from("session_reports")
+      .insert({
+        session_id: sessionId,
+        scores: assessment.scores,
+        narrative,
+        excerpts: assessment.excerpts,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (insertError) {
+      // Unique violation → already created (race); treat as success.
+      if (insertError.code === "23505") {
+        return NextResponse.json({ ok: true, alreadyExists: true });
+      }
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      reportId: inserted?.id,
+    });
+  }
+
+  if (!getReportWriteKey()) {
+    return NextResponse.json(
+      {
+        error:
+          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
+      },
+      { status: 500 },
+    );
+  }
+
+  let sig: string;
+  try {
+    sig = signSessionReport({
+      sessionId,
+      narrative,
+      scoresJson,
+      excerptsJson,
+    });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Signing failed" },
+      { status: 500 },
+    );
+  }
+
   const { data: reportId, error: rpcError } = await supabase.rpc(
     "create_session_report",
     {
       p_session_id: sessionId,
-      p_scores: assessment.scores,
-      p_narrative: assessment.narrative,
-      p_excerpts: assessment.excerpts,
+      p_scores_json: scoresJson,
+      p_narrative: narrative,
+      p_excerpts_json: excerptsJson,
+      p_sig: sig,
     },
   );
 

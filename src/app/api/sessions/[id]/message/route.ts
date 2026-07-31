@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generatePatientReply } from "@/lib/ai/patient-agent";
 import { remainingSeconds } from "@/lib/session-timer";
+import { rateLimit } from "@/lib/rate-limit";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -16,10 +17,24 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const limited = rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   const body = (await request.json()) as { message?: string };
   const message = body.message?.trim();
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
+  }
+  if (message.length > 4000) {
+    return NextResponse.json(
+      { error: "message too long (max 4000 characters)" },
+      { status: 400 },
+    );
   }
 
   const { data: session, error: sessionError } = await supabase
@@ -71,21 +86,27 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
-  const reply = await generatePatientReply({
-    avatar: typed.avatars,
-    history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
-    userMessage: message,
-  });
+  let reply: string;
+  try {
+    reply = await generatePatientReply({
+      avatar: typed.avatars,
+      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+      userMessage: message,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to generate patient reply" },
+      { status: 502 },
+    );
+  }
 
-  const { data: assistantMsg, error: assistantError } = await supabase
-    .from("session_messages")
-    .insert({
-      session_id: sessionId,
-      role: "assistant",
-      content: reply,
-    })
-    .select("*")
-    .single();
+  const { data: assistantMsg, error: assistantError } = await supabase.rpc(
+    "insert_assistant_message",
+    {
+      p_session_id: sessionId,
+      p_content: reply,
+    },
+  );
 
   if (assistantError || !assistantMsg) {
     return NextResponse.json(
