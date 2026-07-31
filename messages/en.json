@@ -369,7 +369,9 @@
       "sttUnavailable": "OpenAI STT unavailable — switching to browser mic…",
       "noSpeech": "No speech detected — try again or type.",
       "transcribeFailed": "Transcription failed. Type your turn.",
-      "micTranscribeError": "Mic/transcription error — type your turn below."
+      "micTranscribeError": "Mic/transcription error — type your turn below.",
+      "textOnly": "Text-only mode — type your turns below.",
+      "textReady": "Ready for your next typed turn."
     },
     "end": "End",
     "ending": "Ending…",
@@ -384,7 +386,14 @@
     "transcript": "Transcript",
     "you": "You",
     "inputPlaceholder": "Type a turn if mic is unavailable…",
+    "inputPlaceholderText": "Type your therapist turn…",
     "send": "Send",
+    "voiceMode": "Voice",
+    "textMode": "Text",
+    "voiceOn": "Voice mode on — mic + patient speech",
+    "voiceOff": "Text-only mode — typing only",
+    "pipelineVoice": "Voice pipeline",
+    "pipelineText": "Text only",
     "start": {
       "failed": "Could not start session",
       "networkError": "Network error",
