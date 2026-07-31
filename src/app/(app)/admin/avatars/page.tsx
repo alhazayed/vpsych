@@ -66,9 +66,14 @@ export default async function AdminAvatarsPage() {
             </p>
 
             <div className="mt-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                Voice
-              </h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+                  ElevenLabs voice
+                </h3>
+                <p className="text-[11px] text-[var(--on-surface-variant)]">
+                  Stored as voice_id / voice_id_ar on the avatar
+                </p>
+              </div>
               <dl className="mt-2 grid gap-2 text-sm text-[var(--on-surface-variant)] sm:grid-cols-2">
                 <div>
                   <dt className="text-[10px] font-semibold uppercase tracking-wider">

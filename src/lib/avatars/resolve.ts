@@ -174,7 +174,18 @@ export function resolveAvatar(
       ideal_guidelines: guidelinesFromCore(core, avatar),
       rubric: localizeRubric(avatar.rubric, personality.rubric_labels),
       dialect: personality.dialect ?? null,
-      voice_id: personality.voice.voice_id ?? avatar.voice_id ?? null,
+      voice_id:
+        (personality.language !== "ar"
+          ? personality.voice.voice_id
+          : undefined) ??
+        avatar.voice_id ??
+        null,
+      voice_id_ar:
+        (personality.language === "ar"
+          ? personality.voice.voice_id
+          : undefined) ??
+        avatar.voice_id_ar ??
+        null,
       stt_lang: personality.voice.stt_lang,
       tts_lang: personality.voice.tts_lang,
       tts_rate: personality.voice.rate,
@@ -221,6 +232,7 @@ export function resolveAvatar(
     rubric: avatar.rubric ?? [],
     dialect: avatar.dialect ?? null,
     voice_id: avatar.voice_id ?? null,
+    voice_id_ar: avatar.voice_id_ar ?? null,
     stt_lang: language === "ar" ? "ar-JO" : "en-US",
     tts_lang: language === "ar" ? "ar-SA" : "en-US",
     fallback_replies: [],

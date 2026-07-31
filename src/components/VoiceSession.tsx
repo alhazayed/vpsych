@@ -158,8 +158,8 @@ export function VoiceSession({
       const result = await synthesizeSpeech({
         text,
         locale,
-        voiceId: locale === "ar" ? undefined : avatar.voice_id,
-        voiceIdAr: locale === "ar" ? avatar.voice_id : undefined,
+        voiceId: avatar.voice_id,
+        voiceIdAr: avatar.voice_id_ar,
       });
 
       if (result.mode === "elevenlabs" && result.objectUrl) {
@@ -200,7 +200,7 @@ export function VoiceSession({
         onerror: () => setSpeaking(false),
       });
     },
-    [avatar.voice_id, locale, stopPlayback],
+    [avatar.voice_id, avatar.voice_id_ar, locale, stopPlayback],
   );
 
   const sendMessage = useCallback(

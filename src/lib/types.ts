@@ -229,6 +229,7 @@ export type ResolvedAvatar = {
   rubric: RubricItem[];
   dialect: string | null;
   voice_id: string | null;
+  voice_id_ar?: string | null;
   stt_lang: string;
   tts_lang: string;
   tts_rate?: number;
