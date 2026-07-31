@@ -1,4 +1,4 @@
-/** Capture a short mono 16 kHz PCM WAV clip from the microphone (Azure-friendly). */
+/** Capture a short mono 16 kHz PCM WAV clip from the microphone (OpenAI STT-friendly). */
 
 function writeString(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) {

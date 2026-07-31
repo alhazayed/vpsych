@@ -363,7 +363,13 @@
       "captured": "Captured speech — sending…",
       "listening": "Listening…",
       "speakNow": "Listening — speak now.",
-      "micError": "Mic error: {error}. You can type instead."
+      "micError": "Mic error: {error}. You can type instead.",
+      "listeningOpenAI": "Listening (OpenAI · {language}) — tap mic again to send.",
+      "transcribing": "Transcribing with OpenAI…",
+      "sttUnavailable": "OpenAI STT unavailable — switching to browser mic…",
+      "noSpeech": "No speech detected — try again or type.",
+      "transcribeFailed": "Transcription failed. Type your turn.",
+      "micTranscribeError": "Mic/transcription error — type your turn below."
     },
     "end": "End",
     "ending": "Ending…",

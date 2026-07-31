@@ -19,6 +19,7 @@ import {
   startMicWavRecording,
   type MicRecorder,
 } from "@/lib/voice/record-wav";
+import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type {
   ResolvedAvatar,
   SessionMessage,
@@ -240,62 +241,63 @@ export function VoiceSession({
     [endSession, pending, session.id, speak, t],
   );
 
-  async function stopAzureListen() {
+  async function stopOpenAIListen() {
     const recorder = micRecorderRef.current;
     micRecorderRef.current = null;
+    // Stop interim browser recognition if it was mirroring the draft live.
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
     setListening(false);
     if (!recorder) return;
 
-    setStatus("Transcribing…");
+    setStatus(t("status.transcribing"));
+
     try {
       const wav = await recorder.stop();
-      const form = new FormData();
-      form.append("audio", wav, "turn.wav");
-      form.append("locale", locale);
-      const res = await fetch("/api/voice/transcribe", {
-        method: "POST",
-        body: form,
+      // session.language drives locale automatically via VoiceSession `locale`.
+      const result = await transcribeWithOpenAI({
+        audio: wav,
+        locale: session.language ?? locale,
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        transcript?: string;
-        error?: string;
-        code?: string;
-      };
 
-      if (!res.ok) {
-        if (data.code === "STT_UNAVAILABLE" || res.status === 501) {
-          setStatus("Server STT unavailable — switching to browser mic…");
-          startBrowserListen();
+      if (!result.ok) {
+        if (result.unavailable) {
+          setStatus(t("status.sttUnavailable"));
+          startBrowserListen({ autoSend: true });
           return;
         }
-        setStatus(data.error ?? "Transcription failed. Type your turn.");
+        setStatus(result.error || t("status.transcribeFailed"));
         return;
       }
 
-      const transcript = data.transcript?.trim() ?? "";
+      const transcript = result.transcript.trim();
       if (!transcript) {
-        setStatus("No speech detected — try again or type.");
+        setStatus(t("status.noSpeech"));
         return;
       }
       setDraft(transcript);
-      setStatus("Captured speech — sending…");
+      setStatus(t("status.captured"));
       void sendMessage(transcript);
     } catch {
-      setStatus("Mic/transcription error — type your turn below.");
+      setStatus(t("status.micTranscribeError"));
     }
   }
 
-  function startBrowserListen() {
+  function startBrowserListen(options?: { autoSend?: boolean; interimOnly?: boolean }) {
+    const autoSend = options?.autoSend ?? true;
+    const interimOnly = options?.interimOnly ?? false;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      setStatus(t("status.speechUnavailable"));
+      if (!interimOnly) setStatus(t("status.speechUnavailable"));
       return;
     }
 
     const recognition = new SR();
-    recognition.continuous = false;
+    recognition.continuous = interimOnly;
     recognition.interimResults = true;
-    recognition.lang = avatar.stt_lang;
+    // Prefer precise personality STT tag; fall back to session language.
+    recognition.lang =
+      avatar.stt_lang || (locale === "ar" ? "ar-SA" : "en-US");
     recognitionRef.current = recognition;
 
     recognition.onresult = (event) => {
@@ -307,24 +309,35 @@ export function VoiceSession({
         if (result.isFinal) finalText += piece;
         else interim += piece;
       }
-      if (finalText) {
+      const live = (finalText || interim).trim();
+      if (live) {
+        setDraft(live);
+        setStatus(t("status.listening"));
+      }
+      if (finalText && autoSend && !interimOnly) {
         setDraft(finalText);
         setStatus(t("status.captured"));
         void sendMessage(finalText);
-      } else if (interim) {
-        setDraft(interim);
-        setStatus(t("status.listening"));
       }
     };
     recognition.onerror = (event) => {
+      if (interimOnly) return;
       setListening(false);
       setStatus(t("status.micError", { error: event.error }));
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (!interimOnly) setListening(false);
+    };
 
-    recognition.start();
-    setListening(true);
-    setStatus(t("status.speakNow"));
+    try {
+      recognition.start();
+      if (!interimOnly) {
+        setListening(true);
+        setStatus(t("status.speakNow"));
+      }
+    } catch {
+      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+    }
   }
 
   async function toggleListen() {
@@ -332,7 +345,7 @@ export function VoiceSession({
 
     if (listening) {
       if (micRecorderRef.current) {
-        await stopAzureListen();
+        await stopOpenAIListen();
         return;
       }
       recognitionRef.current?.stop();
@@ -340,14 +353,21 @@ export function VoiceSession({
       return;
     }
 
-    // Prefer Azure STT via recorded WAV; fall back to browser Web Speech.
+    // Primary: OpenAI Speech-to-Text via recorded WAV upload.
+    // When possible, mirror interim text with browser recognition for live draft.
     try {
-      const recorder = await startMicWavRecording(12000);
+      const recorder = await startMicWavRecording(20000);
       micRecorderRef.current = recorder;
       setListening(true);
-      setStatus("Listening (Azure) — tap mic again to send.");
+      setDraft("");
+      setStatus(
+        t("status.listeningOpenAI", {
+          language: locale === "ar" ? "العربية" : "English",
+        }),
+      );
+      startBrowserListen({ autoSend: false, interimOnly: true });
     } catch {
-      startBrowserListen();
+      startBrowserListen({ autoSend: true });
     }
   }
 
