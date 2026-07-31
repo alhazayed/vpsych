@@ -46,18 +46,6 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "psychology",
       match: (p) => p.startsWith("/admin/avatars"),
     },
-    {
-      href: "/admin/integrations",
-      label: t("apiIntegrations"),
-      icon: "api",
-      match: (p) => p.startsWith("/admin/integrations"),
-    },
-    {
-      href: "/admin/security",
-      label: t("securityKeys"),
-      icon: "vpn_key",
-      match: (p) => p.startsWith("/admin/security"),
-    },
   ];
 }
 
@@ -120,10 +108,6 @@ export function AppShell({
   }
 
   function pageTitle() {
-    if (pathname.startsWith("/admin/security"))
-      return tShell("pageTitle.securityKeys");
-    if (pathname.startsWith("/admin/integrations"))
-      return tShell("pageTitle.apiIntegrations");
     if (pathname.startsWith("/admin/reports"))
       return tShell("pageTitle.reportsLibrary");
     if (pathname.startsWith("/admin/avatars"))

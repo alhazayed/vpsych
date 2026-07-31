@@ -7,12 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("auth.login");
-  const next = searchParams.get("next") ?? "/avatars";
+  const next = safeRedirectPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

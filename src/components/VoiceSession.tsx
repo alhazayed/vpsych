@@ -73,7 +73,18 @@ export function VoiceSession({
     try {
       recognitionRef.current?.stop();
       window.speechSynthesis?.cancel();
-      await fetch(`/api/sessions/${session.id}/end`, { method: "POST" });
+      const res = await fetch(`/api/sessions/${session.id}/end`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setStatus(
+          data.error ?? "Failed to generate the session report. Try again.",
+        );
+        endingRef.current = false;
+        setEnding(false);
+        return;
+      }
       router.push(`/sessions/${session.id}/complete`);
       router.refresh();
     } catch {
