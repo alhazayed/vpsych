@@ -11,11 +11,13 @@ export default async function AdminReportsPage() {
       id,
       session_id,
       scores,
+      language,
       created_at,
       sessions (
         started_at,
         ended_at,
         status,
+        language,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -92,7 +94,8 @@ export default async function AdminReportsPage() {
             Reports Library
           </h2>
           <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-            Confidential. Visible to admins only.
+            Confidential. Visible to admins only. Generated in the session
+            language.
           </p>
         </div>
         <ul className="divide-y divide-[var(--surface-container-low)]">
@@ -100,11 +103,13 @@ export default async function AdminReportsPage() {
             const session = report.sessions as unknown as {
               started_at: string;
               status: string;
+              language?: string | null;
               profiles: { display_name: string } | null;
               avatars: { name: string; disorder: string } | null;
             } | null;
             const overall =
               (report.scores as { overall?: number } | null)?.overall ?? "—";
+            const lang = report.language ?? session?.language ?? "en";
             return (
               <li key={report.id}>
                 <Link
@@ -118,7 +123,8 @@ export default async function AdminReportsPage() {
                     </p>
                     <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                       {session?.avatars?.disorder} ·{" "}
-                      {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}
+                      {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}{" "}
+                      · {String(lang).toUpperCase()}
                     </p>
                   </div>
                   <p className="font-[family-name:var(--font-headline)] text-xl font-bold text-[var(--primary)]">

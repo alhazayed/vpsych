@@ -3,6 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function cookieLocale(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(/(?:^|; )locale=([^;]*)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+}
+
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -15,7 +21,10 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarId }),
+        body: JSON.stringify({
+          avatarId,
+          locale: cookieLocale(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

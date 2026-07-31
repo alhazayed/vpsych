@@ -84,6 +84,16 @@ export async function POST(_request: Request, { params }: Params) {
     (new Date(endedAt).getTime() - new Date(typed.started_at).getTime()) / 1000,
   );
 
+  let reportLanguage = typed.language ?? null;
+  if (!reportLanguage) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("preferred_language")
+      .eq("id", user.id)
+      .maybeSingle();
+    reportLanguage = profile?.preferred_language ?? null;
+  }
+
   const assessment = await assessSession({
     avatar: typed.avatars,
     messages: (messages ?? []) as Pick<
@@ -91,7 +101,16 @@ export async function POST(_request: Request, { params }: Params) {
       "role" | "content" | "created_at"
     >[],
     durationSec,
+    language: reportLanguage,
   });
+
+  // Keep session.language aligned when it was missing at create time.
+  if (!typed.language && assessment.language) {
+    await supabase
+      .from("sessions")
+      .update({ language: assessment.language })
+      .eq("id", sessionId);
+  }
 
   const scoresJson = JSON.stringify(assessment.scores);
   const excerptsJson = JSON.stringify(assessment.excerpts);
@@ -106,6 +125,7 @@ export async function POST(_request: Request, { params }: Params) {
         scores: assessment.scores,
         narrative,
         excerpts: assessment.excerpts,
+        language: assessment.language,
       })
       .select("id")
       .maybeSingle();

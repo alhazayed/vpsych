@@ -47,6 +47,9 @@ export default async function AdminReportDetailPage({ params }: Props) {
       <p className="mt-4 text-sm text-[var(--on-surface-variant)]">
         Therapist: {session?.profiles?.display_name ?? "—"} · Patient:{" "}
         {session?.avatars?.name ?? "—"} ({session?.avatars?.disorder ?? "—"})
+        {(report as SessionReport).language
+          ? ` · Report: ${(report as SessionReport).language}`
+          : ""}
       </p>
       <div className="mt-6">
         <ReportView report={report as SessionReport} />

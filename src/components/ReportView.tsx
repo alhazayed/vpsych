@@ -1,23 +1,51 @@
 import type { SessionReport } from "@/lib/types";
+import { normalizeReportLanguage } from "@/lib/ai/report-locale";
 
 export function ReportView({ report }: { report: SessionReport }) {
   const items = report.scores?.items ?? [];
   const overall = report.scores?.overall ?? 0;
+  const language = normalizeReportLanguage(report.language);
+  const isAr = language === "ar";
+
+  const labels = isAr
+    ? {
+        confidential: "تقييم سرّي",
+        title: "تقرير الجلسة",
+        overall: "المجموع",
+        narrative: "السرد السريري",
+        rubric: "معايير الكفاءة",
+        excerpts: "مقتطفات أساسية",
+        footer: "للإدارة فقط. لا يُشارك مع المتدرّب أو أطراف خارجية.",
+      }
+    : {
+        confidential: "Confidential assessment",
+        title: "Session report",
+        overall: "Overall",
+        narrative: "Clinical narrative",
+        rubric: "Competency rubric",
+        excerpts: "Key excerpts",
+        footer: "Admin-only. Not shared with the trainee or external parties.",
+      };
 
   return (
-    <article className="space-y-6">
+    <article
+      className="space-y-6"
+      dir={isAr ? "rtl" : "ltr"}
+      lang={language}
+      data-report-language={language}
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--outline)]">
-            Confidential assessment
+            {labels.confidential}
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-            Session report
+            {labels.title}
           </h1>
         </div>
         <div className="clinical-card px-5 py-3 text-center">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            Overall
+            {labels.overall}
           </p>
           <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
             {overall}
@@ -30,7 +58,7 @@ export function ReportView({ report }: { report: SessionReport }) {
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-          Clinical narrative
+          {labels.narrative}
         </h2>
         <p className="text-base leading-7 text-[var(--on-surface)]">
           {report.narrative}
@@ -40,7 +68,7 @@ export function ReportView({ report }: { report: SessionReport }) {
       <section className="clinical-card overflow-hidden">
         <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-5 py-3">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            Competency rubric
+            {labels.rubric}
           </h2>
         </div>
         <ul className="divide-y divide-[var(--surface-container-low)]">
@@ -54,7 +82,7 @@ export function ReportView({ report }: { report: SessionReport }) {
                   </p>
                   <p className="font-mono text-sm text-[var(--primary)]">
                     {item.score}/{item.max}
-                    <span className="ml-2 text-[var(--on-surface-variant)]">
+                    <span className="ms-2 text-[var(--on-surface-variant)]">
                       w{item.weight}
                     </span>
                   </p>
@@ -77,13 +105,13 @@ export function ReportView({ report }: { report: SessionReport }) {
       {report.excerpts?.length > 0 && (
         <section className="clinical-card p-5">
           <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            Key excerpts
+            {labels.excerpts}
           </h2>
           <ul className="space-y-3">
             {report.excerpts.map((ex, i) => (
               <li
                 key={`${i}-${ex.slice(0, 12)}`}
-                className="border-l-2 border-[var(--primary)] pl-3 text-sm italic text-[var(--on-surface)]"
+                className="border-s-2 border-[var(--primary)] ps-3 text-sm italic text-[var(--on-surface)]"
               >
                 {ex}
               </li>
@@ -92,9 +120,7 @@ export function ReportView({ report }: { report: SessionReport }) {
         </section>
       )}
 
-      <p className="text-xs text-[var(--on-surface-variant)]">
-        Admin-only. Not shared with the trainee or external parties.
-      </p>
+      <p className="text-xs text-[var(--on-surface-variant)]">{labels.footer}</p>
     </article>
   );
 }
