@@ -10,6 +10,7 @@ function cookieLocale(): string | undefined {
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
 
+
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
   const t = useTranslations("session.start");

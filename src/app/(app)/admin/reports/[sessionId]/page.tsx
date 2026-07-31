@@ -52,6 +52,9 @@ export default async function AdminReportDetailPage({ params }: Props) {
           patient: session?.avatars?.name ?? "—",
           disorder: session?.avatars?.disorder ?? "—",
         })}
+        {(report as SessionReport).language
+          ? ` · ${(report as SessionReport).language}`
+          : ""}
       </p>
       <div className="mt-6">
         <ReportView report={report as SessionReport} />
