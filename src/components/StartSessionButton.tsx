@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
+  const t = useTranslations("session.start");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,13 +21,13 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not start session");
+        setError(data.error ?? t("failed"));
         setLoading(false);
         return;
       }
       router.push(`/sessions/${data.sessionId}`);
     } catch {
-      setError("Network error");
+      setError(t("networkError"));
       setLoading(false);
     }
   }
@@ -39,7 +41,7 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         className="btn-primary w-full"
       >
         <span className="material-symbols-outlined text-[20px]">mic</span>
-        {loading ? "Starting…" : "Start 40-min voice session"}
+        {loading ? t("starting") : t("cta")}
       </button>
       {error && (
         <p className="text-sm text-[var(--error)]">{error}</p>

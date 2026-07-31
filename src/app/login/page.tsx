@@ -1,9 +1,17 @@
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 import LoginPage from "./page-client";
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations("auth");
   return (
-    <Suspense fallback={<main className="p-8 text-[var(--on-surface-variant)]">Loading…</main>}>
+    <Suspense
+      fallback={
+        <main className="p-8 text-[var(--on-surface-variant)]">
+          {t("loading")}
+        </main>
+      }
+    >
       <LoginPage />
     </Suspense>
   );

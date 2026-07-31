@@ -1,11 +1,13 @@
 export type UserRole = "therapist" | "admin";
 export type SessionStatus = "active" | "completed" | "expired";
 export type MessageRole = "user" | "assistant" | "system";
+export type PreferredLanguage = "en" | "ar";
 
 export type Profile = {
   id: string;
   display_name: string;
   role: UserRole;
+  preferred_language: string | null;
   created_at: string;
   updated_at: string;
 };

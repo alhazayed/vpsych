@@ -1,0 +1,460 @@
+{
+  "meta": {
+    "title": "VPsych — Clinical Assessment Platform",
+    "description": "Practice therapy with preset patient avatars and receive admin-only performance assessments."
+  },
+  "common": {
+    "loading": "Loading…",
+    "vpsych": "VPsych",
+    "active": "Active",
+    "inactive": "Inactive",
+    "outOf100": "/100",
+    "cancel": "Cancel",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية",
+    "safety": {
+      "discard": "Discard Changes",
+      "confirmSave": "Confirm & Save"
+    }
+  },
+  "shell": {
+    "tagline": "Clinical Intelligence",
+    "newAssessment": "New Assessment",
+    "signOut": "Sign out",
+    "role": {
+      "admin": "Administrator",
+      "therapist": "Therapist",
+      "clinicalSupervisor": "Clinical Supervisor"
+    },
+    "pageTitle": {
+      "patientLibrary": "Virtual Patient Library",
+      "mySessions": "My Sessions",
+      "reportsLibrary": "Reports Library",
+      "avatarPresets": "Avatar Presets"
+    }
+  },
+  "nav": {
+    "patientLibrary": "Patient Library",
+    "mySessions": "My Sessions",
+    "reportsLibrary": "Reports Library",
+    "avatarPresets": "Avatar Presets"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "about": "About",
+      "resources": "Resources",
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "Next-Gen Clinical Training",
+      "title": "Practice Psychotherapy with AI Patients",
+      "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
+      "startFree": "Start Free",
+      "watchDemo": "Watch Demo",
+      "imageAlt": "Therapist conducting a session with an AI patient avatar"
+    },
+    "features": {
+      "title": "Advanced Clinical Training Tools",
+      "subtitle": "Master complex therapeutic skills through our specialized simulation suite.",
+      "items": {
+        "simulations": {
+          "title": "Clinical Simulations",
+          "body": "Immersive scenarios covering anxiety, depression, PTSD, and complex personality disorders."
+        },
+        "avatars": {
+          "title": "AI Patient Avatars",
+          "body": "Responsive avatars with dynamic facial expressions and realistic emotional vocal modulation."
+        },
+        "feedback": {
+          "title": "Competency-Based Feedback",
+          "body": "Instant scoring on empathy, verbal reflections, and adherence to therapeutic modalities."
+        },
+        "analytics": {
+          "title": "Performance Analytics",
+          "body": "Visualize your growth over time with detailed charts mapping your diagnostic accuracy."
+        },
+        "progress": {
+          "title": "Progress Tracking",
+          "body": "Curated learning paths that adapt based on your strengths and identified areas for improvement."
+        },
+        "bilingual": {
+          "title": "Arabic & English Support",
+          "body": "Full bilingual capability to support diverse practitioners across global medical contexts."
+        }
+      }
+    },
+    "how": {
+      "title": "How VPsych Works",
+      "imageAlt": "VPsych workflow from session creation to analysis",
+      "steps": {
+        "1": {
+          "title": "Create Session",
+          "body": "Select a clinical persona and start a timed voice assessment session."
+        },
+        "2": {
+          "title": "Conduct Therapy",
+          "body": "Engage in natural conversation with the AI patient via voice or text input."
+        },
+        "3": {
+          "title": "Receive AI Report",
+          "body": "Get a comprehensive clinical analysis with specific feedback on your techniques."
+        }
+      }
+    },
+    "stats": {
+      "sessions": "Practice Sessions",
+      "cases": "AI Patient Cases",
+      "competencies": "Clinical Competencies",
+      "satisfaction": "User Satisfaction"
+    },
+    "testimonials": {
+      "title": "Trusted by Professionals",
+      "items": {
+        "1": {
+          "quote": "The diagnostic reasoning feedback is revolutionary. It catches nuances in interviewing technique that are often missed in traditional residency training.",
+          "name": "Dr. Sarah Khalil",
+          "role": "Senior Psychiatrist"
+        },
+        "2": {
+          "quote": "As a clinical psychologist, I find the AI's emotional responses incredibly authentic. It's an invaluable tool for mastering therapeutic alliance building.",
+          "name": "Dr. James Wilson",
+          "role": "Clinical Psychologist"
+        },
+        "3": {
+          "quote": "VPsych helped me build confidence before my first real-world clinical rotation. The progress tracking keeps me motivated to keep refining my skills.",
+          "name": "Layla Ahmed",
+          "role": "Medical Resident"
+        }
+      }
+    },
+    "pricing": {
+      "title": "Scale Your Expertise",
+      "subtitle": "Plans designed for individual learners and major medical institutions.",
+      "mostPopular": "Most Popular",
+      "perMonth": "/mo",
+      "free": {
+        "name": "Free",
+        "price": "$0",
+        "features": {
+          "1": "Practice sessions with preset avatars",
+          "2": "Voice-first training",
+          "3": "Admin-only assessments"
+        },
+        "cta": "Select Plan"
+      },
+      "pro": {
+        "name": "Professional",
+        "price": "$29",
+        "features": {
+          "1": "Unlimited sessions",
+          "2": "Full performance reports",
+          "3": "Expanded patient library"
+        },
+        "cta": "Get Started"
+      },
+      "institution": {
+        "name": "Institution",
+        "price": "Custom",
+        "features": {
+          "1": "Supervisor dashboards",
+          "2": "Custom case creation",
+          "3": "Enterprise support"
+        },
+        "cta": "Contact Sales"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "items": {
+        "1": {
+          "q": "How realistic are AI patients?",
+          "a": "Our models are tuned for clinical training scenarios so behavior patterns, vocabulary, and symptom presentation feel authentic for practice."
+        },
+        "2": {
+          "q": "Can supervisors review sessions?",
+          "a": "Yes. Admin accounts can review performance reports generated after each session while therapist access remains appropriately scoped."
+        },
+        "3": {
+          "q": "Is patient data recorded?",
+          "a": "We do not store real patient information. Simulations use fictional personas. Training session data is handled with security-first defaults."
+        },
+        "4": {
+          "q": "Does the platform support Arabic?",
+          "a": "Yes. VPsych supports Arabic and English across the UI, with automatic right-to-left layout when Arabic is selected."
+        }
+      }
+    },
+    "footer": {
+      "tagline": "Clinical excellence in every interaction. Empowering the next generation of mental health professionals through AI simulation.",
+      "product": "Product",
+      "resources": "Resources",
+      "company": "Company",
+      "features": "Features",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "signIn": "Sign in",
+      "aboutUs": "About Us",
+      "getStarted": "Get Started",
+      "copyright": "© {year} VPsych. All rights reserved."
+    }
+  },
+  "auth": {
+    "loading": "Loading…",
+    "login": {
+      "platformName": "VPsych Clinical Assessment Platform",
+      "support": "Support",
+      "requestAccess": "Request Access",
+      "heroAlt": "Therapist practicing with an AI patient simulation",
+      "heroTitle": "Improve Your Clinical Skills with AI-Powered Practice",
+      "heroBody": "Practice psychotherapy with realistic AI patients and receive structured competency feedback after every session.",
+      "trusted": "Trusted by clinicians worldwide",
+      "welcome": "Welcome Back",
+      "subtitle": "Sign in to continue your clinical training.",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "name@clinic.com",
+      "forgotPassword": "Forgot Password?",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "rememberMe": "Remember me for 30 days",
+      "authenticating": "Authenticating…",
+      "signIn": "Sign in",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create Account",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "copyright": "© {year} VPsych"
+    },
+    "signup": {
+      "nav": {
+        "solutions": "Solutions",
+        "clinicalTools": "Clinical Tools",
+        "signIn": "Sign In"
+      },
+      "title": "Create Your Account",
+      "subtitle": "Join mental health professionals training with AI patient simulations.",
+      "fields": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email Address",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "country": "Country",
+        "profession": "Profession",
+        "organization": "Organization"
+      },
+      "placeholders": {
+        "firstName": "e.g. Jane",
+        "lastName": "e.g. Smith",
+        "email": "jane.smith@clinical.com",
+        "organization": "Clinical Practice / Hospital Name",
+        "selectCountry": "Select Country",
+        "selectProfession": "Select Profession"
+      },
+      "optional": "(Optional)",
+      "strength": {
+        "label": "Password Strength",
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      },
+      "checks": {
+        "length": "8 Characters",
+        "upper": "Uppercase",
+        "number": "Number",
+        "special": "Special Character"
+      },
+      "countries": {
+        "us": "United States",
+        "uk": "United Kingdom",
+        "ca": "Canada",
+        "au": "Australia",
+        "sa": "Saudi Arabia",
+        "ae": "United Arab Emirates",
+        "eg": "Egypt",
+        "jo": "Jordan",
+        "other": "Other"
+      },
+      "professions": {
+        "psychiatrist": "Psychiatrist",
+        "psychologist": "Clinical Psychologist",
+        "therapist": "Therapist / Counselor",
+        "resident": "Medical Resident",
+        "student": "Student",
+        "other": "Other"
+      },
+      "termsAgree": "I agree to the Terms of Service and Privacy Policy regarding clinical training data.",
+      "newsletter": "Subscribe to our Clinical Intelligence newsletter for training tips.",
+      "errors": {
+        "acceptTerms": "Please accept the Terms of Service and Privacy Policy.",
+        "passwordMismatch": "Passwords do not match.",
+        "passwordShort": "Password must be at least 6 characters."
+      },
+      "checkEmail": "Check your email to confirm your account, then sign in.",
+      "creating": "Creating…",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "unsaved": {
+        "title": "Unsaved Registration Data",
+        "discard": "Discard",
+        "saveContinue": "Save & Continue"
+      },
+      "footer": {
+        "copyright": "© {year} VPsych. All rights reserved.",
+        "terms": "Terms of Service",
+        "privacy": "Privacy Policy",
+        "support": "Contact Support"
+      }
+    }
+  },
+  "avatars": {
+    "welcomeBack": "Welcome back",
+    "intro": "Choose a virtual patient to begin a timed voice practice session.",
+    "title": "Virtual Patient Library",
+    "count": "{count} active {persona}",
+    "persona": "persona",
+    "personas": "personas"
+  },
+  "sessions": {
+    "title": "My Sessions",
+    "subtitle": "Transcripts stay with you. Assessment reports remain admin-only.",
+    "history": "Session history",
+    "resume": "Resume",
+    "details": "Details",
+    "empty": "No sessions yet.",
+    "emptyCta": "Start one from the patient library",
+    "status": {
+      "active": "active",
+      "completed": "completed",
+      "expired": "expired"
+    },
+    "complete": {
+      "badge": "Simulation completed",
+      "title": "Session complete",
+      "body": "Your session with {name} ({disorder}) has ended. An admin-only performance report is being prepared from your transcript.",
+      "nextTitle": "What happens next",
+      "next1": "Your transcript remains available under My Sessions for review.",
+      "next2": "Practice again with another persona to keep building clinical skills.",
+      "practiceAgain": "Practice again",
+      "mySessions": "My sessions",
+      "viewReport": "View report"
+    }
+  },
+  "session": {
+    "status": {
+      "ready": "Ready — hold the mic or type a turn.",
+      "ending": "Ending session and generating admin report…",
+      "endFailed": "Failed to end session. Try again.",
+      "patientResponding": "Patient is responding…",
+      "sendFailed": "Failed to send message",
+      "listeningNext": "Listening for your next turn.",
+      "networkError": "Network error — try again.",
+      "speechUnavailable": "Speech recognition unavailable — type your turn below.",
+      "captured": "Captured speech — sending…",
+      "listening": "Listening…",
+      "speakNow": "Listening — speak now.",
+      "micError": "Mic error: {error}. You can type instead.",
+      "reportFailed": "Failed to generate the session report. Try again."
+    },
+    "end": "End",
+    "ending": "Ending…",
+    "endSession": "End session",
+    "patient": "Patient",
+    "presentation": "Presentation",
+    "referralNotes": "Referral Notes",
+    "idealGoals": "Ideal session goals",
+    "noReferralNotes": "No referral notes for this persona.",
+    "stopMic": "Stop microphone",
+    "startMic": "Start microphone",
+    "transcript": "Transcript",
+    "you": "You",
+    "inputPlaceholder": "Type a turn if mic is unavailable…",
+    "send": "Send",
+    "start": {
+      "failed": "Could not start session",
+      "networkError": "Network error",
+      "starting": "Starting…",
+      "cta": "Start 40-min voice session"
+    },
+    "timer": {
+      "ariaLabel": "Time remaining {time}"
+    },
+    "portrait": {
+      "speaking": "Speaking",
+      "listening": "Listening"
+    }
+  },
+  "analysis": {
+    "brandAi": "VPsych AI",
+    "title": "Analyzing Your Clinical Performance",
+    "subtitle": "Our AI is reviewing your therapeutic communication, empathy, diagnostic reasoning, rapport building, interviewing techniques, intervention quality, and overall clinical competency.",
+    "estimatedTime": "Estimated time: Approximately 20–60 seconds",
+    "clinicalTip": "Clinical Tip",
+    "doNotClose": "Do not close this page. Your personalized clinical report will open automatically when analysis is complete.",
+    "steps": {
+      "transcript": "Processing session transcript",
+      "communication": "Evaluating therapeutic communication",
+      "reasoning": "Assessing diagnostic reasoning",
+      "report": "Generating competency report...",
+      "recommendations": "Preparing recommendations",
+      "finalize": "Finalizing feedback"
+    },
+    "tips": {
+      "1": "Active listening strengthens therapeutic alliance.",
+      "2": "Validating emotion before providing solutions increases rapport.",
+      "3": "Reflective statements help clarify patient internal experiences.",
+      "4": "Maintaining professional boundaries protects the therapeutic space.",
+      "5": "Open-ended questions invite deeper patient self-exploration.",
+      "6": "Observe non-verbal cues to detect underlying patient affect."
+    }
+  },
+  "report": {
+    "confidential": "Confidential assessment",
+    "title": "Session report",
+    "overall": "Overall",
+    "narrative": "Clinical narrative",
+    "rubric": "Competency rubric",
+    "excerpts": "Key excerpts",
+    "adminOnlyNote": "Admin-only. Not shared with the trainee or external parties."
+  },
+  "admin": {
+    "reports": {
+      "statTotal": "Total assessments",
+      "statAvg": "Avg. competency score",
+      "statAccess": "Access",
+      "statTotalHint": "Stored securely with RLS",
+      "statAvgHint": "Across completed reports",
+      "adminOnly": "Admin-only",
+      "rlsNote": "Therapists cannot select session reports via row-level security.",
+      "title": "Reports Library",
+      "subtitle": "Confidential. Visible to admins only.",
+      "fallbackTherapist": "Therapist",
+      "fallbackAvatar": "Avatar",
+      "empty": "No reports yet."
+    },
+    "reportDetail": {
+      "back": "All reports",
+      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})"
+    },
+    "avatars": {
+      "title": "Avatar presets",
+      "subtitle": "Presets include disorder persona prompts, ideal-session guidelines, and scoring rubrics.",
+      "goals": "Ideal session goals",
+      "rubric": "Rubric",
+      "rubricItem": "{label} (max {max}, weight {weight})"
+    }
+  },
+  "errors": {
+    "auth": "Authentication failed. Please sign in again.",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "network": "Network error",
+    "generic": "Something went wrong. Please try again."
+  }
+}

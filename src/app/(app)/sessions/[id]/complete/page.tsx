@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import type { TherapySession } from "@/lib/types";
 
@@ -8,6 +9,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function SessionCompletePage({ params }: Props) {
   const { id } = await params;
   const { supabase, user, profile } = await requireProfile();
+  const t = await getTranslations("sessions.complete");
 
   const { data: session } = await supabase
     .from("sessions")
@@ -27,15 +29,16 @@ export default async function SessionCompletePage({ params }: Props) {
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
       <div className="mb-8 text-center fade-in-up">
         <span className="status-chip status-chip-done mb-4">
-          Simulation completed
+          {t("badge")}
         </span>
         <h1 className="mt-4 font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-          Session complete
+          {t("title")}
         </h1>
         <p className="mt-3 text-[var(--on-surface-variant)]">
-          Your session with {typed.avatars?.name} ({typed.avatars?.disorder})
-          has ended. A performance assessment was generated and stored securely
-          for administrators only.
+          {t("body", {
+            name: typed.avatars?.name ?? "",
+            disorder: typed.avatars?.disorder ?? "",
+          })}
         </p>
       </div>
 
@@ -45,7 +48,7 @@ export default async function SessionCompletePage({ params }: Props) {
             verified
           </span>
           <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-            What happens next
+            {t("nextTitle")}
           </h2>
         </div>
         <ul className="space-y-3 text-sm text-[var(--on-surface-variant)]">
@@ -53,18 +56,13 @@ export default async function SessionCompletePage({ params }: Props) {
             <span className="material-symbols-outlined text-[20px] text-[var(--primary)]">
               lock
             </span>
-            <span>
-              Your transcript remains available under My Sessions. Scoring and
-              narrative feedback stay admin-only.
-            </span>
+            <span>{t("next1")}</span>
           </li>
           <li className="flex gap-3">
             <span className="material-symbols-outlined text-[20px] text-[var(--secondary)]">
               trending_up
             </span>
-            <span>
-              Practice again with another persona to build clinical range.
-            </span>
+            <span>{t("next2")}</span>
           </li>
         </ul>
       </section>
@@ -72,11 +70,11 @@ export default async function SessionCompletePage({ params }: Props) {
       <div className="flex flex-col gap-3 fade-in-up">
         <Link href="/avatars" className="btn-primary h-12 w-full">
           <span className="material-symbols-outlined">play_circle</span>
-          Practice again
+          {t("practiceAgain")}
         </Link>
         <Link href="/sessions" className="btn-secondary h-12 w-full">
           <span className="material-symbols-outlined">clinical_notes</span>
-          My sessions
+          {t("mySessions")}
         </Link>
         {profile.role === "admin" && (
           <Link
@@ -84,7 +82,7 @@ export default async function SessionCompletePage({ params }: Props) {
             className="btn-secondary h-12 w-full"
           >
             <span className="material-symbols-outlined">folder_shared</span>
-            View report
+            {t("viewReport")}
           </Link>
         )}
       </div>
