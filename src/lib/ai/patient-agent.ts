@@ -23,17 +23,18 @@ function gatewayModelId() {
 }
 
 /**
- * Prefer Vercel AI Gateway when configured (backward compatible).
- * Otherwise use the official OpenAI SDK (GPT-5 chat).
+ * Prefer the official OpenAI SDK (GPT-5) for the multilingual conversation
+ * pipeline when OPENAI_API_KEY is set. Set OPENAI_CHAT_PROVIDER=gateway to
+ * force the legacy Vercel AI Gateway path.
  */
 function preferOpenAiSdk(): boolean {
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
-    return hasOpenAIApiKey();
-  }
   if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
     return false;
   }
-  return hasOpenAIApiKey() && !hasGatewayKey();
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
+    return hasOpenAIApiKey();
+  }
+  return hasOpenAIApiKey();
 }
 
 /**
