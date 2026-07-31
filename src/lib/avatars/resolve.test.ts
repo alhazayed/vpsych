@@ -142,6 +142,32 @@ describe("pickPersonality", () => {
 });
 
 describe("resolveAvatar", () => {
+  it("projects an assigned Arabic voice_profile onto voice_id_ar", () => {
+    const withProfile: Avatar = {
+      ...v2Avatar,
+      voice_profile_id: "a1000000-0000-4000-8000-000000000003",
+      voice_profile: {
+        id: "a1000000-0000-4000-8000-000000000003",
+        provider: "elevenlabs",
+        voice_name: "Amira",
+        voice_id: "cdxrkuYK4nZwDSkjw5sa",
+        language: "ar",
+        dialect: "Levantine Arabic",
+        gender: "female",
+        is_active: true,
+        created_at: "2026-07-31T00:00:00.000Z",
+      },
+      voice_id: "21m00Tcm4TlvDq8ikWAM",
+      voice_id_ar: "old-ar",
+    };
+    const resolved = resolveAvatar(withProfile, "ar");
+    expect(resolved.voice_profile_id).toBe(
+      "a1000000-0000-4000-8000-000000000003",
+    );
+    expect(resolved.voice_id_ar).toBe("cdxrkuYK4nZwDSkjw5sa");
+    expect(resolved.voice_id).toBe("21m00Tcm4TlvDq8ikWAM");
+  });
+
   it("assembles Claude multilingual prompt for Arabic sessions", () => {
     const resolved = resolveAvatar(v2Avatar, "ar");
     expect(resolved.locale).toBe("ar-JO");

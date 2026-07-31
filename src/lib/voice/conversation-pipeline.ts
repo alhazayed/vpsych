@@ -139,6 +139,8 @@ export async function playPatientSpeech(params: {
   locale: SessionSpeechLocale;
   voiceId?: string | null;
   voiceIdAr?: string | null;
+  voiceProfileId?: string | null;
+  avatarId?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
 }): Promise<"elevenlabs" | "browser"> {
@@ -150,6 +152,8 @@ export async function playPatientSpeech(params: {
     locale: params.locale,
     voiceId: params.voiceId,
     voiceIdAr: params.voiceIdAr,
+    voiceProfileId: params.voiceProfileId,
+    avatarId: params.avatarId,
   });
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
@@ -218,6 +222,8 @@ export async function runVoiceConversationTurn(params: {
   voiceEnabled: boolean;
   voiceId?: string | null;
   voiceIdAr?: string | null;
+  voiceProfileId?: string | null;
+  avatarId?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
@@ -279,6 +285,8 @@ export async function runVoiceConversationTurn(params: {
       locale: params.locale,
       voiceId: params.voiceId,
       voiceIdAr: params.voiceIdAr,
+      voiceProfileId: params.voiceProfileId,
+      avatarId: params.avatarId,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
     });

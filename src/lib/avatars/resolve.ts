@@ -11,6 +11,7 @@ import type {
   RubricItem,
 } from "@/lib/types";
 import { DEFAULT_AVATAR_LOCALE } from "@/lib/types";
+import { projectAvatarVoiceFields } from "@/lib/voice/registry";
 
 const LOCALE_ALIASES: Record<string, string> = {
   en: "en-US",
@@ -157,6 +158,10 @@ export function resolveAvatar(
       session: { locale },
     };
 
+    // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.
+    const registryVoice = projectAvatarVoiceFields(avatar);
+    const personalityVoiceId = personality.voice.voice_id ?? null;
+
     return {
       id: avatar.id,
       schema_version: avatar.schema_version ?? 2,
@@ -174,16 +179,16 @@ export function resolveAvatar(
       ideal_guidelines: guidelinesFromCore(core, avatar),
       rubric: localizeRubric(avatar.rubric, personality.rubric_labels),
       dialect: personality.dialect ?? null,
+      voice_profile_id: registryVoice.voice_profile_id,
+      voice_profile: registryVoice.voice_profile,
       voice_id:
-        (personality.language !== "ar"
-          ? personality.voice.voice_id
-          : undefined) ??
+        registryVoice.voice_id ??
+        (personality.language !== "ar" ? personalityVoiceId : null) ??
         avatar.voice_id ??
         null,
       voice_id_ar:
-        (personality.language === "ar"
-          ? personality.voice.voice_id
-          : undefined) ??
+        registryVoice.voice_id_ar ??
+        (personality.language === "ar" ? personalityVoiceId : null) ??
         avatar.voice_id_ar ??
         null,
       stt_lang: personality.voice.stt_lang,
@@ -215,6 +220,8 @@ export function resolveAvatar(
     idealApproach: avatar.ideal_guidelines?.ideal_approach,
   });
 
+  const registryVoice = projectAvatarVoiceFields(avatar);
+
   return {
     id: avatar.id,
     schema_version: avatar.schema_version ?? 1,
@@ -231,8 +238,10 @@ export function resolveAvatar(
     ideal_guidelines: avatar.ideal_guidelines ?? {},
     rubric: avatar.rubric ?? [],
     dialect: avatar.dialect ?? null,
-    voice_id: avatar.voice_id ?? null,
-    voice_id_ar: avatar.voice_id_ar ?? null,
+    voice_profile_id: registryVoice.voice_profile_id,
+    voice_profile: registryVoice.voice_profile,
+    voice_id: registryVoice.voice_id,
+    voice_id_ar: registryVoice.voice_id_ar,
     stt_lang: language === "ar" ? "ar-JO" : "en-US",
     tts_lang: language === "ar" ? "ar-SA" : "en-US",
     fallback_replies: [],

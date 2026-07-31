@@ -179,6 +179,8 @@ export function VoiceSession({
         locale,
         voiceId: avatar.voice_id,
         voiceIdAr: avatar.voice_id_ar,
+        voiceProfileId: avatar.voice_profile_id,
+        avatarId: avatar.id,
         audioRef,
         handlers: {
           onstart: () => setSpeaking(true),
@@ -187,7 +189,15 @@ export function VoiceSession({
         },
       });
     },
-    [avatar.voice_id, avatar.voice_id_ar, locale, stopPlayback, voiceEnabled],
+    [
+      avatar.id,
+      avatar.voice_id,
+      avatar.voice_id_ar,
+      avatar.voice_profile_id,
+      locale,
+      stopPlayback,
+      voiceEnabled,
+    ],
   );
 
   /** Text or post-STT turn — always persists messages + timestamps server-side. */
@@ -252,6 +262,8 @@ export function VoiceSession({
         voiceEnabled,
         voiceId: avatar.voice_id,
         voiceIdAr: avatar.voice_id_ar,
+        voiceProfileId: avatar.voice_profile_id,
+        avatarId: avatar.id,
         audioRef,
         onTranscript: (transcript) => setDraft(transcript),
         onMessages: (userMessage, assistantMessage) => {

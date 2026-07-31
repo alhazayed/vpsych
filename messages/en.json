@@ -32,6 +32,7 @@
       "mySessions": "My Sessions",
       "reportsLibrary": "Reports Library",
       "avatarPresets": "Avatar Presets",
+      "voiceManagement": "Voice Management",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -41,6 +42,7 @@
     "mySessions": "My Sessions",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
+    "voiceManagement": "Voice Management",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -469,7 +471,32 @@
       "subtitle": "Presets include disorder persona prompts, ideal-session guidelines, and scoring rubrics.",
       "goals": "Ideal session goals",
       "rubric": "Rubric",
-      "rubricItem": "{label} (max {max}, weight {weight})"
+      "rubricItem": "{label} (max {max}, weight {weight})",
+      "voiceProfile": "Voice profile",
+      "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility"
+    },
+    "voices": {
+      "title": "Voice Management",
+      "subtitle": "ElevenLabs voice registry. Avatars speak through an assigned voice profile.",
+      "columns": {
+        "gender": "Gender",
+        "language": "Language",
+        "dialect": "Dialect",
+        "provider": "Provider"
+      },
+      "preview": "Preview voice",
+      "enable": "Enable",
+      "disable": "Disable",
+      "assignTitle": "Assign to avatar",
+      "assignAvatar": "Assign {name}",
+      "unassignAvatar": "Unassign {name}",
+      "assignedTo": "Assigned to: {names}",
+      "unassigned": "Not assigned to any avatar yet.",
+      "empty": "No voice profiles found. Run the voice registry migration.",
+      "errors": {
+        "toggle": "Could not update voice status.",
+        "assign": "Could not assign voice to avatar."
+      }
     },
     "integrations": {
       "title": "API Integrations",

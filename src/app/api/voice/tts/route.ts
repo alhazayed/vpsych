@@ -9,13 +9,18 @@ import {
   elevenLabsService,
   ElevenLabsError,
 } from "@/lib/voice/elevenlabs";
+import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
 
 type TtsBody = {
   text?: string;
   locale?: string;
+  /** Legacy direct ElevenLabs ids (still supported). */
   voiceId?: string;
   voiceIdAr?: string;
+  /** Preferred: resolve Avatar → voice_profile → voice_id */
+  voiceProfileId?: string;
+  avatarId?: string;
   preview?: boolean;
   /** Request streaming synthesis (default true). */
   stream?: boolean;
@@ -49,11 +54,21 @@ export async function POST(request: Request) {
     (body.preview ? previewSampleText(locale) : "")) as string;
 
   try {
+    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
+    const resolved = await resolveTtsVoice({
+      locale,
+      voiceProfileId: body.voiceProfileId,
+      avatarId: body.avatarId,
+      voiceId: body.voiceId,
+      voiceIdAr: body.voiceIdAr,
+    });
+
+    // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({
       text,
       locale,
-      voiceId: body.voiceId,
-      voiceIdAr: body.voiceIdAr,
+      voiceId: resolved.voiceId,
+      voiceIdAr: resolved.voiceId,
       stream: body.stream !== false,
     });
 
@@ -69,6 +84,10 @@ export async function POST(request: Request) {
         "X-Voice-Model": result.modelId,
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
+        "X-Voice-Source": resolved.source,
+        ...(resolved.voiceProfileId
+          ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
+          : {}),
       },
     });
   } catch (error) {

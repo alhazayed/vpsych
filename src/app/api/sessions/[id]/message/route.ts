@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .select("*, avatars(*)")
+    .select("*, avatars(*, voice_profile:voice_profiles(*))")
     .eq("id", sessionId)
     .single();
 

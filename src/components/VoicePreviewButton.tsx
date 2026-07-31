@@ -11,11 +11,15 @@ export function VoicePreviewButton({
   locale,
   voiceId,
   voiceIdAr,
+  voiceProfileId,
+  avatarId,
   label,
 }: {
   locale: SessionSpeechLocale;
   voiceId?: string | null;
   voiceIdAr?: string | null;
+  voiceProfileId?: string | null;
+  avatarId?: string | null;
   label: string;
 }) {
   const [busy, setBusy] = useState(false);
@@ -38,6 +42,8 @@ export function VoicePreviewButton({
           locale,
           voiceId: voiceId ?? undefined,
           voiceIdAr: voiceIdAr ?? undefined,
+          voiceProfileId: voiceProfileId ?? undefined,
+          avatarId: avatarId ?? undefined,
         }),
       });
       if (!res.ok) {

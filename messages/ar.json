@@ -32,6 +32,7 @@
       "mySessions": "جلساتي",
       "reportsLibrary": "مكتبة التقارير",
       "avatarPresets": "نماذج الشخصيات",
+      "voiceManagement": "إدارة الأصوات",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -41,6 +42,7 @@
     "mySessions": "جلساتي",
     "reportsLibrary": "مكتبة التقارير",
     "avatarPresets": "نماذج الشخصيات",
+    "voiceManagement": "إدارة الأصوات",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح"
   },
@@ -469,7 +471,32 @@
       "subtitle": "تتضمن النماذج مطالبات الشخصية والاضطراب وإرشادات الجلسة المثالية ومقاييس التقييم.",
       "goals": "أهداف الجلسة المثالية",
       "rubric": "المقياس",
-      "rubricItem": "{label} (الحد الأقصى {max}، الوزن {weight})"
+      "rubricItem": "{label} (الحد الأقصى {max}، الوزن {weight})",
+      "voiceProfile": "ملف الصوت",
+      "voiceLegacyNote": "تُحدَّث أعمدة voice_id القديمة للتوافق"
+    },
+    "voices": {
+      "title": "إدارة الأصوات",
+      "subtitle": "سجل أصوات ElevenLabs. تتحدث الشخصيات عبر ملف صوت مُعيَّن.",
+      "columns": {
+        "gender": "الجنس",
+        "language": "اللغة",
+        "dialect": "اللهجة",
+        "provider": "المزوّد"
+      },
+      "preview": "معاينة الصوت",
+      "enable": "تفعيل",
+      "disable": "تعطيل",
+      "assignTitle": "تعيين لشخصية",
+      "assignAvatar": "تعيين {name}",
+      "unassignAvatar": "إلغاء تعيين {name}",
+      "assignedTo": "مُعيَّن لـ: {names}",
+      "unassigned": "غير مُعيَّن لأي شخصية بعد.",
+      "empty": "لا توجد ملفات صوت. شغّل ترحيل سجل الأصوات.",
+      "errors": {
+        "toggle": "تعذّر تحديث حالة الصوت.",
+        "assign": "تعذّر تعيين الصوت للشخصية."
+      }
     },
     "integrations": {
       "title": "تكاملات واجهة البرمجة",

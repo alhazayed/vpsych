@@ -13,6 +13,8 @@ export async function synthesizeSpeech(params: {
   locale: SessionSpeechLocale;
   voiceId?: string | null;
   voiceIdAr?: string | null;
+  voiceProfileId?: string | null;
+  avatarId?: string | null;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -23,6 +25,8 @@ export async function synthesizeSpeech(params: {
         locale: params.locale,
         voiceId: params.voiceId ?? undefined,
         voiceIdAr: params.voiceIdAr ?? undefined,
+        voiceProfileId: params.voiceProfileId ?? undefined,
+        avatarId: params.avatarId ?? undefined,
         stream: true,
       }),
     });

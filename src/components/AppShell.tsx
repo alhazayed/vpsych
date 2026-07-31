@@ -46,6 +46,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "psychology",
       match: (p) => p.startsWith("/admin/avatars"),
     },
+    {
+      href: "/admin/voices",
+      label: t("voiceManagement"),
+      icon: "record_voice_over",
+      match: (p) => p.startsWith("/admin/voices"),
+    },
   ];
 }
 
@@ -112,6 +118,8 @@ export function AppShell({
       return tShell("pageTitle.reportsLibrary");
     if (pathname.startsWith("/admin/avatars"))
       return tShell("pageTitle.avatarPresets");
+    if (pathname.startsWith("/admin/voices"))
+      return tShell("pageTitle.voiceManagement");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }
