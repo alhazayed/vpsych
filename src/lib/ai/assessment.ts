@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import type { Avatar, RubricItem, ScoreEntry, SessionMessage } from "@/lib/types";
+import type { ResolvedAvatar, RubricItem, ScoreEntry, SessionMessage } from "@/lib/types";
 
 const assessmentSchema = z.object({
   items: z.array(
@@ -105,7 +105,10 @@ function weightedOverall(items: ScoreEntry[]) {
 }
 
 export async function assessSession(params: {
-  avatar: Pick<Avatar, "name" | "disorder" | "ideal_guidelines" | "rubric">;
+  avatar: Pick<
+    ResolvedAvatar,
+    "name" | "disorder" | "ideal_guidelines" | "rubric"
+  >;
   messages: Pick<SessionMessage, "role" | "content" | "created_at">[];
   durationSec: number;
 }) {

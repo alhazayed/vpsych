@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { assessSession } from "@/lib/ai/assessment";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
+import { resolveAvatar } from "@/lib/avatars/resolve";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -84,8 +85,10 @@ export async function POST(_request: Request, { params }: Params) {
     (new Date(endedAt).getTime() - new Date(typed.started_at).getTime()) / 1000,
   );
 
+  const resolved = resolveAvatar(typed.avatars, typed.language);
+
   const assessment = await assessSession({
-    avatar: typed.avatars,
+    avatar: resolved,
     messages: (messages ?? []) as Pick<
       SessionMessage,
       "role" | "content" | "created_at"
@@ -106,6 +109,7 @@ export async function POST(_request: Request, { params }: Params) {
         scores: assessment.scores,
         narrative,
         excerpts: assessment.excerpts,
+        language: resolved.locale,
       })
       .select("id")
       .maybeSingle();
@@ -162,6 +166,14 @@ export async function POST(_request: Request, { params }: Params) {
 
   if (rpcError) {
     return NextResponse.json({ error: rpcError.message }, { status: 500 });
+  }
+
+  const privileged = createServiceClient();
+  if (reportId && privileged) {
+    await privileged
+      .from("session_reports")
+      .update({ language: resolved.locale })
+      .eq("id", reportId);
   }
 
   return NextResponse.json({
