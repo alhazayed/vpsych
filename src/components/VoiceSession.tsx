@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { SessionTimer } from "@/components/SessionTimer";
@@ -46,6 +47,8 @@ export function VoiceSession({
   initialMessages: SessionMessage[];
 }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("session");
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>
     remainingSeconds(session.started_at, session.max_duration_sec),
@@ -54,7 +57,7 @@ export function VoiceSession({
   const [speaking, setSpeaking] = useState(false);
   const [pending, setPending] = useState(false);
   const [draft, setDraft] = useState("");
-  const [status, setStatus] = useState("Ready — hold the mic or type a turn.");
+  const [status, setStatus] = useState(() => t("status.ready"));
   const [ending, setEnding] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -65,7 +68,7 @@ export function VoiceSession({
     if (endingRef.current) return;
     endingRef.current = true;
     setEnding(true);
-    setStatus("Ending session and generating admin report…");
+    setStatus(t("status.ending"));
     try {
       recognitionRef.current?.stop();
       window.speechSynthesis?.cancel();
@@ -73,11 +76,11 @@ export function VoiceSession({
       router.push(`/sessions/${session.id}/complete`);
       router.refresh();
     } catch {
-      setStatus("Failed to end session. Try again.");
+      setStatus(t("status.endFailed"));
       endingRef.current = false;
       setEnding(false);
     }
-  }, [router, session.id]);
+  }, [router, session.id, t]);
 
   useEffect(() => {
     const tick = () => {
@@ -115,7 +118,7 @@ export function VoiceSession({
       const trimmed = text.trim();
       if (!trimmed || pending || endingRef.current) return;
       setPending(true);
-      setStatus("Patient is responding…");
+      setStatus(t("status.patientResponding"));
       setDraft("");
       try {
         const res = await fetch(`/api/sessions/${session.id}/message`, {
@@ -129,7 +132,7 @@ export function VoiceSession({
             await endSession();
             return;
           }
-          setStatus(data.error ?? "Failed to send message");
+          setStatus(data.error ?? t("status.sendFailed"));
           return;
         }
         setMessages((prev) => [
@@ -138,20 +141,20 @@ export function VoiceSession({
           data.assistantMessage as SessionMessage,
         ]);
         speak((data.assistantMessage as SessionMessage).content);
-        setStatus("Listening for your next turn.");
+        setStatus(t("status.listeningNext"));
       } catch {
-        setStatus("Network error — try again.");
+        setStatus(t("status.networkError"));
       } finally {
         setPending(false);
       }
     },
-    [endSession, pending, session.id],
+    [endSession, pending, session.id, t],
   );
 
   function toggleListen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      setStatus("Speech recognition unavailable — type your turn below.");
+      setStatus(t("status.speechUnavailable"));
       return;
     }
 
@@ -164,7 +167,7 @@ export function VoiceSession({
     const recognition = new SR();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = locale === "ar" ? "ar-SA" : "en-US";
     recognitionRef.current = recognition;
 
     recognition.onresult = (event) => {
@@ -178,22 +181,22 @@ export function VoiceSession({
       }
       if (finalText) {
         setDraft(finalText);
-        setStatus("Captured speech — sending…");
+        setStatus(t("status.captured"));
         void sendMessage(finalText);
       } else if (interim) {
         setDraft(interim);
-        setStatus("Listening…");
+        setStatus(t("status.listening"));
       }
     };
     recognition.onerror = (event) => {
       setListening(false);
-      setStatus(`Mic error: ${event.error}. You can type instead.`);
+      setStatus(t("status.micError", { error: event.error }));
     };
     recognition.onend = () => setListening(false);
 
     recognition.start();
     setListening(true);
-    setStatus("Listening — speak now.");
+    setStatus(t("status.speakNow"));
   }
 
   const goals = avatar.ideal_guidelines?.session_goals ?? [];
@@ -201,7 +204,7 @@ export function VoiceSession({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       {ending && <AiAnalysisOverlay />}
-      <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
+      <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href="/avatars" className="flex items-center gap-3">
           <Image
             src="/vpsych-logo.png"
@@ -222,18 +225,18 @@ export function VoiceSession({
             disabled={ending}
             className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] disabled:opacity-50"
           >
-            {ending ? "Ending…" : "End"}
+            {ending ? t("ending") : t("end")}
           </button>
         </div>
       </header>
 
       <main className="relative flex flex-1 flex-col pt-16 lg:flex-row">
         <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6 lg:pb-12">
-          <div className="absolute left-4 right-4 top-4 flex justify-between gap-3 pointer-events-none md:left-6 md:right-6">
+          <div className="absolute start-4 end-4 top-4 flex justify-between gap-3 pointer-events-none md:start-6 md:end-6">
             <div className="flex flex-col gap-2">
               <div className="pointer-events-auto rounded-xl border border-[var(--outline-variant)] bg-white/90 px-4 py-2 shadow-sm backdrop-blur-md">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                  Patient
+                  {t("patient")}
                 </p>
                 <p className="text-sm font-bold text-[var(--primary)]">
                   {avatar.name}
@@ -241,7 +244,7 @@ export function VoiceSession({
               </div>
               <div className="pointer-events-auto rounded-xl border border-[var(--outline-variant)] bg-white/90 px-4 py-2 shadow-sm backdrop-blur-md">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                  Presentation
+                  {t("presentation")}
                 </p>
                 <p className="text-sm font-bold text-[var(--secondary)]">
                   {avatar.disorder}
@@ -257,21 +260,21 @@ export function VoiceSession({
                 <span className="material-symbols-outlined text-[20px]">
                   description
                 </span>
-                Referral Notes
+                {t("referralNotes")}
               </span>
             </button>
           </div>
 
           {showNotes && (
-            <div className="absolute right-4 top-24 z-20 w-72 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 shadow-[var(--clinical-shadow-hover)] md:right-6">
+            <div className="absolute end-4 top-24 z-20 w-72 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 shadow-[var(--clinical-shadow-hover)] md:end-6">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-                Ideal session goals
+                {t("idealGoals")}
               </p>
               <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
                 {goals.length ? (
                   goals.map((g) => <li key={g}>• {g}</li>)
                 ) : (
-                  <li>No referral notes for this persona.</li>
+                  <li>{t("noReferralNotes")}</li>
                 )}
               </ul>
             </div>
@@ -314,7 +317,7 @@ export function VoiceSession({
                   ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"
                   : "bg-[var(--primary)] text-[var(--on-primary)]"
               } disabled:opacity-50`}
-              aria-label={listening ? "Stop microphone" : "Start microphone"}
+              aria-label={listening ? t("stopMic") : t("startMic")}
             >
               <span className="material-symbols-outlined text-[28px]">
                 {listening ? "stop" : "mic"}
@@ -326,15 +329,15 @@ export function VoiceSession({
               disabled={ending}
               className="btn-secondary"
             >
-              {ending ? "Ending…" : "End session"}
+              {ending ? t("ending") : t("endSession")}
             </button>
           </div>
         </section>
 
-        <section className="flex min-h-[22rem] flex-col border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] lg:w-[26rem] lg:border-l lg:border-t-0 xl:w-[30rem]">
+        <section className="flex min-h-[22rem] flex-col border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] lg:w-[26rem] lg:border-s lg:border-t-0 xl:w-[30rem]">
           <div className="border-b border-[var(--outline-variant)] px-4 py-3">
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-              Transcript
+              {t("transcript")}
             </h2>
           </div>
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -345,12 +348,12 @@ export function VoiceSession({
                   key={m.id}
                   className={`max-w-[92%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
                     m.role === "user"
-                      ? "ml-auto bg-[var(--primary-fixed)] text-[var(--on-surface)]"
+                      ? "ms-auto bg-[var(--primary-fixed)] text-[var(--on-surface)]"
                       : "bg-[var(--surface-container)] text-[var(--on-surface)]"
                   }`}
                 >
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                    {m.role === "user" ? "You" : avatar.name}
+                    {m.role === "user" ? t("you") : avatar.name}
                   </p>
                   {m.content}
                 </div>
@@ -368,7 +371,7 @@ export function VoiceSession({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Type a turn if mic is unavailable…"
+              placeholder={t("inputPlaceholder")}
               className="field-input flex-1"
               disabled={pending || ending}
             />
@@ -377,7 +380,7 @@ export function VoiceSession({
               disabled={pending || ending || !draft.trim()}
               className="btn-primary px-4"
             >
-              Send
+              {t("send")}
             </button>
           </form>
         </section>

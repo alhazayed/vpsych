@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AdminInstitutionalNav } from "@/components/AdminInstitutionalNav";
 import { SafetyBar } from "@/components/SafetyBar";
 
@@ -28,31 +29,32 @@ const KEYS = [
   },
 ];
 
-const EVENTS = [
+const EVENT_KEYS = [
   {
     icon: "key",
     tone: "text-[var(--tertiary)]",
-    title: "Key Rotated:",
+    titleKey: "rotated" as const,
     body: "`production_phi_master` was automatically rotated by System Core.",
     when: "Today, 04:12 AM",
   },
   {
     icon: "person",
     tone: "text-[var(--primary)]",
-    title: "Config Changed:",
+    titleKey: "config" as const,
     body: "MFA was disabled for `internal_support_user_02` by Administrator.",
     when: "Yesterday, 11:45 PM",
   },
   {
     icon: "dangerous",
     tone: "text-[var(--error)]",
-    title: "Failed Login:",
+    titleKey: "failedLogin" as const,
     body: "Unrecognized IP attempt (45.122.1.2) blocked by Whitelist Policy.",
     when: "Oct 14, 2:10 PM",
   },
 ];
 
 export function SecurityKeysClient() {
+  const t = useTranslations("admin.security");
   const [dirty, setDirty] = useState(false);
   const [mfa, setMfa] = useState(true);
   const [timeoutMins, setTimeoutMins] = useState(30);
@@ -72,6 +74,12 @@ export function SecurityKeysClient() {
     setDirty(false);
   }
 
+  function statusLabel(status: (typeof KEYS)[number]["status"]) {
+    if (status === "active") return t("status.active");
+    if (status === "expiring") return t("status.expiring");
+    return t("status.revoked");
+  }
+
   return (
     <>
       <main className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-8 md:px-8 lg:flex-row">
@@ -80,11 +88,10 @@ export function SecurityKeysClient() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
-                Security & Keys
+                {t("title")}
               </h1>
               <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                Manage encryption primitives, SSL certificates, and enterprise
-                security policies.
+                {t("subtitle")}
               </p>
             </div>
             <button
@@ -93,7 +100,7 @@ export function SecurityKeysClient() {
               className="btn-primary"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
-              Generate New Key
+              {t("generate")}
             </button>
           </div>
 
@@ -102,29 +109,36 @@ export function SecurityKeysClient() {
               <section className="clinical-card overflow-hidden">
                 <div className="flex items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container)] px-4 py-3">
                   <h2 className="text-sm font-semibold text-[var(--on-surface)]">
-                    Active Encryption Keys
+                    {t("keysTitle")}
                   </h2>
                   <span className="text-[11px] font-semibold text-[var(--on-surface-variant)]">
-                    {KEYS.filter((k) => k.status !== "revoked").length} Active
-                    Keys
+                    {t("activeCount", {
+                      count: KEYS.filter((k) => k.status !== "revoked").length,
+                    })}
                   </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                  <table className="w-full text-start text-sm">
                     <thead>
                       <tr className="border-b border-[var(--outline-variant)] bg-[var(--surface-container-low)]">
-                        {["Key Name", "Type", "Status", "Last Rotated", "Actions"].map(
-                          (h) => (
-                            <th
-                              key={h}
-                              className={`px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] ${
-                                h === "Actions" ? "text-right" : ""
-                              }`}
-                            >
-                              {h}
-                            </th>
-                          ),
-                        )}
+                        {(
+                          [
+                            "name",
+                            "type",
+                            "status",
+                            "lastRotated",
+                            "actions",
+                          ] as const
+                        ).map((h) => (
+                          <th
+                            key={h}
+                            className={`px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] ${
+                              h === "actions" ? "text-end" : ""
+                            }`}
+                          >
+                            {t(`table.${h}`)}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)]">
@@ -152,18 +166,14 @@ export function SecurityKeysClient() {
                                     : "bg-[var(--outline-variant)] text-[var(--on-surface-variant)]"
                               }`}
                             >
-                              {key.status === "active"
-                                ? "Active"
-                                : key.status === "expiring"
-                                  ? "Expiring Soon"
-                                  : "Revoked"}
+                              {statusLabel(key.status)}
                             </span>
                           </td>
                           <td className="px-4 py-4">{key.rotated}</td>
-                          <td className="space-x-3 px-4 py-4 text-right">
+                          <td className="space-x-3 px-4 py-4 text-end">
                             {key.status === "revoked" ? (
                               <span className="text-xs text-[var(--on-surface-variant)] opacity-50">
-                                Archived
+                                {t("status.archived")}
                               </span>
                             ) : (
                               <>
@@ -173,15 +183,15 @@ export function SecurityKeysClient() {
                                   onClick={markDirty}
                                 >
                                   {key.status === "expiring"
-                                    ? "Rotate"
-                                    : "Download"}
+                                    ? t("actions.rotate")
+                                    : t("actions.download")}
                                 </button>
                                 <button
                                   type="button"
                                   className="text-xs font-semibold text-[var(--error)] hover:underline"
                                   onClick={markDirty}
                                 >
-                                  Revoke
+                                  {t("actions.revoke")}
                                 </button>
                               </>
                             )}
@@ -198,7 +208,7 @@ export function SecurityKeysClient() {
                   <span className="material-symbols-outlined text-[var(--primary)]">
                     verified_user
                   </span>
-                  SSL/TLS Certificates
+                  {t("ssl.title")}
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="clinical-card flex items-center justify-between p-4">
@@ -213,12 +223,12 @@ export function SecurityKeysClient() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="font-[family-name:var(--font-headline)] text-xl font-bold text-[#15803d]">
                         214 Days
                       </p>
                       <p className="text-[11px] text-[var(--on-surface-variant)]">
-                        Until Expiry
+                        {t("ssl.untilExpiry")}
                       </p>
                     </div>
                   </div>
@@ -234,12 +244,12 @@ export function SecurityKeysClient() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="font-[family-name:var(--font-headline)] text-xl font-bold text-[var(--error)]">
                         12 Days
                       </p>
                       <p className="text-[11px] text-[var(--on-surface-variant)]">
-                        Action Required
+                        {t("ssl.actionRequired")}
                       </p>
                     </div>
                   </div>
@@ -253,14 +263,14 @@ export function SecurityKeysClient() {
                   <span className="material-symbols-outlined text-[var(--primary)]">
                     policy
                   </span>
-                  Security Policy
+                  {t("policy.title")}
                 </h3>
                 <div className="space-y-6">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold">MFA Enforcement</p>
+                      <p className="text-sm font-semibold">{t("policy.mfa")}</p>
                       <p className="text-xs text-[var(--on-surface-variant)]">
-                        Require MFA for all administrative accounts.
+                        {t("policy.mfaHint")}
                       </p>
                     </div>
                     <button
@@ -277,13 +287,13 @@ export function SecurityKeysClient() {
                     >
                       <span
                         className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${
-                          mfa ? "left-5" : "left-0.5"
+                          mfa ? "start-5" : "start-0.5"
                         }`}
                       />
                     </button>
                   </div>
                   <div>
-                    <p className="mb-2 text-sm font-semibold">Session Timeout</p>
+                    <p className="mb-2 text-sm font-semibold">{t("policy.timeout")}</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -295,12 +305,12 @@ export function SecurityKeysClient() {
                         className="field-input w-20"
                       />
                       <span className="text-xs text-[var(--on-surface-variant)]">
-                        Minutes of inactivity
+                        {t("policy.timeoutHint")}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <p className="mb-2 text-sm font-semibold">IP Whitelisting</p>
+                    <p className="mb-2 text-sm font-semibold">{t("policy.ip")}</p>
                     <div className="rounded-lg border border-dashed border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-3">
                       <div className="flex flex-wrap gap-2">
                         {ips.map((ip) => (
@@ -329,7 +339,7 @@ export function SecurityKeysClient() {
                           }}
                           className="text-[11px] font-bold text-[var(--primary)] hover:underline"
                         >
-                          + Add Range
+                          {t("policy.addRange")}
                         </button>
                       </div>
                     </div>
@@ -338,16 +348,15 @@ export function SecurityKeysClient() {
               </section>
 
               <section className="relative overflow-hidden rounded-xl bg-[var(--primary-container)] p-4 text-[var(--on-primary-container)] shadow-lg">
-                <span className="material-symbols-outlined absolute -right-4 -top-4 text-[120px] opacity-10">
+                <span className="material-symbols-outlined absolute -end-4 -top-4 text-[120px] opacity-10">
                   published_with_changes
                 </span>
-                <h3 className="mb-2 text-sm font-semibold">Key Rotation Policy</h3>
+                <h3 className="mb-2 text-sm font-semibold">{t("rotation.title")}</h3>
                 <p className="mb-4 text-xs opacity-90">
-                  Automated rotation reduces the impact of potential key
-                  compromises.
+                  {t("rotation.hint")}
                 </p>
                 <label className="mb-1 block text-[11px] font-bold uppercase opacity-70">
-                  Interval Frequency
+                  {t("rotation.interval")}
                 </label>
                 <select
                   value={rotation}
@@ -360,18 +369,18 @@ export function SecurityKeysClient() {
                   className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none"
                 >
                   <option value="90" className="text-[var(--on-surface)]">
-                    Every 90 Days (Recommended)
+                    {t("rotation.days90")}
                   </option>
                   <option value="60" className="text-[var(--on-surface)]">
-                    Every 60 Days
+                    {t("rotation.days60")}
                   </option>
                   <option value="30" className="text-[var(--on-surface)]">
-                    Every 30 Days
+                    {t("rotation.days30")}
                   </option>
                 </select>
                 <div className="mt-4 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-xs">
                   <span className="material-symbols-outlined text-white">info</span>
-                  Next scheduled rotation: <strong>Nov 24, 2023</strong>
+                  {t("rotation.next")} <strong>Nov 24, 2023</strong>
                 </div>
               </section>
             </div>
@@ -379,30 +388,32 @@ export function SecurityKeysClient() {
 
           <section className="clinical-card p-4">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Recent Security Events</h3>
+              <h3 className="text-sm font-semibold">{t("events.title")}</h3>
               <button
                 type="button"
                 className="text-xs font-semibold text-[var(--primary)] hover:underline"
               >
-                Export CSV
+                {t("events.export")}
               </button>
             </div>
             <div className="space-y-2">
-              {EVENTS.map((event) => (
+              {EVENT_KEYS.map((event) => (
                 <div
-                  key={event.title + event.when}
+                  key={event.titleKey + event.when}
                   className="flex items-center gap-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] py-3 last:border-0"
                 >
                   <span className={`material-symbols-outlined ${event.tone}`}>
                     {event.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="font-semibold">{event.title}</span>{" "}
+                    <span className="font-semibold">
+                      {t(`events.${event.titleKey}`)}
+                    </span>{" "}
                     <span className="text-[var(--on-surface-variant)]">
                       {event.body}
                     </span>
                   </div>
-                  <div className="text-right text-[11px] text-[var(--on-surface)]">
+                  <div className="text-end text-[11px] text-[var(--on-surface)]">
                     {event.when}
                   </div>
                 </div>
@@ -414,7 +425,7 @@ export function SecurityKeysClient() {
 
       <SafetyBar
         visible={dirty}
-        message="Unsaved changes in security configuration"
+        message={t("unsaved")}
         onDiscard={discard}
         onSave={() => setDirty(false)}
       />
@@ -423,18 +434,15 @@ export function SecurityKeysClient() {
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-8 shadow-2xl">
             <h2 className="font-[family-name:var(--font-headline)] text-2xl font-bold">
-              Sensitive Configuration
+              {t("confirm.title")}
             </h2>
             <p className="text-[var(--on-surface-variant)]">
-              You are about to modify the core encryption key rotation
-              frequency. This action will be logged in the permanent audit trail
-              and requires enterprise clearance.
+              {t("confirm.body")}
             </p>
             <div className="flex gap-3 rounded-lg bg-[var(--error-container)] p-4 text-[var(--on-error-container)]">
               <span className="material-symbols-outlined">warning</span>
               <span className="text-sm font-semibold">
-                This change takes effect immediately across all regional
-                clusters.
+                {t("confirm.warning")}
               </span>
             </div>
             <div className="flex justify-end gap-3 pt-2">
@@ -446,14 +454,14 @@ export function SecurityKeysClient() {
                 }}
                 className="rounded-lg px-4 py-2 text-sm font-semibold text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
               >
-                Cancel
+                {t("confirm.cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-lg bg-[var(--error)] px-4 py-2 text-sm font-semibold text-white"
               >
-                Proceed with Change
+                {t("confirm.proceed")}
               </button>
             </div>
           </div>

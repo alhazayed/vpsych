@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const ITEMS = [
-  { href: "/admin/integrations", label: "API Integrations", icon: "api" },
-  { href: "/admin/security", label: "Security & Keys", icon: "vpn_key" },
-  { href: "/admin/reports", label: "Reports Library", icon: "folder_shared" },
-  { href: "/admin/avatars", label: "Avatar Presets", icon: "psychology" },
-] as const;
+  { href: "/admin/integrations", labelKey: "apiIntegrations" as const, icon: "api" },
+  { href: "/admin/security", labelKey: "securityKeys" as const, icon: "vpn_key" },
+  { href: "/admin/reports", labelKey: "reportsLibrary" as const, icon: "folder_shared" },
+  { href: "/admin/avatars", labelKey: "avatarPresets" as const, icon: "psychology" },
+];
 
 export function AdminInstitutionalNav() {
   const pathname = usePathname();
+  const tNav = useTranslations("nav");
+  const tAdmin = useTranslations("admin.nav");
 
   return (
     <aside className="mb-6 w-full shrink-0 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-3 lg:mb-0 lg:w-[260px]">
@@ -22,7 +25,7 @@ export function AdminInstitutionalNav() {
         <div>
           <p className="text-sm font-semibold text-[var(--primary)]">VPsych</p>
           <p className="text-xs text-[var(--on-surface-variant)]">
-            Enterprise Admin
+            {tAdmin("enterpriseAdmin")}
           </p>
         </div>
       </div>
@@ -35,14 +38,14 @@ export function AdminInstitutionalNav() {
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition ${
                 active
-                  ? "border-l-4 border-[var(--primary)] bg-[var(--primary-fixed)] text-[var(--primary)]"
+                  ? "border-s-4 border-[var(--primary)] bg-[var(--primary-fixed)] text-[var(--primary)]"
                   : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-high)]"
               }`}
             >
               <span className="material-symbols-outlined text-[20px]">
                 {item.icon}
               </span>
-              {item.label}
+              {tNav(item.labelKey)}
             </Link>
           );
         })}
@@ -51,7 +54,7 @@ export function AdminInstitutionalNav() {
         <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
           <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
           <span className="text-[10px] font-bold text-green-700">
-            System Status: Healthy
+            {tAdmin("systemHealthy")}
           </span>
         </div>
       </div>

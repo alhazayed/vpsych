@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AdminInstitutionalNav } from "@/components/AdminInstitutionalNav";
 import { SafetyBar } from "@/components/SafetyBar";
 
-const INTEGRATIONS = [
+const INTEGRATION_KEYS = [
   {
-    name: "Epic App Orchard",
+    key: "epic" as const,
     detail: "Production (v2.4)",
     status: "active" as const,
     sync: "2 mins ago",
@@ -14,7 +15,7 @@ const INTEGRATIONS = [
     iconTone: "bg-blue-50 text-[var(--primary)]",
   },
   {
-    name: "Cerner Millennium",
+    key: "cerner" as const,
     detail: "Sandbox (v1.0)",
     status: "syncing" as const,
     sync: "Now",
@@ -22,7 +23,7 @@ const INTEGRATIONS = [
     iconTone: "bg-[var(--surface-container)] text-[var(--on-surface-variant)]",
   },
   {
-    name: "Institutional Webhooks",
+    key: "webhooks" as const,
     detail: "Internal Events",
     status: "error" as const,
     sync: "Failed (4h ago)",
@@ -63,6 +64,7 @@ const LOGS = [
 ];
 
 export function ApiIntegrationsClient() {
+  const t = useTranslations("admin.integrations");
   const [dirty, setDirty] = useState(false);
   const [env, setEnv] = useState<"production" | "sandbox">("production");
   const [baseUrl, setBaseUrl] = useState(
@@ -86,6 +88,13 @@ export function ApiIntegrationsClient() {
     setDirty(false);
   }
 
+  const metrics = [
+    { label: t("metrics.latency"), value: "42", unit: "ms" },
+    { label: t("metrics.success"), value: "99.98", unit: "%" },
+    { label: t("metrics.streams"), value: "12", unit: "" },
+    { label: t("metrics.throughput"), value: "1.2", unit: "GB/m" },
+  ];
+
   return (
     <>
       <main className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-8 md:px-8 lg:flex-row">
@@ -94,25 +103,20 @@ export function ApiIntegrationsClient() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
-                API Integrations
+                {t("title")}
               </h1>
               <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                Manage clinical data exchange and EHR connections.
+                {t("subtitle")}
               </p>
             </div>
             <button type="button" onClick={markDirty} className="btn-primary rounded-xl">
               <span className="material-symbols-outlined text-[20px]">add</span>
-              Create Connection
+              {t("create")}
             </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Avg API Latency", value: "42", unit: "ms" },
-              { label: "Success Rate", value: "99.98", unit: "%" },
-              { label: "Active Stream Count", value: "12", unit: "" },
-              { label: "Data Throughput", value: "1.2", unit: "GB/m" },
-            ].map((m) => (
+            {metrics.map((m) => (
               <div key={m.label} className="clinical-card p-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--outline)]">
                   {m.label}
@@ -131,22 +135,22 @@ export function ApiIntegrationsClient() {
             <section className="space-y-4 lg:col-span-2">
               <h2 className="flex items-center gap-2 font-[family-name:var(--font-headline)] text-lg font-semibold">
                 <span className="material-symbols-outlined">hub</span>
-                Active Integrations
+                {t("active")}
               </h2>
               <div className="clinical-card overflow-hidden">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-start text-sm">
                   <thead className="border-b border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-xs font-semibold">
                     <tr>
-                      <th className="px-4 py-3">Provider</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Last Sync</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3">{t("table.provider")}</th>
+                      <th className="px-4 py-3">{t("table.status")}</th>
+                      <th className="px-4 py-3">{t("table.lastSync")}</th>
+                      <th className="px-4 py-3 text-end">{t("table.actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--outline-variant)]">
-                    {INTEGRATIONS.map((row) => (
+                    {INTEGRATION_KEYS.map((row) => (
                       <tr
-                        key={row.name}
+                        key={row.key}
                         className="hover:bg-[var(--surface-container-low)]"
                       >
                         <td className="px-4 py-4">
@@ -159,7 +163,9 @@ export function ApiIntegrationsClient() {
                               </span>
                             </div>
                             <div>
-                              <p className="font-semibold">{row.name}</p>
+                              <p className="font-semibold">
+                                {t(`providers.${row.key}`)}
+                              </p>
                               <p className="text-xs text-[var(--on-surface-variant)]">
                                 {row.detail}
                               </p>
@@ -176,7 +182,7 @@ export function ApiIntegrationsClient() {
                                   : "bg-[var(--error-container)] text-[var(--error)]"
                             }`}
                           >
-                            {row.status}
+                            {t(`status.${row.status}`)}
                           </span>
                         </td>
                         <td
@@ -188,7 +194,7 @@ export function ApiIntegrationsClient() {
                         >
                           {row.sync}
                         </td>
-                        <td className="px-4 py-4 text-right">
+                        <td className="px-4 py-4 text-end">
                           <div className="flex justify-end gap-1">
                             <button
                               type="button"
@@ -219,23 +225,28 @@ export function ApiIntegrationsClient() {
               <div>
                 <h2 className="mb-4 flex items-center gap-2 font-[family-name:var(--font-headline)] text-lg font-semibold">
                   <span className="material-symbols-outlined">history</span>
-                  Recent API Logs
+                  {t("logs")}
                 </h2>
                 <div className="clinical-card overflow-hidden">
                   <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-start text-xs">
                       <thead className="sticky top-0 border-b border-[var(--outline-variant)] bg-[var(--surface-container-low)]">
                         <tr>
-                          {["Timestamp", "Endpoint", "Status", "Latency"].map(
-                            (h) => (
-                              <th
-                                key={h}
-                                className="px-4 py-2 font-bold uppercase tracking-tighter opacity-70"
-                              >
-                                {h}
-                              </th>
-                            ),
-                          )}
+                          {(
+                            [
+                              "timestamp",
+                              "endpoint",
+                              "status",
+                              "latency",
+                            ] as const
+                          ).map((h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-2 font-bold uppercase tracking-tighter opacity-70"
+                            >
+                              {t(`logCols.${h}`)}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--outline-variant)]">
@@ -275,12 +286,12 @@ export function ApiIntegrationsClient() {
                   <span className="material-symbols-outlined text-[var(--primary)]">
                     dns
                   </span>
-                  Connection Profile
+                  {t("profile.title")}
                 </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="mb-1 block text-[11px] font-bold uppercase text-[var(--outline)]">
-                      Environment
+                      {t("profile.environment")}
                     </label>
                     <div className="flex gap-2">
                       {(["production", "sandbox"] as const).map((option) => (
@@ -297,14 +308,14 @@ export function ApiIntegrationsClient() {
                               : "border border-[var(--outline-variant)] hover:bg-[var(--surface-container-high)]"
                           }`}
                         >
-                          {option}
+                          {t(`profile.${option}`)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
                     <label className="mb-1 block text-[11px] font-bold uppercase text-[var(--outline)]">
-                      Base URL
+                      {t("profile.baseUrl")}
                     </label>
                     <input
                       value={baseUrl}
@@ -318,7 +329,7 @@ export function ApiIntegrationsClient() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1 block text-[11px] font-bold uppercase text-[var(--outline)]">
-                        API Version
+                        {t("profile.apiVersion")}
                       </label>
                       <select
                         value={version}
@@ -328,14 +339,14 @@ export function ApiIntegrationsClient() {
                         }}
                         className="field-input"
                       >
-                        <option value="v2.4">v2.4 (Latest)</option>
+                        <option value="v2.4">{t("profile.vLatest")}</option>
                         <option value="v2.3">v2.3</option>
-                        <option value="v1.0">v1.0 (Legacy)</option>
+                        <option value="v1.0">{t("profile.vLegacy")}</option>
                       </select>
                     </div>
                     <div>
                       <label className="mb-1 block text-[11px] font-bold uppercase text-[var(--outline)]">
-                        Timeout (ms)
+                        {t("profile.timeout")}
                       </label>
                       <input
                         type="number"
@@ -351,24 +362,24 @@ export function ApiIntegrationsClient() {
                 </div>
               </div>
 
-              <div className="clinical-card border-l-4 border-l-[var(--primary)] p-6">
+              <div className="clinical-card border-s-4 border-s-[var(--primary)] p-6">
                 <h3 className="mb-4 flex items-center gap-2 font-[family-name:var(--font-headline)] text-lg font-semibold">
                   <span className="material-symbols-outlined text-[var(--primary)]">
                     key
                   </span>
-                  Auth & Security
+                  {t("auth.title")}
                 </h3>
                 <div className="space-y-4">
                   <div>
                     <div className="mb-1 flex items-center justify-between">
                       <label className="text-[11px] font-bold uppercase text-[var(--outline)]">
-                        Client ID
+                        {t("auth.clientId")}
                       </label>
                       <button
                         type="button"
                         className="text-[10px] text-[var(--primary)] hover:underline"
                       >
-                        Copy
+                        {t("auth.copy")}
                       </button>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-3 py-2 font-mono text-sm">
@@ -381,14 +392,14 @@ export function ApiIntegrationsClient() {
                   <div>
                     <div className="mb-1 flex items-center justify-between">
                       <label className="text-[11px] font-bold uppercase text-[var(--outline)]">
-                        Client Secret
+                        {t("auth.clientSecret")}
                       </label>
                       <button
                         type="button"
                         onClick={() => setRevealSecret((v) => !v)}
                         className="text-[10px] text-[var(--primary)] hover:underline"
                       >
-                        {revealSecret ? "Hide" : "Reveal"}
+                        {revealSecret ? t("auth.hide") : t("auth.reveal")}
                       </button>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-3 py-2 font-mono text-sm tracking-widest">
@@ -408,19 +419,19 @@ export function ApiIntegrationsClient() {
                     <span className="material-symbols-outlined text-sm">
                       autorenew
                     </span>
-                    Rotate Secrets
+                    {t("auth.rotate")}
                   </button>
                   <p className="text-center text-[10px] italic text-[var(--on-surface-variant)]">
-                    Last rotated: 12 days ago (Recomm. 30 days)
+                    {t("auth.lastRotated")}
                   </p>
                 </div>
               </div>
 
               <div className="clinical-card flex items-center justify-between p-4">
                 <div>
-                  <h4 className="text-xs font-semibold">Auto-Recovery</h4>
+                  <h4 className="text-xs font-semibold">{t("autoRecovery")}</h4>
                   <p className="text-[10px] text-[var(--on-surface-variant)]">
-                    Restart connection on 5xx errors
+                    {t("autoRecoveryHint")}
                   </p>
                 </div>
                 <button
@@ -439,7 +450,7 @@ export function ApiIntegrationsClient() {
                 >
                   <span
                     className={`absolute top-1 h-3 w-3 rounded-full bg-white transition ${
-                      autoRecovery ? "right-1" : "left-1"
+                      autoRecovery ? "end-1" : "start-1"
                     }`}
                   />
                 </button>
@@ -451,7 +462,7 @@ export function ApiIntegrationsClient() {
 
       <SafetyBar
         visible={dirty}
-        message="You have unsaved configuration changes"
+        message={t("unsaved")}
         onDiscard={discard}
         onSave={() => setDirty(false)}
       />

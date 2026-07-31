@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
 import { requireAdmin } from "@/lib/auth";
 import type { SessionReport } from "@/lib/types";
@@ -9,6 +10,7 @@ type Props = { params: Promise<{ sessionId: string }> };
 export default async function AdminReportDetailPage({ params }: Props) {
   const { sessionId } = await params;
   const { supabase } = await requireAdmin();
+  const t = await getTranslations("admin.reportDetail");
 
   const { data: report } = await supabase
     .from("session_reports")
@@ -42,11 +44,14 @@ export default async function AdminReportDetailPage({ params }: Props) {
         className="inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:underline"
       >
         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-        All reports
+        {t("back")}
       </Link>
       <p className="mt-4 text-sm text-[var(--on-surface-variant)]">
-        Therapist: {session?.profiles?.display_name ?? "—"} · Patient:{" "}
-        {session?.avatars?.name ?? "—"} ({session?.avatars?.disorder ?? "—"})
+        {t("meta", {
+          therapist: session?.profiles?.display_name ?? "—",
+          patient: session?.avatars?.name ?? "—",
+          disorder: session?.avatars?.disorder ?? "—",
+        })}
       </p>
       <div className="mt-6">
         <ReportView report={report as SessionReport} />

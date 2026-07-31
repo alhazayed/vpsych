@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export function AvatarPortrait({
   name,
@@ -11,6 +12,8 @@ export function AvatarPortrait({
   src: string | null;
   speaking: boolean;
 }) {
+  const t = useTranslations("session.portrait");
+
   return (
     <div className="relative mx-auto flex aspect-square w-full max-w-[18rem] items-center justify-center">
       <div className="absolute -z-10 h-[120%] w-[120%] rounded-full bg-gradient-to-b from-[color-mix(in_srgb,var(--primary)_8%,transparent)] via-[var(--background)] to-[var(--background)] opacity-60 blur-3xl" />
@@ -39,7 +42,7 @@ export function AvatarPortrait({
             {speaking ? "record_voice_over" : "hearing"}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-widest text-white">
-            {speaking ? "Speaking" : "Listening"}
+            {speaking ? t("speaking") : t("listening")}
           </span>
         </div>
       </div>

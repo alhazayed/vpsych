@@ -4,11 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("auth.login");
   const next = searchParams.get("next") ?? "/avatars";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +41,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-[var(--background)] text-[var(--on-surface)]">
-      <header className="absolute left-0 top-0 z-50 flex w-full items-center justify-between px-4 py-4 md:px-10">
+      <header className="absolute start-0 top-0 z-50 flex w-full items-center justify-between px-4 py-4 md:px-10">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/vpsych-logo.png"
@@ -49,16 +52,19 @@ export default function LoginPage() {
             priority
           />
           <span className="hidden font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)] sm:inline">
-            VPsych Clinical Assessment Platform
+            {t("platformName")}
           </span>
         </Link>
-        <div className="hidden items-center gap-8 md:flex">
-          <span className="text-base font-medium text-[var(--on-surface-variant)]">
-            Support
-          </span>
-          <Link href="/signup" className="btn-primary rounded-xl px-6">
-            Request Access
-          </Link>
+        <div className="flex items-center gap-4 md:gap-8">
+          <LanguageSwitcher />
+          <div className="hidden items-center gap-8 md:flex">
+            <span className="text-base font-medium text-[var(--on-surface-variant)]">
+              {t("support")}
+            </span>
+            <Link href="/signup" className="btn-primary rounded-xl px-6">
+              {t("requestAccess")}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -66,7 +72,7 @@ export default function LoginPage() {
         <section className="relative hidden flex-col justify-end overflow-hidden bg-[var(--primary-fixed)] p-16 md:flex md:w-[60%]">
           <Image
             src="/stitch/login-hero.png"
-            alt="Therapist practicing with an AI patient simulation"
+            alt={t("heroAlt")}
             fill
             className="object-cover"
             priority
@@ -74,14 +80,13 @@ export default function LoginPage() {
           <div className="relative z-10 max-w-2xl fade-in-up">
             <div className="rounded-3xl border border-white/30 bg-white/40 p-10 shadow-2xl backdrop-blur-md">
               <h1 className="font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--primary)] lg:text-5xl">
-                Improve Your Clinical Skills with AI-Powered Practice
+                {t("heroTitle")}
               </h1>
               <p className="mt-4 text-lg leading-relaxed text-[#35485f] opacity-90">
-                Practice psychotherapy with realistic AI patients and receive
-                structured competency feedback after every session.
+                {t("heroBody")}
               </p>
               <div className="mt-8 flex items-center gap-4">
-                <div className="flex -space-x-3">
+                <div className="flex -space-x-3 rtl:space-x-reverse">
                   {["JD", "AS", "ML"].map((initials) => (
                     <div
                       key={initials}
@@ -98,7 +103,7 @@ export default function LoginPage() {
                   >
                     star
                   </span>
-                  Trusted by clinicians worldwide
+                  {t("trusted")}
                 </p>
               </div>
             </div>
@@ -116,22 +121,22 @@ export default function LoginPage() {
                 className="h-12 w-12 rounded-lg object-cover"
               />
             </div>
-            <div className="mb-10 text-center md:text-left">
+            <div className="mb-10 text-center md:text-start">
               <h2 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-                Welcome Back
+                {t("welcome")}
               </h2>
               <p className="mt-2 text-base text-[var(--on-surface-variant)]">
-                Sign in to continue your clinical training.
+                {t("subtitle")}
               </p>
             </div>
 
             <form className="space-y-6" onSubmit={onSubmit}>
               <div className="space-y-2">
                 <label
-                  className="ml-1 text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]"
+                  className="ms-1 text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]"
                   htmlFor="email"
                 >
-                  Email
+                  {t("email")}
                 </label>
                 <input
                   id="email"
@@ -139,7 +144,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@clinic.com"
+                  placeholder={t("emailPlaceholder")}
                   className={`h-12 w-full rounded-xl border-2 bg-white px-4 text-base outline-none transition focus:border-[var(--primary)] ${
                     error
                       ? "border-[var(--error)]"
@@ -147,7 +152,7 @@ export default function LoginPage() {
                   }`}
                 />
                 {error && (
-                  <p className="ml-1 text-xs font-medium text-[var(--error)]">
+                  <p className="ms-1 text-xs font-medium text-[var(--error)]">
                     {error}
                   </p>
                 )}
@@ -159,10 +164,10 @@ export default function LoginPage() {
                     className="text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]"
                     htmlFor="password"
                   >
-                    Password
+                    {t("password")}
                   </label>
                   <span className="cursor-default text-xs font-semibold text-[var(--primary)] opacity-60">
-                    Forgot Password?
+                    {t("forgotPassword")}
                   </span>
                 </div>
                 <div className="relative">
@@ -174,13 +179,15 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 pr-12 text-base outline-none transition focus:border-[var(--primary)]"
+                    className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)]"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)]"
+                    aria-label={
+                      showPassword ? t("hidePassword") : t("showPassword")
+                    }
                   >
                     <span className="material-symbols-outlined">
                       {showPassword ? "visibility_off" : "visibility"}
@@ -197,7 +204,7 @@ export default function LoginPage() {
                   className="h-4 w-4 rounded border-[var(--outline-variant)] text-[var(--primary)]"
                 />
                 <span className="text-sm text-[var(--on-surface-variant)]">
-                  Remember me for 30 days
+                  {t("rememberMe")}
                 </span>
               </label>
 
@@ -227,29 +234,29 @@ export default function LoginPage() {
                         fill="currentColor"
                       />
                     </svg>
-                    Authenticating…
+                    {t("authenticating")}
                   </>
                 ) : (
-                  "Sign in"
+                  t("signIn")
                 )}
               </button>
             </form>
 
             <footer className="mt-12 text-center">
               <p className="text-base text-[var(--on-surface-variant)]">
-                Don&apos;t have an account?{" "}
+                {t("noAccount")}{" "}
                 <Link
                   href="/signup"
                   className="font-semibold text-[var(--secondary)] hover:underline"
                 >
-                  Create Account
+                  {t("createAccount")}
                 </Link>
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
-                <span className="text-[11px] font-medium">Privacy Policy</span>
-                <span className="text-[11px] font-medium">Terms of Service</span>
+                <span className="text-[11px] font-medium">{t("privacy")}</span>
+                <span className="text-[11px] font-medium">{t("terms")}</span>
                 <span className="text-[11px] font-medium">
-                  © {new Date().getFullYear()} VPsych
+                  {t("copyright", { year: new Date().getFullYear() })}
                 </span>
               </div>
             </footer>
