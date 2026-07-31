@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { formatTimer } from "@/lib/session-timer";
 
 export function SessionTimer({
@@ -9,7 +10,9 @@ export function SessionTimer({
   remaining: number;
   warningThreshold?: number;
 }) {
+  const t = useTranslations("session.timer");
   const urgent = remaining <= warningThreshold;
+  const time = formatTimer(remaining);
   return (
     <div
       className={`rounded-full px-3 py-1 font-[family-name:var(--font-body)] text-xs font-semibold tabular-nums tracking-wider ${
@@ -18,10 +21,10 @@ export function SessionTimer({
           : "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]"
       }`}
       aria-live="polite"
-      aria-label={`Time remaining ${formatTimer(remaining)}`}
+      aria-label={t("ariaLabel", { time })}
     >
-      <span className="mr-2 inline-block h-2 w-2 rounded-full bg-current opacity-80" />
-      {formatTimer(remaining)}
+      <span className="me-2 inline-block h-2 w-2 rounded-full bg-current opacity-80" />
+      {time}
     </div>
   );
 }

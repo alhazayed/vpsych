@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { VoiceSession } from "@/components/VoiceSession";
 import { requireProfile } from "@/lib/auth";
+import { resolveAvatar } from "@/lib/avatars/resolve";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -32,10 +33,12 @@ export default async function SessionPage({ params }: Props) {
     .eq("session_id", id)
     .order("created_at", { ascending: true });
 
+  const resolved = resolveAvatar(typed.avatars, typed.language);
+
   return (
     <VoiceSession
       session={typed}
-      avatar={typed.avatars}
+      avatar={resolved}
       initialMessages={(messages ?? []) as SessionMessage[]}
     />
   );

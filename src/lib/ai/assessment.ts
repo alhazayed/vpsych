@@ -1,6 +1,17 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import type { Avatar, RubricItem, ScoreEntry, SessionMessage } from "@/lib/types";
+import {
+  buildExaminerSystemPrompt,
+  heuristicCopy,
+  localizeRubricLabel,
+  normalizeReportLanguage,
+} from "@/lib/ai/report-locale";
+import type {
+  ResolvedAvatar,
+  RubricItem,
+  ScoreEntry,
+  SessionMessage,
+} from "@/lib/types";
 
 const assessmentSchema = z.object({
   items: z.array(
@@ -24,13 +35,31 @@ function modelId() {
   return process.env.AI_MODEL || "openai/gpt-4o-mini";
 }
 
+function defaultRubric(language: "en" | "ar"): RubricItem[] {
+  const ids = [
+    { id: "alliance", weight: 25 },
+    { id: "assessment", weight: 25 },
+    { id: "interventions", weight: 20 },
+    { id: "safety", weight: 20 },
+    { id: "structure", weight: 10 },
+  ] as const;
+  return ids.map((r) => ({
+    id: r.id,
+    label: localizeRubricLabel(r.id, r.id, language),
+    weight: r.weight,
+    max: 5,
+  }));
+}
+
 function heuristicAssessment(
   rubric: RubricItem[],
   messages: Pick<SessionMessage, "role" | "content">[],
+  language: "en" | "ar",
 ) {
   const therapistTurns = messages.filter((m) => m.role === "user");
   const joined = therapistTurns.map((m) => m.content.toLowerCase()).join(" ");
   const turnCount = therapistTurns.length;
+  const copy = heuristicCopy(language, turnCount);
 
   const empathyWords = [
     "hear",
@@ -39,6 +68,10 @@ function heuristicAssessment(
     "understand",
     "validate",
     "thank",
+    "أفهم",
+    "يبدو",
+    "تشعر",
+    "شكرا",
   ];
   const safetyWords = [
     "suicid",
@@ -47,6 +80,10 @@ function heuristicAssessment(
     "kill",
     "hurt yourself",
     "plan",
+    "انتحار",
+    "أذى",
+    "آمن",
+    "خطة",
   ];
   const structureWords = [
     "today",
@@ -55,6 +92,11 @@ function heuristicAssessment(
     "agenda",
     "homework",
     "next",
+    "اليوم",
+    "هدف",
+    "نلخّص",
+    "ملخص",
+    "واجب",
   ];
 
   const empathyHits = empathyWords.filter((w) => joined.includes(w)).length;
@@ -76,21 +118,19 @@ function heuristicAssessment(
 
     return {
       id: r.id,
-      label: r.label,
+      label: localizeRubricLabel(r.id, r.label, language),
       score,
       max: r.max,
       weight: r.weight,
-      feedback: `Heuristic score based on ${turnCount} therapist turns (AI key not configured).`,
+      feedback: copy.feedback,
     };
   });
 
   const overall = weightedOverall(items);
   return {
+    language,
     scores: { overall, items },
-    narrative:
-      turnCount === 0
-        ? "No therapist speech was captured. Session ended without a usable transcript."
-        : `Automated heuristic assessment from ${turnCount} therapist turns. Configure AI_GATEWAY_API_KEY for full rubric evaluation against ideal session guidelines.`,
+    narrative: turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns,
     excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
   };
 }
@@ -104,79 +144,82 @@ function weightedOverall(items: ScoreEntry[]) {
   return Math.round(sum);
 }
 
+export type SessionAssessment = {
+  language: "en" | "ar";
+  scores: { overall: number; items: ScoreEntry[] };
+  narrative: string;
+  excerpts: string[];
+};
+
+/**
+ * Assess a completed session and generate the report directly in `language`
+ * (from session.language). No translation step — compose natively.
+ */
 export async function assessSession(params: {
-  avatar: Pick<Avatar, "name" | "disorder" | "ideal_guidelines" | "rubric">;
+  avatar: Pick<
+    ResolvedAvatar,
+    "name" | "disorder" | "ideal_guidelines" | "rubric"
+  >;
   messages: Pick<SessionMessage, "role" | "content" | "created_at">[];
   durationSec: number;
-}) {
+  /** Session / therapist language (e.g. en, ar, en-US, ar-JO). */
+  language?: string | null;
+}): Promise<SessionAssessment> {
+  const language = normalizeReportLanguage(params.language);
   const { avatar, messages, durationSec } = params;
-  const rubric = avatar.rubric?.length
-    ? avatar.rubric
-    : ([
-        {
-          id: "alliance",
-          label: "Therapeutic alliance & empathy",
-          weight: 25,
-          max: 5,
-        },
-        {
-          id: "assessment",
-          label: "Clinical assessment & exploration",
-          weight: 25,
-          max: 5,
-        },
-        {
-          id: "interventions",
-          label: "Appropriate interventions",
-          weight: 20,
-          max: 5,
-        },
-        {
-          id: "safety",
-          label: "Safety / risk handling",
-          weight: 20,
-          max: 5,
-        },
-        {
-          id: "structure",
-          label: "Session structure & time use",
-          weight: 10,
-          max: 5,
-        },
-      ] satisfies RubricItem[]);
+  const rubric = (avatar.rubric?.length ? avatar.rubric : defaultRubric(language)).map(
+    (r) => ({
+      ...r,
+      label: localizeRubricLabel(r.id, r.label, language),
+    }),
+  );
 
   if (!hasAiKey()) {
-    return heuristicAssessment(rubric, messages);
+    return heuristicAssessment(rubric, messages, language);
   }
 
+  const therapistLabel = language === "ar" ? "المعالج" : "THERAPIST";
+  const patientLabel = language === "ar" ? "المريض" : "PATIENT";
+  const systemLabel = language === "ar" ? "النظام" : "SYSTEM";
+
   const transcript = messages
-    .map(
-      (m) =>
-        `${m.role === "user" ? "THERAPIST" : m.role === "assistant" ? "PATIENT" : "SYSTEM"}: ${m.content}`,
-    )
+    .map((m) => {
+      const who =
+        m.role === "user"
+          ? therapistLabel
+          : m.role === "assistant"
+            ? patientLabel
+            : systemLabel;
+      return `${who}: ${m.content}`;
+    })
     .join("\n");
 
   const goals = avatar.ideal_guidelines?.session_goals?.join("; ") ?? "";
   const approach = avatar.ideal_guidelines?.ideal_approach ?? "";
+  const rubricLines = rubric.map((r) => `${r.id} — ${r.label}`).join("; ");
 
   try {
     const { output } = await generateText({
       model: modelId(),
       output: Output.object({ schema: assessmentSchema }),
-      system: `You are a clinical skills examiner assessing a trainee therapist in a simulated session.
-Score only from the transcript. Be fair, specific, and constructive.
-Patient avatar: ${avatar.name} (${avatar.disorder}).
-Ideal approach: ${approach}
-Session goals: ${goals}
-Duration seconds: ${durationSec}.
-Rubric item ids to score (0–5 each): ${rubric.map((r) => `${r.id} — ${r.label}`).join("; ")}.
-Return one score entry per rubric id.`,
-      prompt: `Transcript:\n${transcript || "(empty)"}`,
+      system: buildExaminerSystemPrompt({
+        language,
+        patientName: avatar.name,
+        disorder: avatar.disorder,
+        approach,
+        goals,
+        durationSec,
+        rubricLines,
+      }),
+      prompt:
+        language === "ar"
+          ? `نص المحادثة:\n${transcript || "(فارغ)"}`
+          : `Transcript:\n${transcript || "(empty)"}`,
       temperature: 0.3,
     });
 
     if (!output) {
-      return heuristicAssessment(rubric, messages);
+      return heuristicAssessment(rubric, messages, language);
     }
 
     const items: ScoreEntry[] = rubric.map((r) => {
@@ -187,16 +230,19 @@ Return one score entry per rubric id.`,
         score: Math.min(r.max, Math.max(0, found?.score ?? 0)),
         max: r.max,
         weight: r.weight,
-        feedback: found?.feedback ?? "No feedback provided.",
+        feedback:
+          found?.feedback ??
+          (language === "ar" ? "لا توجد ملاحظات." : "No feedback provided."),
       };
     });
 
     return {
+      language,
       scores: { overall: weightedOverall(items), items },
       narrative: output.narrative,
       excerpts: output.excerpts.slice(0, 5),
     };
   } catch {
-    return heuristicAssessment(rubric, messages);
+    return heuristicAssessment(rubric, messages, language);
   }
 }

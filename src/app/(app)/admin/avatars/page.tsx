@@ -1,12 +1,16 @@
+import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import type { Avatar } from "@/lib/types";
+import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 
 export default async function AdminAvatarsPage() {
   const { supabase } = await requireAdmin();
+  const t = await getTranslations("admin.avatars");
+  const tCommon = await getTranslations("common");
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
-      "id, name, disorder, age, gender, is_active, ideal_guidelines, rubric",
+      "id, name, disorder, age, gender, is_active, ideal_guidelines, rubric, language, dialect, voice_id, voice_id_ar",
     )
     .order("name");
 
@@ -22,6 +26,10 @@ export default async function AdminAvatarsPage() {
           | "is_active"
           | "ideal_guidelines"
           | "rubric"
+          | "language"
+          | "dialect"
+          | "voice_id"
+          | "voice_id_ar"
         >[]
       | null) ?? [];
 
@@ -29,12 +37,10 @@ export default async function AdminAvatarsPage() {
     <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
       <section className="mb-8 fade-in-up">
         <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-          Avatar presets
+          {t("title")}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
-          Presets include disorder persona prompts and ideal-session guidelines.
-          Full avatar builder editing can expand in a later phase; manage seed
-          data via Supabase for now.
+          {t("subtitle")}
         </p>
       </section>
 
@@ -50,7 +56,7 @@ export default async function AdminAvatarsPage() {
                   avatar.is_active ? "status-chip-active" : "status-chip-warn"
                 }`}
               >
-                {avatar.is_active ? "Active" : "Inactive"}
+                {avatar.is_active ? tCommon("active") : tCommon("inactive")}
               </span>
             </div>
             <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
@@ -58,8 +64,56 @@ export default async function AdminAvatarsPage() {
               {avatar.age ? ` · ${avatar.age}` : ""}
               {avatar.gender ? ` · ${avatar.gender}` : ""}
             </p>
+
+            <div className="mt-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+                Voice
+              </h3>
+              <dl className="mt-2 grid gap-2 text-sm text-[var(--on-surface-variant)] sm:grid-cols-2">
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider">
+                    Language
+                  </dt>
+                  <dd className="font-medium text-[var(--on-surface)]">
+                    {avatar.language ?? "en"}
+                    {avatar.dialect ? ` · ${avatar.dialect}` : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider">
+                    English voice_id
+                  </dt>
+                  <dd className="break-all font-mono text-xs text-[var(--on-surface)]">
+                    {avatar.voice_id ?? "— (env default)"}
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider">
+                    Arabic voice_id
+                  </dt>
+                  <dd className="break-all font-mono text-xs text-[var(--on-surface)]">
+                    {avatar.voice_id_ar ?? "— (env default)"}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <VoicePreviewButton
+                  locale="en"
+                  voiceId={avatar.voice_id}
+                  voiceIdAr={avatar.voice_id_ar}
+                  label="Preview English"
+                />
+                <VoicePreviewButton
+                  locale="ar"
+                  voiceId={avatar.voice_id}
+                  voiceIdAr={avatar.voice_id_ar}
+                  label="Preview Arabic"
+                />
+              </div>
+            </div>
+
             <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-              Ideal session goals
+              {t("goals")}
             </h3>
             <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
               {(avatar.ideal_guidelines?.session_goals ?? []).map((g) => (
@@ -72,12 +126,16 @@ export default async function AdminAvatarsPage() {
               ))}
             </ul>
             <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-              Rubric
+              {t("rubric")}
             </h3>
             <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
               {(avatar.rubric ?? []).map((r) => (
                 <li key={r.id}>
-                  {r.label} (max {r.max}, weight {r.weight})
+                  {t("rubricItem", {
+                    label: r.label,
+                    max: r.max,
+                    weight: r.weight,
+                  })}
                 </li>
               ))}
             </ul>

@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 
 export default async function AdminReportsPage() {
   const { supabase } = await requireAdmin();
+  const t = await getTranslations("admin.reports");
+  const tCommon = await getTranslations("common");
   const { data: reports } = await supabase
     .from("session_reports")
     .select(
@@ -11,11 +14,13 @@ export default async function AdminReportsPage() {
       id,
       session_id,
       scores,
+      language,
       created_at,
       sessions (
         started_at,
         ended_at,
         status,
+        language,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -41,7 +46,7 @@ export default async function AdminReportsPage() {
         <div className="clinical-card flex flex-col justify-between p-6">
           <div>
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-              Total assessments
+              {t("statTotal")}
             </p>
             <h3 className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
               {list.length}
@@ -49,39 +54,39 @@ export default async function AdminReportsPage() {
           </div>
           <p className="mt-4 flex items-center gap-1 text-xs font-semibold text-[var(--on-surface-variant)]">
             <span className="material-symbols-outlined text-sm">analytics</span>
-            Stored securely with RLS
+            {t("statTotalHint")}
           </p>
         </div>
         <div className="clinical-card flex flex-col justify-between p-6">
           <div>
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-              Avg. competency score
+              {t("statAvg")}
             </p>
             <h3 className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--secondary)]">
               {list.length ? avg : "—"}
               {list.length ? (
                 <span className="text-lg text-[var(--on-surface-variant)]">
-                  /100
+                  {tCommon("outOf100")}
                 </span>
               ) : null}
             </h3>
           </div>
           <p className="mt-4 flex items-center gap-1 text-xs font-semibold text-[var(--on-surface-variant)]">
             <span className="material-symbols-outlined text-sm">monitoring</span>
-            Across completed reports
+            {t("statAvgHint")}
           </p>
         </div>
         <div className="clinical-card flex flex-col justify-between p-6 sm:col-span-2 lg:col-span-1">
           <div>
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-              Access
+              {t("statAccess")}
             </p>
             <h3 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-              Admin-only
+              {t("adminOnly")}
             </h3>
           </div>
           <p className="mt-4 text-xs text-[var(--on-surface-variant)]">
-            Therapists cannot select session reports via row-level security.
+            {t("rlsNote")}
           </p>
         </div>
       </section>
@@ -89,10 +94,10 @@ export default async function AdminReportsPage() {
       <section className="clinical-card overflow-hidden">
         <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
           <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--on-surface)]">
-            Reports Library
+            {t("title")}
           </h2>
           <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-            Confidential. Visible to admins only.
+            {t("subtitle")}
           </p>
         </div>
         <ul className="divide-y divide-[var(--surface-container-low)]">
@@ -100,11 +105,13 @@ export default async function AdminReportsPage() {
             const session = report.sessions as unknown as {
               started_at: string;
               status: string;
+              language?: string | null;
               profiles: { display_name: string } | null;
               avatars: { name: string; disorder: string } | null;
             } | null;
             const overall =
               (report.scores as { overall?: number } | null)?.overall ?? "—";
+            const lang = report.language ?? session?.language ?? "en";
             return (
               <li key={report.id}>
                 <Link
@@ -113,18 +120,19 @@ export default async function AdminReportsPage() {
                 >
                   <div>
                     <p className="font-medium text-[var(--on-surface)]">
-                      {session?.profiles?.display_name ?? "Therapist"} ·{" "}
-                      {session?.avatars?.name ?? "Avatar"}
+                      {session?.profiles?.display_name ?? t("fallbackTherapist")} ·{" "}
+                      {session?.avatars?.name ?? t("fallbackAvatar")}
                     </p>
                     <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                       {session?.avatars?.disorder} ·{" "}
-                      {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}
+                      {format(new Date(report.created_at), "MMM d, yyyy HH:mm")}{" "}
+                      · {String(lang).toUpperCase()}
                     </p>
                   </div>
                   <p className="font-[family-name:var(--font-headline)] text-xl font-bold text-[var(--primary)]">
                     {overall}
                     <span className="text-sm font-medium text-[var(--on-surface-variant)]">
-                      /100
+                      {tCommon("outOf100")}
                     </span>
                   </p>
                 </Link>
@@ -133,7 +141,7 @@ export default async function AdminReportsPage() {
           })}
           {!list.length && (
             <li className="px-6 py-10 text-sm text-[var(--on-surface-variant)]">
-              No reports yet.
+              {t("empty")}
             </li>
           )}
         </ul>

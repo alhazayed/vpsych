@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
-const TIPS = [
-  "Active listening strengthens therapeutic alliance.",
-  "Validating emotion before providing solutions increases rapport.",
-  "Reflective statements help clarify patient internal experiences.",
-  "Maintaining professional boundaries protects the therapeutic space.",
-  "Open-ended questions invite deeper patient self-exploration.",
-  "Observe non-verbal cues to detect underlying patient affect.",
-];
+const STEP_IDS = [
+  "transcript",
+  "communication",
+  "reasoning",
+  "report",
+  "recommendations",
+  "finalize",
+] as const;
 
-const STEPS = [
-  { id: "transcript", label: "Processing session transcript" },
-  { id: "communication", label: "Evaluating therapeutic communication" },
-  { id: "reasoning", label: "Assessing diagnostic reasoning" },
-  { id: "report", label: "Generating competency report..." },
-  { id: "recommendations", label: "Preparing recommendations" },
-  { id: "finalize", label: "Finalizing feedback" },
-];
+const TIP_KEYS = ["1", "2", "3", "4", "5", "6"] as const;
 
 export function AiAnalysisOverlay() {
+  const t = useTranslations("analysis");
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(18);
   const [tipIndex, setTipIndex] = useState(0);
@@ -28,7 +23,7 @@ export function AiAnalysisOverlay() {
 
   useEffect(() => {
     const stepTimer = window.setInterval(() => {
-      setActiveStep((s) => Math.min(s + 1, STEPS.length - 2));
+      setActiveStep((s) => Math.min(s + 1, STEP_IDS.length - 2));
     }, 2200);
     const progressTimer = window.setInterval(() => {
       setProgress((p) => Math.min(p + Math.random() * 8 + 2, 92));
@@ -36,7 +31,7 @@ export function AiAnalysisOverlay() {
     const tipTimer = window.setInterval(() => {
       setTipVisible(false);
       window.setTimeout(() => {
-        setTipIndex((i) => (i + 1) % TIPS.length);
+        setTipIndex((i) => (i + 1) % TIP_KEYS.length);
         setTipVisible(true);
       }, 400);
     }, 5000);
@@ -70,7 +65,7 @@ export function AiAnalysisOverlay() {
             psychology
           </span>
           <span className="font-[family-name:var(--font-headline)] text-xl font-bold tracking-tight text-[var(--primary)]">
-            VPsych AI
+            {t("brandAi")}
           </span>
         </div>
 
@@ -110,23 +105,21 @@ export function AiAnalysisOverlay() {
 
           <div className="mb-8 text-center">
             <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
-              Analyzing Your Clinical Performance
+              {t("title")}
             </h1>
             <p className="mx-auto mt-2 max-w-lg text-base text-[var(--on-surface-variant)]">
-              Our AI is reviewing your therapeutic communication, empathy,
-              diagnostic reasoning, rapport building, interviewing techniques,
-              intervention quality, and overall clinical competency.
+              {t("subtitle")}
             </p>
           </div>
 
           <div className="mb-6 w-full space-y-4 border-t border-[var(--outline-variant)] pt-8">
-            {STEPS.map((step, index) => {
+            {STEP_IDS.map((stepId, index) => {
               const done = index < activeStep;
               const active = index === activeStep;
               const pending = index > activeStep;
               return (
                 <div
-                  key={step.id}
+                  key={stepId}
                   className={`flex items-center gap-4 ${pending ? "opacity-40" : ""}`}
                 >
                   <div
@@ -153,7 +146,7 @@ export function AiAnalysisOverlay() {
                         : "text-[var(--on-surface)]"
                     }`}
                   >
-                    {step.label}
+                    {t(`steps.${stepId}`)}
                   </span>
                 </div>
               );
@@ -165,7 +158,7 @@ export function AiAnalysisOverlay() {
               schedule
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider">
-              Estimated time: Approximately 20–60 seconds
+              {t("estimatedTime")}
             </span>
           </div>
         </div>
@@ -181,21 +174,20 @@ export function AiAnalysisOverlay() {
           </div>
           <div className="min-w-0 flex-1">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#7b2e00]">
-              Clinical Tip
+              {t("clinicalTip")}
             </span>
             <p
               className={`text-sm text-[var(--on-surface-variant)] transition-opacity duration-500 ${
                 tipVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              {TIPS[tipIndex]}
+              {t(`tips.${TIP_KEYS[tipIndex]}`)}
             </p>
           </div>
         </div>
 
         <p className="text-center text-xs font-semibold text-[var(--on-surface-variant)] opacity-60">
-          Do not close this page. Your personalized clinical report will open
-          automatically when analysis is complete.
+          {t("doNotClose")}
         </p>
       </main>
     </div>

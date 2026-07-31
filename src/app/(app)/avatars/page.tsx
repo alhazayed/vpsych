@@ -1,10 +1,13 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
+  const t = await getTranslations("avatars");
+  const tCommon = await getTranslations("common");
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
@@ -25,25 +28,26 @@ export default async function AvatarsPage() {
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
       <section className="mb-8 fade-in-up">
         <p className="mb-1 text-sm font-medium uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
-          Welcome back
+          {t("welcomeBack")}
         </p>
         <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)] md:text-[32px] md:leading-10">
           {profile.display_name}
         </h1>
         <p className="mt-2 max-w-2xl text-base leading-6 text-[var(--on-surface-variant)]">
-          Choose a virtual patient to begin a timed voice assessment. Each
-          persona includes disorder context and ideal-session guidelines.
-          Performance reports are generated for administrators only.
+          {t("intro")}
         </p>
       </section>
 
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
-            Virtual Patient Library
+            {t("title")}
           </h2>
           <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-            {list.length} active {list.length === 1 ? "persona" : "personas"}
+            {t("count", {
+              count: list.length,
+              persona: list.length === 1 ? t("persona") : t("personas"),
+            })}
           </p>
         </div>
       </div>
@@ -81,7 +85,9 @@ export default async function AvatarsPage() {
                     {avatar.gender ? ` · ${avatar.gender}` : ""}
                   </p>
                 </div>
-                <span className="status-chip status-chip-active">Active</span>
+                <span className="status-chip status-chip-active">
+                  {tCommon("active")}
+                </span>
               </div>
               <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
                 {(avatar.ideal_guidelines?.session_goals ?? [])

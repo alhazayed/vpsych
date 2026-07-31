@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 
@@ -13,34 +15,34 @@ type NavItem = {
   match?: (pathname: string) => boolean;
 };
 
-function therapistNav(): NavItem[] {
+function therapistNav(t: (key: string) => string): NavItem[] {
   return [
     {
       href: "/avatars",
-      label: "Patient Library",
+      label: t("patientLibrary"),
       icon: "library_books",
       match: (p) => p.startsWith("/avatars"),
     },
     {
       href: "/sessions",
-      label: "My Sessions",
+      label: t("mySessions"),
       icon: "clinical_notes",
       match: (p) => p.startsWith("/sessions"),
     },
   ];
 }
 
-function adminNav(): NavItem[] {
+function adminNav(t: (key: string) => string): NavItem[] {
   return [
     {
       href: "/admin/reports",
-      label: "Reports Library",
+      label: t("reportsLibrary"),
       icon: "folder_shared",
       match: (p) => p.startsWith("/admin/reports"),
     },
     {
       href: "/admin/avatars",
-      label: "Avatar Presets",
+      label: t("avatarPresets"),
       icon: "psychology",
       match: (p) => p.startsWith("/admin/avatars"),
     },
@@ -88,12 +90,14 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const tNav = useTranslations("nav");
+  const tShell = useTranslations("shell");
   const isImmersiveSession =
     /^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete");
 
   const nav = [
-    ...therapistNav(),
-    ...(profile.role === "admin" ? adminNav() : []),
+    ...therapistNav(tNav),
+    ...(profile.role === "admin" ? adminNav(tNav) : []),
   ];
 
   async function signOut() {
@@ -103,6 +107,15 @@ export function AppShell({
     router.refresh();
   }
 
+  function pageTitle() {
+    if (pathname.startsWith("/admin/reports"))
+      return tShell("pageTitle.reportsLibrary");
+    if (pathname.startsWith("/admin/avatars"))
+      return tShell("pageTitle.avatarPresets");
+    if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
+    return tShell("pageTitle.patientLibrary");
+  }
+
   if (isImmersiveSession) {
     return <div className="min-h-screen bg-[var(--background)]">{children}</div>;
   }
@@ -110,7 +123,7 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--on-surface)]">
       {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col border-r border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-6 md:flex">
+      <aside className="fixed start-0 top-0 z-50 hidden h-screen w-64 flex-col border-e border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-6 md:flex">
         <div className="mb-8 px-6">
           <Link href="/avatars" className="flex items-center gap-3">
             <Image
@@ -126,7 +139,7 @@ export function AppShell({
                 VPsych
               </p>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)] opacity-70">
-                Clinical Intelligence
+                {tShell("tagline")}
               </p>
             </div>
           </Link>
@@ -144,12 +157,14 @@ export function AppShell({
               {profile.display_name}
             </p>
             <p className="text-[10px] uppercase tracking-wider text-[var(--on-surface-variant)]">
-              {profile.role === "admin" ? "Administrator" : "Therapist"}
+              {profile.role === "admin"
+                ? tShell("role.admin")
+                : tShell("role.therapist")}
             </p>
           </div>
           <Link href="/avatars" className="btn-primary w-full">
             <span className="material-symbols-outlined text-[20px]">add</span>
-            New Assessment
+            {tShell("newAssessment")}
           </Link>
           <button
             type="button"
@@ -157,13 +172,13 @@ export function AppShell({
             className="btn-secondary w-full"
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>
-            Sign out
+            {tShell("signOut")}
           </button>
         </div>
       </aside>
 
       {/* Mobile top bar */}
-      <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
+      <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
         <Link href="/avatars" className="flex items-center gap-2">
           <Image
             src="/vpsych-logo.png"
@@ -176,33 +191,33 @@ export function AppShell({
             VPsych
           </span>
         </Link>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)]"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher compact />
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)]"
+          >
+            {tShell("signOut")}
+          </button>
+        </div>
       </header>
 
-      <div className="md:ml-64">
+      <div className="md:ms-64">
         <header className="sticky top-0 z-40 hidden h-16 items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface)] px-8 md:flex">
           <p className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-            {pathname.startsWith("/admin/reports")
-              ? "Reports Library"
-              : pathname.startsWith("/admin/avatars")
-                ? "Avatar Presets"
-                : pathname.startsWith("/sessions")
-                  ? "My Sessions"
-                  : "Virtual Patient Library"}
+            {pageTitle()}
           </p>
           <div className="flex items-center gap-3">
-            <div className="text-right">
+            <LanguageSwitcher />
+            <div className="text-end">
               <p className="text-sm font-bold text-[var(--on-surface)]">
                 {profile.display_name}
               </p>
               <p className="text-[10px] uppercase tracking-wider text-[var(--on-surface-variant)]">
-                {profile.role === "admin" ? "Clinical Supervisor" : "Therapist"}
+                {profile.role === "admin"
+                  ? tShell("role.clinicalSupervisor")
+                  : tShell("role.therapist")}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--primary-fixed)] bg-[var(--surface-container)] font-[family-name:var(--font-headline)] text-sm font-bold text-[var(--primary)]">
@@ -215,7 +230,7 @@ export function AppShell({
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
+      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
         {nav.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} compact />
         ))}

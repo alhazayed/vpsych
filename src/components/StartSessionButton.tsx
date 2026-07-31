@@ -2,9 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+
+function cookieLocale(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(/(?:^|; )locale=([^;]*)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+}
+
 
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
+  const t = useTranslations("session.start");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,17 +24,20 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarId }),
+        body: JSON.stringify({
+          avatarId,
+          locale: cookieLocale(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not start session");
+        setError(data.error ?? t("failed"));
         setLoading(false);
         return;
       }
       router.push(`/sessions/${data.sessionId}`);
     } catch {
-      setError("Network error");
+      setError(t("networkError"));
       setLoading(false);
     }
   }
@@ -39,7 +51,7 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         className="btn-primary w-full"
       >
         <span className="material-symbols-outlined text-[20px]">mic</span>
-        {loading ? "Starting…" : "Start 40-min voice session"}
+        {loading ? t("starting") : t("cta")}
       </button>
       {error && (
         <p className="text-sm text-[var(--error)]">{error}</p>

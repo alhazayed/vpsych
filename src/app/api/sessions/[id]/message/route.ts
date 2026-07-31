@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generatePatientReply } from "@/lib/ai/patient-agent";
+import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { rateLimit } from "@/lib/rate-limit";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
@@ -63,6 +64,9 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  // Load multilingual prompt from clinical_core + personality for session.language.
+  const resolved = resolveAvatar(typed.avatars, typed.language);
+
   const { data: userMsg, error: userMsgError } = await supabase
     .from("session_messages")
     .insert({
@@ -89,7 +93,7 @@ export async function POST(request: Request, { params }: Params) {
   let reply: string;
   try {
     reply = await generatePatientReply({
-      avatar: typed.avatars,
+      avatar: resolved,
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
