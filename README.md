@@ -95,6 +95,11 @@ unaffected.
 - Session reports are not exposed on therapist-facing APIs.
 - `create_session_report` is a security-definer RPC that writes reports; only `is_admin()` policies allow reading `session_reports`.
 - Do not put authorization in `user_metadata` — roles live in `profiles.role`.
+- RLS policies wrap `auth.uid()` / `is_admin()` in `(select …)` so they evaluate
+  once per statement (see `20260731110213_optimize_rls_initplan_and_fk_index.sql`).
+- **Enable leaked-password protection** (Authentication → Policies) so Supabase
+  checks new passwords against HaveIBeenPwned — this is a dashboard setting and
+  is currently off.
 
 ## Scripts
 
