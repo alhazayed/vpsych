@@ -44,12 +44,6 @@ function adminNav(): NavItem[] {
       icon: "psychology",
       match: (p) => p.startsWith("/admin/avatars"),
     },
-    {
-      href: "/admin/integrations",
-      label: "API Integrations",
-      icon: "api",
-      match: (p) => p.startsWith("/admin/integrations"),
-    },
   ];
 }
 
@@ -194,15 +188,13 @@ export function AppShell({
       <div className="md:ml-64">
         <header className="sticky top-0 z-40 hidden h-16 items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface)] px-8 md:flex">
           <p className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-            {pathname.startsWith("/admin/integrations")
-              ? "API Integrations"
-              : pathname.startsWith("/admin/reports")
-                ? "Reports Library"
-                : pathname.startsWith("/admin/avatars")
-                  ? "Avatar Presets"
-                  : pathname.startsWith("/sessions")
-                    ? "My Sessions"
-                    : "Virtual Patient Library"}
+            {pathname.startsWith("/admin/reports")
+              ? "Reports Library"
+              : pathname.startsWith("/admin/avatars")
+                ? "Avatar Presets"
+                : pathname.startsWith("/sessions")
+                  ? "My Sessions"
+                  : "Virtual Patient Library"}
           </p>
           <div className="flex items-center gap-3">
             <div className="text-right">
