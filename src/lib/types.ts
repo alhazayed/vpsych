@@ -8,7 +8,7 @@ export type Profile = {
   id: string;
   display_name: string;
   role: UserRole;
-  preferred_language: PreferredLanguage;
+  preferred_language?: PreferredLanguage;
   created_at: string;
   updated_at: string;
 };

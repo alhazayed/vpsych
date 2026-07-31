@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
@@ -218,6 +219,7 @@ export function VoiceSession({
           </span>
         </Link>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher compact />
           <SessionTimer remaining={remaining} />
           <button
             type="button"
