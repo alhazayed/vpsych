@@ -6,6 +6,7 @@ export type Profile = {
   id: string;
   display_name: string;
   role: UserRole;
+  preferred_language: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -30,6 +31,9 @@ export type Avatar = {
     ideal_approach?: string;
   };
   rubric: RubricItem[];
+  language: string | null;
+  dialect: string | null;
+  voice_id: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -43,6 +47,7 @@ export type TherapySession = {
   started_at: string;
   ended_at: string | null;
   max_duration_sec: number;
+  language: string | null;
   created_at: string;
   avatars?: Avatar;
   profiles?: Profile;
@@ -74,6 +79,7 @@ export type SessionReport = {
   };
   narrative: string;
   excerpts: string[];
+  language: string | null;
   created_at: string;
   sessions?: TherapySession;
 };
