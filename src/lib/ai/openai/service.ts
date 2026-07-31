@@ -1,0 +1,247 @@
+import { toFile } from "openai";
+import {
+  getOpenAIClient,
+  hasOpenAIApiKey,
+  OpenAIConfigError,
+} from "@/lib/ai/openai/client";
+import { toOpenAIServiceError } from "@/lib/ai/openai/errors";
+import { withOpenAIRetry } from "@/lib/ai/openai/retry";
+
+/** Default GPT-5 chat model; override with OPENAI_CHAT_MODEL. */
+export const DEFAULT_OPENAI_CHAT_MODEL = "gpt-5";
+
+/** Default STT model; override with OPENAI_STT_MODEL. */
+export const DEFAULT_OPENAI_STT_MODEL = "gpt-4o-transcribe";
+
+export type ChatMessage = {
+  role: "system" | "user" | "assistant" | "developer";
+  content: string;
+};
+
+export type ChatCompletionParams = {
+  messages: ChatMessage[];
+  /** Defaults to OPENAI_CHAT_MODEL or gpt-5. */
+  model?: string;
+  temperature?: number;
+  maxCompletionTokens?: number;
+};
+
+export type ChatCompletionResult = {
+  text: string;
+  model: string;
+  provider: "openai";
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+};
+
+export type SpeechToTextParams = {
+  audio: Blob | ArrayBuffer | Buffer | Uint8Array;
+  /** Filename hint for MIME/type detection (e.g. audio.wav). */
+  filename?: string;
+  /** BCP-47 / ISO-639-1 language hint (en, ar, …). */
+  language?: string;
+  /** Defaults to OPENAI_STT_MODEL or gpt-4o-transcribe. */
+  model?: string;
+  prompt?: string;
+};
+
+export type SpeechToTextResult = {
+  transcript: string;
+  model: string;
+  provider: "openai";
+  language?: string;
+};
+
+export type OpenAIHealthStatus = {
+  ok: boolean;
+  configured: boolean;
+  provider: "openai";
+  chatModel: string;
+  sttModel: string;
+  checkedAt: string;
+  latencyMs?: number;
+  error?: string;
+  code?: string;
+};
+
+function chatModelId(override?: string) {
+  return (
+    override?.trim() ||
+    process.env.OPENAI_CHAT_MODEL?.trim() ||
+    DEFAULT_OPENAI_CHAT_MODEL
+  );
+}
+
+function sttModelId(override?: string) {
+  return (
+    override?.trim() ||
+    process.env.OPENAI_STT_MODEL?.trim() ||
+    DEFAULT_OPENAI_STT_MODEL
+  );
+}
+
+function languageHint(input?: string): string | undefined {
+  if (!input) return undefined;
+  const trimmed = input.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  // OpenAI STT expects ISO-639-1 (e.g. en, ar).
+  return trimmed.split(/[-_]/)[0];
+}
+
+async function audioToUploadable(
+  audio: SpeechToTextParams["audio"],
+  filename: string,
+) {
+  if (audio instanceof Blob) {
+    const buffer = Buffer.from(await audio.arrayBuffer());
+    return toFile(buffer, filename, {
+      type: audio.type || undefined,
+    });
+  }
+  if (audio instanceof ArrayBuffer) {
+    return toFile(Buffer.from(audio), filename);
+  }
+  return toFile(audio, filename);
+}
+
+/**
+ * Reusable OpenAI service — GPT-5 chat + speech-to-text, with retries
+ * and normalized error handling. Reads OPENAI_API_KEY from the environment.
+ */
+export const openAIService = {
+  isConfigured: hasOpenAIApiKey,
+
+  /** GPT-5 (or configured) chat completion via the official SDK. */
+  async chat(params: ChatCompletionParams): Promise<ChatCompletionResult> {
+    return withOpenAIRetry(async () => {
+      try {
+        const client = getOpenAIClient();
+        const model = chatModelId(params.model);
+        const completion = await client.chat.completions.create({
+          model,
+          messages: params.messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          temperature: params.temperature,
+          max_completion_tokens: params.maxCompletionTokens,
+        });
+
+        const text = completion.choices[0]?.message?.content?.trim() ?? "";
+        return {
+          text,
+          model: completion.model || model,
+          provider: "openai" as const,
+          usage: completion.usage
+            ? {
+                promptTokens: completion.usage.prompt_tokens,
+                completionTokens: completion.usage.completion_tokens,
+                totalTokens: completion.usage.total_tokens,
+              }
+            : undefined,
+        };
+      } catch (error) {
+        throw toOpenAIServiceError(error);
+      }
+    });
+  },
+
+  /** Speech-to-text via OpenAI audio transcriptions. */
+  async speechToText(
+    params: SpeechToTextParams,
+  ): Promise<SpeechToTextResult> {
+    return withOpenAIRetry(async () => {
+      try {
+        const client = getOpenAIClient();
+        const model = sttModelId(params.model);
+        const filename = params.filename || "audio.wav";
+        const file = await audioToUploadable(params.audio, filename);
+        const language = languageHint(params.language);
+
+        const result = await client.audio.transcriptions.create({
+          file,
+          model,
+          ...(language ? { language } : {}),
+          ...(params.prompt ? { prompt: params.prompt } : {}),
+        });
+
+        const transcript = String(
+          (result as { text?: string }).text ?? result ?? "",
+        ).trim();
+
+        return {
+          transcript,
+          model,
+          provider: "openai" as const,
+          language,
+        };
+      } catch (error) {
+        throw toOpenAIServiceError(error);
+      }
+    });
+  },
+
+  /**
+   * Lightweight health check — verifies key presence and a minimal models list call.
+   * Does not change existing product APIs.
+   */
+  async healthCheck(): Promise<OpenAIHealthStatus> {
+    const checkedAt = new Date().toISOString();
+    const chatModel = chatModelId();
+    const sttModel = sttModelId();
+
+    if (!hasOpenAIApiKey()) {
+      return {
+        ok: false,
+        configured: false,
+        provider: "openai",
+        chatModel,
+        sttModel,
+        checkedAt,
+        error: "OPENAI_API_KEY is not configured",
+        code: "OPENAI_CONFIG",
+      };
+    }
+
+    const started = Date.now();
+    try {
+      await withOpenAIRetry(
+        async () => {
+          const client = getOpenAIClient();
+          // Cheap authenticated probe (does not burn chat tokens).
+          await client.models.list();
+        },
+        { attempts: 2, baseDelayMs: 150 },
+      );
+
+      return {
+        ok: true,
+        configured: true,
+        provider: "openai",
+        chatModel,
+        sttModel,
+        checkedAt,
+        latencyMs: Date.now() - started,
+      };
+    } catch (error) {
+      const mapped =
+        error instanceof OpenAIConfigError
+          ? toOpenAIServiceError(error)
+          : toOpenAIServiceError(error);
+      return {
+        ok: false,
+        configured: true,
+        provider: "openai",
+        chatModel,
+        sttModel,
+        checkedAt,
+        latencyMs: Date.now() - started,
+        error: mapped.message,
+        code: mapped.code,
+      };
+    }
+  },
+};
