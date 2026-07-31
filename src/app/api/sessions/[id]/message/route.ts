@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generatePatientReply } from "@/lib/ai/patient-agent";
 import { remainingSeconds } from "@/lib/session-timer";
 import { rateLimit } from "@/lib/rate-limit";
+import { resolveAvatar } from "@/lib/avatars/resolve";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -63,6 +64,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  const resolved = resolveAvatar(typed.avatars, typed.language);
+
   const { data: userMsg, error: userMsgError } = await supabase
     .from("session_messages")
     .insert({
@@ -89,7 +92,7 @@ export async function POST(request: Request, { params }: Params) {
   let reply: string;
   try {
     reply = await generatePatientReply({
-      avatar: typed.avatars,
+      avatar: resolved,
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
@@ -119,5 +122,6 @@ export async function POST(request: Request, { params }: Params) {
     userMessage: userMsg,
     assistantMessage: assistantMsg,
     remainingSeconds: remainingSeconds(typed.started_at, typed.max_duration_sec),
+    locale: resolved.locale,
   });
 }

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpsych.app/schemas/avatar.v2.json",
+  "title": "VPsych Avatar (multi-personality, natively authored)",
+  "description": "A patient avatar. Clinical presentation is shared and language-neutral; each locale carries an INDEPENDENTLY AUTHORED personality. See repository Task docs / Claude schema for the full draft/2020-12 definition. Runtime storage: public.avatars.clinical_core + public.avatars.personalities (schema_version=2) with flat v1 columns kept for backward compatibility.",
+  "type": "object",
+  "required": ["id", "clinical_core", "personalities", "rubric", "default_locale", "is_active"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "slug": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 2 },
+    "is_active": { "type": "boolean" },
+    "default_locale": { "type": "string" },
+    "clinical_core": { "type": "object" },
+    "personalities": {
+      "type": "object",
+      "required": ["en-US", "ar-JO"]
+    },
+    "rubric": { "type": "array" }
+  }
+}

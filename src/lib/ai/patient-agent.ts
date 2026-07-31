@@ -1,7 +1,7 @@
 import { generateText } from "ai";
-import type { Avatar, SessionMessage } from "@/lib/types";
+import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
-const FALLBACK_REPLIES = [
+const DEFAULT_FALLBACK_REPLIES = [
   "I'm not sure how to answer that… could you say a bit more?",
   "Yeah… I've been feeling that way a lot lately.",
   "Hmm. I guess I haven't thought about it like that.",
@@ -20,18 +20,25 @@ function modelId() {
 }
 
 export async function generatePatientReply(params: {
-  avatar: Pick<Avatar, "name" | "disorder" | "persona_prompt">;
+  avatar: Pick<
+    ResolvedAvatar,
+    "name" | "disorder" | "system_prompt" | "fallback_replies" | "per_turn_reinforcement"
+  >;
   history: Pick<SessionMessage, "role" | "content">[];
   userMessage: string;
 }): Promise<string> {
   const { avatar, history, userMessage } = params;
+  const fallbacks =
+    avatar.fallback_replies?.length > 0
+      ? avatar.fallback_replies
+      : DEFAULT_FALLBACK_REPLIES;
 
   if (!hasAiKey()) {
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
-      ) % FALLBACK_REPLIES.length;
-    return `(${avatar.name}) ${FALLBACK_REPLIES[idx]}`;
+      ) % fallbacks.length;
+    return fallbacks[idx]!;
   }
 
   const messages = history
@@ -44,18 +51,22 @@ export async function generatePatientReply(params: {
 
   messages.push({ role: "user", content: userMessage });
 
+  const reinforcement = avatar.per_turn_reinforcement
+    ? `\n${avatar.per_turn_reinforcement}`
+    : "";
+
   const { text } = await generateText({
     model: modelId(),
-    system: `${avatar.persona_prompt}
+    system: `${avatar.system_prompt}
 
 Additional constraints for this voice therapy simulation:
 - Reply as the patient only. Never narrate stage directions.
 - Keep replies under 80 words so they can be spoken aloud.
-- Disorder context: ${avatar.disorder}.`,
+- Disorder context: ${avatar.disorder}.${reinforcement}`,
     messages,
     temperature: 0.85,
     maxOutputTokens: 220,
   });
 
-  return text.trim() || FALLBACK_REPLIES[0];
+  return text.trim() || fallbacks[0]!;
 }

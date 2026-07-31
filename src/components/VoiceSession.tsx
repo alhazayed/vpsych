@@ -8,7 +8,7 @@ import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
-import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import type { ResolvedAvatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -42,7 +42,7 @@ export function VoiceSession({
   initialMessages,
 }: {
   session: TherapySession;
-  avatar: Avatar;
+  avatar: ResolvedAvatar;
   initialMessages: SessionMessage[];
 }) {
   const router = useRouter();
@@ -114,7 +114,8 @@ export function VoiceSession({
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 0.95;
+    utter.lang = avatar.tts_lang;
+    utter.rate = avatar.tts_rate ?? 0.95;
     utter.onstart = () => setSpeaking(true);
     utter.onend = () => setSpeaking(false);
     utter.onerror = () => setSpeaking(false);
@@ -175,7 +176,7 @@ export function VoiceSession({
     const recognition = new SR();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = avatar.stt_lang;
     recognitionRef.current = recognition;
 
     recognition.onresult = (event) => {
