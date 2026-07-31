@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { SessionSpeechLocale } from "@/lib/voice/config";
 
+/**
+ * Admin voice preview — streams ElevenLabs audio when available,
+ * falls back to a clear error (does not affect therapy text mode).
+ */
 export function VoicePreviewButton({
   locale,
   voiceId,
@@ -16,16 +20,21 @@ export function VoicePreviewButton({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cached, setCached] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   async function preview() {
     setBusy(true);
     setError(null);
+    setCached(false);
     try {
+      audioRef.current?.pause();
       const res = await fetch("/api/voice/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           preview: true,
+          stream: true,
           locale,
           voiceId: voiceId ?? undefined,
           voiceIdAr: voiceIdAr ?? undefined,
@@ -43,12 +52,18 @@ export function VoicePreviewButton({
         );
         return;
       }
-      const blob = await res.blob();
+      setCached(res.headers.get("X-Voice-Cached") === "1");
+      const blob = await new Response(res.body).blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
       audio.onerror = () => {
         URL.revokeObjectURL(url);
+        audioRef.current = null;
         setError("Could not play audio");
       };
       await audio.play();
@@ -72,6 +87,11 @@ export function VoicePreviewButton({
         </span>
         {busy ? "Playing…" : label}
       </button>
+      {cached && !error && (
+        <p className="text-[11px] text-[var(--on-surface-variant)]">
+          Served from cache
+        </p>
+      )}
       {error && (
         <p className="text-[11px] text-[var(--error)]">{error}</p>
       )}

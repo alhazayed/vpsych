@@ -4,6 +4,10 @@ import {
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
 
+/**
+ * Request TTS from /api/voice/tts with graceful browser fallback.
+ * Does not break text mode — callers may ignore audio entirely.
+ */
 export async function synthesizeSpeech(params: {
   text: string;
   locale: SessionSpeechLocale;
@@ -19,16 +23,18 @@ export async function synthesizeSpeech(params: {
         locale: params.locale,
         voiceId: params.voiceId ?? undefined,
         voiceIdAr: params.voiceIdAr ?? undefined,
+        stream: true,
       }),
     });
 
-    if (res.ok) {
-      const blob = await res.blob();
+    if (res.ok && res.body) {
+      // Consume the (possibly streamed) body into a playable blob.
+      // MediaSource progressive playback is optional; blob keeps broad support.
+      const blob = await new Response(res.body).blob();
       return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
     }
 
     if (res.status !== 501) {
-      // Non-config errors still fall back to browser TTS.
       console.warn("ElevenLabs TTS failed; falling back to browser.", res.status);
     }
   } catch (err) {
@@ -54,7 +60,7 @@ export function speakWithBrowser(
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = browserSpeechLocale(locale);
-  utter.rate = locale === "ar" ? 0.95 : 0.95;
+  utter.rate = 0.95;
   utter.onstart = () => handlers.onstart?.();
   utter.onend = () => handlers.onend?.();
   utter.onerror = () => handlers.onerror?.();
