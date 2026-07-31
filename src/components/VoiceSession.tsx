@@ -4,13 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
-import type { ResolvedAvatar, SessionMessage, TherapySession } from "@/lib/types";
+import {
+  sessionLocaleFrom,
+  speakWithBrowser,
+  synthesizeSpeech,
+} from "@/lib/voice/client";
+import {
+  startMicWavRecording,
+  type MicRecorder,
+} from "@/lib/voice/record-wav";
+import type {
+  ResolvedAvatar,
+  SessionMessage,
+  TherapySession,
+} from "@/lib/types";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -48,8 +61,10 @@ export function VoiceSession({
   initialMessages: SessionMessage[];
 }) {
   const router = useRouter();
-  const locale = useLocale();
   const t = useTranslations("session");
+  // Speech locale ("en" | "ar") for TTS/provider selection. The precise
+  // dialect for STT comes from the resolved personality (avatar.stt_lang).
+  const locale = sessionLocaleFrom(session.language, avatar.language);
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>
     remainingSeconds(session.started_at, session.max_duration_sec),
@@ -62,8 +77,19 @@ export function VoiceSession({
   const [ending, setEnding] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const micRecorderRef = useRef<MicRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const stopPlayback = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+  }, []);
 
   const endSession = useCallback(async () => {
     if (endingRef.current) return;
@@ -72,7 +98,9 @@ export function VoiceSession({
     setStatus(t("status.ending"));
     try {
       recognitionRef.current?.stop();
-      window.speechSynthesis?.cancel();
+      micRecorderRef.current?.cancel();
+      micRecorderRef.current = null;
+      stopPlayback();
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
       });
@@ -92,7 +120,7 @@ export function VoiceSession({
       endingRef.current = false;
       setEnding(false);
     }
-  }, [router, session.id, t]);
+  }, [router, session.id, t, stopPlayback]);
 
   useEffect(() => {
     const tick = () => {
@@ -114,17 +142,65 @@ export function VoiceSession({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
 
-  function speak(text: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = avatar.tts_lang;
-    utter.rate = avatar.tts_rate ?? 0.95;
-    utter.onstart = () => setSpeaking(true);
-    utter.onend = () => setSpeaking(false);
-    utter.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(utter);
-  }
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      micRecorderRef.current?.cancel();
+      stopPlayback();
+    };
+  }, [stopPlayback]);
+
+  const speak = useCallback(
+    async (text: string) => {
+      stopPlayback();
+      setSpeaking(true);
+      const result = await synthesizeSpeech({
+        text,
+        locale,
+        voiceId: locale === "ar" ? undefined : avatar.voice_id,
+        voiceIdAr: locale === "ar" ? avatar.voice_id : undefined,
+      });
+
+      if (result.mode === "elevenlabs" && result.objectUrl) {
+        const audio = new Audio(result.objectUrl);
+        audioRef.current = audio;
+        audio.onended = () => {
+          URL.revokeObjectURL(result.objectUrl!);
+          setSpeaking(false);
+          audioRef.current = null;
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(result.objectUrl!);
+          setSpeaking(false);
+          audioRef.current = null;
+          speakWithBrowser(text, locale, {
+            onstart: () => setSpeaking(true),
+            onend: () => setSpeaking(false),
+            onerror: () => setSpeaking(false),
+          });
+        };
+        try {
+          await audio.play();
+        } catch {
+          URL.revokeObjectURL(result.objectUrl);
+          setSpeaking(false);
+          speakWithBrowser(text, locale, {
+            onstart: () => setSpeaking(true),
+            onend: () => setSpeaking(false),
+            onerror: () => setSpeaking(false),
+          });
+        }
+        return;
+      }
+
+      speakWithBrowser(text, locale, {
+        onstart: () => setSpeaking(true),
+        onend: () => setSpeaking(false),
+        onerror: () => setSpeaking(false),
+      });
+    },
+    [avatar.voice_id, locale, stopPlayback],
+  );
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -153,7 +229,7 @@ export function VoiceSession({
           data.userMessage as SessionMessage,
           data.assistantMessage as SessionMessage,
         ]);
-        speak((data.assistantMessage as SessionMessage).content);
+        void speak((data.assistantMessage as SessionMessage).content);
         setStatus(t("status.listeningNext"));
       } catch {
         setStatus(t("status.networkError"));
@@ -161,19 +237,58 @@ export function VoiceSession({
         setPending(false);
       }
     },
-    [endSession, pending, session.id, t],
+    [endSession, pending, session.id, speak, t],
   );
 
-  function toggleListen() {
+  async function stopAzureListen() {
+    const recorder = micRecorderRef.current;
+    micRecorderRef.current = null;
+    setListening(false);
+    if (!recorder) return;
+
+    setStatus("Transcribing…");
+    try {
+      const wav = await recorder.stop();
+      const form = new FormData();
+      form.append("audio", wav, "turn.wav");
+      form.append("locale", locale);
+      const res = await fetch("/api/voice/transcribe", {
+        method: "POST",
+        body: form,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        transcript?: string;
+        error?: string;
+        code?: string;
+      };
+
+      if (!res.ok) {
+        if (data.code === "STT_UNAVAILABLE" || res.status === 501) {
+          setStatus("Server STT unavailable — switching to browser mic…");
+          startBrowserListen();
+          return;
+        }
+        setStatus(data.error ?? "Transcription failed. Type your turn.");
+        return;
+      }
+
+      const transcript = data.transcript?.trim() ?? "";
+      if (!transcript) {
+        setStatus("No speech detected — try again or type.");
+        return;
+      }
+      setDraft(transcript);
+      setStatus("Captured speech — sending…");
+      void sendMessage(transcript);
+    } catch {
+      setStatus("Mic/transcription error — type your turn below.");
+    }
+  }
+
+  function startBrowserListen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       setStatus(t("status.speechUnavailable"));
-      return;
-    }
-
-    if (listening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setListening(false);
       return;
     }
 
@@ -212,6 +327,30 @@ export function VoiceSession({
     setStatus(t("status.speakNow"));
   }
 
+  async function toggleListen() {
+    if (pending || ending) return;
+
+    if (listening) {
+      if (micRecorderRef.current) {
+        await stopAzureListen();
+        return;
+      }
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    // Prefer Azure STT via recorded WAV; fall back to browser Web Speech.
+    try {
+      const recorder = await startMicWavRecording(12000);
+      micRecorderRef.current = recorder;
+      setListening(true);
+      setStatus("Listening (Azure) — tap mic again to send.");
+    } catch {
+      startBrowserListen();
+    }
+  }
+
   const goals = avatar.ideal_guidelines?.session_goals ?? [];
 
   return (
@@ -232,6 +371,9 @@ export function VoiceSession({
         </Link>
         <div className="flex items-center gap-3">
           <LanguageSwitcher compact />
+          <span className="hidden rounded-full bg-[var(--surface-container-high)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] sm:inline">
+            {locale === "ar" ? "AR voice" : "EN voice"}
+          </span>
           <SessionTimer remaining={remaining} />
           <button
             type="button"
@@ -324,7 +466,7 @@ export function VoiceSession({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              onClick={toggleListen}
+              onClick={() => void toggleListen()}
               disabled={pending || ending}
               className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
                 listening

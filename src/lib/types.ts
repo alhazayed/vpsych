@@ -194,7 +194,10 @@ export type Avatar = {
   rubric: RubricItem[];
   language?: string | null;
   dialect?: string | null;
+  /** ElevenLabs voice id for English / primary TTS */
   voice_id?: string | null;
+  /** ElevenLabs voice id for Arabic TTS */
+  voice_id_ar?: string | null;
   schema_version?: number;
   slug?: string | null;
   default_locale?: string | null;

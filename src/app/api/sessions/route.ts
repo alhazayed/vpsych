@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
-import { MAX_SESSION_SECONDS } from "@/lib/types";
+import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -33,13 +33,23 @@ export async function POST(request: Request) {
 
   const { data: avatar, error: avatarError } = await supabase
     .from("avatars")
-    .select("id, is_active, language, default_locale")
+    .select("id, is_active, language, default_locale, voice_id, voice_id_ar")
     .eq("id", body.avatarId)
     .single();
 
   if (avatarError || !avatar?.is_active) {
     return NextResponse.json({ error: "Avatar not found" }, { status: 404 });
   }
+
+  const typedAvatar = avatar as Pick<
+    Avatar,
+    | "id"
+    | "is_active"
+    | "language"
+    | "default_locale"
+    | "voice_id"
+    | "voice_id_ar"
+  >;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -51,8 +61,8 @@ export async function POST(request: Request) {
     body.locale ??
       body.language ??
       profile?.preferred_language ??
-      avatar.default_locale ??
-      avatar.language,
+      typedAvatar.default_locale ??
+      typedAvatar.language,
   );
 
   const { data: session, error } = await supabase
@@ -83,6 +93,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: sysErr.message }, { status: 500 });
   }
 
-  // Keep existing API contract: { sessionId } only.
-  return NextResponse.json({ sessionId: session.id });
+  return NextResponse.json({
+    sessionId: session.id,
+    language: sessionLanguage,
+  });
 }
