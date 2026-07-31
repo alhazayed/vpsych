@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { legacyColumnsFromProfile } from "@/lib/voice/registry";
+import {
+  clearLegacyColumnsFromProfile,
+  coerceVoiceProfile,
+  legacyColumnsFromProfile,
+} from "@/lib/voice/registry";
 import type { VoiceProfile } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -9,6 +13,7 @@ type Params = { params: Promise<{ id: string }> };
  * Admin: assign (or clear) a voice_profile on an avatar.
  * Body: { voice_profile_id: string | null }
  * Syncs legacy voice_id / voice_id_ar for backward compatibility.
+ * Unassign clears the legacy column synced from the previous profile.
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { id: avatarId } = await params;
@@ -42,7 +47,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const voiceProfileId = body.voice_profile_id;
 
-  let legacyPatch: { voice_id?: string; voice_id_ar?: string } = {};
+  let legacyPatch: { voice_id?: string | null; voice_id_ar?: string | null } =
+    {};
   if (voiceProfileId) {
     const { data: voice, error: voiceError } = await supabase
       .from("voice_profiles")
@@ -63,6 +69,18 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
     legacyPatch = legacyColumnsFromProfile(voice as VoiceProfile);
+  } else {
+    const { data: current } = await supabase
+      .from("avatars")
+      .select("voice_profile_id, voice_profile:voice_profiles(*)")
+      .eq("id", avatarId)
+      .maybeSingle();
+    const previous = coerceVoiceProfile(
+      current?.voice_profile as VoiceProfile | VoiceProfile[] | null,
+    );
+    if (previous) {
+      legacyPatch = clearLegacyColumnsFromProfile(previous);
+    }
   }
 
   const { data, error } = await supabase

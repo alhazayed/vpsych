@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clearLegacyColumnsFromProfile,
   coerceVoiceProfile,
   isActiveVoiceProfile,
   legacyColumnsFromProfile,
@@ -117,5 +118,20 @@ describe("legacyColumnsFromProfile", () => {
         voice_id: "en-voice",
       }),
     ).toEqual({ voice_id: "en-voice" });
+  });
+});
+
+describe("clearLegacyColumnsFromProfile", () => {
+  it("nulls the language-specific legacy column on unassign", () => {
+    expect(clearLegacyColumnsFromProfile(amira)).toEqual({
+      voice_id_ar: null,
+    });
+    expect(
+      clearLegacyColumnsFromProfile({
+        ...amira,
+        language: "en",
+        voice_id: "en-voice",
+      }),
+    ).toEqual({ voice_id: null });
   });
 });

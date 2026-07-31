@@ -121,12 +121,27 @@ export function projectAvatarVoiceFields(avatar: Avatar): {
 
 /** Sync denormalized legacy columns when assigning a profile (admin). */
 export function legacyColumnsFromProfile(profile: VoiceProfile): {
-  voice_id?: string;
-  voice_id_ar?: string;
+  voice_id?: string | null;
+  voice_id_ar?: string | null;
 } {
   const lang = normalizeSpeechLocale(profile.language);
   if (lang === "ar") {
     return { voice_id_ar: profile.voice_id };
   }
   return { voice_id: profile.voice_id };
+}
+
+/**
+ * Clear the legacy column that was synced from a previously assigned profile.
+ * Lets TTS fall back to env defaults after admin unassign.
+ */
+export function clearLegacyColumnsFromProfile(profile: VoiceProfile): {
+  voice_id?: string | null;
+  voice_id_ar?: string | null;
+} {
+  const lang = normalizeSpeechLocale(profile.language);
+  if (lang === "ar") {
+    return { voice_id_ar: null };
+  }
+  return { voice_id: null };
 }
