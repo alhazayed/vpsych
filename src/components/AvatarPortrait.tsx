@@ -27,6 +27,7 @@ export function AvatarPortrait({
             src={src}
             alt={name}
             fill
+            sizes="(max-width: 768px) 70vw, 18rem"
             className={`object-cover transition duration-500 ${
               speaking ? "brightness-110" : "brightness-100"
             }`}

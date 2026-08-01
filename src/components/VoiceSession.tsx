@@ -99,6 +99,8 @@ export function VoiceSession({
   const micRecorderRef = useRef<MicRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
+  const pendingRef = useRef(false);
+  const speakGenerationRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const stopPlayback = useCallback(() => {
@@ -172,6 +174,7 @@ export function VoiceSession({
   const speak = useCallback(
     async (text: string) => {
       if (!voiceEnabled) return;
+      const generation = ++speakGenerationRef.current;
       stopPlayback();
       setSpeaking(true);
       await playPatientSpeech({
@@ -183,9 +186,15 @@ export function VoiceSession({
         avatarId: avatar.id,
         audioRef,
         handlers: {
-          onstart: () => setSpeaking(true),
-          onend: () => setSpeaking(false),
-          onerror: () => setSpeaking(false),
+          onstart: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(true);
+          },
+          onend: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(false);
+          },
+          onerror: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(false);
+          },
         },
       });
     },
@@ -204,7 +213,8 @@ export function VoiceSession({
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || pending || endingRef.current) return;
+      if (!trimmed || pendingRef.current || endingRef.current) return;
+      pendingRef.current = true;
       setPending(true);
       setStatus(t("status.patientResponding"));
       setDraft("");
@@ -235,10 +245,11 @@ export function VoiceSession({
       } catch {
         setStatus(t("status.networkError"));
       } finally {
+        pendingRef.current = false;
         setPending(false);
       }
     },
-    [endSession, pending, session.id, speak, t, voiceEnabled],
+    [endSession, session.id, speak, t, voiceEnabled],
   );
 
   async function stopOpenAIListen() {
@@ -248,9 +259,15 @@ export function VoiceSession({
     recognitionRef.current = null;
     setListening(false);
     if (!recorder) return;
+    if (pendingRef.current || endingRef.current) {
+      recorder.cancel();
+      return;
+    }
 
     setStatus(t("status.transcribing"));
+    pendingRef.current = true;
     setPending(true);
+    const generation = ++speakGenerationRef.current;
 
     try {
       const wav = await recorder.stop();
@@ -270,9 +287,15 @@ export function VoiceSession({
           setMessages((prev) => [...prev, userMessage, assistantMessage]);
         },
         speakHandlers: {
-          onstart: () => setSpeaking(true),
-          onend: () => setSpeaking(false),
-          onerror: () => setSpeaking(false),
+          onstart: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(true);
+          },
+          onend: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(false);
+          },
+          onerror: () => {
+            if (speakGenerationRef.current === generation) setSpeaking(false);
+          },
         },
       });
 
@@ -301,6 +324,7 @@ export function VoiceSession({
     } catch {
       setStatus(t("status.micTranscribeError"));
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
