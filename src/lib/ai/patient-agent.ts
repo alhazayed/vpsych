@@ -89,7 +89,8 @@ export async function generatePatientReply(params: {
         { role: "user", content: reinforced },
       ],
       temperature: 0.85,
-      maxCompletionTokens: 220,
+      // Headroom so reasoning-model overhead doesn't starve the visible reply.
+      maxCompletionTokens: 512,
     });
     return result.text.trim() || fallbacks[0]!;
   }
