@@ -64,10 +64,12 @@ export function toOpenAIServiceError(error: unknown): OpenAIServiceError {
   }
 
   if (error instanceof RateLimitError) {
+    // Do not retry 429s at the app layer — retries deepen the rate-limit hole.
+    // Callers (patient-agent) fall through to gpt-4o-mini / gateway / persona.
     return new OpenAIServiceError("OpenAI rate limit exceeded.", {
       code: "OPENAI_RATE_LIMIT",
       status: error.status,
-      retryable: true,
+      retryable: false,
       cause: error,
     });
   }
