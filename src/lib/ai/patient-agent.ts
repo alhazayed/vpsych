@@ -60,12 +60,16 @@ export async function generatePatientReply(params: {
       ? avatar.fallback_replies
       : DEFAULT_FALLBACK_REPLIES;
 
-  if (!hasAnyAiKey()) {
+  const pickFallback = () => {
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
       ) % fallbacks.length;
     return fallbacks[idx]!;
+  };
+
+  if (!hasAnyAiKey()) {
+    return pickFallback();
   }
 
   const prior = history
@@ -81,29 +85,40 @@ export async function generatePatientReply(params: {
     ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
     : userMessage;
 
-  if (preferOpenAiSdk()) {
-    const result = await openAIService.chat({
-      messages: [
-        { role: "system", content: avatar.system_prompt },
-        ...prior,
-        { role: "user", content: reinforced },
-      ],
+  // Degrade gracefully: if the model call fails (rate limit, quota, outage),
+  // return a persona fallback instead of hard-failing the whole turn. This
+  // mirrors assessSession's behavior and keeps the session usable.
+  try {
+    if (preferOpenAiSdk()) {
+      const result = await openAIService.chat({
+        messages: [
+          { role: "system", content: avatar.system_prompt },
+          ...prior,
+          { role: "user", content: reinforced },
+        ],
+        temperature: 0.85,
+        // Headroom so reasoning-model overhead doesn't starve the visible reply.
+        maxCompletionTokens: 512,
+      });
+      return result.text.trim() || pickFallback();
+    }
+
+    const messages = [...prior, { role: "user" as const, content: reinforced }];
+
+    const { text } = await generateText({
+      model: gatewayModelId(),
+      system: avatar.system_prompt,
+      messages,
       temperature: 0.85,
-      // Headroom so reasoning-model overhead doesn't starve the visible reply.
-      maxCompletionTokens: 512,
+      maxOutputTokens: 220,
     });
-    return result.text.trim() || fallbacks[0]!;
+
+    return text.trim() || pickFallback();
+  } catch (err) {
+    console.warn(
+      "[patient-agent] AI reply failed; using persona fallback:",
+      err instanceof Error ? err.message : String(err),
+    );
+    return pickFallback();
   }
-
-  const messages = [...prior, { role: "user" as const, content: reinforced }];
-
-  const { text } = await generateText({
-    model: gatewayModelId(),
-    system: avatar.system_prompt,
-    messages,
-    temperature: 0.85,
-    maxOutputTokens: 220,
-  });
-
-  return text.trim() || fallbacks[0]!;
 }

@@ -98,7 +98,7 @@ describe("openai service exports", () => {
   it("omits temperature and sets reasoning_effort for reasoning models", async () => {
     const prev = process.env.OPENAI_API_KEY;
     process.env.OPENAI_API_KEY = "test-key";
-    const create = vi.fn(async (_args: unknown) => ({
+    const create = vi.fn(async () => ({
       choices: [{ message: { content: "hi" } }],
       model: "gpt-5",
     }));
@@ -112,7 +112,10 @@ describe("openai service exports", () => {
       temperature: 0.85,
       maxCompletionTokens: 512,
     });
-    const arg = create.mock.calls[0]![0] as Record<string, unknown>;
+    const arg = (create.mock.calls[0] as unknown[])[0] as Record<
+      string,
+      unknown
+    >;
     expect(arg).not.toHaveProperty("temperature");
     expect(arg.reasoning_effort).toBe("minimal");
     expect(arg.max_completion_tokens).toBe(512);
@@ -123,7 +126,7 @@ describe("openai service exports", () => {
   it("sends temperature (not reasoning_effort) for standard models", async () => {
     const prev = process.env.OPENAI_API_KEY;
     process.env.OPENAI_API_KEY = "test-key";
-    const create = vi.fn(async (_args: unknown) => ({
+    const create = vi.fn(async () => ({
       choices: [{ message: { content: "hi" } }],
       model: "gpt-4o",
     }));
@@ -137,7 +140,10 @@ describe("openai service exports", () => {
       temperature: 0.85,
       maxCompletionTokens: 220,
     });
-    const arg = create.mock.calls[0]![0] as Record<string, unknown>;
+    const arg = (create.mock.calls[0] as unknown[])[0] as Record<
+      string,
+      unknown
+    >;
     expect(arg.temperature).toBe(0.85);
     expect(arg).not.toHaveProperty("reasoning_effort");
     if (prev === undefined) delete process.env.OPENAI_API_KEY;
