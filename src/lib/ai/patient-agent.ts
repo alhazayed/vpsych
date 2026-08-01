@@ -40,7 +40,7 @@ function preferOpenAiSdk(): boolean {
 
 function isRateLimited(err: unknown): boolean {
   if (err instanceof OpenAIServiceError) {
-    return err.code === "RATE_LIMIT" || err.status === 429;
+    return err.code === "OPENAI_RATE_LIMIT" || err.status === 429;
   }
   const msg = err instanceof Error ? err.message : String(err);
   return /rate limit|429|too many requests/i.test(msg);
