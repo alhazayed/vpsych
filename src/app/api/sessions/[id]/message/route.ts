@@ -97,7 +97,12 @@ export async function POST(request: Request, { params }: Params) {
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
-  } catch {
+  } catch (err) {
+    console.error("[sessions/message] patient reply generation failed", {
+      sessionId,
+      language: typed.language,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json(
       { error: "Failed to generate patient reply" },
       { status: 502 },

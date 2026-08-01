@@ -1,4 +1,4 @@
-import { toFile } from "openai";
+import OpenAI, { toFile } from "openai";
 import {
   getOpenAIClient,
   hasOpenAIApiKey,
@@ -12,6 +12,27 @@ export const DEFAULT_OPENAI_CHAT_MODEL = "gpt-5";
 
 /** Default STT model; override with OPENAI_STT_MODEL. */
 export const DEFAULT_OPENAI_STT_MODEL = "gpt-4o-transcribe";
+
+type ReasoningEffort = "minimal" | "low" | "medium" | "high";
+
+/**
+ * Reasoning-family chat models (gpt-5*, o1*, o3*, o4*) reject a non-default
+ * `temperature` (only 1 is allowed) and instead accept `reasoning_effort`.
+ * Sending `temperature` to them returns HTTP 400, which previously surfaced as
+ * a hard "Failed to generate patient reply" (502) on every turn.
+ */
+export function isReasoningModel(model: string): boolean {
+  return /^(gpt-5|o1|o3|o4)/i.test(model.trim());
+}
+
+/** Reasoning effort for reasoning models; `minimal` keeps replies fast + within token budget. */
+function reasoningEffort(): ReasoningEffort {
+  const v = process.env.OPENAI_REASONING_EFFORT?.trim().toLowerCase();
+  if (v === "minimal" || v === "low" || v === "medium" || v === "high") {
+    return v;
+  }
+  return "minimal";
+}
 
 export type ChatMessage = {
   role: "system" | "user" | "assistant" | "developer";
@@ -120,15 +141,25 @@ export const openAIService = {
       try {
         const client = getOpenAIClient();
         const model = chatModelId(params.model);
-        const completion = await client.chat.completions.create({
-          model,
-          messages: params.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          temperature: params.temperature,
-          max_completion_tokens: params.maxCompletionTokens,
-        });
+        const reasoning = isReasoningModel(model);
+        const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
+          {
+            model,
+            messages: params.messages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            max_completion_tokens: params.maxCompletionTokens,
+          };
+        // Only standard models accept a custom temperature. Reasoning models
+        // (gpt-5, o-series) 400 on any temperature != 1, so omit it and steer
+        // them with reasoning_effort instead.
+        if (reasoning) {
+          request.reasoning_effort = reasoningEffort();
+        } else if (params.temperature !== undefined) {
+          request.temperature = params.temperature;
+        }
+        const completion = await client.chat.completions.create(request);
 
         const text = completion.choices[0]?.message?.content?.trim() ?? "";
         return {

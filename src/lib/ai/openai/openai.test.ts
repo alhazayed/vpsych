@@ -1,6 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpenAIServiceError } from "@/lib/ai/openai/errors";
 import { withOpenAIRetry } from "@/lib/ai/openai/retry";
+import { isReasoningModel } from "@/lib/ai/openai/service";
+
+vi.mock("@/lib/ai/openai/client", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/ai/openai/client")
+  >("@/lib/ai/openai/client");
+  return {
+    ...actual,
+    getOpenAIClient: () =>
+      (globalThis as Record<string, unknown>).__openaiMock,
+  };
+});
 
 describe("withOpenAIRetry", () => {
   afterEach(() => {
@@ -72,6 +84,70 @@ describe("openai service exports", () => {
     expect(typeof mod.openAIService.chat).toBe("function");
     expect(typeof mod.openAIService.speechToText).toBe("function");
     expect(typeof mod.openAIService.healthCheck).toBe("function");
+  });
+
+  it("classifies reasoning vs standard models", () => {
+    expect(isReasoningModel("gpt-5")).toBe(true);
+    expect(isReasoningModel("gpt-5-mini")).toBe(true);
+    expect(isReasoningModel("o1-preview")).toBe(true);
+    expect(isReasoningModel("o3-mini")).toBe(true);
+    expect(isReasoningModel("gpt-4o")).toBe(false);
+    expect(isReasoningModel("gpt-4o-mini")).toBe(false);
+  });
+
+  it("omits temperature and sets reasoning_effort for reasoning models", async () => {
+    const prev = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const create = vi.fn(async () => ({
+      choices: [{ message: { content: "hi" } }],
+      model: "gpt-5",
+    }));
+    (globalThis as Record<string, unknown>).__openaiMock = {
+      chat: { completions: { create } },
+    };
+    const { openAIService } = await import("@/lib/ai/openai");
+    await openAIService.chat({
+      model: "gpt-5",
+      messages: [{ role: "user", content: "hello" }],
+      temperature: 0.85,
+      maxCompletionTokens: 512,
+    });
+    const arg = (create.mock.calls[0] as unknown[])[0] as Record<
+      string,
+      unknown
+    >;
+    expect(arg).not.toHaveProperty("temperature");
+    expect(arg.reasoning_effort).toBe("minimal");
+    expect(arg.max_completion_tokens).toBe(512);
+    if (prev === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = prev;
+  });
+
+  it("sends temperature (not reasoning_effort) for standard models", async () => {
+    const prev = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const create = vi.fn(async () => ({
+      choices: [{ message: { content: "hi" } }],
+      model: "gpt-4o",
+    }));
+    (globalThis as Record<string, unknown>).__openaiMock = {
+      chat: { completions: { create } },
+    };
+    const { openAIService } = await import("@/lib/ai/openai");
+    await openAIService.chat({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: "hello" }],
+      temperature: 0.85,
+      maxCompletionTokens: 220,
+    });
+    const arg = (create.mock.calls[0] as unknown[])[0] as Record<
+      string,
+      unknown
+    >;
+    expect(arg.temperature).toBe(0.85);
+    expect(arg).not.toHaveProperty("reasoning_effort");
+    if (prev === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = prev;
   });
 
   it("healthCheck reports unconfigured without key", async () => {
