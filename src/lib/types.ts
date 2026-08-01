@@ -209,6 +209,8 @@ export type Avatar = {
   rubric: RubricItem[];
   language?: string | null;
   dialect?: string | null;
+  /** BCP-47 locales with an authored personality (synced from personalities) */
+  available_locales?: string[] | null;
   /** FK to voice_profiles — preferred TTS resolution path */
   voice_profile_id?: string | null;
   /** Joined voice_profiles row when selected with embed */

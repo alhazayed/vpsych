@@ -252,6 +252,9 @@ export function resolveAvatar(
 }
 
 export function listAvailableLocales(avatar: Avatar): string[] {
+  if (avatar.available_locales?.length) {
+    return [...avatar.available_locales];
+  }
   if ((avatar.schema_version ?? 1) >= 2 && avatar.personalities) {
     return Object.entries(avatar.personalities)
       .filter(([, p]) => isPersonality(p) && p.is_active !== false)
