@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 
@@ -11,7 +12,7 @@ export default async function AvatarsPage() {
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
-      "id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active",
+      "id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales",
     )
     .eq("is_active", true)
     .order("name");
@@ -89,6 +90,21 @@ export default async function AvatarsPage() {
                   {tCommon("active")}
                 </span>
               </div>
+              {localeNativeNames(avatar.available_locales).length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {localeNativeNames(avatar.available_locales).map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-container-high)] px-2.5 py-1 text-[11px] font-semibold text-[var(--on-surface-variant)]"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        translate
+                      </span>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
               <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
                 {(avatar.ideal_guidelines?.session_goals ?? [])
                   .slice(0, 3)

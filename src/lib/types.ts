@@ -220,6 +220,8 @@ export type Avatar = {
   schema_version?: number;
   slug?: string | null;
   default_locale?: string | null;
+  /** BCP-47 locales with an authored personality. Synced from `personalities`. */
+  available_locales?: string[] | null;
   clinical_core?: ClinicalCore | null;
   personalities?: Partial<Record<string, AvatarPersonality>> | null;
   is_active: boolean;
