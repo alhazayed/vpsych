@@ -91,4 +91,41 @@ describe("elevenLabsService", () => {
       elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
     ).rejects.toMatchObject({ code: "TTS_FAILED", status: 502 });
   });
+
+  it("retries with the default premade voice after paid_plan_required", async () => {
+    process.env.ELEVENLABS_API_KEY = "test-key";
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(String(url));
+        if (url.includes("library-voice")) {
+          return new Response(
+            JSON.stringify({
+              detail: {
+                type: "payment_required",
+                code: "paid_plan_required",
+                message: "Free users cannot use library voices via the API.",
+              },
+            }),
+            { status: 402 },
+          );
+        }
+        return new Response(new Uint8Array([9, 9]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+      }),
+    );
+
+    const result = await elevenLabsService.synthesize({
+      text: "Hello",
+      locale: "en",
+      voiceId: "library-voice",
+    });
+    expect(result.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+    expect(calls.length).toBe(2);
+    expect(calls[0]).toContain("library-voice");
+    expect(calls[1]).toContain("21m00Tcm4TlvDq8ikWAM");
+  });
 });

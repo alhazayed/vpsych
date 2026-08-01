@@ -65,12 +65,15 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Explicit locale cookie wins. LanguageSwitcher sets the cookie immediately and
+  // syncs preferred_language asynchronously — never clobber a valid cookie with a
+  // stale profile value (that forced Arabic sessions back to en-US).
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
-  let locale: AppLocale = isAppLocale(cookieLocale)
-    ? cookieLocale
-    : defaultLocale;
+  let locale: AppLocale = defaultLocale;
 
-  if (user) {
+  if (isAppLocale(cookieLocale)) {
+    locale = cookieLocale;
+  } else if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("preferred_language")

@@ -73,6 +73,15 @@ describe("resolveAvatarSpeechVoice", () => {
     expect(result.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
   });
 
+  it("does not use a cross-locale profile even when legacy ids are missing", () => {
+    const result = resolveAvatarSpeechVoice({
+      locale: "en",
+      voiceProfile: amira,
+    });
+    expect(result.source).toBe("env_default");
+    expect(result.voiceId).not.toBe(amira.voice_id);
+  });
+
   it("falls back to env defaults without profile or legacy ids", () => {
     const result = resolveAvatarSpeechVoice({ locale: "en" });
     expect(result.source).toBe("env_default");

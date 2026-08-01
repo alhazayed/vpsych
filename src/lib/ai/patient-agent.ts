@@ -42,6 +42,12 @@ function preferOpenAiSdk(): boolean {
  * Call sites pass a ResolvedAvatar (from resolveAvatar + session.language).
  * HTTP API request/response shapes are unchanged.
  */
+export type PatientReplyResult = {
+  text: string;
+  source: "openai" | "gateway" | "fallback";
+  model?: string;
+};
+
 export async function generatePatientReply(params: {
   avatar: Pick<
     ResolvedAvatar,
@@ -54,18 +60,35 @@ export async function generatePatientReply(params: {
   history: Pick<SessionMessage, "role" | "content">[];
   userMessage: string;
 }): Promise<string> {
+  const result = await generatePatientReplyDetailed(params);
+  return result.text;
+}
+
+/** Same as generatePatientReply but exposes provider/source for observability. */
+export async function generatePatientReplyDetailed(params: {
+  avatar: Pick<
+    ResolvedAvatar,
+    | "name"
+    | "disorder"
+    | "system_prompt"
+    | "fallback_replies"
+    | "per_turn_reinforcement"
+  >;
+  history: Pick<SessionMessage, "role" | "content">[];
+  userMessage: string;
+}): Promise<PatientReplyResult> {
   const { avatar, history, userMessage } = params;
   const fallbacks =
     avatar.fallback_replies?.length > 0
       ? avatar.fallback_replies
       : DEFAULT_FALLBACK_REPLIES;
 
-  const pickFallback = () => {
+  const pickFallback = (): PatientReplyResult => {
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
       ) % fallbacks.length;
-    return fallbacks[idx]!;
+    return { text: fallbacks[idx]!, source: "fallback" };
   };
 
   if (!hasAnyAiKey()) {
@@ -100,20 +123,29 @@ export async function generatePatientReply(params: {
         // Headroom so reasoning-model overhead doesn't starve the visible reply.
         maxCompletionTokens: 512,
       });
-      return result.text.trim() || pickFallback();
+      const text = result.text.trim();
+      if (!text) return pickFallback();
+      return {
+        text,
+        source: "openai",
+        model: result.model,
+      };
     }
 
     const messages = [...prior, { role: "user" as const, content: reinforced }];
+    const model = gatewayModelId();
 
     const { text } = await generateText({
-      model: gatewayModelId(),
+      model,
       system: avatar.system_prompt,
       messages,
       temperature: 0.85,
       maxOutputTokens: 220,
     });
 
-    return text.trim() || pickFallback();
+    const trimmed = text.trim();
+    if (!trimmed) return pickFallback();
+    return { text: trimmed, source: "gateway", model };
   } catch (err) {
     console.warn(
       "[patient-agent] AI reply failed; using persona fallback:",
