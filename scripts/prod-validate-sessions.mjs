@@ -565,7 +565,13 @@ try {
     await warm.close();
   }
 
-  for (const scenario of scenarios) {
+  for (let i = 0; i < scenarios.length; i++) {
+    const scenario = scenarios[i];
+    if (i > 0) {
+      // Give OpenAI rate-limit windows time to recover between scenarios.
+      console.log("\n… cooling down 20s before next scenario");
+      await sleep(20000);
+    }
     console.log(`\n=== Running ${scenario.id} ===`);
     const result = await runScenario(browser, scenario);
     report.scenarios.push({
