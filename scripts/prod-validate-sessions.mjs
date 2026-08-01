@@ -16,8 +16,8 @@ const ADMIN = {
   email: "audit.admin@vpsych.dev",
   password: "AuditTest!2026Aa",
 };
-const OUT = "/opt/cursor/artifacts/prod-validation";
-const SHOTS = "/opt/cursor/artifacts/screenshots/prod";
+const OUT = process.env.VPSYCH_OUT || "/opt/cursor/artifacts/prod-validation";
+const SHOTS = process.env.VPSYCH_SHOTS || "/opt/cursor/artifacts/screenshots/prod";
 
 const FALLBACK_EN = [
   "I'm not sure how to answer that",

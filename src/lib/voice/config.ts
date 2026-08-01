@@ -2,8 +2,10 @@
 
 export type SessionSpeechLocale = "en" | "ar";
 
-export const DEFAULT_ELEVENLABS_VOICE_EN = "21m00Tcm4TlvDq8ikWAM"; // Rachel
-export const DEFAULT_ELEVENLABS_VOICE_AR = "XB0fDUnXU5powFXDhCwa"; // Charlotte (multilingual)
+// Premade voices verified to work on the current ElevenLabs API key.
+// Many classic defaults (Rachel, Charlotte, Sam) now return paid_plan_required.
+export const DEFAULT_ELEVENLABS_VOICE_EN = "EXAVITQu4vr4xnSDxMaL"; // Bella
+export const DEFAULT_ELEVENLABS_VOICE_AR = "pNInz6obpgDQGcFmaJgB"; // Adam (multilingual)
 
 export function normalizeSpeechLocale(
   input?: string | null,

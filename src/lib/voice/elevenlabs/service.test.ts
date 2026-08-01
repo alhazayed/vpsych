@@ -123,9 +123,9 @@ describe("elevenLabsService", () => {
       locale: "en",
       voiceId: "library-voice",
     });
-    expect(result.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+    expect(result.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
     expect(calls.length).toBe(2);
     expect(calls[0]).toContain("library-voice");
-    expect(calls[1]).toContain("21m00Tcm4TlvDq8ikWAM");
+    expect(calls[1]).toContain("EXAVITQu4vr4xnSDxMaL");
   });
 });

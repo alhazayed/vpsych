@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import { openAIService, hasOpenAIApiKey } from "@/lib/ai/openai";
+import { OpenAIServiceError } from "@/lib/ai/openai/errors";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
 const DEFAULT_FALLBACK_REPLIES = [
@@ -37,11 +38,14 @@ function preferOpenAiSdk(): boolean {
   return hasOpenAIApiKey();
 }
 
-/**
- * Generate a patient reply using the multilingual prompt engine output.
- * Call sites pass a ResolvedAvatar (from resolveAvatar + session.language).
- * HTTP API request/response shapes are unchanged.
- */
+function isRateLimited(err: unknown): boolean {
+  if (err instanceof OpenAIServiceError) {
+    return err.code === "RATE_LIMIT" || err.status === 429;
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  return /rate limit|429|too many requests/i.test(msg);
+}
+
 export type PatientReplyResult = {
   text: string;
   source: "openai" | "gateway" | "fallback";
@@ -108,11 +112,25 @@ export async function generatePatientReplyDetailed(params: {
     ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
     : userMessage;
 
-  // Degrade gracefully: if the model call fails (rate limit, quota, outage),
-  // return a persona fallback instead of hard-failing the whole turn. This
-  // mirrors assessSession's behavior and keeps the session usable.
-  try {
-    if (preferOpenAiSdk()) {
+  const viaGateway = async (): Promise<PatientReplyResult> => {
+    const messages = [...prior, { role: "user" as const, content: reinforced }];
+    const model = gatewayModelId();
+    const { text } = await generateText({
+      model,
+      system: avatar.system_prompt,
+      messages,
+      temperature: 0.85,
+      maxOutputTokens: 220,
+    });
+    const trimmed = text.trim();
+    if (!trimmed) return pickFallback();
+    return { text: trimmed, source: "gateway", model };
+  };
+
+  // Prefer OpenAI GPT-5; on rate-limit / outage fall through to AI Gateway
+  // when configured, then persona fallback so the session stays usable.
+  if (preferOpenAiSdk()) {
+    try {
       const result = await openAIService.chat({
         messages: [
           { role: "system", content: avatar.system_prompt },
@@ -124,28 +142,40 @@ export async function generatePatientReplyDetailed(params: {
         maxCompletionTokens: 512,
       });
       const text = result.text.trim();
-      if (!text) return pickFallback();
+      if (!text) {
+        if (hasGatewayKey()) return viaGateway();
+        return pickFallback();
+      }
       return {
         text,
         source: "openai",
         model: result.model,
       };
+    } catch (err) {
+      console.warn(
+        "[patient-agent] OpenAI chat failed:",
+        err instanceof Error ? err.message : String(err),
+      );
+      if (hasGatewayKey()) {
+        try {
+          if (isRateLimited(err)) {
+            console.warn("[patient-agent] falling back to AI Gateway after rate limit");
+          }
+          return await viaGateway();
+        } catch (gatewayErr) {
+          console.warn(
+            "[patient-agent] AI Gateway also failed; using persona fallback:",
+            gatewayErr instanceof Error ? gatewayErr.message : String(gatewayErr),
+          );
+          return pickFallback();
+        }
+      }
+      return pickFallback();
     }
+  }
 
-    const messages = [...prior, { role: "user" as const, content: reinforced }];
-    const model = gatewayModelId();
-
-    const { text } = await generateText({
-      model,
-      system: avatar.system_prompt,
-      messages,
-      temperature: 0.85,
-      maxOutputTokens: 220,
-    });
-
-    const trimmed = text.trim();
-    if (!trimmed) return pickFallback();
-    return { text: trimmed, source: "gateway", model };
+  try {
+    return await viaGateway();
   } catch (err) {
     console.warn(
       "[patient-agent] AI reply failed; using persona fallback:",
