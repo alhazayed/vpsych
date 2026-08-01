@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import { openAIService, hasOpenAIApiKey } from "@/lib/ai/openai";
+import { isConfiguredSecret } from "@/lib/env";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
 const DEFAULT_FALLBACK_REPLIES = [
@@ -11,7 +12,7 @@ const DEFAULT_FALLBACK_REPLIES = [
 ];
 
 function hasGatewayKey() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
+  return isConfiguredSecret(process.env.AI_GATEWAY_API_KEY);
 }
 
 function hasAnyAiKey() {
@@ -23,18 +24,18 @@ function gatewayModelId() {
 }
 
 /**
- * Prefer the official OpenAI SDK (GPT-5) for the multilingual conversation
- * pipeline when OPENAI_API_KEY is set. Set OPENAI_CHAT_PROVIDER=gateway to
- * force the legacy Vercel AI Gateway path.
+ * Prefer AI Gateway when configured (matches assessment routing).
+ * Set OPENAI_CHAT_PROVIDER=openai to force the OpenAI SDK, or
+ * OPENAI_CHAT_PROVIDER=gateway to force the gateway.
  */
 function preferOpenAiSdk(): boolean {
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
-    return false;
-  }
   if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
     return hasOpenAIApiKey();
   }
-  return hasOpenAIApiKey();
+  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
+    return false;
+  }
+  return hasOpenAIApiKey() && !hasGatewayKey();
 }
 
 /**
@@ -81,28 +82,37 @@ export async function generatePatientReply(params: {
     ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
     : userMessage;
 
-  if (preferOpenAiSdk()) {
-    const result = await openAIService.chat({
-      messages: [
-        { role: "system", content: avatar.system_prompt },
-        ...prior,
-        { role: "user", content: reinforced },
-      ],
+  try {
+    if (preferOpenAiSdk()) {
+      const result = await openAIService.chat({
+        messages: [
+          { role: "system", content: avatar.system_prompt },
+          ...prior,
+          { role: "user", content: reinforced },
+        ],
+        temperature: 0.85,
+        maxCompletionTokens: 220,
+      });
+      return result.text.trim() || fallbacks[0]!;
+    }
+
+    const messages = [...prior, { role: "user" as const, content: reinforced }];
+
+    const { text } = await generateText({
+      model: gatewayModelId(),
+      system: avatar.system_prompt,
+      messages,
       temperature: 0.85,
-      maxCompletionTokens: 220,
+      maxOutputTokens: 220,
     });
-    return result.text.trim() || fallbacks[0]!;
+
+    return text.trim() || fallbacks[0]!;
+  } catch {
+    // Provider misconfiguration / outage must not hard-fail the session turn.
+    const idx =
+      Math.abs(
+        userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+      ) % fallbacks.length;
+    return fallbacks[idx]!;
   }
-
-  const messages = [...prior, { role: "user" as const, content: reinforced }];
-
-  const { text } = await generateText({
-    model: gatewayModelId(),
-    system: avatar.system_prompt,
-    messages,
-    temperature: 0.85,
-    maxOutputTokens: 220,
-  });
-
-  return text.trim() || fallbacks[0]!;
 }

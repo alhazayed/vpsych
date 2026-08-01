@@ -1,5 +1,7 @@
 /** Shared voice locale + provider defaults for STT/TTS. */
 
+import { isConfiguredSecret } from "@/lib/env";
+
 export type SessionSpeechLocale = "en" | "ar";
 
 export const DEFAULT_ELEVENLABS_VOICE_EN = "21m00Tcm4TlvDq8ikWAM"; // Rachel
@@ -48,10 +50,11 @@ export function previewSampleText(locale: SessionSpeechLocale): string {
 
 export function hasAzureSpeech(): boolean {
   return Boolean(
-    process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION,
+    isConfiguredSecret(process.env.AZURE_SPEECH_KEY) &&
+      process.env.AZURE_SPEECH_REGION?.trim(),
   );
 }
 
 export function hasElevenLabs(): boolean {
-  return Boolean(process.env.ELEVENLABS_API_KEY);
+  return isConfiguredSecret(process.env.ELEVENLABS_API_KEY);
 }

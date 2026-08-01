@@ -7,6 +7,7 @@ import {
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
 import { hasOpenAIApiKey, openAIService } from "@/lib/ai/openai";
+import { isConfiguredSecret } from "@/lib/env";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -27,7 +28,7 @@ const assessmentSchema = z.object({
 });
 
 function hasGatewayKey() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
+  return isConfiguredSecret(process.env.AI_GATEWAY_API_KEY);
 }
 
 function hasAiKey() {

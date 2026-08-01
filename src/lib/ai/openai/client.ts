@@ -1,10 +1,11 @@
 import OpenAI from "openai";
+import { isConfiguredSecret } from "@/lib/env";
 
 let client: OpenAI | null = null;
 
-/** True when OPENAI_API_KEY is present in the environment. */
+/** True when OPENAI_API_KEY is present and not a placeholder. */
 export function hasOpenAIApiKey(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return isConfiguredSecret(process.env.OPENAI_API_KEY);
 }
 
 /**
