@@ -49,10 +49,20 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
+  const isApi = path.startsWith("/api/");
+  const isHealthApi = path.startsWith("/api/health/");
   const isPublic =
-    path === "/" || isAuthPage || path.startsWith("/auth/");
+    path === "/" ||
+    isAuthPage ||
+    path.startsWith("/auth/") ||
+    isHealthApi;
 
   if (!user && !isPublic) {
+    // API clients expect JSON 401 — not an HTML login redirect
+    // (fetch follows redirects and would treat login HTML as success).
+    if (isApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
