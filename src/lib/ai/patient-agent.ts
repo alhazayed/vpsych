@@ -127,45 +127,62 @@ export async function generatePatientReplyDetailed(params: {
     return { text: trimmed, source: "gateway", model };
   };
 
-  // Prefer OpenAI GPT-5; on rate-limit / outage fall through to AI Gateway
-  // when configured, then persona fallback so the session stays usable.
+  const viaOpenAi = async (model?: string): Promise<PatientReplyResult> => {
+    const result = await openAIService.chat({
+      messages: [
+        { role: "system", content: avatar.system_prompt },
+        ...prior,
+        { role: "user", content: reinforced },
+      ],
+      temperature: 0.85,
+      // Headroom so reasoning-model overhead doesn't starve the visible reply.
+      maxCompletionTokens: 512,
+      model,
+    });
+    const text = result.text.trim();
+    if (!text) return pickFallback();
+    return {
+      text,
+      source: "openai",
+      model: result.model,
+    };
+  };
+
+  // Prefer OpenAI GPT-5; on rate-limit try gpt-4o-mini (often separate quota),
+  // then AI Gateway when configured, then persona fallback.
   if (preferOpenAiSdk()) {
     try {
-      const result = await openAIService.chat({
-        messages: [
-          { role: "system", content: avatar.system_prompt },
-          ...prior,
-          { role: "user", content: reinforced },
-        ],
-        temperature: 0.85,
-        // Headroom so reasoning-model overhead doesn't starve the visible reply.
-        maxCompletionTokens: 512,
-      });
-      const text = result.text.trim();
-      if (!text) {
-        if (hasGatewayKey()) return viaGateway();
-        return pickFallback();
-      }
-      return {
-        text,
-        source: "openai",
-        model: result.model,
-      };
+      return await viaOpenAi();
     } catch (err) {
       console.warn(
         "[patient-agent] OpenAI chat failed:",
         err instanceof Error ? err.message : String(err),
       );
+
+      if (isRateLimited(err)) {
+        try {
+          console.warn(
+            "[patient-agent] retrying with gpt-4o-mini after rate limit",
+          );
+          return await viaOpenAi("gpt-4o-mini");
+        } catch (miniErr) {
+          console.warn(
+            "[patient-agent] gpt-4o-mini also failed:",
+            miniErr instanceof Error ? miniErr.message : String(miniErr),
+          );
+        }
+      }
+
       if (hasGatewayKey()) {
         try {
-          if (isRateLimited(err)) {
-            console.warn("[patient-agent] falling back to AI Gateway after rate limit");
-          }
+          console.warn("[patient-agent] falling back to AI Gateway");
           return await viaGateway();
         } catch (gatewayErr) {
           console.warn(
             "[patient-agent] AI Gateway also failed; using persona fallback:",
-            gatewayErr instanceof Error ? gatewayErr.message : String(gatewayErr),
+            gatewayErr instanceof Error
+              ? gatewayErr.message
+              : String(gatewayErr),
           );
           return pickFallback();
         }

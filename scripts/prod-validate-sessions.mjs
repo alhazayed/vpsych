@@ -402,8 +402,11 @@ async function runScenario(browser, scenario) {
       patientReplies.length > 0 &&
       patientReplies.every((t) => looksLikeFallback(t));
     const aiLive = aiSources.some((s) => s === "openai" || s === "gateway");
-    result.checks.likelyLiveModel =
-      (patientReplies.length > 0 && !fallbackOnly) || aiLive;
+    // Require explicit provider signal when available; otherwise heuristic.
+    result.checks.likelyLiveModel = aiSources.length
+      ? aiLive
+      : patientReplies.length > 0 && !fallbackOnly;
+    result.checks.aiProviderLive = aiLive;
     if (scenario.locale === "ar") {
       result.checks.arabicReply = hasArabic(joined);
     } else {
