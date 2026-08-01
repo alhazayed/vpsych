@@ -42,6 +42,30 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const { data: alreadyHasReport, error: hasErr } = await supabase.rpc(
+    "session_has_report",
+    { p_session_id: sessionId },
+  );
+  if (hasErr) {
+    return NextResponse.json({ error: hasErr.message }, { status: 500 });
+  }
+  if (alreadyHasReport) {
+    return NextResponse.json({ ok: true, alreadyExists: true });
+  }
+
+  // Fail fast before mutating session status or calling assessment when the
+  // server cannot persist a report (avoids completed sessions with no report).
+  const admin = createServiceClient();
+  if (!admin && !getReportWriteKey()) {
+    return NextResponse.json(
+      {
+        error:
+          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
+      },
+      { status: 500 },
+    );
+  }
+
   if (typed.status === "active") {
     const now = new Date();
     const elapsedSec = Math.floor(
@@ -61,17 +85,6 @@ export async function POST(_request: Request, { params }: Params) {
     }
     typed.status = expired ? "expired" : "completed";
     typed.ended_at = now.toISOString();
-  }
-
-  const { data: alreadyHasReport, error: hasErr } = await supabase.rpc(
-    "session_has_report",
-    { p_session_id: sessionId },
-  );
-  if (hasErr) {
-    return NextResponse.json({ error: hasErr.message }, { status: 500 });
-  }
-  if (alreadyHasReport) {
-    return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
   const { data: messages } = await supabase
@@ -120,7 +133,6 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  const admin = createServiceClient();
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")
@@ -146,16 +158,6 @@ export async function POST(_request: Request, { params }: Params) {
       ok: true,
       reportId: inserted?.id,
     });
-  }
-
-  if (!getReportWriteKey()) {
-    return NextResponse.json(
-      {
-        error:
-          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
-      },
-      { status: 500 },
-    );
   }
 
   let sig: string;
