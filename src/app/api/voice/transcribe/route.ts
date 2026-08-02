@@ -7,13 +7,18 @@ import {
 } from "@/lib/ai/openai";
 import { rateLimit } from "@/lib/rate-limit";
 import {
+  audioTooLargeError,
+  audioTypeNotAllowedError,
   emptyAudioError,
   guessAudioExtension,
+  isAllowedSttMime,
+  MAX_STT_AUDIO_BYTES,
   notConfiguredError,
   openAISpeechLanguage,
   speechLocaleTag,
   type TranscribeSuccess,
 } from "@/lib/voice/stt";
+import { sanitizeProviderError } from "@/lib/safe-client-error";
 
 /**
  * OpenAI Speech-to-Text — primary (and only server) STT pipeline.
@@ -65,27 +70,19 @@ export async function POST(request: Request) {
     );
   }
 
-  // Cap upload size to limit STT cost / DoS (10 MiB).
-  const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
-  if (audio.size > MAX_AUDIO_BYTES) {
+  if (audio.size > MAX_STT_AUDIO_BYTES) {
+    const err = audioTooLargeError();
     return NextResponse.json(
-      {
-        error: "Audio too large (max 10MB)",
-        code: "AUDIO_TOO_LARGE",
-      },
-      { status: 413 },
+      { error: err.error, code: err.code },
+      { status: err.status },
     );
   }
 
-  const mime = (audio.type || "audio/wav").toLowerCase();
-  const allowedMime =
-    mime.startsWith("audio/") ||
-    mime === "application/octet-stream" ||
-    mime === "video/webm";
-  if (!allowedMime) {
+  if (!isAllowedSttMime(audio.type || "")) {
+    const err = audioTypeNotAllowedError();
     return NextResponse.json(
-      { error: "Unsupported audio type", code: "AUDIO_TYPE_UNSUPPORTED" },
-      { status: 415 },
+      { error: err.error, code: err.code },
+      { status: err.status },
     );
   }
 
@@ -107,33 +104,31 @@ export async function POST(request: Request) {
 
     return NextResponse.json(body);
   } catch (error) {
+    console.warn(
+      "[stt]",
+      error instanceof Error ? error.message : String(error),
+    );
     const mapped =
       error instanceof OpenAIServiceError
-        ? error
-        : new OpenAIServiceError("OpenAI STT failed", {
-            code: "OPENAI_UNKNOWN",
-            kind: "unknown",
+        ? {
+            error: "Speech transcription failed",
+            code: error.code || "OPENAI_STT_FAILED",
+            status:
+              error.status && error.status >= 400 && error.status < 600
+                ? error.status
+                : 502,
+          }
+        : {
+            ...sanitizeProviderError(error, {
+              code: "OPENAI_STT_FAILED",
+              fallback: "Speech transcription failed",
+            }),
             status: 502,
-            retryable: false,
-          });
-
-    console.error("[voice/transcribe] STT failed", {
-      code: mapped.code,
-      status: mapped.status,
-      message: mapped.message,
-    });
+          };
 
     return NextResponse.json(
-      {
-        error: "Transcription failed",
-        code: mapped.code || "OPENAI_STT_FAILED",
-      },
-      {
-        status:
-          mapped.status && mapped.status >= 400 && mapped.status < 600
-            ? mapped.status
-            : 502,
-      },
+      { error: mapped.error, code: mapped.code },
+      { status: mapped.status },
     );
   }
 }

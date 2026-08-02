@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { rateLimit } from "@/lib/rate-limit";
@@ -58,14 +59,7 @@ export async function POST(_request: Request, { params }: Params) {
       .eq("id", sessionId);
 
     if (updateError) {
-      console.error("[sessions/end] status update failed", {
-        sessionId,
-        error: updateError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to end session" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
     typed.status = expired ? "expired" : "completed";
     typed.ended_at = now.toISOString();
@@ -76,14 +70,7 @@ export async function POST(_request: Request, { params }: Params) {
     { p_session_id: sessionId },
   );
   if (hasErr) {
-    console.error("[sessions/end] session_has_report failed", {
-      sessionId,
-      error: hasErr.message,
-    });
-    return NextResponse.json(
-      { error: "Failed to check report status" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: hasErr.message }, { status: 500 });
   }
   if (alreadyHasReport) {
     return NextResponse.json({ ok: true, alreadyExists: true });
@@ -146,9 +133,8 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // ACE persistence requires service role (learner score/cert RLS is write-locked).
-  const admin = createServiceClient();
-  const ace = await runAceAfterAssessment(admin ?? supabase, {
+  // Adaptive Curriculum Engine — update learner competencies + next case
+  const ace = await runAceAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,
@@ -160,6 +146,7 @@ export async function POST(_request: Request, { params }: Params) {
     timeLimitSec: typed.max_duration_sec,
   });
 
+  const admin = createServiceClient();
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")
@@ -184,14 +171,8 @@ export async function POST(_request: Request, { params }: Params) {
           aiErrorKind: assessment.errorKind ?? null,
         });
       }
-      console.error("[sessions/end] report insert failed", {
-        sessionId,
-        error: insertError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to save report" },
-        { status: 500 },
-      );
+      console.warn("[session-end] report insert:", insertError.message);
+      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
     }
 
     return NextResponse.json(
@@ -223,9 +204,11 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   if (!getReportWriteKey()) {
-    console.error("[sessions/end] missing report write configuration");
     return NextResponse.json(
-      { error: "Server misconfigured" },
+      {
+        error:
+          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
+      },
       { status: 500 },
     );
   }
@@ -239,8 +222,9 @@ export async function POST(_request: Request, { params }: Params) {
       excerptsJson,
     });
   } catch (e) {
+    console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Signing failed" },
+      { error: "Report signing failed" },
       { status: 500 },
     );
   }
@@ -257,14 +241,8 @@ export async function POST(_request: Request, { params }: Params) {
   );
 
   if (rpcError) {
-    console.error("[sessions/end] create_session_report failed", {
-      sessionId,
-      error: rpcError.message,
-    });
-    return NextResponse.json(
-      { error: "Failed to save report" },
-      { status: 500 },
-    );
+    console.warn("[session-end] report rpc:", rpcError.message);
+    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
   }
 
   const privileged = createServiceClient();

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiAdmin } from "@/lib/api-auth";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import {
   listBuiltinPresets,
   findPresetById,
@@ -7,31 +8,10 @@ import {
 } from "@/lib/instructor-presets";
 import { validateInstructorPreset } from "@/lib/instructor-presets/validation";
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profile?.role !== "admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { supabase, user };
-}
-
-export async function GET() {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
-  const { supabase } = auth as Awaited<ReturnType<typeof requireAdmin>> & {
-    supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>;
-  };
+export async function GET(request: Request) {
+  const auth = await requireApiAdmin(request);
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data, error } = await supabase
     .from("instructor_presets")
@@ -52,12 +32,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
-  const { supabase, user } = auth as {
-    supabase: Awaited<ReturnType<typeof createClient>>;
-    user: { id: string };
-  };
+  const auth = await requireApiAdmin(request);
+  if (!auth.ok) return auth.response;
+  const { supabase, user } = auth;
 
   const body = (await request.json()) as {
     action?:
@@ -101,7 +78,8 @@ export async function POST(request: Request) {
       })
       .eq("id", body.presetId);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   }
@@ -289,7 +267,8 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true, preset: imported });
   }
@@ -319,7 +298,8 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true, preset: data });
   }
@@ -427,7 +407,8 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
 
     await supabase.from("preset_objectives").insert({
