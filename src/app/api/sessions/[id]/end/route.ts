@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { rateLimit } from "@/lib/rate-limit";
@@ -168,10 +169,10 @@ export async function POST(_request: Request, { params }: Params) {
           aiSource: assessment.aiSource,
           aiModel: assessment.model ?? null,
           aiErrorKind: assessment.errorKind ?? null,
-          aiFailureDetail: assessment.failureDetail ?? null,
         });
       }
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      console.warn("[session-end] report insert:", insertError.message);
+      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
     }
 
     return NextResponse.json(
@@ -182,7 +183,6 @@ export async function POST(_request: Request, { params }: Params) {
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
         aiErrorKind: assessment.errorKind ?? null,
-        aiFailureDetail: assessment.failureDetail ?? null,
         adaptive: ace.ok
           ? {
               learnerId: ace.learnerId,
@@ -222,8 +222,9 @@ export async function POST(_request: Request, { params }: Params) {
       excerptsJson,
     });
   } catch (e) {
+    console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Signing failed" },
+      { error: "Report signing failed" },
       { status: 500 },
     );
   }
@@ -240,7 +241,8 @@ export async function POST(_request: Request, { params }: Params) {
   );
 
   if (rpcError) {
-    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+    console.warn("[session-end] report rpc:", rpcError.message);
+    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
   }
 
   const privileged = createServiceClient();
@@ -259,7 +261,6 @@ export async function POST(_request: Request, { params }: Params) {
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,
-      aiFailureDetail: assessment.failureDetail ?? null,
       adaptive: ace.ok
         ? {
             learnerId: ace.learnerId,

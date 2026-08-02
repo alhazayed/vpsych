@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import { getBuiltinGraph } from "@/lib/cge";
 
 export async function GET(request: Request) {
@@ -75,7 +76,8 @@ export async function PATCH(request: Request) {
       { onConflict: "learner_id,competency_id" },
     );
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   }
@@ -93,7 +95,8 @@ export async function PATCH(request: Request) {
       { onConflict: "learner_id,competency_id" },
     );
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     await supabase.from("cge_mastery_history").insert({
       learner_id: body.learnerId,
@@ -115,7 +118,8 @@ export async function PATCH(request: Request) {
       .eq("learner_id", body.learnerId)
       .eq("competency_id", body.competencyId);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   }
