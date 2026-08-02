@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
 import { requireAdmin } from "@/lib/auth";
+import { logSecurityEvent } from "@/lib/security-audit";
 import type { SessionReport } from "@/lib/types";
 
 type Props = { params: Promise<{ sessionId: string }> };
@@ -31,6 +32,13 @@ export default async function AdminReportDetailPage({ params }: Props) {
     .maybeSingle();
 
   if (!report) notFound();
+
+  await logSecurityEvent({
+    action: "admin.report.view",
+    outcome: "success",
+    resourceType: "session_report",
+    resourceId: sessionId,
+  });
 
   const session = report.sessions as unknown as {
     profiles: { display_name: string } | null;

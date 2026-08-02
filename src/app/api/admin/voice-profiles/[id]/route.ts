@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-audit";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,13 @@ export async function PATCH(request: Request, { params }: Params) {
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") {
+    await logSecurityEvent({
+      action: "admin.voice_profile.update",
+      outcome: "denied",
+      resourceType: "voice_profile",
+      resourceId: id,
+      request,
+    });
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -58,6 +66,15 @@ export async function PATCH(request: Request, { params }: Params) {
       { status: 500 },
     );
   }
+
+  await logSecurityEvent({
+    action: "admin.voice_profile.update",
+    outcome: "success",
+    resourceType: "voice_profile",
+    resourceId: id,
+    metadata: { is_active: body.is_active },
+    request,
+  });
 
   return NextResponse.json({ voiceProfile: data });
 }
