@@ -319,7 +319,8 @@
       "errors": {
         "acceptTerms": "Please accept the Terms of Service and Privacy Policy.",
         "passwordMismatch": "Passwords do not match.",
-        "passwordShort": "Password must be at least 6 characters."
+        "passwordShort": "Password must be at least 8 characters.",
+        "passwordWeak": "Password is too weak — add an uppercase letter, a number, or a symbol."
       },
       "checkEmail": "Check your email to confirm your account, then sign in.",
       "creating": "Creating…",

@@ -279,7 +279,10 @@ export async function assessSession(params: {
       console.warn("[assessment]", {
         event: "openai_json_parse_failed",
         model: result.model,
-        textPreview: result.text.slice(0, 240),
+        // Never log model output content — it is derived from session
+        // transcript text and may echo clinical/PHI-adjacent detail. Length
+        // alone is enough to diagnose truncation vs. malformed JSON.
+        textLength: result.text.length,
         message:
           parseErr instanceof Error ? parseErr.message : String(parseErr),
       });

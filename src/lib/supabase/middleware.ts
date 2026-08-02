@@ -15,6 +15,9 @@ function applyLocaleCookie(
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
+    // Never send this cookie over plaintext HTTP once deployed; skip in local
+    // dev where http://localhost has no TLS.
+    secure: process.env.NODE_ENV === "production",
   });
 }
 

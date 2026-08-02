@@ -102,8 +102,15 @@ export default function SignupPage() {
       setError(t("errors.passwordMismatch"));
       return;
     }
-    if (password.length < 6) {
+    // The strength meter is not just cosmetic — enforce it. Length alone
+    // (Supabase Auth's own minimum) is not sufficient for a HIPAA-adjacent
+    // platform; require "good" or "strong" (at least 3 of the 4 checks).
+    if (!checks.length) {
       setError(t("errors.passwordShort"));
+      return;
+    }
+    if (strengthKey === "weak" || strengthKey === "fair") {
+      setError(t("errors.passwordWeak"));
       return;
     }
 
@@ -263,7 +270,7 @@ export default function SignupPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -293,7 +300,7 @@ export default function SignupPage() {
                   <input
                     type={showConfirm ? "text" : "password"}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
