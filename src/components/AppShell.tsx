@@ -33,7 +33,13 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       href: "/learning",
       label: t("adaptiveLearning"),
       icon: "auto_graph",
-      match: (p) => p.startsWith("/learning"),
+      match: (p) => p === "/learning" || p.startsWith("/learning?"),
+    },
+    {
+      href: "/learning/graph",
+      label: t("competencyGraph"),
+      icon: "account_tree",
+      match: (p) => p.startsWith("/learning/graph"),
     },
   ];
 }
@@ -81,6 +87,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       label: t("adaptiveCurriculum"),
       icon: "timeline",
       match: (p) => p.startsWith("/admin/curriculum"),
+    },
+    {
+      href: "/admin/graph",
+      label: t("competencyGraph"),
+      icon: "account_tree",
+      match: (p) => p.startsWith("/admin/graph"),
     },
   ];
 }
@@ -158,6 +170,10 @@ export function AppShell({
       return tShell("pageTitle.instructorPresets");
     if (pathname.startsWith("/admin/curriculum"))
       return tShell("pageTitle.adaptiveCurriculum");
+    if (pathname.startsWith("/admin/graph"))
+      return tShell("pageTitle.competencyGraph");
+    if (pathname.startsWith("/learning/graph"))
+      return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning"))
       return tShell("pageTitle.adaptiveLearning");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");

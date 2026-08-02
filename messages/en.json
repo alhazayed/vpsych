@@ -38,6 +38,7 @@
       "instructorPresets": "Instructor Presets",
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
+      "competencyGraph": "Competency Graph",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -46,6 +47,7 @@
     "patientLibrary": "Patient Library",
     "mySessions": "My Sessions",
     "adaptiveLearning": "My Learning",
+    "competencyGraph": "Competency Graph",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "voiceManagement": "Voice Management",
@@ -58,7 +60,11 @@
   },
   "learning": {
     "title": "Adaptive Learning",
-    "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals."
+    "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals.",
+    "graph": {
+      "title": "Competency Graph",
+      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways."
+    }
   },
   "landing": {
     "nav": {
@@ -512,6 +518,10 @@
     "curriculum": {
       "title": "Adaptive Curriculum Engine",
       "subtitle": "Monitor learner competencies, toggle adaptive mode, set thresholds, and review personalized pathways."
+    },
+    "graph": {
+      "title": "Competency Graph Engine",
+      "subtitle": "Inspect learner and cohort DAGs, lock or unlock competencies, approve mastery, and assign reassessment."
     },
     "voices": {
       "title": "Voice Management",
