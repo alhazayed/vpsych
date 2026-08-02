@@ -39,6 +39,9 @@ export async function POST(request: Request) {
     severity?: "subclinical" | "mild" | "moderate" | "severe";
     /** @deprecated alias for disorderSlug */
     caseId?: string;
+    /** Clinical Scenario Template Engine */
+    templateId?: string;
+    templateSlug?: string;
   };
   if (!body.avatarId) {
     return NextResponse.json({ error: "avatarId required" }, { status: 400 });
@@ -82,6 +85,8 @@ export async function POST(request: Request) {
     difficulty: body.difficulty,
     therapyModality: body.therapyModality,
     severity: body.severity,
+    templateId: body.templateId,
+    templateSlug: body.templateSlug,
   });
 
   if (!caseResult.ok) {
@@ -152,5 +157,7 @@ export async function POST(request: Request) {
     diagnosis: caseResult.snapshot.primary_diagnosis.name,
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
+    templateId: caseResult.snapshot.template?.id ?? null,
+    templateSlug: caseResult.snapshot.template?.slug ?? null,
   });
 }

@@ -58,6 +58,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "biotech",
       match: (p) => p.startsWith("/admin/cases"),
     },
+    {
+      href: "/admin/templates",
+      label: t("scenarioTemplates"),
+      icon: "schema",
+      match: (p) => p.startsWith("/admin/templates"),
+    },
   ];
 }
 
@@ -128,6 +134,8 @@ export function AppShell({
       return tShell("pageTitle.voiceManagement");
     if (pathname.startsWith("/admin/cases"))
       return tShell("pageTitle.caseEngine");
+    if (pathname.startsWith("/admin/templates"))
+      return tShell("pageTitle.scenarioTemplates");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }
