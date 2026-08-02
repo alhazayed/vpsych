@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
+import { clientSafeError } from "@/lib/api-errors";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -82,8 +84,12 @@ export async function POST(request: Request, { params }: Params) {
     .single();
 
   if (userMsgError || !userMsg) {
+    console.error("[sessions/message] user message save failed", {
+      sessionId,
+      error: userMsgError?.message,
+    });
     return NextResponse.json(
-      { error: userMsgError?.message ?? "Failed to save message" },
+      { error: clientSafeError("Failed to save message", userMsgError) },
       { status: 500 },
     );
   }
@@ -121,7 +127,15 @@ export async function POST(request: Request, { params }: Params) {
     errorKind: replyMeta.errorKind ?? null,
   });
 
-  const { data: assistantMsg, error: assistantError } = await supabase.rpc(
+  // Privileged insert — RPC is revoked from authenticated (prevents transcript forge).
+  const privileged = createServiceClient();
+  if (!privileged) {
+    return NextResponse.json(
+      { error: "Server misconfigured" },
+      { status: 500 },
+    );
+  }
+  const { data: assistantMsg, error: assistantError } = await privileged.rpc(
     "insert_assistant_message",
     {
       p_session_id: sessionId,
@@ -130,8 +144,12 @@ export async function POST(request: Request, { params }: Params) {
   );
 
   if (assistantError || !assistantMsg) {
+    console.error("[sessions/message] assistant message save failed", {
+      sessionId,
+      error: assistantError?.message,
+    });
     return NextResponse.json(
-      { error: assistantError?.message ?? "Failed to save reply" },
+      { error: clientSafeError("Failed to save reply", assistantError) },
       { status: 500 },
     );
   }

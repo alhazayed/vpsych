@@ -58,7 +58,14 @@ export async function POST(_request: Request, { params }: Params) {
       .eq("id", sessionId);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      console.error("[sessions/end] status update failed", {
+        sessionId,
+        error: updateError.message,
+      });
+      return NextResponse.json(
+        { error: "Failed to end session" },
+        { status: 500 },
+      );
     }
     typed.status = expired ? "expired" : "completed";
     typed.ended_at = now.toISOString();
@@ -69,7 +76,14 @@ export async function POST(_request: Request, { params }: Params) {
     { p_session_id: sessionId },
   );
   if (hasErr) {
-    return NextResponse.json({ error: hasErr.message }, { status: 500 });
+    console.error("[sessions/end] session_has_report failed", {
+      sessionId,
+      error: hasErr.message,
+    });
+    return NextResponse.json(
+      { error: "Failed to check report status" },
+      { status: 500 },
+    );
   }
   if (alreadyHasReport) {
     return NextResponse.json({ ok: true, alreadyExists: true });
@@ -132,8 +146,9 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // Adaptive Curriculum Engine — update learner competencies + next case
-  const ace = await runAceAfterAssessment(supabase, {
+  // ACE persistence requires service role (learner score/cert RLS is write-locked).
+  const admin = createServiceClient();
+  const ace = await runAceAfterAssessment(admin ?? supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,
@@ -145,7 +160,6 @@ export async function POST(_request: Request, { params }: Params) {
     timeLimitSec: typed.max_duration_sec,
   });
 
-  const admin = createServiceClient();
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")
@@ -168,10 +182,16 @@ export async function POST(_request: Request, { params }: Params) {
           aiSource: assessment.aiSource,
           aiModel: assessment.model ?? null,
           aiErrorKind: assessment.errorKind ?? null,
-          aiFailureDetail: assessment.failureDetail ?? null,
         });
       }
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      console.error("[sessions/end] report insert failed", {
+        sessionId,
+        error: insertError.message,
+      });
+      return NextResponse.json(
+        { error: "Failed to save report" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json(
@@ -182,7 +202,6 @@ export async function POST(_request: Request, { params }: Params) {
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
         aiErrorKind: assessment.errorKind ?? null,
-        aiFailureDetail: assessment.failureDetail ?? null,
         adaptive: ace.ok
           ? {
               learnerId: ace.learnerId,
@@ -204,11 +223,9 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   if (!getReportWriteKey()) {
+    console.error("[sessions/end] missing report write configuration");
     return NextResponse.json(
-      {
-        error:
-          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
-      },
+      { error: "Server misconfigured" },
       { status: 500 },
     );
   }
@@ -240,7 +257,14 @@ export async function POST(_request: Request, { params }: Params) {
   );
 
   if (rpcError) {
-    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+    console.error("[sessions/end] create_session_report failed", {
+      sessionId,
+      error: rpcError.message,
+    });
+    return NextResponse.json(
+      { error: "Failed to save report" },
+      { status: 500 },
+    );
   }
 
   const privileged = createServiceClient();
@@ -259,7 +283,6 @@ export async function POST(_request: Request, { params }: Params) {
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,
-      aiFailureDetail: assessment.failureDetail ?? null,
       adaptive: ace.ok
         ? {
             learnerId: ace.learnerId,

@@ -65,6 +65,30 @@ export async function POST(request: Request) {
     );
   }
 
+  // Cap upload size to limit STT cost / DoS (10 MiB).
+  const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
+  if (audio.size > MAX_AUDIO_BYTES) {
+    return NextResponse.json(
+      {
+        error: "Audio too large (max 10MB)",
+        code: "AUDIO_TOO_LARGE",
+      },
+      { status: 413 },
+    );
+  }
+
+  const mime = (audio.type || "audio/wav").toLowerCase();
+  const allowedMime =
+    mime.startsWith("audio/") ||
+    mime === "application/octet-stream" ||
+    mime === "video/webm";
+  if (!allowedMime) {
+    return NextResponse.json(
+      { error: "Unsupported audio type", code: "AUDIO_TYPE_UNSUPPORTED" },
+      { status: 415 },
+    );
+  }
+
   try {
     const ext = guessAudioExtension(audio.type || "audio/wav");
     const result = await openAIService.speechToText({
@@ -86,19 +110,22 @@ export async function POST(request: Request) {
     const mapped =
       error instanceof OpenAIServiceError
         ? error
-        : new OpenAIServiceError(
-            error instanceof Error ? error.message : "OpenAI STT failed",
-            {
-              code: "OPENAI_UNKNOWN",
-              kind: "unknown",
-              status: 502,
-              retryable: false,
-            },
-          );
+        : new OpenAIServiceError("OpenAI STT failed", {
+            code: "OPENAI_UNKNOWN",
+            kind: "unknown",
+            status: 502,
+            retryable: false,
+          });
+
+    console.error("[voice/transcribe] STT failed", {
+      code: mapped.code,
+      status: mapped.status,
+      message: mapped.message,
+    });
 
     return NextResponse.json(
       {
-        error: mapped.message,
+        error: "Transcription failed",
         code: mapped.code || "OPENAI_STT_FAILED",
       },
       {
