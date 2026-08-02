@@ -36,6 +36,8 @@
       "caseEngine": "Case Engine",
       "scenarioTemplates": "Scenario Templates",
       "instructorPresets": "Instructor Presets",
+      "adaptiveCurriculum": "Adaptive Curriculum",
+      "adaptiveLearning": "My Learning",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -43,14 +45,20 @@
   "nav": {
     "patientLibrary": "Patient Library",
     "mySessions": "My Sessions",
+    "adaptiveLearning": "My Learning",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "voiceManagement": "Voice Management",
     "caseEngine": "Case Engine",
     "scenarioTemplates": "Scenario Templates",
     "instructorPresets": "Instructor Presets",
+    "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
+  },
+  "learning": {
+    "title": "Adaptive Learning",
+    "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals."
   },
   "landing": {
     "nav": {
@@ -500,6 +508,10 @@
       "subtitle": "Configure learning objectives and learner level. The engine selects diagnosis, template, and generates an adaptive standardized patient.",
       "library": "Preset library",
       "preview": "Generate case / report preview"
+    },
+    "curriculum": {
+      "title": "Adaptive Curriculum Engine",
+      "subtitle": "Monitor learner competencies, toggle adaptive mode, set thresholds, and review personalized pathways."
     },
     "voices": {
       "title": "Voice Management",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { assessSession } from "@/lib/ai/assessment";
+import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
@@ -131,6 +132,19 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
+  // Adaptive Curriculum Engine — update learner competencies + next case
+  const ace = await runAceAfterAssessment(supabase, {
+    userId: user.id,
+    sessionId,
+    overall: assessment.scores.overall,
+    items: assessment.scores.items,
+    language: assessment.language ?? resolved.locale,
+    diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+    narrative,
+    durationSec,
+    timeLimitSec: typed.max_duration_sec,
+  });
+
   const admin = createServiceClient();
   if (admin) {
     const { data: inserted, error: insertError } = await admin
@@ -169,6 +183,13 @@ export async function POST(_request: Request, { params }: Params) {
         aiModel: assessment.model ?? null,
         aiErrorKind: assessment.errorKind ?? null,
         aiFailureDetail: assessment.failureDetail ?? null,
+        adaptive: ace.ok
+          ? {
+              learnerId: ace.learnerId,
+              nextCase: ace.nextCase,
+              coachSummary: ace.coach?.supervisor_feedback ?? null,
+            }
+          : null,
       },
       {
         headers: {
@@ -239,6 +260,13 @@ export async function POST(_request: Request, { params }: Params) {
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,
       aiFailureDetail: assessment.failureDetail ?? null,
+      adaptive: ace.ok
+        ? {
+            learnerId: ace.learnerId,
+            nextCase: ace.nextCase,
+            coachSummary: ace.coach?.supervisor_feedback ?? null,
+          }
+        : null,
     },
     {
       headers: {

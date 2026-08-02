@@ -29,6 +29,12 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       icon: "clinical_notes",
       match: (p) => p.startsWith("/sessions"),
     },
+    {
+      href: "/learning",
+      label: t("adaptiveLearning"),
+      icon: "auto_graph",
+      match: (p) => p.startsWith("/learning"),
+    },
   ];
 }
 
@@ -69,6 +75,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       label: t("instructorPresets"),
       icon: "school",
       match: (p) => p.startsWith("/admin/presets"),
+    },
+    {
+      href: "/admin/curriculum",
+      label: t("adaptiveCurriculum"),
+      icon: "timeline",
+      match: (p) => p.startsWith("/admin/curriculum"),
     },
   ];
 }
@@ -144,6 +156,10 @@ export function AppShell({
       return tShell("pageTitle.scenarioTemplates");
     if (pathname.startsWith("/admin/presets"))
       return tShell("pageTitle.instructorPresets");
+    if (pathname.startsWith("/admin/curriculum"))
+      return tShell("pageTitle.adaptiveCurriculum");
+    if (pathname.startsWith("/learning"))
+      return tShell("pageTitle.adaptiveLearning");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }
