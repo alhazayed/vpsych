@@ -21,7 +21,13 @@
       "Negative findings are encoded as deliberately as positive ones: the exclusions are what make the case examinable.",
       "Each case carries at least one item that is present but sub-threshold, so that a trainee who pattern-matches instead of examining will get it wrong."
     ],
-    "distribution_note": "These files contain clinical training material only. They describe fictional patients; no field refers to a real person."
+    "distribution_note": "These files contain clinical training material only. They describe fictional patients; no field refers to a real person.",
+    "examination": {
+      "date": "2026-08-02",
+      "examiner": "Board-certified psychiatrist — adversarial resident-examination review",
+      "report": "personas/clinical-examination.json",
+      "outcome": "Both diagnoses survived interrogation across DSM-5, ICD-11, differential, risk, trauma, personality, psychosis, substance, sleep, family-history, cultural and emotional domains. Fourteen consistency and localization defects were found and repaired in place. All four personas approved above the 9.5/10 clinical-accuracy bar."
+    }
   },
 
   "cases": [
@@ -52,7 +58,9 @@
         "A hypnagogic experience of hearing her name is a normal variant, not a psychotic symptom",
         "Ruptures present as increased agreeableness and are repaired between sessions by non-attendance"
       ],
-      "changed_from_v1_seed": "Diagnostic code moved from 296.22 / 6A70.1 (single episode) to 296.32 / 6A71.1 (recurrent, current episode moderate), because the expanded history documents a prior major depressive episode at age 20 with full inter-episode remission."
+      "changed_from_v1_seed": "Diagnostic code moved from 296.22 / 6A70.1 (single episode) to 296.32 / 6A71.1 (recurrent, current episode moderate), because the expanded history documents a prior major depressive episode at age 20 with full inter-episode remission.",
+      "examination_status": "APPROVED — diagnosis survived interrogation",
+      "clinical_accuracy": { "en-US": 9.7, "ar-JO": 9.6 }
     },
     {
       "case_id": "VPSY-CASE-002",
@@ -81,7 +89,9 @@
         "450–600 mg of daily caffeine is generating the palpitations that drive the health worry and is routinely never asked about",
         "The non-prescribed benzodiazepine is disclosed only to a therapist who has not moralised about anything else"
       ],
-      "changed_from_v1_seed": "None to the diagnosis. Severity remains moderate; the 'with panic attacks' specifier and the GAD-7 of 15 are new and documented in the case file."
+      "changed_from_v1_seed": "None to the diagnosis. Severity remains moderate; the 'with panic attacks' specifier and the GAD-7 of 15 are new and documented in the case file.",
+      "examination_status": "APPROVED — diagnosis survived interrogation",
+      "clinical_accuracy": { "en-US": 9.7, "ar-JO": 9.6 }
     }
   ],
 
