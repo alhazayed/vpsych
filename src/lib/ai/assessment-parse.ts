@@ -1,16 +1,37 @@
 import { z } from "zod";
 
-/** Coerce model score strings ("4") and clamp to rubric range. */
-export const assessmentSchema = z.object({
+/** Strict schema for AI SDK structured output (Gateway). */
+export const assessmentStructuredSchema = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      score: z.coerce.number().min(0).max(5),
+      score: z.number().min(0).max(5),
       feedback: z.string(),
     }),
   ),
   narrative: z.string(),
-  excerpts: z.array(z.string()).max(5),
+  excerpts: z.array(z.string()),
+});
+
+/**
+ * Lenient model schema for OpenAI text JSON.
+ * GPT often returns >5 excerpts or out-of-range / string scores; rejecting those
+ * previously forced heuristicAssessment for every report.
+ */
+export const assessmentSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      score: z.coerce.number().transform((n) => {
+        if (Number.isNaN(n)) return 0;
+        return Math.min(5, Math.max(0, n));
+      }),
+      feedback: z.string().catch(""),
+    }),
+  ),
+  narrative: z.string(),
+  // Do not .max(5) here — that rejected valid AI JSON. Truncate after parse.
+  excerpts: z.array(z.string()).catch([]),
 });
 
 export type AssessmentModelOutput = z.infer<typeof assessmentSchema>;
@@ -47,5 +68,17 @@ export function extractJsonObject(text: string): unknown {
 
 export function parseAssessmentModelText(text: string): AssessmentModelOutput {
   const parsed = extractJsonObject(text);
-  return assessmentSchema.parse(parsed);
+  const validated = assessmentSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error(
+      `assessment JSON schema mismatch: ${validated.error.issues
+        .slice(0, 3)
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; ")}`,
+    );
+  }
+  return {
+    ...validated.data,
+    excerpts: validated.data.excerpts.slice(0, 5),
+  };
 }

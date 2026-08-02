@@ -39,4 +39,15 @@ describe("assessment JSON parsing", () => {
   it("rejects empty responses", () => {
     expect(() => parseAssessmentModelText("   ")).toThrow(/empty/i);
   });
+
+  it("accepts more than 5 excerpts and truncates", () => {
+    const many = {
+      ...valid,
+      excerpts: ["a", "b", "c", "d", "e", "f", "g"],
+      items: valid.items.map((i) => ({ ...i, score: 9 })),
+    };
+    const out = parseAssessmentModelText(JSON.stringify(many));
+    expect(out.excerpts).toHaveLength(5);
+    expect(out.items.every((i) => i.score === 5)).toBe(true);
+  });
 });

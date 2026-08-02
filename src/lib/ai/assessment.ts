@@ -6,7 +6,7 @@ import {
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
 import {
-  assessmentSchema,
+  assessmentStructuredSchema,
   parseAssessmentModelText,
   type AssessmentModelOutput,
 } from "@/lib/ai/assessment-parse";
@@ -288,7 +288,7 @@ export async function assessSession(params: {
     const model = gatewayModelId();
     const generated = await generateText({
       model,
-      output: Output.object({ schema: assessmentSchema }),
+      output: Output.object({ schema: assessmentStructuredSchema }),
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.3,
