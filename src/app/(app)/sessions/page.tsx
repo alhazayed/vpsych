@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import type { TherapySession } from "@/lib/types";
 import { format } from "date-fns";
 
 export default async function SessionsListPage() {
   const { supabase, user } = await requireProfile();
   const t = await getTranslations("sessions");
+
+  // Abandoned rooms past max_duration_sec should not linger as "active".
+  await expireStaleSessionsForTherapist(supabase, user.id);
+
   const { data: sessions } = await supabase
     .from("sessions")
     .select("id, status, started_at, ended_at, avatars(name, disorder)")
