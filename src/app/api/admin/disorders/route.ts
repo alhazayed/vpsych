@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiAdmin } from "@/lib/api-auth";
 import { getBuiltinCatalog } from "@/lib/case-engine/catalog";
 
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(request: Request) {
+  const auth = await requireApiAdmin(request, {
+    action: "admin.disorders.list",
+    resourceType: "disorders",
+  });
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data: rows, error } = await supabase
     .from("disorders")

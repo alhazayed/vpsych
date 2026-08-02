@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiAdmin } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-audit";
 import {
@@ -19,13 +19,13 @@ type Params = { params: Promise<{ id: string }> };
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { id: avatarId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireApiAdmin(request, {
+    action: "admin.avatar.voice.assign",
+    resourceType: "avatar",
+    resourceId: avatarId,
+  });
+  if (!auth.ok) return auth.response;
+  const { supabase, user } = auth;
 
   const limited = await rateLimit(`admin:${user.id}`, 60, 60 * 60 * 1000);
   if (!limited.ok) {
@@ -33,22 +33,6 @@ export async function PATCH(request: Request, { params }: Params) {
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
       { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
     );
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
-    await logSecurityEvent({
-      action: "admin.avatar.voice.assign",
-      outcome: "denied",
-      resourceType: "avatar",
-      resourceId: avatarId,
-      request,
-    });
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => ({}))) as {
