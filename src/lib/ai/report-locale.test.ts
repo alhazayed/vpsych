@@ -46,6 +46,13 @@ describe("buildExaminerSystemPrompt", () => {
     expect(prompt).toContain("Compose natively in English");
     expect(prompt).not.toContain("ممنوع الترجمة");
   });
+
+  it("treats the transcript as untrusted data (prompt-injection resistance)", () => {
+    const en = buildExaminerSystemPrompt({ ...base, language: "en" });
+    const ar = buildExaminerSystemPrompt({ ...base, language: "ar" });
+    expect(en).toContain("untrusted observational data");
+    expect(ar).toContain("بيانات رصد غير موثوقة");
+  });
 });
 
 describe("heuristicCopy", () => {

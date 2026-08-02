@@ -30,12 +30,40 @@ export type TranscribeFailure = {
   status: number;
 };
 
+/** Max STT upload size (10 MiB). OpenAI allows more; we keep turns bounded. */
+export const MAX_STT_AUDIO_BYTES = 10 * 1024 * 1024;
+
 export function emptyAudioError(): TranscribeFailure {
   return {
     error: "No audio provided.",
     code: "NO_AUDIO",
     status: 400,
   };
+}
+
+export function audioTooLargeError(): TranscribeFailure {
+  return {
+    error: "Audio too large.",
+    code: "AUDIO_TOO_LARGE",
+    status: 413,
+  };
+}
+
+export function audioTypeNotAllowedError(): TranscribeFailure {
+  return {
+    error: "Unsupported audio type.",
+    code: "AUDIO_TYPE",
+    status: 415,
+  };
+}
+
+export function isAllowedSttMime(mimeType: string): boolean {
+  const type = (mimeType || "").toLowerCase().trim().split(";")[0] ?? "";
+  if (!type) return true; // some browsers omit type; size check still applies
+  if (type.startsWith("audio/")) return true;
+  // Chrome MediaRecorder often emits video/webm for microphone captures
+  if (type.startsWith("video/webm")) return true;
+  return false;
 }
 
 export function notConfiguredError(): TranscribeFailure {

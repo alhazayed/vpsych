@@ -6,6 +6,8 @@ import {
   generateLearningPlan,
 } from "@/lib/ace";
 import { ensureLearnerProfile } from "@/lib/ace/persist";
+import { rateLimit } from "@/lib/rate-limit";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 
 export async function GET() {
   const supabase = await createClient();
@@ -14,6 +16,14 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = await rateLimit(`ace-profile:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const profile = await ensureLearnerProfile(supabase, user.id);
@@ -36,6 +46,14 @@ export async function PATCH(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = await rateLimit(`ace-profile:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const body = (await request.json()) as {
@@ -86,7 +104,7 @@ export async function PATCH(request: Request) {
       ok: true,
       profile: { ...profile, ...body },
       source: "memory",
-      warning: error.message,
+      warning: sanitizeDbError(error.message),
     });
   }
 

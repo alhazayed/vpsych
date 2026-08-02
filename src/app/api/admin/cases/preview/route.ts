@@ -11,12 +11,21 @@ import type {
   TherapyModality,
 } from "@/lib/case-engine/types";
 import type { Avatar } from "@/lib/types";
+import { rateLimit } from "@/lib/rate-limit";
 
 /** Admin preview — generate CaseInstance JSON without persisting a session. */
 export async function POST(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
+
+  const limited = await rateLimit(`admin-case-preview:${auth.user.id}`, 30, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json()) as {
     avatarId?: string;

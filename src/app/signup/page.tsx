@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
+import {
+  isPasswordPolicySatisfied,
+  passwordChecks,
+  passwordStrengthLevel,
+} from "@/lib/password-policy";
 
 const COUNTRIES = [
   { value: "US", key: "us" },
@@ -29,26 +34,7 @@ const PROFESSIONS = [
   { value: "Other", key: "other" },
 ] as const;
 
-function passwordChecks(password: string) {
-  return {
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    number: /\d/.test(password),
-    special: /[^A-Za-z0-9]/.test(password),
-  };
-}
-
-function strengthLevel(password: string): "" | "weak" | "fair" | "good" | "strong" {
-  const checks = passwordChecks(password);
-  const score = Object.values(checks).filter(Boolean).length;
-  if (!password) return "";
-  if (score <= 1) return "weak";
-  if (score === 2) return "fair";
-  if (score === 3) return "good";
-  return "strong";
-}
-
-function strengthMeta(level: ReturnType<typeof strengthLevel>) {
+function strengthMeta(level: ReturnType<typeof passwordStrengthLevel>) {
   if (!level) return { width: "0%", color: "var(--primary)" };
   if (level === "weak") return { width: "25%", color: "var(--error)" };
   if (level === "fair") return { width: "50%", color: "#F3650A" };
@@ -77,7 +63,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   const checks = useMemo(() => passwordChecks(password), [password]);
-  const strengthKey = useMemo(() => strengthLevel(password), [password]);
+  const strengthKey = useMemo(
+    () => passwordStrengthLevel(password),
+    [password],
+  );
   const strength = useMemo(() => strengthMeta(strengthKey), [strengthKey]);
   const dirty =
     firstName ||
@@ -102,8 +91,8 @@ export default function SignupPage() {
       setError(t("errors.passwordMismatch"));
       return;
     }
-    if (password.length < 6) {
-      setError(t("errors.passwordShort"));
+    if (!isPasswordPolicySatisfied(password)) {
+      setError(t("errors.passwordPolicy"));
       return;
     }
 
@@ -263,7 +252,7 @@ export default function SignupPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -293,7 +282,7 @@ export default function SignupPage() {
                   <input
                     type={showConfirm ? "text" : "password"}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"

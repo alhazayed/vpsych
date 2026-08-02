@@ -16,6 +16,15 @@ describe("architecture invariants", () => {
       "utf8",
     );
     expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/OpenAI health probe failed|not configured/);
+  });
+
+  it("does not return raw AI failure detail from session end", () => {
+    const route = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    expect(route).not.toMatch(/aiFailureDetail:/);
   });
 
   it("provides App Router error boundaries", () => {

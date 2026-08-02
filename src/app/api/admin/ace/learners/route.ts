@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import { COMPETENCY_DOMAINS } from "@/lib/ace";
 
 export async function GET(request: Request) {
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
       source: "empty",
       learners: [],
       competencyDomains: COMPETENCY_DOMAINS,
-      warning: error.message,
+      warning: sanitizeDbError(error.message),
     });
   }
 
@@ -74,7 +75,8 @@ export async function PATCH(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
   }
   return NextResponse.json({ ok: true, learner: data });
 }

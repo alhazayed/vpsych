@@ -92,15 +92,16 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ElevenLabsError) {
+      console.warn("[tts]", error.code, error.detail ?? error.message);
       return NextResponse.json(
         {
-          error: error.message,
-          code: error.code,
-          detail: error.detail,
+          error: "Text-to-speech failed",
+          code: error.code || "TTS_FAILED",
         },
         { status: error.status },
       );
     }
+    console.warn("[tts]", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502 },

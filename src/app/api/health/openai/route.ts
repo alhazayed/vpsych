@@ -14,5 +14,24 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
 
   const status = await openAIService.healthCheck();
-  return NextResponse.json(status, { status: status.ok ? 200 : 503 });
+  // Never return raw provider error strings to the client.
+  const safe = {
+    ok: status.ok,
+    configured: status.configured,
+    provider: status.provider,
+    chatModel: status.chatModel,
+    sttModel: status.sttModel,
+    checkedAt: status.checkedAt,
+    latencyMs: status.latencyMs,
+    code: status.code ?? null,
+    error: status.ok
+      ? null
+      : status.configured
+        ? "OpenAI health probe failed"
+        : "OpenAI is not configured",
+  };
+  if (!status.ok && status.error) {
+    console.warn("[health/openai]", status.code, status.error);
+  }
+  return NextResponse.json(safe, { status: status.ok ? 200 : 503 });
 }
