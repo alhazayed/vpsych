@@ -6,6 +6,10 @@ import type {
   CaseDifficulty,
   TherapyModality,
 } from "@/lib/case-engine/types";
+import {
+  findPresetById,
+  findPresetBySlug,
+} from "@/lib/instructor-presets";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -42,6 +46,11 @@ export async function POST(request: Request) {
     /** Clinical Scenario Template Engine */
     templateId?: string;
     templateSlug?: string;
+    /** Instructor Preset Engine — objectives drive case generation */
+    presetId?: string;
+    presetSlug?: string;
+    /** Advanced Mode diagnosis pin (requires preset.advanced_mode) */
+    disorderSlugOverride?: string;
   };
   if (!body.avatarId) {
     return NextResponse.json({ error: "avatarId required" }, { status: 400 });
@@ -67,18 +76,25 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
+  const builtinPreset =
+    (body.presetId ? findPresetById(body.presetId) : undefined) ??
+    (body.presetSlug ? findPresetBySlug(body.presetSlug) : undefined);
+
+  // Explicit locale wins; else preset language; else profile/avatar defaults
   const sessionLanguage = normalizeAvatarLocale(
     body.locale ??
       body.language ??
+      builtinPreset?.language ??
       profile?.preferred_language ??
       typedAvatar.default_locale ??
       typedAvatar.language,
   );
+  const effectiveLocale = sessionLanguage;
 
   // Module 7 — generate immutable CaseInstance for this assessment
   const caseResult = await createCaseForSession(supabase, {
     avatar: typedAvatar,
-    locale: sessionLanguage,
+    locale: effectiveLocale,
     therapistId: user.id,
     disorderSlug: body.disorderSlug ?? body.caseId,
     comorbiditySlugs: body.comorbiditySlugs,
@@ -87,6 +103,9 @@ export async function POST(request: Request) {
     severity: body.severity,
     templateId: body.templateId,
     templateSlug: body.templateSlug,
+    presetId: body.presetId,
+    presetSlug: body.presetSlug,
+    disorderSlugOverride: body.disorderSlugOverride,
   });
 
   if (!caseResult.ok) {
@@ -96,18 +115,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const maxDurationSec =
+    caseResult.maxDurationSec ?? MAX_SESSION_SECONDS;
+
   const insertPayload: Record<string, unknown> = {
     therapist_id: user.id,
     avatar_id: body.avatarId,
     status: "active",
-    max_duration_sec: MAX_SESSION_SECONDS,
-    language: sessionLanguage,
+    max_duration_sec: maxDurationSec,
+    language: caseResult.snapshot.locale || effectiveLocale,
     case_instance_id: caseResult.caseInstanceId.startsWith("VPSY-")
       ? null
       : caseResult.caseInstanceId,
     clinical_snapshot: caseResult.snapshot,
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
+    instructor_preset_id: caseResult.preset?.id ?? null,
   };
 
   let { data: session, error } = await supabase
@@ -117,20 +140,42 @@ export async function POST(request: Request) {
     .single();
 
   // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
-  if (error && /clinical_snapshot|case_instance_id|difficulty|therapy_modality/i.test(error.message)) {
-    const legacy = await supabase
+  if (
+    error &&
+    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset/i.test(
+      error.message,
+    )
+  ) {
+    const withoutPreset = { ...insertPayload };
+    delete withoutPreset.instructor_preset_id;
+    const retry = await supabase
       .from("sessions")
-      .insert({
-        therapist_id: user.id,
-        avatar_id: body.avatarId,
-        status: "active",
-        max_duration_sec: MAX_SESSION_SECONDS,
-        language: sessionLanguage,
-      })
+      .insert(withoutPreset)
       .select("id")
       .single();
-    session = legacy.data;
-    error = legacy.error;
+    if (
+      retry.error &&
+      /clinical_snapshot|case_instance_id|difficulty|therapy_modality/i.test(
+        retry.error.message,
+      )
+    ) {
+      const legacy = await supabase
+        .from("sessions")
+        .insert({
+          therapist_id: user.id,
+          avatar_id: body.avatarId,
+          status: "active",
+          max_duration_sec: maxDurationSec,
+          language: caseResult.snapshot.locale || effectiveLocale,
+        })
+        .select("id")
+        .single();
+      session = legacy.data;
+      error = legacy.error;
+    } else {
+      session = retry.data;
+      error = retry.error;
+    }
   }
 
   if (error || !session) {
@@ -151,7 +196,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     sessionId: session.id,
-    language: sessionLanguage,
+    language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
     diagnosis: caseResult.snapshot.primary_diagnosis.name,
@@ -159,5 +204,9 @@ export async function POST(request: Request) {
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,
     templateSlug: caseResult.snapshot.template?.slug ?? null,
+    presetId: caseResult.preset?.id ?? null,
+    presetSlug: caseResult.preset?.slug ?? null,
+    primaryObjective: caseResult.preset?.primary_objective ?? null,
+    maxDurationSec,
   });
 }

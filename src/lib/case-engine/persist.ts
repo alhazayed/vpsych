@@ -20,6 +20,12 @@ import {
 } from "@/lib/scenario-templates/catalog";
 import { generateFromTemplate } from "@/lib/scenario-templates/generate";
 import type { ClinicalScenarioTemplate } from "@/lib/scenario-templates/types";
+import {
+  findPresetById,
+  findPresetBySlug,
+  generateFromPreset,
+  type InstructorPreset,
+} from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
 
 export type StartCaseOptions = {
@@ -35,6 +41,11 @@ export type StartCaseOptions = {
   /** Clinical Scenario Template Engine */
   templateId?: string;
   templateSlug?: string;
+  /** Instructor Preset Engine — objectives drive diagnosis + template */
+  presetId?: string;
+  presetSlug?: string;
+  /** Advanced Mode only (requires preset.advanced_mode). */
+  disorderSlugOverride?: string;
 };
 
 function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): PersonaRow {
@@ -85,6 +96,166 @@ function mapDbDisorder(row: Record<string, unknown>): DisorderRow {
  * Load catalog pieces from DB when available; fall back to builtins.
  * Generate + persist CaseInstance + empty case_memory.
  */
+type PresetChildren = {
+  secondaryObjectives: InstructorPreset["secondary_objectives"];
+  constraints: InstructorPreset["clinical_constraints"];
+  competencies: {
+    required: InstructorPreset["required_competencies"];
+    optional: InstructorPreset["optional_competencies"];
+  };
+  preferredTemplateSlugs: string[];
+  grading?: Partial<InstructorPreset["grading"]>;
+};
+
+async function loadPresetChildren(
+  supabase: SupabaseClient,
+  presetId: string,
+): Promise<PresetChildren> {
+  const [{ data: objectives }, { data: competencies }, { data: constraints }, { data: templates }, { data: grading }] =
+    await Promise.all([
+      supabase
+        .from("preset_objectives")
+        .select("objective, is_primary, sort_order")
+        .eq("preset_id", presetId)
+        .order("sort_order"),
+      supabase
+        .from("preset_competencies")
+        .select("competency_id, label, required, weight, max_score")
+        .eq("preset_id", presetId)
+        .order("sort_order"),
+      supabase
+        .from("preset_constraints")
+        .select("constraint_type, value")
+        .eq("preset_id", presetId),
+      supabase
+        .from("preset_templates")
+        .select("priority, clinical_templates(slug)")
+        .eq("preset_id", presetId)
+        .order("priority", { ascending: false }),
+      supabase
+        .from("preset_grading")
+        .select("*")
+        .eq("preset_id", presetId)
+        .maybeSingle(),
+    ]);
+
+  const secondaryObjectives = (objectives ?? [])
+    .filter((o) => !o.is_primary)
+    .map((o) => o.objective as InstructorPreset["secondary_objectives"][number]);
+
+  const required = (competencies ?? [])
+    .filter((c) => c.required)
+    .map((c) => ({
+      competency_id: c.competency_id,
+      label: c.label,
+      required: true,
+      weight: Number(c.weight),
+      max_score: Number(c.max_score),
+    }));
+  const optional = (competencies ?? [])
+    .filter((c) => !c.required)
+    .map((c) => ({
+      competency_id: c.competency_id,
+      label: c.label,
+      required: false,
+      weight: Number(c.weight),
+      max_score: Number(c.max_score),
+    }));
+
+  const preferredTemplateSlugs = (templates ?? [])
+    .map((t) => {
+      const ct = t.clinical_templates as
+        | { slug?: string }
+        | { slug?: string }[]
+        | null;
+      if (Array.isArray(ct)) return ct[0]?.slug;
+      return ct?.slug;
+    })
+    .filter(Boolean) as string[];
+
+  return {
+    secondaryObjectives,
+    constraints: (constraints ?? []).map((c) => ({
+      constraint_type: c.constraint_type as InstructorPreset["clinical_constraints"][number]["constraint_type"],
+      value: c.value,
+    })),
+    competencies: { required, optional },
+    preferredTemplateSlugs,
+    grading: grading
+      ? {
+          pass_threshold: Number(grading.pass_threshold),
+          outstanding_threshold: Number(grading.outstanding_threshold),
+          critical_mistakes: (grading.critical_mistakes as string[]) ?? [],
+          automatic_deductions:
+            (grading.automatic_deductions as Record<string, number>) ?? {},
+          dimensions: (grading.dimensions as string[]) ?? [],
+          report_sections: (grading.report_sections as string[]) ?? [],
+        }
+      : undefined,
+  };
+}
+
+function mapDbPreset(
+  row: Record<string, unknown>,
+  children: PresetChildren,
+): InstructorPreset {
+  const primaryFromChildren = undefined; // primary stays on row
+  void primaryFromChildren;
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    name: String(row.name),
+    description: (row.description as string) ?? null,
+    specialty: row.specialty as InstructorPreset["specialty"],
+    target_learner: row.target_learner as InstructorPreset["target_learner"],
+    learning_level: row.learning_level as InstructorPreset["learning_level"],
+    clinical_rotation: (row.clinical_rotation as string) ?? null,
+    assessment_type: row.assessment_type as InstructorPreset["assessment_type"],
+    primary_objective:
+      row.primary_objective as InstructorPreset["primary_objective"],
+    secondary_objectives: children.secondaryObjectives,
+    difficulty: row.difficulty as InstructorPreset["difficulty"],
+    time_limit_minutes:
+      row.time_limit_minutes as InstructorPreset["time_limit_minutes"],
+    language: String(row.language),
+    culture: (row.culture as string) ?? null,
+    therapy_modality:
+      row.therapy_modality as InstructorPreset["therapy_modality"],
+    randomization_level:
+      row.randomization_level as InstructorPreset["randomization_level"],
+    grading_mode: row.grading_mode as InstructorPreset["grading_mode"],
+    feedback_mode: row.feedback_mode as InstructorPreset["feedback_mode"],
+    voice_enabled: Boolean(row.voice_enabled),
+    assessment_enabled: Boolean(row.assessment_enabled ?? true),
+    record_session: Boolean(row.record_session ?? true),
+    allow_hints: Boolean(row.allow_hints),
+    allow_pause: Boolean(row.allow_pause ?? true),
+    allow_restart: Boolean(row.allow_restart ?? true),
+    advanced_mode: Boolean(row.advanced_mode),
+    scenario_template_id: (row.scenario_template_id as string) ?? null,
+    preferred_template_slugs: children.preferredTemplateSlugs,
+    clinical_constraints: children.constraints,
+    required_competencies: children.competencies.required,
+    optional_competencies: children.competencies.optional,
+    grading: {
+      pass_threshold: children.grading?.pass_threshold ?? 60,
+      outstanding_threshold: children.grading?.outstanding_threshold ?? 85,
+      critical_mistakes: children.grading?.critical_mistakes ?? [],
+      automatic_deductions: children.grading?.automatic_deductions ?? {},
+      dimensions: children.grading?.dimensions ?? [],
+      report_sections: children.grading?.report_sections ?? [
+        "score",
+        "strengths",
+        "weaknesses",
+        "missed_opportunities",
+        "recommendations",
+      ],
+    },
+    enabled: Boolean(row.enabled),
+    version: Number(row.version ?? 1),
+  };
+}
+
 export async function createCaseForSession(
   supabase: SupabaseClient,
   opts: StartCaseOptions,
@@ -95,6 +266,8 @@ export async function createCaseForSession(
       snapshot: CaseInstanceSnapshot;
       difficulty: CaseDifficulty;
       therapyModality: TherapyModality;
+      preset?: InstructorPreset;
+      maxDurationSec?: number;
     }
   | { ok: false; error: string; status: number }
 > {
@@ -107,6 +280,150 @@ export async function createCaseForSession(
     .maybeSingle();
 
   const persona = personaFromAvatar(opts.avatar, dbPersona as PersonaRow | null);
+
+  // -------------------------------------------------------------------------
+  // Instructor Preset path — objectives → diagnosis + template → patient
+  // -------------------------------------------------------------------------
+  let resolvedPreset: InstructorPreset | null = null;
+  if (opts.presetId || opts.presetSlug) {
+    if (opts.presetId) {
+      const { data: prow } = await supabase
+        .from("instructor_presets")
+        .select("*")
+        .eq("id", opts.presetId)
+        .maybeSingle();
+      if (prow) {
+        resolvedPreset = mapDbPreset(prow, await loadPresetChildren(supabase, prow.id));
+      }
+    } else if (opts.presetSlug) {
+      const { data: prow } = await supabase
+        .from("instructor_presets")
+        .select("*")
+        .eq("slug", opts.presetSlug)
+        .maybeSingle();
+      if (prow) {
+        resolvedPreset = mapDbPreset(prow, await loadPresetChildren(supabase, prow.id));
+      }
+    }
+    if (!resolvedPreset) {
+      resolvedPreset =
+        (opts.presetId ? findPresetById(opts.presetId) : undefined) ??
+        (opts.presetSlug ? findPresetBySlug(opts.presetSlug) : undefined) ??
+        null;
+    }
+    if (!resolvedPreset) {
+      return { ok: false, error: "Instructor preset not found", status: 404 };
+    }
+
+    // Prefer preset language when caller did not force a different locale path
+    const presetLocale = opts.locale || resolvedPreset.language;
+    const fromPreset = generateFromPreset({
+      preset: { ...resolvedPreset, language: presetLocale },
+      persona,
+      avatarId: opts.avatar.id,
+      disorderSlugOverride: opts.disorderSlugOverride ?? opts.disorderSlug,
+      comorbiditySlugs: opts.comorbiditySlugs,
+      seed: opts.seed,
+    });
+    if (!fromPreset.ok) {
+      return {
+        ok: false,
+        error: fromPreset.issues.map((i) => i.message).join("; "),
+        status: 400,
+      };
+    }
+
+    const snapshot = fromPreset.assessment.snapshot;
+    const difficulty = resolvedPreset.difficulty;
+    const therapyModality =
+      resolvedPreset.therapy_modality === "medication_management"
+        ? ("supportive" as TherapyModality)
+        : (resolvedPreset.therapy_modality as TherapyModality);
+
+    const selectedSlug =
+      fromPreset.assessment.resolution.selectedDisorderSlug;
+    const { data: dbDisorder } = await supabase
+      .from("disorders")
+      .select("id")
+      .eq("slug", selectedSlug)
+      .maybeSingle();
+    const primaryDisorder =
+      findDisorderBySlug(selectedSlug, catalog) ??
+      (dbDisorder ? { id: dbDisorder.id } : null);
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from("case_instances")
+      .insert({
+        assessment_id: snapshot.assessment_id,
+        persona_id: dbPersona?.id ?? null,
+        avatar_id: opts.avatar.id,
+        primary_disorder_id: dbDisorder?.id ?? primaryDisorder?.id ?? null,
+        comorbidity_disorder_ids: snapshot.comorbidities.map((c) => c.id),
+        difficulty,
+        therapy_modality: therapyModality,
+        locale: snapshot.locale,
+        severity: snapshot.severity,
+        clinical_snapshot: snapshot,
+        randomized_context: snapshot.randomized_context,
+        voice_profile_id: opts.avatar.voice_profile_id ?? null,
+        template_id: snapshot.template?.id ?? null,
+        template_version: snapshot.template?.version ?? null,
+        instructor_preset_id: resolvedPreset.id,
+        instructor_preset_version: resolvedPreset.version,
+        created_by: opts.therapistId,
+      })
+      .select("id")
+      .single();
+
+    if (insertErr || !inserted) {
+      if (
+        insertErr?.message?.includes("does not exist") ||
+        insertErr?.code === "42P01" ||
+        insertErr?.message?.includes("instructor_preset")
+      ) {
+        return {
+          ok: true,
+          caseInstanceId: snapshot.assessment_id,
+          snapshot,
+          difficulty,
+          therapyModality,
+          preset: resolvedPreset,
+          maxDurationSec: fromPreset.assessment.maxDurationSec,
+        };
+      }
+      return {
+        ok: false,
+        error: insertErr?.message ?? "Failed to persist case instance",
+        status: 500,
+      };
+    }
+
+    snapshot.case_instance_id = inserted.id;
+    await supabase.from("case_memory").insert({
+      case_instance_id: inserted.id,
+      memory: {
+        turns: [],
+        notes: [],
+        scope: "case_instance",
+        template_id: snapshot.template?.id,
+        instructor_preset_id: resolvedPreset.id,
+      },
+    });
+    await supabase
+      .from("case_instances")
+      .update({ clinical_snapshot: snapshot })
+      .eq("id", inserted.id);
+
+    return {
+      ok: true,
+      caseInstanceId: inserted.id,
+      snapshot,
+      difficulty,
+      therapyModality,
+      preset: resolvedPreset,
+      maxDurationSec: fromPreset.assessment.maxDurationSec,
+    };
+  }
 
   // -------------------------------------------------------------------------
   // Template path — instructor templates drive generation
