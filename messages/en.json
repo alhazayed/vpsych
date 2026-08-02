@@ -33,6 +33,7 @@
       "reportsLibrary": "Reports Library",
       "avatarPresets": "Avatar Presets",
       "voiceManagement": "Voice Management",
+      "caseEngine": "Case Engine",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -43,6 +44,7 @@
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "voiceManagement": "Voice Management",
+    "caseEngine": "Case Engine",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -474,6 +476,14 @@
       "rubricItem": "{label} (max {max}, weight {weight})",
       "voiceProfile": "Voice profile",
       "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility"
+    },
+    "cases": {
+      "title": "Dynamic Clinical Case Engine",
+      "subtitle": "Personas stay constant. Each assessment generates a new immutable clinical case (diagnosis, comorbidity, difficulty, therapy modality, language).",
+      "recent": "Recent case instances",
+      "empty": "No case instances yet. Start an assessment or preview a case below.",
+      "disorders": "Disorder catalog",
+      "preview": "Preview generator"
     },
     "voices": {
       "title": "Voice Management",

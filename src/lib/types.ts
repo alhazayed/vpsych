@@ -274,6 +274,12 @@ export type TherapySession = {
   max_duration_sec: number;
   language?: string | null;
   created_at: string;
+  /** Dynamic Clinical Case Engine — FK to case_instances (null = legacy). */
+  case_instance_id?: string | null;
+  /** Frozen CaseInstance snapshot for this assessment. */
+  clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
+  difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
+  therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
   avatars?: Avatar;
   profiles?: Profile;
 };

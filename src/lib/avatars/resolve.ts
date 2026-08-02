@@ -3,6 +3,8 @@ import {
   assembleSystemPrompt,
   synthesizePromptInputFromFlat,
 } from "@/lib/ai/prompt-engine";
+import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import { isCaseSnapshot } from "@/lib/case-engine/persist";
 import type {
   Avatar,
   AvatarPersonality,
@@ -12,6 +14,11 @@ import type {
 } from "@/lib/types";
 import { DEFAULT_AVATAR_LOCALE } from "@/lib/types";
 import { projectAvatarVoiceFields } from "@/lib/voice/registry";
+
+export type ResolveAvatarOptions = {
+  /** Immutable CaseInstance snapshot — diagnosis comes from here, not the avatar. */
+  caseSnapshot?: CaseInstanceSnapshot | null;
+};
 
 const LOCALE_ALIASES: Record<string, string> = {
   en: "en-US",
@@ -126,19 +133,31 @@ function guidelinesFromCore(
  * Resolve an avatar row into a locale-specific runtime projection.
  * System prompt is assembled by the multilingual prompt engine (Modules 1–4).
  * v1 rows (no personalities) synthesize a compatible prompt input from flat columns.
+ *
+ * When `options.caseSnapshot` is present (Dynamic Clinical Case Engine), diagnosis
+ * and clinical_core come from the immutable CaseInstance — the persona identity
+ * remains on the avatar/personality.
  */
 export function resolveAvatar(
   avatar: Avatar,
   requestedLocale?: string | null,
+  options?: ResolveAvatarOptions,
 ): ResolvedAvatar {
+  const snapshot =
+    options?.caseSnapshot && isCaseSnapshot(options.caseSnapshot)
+      ? options.caseSnapshot
+      : null;
+  const localeHint = snapshot?.locale ?? requestedLocale;
+
   const picked =
     (avatar.schema_version ?? 1) >= 2
-      ? pickPersonality(avatar, requestedLocale)
+      ? pickPersonality(avatar, localeHint)
       : null;
 
   if (picked) {
     const { locale, personality } = picked;
-    const core =
+    const core: ClinicalCore =
+      snapshot?.clinical_core ??
       avatar.clinical_core ??
       synthesizePromptInputFromFlat({
         name: personality.identity.display_name,
@@ -152,8 +171,18 @@ export function resolveAvatar(
         idealApproach: avatar.ideal_guidelines?.ideal_approach,
       }).clinical_core;
 
+    // Preserve persona age/gender from personality/identity when case overrides diagnosis only
+    const mergedCore: ClinicalCore = snapshot
+      ? {
+          ...core,
+          age: personality.identity
+            ? (avatar.clinical_core?.age ?? core.age)
+            : core.age,
+        }
+      : core;
+
     const assembly = {
-      clinical_core: core,
+      clinical_core: mergedCore,
       personality,
       session: { locale },
     };
@@ -169,15 +198,18 @@ export function resolveAvatar(
       language: personality.language,
       direction: personality.direction,
       name: personality.identity.display_name,
-      disorder: core.disorder ?? avatar.disorder,
-      age: core.age ?? avatar.age,
-      gender: core.gender ?? avatar.gender,
+      disorder: mergedCore.disorder ?? avatar.disorder,
+      age: mergedCore.age ?? avatar.age,
+      gender: mergedCore.gender ?? avatar.gender,
       portrait_url:
         personality.identity.portrait_url ?? avatar.portrait_url ?? null,
       persona_prompt: personality.persona_prompt,
       system_prompt: assembleSystemPrompt(assembly),
-      ideal_guidelines: guidelinesFromCore(core, avatar),
-      rubric: localizeRubric(avatar.rubric, personality.rubric_labels),
+      ideal_guidelines: guidelinesFromCore(mergedCore, avatar),
+      rubric: localizeRubric(
+        snapshot?.rubric ?? avatar.rubric,
+        personality.rubric_labels,
+      ),
       dialect: personality.dialect ?? null,
       voice_profile_id: registryVoice.voice_profile_id,
       voice_profile: registryVoice.voice_profile,
@@ -198,27 +230,35 @@ export function resolveAvatar(
         personality.language_module.fallback_replies?.filter(Boolean) ?? [],
       per_turn_reinforcement: assemblePerTurnReinforcement(assembly),
       personality,
-      clinical_core: core,
+      clinical_core: mergedCore,
     };
   }
 
   // v1 / flat-column fallback — fully backward compatible
   const locale = normalizeAvatarLocale(
-    requestedLocale ?? avatar.language,
+    localeHint ?? avatar.language,
     DEFAULT_AVATAR_LOCALE,
   );
   const language = locale.startsWith("ar") ? "ar" : "en";
+  const flatDisorder = snapshot?.clinical_core.disorder ?? avatar.disorder;
   const assembly = synthesizePromptInputFromFlat({
     name: avatar.name,
-    disorder: avatar.disorder,
-    age: avatar.age,
-    gender: avatar.gender,
+    disorder: flatDisorder,
+    age: snapshot?.clinical_core.age ?? avatar.age,
+    gender: snapshot?.clinical_core.gender ?? avatar.gender,
     persona_prompt: avatar.persona_prompt,
     dialect: avatar.dialect,
     locale,
-    sessionGoals: avatar.ideal_guidelines?.session_goals,
-    idealApproach: avatar.ideal_guidelines?.ideal_approach,
+    sessionGoals:
+      snapshot?.clinical_core.session_goals ??
+      avatar.ideal_guidelines?.session_goals,
+    idealApproach:
+      snapshot?.clinical_core.ideal_approach ??
+      avatar.ideal_guidelines?.ideal_approach,
   });
+  if (snapshot?.clinical_core) {
+    assembly.clinical_core = snapshot.clinical_core;
+  }
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 
@@ -229,14 +269,17 @@ export function resolveAvatar(
     language,
     direction: language === "ar" ? "rtl" : "ltr",
     name: avatar.name,
-    disorder: avatar.disorder,
-    age: avatar.age,
-    gender: avatar.gender,
+    disorder: flatDisorder,
+    age: snapshot?.clinical_core.age ?? avatar.age,
+    gender: snapshot?.clinical_core.gender ?? avatar.gender,
     portrait_url: avatar.portrait_url,
     persona_prompt: avatar.persona_prompt,
     system_prompt: assembleSystemPrompt(assembly),
-    ideal_guidelines: avatar.ideal_guidelines ?? {},
-    rubric: avatar.rubric ?? [],
+    ideal_guidelines: guidelinesFromCore(
+      snapshot?.clinical_core ?? avatar.clinical_core,
+      avatar,
+    ),
+    rubric: snapshot?.rubric ?? avatar.rubric ?? [],
     dialect: avatar.dialect ?? null,
     voice_profile_id: registryVoice.voice_profile_id,
     voice_profile: registryVoice.voice_profile,
@@ -246,7 +289,8 @@ export function resolveAvatar(
     tts_lang: language === "ar" ? "ar-SA" : "en-US",
     fallback_replies: [],
     per_turn_reinforcement: assemblePerTurnReinforcement(assembly),
-    clinical_core: avatar.clinical_core ?? assembly.clinical_core,
+    clinical_core:
+      snapshot?.clinical_core ?? avatar.clinical_core ?? assembly.clinical_core,
     personality: assembly.personality,
   };
 }

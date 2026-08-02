@@ -66,8 +66,10 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Load multilingual prompt from clinical_core + personality for session.language.
-  const resolved = resolveAvatar(typed.avatars, typed.language);
+  // Case Engine: diagnosis from immutable session snapshot when present.
+  const resolved = resolveAvatar(typed.avatars, typed.language, {
+    caseSnapshot: typed.clinical_snapshot,
+  });
 
   const { data: userMsg, error: userMsgError } = await supabase
     .from("session_messages")

@@ -85,7 +85,9 @@ export async function POST(_request: Request, { params }: Params) {
     (new Date(endedAt).getTime() - new Date(typed.started_at).getTime()) / 1000,
   );
 
-  const resolved = resolveAvatar(typed.avatars, typed.language);
+  const resolved = resolveAvatar(typed.avatars, typed.language, {
+    caseSnapshot: typed.clinical_snapshot,
+  });
 
   let reportLanguage = typed.language ?? null;
   if (!reportLanguage) {
