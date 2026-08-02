@@ -36,6 +36,8 @@
       "caseEngine": "محرك الحالات",
       "scenarioTemplates": "قوالب السيناريو",
       "instructorPresets": "إعدادات المدرب",
+      "adaptiveCurriculum": "المنهج التكيفي",
+      "adaptiveLearning": "تعلّمي",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -43,14 +45,20 @@
   "nav": {
     "patientLibrary": "مكتبة المرضى",
     "mySessions": "جلساتي",
+    "adaptiveLearning": "تعلّمي",
     "reportsLibrary": "مكتبة التقارير",
     "avatarPresets": "نماذج الشخصيات",
     "voiceManagement": "إدارة الأصوات",
     "caseEngine": "محرك الحالات",
     "scenarioTemplates": "قوالب السيناريو",
     "instructorPresets": "إعدادات المدرب",
+    "adaptiveCurriculum": "المنهج التكيفي",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح"
+  },
+  "learning": {
+    "title": "التعلّم التكيفي",
+    "subtitle": "مسارك التدريبي الشخصي في الطب النفسي — الكفاءات والحالات التالية وأهداف المدرب الذكي."
   },
   "landing": {
     "nav": {
@@ -500,6 +508,10 @@
       "subtitle": "اضبط أهداف التعلم ومستوى المتعلم. المحرك يختار التشخيص والقالب ويولّد مريضاً معيارياً تكيفياً.",
       "library": "مكتبة الإعدادات",
       "preview": "معاينة الحالة / التقرير"
+    },
+    "curriculum": {
+      "title": "محرك المنهج التكيفي",
+      "subtitle": "راقب كفاءات المتعلمين، فعّل الوضع التكيفي، اضبط العتبات، وراجع المسارات الشخصية."
     },
     "voices": {
       "title": "إدارة الأصوات",
