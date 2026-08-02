@@ -113,12 +113,24 @@ async function rateLimitUpstash(
  * Distributed-aware rate limit. Same result shape as the original sync helper.
  * Call sites should `await` — Redis path is async; memory path resolves immediately.
  */
+let warnedMissingUpstash = false;
+
 export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ): Promise<RateLimitResult> {
   if (!hasUpstashRedis()) {
+    if (
+      process.env.NODE_ENV === "production" &&
+      !warnedMissingUpstash &&
+      process.env.VERCEL_ENV === "production"
+    ) {
+      warnedMissingUpstash = true;
+      console.warn(
+        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN unset in production; using per-instance memory limits (not horizontally safe)",
+      );
+    }
     return rateLimitMemory(key, limit, windowMs);
   }
 
