@@ -114,6 +114,7 @@ export async function POST(_request: Request, { params }: Params) {
     aiSource: assessment.aiSource,
     aiModel: assessment.model ?? null,
     errorKind: assessment.errorKind ?? null,
+    failureDetail: assessment.failureDetail ?? null,
   });
 
   // Keep session.language aligned when it was missing at create time.
@@ -151,6 +152,7 @@ export async function POST(_request: Request, { params }: Params) {
           aiSource: assessment.aiSource,
           aiModel: assessment.model ?? null,
           aiErrorKind: assessment.errorKind ?? null,
+          aiFailureDetail: assessment.failureDetail ?? null,
         });
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 });
@@ -164,6 +166,7 @@ export async function POST(_request: Request, { params }: Params) {
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
         aiErrorKind: assessment.errorKind ?? null,
+        aiFailureDetail: assessment.failureDetail ?? null,
       },
       {
         headers: {
@@ -233,6 +236,7 @@ export async function POST(_request: Request, { params }: Params) {
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,
+      aiFailureDetail: assessment.failureDetail ?? null,
     },
     {
       headers: {

@@ -53,6 +53,7 @@ function heuristicAssessment(
   language: "en" | "ar",
   reason: "unconfigured" | "unavailable",
   errorKind?: OpenAIErrorKind,
+  failureDetail?: string,
 ) {
   const therapistTurns = messages.filter((m) => m.role === "user");
   const joined = therapistTurns.map((m) => m.content.toLowerCase()).join(" ");
@@ -130,6 +131,7 @@ function heuristicAssessment(
     aiSource: "persona_fallback",
     reason,
     errorKind: errorKind ?? null,
+    failureDetail: failureDetail ?? null,
   });
   return {
     language,
@@ -138,6 +140,7 @@ function heuristicAssessment(
     excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
     aiSource: "persona_fallback" as const,
     errorKind,
+    failureDetail,
   };
 }
 
@@ -184,6 +187,8 @@ export type SessionAssessment = {
   aiSource: AiSource;
   model?: string;
   errorKind?: OpenAIErrorKind;
+  /** Short failure reason when aiSource is persona_fallback (ops / verification). */
+  failureDetail?: string;
 };
 
 type ModelAttempt = {
@@ -347,6 +352,11 @@ export async function assessSession(params: {
   ): Promise<SessionAssessment> => {
     const kind = openaiErrorKind(primaryErr);
     const fallbackModel = openAiFallbackChatModel();
+    const details: string[] = [
+      primaryErr instanceof Error
+        ? `primary: ${primaryErr.message}`
+        : `primary: ${String(primaryErr)}`,
+    ];
 
     console.warn("[assessment]", {
       event: "openai_assessment_failed",
@@ -359,6 +369,11 @@ export async function assessSession(params: {
       const result = await viaOpenAi(fallbackModel);
       return toAssessment(result.output, "gpt", result.model, kind);
     } catch (miniErr) {
+      details.push(
+        miniErr instanceof Error
+          ? `${fallbackModel}: ${miniErr.message}`
+          : `${fallbackModel}: ${String(miniErr)}`,
+      );
       console.warn("[assessment]", {
         event: "openai_fallback_model_failed",
         model: fallbackModel,
@@ -371,12 +386,19 @@ export async function assessSession(params: {
         const result = await viaGateway();
         return toAssessment(result.output, "gateway", result.model, kind);
       } catch (gatewayErr) {
+        details.push(
+          gatewayErr instanceof Error
+            ? `gateway: ${gatewayErr.message}`
+            : `gateway: ${String(gatewayErr)}`,
+        );
         console.warn("[assessment]", {
           event: "gateway_failed",
           ...errorDetails(gatewayErr),
           next: "persona_fallback",
         });
       }
+    } else {
+      details.push("gateway: not configured");
     }
 
     return heuristicAssessment(
@@ -385,6 +407,7 @@ export async function assessSession(params: {
       language,
       "unavailable",
       kind,
+      details.join(" | ").slice(0, 500),
     );
   };
 
@@ -413,6 +436,7 @@ export async function assessSession(params: {
       language,
       "unavailable",
       kind,
+      err instanceof Error ? err.message.slice(0, 300) : String(err).slice(0, 300),
     );
   }
 }
