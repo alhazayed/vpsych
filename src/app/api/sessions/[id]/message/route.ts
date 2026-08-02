@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generatePatientReply } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
+import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
@@ -18,7 +19,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
+  const limited = await rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -58,6 +59,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const remaining = remainingSeconds(typed.started_at, typed.max_duration_sec);
   if (remaining <= 0) {
+    await expireStaleSession(supabase, typed);
     return NextResponse.json(
       { error: "Session time expired", expired: true },
       { status: 409 },

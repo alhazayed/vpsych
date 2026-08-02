@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { VoiceSession } from "@/components/VoiceSession";
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { expireStaleSession } from "@/lib/session-expiry";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -21,6 +22,10 @@ export default async function SessionPage({ params }: Props) {
   const typed = session as TherapySession & { avatars: Avatar };
   if (typed.therapist_id !== user.id) {
     redirect("/avatars");
+  }
+
+  if (await expireStaleSession(supabase, typed)) {
+    redirect(`/sessions/${id}/complete`);
   }
 
   if (typed.status !== "active") {

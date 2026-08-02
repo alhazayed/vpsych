@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-audit";
 import {
   clearLegacyColumnsFromProfile,
   coerceVoiceProfile,
@@ -25,12 +27,27 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const limited = await rateLimit(`admin:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") {
+    await logSecurityEvent({
+      action: "admin.avatar.voice.assign",
+      outcome: "denied",
+      resourceType: "avatar",
+      resourceId: avatarId,
+      request,
+    });
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -102,6 +119,15 @@ export async function PATCH(request: Request, { params }: Params) {
       { status: 500 },
     );
   }
+
+  await logSecurityEvent({
+    action: "admin.avatar.voice.assign",
+    outcome: "success",
+    resourceType: "avatar",
+    resourceId: avatarId,
+    metadata: { voice_profile_id: voiceProfileId },
+    request,
+  });
 
   return NextResponse.json({ avatar: data });
 }

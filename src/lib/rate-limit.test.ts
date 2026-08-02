@@ -1,16 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { rateLimit } from "./rate-limit";
+import {
+  hasUpstashRedis,
+  rateLimit,
+  rateLimitMemory,
+  resetRateLimitMemory,
+  windowMsToDuration,
+} from "./rate-limit";
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
+  resetRateLimitMemory();
 });
 
-describe("rateLimit", () => {
+describe("rateLimitMemory", () => {
   it("allows requests up to the limit, then blocks", () => {
     const key = `k-${Math.random()}`;
-    expect(rateLimit(key, 2, 60_000).ok).toBe(true);
-    expect(rateLimit(key, 2, 60_000).ok).toBe(true);
-    const blocked = rateLimit(key, 2, 60_000);
+    expect(rateLimitMemory(key, 2, 60_000).ok).toBe(true);
+    expect(rateLimitMemory(key, 2, 60_000).ok).toBe(true);
+    const blocked = rateLimitMemory(key, 2, 60_000);
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.retryAfterSec).toBeGreaterThan(0);
   });
@@ -18,18 +26,39 @@ describe("rateLimit", () => {
   it("tracks buckets independently per key", () => {
     const a = `a-${Math.random()}`;
     const b = `b-${Math.random()}`;
-    expect(rateLimit(a, 1, 60_000).ok).toBe(true);
-    expect(rateLimit(a, 1, 60_000).ok).toBe(false);
-    expect(rateLimit(b, 1, 60_000).ok).toBe(true);
+    expect(rateLimitMemory(a, 1, 60_000).ok).toBe(true);
+    expect(rateLimitMemory(a, 1, 60_000).ok).toBe(false);
+    expect(rateLimitMemory(b, 1, 60_000).ok).toBe(true);
   });
 
   it("resets after the window elapses", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
     const key = `w-${Math.random()}`;
-    expect(rateLimit(key, 1, 1_000).ok).toBe(true);
-    expect(rateLimit(key, 1, 1_000).ok).toBe(false);
+    expect(rateLimitMemory(key, 1, 1_000).ok).toBe(true);
+    expect(rateLimitMemory(key, 1, 1_000).ok).toBe(false);
     vi.setSystemTime(new Date("2026-01-01T00:00:02.000Z")); // +2s > window
-    expect(rateLimit(key, 1, 1_000).ok).toBe(true);
+    expect(rateLimitMemory(key, 1, 1_000).ok).toBe(true);
+  });
+});
+
+describe("rateLimit (async facade)", () => {
+  it("uses the in-memory path when Upstash env is unset", async () => {
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    expect(hasUpstashRedis()).toBe(false);
+
+    const key = `async-${Math.random()}`;
+    expect((await rateLimit(key, 1, 60_000)).ok).toBe(true);
+    expect((await rateLimit(key, 1, 60_000)).ok).toBe(false);
+  });
+});
+
+describe("windowMsToDuration", () => {
+  it("maps common windows to Upstash duration units", () => {
+    expect(windowMsToDuration(3_600_000)).toBe("1 h");
+    expect(windowMsToDuration(60_000)).toBe("1 m");
+    expect(windowMsToDuration(5_000)).toBe("5 s");
+    expect(windowMsToDuration(250)).toBe("250 ms");
   });
 });
