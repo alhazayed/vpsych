@@ -210,6 +210,29 @@ export type CaseInstanceSnapshot = {
     risk_level?: string;
     grading_rubric?: Record<string, unknown>;
     learning_objectives?: unknown[];
+    report_template?: Record<string, unknown>;
+    memory_mode?: string;
+  };
+  /** Present when generated from an Instructor Preset. */
+  instructor_preset?: {
+    id: string;
+    slug: string;
+    version: number;
+    name: string;
+    primary_objective: string;
+    secondary_objectives: string[];
+    target_learner: string;
+    assessment_type: string;
+    grading_mode: string;
+    feedback_mode: string;
+    time_limit_minutes: number;
+    allow_hints: boolean;
+    allow_pause: boolean;
+    allow_restart: boolean;
+    voice_enabled: boolean;
+    culture?: string | null;
+    pacing?: Record<string, string>;
+    rationale?: string;
   };
 };
 

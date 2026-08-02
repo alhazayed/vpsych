@@ -64,6 +64,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "schema",
       match: (p) => p.startsWith("/admin/templates"),
     },
+    {
+      href: "/admin/presets",
+      label: t("instructorPresets"),
+      icon: "school",
+      match: (p) => p.startsWith("/admin/presets"),
+    },
   ];
 }
 
@@ -136,6 +142,8 @@ export function AppShell({
       return tShell("pageTitle.caseEngine");
     if (pathname.startsWith("/admin/templates"))
       return tShell("pageTitle.scenarioTemplates");
+    if (pathname.startsWith("/admin/presets"))
+      return tShell("pageTitle.instructorPresets");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }

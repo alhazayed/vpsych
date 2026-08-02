@@ -35,6 +35,7 @@
       "voiceManagement": "Voice Management",
       "caseEngine": "Case Engine",
       "scenarioTemplates": "Scenario Templates",
+      "instructorPresets": "Instructor Presets",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -47,6 +48,7 @@
     "voiceManagement": "Voice Management",
     "caseEngine": "Case Engine",
     "scenarioTemplates": "Scenario Templates",
+    "instructorPresets": "Instructor Presets",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -492,6 +494,12 @@
       "subtitle": "Instructors author reusable templates. The engine generates standardized patients — never hand-build a patient.",
       "library": "Template library",
       "preview": "Generate sample patient"
+    },
+    "presets": {
+      "title": "Instructor Preset Engine",
+      "subtitle": "Configure learning objectives and learner level. The engine selects diagnosis, template, and generates an adaptive standardized patient.",
+      "library": "Preset library",
+      "preview": "Generate case / report preview"
     },
     "voices": {
       "title": "Voice Management",
