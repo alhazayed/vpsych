@@ -9,13 +9,19 @@ import puppeteer from "puppeteer-core";
 const BASE = process.env.VPSYCH_PROD_URL || "https://vpsych.vercel.app";
 const SHARE = process.env.VPSYCH_SHARE || "";
 const THERAPIST = {
-  email: "audit.therapist@vpsych.dev",
-  password: "AuditTest!2026Aa",
+  email: process.env.VPSYCH_AUDIT_THERAPIST_EMAIL || "",
+  password: process.env.VPSYCH_AUDIT_THERAPIST_PASSWORD || "",
 };
 const ADMIN = {
-  email: "audit.admin@vpsych.dev",
-  password: "AuditTest!2026Aa",
+  email: process.env.VPSYCH_AUDIT_ADMIN_EMAIL || "",
+  password: process.env.VPSYCH_AUDIT_ADMIN_PASSWORD || "",
 };
+if (!THERAPIST.email || !THERAPIST.password || !ADMIN.email || !ADMIN.password) {
+  console.error(
+    "Set VPSYCH_AUDIT_THERAPIST_EMAIL/PASSWORD and VPSYCH_AUDIT_ADMIN_EMAIL/PASSWORD",
+  );
+  process.exit(1);
+}
 const OUT = process.env.VPSYCH_OUT || "/opt/cursor/artifacts/prod-validation";
 const SHOTS = process.env.VPSYCH_SHOTS || "/opt/cursor/artifacts/screenshots/prod";
 

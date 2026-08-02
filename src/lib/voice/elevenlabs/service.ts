@@ -3,6 +3,7 @@ import {
   DEFAULT_ELEVENLABS_VOICE_AR,
   DEFAULT_ELEVENLABS_VOICE_EN,
   hasElevenLabs,
+  isValidElevenLabsVoiceId,
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
@@ -222,6 +223,13 @@ export const elevenLabsService = {
     for (let i = 0; i < voiceCandidates.length; i++) {
       const voiceId = voiceCandidates[i]!;
       lastVoiceId = voiceId;
+
+      // Defense-in-depth: never interpolate a malformed id into the upstream
+      // request path (guards env/DB-derived candidates too).
+      if (!isValidElevenLabsVoiceId(voiceId)) {
+        lastDetail = `invalid voice id: ${voiceId}`;
+        continue;
+      }
 
       const key = cacheKey({
         text,

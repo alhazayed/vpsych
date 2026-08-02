@@ -26,6 +26,19 @@ export function browserSpeechLocale(locale: SessionSpeechLocale): string {
   return locale === "ar" ? "ar-SA" : "en-US";
 }
 
+/**
+ * ElevenLabs voice ids are opaque alphanumeric tokens. Validate before a value
+ * is ever interpolated into the upstream request path
+ * (`/v1/text-to-speech/${voiceId}/stream`) so a client-supplied id cannot
+ * inject path segments (`/`, `..`) and reach other ElevenLabs endpoints, or
+ * select an arbitrary off-catalogue voice.
+ */
+export function isValidElevenLabsVoiceId(
+  value: string | null | undefined,
+): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{3,64}$/.test(value);
+}
+
 export function resolveElevenLabsVoiceId(params: {
   locale: SessionSpeechLocale;
   voiceId?: string | null;
@@ -36,10 +49,12 @@ export function resolveElevenLabsVoiceId(params: {
   const envAr =
     process.env.ELEVENLABS_VOICE_ID_AR || DEFAULT_ELEVENLABS_VOICE_AR;
 
+  // Invalid (or path-injecting) ids are ignored and fall back to the safe
+  // configured default rather than being passed through to the upstream URL.
   if (params.locale === "ar") {
-    return params.voiceIdAr || envAr;
+    return isValidElevenLabsVoiceId(params.voiceIdAr) ? params.voiceIdAr : envAr;
   }
-  return params.voiceId || envEn;
+  return isValidElevenLabsVoiceId(params.voiceId) ? params.voiceId : envEn;
 }
 
 export function previewSampleText(locale: SessionSpeechLocale): string {
