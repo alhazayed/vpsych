@@ -24,7 +24,7 @@ const root = join(__dirname, "..");
 // Inline the structural rules so CI can run without a TS build step.
 // Unit tests in src/lib/migration-parity.test.ts cover the TypeScript module.
 
-const MIGRATION_RE = /^(?<version>\d{14})_(?<name>[a-z0-9_]+)\.sql$/i;
+const MIGRATION_RE = /^(\d{14})_([a-z0-9_]+)\.sql$/i;
 
 function loadLocal(dir) {
   const errors = [];
@@ -33,11 +33,12 @@ function loadLocal(dir) {
   const entries = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
   for (const fileName of entries) {
     const match = MIGRATION_RE.exec(fileName);
-    if (!match?.groups) {
+    if (!match) {
       errors.push(`Invalid migration filename "${fileName}"`);
       continue;
     }
-    const version = match.groups.version;
+    const version = match[1];
+    const name = match[2];
     if (seen.has(version)) {
       errors.push(`Duplicate version ${version}: ${seen.get(version)} and ${fileName}`);
     } else {
@@ -48,7 +49,7 @@ function loadLocal(dir) {
     if (bytes === 0 || !readFileSync(full, "utf8").trim()) {
       errors.push(`Empty migration: ${fileName}`);
     }
-    migrations.push({ fileName, version, name: match.groups.name, bytes });
+    migrations.push({ fileName, version, name, bytes });
   }
   return { migrations, errors };
 }

@@ -8,17 +8,17 @@ export type LocalMigration = {
   bytes: number;
 };
 
-const MIGRATION_RE = /^(?<version>\d{14})_(?<name>[a-z0-9_]+)\.sql$/i;
+const MIGRATION_RE = /^(\d{14})_([a-z0-9_]+)\.sql$/i;
 
 /** Parse a migration filename into version + snake_case name. */
 export function parseMigrationFileName(
   fileName: string,
 ): { version: string; name: string } | null {
   const match = MIGRATION_RE.exec(fileName);
-  if (!match?.groups) return null;
+  if (!match) return null;
   return {
-    version: match.groups.version!,
-    name: match.groups.name!,
+    version: match[1]!,
+    name: match[2]!,
   };
 }
 
