@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
@@ -101,15 +102,18 @@ function NavLink({
   item,
   pathname,
   compact,
+  onNavigate,
 }: {
   item: NavItem;
   pathname: string;
   compact?: boolean;
+  onNavigate?: () => void;
 }) {
   const active = item.match ? item.match(pathname) : pathname === item.href;
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200 ${
         active
           ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
@@ -142,11 +146,23 @@ export function AppShell({
   const tShell = useTranslations("shell");
   const isImmersiveSession =
     /^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete");
+  const isAdmin = profile.role === "admin";
+  const primaryNav = therapistNav(tNav);
+  const secondaryNav = isAdmin ? adminNav(tNav) : [];
+  const desktopNav = [...primaryNav, ...secondaryNav];
+  const [moreOpen, setMoreOpen] = useState(false);
+  const adminActive = secondaryNav.some((item) =>
+    item.match ? item.match(pathname) : pathname === item.href,
+  );
 
-  const nav = [
-    ...therapistNav(tNav),
-    ...(profile.role === "admin" ? adminNav(tNav) : []),
-  ];
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
 
   async function signOut() {
     const supabase = createClient();
@@ -209,8 +225,8 @@ export function AppShell({
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 px-2">
-          {nav.map((item) => (
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2">
+          {desktopNav.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
@@ -293,12 +309,86 @@ export function AppShell({
         <div className="pb-24 pt-16 md:pb-0 md:pt-0">{children}</div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
-        {nav.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} compact />
+      {/* Mobile bottom nav — primary destinations only; admin via More sheet */}
+      <nav
+        className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden"
+        aria-label={tShell("tagline")}
+      >
+        {primaryNav.map((item) => (
+          <NavLink
+            key={item.href}
+            item={item}
+            pathname={pathname}
+            compact
+            onNavigate={() => setMoreOpen(false)}
+          />
         ))}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-medium tracking-wide ${
+              adminActive || moreOpen
+                ? "text-[var(--primary)]"
+                : "text-[var(--on-surface-variant)]"
+            }`}
+            aria-expanded={moreOpen}
+            aria-haspopup="dialog"
+          >
+            <span
+              className="material-symbols-outlined text-[22px]"
+              style={
+                adminActive || moreOpen
+                  ? { fontVariationSettings: "'FILL' 1" }
+                  : undefined
+              }
+            >
+              more_horiz
+            </span>
+            {tNav("more")}
+          </button>
+        )}
       </nav>
+
+      {moreOpen && isAdmin && (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/35"
+            aria-label={tNav("closeMenu")}
+            onClick={() => setMoreOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={tNav("adminTools")}
+            className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 pb-8 shadow-2xl"
+          >
+            <div className="mb-3 flex items-center justify-between px-1">
+              <p className="text-sm font-semibold text-[var(--on-surface)]">
+                {tNav("adminTools")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium"
+              >
+                {tNav("closeMenu")}
+              </button>
+            </div>
+            <nav className="space-y-1">
+              {secondaryNav.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={() => setMoreOpen(false)}
+                />
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   LOCALE_COOKIE,
   type AppLocale,
 } from "@/i18n/config";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 function applyLocaleCookie(
   response: NextResponse,
@@ -50,19 +51,29 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
   const isPublic =
-    path === "/" || isAuthPage || path.startsWith("/auth/");
+    path === "/" ||
+    isAuthPage ||
+    path.startsWith("/auth/") ||
+    path === "/privacy" ||
+    path === "/terms";
 
   if (!user && !isPublic) {
+    // API clients need JSON 401 — never HTML login redirects.
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", path);
+    // Preserve query string so deep links round-trip after login.
+    const nextTarget = `${path}${request.nextUrl.search}`;
+    url.search = "";
+    url.searchParams.set("next", nextTarget);
     return NextResponse.redirect(url);
   }
 
   if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/avatars";
-    return NextResponse.redirect(url);
+    const next = safeRedirectPath(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(next, request.url));
   }
 
   const isAdminPath =

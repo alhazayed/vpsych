@@ -27,6 +27,18 @@ describe("architecture invariants", () => {
     expect(route).not.toMatch(/aiFailureDetail:/);
   });
 
+  it("session start/message RPCs fall back when service role is unset", () => {
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(start).toMatch(/messageRpcClient/);
+    expect(message).toMatch(/messageRpcClient/);
+    expect(start).not.toMatch(/error: "Server misconfigured"/);
+    expect(message).not.toMatch(/error: "Server misconfigured"/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),
@@ -36,6 +48,26 @@ describe("architecture invariants", () => {
     ).not.toThrow();
     expect(() =>
       readFileSync(join(root, "app/global-error.tsx"), "utf8"),
+    ).not.toThrow();
+  });
+
+  it("middleware returns JSON 401 for anonymous API access", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/path\.startsWith\("\/api\/"\)/);
+    expect(mw).toMatch(/Unauthorized/);
+    expect(mw).toMatch(/\/privacy/);
+    expect(mw).toMatch(/\/terms/);
+  });
+
+  it("provides a custom not-found page and legal routes", () => {
+    expect(() =>
+      readFileSync(join(root, "app/not-found.tsx"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(root, "app/privacy/page.tsx"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(root, "app/terms/page.tsx"), "utf8"),
     ).not.toThrow();
   });
 });

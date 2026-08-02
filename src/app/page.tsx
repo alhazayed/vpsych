@@ -414,6 +414,16 @@ export default async function HomePage() {
                 </a>
               </li>
               <li>
+                <Link href="/privacy" className="hover:text-[var(--primary)]">
+                  {t("footer.privacy")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-[var(--primary)]">
+                  {t("footer.terms")}
+                </Link>
+              </li>
+              <li>
                 <Link href="/signup" className="hover:text-[var(--primary)]">
                   {t("footer.getStarted")}
                 </Link>

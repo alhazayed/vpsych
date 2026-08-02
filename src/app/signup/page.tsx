@@ -415,7 +415,18 @@ export default function SignupPage() {
                   required
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
-                  {t("termsAgree")}
+                  {t.rich("termsAgreeRich", {
+                    terms: (chunks) => (
+                      <Link href="/terms" className="font-semibold text-[var(--primary)] hover:underline">
+                        {chunks}
+                      </Link>
+                    ),
+                    privacy: (chunks) => (
+                      <Link href="/privacy" className="font-semibold text-[var(--primary)] hover:underline">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </span>
               </label>
               <label className="flex cursor-pointer items-start gap-3">
@@ -506,9 +517,15 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex gap-6 text-xs text-[var(--on-surface-variant)]">
-            <span>{t("footer.terms")}</span>
-            <span>{t("footer.privacy")}</span>
-            <span>{t("footer.support")}</span>
+            <Link href="/terms" className="hover:text-[var(--primary)]">
+              {t("footer.terms")}
+            </Link>
+            <Link href="/privacy" className="hover:text-[var(--primary)]">
+              {t("footer.privacy")}
+            </Link>
+            <Link href="/#faq" className="hover:text-[var(--primary)]">
+              {t("footer.support")}
+            </Link>
           </div>
         </div>
       </footer>

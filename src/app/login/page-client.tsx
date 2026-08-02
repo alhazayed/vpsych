@@ -14,17 +14,23 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const t = useTranslations("auth.login");
   const next = safeRedirectPath(searchParams.get("next"));
+  const authCallbackFailed =
+    searchParams.get("error") === "auth" ? t("authCallbackFailed") : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const displayError = error ?? authCallbackFailed;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setInfo(null);
     const supabase = createClient();
     const { error: signError } = await supabase.auth.signInWithPassword({
       email,
@@ -38,6 +44,30 @@ export default function LoginPage() {
     void remember;
     router.push(next);
     router.refresh();
+  }
+
+  async function onForgotPassword() {
+    setError(null);
+    setInfo(null);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError(t("resetNeedEmail"));
+      return;
+    }
+    setResetting(true);
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      trimmed,
+      {
+        redirectTo: `${window.location.origin}/auth/callback?next=/login`,
+      },
+    );
+    setResetting(false);
+    if (resetError) {
+      setError(t("resetFailed"));
+      return;
+    }
+    setInfo(t("resetSent"));
   }
 
   return (
@@ -59,9 +89,12 @@ export default function LoginPage() {
         <div className="flex items-center gap-4 md:gap-8">
           <LanguageSwitcher />
           <div className="hidden items-center gap-8 md:flex">
-            <span className="text-base font-medium text-[var(--on-surface-variant)]">
+            <Link
+              href="/#faq"
+              className="text-base font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
+            >
               {t("support")}
-            </span>
+            </Link>
             <Link href="/signup" className="btn-primary rounded-xl px-6">
               {t("requestAccess")}
             </Link>
@@ -147,14 +180,17 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("emailPlaceholder")}
                   className={`h-12 w-full rounded-xl border-2 bg-white px-4 text-base outline-none transition focus:border-[var(--primary)] ${
-                    error
+                    displayError
                       ? "border-[var(--error)]"
                       : "border-[var(--outline-variant)]"
                   }`}
                 />
-                {error && (
-                  <p className="ms-1 text-xs font-medium text-[var(--error)]">
-                    {error}
+                {displayError && (
+                  <p
+                    className="ms-1 text-xs font-medium text-[var(--error)]"
+                    role="alert"
+                  >
+                    {displayError}
                   </p>
                 )}
               </div>
@@ -167,9 +203,14 @@ export default function LoginPage() {
                   >
                     {t("password")}
                   </label>
-                  <span className="cursor-default text-xs font-semibold text-[var(--primary)] opacity-60">
-                    {t("forgotPassword")}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void onForgotPassword()}
+                    disabled={resetting || loading}
+                    className="text-xs font-semibold text-[var(--primary)] hover:underline disabled:opacity-60"
+                  >
+                    {resetting ? t("resetSending") : t("forgotPassword")}
+                  </button>
                 </div>
                 <div className="relative">
                   <input
@@ -208,6 +249,15 @@ export default function LoginPage() {
                   {t("rememberMe")}
                 </span>
               </label>
+
+              {info && (
+                <p
+                  className="rounded-xl border border-[var(--primary)]/25 bg-[var(--primary-fixed)]/40 px-3 py-2 text-sm text-[var(--primary)]"
+                  role="status"
+                >
+                  {info}
+                </p>
+              )}
 
               <button
                 type="submit"
@@ -253,10 +303,14 @@ export default function LoginPage() {
                   {t("createAccount")}
                 </Link>
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
-                <span className="text-[11px] font-medium">{t("privacy")}</span>
-                <span className="text-[11px] font-medium">{t("terms")}</span>
-                <span className="text-[11px] font-medium">
+              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-medium text-[var(--on-surface-variant)]">
+                <Link href="/privacy" className="hover:text-[var(--primary)]">
+                  {t("privacy")}
+                </Link>
+                <Link href="/terms" className="hover:text-[var(--primary)]">
+                  {t("terms")}
+                </Link>
+                <span>
                   {t("copyright", { year: new Date().getFullYear() })}
                 </span>
               </div>
