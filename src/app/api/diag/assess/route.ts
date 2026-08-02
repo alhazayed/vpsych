@@ -51,5 +51,43 @@ export async function GET() {
     out.gatewayPath = { ok: false, model: gwModel, error: msg(e) };
   }
 
+  // Faithful assessment-shaped call at the app's budget (1200) and a larger one.
+  const sys =
+    "You are a clinical examiner scoring a therapy trainee against a rubric. " +
+    "Respond with a single JSON object only (no markdown), keys: items " +
+    "(array of {id, score (0-5), feedback}), narrative (string), excerpts (array of strings).";
+  const user =
+    "Transcript:\nTHERAPIST: How have you been?\nPATIENT: Low and tired most days, sleeping a lot.\n" +
+    "THERAPIST: Any thoughts of hurting yourself?\nPATIENT: Sometimes I wish I wouldn't wake up, no plan.\n\n" +
+    "Rubric ids: alliance, assessment, interventions, safety, structure. Return JSON with keys items, narrative, excerpts only.";
+  for (const budget of [1200, 4000]) {
+    try {
+      const r = await openAIService.chat({
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: user },
+        ],
+        temperature: 0.3,
+        maxCompletionTokens: budget,
+      });
+      let parseOk = false;
+      try {
+        JSON.parse(r.text);
+        parseOk = true;
+      } catch {
+        parseOk = false;
+      }
+      out[`assessmentCall_${budget}`] = {
+        ok: true,
+        textLen: r.text.length,
+        parseOk,
+        usage: r.usage,
+        textHead: r.text.slice(0, 160),
+      };
+    } catch (e) {
+      out[`assessmentCall_${budget}`] = { ok: false, error: msg(e) };
+    }
+  }
+
   return NextResponse.json(out);
 }
