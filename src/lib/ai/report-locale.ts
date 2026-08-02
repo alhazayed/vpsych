@@ -94,23 +94,32 @@ Return one score entry per rubric id.`;
 export function heuristicCopy(
   language: "en" | "ar",
   turnCount: number,
+  reason: "unconfigured" | "unavailable" = "unconfigured",
 ): {
   feedback: string;
   narrativeEmpty: string;
   narrativeWithTurns: string;
 } {
   if (language === "ar") {
+    const why =
+      reason === "unavailable"
+        ? "تعذّر التقييم بالذكاء الاصطناعي؛ استُخدم تقدير آلي (persona_fallback)."
+        : "مفتاح الذكاء الاصطناعي غير مضبوط (AI_GATEWAY_API_KEY أو OPENAI_API_KEY).";
     return {
-      feedback: `درجة تقديرية استناداً إلى ${turnCount} مداخلة للمعالج (مفتاح الذكاء الاصطناعي غير مضبوط).`,
+      feedback: `درجة تقديرية استناداً إلى ${turnCount} مداخلة للمعالج (${why})`,
       narrativeEmpty:
         "لم يُلتقط كلام للمعالج. انتهت الجلسة دون نص صالح للتقييم.",
-      narrativeWithTurns: `تقييم آلي تقديري من ${turnCount} مداخلة للمعالج. اضبط AI_GATEWAY_API_KEY لتقييم كامل وفق معايير الجلسة المثالية.`,
+      narrativeWithTurns: `تقييم آلي تقديري من ${turnCount} مداخلة للمعالج. المصدر: persona_fallback. ${why}`,
     };
   }
+  const why =
+    reason === "unavailable"
+      ? "AI assessment failed; used heuristic (persona_fallback)."
+      : "AI key not configured (set OPENAI_API_KEY or AI_GATEWAY_API_KEY).";
   return {
-    feedback: `Heuristic score based on ${turnCount} therapist turns (AI key not configured).`,
+    feedback: `Heuristic score based on ${turnCount} therapist turns (${why})`,
     narrativeEmpty:
       "No therapist speech was captured. Session ended without a usable transcript.",
-    narrativeWithTurns: `Automated heuristic assessment from ${turnCount} therapist turns. Configure AI_GATEWAY_API_KEY for full rubric evaluation against ideal session guidelines.`,
+    narrativeWithTurns: `Automated heuristic assessment from ${turnCount} therapist turns. aiSource=persona_fallback. ${why}`,
   };
 }

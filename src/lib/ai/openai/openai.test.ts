@@ -32,6 +32,7 @@ describe("withOpenAIRetry", () => {
         if (calls < 2) {
           throw new OpenAIServiceError("temp", {
             code: "OPENAI_CONNECTION",
+            kind: "connection",
             retryable: true,
           });
         }
@@ -51,6 +52,7 @@ describe("withOpenAIRetry", () => {
           calls += 1;
           throw new OpenAIServiceError("auth", {
             code: "OPENAI_AUTH",
+            kind: "authentication",
             retryable: false,
           });
         },
@@ -59,12 +61,32 @@ describe("withOpenAIRetry", () => {
     ).rejects.toMatchObject({ code: "OPENAI_AUTH" });
     expect(calls).toBe(1);
   });
+
+  it("does not retry HTTP 429 rate_limit errors", async () => {
+    let calls = 0;
+    await expect(
+      withOpenAIRetry(
+        async () => {
+          calls += 1;
+          throw new OpenAIServiceError("rate limited", {
+            code: "OPENAI_RATE_LIMIT",
+            kind: "rate_limit",
+            status: 429,
+            retryable: false,
+          });
+        },
+        { attempts: 3, baseDelayMs: 1 },
+      ),
+    ).rejects.toMatchObject({ code: "OPENAI_RATE_LIMIT", retryable: false });
+    expect(calls).toBe(1);
+  });
 });
 
 describe("OpenAIServiceError mapping", () => {
   it("preserves OpenAIServiceError instances", async () => {
     const err = new OpenAIServiceError("x", {
       code: "OPENAI_API",
+      kind: "api",
       status: 500,
       retryable: true,
     });
@@ -73,6 +95,66 @@ describe("OpenAIServiceError mapping", () => {
         throw err;
       }, { attempts: 1 }),
     ).rejects.toBe(err);
+  });
+
+  it("distinguishes insufficient_quota from rate_limit", async () => {
+    const { RateLimitError } = await import("openai");
+    const { toOpenAIServiceError } = await import("@/lib/ai/openai/errors");
+    const quota = new RateLimitError(
+      429,
+      { message: "You exceeded your current quota", code: "insufficient_quota" },
+      "You exceeded your current quota",
+      new Headers(),
+    );
+    const rate = new RateLimitError(
+      429,
+      { message: "Rate limit reached", code: "rate_limit_exceeded" },
+      "Rate limit reached",
+      new Headers(),
+    );
+    const quotaMapped = toOpenAIServiceError(quota);
+    const rateMapped = toOpenAIServiceError(rate);
+    expect(quotaMapped.kind).toBe("insufficient_quota");
+    expect(quotaMapped.code).toBe("OPENAI_INSUFFICIENT_QUOTA");
+    expect(quotaMapped.retryable).toBe(false);
+    expect(rateMapped.kind).toBe("rate_limit");
+    expect(rateMapped.code).toBe("OPENAI_RATE_LIMIT");
+    expect(rateMapped.retryable).toBe(false);
+  });
+
+  it("maps auth, timeout, and invalid_request kinds", async () => {
+    const {
+      AuthenticationError,
+      APIConnectionTimeoutError,
+      BadRequestError,
+    } = await import("openai");
+    const { toOpenAIServiceError } = await import("@/lib/ai/openai/errors");
+
+    const auth = toOpenAIServiceError(
+      new AuthenticationError(
+        401,
+        { message: "invalid api key", code: "invalid_api_key" },
+        "invalid api key",
+        new Headers(),
+      ),
+    );
+    expect(auth.kind).toBe("authentication");
+    expect(auth.retryable).toBe(false);
+
+    const timeout = toOpenAIServiceError(new APIConnectionTimeoutError());
+    expect(timeout.kind).toBe("timeout");
+    expect(timeout.code).toBe("OPENAI_TIMEOUT");
+
+    const invalid = toOpenAIServiceError(
+      new BadRequestError(
+        400,
+        { message: "bad request", code: "invalid_request_error" },
+        "bad request",
+        new Headers(),
+      ),
+    );
+    expect(invalid.kind).toBe("invalid_request");
+    expect(invalid.retryable).toBe(false);
   });
 });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generatePatientReply } from "@/lib/ai/patient-agent";
+import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { rateLimit } from "@/lib/rate-limit";
@@ -90,9 +90,9 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
-  let reply: string;
+  let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
-    reply = await generatePatientReply({
+    replyMeta = await generatePatientReplyDetailed({
       avatar: resolved,
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
@@ -109,11 +109,19 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  console.info("[sessions/message] assistant reply", {
+    sessionId,
+    language: typed.language,
+    aiSource: replyMeta.aiSource,
+    aiModel: replyMeta.model ?? null,
+    errorKind: replyMeta.errorKind ?? null,
+  });
+
   const { data: assistantMsg, error: assistantError } = await supabase.rpc(
     "insert_assistant_message",
     {
       p_session_id: sessionId,
-      p_content: reply,
+      p_content: replyMeta.text,
     },
   );
 
@@ -124,11 +132,29 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({
-    userMessage: userMsg,
-    assistantMessage: assistantMsg,
-    remainingSeconds: remainingSeconds(typed.started_at, typed.max_duration_sec),
-    // Additive: session language used for this turn (AR/EN pipeline).
-    locale: typed.language ?? resolved.language,
-  });
+  return NextResponse.json(
+    {
+      userMessage: userMsg,
+      assistantMessage: assistantMsg,
+      remainingSeconds: remainingSeconds(
+        typed.started_at,
+        typed.max_duration_sec,
+      ),
+      // Additive: session language used for this turn (AR/EN pipeline).
+      locale: typed.language ?? resolved.language,
+      // Additive observability — never hide persona fallback usage.
+      aiSource: replyMeta.aiSource,
+      aiModel: replyMeta.model ?? null,
+      aiErrorKind: replyMeta.errorKind ?? null,
+    },
+    {
+      headers: {
+        "X-AI-Source": replyMeta.aiSource,
+        ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
+        ...(replyMeta.errorKind
+          ? { "X-AI-Error-Kind": replyMeta.errorKind }
+          : {}),
+      },
+    },
+  );
 }
