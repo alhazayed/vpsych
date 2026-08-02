@@ -14,6 +14,12 @@ import type {
   PersonaRow,
   TherapyModality,
 } from "@/lib/case-engine/types";
+import {
+  findTemplateById,
+  findTemplateBySlug,
+} from "@/lib/scenario-templates/catalog";
+import { generateFromTemplate } from "@/lib/scenario-templates/generate";
+import type { ClinicalScenarioTemplate } from "@/lib/scenario-templates/types";
 import type { Avatar, ClinicalCore } from "@/lib/types";
 
 export type StartCaseOptions = {
@@ -26,6 +32,9 @@ export type StartCaseOptions = {
   therapyModality?: TherapyModality;
   severity?: CaseSeverity;
   seed?: string | number;
+  /** Clinical Scenario Template Engine */
+  templateId?: string;
+  templateSlug?: string;
 };
 
 function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): PersonaRow {
@@ -98,6 +107,209 @@ export async function createCaseForSession(
     .maybeSingle();
 
   const persona = personaFromAvatar(opts.avatar, dbPersona as PersonaRow | null);
+
+  // -------------------------------------------------------------------------
+  // Template path — instructor templates drive generation
+  // -------------------------------------------------------------------------
+  let resolvedTemplate: ClinicalScenarioTemplate | null = null;
+  if (opts.templateId || opts.templateSlug) {
+    const { data: trow } = opts.templateId
+      ? await supabase
+          .from("clinical_templates")
+          .select("*")
+          .eq("id", opts.templateId)
+          .maybeSingle()
+      : await supabase
+          .from("clinical_templates")
+          .select("*")
+          .eq("slug", opts.templateSlug!)
+          .maybeSingle();
+
+    if (trow) {
+      const { data: objectives } = await supabase
+        .from("template_objectives")
+        .select("category, statement, sort_order")
+        .eq("template_id", trow.id)
+        .order("sort_order");
+      const { data: competencies } = await supabase
+        .from("template_competencies")
+        .select(
+          "competency_id, label, weight, max_score, critical, auto_deduction, excellent_marker, sort_order",
+        )
+        .eq("template_id", trow.id)
+        .order("sort_order");
+      const { data: comorbidities } = await supabase
+        .from("template_comorbidities")
+        .select("disorder_id, tier, disorders(slug)")
+        .eq("template_id", trow.id);
+      const { data: primaryDisorder } = await supabase
+        .from("disorders")
+        .select("slug")
+        .eq("id", trow.primary_diagnosis_id)
+        .maybeSingle();
+
+      resolvedTemplate = {
+        id: trow.id,
+        slug: trow.slug,
+        name: trow.name,
+        description: trow.description,
+        specialty: trow.specialty,
+        target_learners: trow.target_learners ?? [],
+        estimated_duration_minutes: trow.estimated_duration_minutes,
+        difficulty: trow.difficulty,
+        language: opts.locale || trow.language,
+        culture: trow.culture,
+        therapy_modality: trow.therapy_modality,
+        primary_diagnosis_id: trow.primary_diagnosis_id,
+        primary_diagnosis_slug: primaryDisorder?.slug,
+        allowed_comorbidity_slugs: (comorbidities ?? [])
+          .map((c) => {
+            const d = c.disorders as { slug?: string } | { slug?: string }[] | null;
+            if (Array.isArray(d)) return d[0]?.slug;
+            return d?.slug;
+          })
+          .filter(Boolean) as string[],
+        excluded_diagnosis_slugs: [],
+        severity: trow.severity,
+        risk_level: trow.risk_level,
+        assessment_type: trow.assessment_type,
+        voice_profile_id: trow.voice_profile_id,
+        default_persona_id: trow.default_persona_id,
+        randomization_level: trow.randomization_level,
+        memory_mode: trow.memory_mode,
+        grading_rubric: trow.grading_rubric ?? {
+          pass_threshold: 60,
+          outstanding_threshold: 85,
+        },
+        report_template: trow.report_template ?? {},
+        learning_objectives: (objectives ?? []).map((o) => ({
+          category: o.category,
+          statement: o.statement,
+          sort_order: o.sort_order,
+        })),
+        clinical_competencies: (competencies ?? []).map((c) => ({
+          competency_id: c.competency_id,
+          label: c.label,
+          weight: Number(c.weight),
+          max_score: Number(c.max_score),
+          critical: c.critical,
+          auto_deduction: c.auto_deduction ? Number(c.auto_deduction) : 0,
+          excellent_marker: c.excellent_marker ?? undefined,
+          sort_order: c.sort_order,
+        })),
+        allow_medical_simulation: trow.allow_medical_simulation,
+        enabled: trow.enabled,
+        version: trow.version,
+      } as ClinicalScenarioTemplate;
+    } else {
+      resolvedTemplate =
+        (opts.templateId ? findTemplateById(opts.templateId) : undefined) ??
+        (opts.templateSlug ? findTemplateBySlug(opts.templateSlug) : undefined) ??
+        null;
+      if (resolvedTemplate) {
+        resolvedTemplate = {
+          ...resolvedTemplate,
+          language: opts.locale || resolvedTemplate.language,
+        };
+      }
+    }
+
+    if (!resolvedTemplate) {
+      return { ok: false, error: "Clinical template not found", status: 404 };
+    }
+
+    const fromTemplate = generateFromTemplate({
+      template: resolvedTemplate,
+      persona,
+      avatarId: opts.avatar.id,
+      comorbiditySlugs: opts.comorbiditySlugs,
+      seed: opts.seed,
+      autoComorbidity: !opts.comorbiditySlugs?.length,
+    });
+    if (!fromTemplate.ok) {
+      return {
+        ok: false,
+        error: fromTemplate.issues.map((i) => i.message).join("; "),
+        status: 400,
+      };
+    }
+
+    const snapshot = {
+      ...fromTemplate.patient.snapshot,
+      template: fromTemplate.patient.template,
+    };
+    const difficulty = resolvedTemplate.difficulty;
+    const therapyModality = resolvedTemplate.therapy_modality as TherapyModality;
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from("case_instances")
+      .insert({
+        assessment_id: snapshot.assessment_id,
+        persona_id: dbPersona?.id ?? null,
+        avatar_id: opts.avatar.id,
+        primary_disorder_id: resolvedTemplate.primary_diagnosis_id,
+        comorbidity_disorder_ids: snapshot.comorbidities.map((c) => c.id),
+        difficulty,
+        therapy_modality: therapyModality,
+        locale: snapshot.locale,
+        severity: snapshot.severity,
+        clinical_snapshot: snapshot,
+        randomized_context: snapshot.randomized_context,
+        voice_profile_id:
+          resolvedTemplate.voice_profile_id ??
+          opts.avatar.voice_profile_id ??
+          null,
+        template_id: resolvedTemplate.id,
+        template_version: resolvedTemplate.version,
+        created_by: opts.therapistId,
+      })
+      .select("id")
+      .single();
+
+    if (insertErr || !inserted) {
+      if (
+        insertErr?.message?.includes("does not exist") ||
+        insertErr?.code === "42P01" ||
+        insertErr?.message?.includes("template_id")
+      ) {
+        return {
+          ok: true,
+          caseInstanceId: snapshot.assessment_id,
+          snapshot,
+          difficulty,
+          therapyModality,
+        };
+      }
+      return {
+        ok: false,
+        error: insertErr?.message ?? "Failed to persist case instance",
+        status: 500,
+      };
+    }
+
+    snapshot.case_instance_id = inserted.id;
+    await supabase.from("case_memory").insert({
+      case_instance_id: inserted.id,
+      memory: {
+        turns: [],
+        notes: [],
+        scope: "case_instance",
+        template_id: resolvedTemplate.id,
+      },
+    });
+    await supabase
+      .from("case_instances")
+      .update({ clinical_snapshot: snapshot })
+      .eq("id", inserted.id);
+
+    return {
+      ok: true,
+      caseInstanceId: inserted.id,
+      snapshot,
+      difficulty,
+      therapyModality,
+    };
+  }
 
   let primary: DisorderRow | undefined;
   const disorderSlug =

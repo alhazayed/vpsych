@@ -34,6 +34,7 @@
       "avatarPresets": "Avatar Presets",
       "voiceManagement": "Voice Management",
       "caseEngine": "Case Engine",
+      "scenarioTemplates": "Scenario Templates",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -45,6 +46,7 @@
     "avatarPresets": "Avatar Presets",
     "voiceManagement": "Voice Management",
     "caseEngine": "Case Engine",
+    "scenarioTemplates": "Scenario Templates",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -484,6 +486,12 @@
       "empty": "No case instances yet. Start an assessment or preview a case below.",
       "disorders": "Disorder catalog",
       "preview": "Preview generator"
+    },
+    "templates": {
+      "title": "Clinical Scenario Templates",
+      "subtitle": "Instructors author reusable templates. The engine generates standardized patients — never hand-build a patient.",
+      "library": "Template library",
+      "preview": "Generate sample patient"
     },
     "voices": {
       "title": "Voice Management",

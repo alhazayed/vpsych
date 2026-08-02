@@ -119,7 +119,7 @@ export function validateComorbidities(
           "comorbidities",
         ),
       );
-    } else if (!rule.compatible) {
+    } else if (!rule.compatible || rule.tier === "impossible") {
       out.push(
         issue(
           "comorbidity_incompatible",

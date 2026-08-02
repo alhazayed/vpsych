@@ -15,9 +15,13 @@ export type TherapyModality =
   | "supportive"
   | "motivational_interviewing"
   | "family_therapy"
-  | "crisis_intervention";
+  | "crisis_intervention"
+  | "exposure_therapy";
 
+/** Runtime clinical_core severity (DB CHECK + ClinicalCore). */
 export type CaseSeverity = "subclinical" | "mild" | "moderate" | "severe";
+
+export type ComorbidityTier = "compatible" | "possible" | "rare" | "impossible";
 
 /** Module 1 — stable identity (locale-neutral baseline). */
 export type PersonaIdentityModule = {
@@ -96,6 +100,7 @@ export type ComorbidityRule = {
   primary_disorder_id: string;
   comorbid_disorder_id: string;
   compatible: boolean;
+  tier?: ComorbidityTier;
   notes?: string | null;
 };
 
@@ -193,6 +198,19 @@ export type CaseInstanceSnapshot = {
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
+  /** Present when generated from a Clinical Scenario Template. */
+  template?: {
+    id: string;
+    slug: string;
+    version: number;
+    name: string;
+    specialty: string;
+    assessment_type: string;
+    culture?: string | null;
+    risk_level?: string;
+    grading_rubric?: Record<string, unknown>;
+    learning_objectives?: unknown[];
+  };
 };
 
 export type CaseValidationIssue = {
