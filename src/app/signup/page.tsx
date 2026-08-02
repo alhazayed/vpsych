@@ -102,7 +102,11 @@ export default function SignupPage() {
       setError(t("errors.passwordMismatch"));
       return;
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
+      setError(t("errors.passwordShort"));
+      return;
+    }
+    if (!checks.upper || !checks.number) {
       setError(t("errors.passwordShort"));
       return;
     }

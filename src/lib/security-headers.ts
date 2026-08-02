@@ -62,6 +62,7 @@ export function securityHeaders(): SecurityHeader[] {
     { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
     { key: "X-DNS-Prefetch-Control", value: "on" },
     { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+    { key: "Cross-Origin-Resource-Policy", value: "same-site" },
     {
       key: "Strict-Transport-Security",
       value: "max-age=63072000; includeSubDomains; preload",

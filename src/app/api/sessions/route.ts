@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -12,6 +13,7 @@ import {
 } from "@/lib/instructor-presets";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
+import { clientSafeError } from "@/lib/api-errors";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -179,19 +181,34 @@ export async function POST(request: Request) {
   }
 
   if (error || !session) {
+    console.error("[sessions] create failed", { error: error?.message });
     return NextResponse.json(
-      { error: error?.message ?? "Failed to create session" },
+      { error: clientSafeError("Failed to create session", error) },
       { status: 500 },
     );
   }
 
-  const { error: sysErr } = await supabase.rpc("insert_system_message", {
+  const privileged = createServiceClient();
+  if (!privileged) {
+    return NextResponse.json(
+      { error: "Server misconfigured" },
+      { status: 500 },
+    );
+  }
+  const { error: sysErr } = await privileged.rpc("insert_system_message", {
     p_session_id: session.id,
     p_content: "Session started. Speak with the patient avatar.",
   });
 
   if (sysErr) {
-    return NextResponse.json({ error: sysErr.message }, { status: 500 });
+    console.error("[sessions] system message failed", {
+      sessionId: session.id,
+      error: sysErr.message,
+    });
+    return NextResponse.json(
+      { error: clientSafeError("Failed to start session", sysErr) },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({

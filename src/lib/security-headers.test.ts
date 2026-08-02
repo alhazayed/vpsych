@@ -16,6 +16,7 @@ describe("securityHeaders", () => {
     expect(map["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
     expect(map["Strict-Transport-Security"]).toContain("max-age=");
     expect(map["Cross-Origin-Opener-Policy"]).toBe("same-origin");
+    expect(map["Cross-Origin-Resource-Policy"]).toBe("same-site");
     expect(map["Content-Security-Policy"]).toBeTruthy();
   });
 

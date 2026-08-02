@@ -54,16 +54,17 @@ export async function POST(request: Request) {
     (body.preview ? previewSampleText(locale) : "")) as string;
 
   try {
-    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
+    // Resolve only from avatar / registered voice_profile — ignore raw client voice ids
+    // to prevent arbitrary ElevenLabs voice / billing abuse.
     const resolved = await resolveTtsVoice({
       locale,
       voiceProfileId: body.voiceProfileId,
       avatarId: body.avatarId,
-      voiceId: body.voiceId,
-      voiceIdAr: body.voiceIdAr,
+      // Legacy voiceId* ignored unless tied to an avatar/profile lookup above.
+      voiceId: null,
+      voiceIdAr: null,
     });
 
-    // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({
       text,
       locale,
@@ -92,15 +93,23 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ElevenLabsError) {
+      console.error("[voice/tts] ElevenLabs error", {
+        code: error.code,
+        status: error.status,
+        detail: error.detail,
+      });
       return NextResponse.json(
         {
           error: error.message,
           code: error.code,
-          detail: error.detail,
         },
-        { status: error.status },
+        { status: error.status >= 400 && error.status < 600 ? error.status : 502 },
       );
     }
+    console.error(
+      "[voice/tts] failed",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502 },
