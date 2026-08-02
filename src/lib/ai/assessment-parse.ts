@@ -66,8 +66,36 @@ export function extractJsonObject(text: string): unknown {
   throw new Error("assessment model response is not valid JSON");
 }
 
+/**
+ * GPT often returns `items` as an object keyed by rubric id instead of an array:
+ * `{ "alliance": { score, feedback }, ... }`. That shape previously failed Zod
+ * and forced heuristicAssessment even when narrative/scores were present.
+ */
+export function normalizeAssessmentPayload(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const obj = { ...(raw as Record<string, unknown>) };
+  const items = obj.items;
+  if (items && !Array.isArray(items) && typeof items === "object") {
+    obj.items = Object.entries(items as Record<string, unknown>).map(
+      ([key, value]) => {
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          const v = value as Record<string, unknown>;
+          return {
+            ...v,
+            id: typeof v.id === "string" && v.id.trim() ? v.id : key,
+            score: v.score,
+            feedback: typeof v.feedback === "string" ? v.feedback : "",
+          };
+        }
+        return { id: key, score: value, feedback: "" };
+      },
+    );
+  }
+  return obj;
+}
+
 export function parseAssessmentModelText(text: string): AssessmentModelOutput {
-  const parsed = extractJsonObject(text);
+  const parsed = normalizeAssessmentPayload(extractJsonObject(text));
   const validated = assessmentSchema.safeParse(parsed);
   if (!validated.success) {
     throw new Error(

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   extractJsonObject,
+  normalizeAssessmentPayload,
   parseAssessmentModelText,
 } from "@/lib/ai/assessment-parse";
 
@@ -49,5 +50,28 @@ describe("assessment JSON parsing", () => {
     const out = parseAssessmentModelText(JSON.stringify(many));
     expect(out.excerpts).toHaveLength(5);
     expect(out.items.every((i) => i.score === 5)).toBe(true);
+  });
+
+  it("normalizes object-shaped items (verified GPT failure mode)", () => {
+    const objectItems = {
+      items: {
+        alliance: { score: 4, feedback: "Warm opening." },
+        assessment: { score: "3", feedback: "Some exploration." },
+        interventions: { score: 2, feedback: "Supportive." },
+        safety: { score: 5, feedback: "Safety checked." },
+        structure: { score: 3, feedback: "Clear start." },
+      },
+      narrative: "Therapist opened with mood and safety.",
+      excerpts: ["How have you been feeling?"],
+    };
+    const normalized = normalizeAssessmentPayload(objectItems) as {
+      items: { id: string }[];
+    };
+    expect(Array.isArray(normalized.items)).toBe(true);
+    expect(normalized.items.map((i) => i.id)).toContain("safety");
+    const out = parseAssessmentModelText(JSON.stringify(objectItems));
+    expect(out.items).toHaveLength(5);
+    expect(out.items.find((i) => i.id === "alliance")?.score).toBe(4);
+    expect(out.narrative).toContain("mood and safety");
   });
 });
