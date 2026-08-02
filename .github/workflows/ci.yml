@@ -29,6 +29,13 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Migration parity
+        run: npm run test:migrations
+        env:
+          # Optional: set SUPABASE_DB_URL in repo secrets to also compare
+          # remote supabase_migrations.schema_migrations against git.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
       - name: Build
         run: npm run build
         env:
