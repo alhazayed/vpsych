@@ -54,17 +54,16 @@ export async function POST(request: Request) {
     (body.preview ? previewSampleText(locale) : "")) as string;
 
   try {
-    // Resolve only from avatar / registered voice_profile — ignore raw client voice ids
-    // to prevent arbitrary ElevenLabs voice / billing abuse.
+    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
     const resolved = await resolveTtsVoice({
       locale,
       voiceProfileId: body.voiceProfileId,
       avatarId: body.avatarId,
-      // Legacy voiceId* ignored unless tied to an avatar/profile lookup above.
-      voiceId: null,
-      voiceIdAr: null,
+      voiceId: body.voiceId,
+      voiceIdAr: body.voiceIdAr,
     });
 
+    // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({
       text,
       locale,
@@ -93,23 +92,16 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ElevenLabsError) {
-      console.error("[voice/tts] ElevenLabs error", {
-        code: error.code,
-        status: error.status,
-        detail: error.detail,
-      });
+      console.warn("[tts]", error.code, error.detail ?? error.message);
       return NextResponse.json(
         {
-          error: error.message,
-          code: error.code,
+          error: "Text-to-speech failed",
+          code: error.code || "TTS_FAILED",
         },
-        { status: error.status >= 400 && error.status < 600 ? error.status : 502 },
+        { status: error.status },
       );
     }
-    console.error(
-      "[voice/tts] failed",
-      error instanceof Error ? error.message : String(error),
-    );
+    console.warn("[tts]", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502 },

@@ -16,6 +16,17 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders(),
       },
+      {
+        // Sensitive API responses must not be stored by shared caches/browsers.
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, private",
+          },
+          { key: "Pragma", value: "no-cache" },
+        ],
+      },
     ];
   },
 };

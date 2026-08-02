@@ -1,30 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiAdmin } from "@/lib/api-auth";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import { getBuiltinGraph } from "@/lib/cge";
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profile?.role !== "admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { supabase, user };
-}
-
-export async function GET() {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
-  const { supabase } = auth as { supabase: Awaited<ReturnType<typeof createClient>> };
+export async function GET(request: Request) {
+  const auth = await requireApiAdmin(request, {
+    action: "admin.cge.list",
+    resourceType: "cge",
+  });
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data: learners } = await supabase
     .from("learner_profiles")
@@ -53,9 +38,12 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
-  const { supabase } = auth as { supabase: Awaited<ReturnType<typeof createClient>> };
+  const auth = await requireApiAdmin(request, {
+    action: "admin.cge.patch",
+    resourceType: "cge",
+  });
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const body = (await request.json()) as {
     action?:
@@ -88,7 +76,8 @@ export async function PATCH(request: Request) {
       { onConflict: "learner_id,competency_id" },
     );
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   }
@@ -106,7 +95,8 @@ export async function PATCH(request: Request) {
       { onConflict: "learner_id,competency_id" },
     );
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     await supabase.from("cge_mastery_history").insert({
       learner_id: body.learnerId,
@@ -128,7 +118,8 @@ export async function PATCH(request: Request) {
       .eq("learner_id", body.learnerId)
       .eq("competency_id", body.competencyId);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn("[api]", error.message);
+      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiAdmin } from "@/lib/api-auth";
 import {
   findTemplateById,
   findTemplateBySlug,
@@ -7,22 +7,19 @@ import {
 import { generateFromTemplate } from "@/lib/scenario-templates/generate";
 import type { PersonaRow } from "@/lib/case-engine/types";
 import type { Avatar } from "@/lib/types";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireApiAdmin(request);
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
+
+  const limited = await rateLimit(`admin-tpl-preview:${auth.user.id}`, 30, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
   }
 
   const body = (await request.json()) as {

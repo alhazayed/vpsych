@@ -65,24 +65,42 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  const isAdminPath =
+    path.startsWith("/admin") || path.startsWith("/api/admin");
+
   // Explicit locale cookie wins. LanguageSwitcher sets the cookie immediately and
   // syncs preferred_language asynchronously — never clobber a valid cookie with a
   // stale profile value (that forced Arabic sessions back to en-US).
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   let locale: AppLocale = defaultLocale;
+  let profileRole: string | null = null;
 
-  if (isAppLocale(cookieLocale)) {
-    locale = cookieLocale;
-  } else if (user) {
+  if (user && (isAdminPath || !isAppLocale(cookieLocale))) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("preferred_language")
+      .select("preferred_language, role")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (isAppLocale(profile?.preferred_language)) {
+    profileRole = profile?.role ?? null;
+
+    if (!isAppLocale(cookieLocale) && isAppLocale(profile?.preferred_language)) {
       locale = profile.preferred_language;
     }
+  }
+
+  if (isAppLocale(cookieLocale)) {
+    locale = cookieLocale;
+  }
+
+  // Defense-in-depth: admin UI + /api/admin require role=admin at the edge.
+  if (user && isAdminPath && profileRole !== "admin") {
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/avatars";
+    return NextResponse.redirect(url);
   }
 
   if (cookieLocale !== locale) {
