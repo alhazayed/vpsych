@@ -19,12 +19,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setInfo(null);
     const supabase = createClient();
     const { error: signError } = await supabase.auth.signInWithPassword({
       email,
@@ -38,6 +41,31 @@ export default function LoginPage() {
     void remember;
     router.push(next);
     router.refresh();
+  }
+
+  async function onForgotPassword() {
+    setError(null);
+    setInfo(null);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError(t("resetNeedEmail"));
+      return;
+    }
+    setResetting(true);
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      trimmed,
+      {
+        redirectTo: `${window.location.origin}/auth/callback?next=/login`,
+      },
+    );
+    setResetting(false);
+    if (resetError) {
+      setError(t("resetFailed"));
+      return;
+    }
+    // Do not reveal whether the email exists.
+    setInfo(t("resetSent"));
   }
 
   return (
@@ -153,7 +181,10 @@ export default function LoginPage() {
                   }`}
                 />
                 {error && (
-                  <p className="ms-1 text-xs font-medium text-[var(--error)]">
+                  <p
+                    className="ms-1 text-xs font-medium text-[var(--error)]"
+                    role="alert"
+                  >
                     {error}
                   </p>
                 )}
@@ -167,9 +198,14 @@ export default function LoginPage() {
                   >
                     {t("password")}
                   </label>
-                  <span className="cursor-default text-xs font-semibold text-[var(--primary)] opacity-60">
-                    {t("forgotPassword")}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void onForgotPassword()}
+                    disabled={resetting || loading}
+                    className="text-xs font-semibold text-[var(--primary)] hover:underline disabled:opacity-60"
+                  >
+                    {resetting ? t("resetSending") : t("forgotPassword")}
+                  </button>
                 </div>
                 <div className="relative">
                   <input
@@ -208,6 +244,15 @@ export default function LoginPage() {
                   {t("rememberMe")}
                 </span>
               </label>
+
+              {info && (
+                <p
+                  className="rounded-xl border border-[var(--primary)]/25 bg-[var(--primary-fixed)]/40 px-3 py-2 text-sm text-[var(--primary)]"
+                  role="status"
+                >
+                  {info}
+                </p>
+              )}
 
               <button
                 type="submit"
