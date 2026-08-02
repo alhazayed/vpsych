@@ -45,6 +45,8 @@ export type ChatCompletionParams = {
   model?: string;
   temperature?: number;
   maxCompletionTokens?: number;
+  /** Request JSON object mode when the model supports it (assessment). */
+  json?: boolean;
 };
 
 export type ChatCompletionResult = {
@@ -158,6 +160,9 @@ export const openAIService = {
           request.reasoning_effort = reasoningEffort();
         } else if (params.temperature !== undefined) {
           request.temperature = params.temperature;
+        }
+        if (params.json) {
+          request.response_format = { type: "json_object" };
         }
         const completion = await client.chat.completions.create(request);
 

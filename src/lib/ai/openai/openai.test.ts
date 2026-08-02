@@ -232,6 +232,32 @@ describe("openai service exports", () => {
     else process.env.OPENAI_API_KEY = prev;
   });
 
+  it("sets response_format json_object when json: true", async () => {
+    const prev = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const create = vi.fn(async () => ({
+      choices: [{ message: { content: "{}" } }],
+      model: "gpt-4o-mini",
+    }));
+    (globalThis as Record<string, unknown>).__openaiMock = {
+      chat: { completions: { create } },
+    };
+    const { openAIService } = await import("@/lib/ai/openai");
+    await openAIService.chat({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: "return json" }],
+      json: true,
+      maxCompletionTokens: 500,
+    });
+    const arg = (create.mock.calls[0] as unknown[])[0] as Record<
+      string,
+      unknown
+    >;
+    expect(arg.response_format).toEqual({ type: "json_object" });
+    if (prev === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = prev;
+  });
+
   it("healthCheck reports unconfigured without key", async () => {
     const prev = process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_API_KEY;

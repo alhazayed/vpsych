@@ -1,11 +1,15 @@
 import { generateText, Output } from "ai";
-import { z } from "zod";
 import {
   buildExaminerSystemPrompt,
   heuristicCopy,
   localizeRubricLabel,
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
+import {
+  assessmentSchema,
+  parseAssessmentModelText,
+  type AssessmentModelOutput,
+} from "@/lib/ai/assessment-parse";
 import { openAIService } from "@/lib/ai/openai";
 import {
   isOpenAIServiceError,
@@ -26,18 +30,6 @@ import type {
   ScoreEntry,
   SessionMessage,
 } from "@/lib/types";
-
-const assessmentSchema = z.object({
-  items: z.array(
-    z.object({
-      id: z.string(),
-      score: z.number().min(0).max(5),
-      feedback: z.string(),
-    }),
-  ),
-  narrative: z.string(),
-  excerpts: z.array(z.string()).max(5),
-});
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
   const ids = [
@@ -194,6 +186,11 @@ export type SessionAssessment = {
   errorKind?: OpenAIErrorKind;
 };
 
+type ModelAttempt = {
+  output: AssessmentModelOutput;
+  model: string;
+};
+
 /**
  * Assess a completed session and generate the report directly in `language`
  * (from session.language). Uses the same OpenAI → mini → Gateway → heuristic
@@ -255,34 +252,39 @@ export async function assessSession(params: {
       ? `نص المحادثة:\n${transcript || "(فارغ)"}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
       : `Transcript:\n${transcript || "(empty)"}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
 
-  const viaOpenAi = async (
-    model?: string,
-  ): Promise<{
-    output: z.infer<typeof assessmentSchema>;
-    model: string;
-  } | null> => {
+  const viaOpenAi = async (model?: string): Promise<ModelAttempt> => {
     const result = await openAIService.chat({
       messages: [
         {
           role: "system",
-          content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown).`,
+          content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown). Keys: items, narrative, excerpts.`,
         },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      maxCompletionTokens: 1200,
+      // Reasoning models spend completion budget on hidden tokens; keep headroom for JSON.
+      maxCompletionTokens: 2500,
       model,
+      json: true,
     });
-    const parsed = JSON.parse(result.text) as unknown;
-    const validated = assessmentSchema.safeParse(parsed);
-    if (!validated.success) return null;
-    return { output: validated.data, model: result.model };
+    try {
+      const output = parseAssessmentModelText(result.text);
+      return { output, model: result.model };
+    } catch (parseErr) {
+      console.warn("[assessment]", {
+        event: "openai_json_parse_failed",
+        model: result.model,
+        textPreview: result.text.slice(0, 240),
+        message:
+          parseErr instanceof Error ? parseErr.message : String(parseErr),
+      });
+      throw parseErr instanceof Error
+        ? parseErr
+        : new Error("assessment JSON parse failed");
+    }
   };
 
-  const viaGateway = async (): Promise<{
-    output: z.infer<typeof assessmentSchema>;
-    model: string;
-  } | null> => {
+  const viaGateway = async (): Promise<ModelAttempt> => {
     const model = gatewayModelId();
     const generated = await generateText({
       model,
@@ -291,12 +293,14 @@ export async function assessSession(params: {
       prompt: userPrompt,
       temperature: 0.3,
     });
-    if (!generated.output) return null;
+    if (!generated.output) {
+      throw new Error("gateway assessment returned empty structured output");
+    }
     return { output: generated.output, model };
   };
 
   const toAssessment = (
-    output: z.infer<typeof assessmentSchema>,
+    output: AssessmentModelOutput,
     aiSource: Exclude<AiSource, "persona_fallback">,
     model: string,
     errorKind?: OpenAIErrorKind,
@@ -315,7 +319,7 @@ export async function assessSession(params: {
       };
     });
 
-    console.warn("[assessment]", {
+    console.info("[assessment]", {
       event: "assessment_ok",
       aiSource,
       model,
@@ -333,76 +337,68 @@ export async function assessSession(params: {
     };
   };
 
+  /**
+   * Shared failover after primary GPT assessment fails.
+   * Verified defect: parse/validation null used to skip mini/gateway and go
+   * straight to heuristicAssessment — always try mini then gateway first.
+   */
+  const failoverAfterPrimary = async (
+    primaryErr: unknown,
+  ): Promise<SessionAssessment> => {
+    const kind = openaiErrorKind(primaryErr);
+    const fallbackModel = openAiFallbackChatModel();
+
+    console.warn("[assessment]", {
+      event: "openai_assessment_failed",
+      ...errorDetails(primaryErr),
+      rateLimited: isRateLimitedOrQuota(primaryErr),
+      next: fallbackModel,
+    });
+
+    try {
+      const result = await viaOpenAi(fallbackModel);
+      return toAssessment(result.output, "gpt", result.model, kind);
+    } catch (miniErr) {
+      console.warn("[assessment]", {
+        event: "openai_fallback_model_failed",
+        model: fallbackModel,
+        ...errorDetails(miniErr),
+      });
+    }
+
+    if (hasGatewayKey()) {
+      try {
+        const result = await viaGateway();
+        return toAssessment(result.output, "gateway", result.model, kind);
+      } catch (gatewayErr) {
+        console.warn("[assessment]", {
+          event: "gateway_failed",
+          ...errorDetails(gatewayErr),
+          next: "persona_fallback",
+        });
+      }
+    }
+
+    return heuristicAssessment(
+      rubric,
+      messages,
+      language,
+      "unavailable",
+      kind,
+    );
+  };
+
   if (preferOpenAiSdk()) {
     try {
       const result = await viaOpenAi();
-      if (!result) {
-        return heuristicAssessment(
-          rubric,
-          messages,
-          language,
-          "unavailable",
-        );
-      }
       return toAssessment(result.output, "gpt", result.model);
     } catch (err) {
-      const kind = openaiErrorKind(err);
-      console.warn("[assessment]", {
-        event: "openai_assessment_failed",
-        ...errorDetails(err),
-        next: isRateLimitedOrQuota(err)
-          ? openAiFallbackChatModel()
-          : hasGatewayKey()
-            ? "gateway"
-            : "persona_fallback",
-      });
-
-      if (isRateLimitedOrQuota(err)) {
-        const fallbackModel = openAiFallbackChatModel();
-        try {
-          const result = await viaOpenAi(fallbackModel);
-          if (result) {
-            return toAssessment(result.output, "gpt", result.model, kind);
-          }
-        } catch (miniErr) {
-          console.warn("[assessment]", {
-            event: "openai_fallback_model_failed",
-            model: fallbackModel,
-            ...errorDetails(miniErr),
-          });
-        }
-      }
-
-      if (hasGatewayKey()) {
-        try {
-          const result = await viaGateway();
-          if (result) {
-            return toAssessment(result.output, "gateway", result.model, kind);
-          }
-        } catch (gatewayErr) {
-          console.warn("[assessment]", {
-            event: "gateway_failed",
-            ...errorDetails(gatewayErr),
-            next: "persona_fallback",
-          });
-        }
-      }
-
-      return heuristicAssessment(
-        rubric,
-        messages,
-        language,
-        "unavailable",
-        kind,
-      );
+      return failoverAfterPrimary(err);
     }
   }
 
   try {
     const result = await viaGateway();
-    if (!result) {
-      return heuristicAssessment(rubric, messages, language, "unavailable");
-    }
     return toAssessment(result.output, "gateway", result.model);
   } catch (err) {
     const kind = openaiErrorKind(err);
