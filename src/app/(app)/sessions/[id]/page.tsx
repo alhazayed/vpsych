@@ -38,7 +38,9 @@ export default async function SessionPage({ params }: Props) {
     .eq("session_id", id)
     .order("created_at", { ascending: true });
 
-  const resolved = resolveAvatar(typed.avatars, typed.language);
+  const resolved = resolveAvatar(typed.avatars, typed.language, {
+    caseSnapshot: typed.clinical_snapshot,
+  });
 
   return (
     <VoiceSession

@@ -52,6 +52,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "record_voice_over",
       match: (p) => p.startsWith("/admin/voices"),
     },
+    {
+      href: "/admin/cases",
+      label: t("caseEngine"),
+      icon: "biotech",
+      match: (p) => p.startsWith("/admin/cases"),
+    },
   ];
 }
 
@@ -120,6 +126,8 @@ export function AppShell({
       return tShell("pageTitle.avatarPresets");
     if (pathname.startsWith("/admin/voices"))
       return tShell("pageTitle.voiceManagement");
+    if (pathname.startsWith("/admin/cases"))
+      return tShell("pageTitle.caseEngine");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }
