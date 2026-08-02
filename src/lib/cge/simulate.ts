@@ -44,7 +44,7 @@ export function simulateGraphLearners(
   const cycle = findCycle(graph);
   const prereqErrors = validatePrerequisites(graph);
   let noCycles = !cycle;
-  let noInvalidPrerequisites = prereqErrors.length === 0;
+  const noInvalidPrerequisites = prereqErrors.length === 0;
   try {
     assertAcyclic(graph);
     topologicalOrder(graph);
