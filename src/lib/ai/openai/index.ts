@@ -6,8 +6,11 @@ export {
 } from "@/lib/ai/openai/client";
 export {
   OpenAIServiceError,
+  isOpenAIServiceError,
   toOpenAIServiceError,
+  openaiErrorKind,
   type OpenAIErrorCode,
+  type OpenAIErrorKind,
 } from "@/lib/ai/openai/errors";
 export { withOpenAIRetry, type RetryOptions } from "@/lib/ai/openai/retry";
 export {

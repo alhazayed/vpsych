@@ -1,52 +1,35 @@
 import { generateText, Output } from "ai";
-import { z } from "zod";
 import {
   buildExaminerSystemPrompt,
   heuristicCopy,
   localizeRubricLabel,
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
-import { hasOpenAIApiKey, openAIService } from "@/lib/ai/openai";
+import {
+  assessmentStructuredSchema,
+  parseAssessmentModelText,
+  type AssessmentModelOutput,
+} from "@/lib/ai/assessment-parse";
+import { openAIService } from "@/lib/ai/openai";
+import {
+  isOpenAIServiceError,
+  openaiErrorKind,
+  type OpenAIErrorKind,
+} from "@/lib/ai/openai/errors";
+import {
+  gatewayModelId,
+  hasAnyAiKey,
+  hasGatewayKey,
+  openAiFallbackChatModel,
+  preferOpenAiSdk,
+  type AiSource,
+} from "@/lib/ai/provider";
 import type {
   ResolvedAvatar,
   RubricItem,
   ScoreEntry,
   SessionMessage,
 } from "@/lib/types";
-
-const assessmentSchema = z.object({
-  items: z.array(
-    z.object({
-      id: z.string(),
-      score: z.number().min(0).max(5),
-      feedback: z.string(),
-    }),
-  ),
-  narrative: z.string(),
-  excerpts: z.array(z.string()).max(5),
-});
-
-function hasGatewayKey() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
-}
-
-function hasAiKey() {
-  return hasGatewayKey() || hasOpenAIApiKey();
-}
-
-function gatewayModelId() {
-  return process.env.AI_MODEL || "openai/gpt-4o-mini";
-}
-
-function preferOpenAiSdk(): boolean {
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
-    return hasOpenAIApiKey();
-  }
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
-    return false;
-  }
-  return hasOpenAIApiKey() && !hasGatewayKey();
-}
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
   const ids = [
@@ -68,11 +51,14 @@ function heuristicAssessment(
   rubric: RubricItem[],
   messages: Pick<SessionMessage, "role" | "content">[],
   language: "en" | "ar",
+  reason: "unconfigured" | "unavailable",
+  errorKind?: OpenAIErrorKind,
+  failureDetail?: string,
 ) {
   const therapistTurns = messages.filter((m) => m.role === "user");
   const joined = therapistTurns.map((m) => m.content.toLowerCase()).join(" ");
   const turnCount = therapistTurns.length;
-  const copy = heuristicCopy(language, turnCount);
+  const copy = heuristicCopy(language, turnCount, reason);
 
   const empathyWords = [
     "hear",
@@ -140,11 +126,21 @@ function heuristicAssessment(
   });
 
   const overall = weightedOverall(items);
+  console.warn("[assessment]", {
+    event: "heuristic_fallback",
+    aiSource: "persona_fallback",
+    reason,
+    errorKind: errorKind ?? null,
+    failureDetail: failureDetail ?? null,
+  });
   return {
     language,
     scores: { overall, items },
     narrative: turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns,
     excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
+    aiSource: "persona_fallback" as const,
+    errorKind,
+    failureDetail,
   };
 }
 
@@ -157,16 +153,53 @@ function weightedOverall(items: ScoreEntry[]) {
   return Math.round(sum);
 }
 
+function isRateLimitedOrQuota(err: unknown): boolean {
+  const kind = openaiErrorKind(err);
+  if (kind === "rate_limit" || kind === "insufficient_quota") return true;
+  if (isOpenAIServiceError(err) && err.status === 429) return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  return /rate limit|429|too many requests|insufficient.?quota/i.test(msg);
+}
+
+function errorDetails(err: unknown) {
+  if (isOpenAIServiceError(err)) {
+    return {
+      kind: err.kind,
+      code: err.code,
+      status: err.status,
+      providerCode: err.providerCode ?? null,
+      message: err.message,
+      retryable: err.retryable,
+    };
+  }
+  return {
+    kind: openaiErrorKind(err),
+    message: err instanceof Error ? err.message : String(err),
+  };
+}
+
 export type SessionAssessment = {
   language: "en" | "ar";
   scores: { overall: number; items: ScoreEntry[] };
   narrative: string;
   excerpts: string[];
+  /** Same provenance contract as patient chat (never hide heuristic). */
+  aiSource: AiSource;
+  model?: string;
+  errorKind?: OpenAIErrorKind;
+  /** Short failure reason when aiSource is persona_fallback (ops / verification). */
+  failureDetail?: string;
+};
+
+type ModelAttempt = {
+  output: AssessmentModelOutput;
+  model: string;
 };
 
 /**
  * Assess a completed session and generate the report directly in `language`
- * (from session.language). No translation step — compose natively.
+ * (from session.language). Uses the same OpenAI → mini → Gateway → heuristic
+ * pipeline as patient conversation replies.
  */
 export async function assessSession(params: {
   avatar: Pick<
@@ -187,8 +220,8 @@ export async function assessSession(params: {
     }),
   );
 
-  if (!hasAiKey()) {
-    return heuristicAssessment(rubric, messages, language);
+  if (!hasAnyAiKey()) {
+    return heuristicAssessment(rubric, messages, language, "unconfigured");
   }
 
   const therapistLabel = language === "ar" ? "المعالج" : "THERAPIST";
@@ -224,39 +257,59 @@ export async function assessSession(params: {
       ? `نص المحادثة:\n${transcript || "(فارغ)"}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
       : `Transcript:\n${transcript || "(empty)"}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
 
-  try {
-    let output: z.infer<typeof assessmentSchema> | null = null;
-
-    if (preferOpenAiSdk()) {
-      const result = await openAIService.chat({
-        messages: [
-          {
-            role: "system",
-            content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown).`,
-          },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        maxCompletionTokens: 1200,
+  const viaOpenAi = async (model?: string): Promise<ModelAttempt> => {
+    const result = await openAIService.chat({
+      messages: [
+        {
+          role: "system",
+          content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown). Keys: items, narrative, excerpts.`,
+        },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      // Reasoning models spend completion budget on hidden tokens; keep headroom for JSON.
+      maxCompletionTokens: 2500,
+      model,
+      json: true,
+    });
+    try {
+      const output = parseAssessmentModelText(result.text);
+      return { output, model: result.model };
+    } catch (parseErr) {
+      console.warn("[assessment]", {
+        event: "openai_json_parse_failed",
+        model: result.model,
+        textPreview: result.text.slice(0, 240),
+        message:
+          parseErr instanceof Error ? parseErr.message : String(parseErr),
       });
-      const parsed = JSON.parse(result.text) as unknown;
-      const validated = assessmentSchema.safeParse(parsed);
-      output = validated.success ? validated.data : null;
-    } else {
-      const generated = await generateText({
-        model: gatewayModelId(),
-        output: Output.object({ schema: assessmentSchema }),
-        system: systemPrompt,
-        prompt: userPrompt,
-        temperature: 0.3,
-      });
-      output = generated.output ?? null;
+      throw parseErr instanceof Error
+        ? parseErr
+        : new Error("assessment JSON parse failed");
     }
+  };
 
-    if (!output) {
-      return heuristicAssessment(rubric, messages, language);
+  const viaGateway = async (): Promise<ModelAttempt> => {
+    const model = gatewayModelId();
+    const generated = await generateText({
+      model,
+      output: Output.object({ schema: assessmentStructuredSchema }),
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.3,
+    });
+    if (!generated.output) {
+      throw new Error("gateway assessment returned empty structured output");
     }
+    return { output: generated.output, model };
+  };
 
+  const toAssessment = (
+    output: AssessmentModelOutput,
+    aiSource: Exclude<AiSource, "persona_fallback">,
+    model: string,
+    errorKind?: OpenAIErrorKind,
+  ): SessionAssessment => {
     const items: ScoreEntry[] = rubric.map((r) => {
       const found = output.items.find((i) => i.id === r.id);
       return {
@@ -271,13 +324,119 @@ export async function assessSession(params: {
       };
     });
 
+    console.info("[assessment]", {
+      event: "assessment_ok",
+      aiSource,
+      model,
+      errorKind: errorKind ?? null,
+    });
+
     return {
       language,
       scores: { overall: weightedOverall(items), items },
       narrative: output.narrative,
       excerpts: output.excerpts.slice(0, 5),
+      aiSource,
+      model,
+      errorKind,
     };
-  } catch {
-    return heuristicAssessment(rubric, messages, language);
+  };
+
+  /**
+   * Shared failover after primary GPT assessment fails.
+   * Verified defect: parse/validation null used to skip mini/gateway and go
+   * straight to heuristicAssessment — always try mini then gateway first.
+   */
+  const failoverAfterPrimary = async (
+    primaryErr: unknown,
+  ): Promise<SessionAssessment> => {
+    const kind = openaiErrorKind(primaryErr);
+    const fallbackModel = openAiFallbackChatModel();
+    const details: string[] = [
+      primaryErr instanceof Error
+        ? `primary: ${primaryErr.message}`
+        : `primary: ${String(primaryErr)}`,
+    ];
+
+    console.warn("[assessment]", {
+      event: "openai_assessment_failed",
+      ...errorDetails(primaryErr),
+      rateLimited: isRateLimitedOrQuota(primaryErr),
+      next: fallbackModel,
+    });
+
+    try {
+      const result = await viaOpenAi(fallbackModel);
+      return toAssessment(result.output, "gpt", result.model, kind);
+    } catch (miniErr) {
+      details.push(
+        miniErr instanceof Error
+          ? `${fallbackModel}: ${miniErr.message}`
+          : `${fallbackModel}: ${String(miniErr)}`,
+      );
+      console.warn("[assessment]", {
+        event: "openai_fallback_model_failed",
+        model: fallbackModel,
+        ...errorDetails(miniErr),
+      });
+    }
+
+    if (hasGatewayKey()) {
+      try {
+        const result = await viaGateway();
+        return toAssessment(result.output, "gateway", result.model, kind);
+      } catch (gatewayErr) {
+        details.push(
+          gatewayErr instanceof Error
+            ? `gateway: ${gatewayErr.message}`
+            : `gateway: ${String(gatewayErr)}`,
+        );
+        console.warn("[assessment]", {
+          event: "gateway_failed",
+          ...errorDetails(gatewayErr),
+          next: "persona_fallback",
+        });
+      }
+    } else {
+      details.push("gateway: not configured");
+    }
+
+    return heuristicAssessment(
+      rubric,
+      messages,
+      language,
+      "unavailable",
+      kind,
+      details.join(" | ").slice(0, 500),
+    );
+  };
+
+  if (preferOpenAiSdk()) {
+    try {
+      const result = await viaOpenAi();
+      return toAssessment(result.output, "gpt", result.model);
+    } catch (err) {
+      return failoverAfterPrimary(err);
+    }
+  }
+
+  try {
+    const result = await viaGateway();
+    return toAssessment(result.output, "gateway", result.model);
+  } catch (err) {
+    const kind = openaiErrorKind(err);
+    console.warn("[assessment]", {
+      event: "gateway_failed",
+      ...errorDetails(err),
+      next: "persona_fallback",
+    });
+    return heuristicAssessment(
+      rubric,
+      messages,
+      language,
+      "unavailable",
+      kind,
+      err instanceof Error ? err.message.slice(0, 300) : String(err).slice(0, 300),
+    );
   }
 }

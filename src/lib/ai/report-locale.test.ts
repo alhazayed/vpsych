@@ -54,4 +54,11 @@ describe("heuristicCopy", () => {
     expect(copy.feedback).toContain("درجة تقديرية");
     expect(copy.narrativeWithTurns).toContain("تقييم آلي");
   });
+
+  it("does not claim key missing when AI was unavailable", () => {
+    const copy = heuristicCopy("en", 2, "unavailable");
+    expect(copy.narrativeWithTurns).toContain("persona_fallback");
+    expect(copy.narrativeWithTurns).toContain("AI assessment failed");
+    expect(copy.narrativeWithTurns).not.toContain("AI key not configured");
+  });
 });

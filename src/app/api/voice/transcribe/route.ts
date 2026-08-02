@@ -88,7 +88,12 @@ export async function POST(request: Request) {
         ? error
         : new OpenAIServiceError(
             error instanceof Error ? error.message : "OpenAI STT failed",
-            { code: "OPENAI_UNKNOWN", status: 502, retryable: false },
+            {
+              code: "OPENAI_UNKNOWN",
+              kind: "unknown",
+              status: 502,
+              retryable: false,
+            },
           );
 
     return NextResponse.json(
