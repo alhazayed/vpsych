@@ -1,6 +1,18 @@
 import { generateText } from "ai";
-import { openAIService, hasOpenAIApiKey } from "@/lib/ai/openai";
-import { OpenAIServiceError } from "@/lib/ai/openai/errors";
+import { openAIService } from "@/lib/ai/openai";
+import {
+  isOpenAIServiceError,
+  openaiErrorKind,
+  type OpenAIErrorKind,
+} from "@/lib/ai/openai/errors";
+import {
+  gatewayModelId,
+  hasAnyAiKey,
+  hasGatewayKey,
+  openAiFallbackChatModel,
+  preferOpenAiSdk,
+  type AiSource,
+} from "@/lib/ai/provider";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
 const DEFAULT_FALLBACK_REPLIES = [
@@ -11,47 +23,52 @@ const DEFAULT_FALLBACK_REPLIES = [
   "It's hard to put into words, but I'll try.",
 ];
 
-function hasGatewayKey() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
+export type PatientReplyResult = {
+  text: string;
+  /** gpt | gateway | persona_fallback — always set; never omit on fallback. */
+  aiSource: AiSource;
+  model?: string;
+  /** Present when a model path failed before the returned source. */
+  errorKind?: OpenAIErrorKind;
+};
+
+function logPatientAgent(
+  event: string,
+  details: Record<string, unknown>,
+): void {
+  console.warn("[patient-agent]", { event, ...details });
 }
 
-function hasAnyAiKey() {
-  return hasGatewayKey() || hasOpenAIApiKey();
+function isRateLimitedOrQuota(err: unknown): boolean {
+  const kind = openaiErrorKind(err);
+  if (kind === "rate_limit" || kind === "insufficient_quota") return true;
+  if (isOpenAIServiceError(err) && err.status === 429) return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  return /rate limit|429|too many requests|insufficient.?quota/i.test(msg);
 }
 
-function gatewayModelId() {
-  return process.env.AI_MODEL || "openai/gpt-4o-mini";
+function errorDetails(err: unknown) {
+  if (isOpenAIServiceError(err)) {
+    return {
+      kind: err.kind,
+      code: err.code,
+      status: err.status,
+      providerCode: err.providerCode ?? null,
+      message: err.message,
+      retryable: err.retryable,
+    };
+  }
+  return {
+    kind: openaiErrorKind(err),
+    message: err instanceof Error ? err.message : String(err),
+  };
 }
 
 /**
- * Prefer the official OpenAI SDK (GPT-5) for the multilingual conversation
- * pipeline when OPENAI_API_KEY is set. Set OPENAI_CHAT_PROVIDER=gateway to
- * force the legacy Vercel AI Gateway path.
+ * Generate a patient reply using the multilingual prompt engine output.
+ * Call sites pass a ResolvedAvatar (from resolveAvatar + session.language).
+ * `generatePatientReply` keeps the string return for backward compatibility.
  */
-function preferOpenAiSdk(): boolean {
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "gateway") {
-    return false;
-  }
-  if (process.env.OPENAI_CHAT_PROVIDER?.trim().toLowerCase() === "openai") {
-    return hasOpenAIApiKey();
-  }
-  return hasOpenAIApiKey();
-}
-
-function isRateLimited(err: unknown): boolean {
-  if (err instanceof OpenAIServiceError) {
-    return err.code === "OPENAI_RATE_LIMIT" || err.status === 429;
-  }
-  const msg = err instanceof Error ? err.message : String(err);
-  return /rate limit|429|too many requests/i.test(msg);
-}
-
-export type PatientReplyResult = {
-  text: string;
-  source: "openai" | "gateway" | "fallback";
-  model?: string;
-};
-
 export async function generatePatientReply(params: {
   avatar: Pick<
     ResolvedAvatar,
@@ -87,15 +104,25 @@ export async function generatePatientReplyDetailed(params: {
       ? avatar.fallback_replies
       : DEFAULT_FALLBACK_REPLIES;
 
-  const pickFallback = (): PatientReplyResult => {
+  const pickFallback = (errorKind?: OpenAIErrorKind): PatientReplyResult => {
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
       ) % fallbacks.length;
-    return { text: fallbacks[idx]!, source: "fallback" };
+    logPatientAgent("persona_fallback", {
+      aiSource: "persona_fallback",
+      errorKind: errorKind ?? null,
+      avatar: avatar.name,
+    });
+    return {
+      text: fallbacks[idx]!,
+      aiSource: "persona_fallback",
+      errorKind,
+    };
   };
 
   if (!hasAnyAiKey()) {
+    logPatientAgent("no_ai_key", { aiSource: "persona_fallback" });
     return pickFallback();
   }
 
@@ -112,7 +139,9 @@ export async function generatePatientReplyDetailed(params: {
     ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
     : userMessage;
 
-  const viaGateway = async (): Promise<PatientReplyResult> => {
+  const viaGateway = async (
+    priorErrorKind?: OpenAIErrorKind,
+  ): Promise<PatientReplyResult> => {
     const messages = [...prior, { role: "user" as const, content: reinforced }];
     const model = gatewayModelId();
     const { text } = await generateText({
@@ -123,11 +152,20 @@ export async function generatePatientReplyDetailed(params: {
       maxOutputTokens: 220,
     });
     const trimmed = text.trim();
-    if (!trimmed) return pickFallback();
-    return { text: trimmed, source: "gateway", model };
+    if (!trimmed) return pickFallback(priorErrorKind);
+    logPatientAgent("reply_ok", { aiSource: "gateway", model });
+    return {
+      text: trimmed,
+      aiSource: "gateway",
+      model,
+      errorKind: priorErrorKind,
+    };
   };
 
-  const viaOpenAi = async (model?: string): Promise<PatientReplyResult> => {
+  const viaOpenAi = async (
+    model?: string,
+    priorErrorKind?: OpenAIErrorKind,
+  ): Promise<PatientReplyResult> => {
     const result = await openAIService.chat({
       messages: [
         { role: "system", content: avatar.system_prompt },
@@ -140,64 +178,76 @@ export async function generatePatientReplyDetailed(params: {
       model,
     });
     const text = result.text.trim();
-    if (!text) return pickFallback();
+    if (!text) return pickFallback(priorErrorKind);
+    logPatientAgent("reply_ok", {
+      aiSource: "gpt",
+      model: result.model,
+    });
     return {
       text,
-      source: "openai",
+      aiSource: "gpt",
       model: result.model,
+      errorKind: priorErrorKind,
     };
   };
 
-  // Prefer OpenAI GPT-5; on rate-limit try gpt-4o-mini (often separate quota),
-  // then AI Gateway when configured, then persona fallback.
+  // Prefer OpenAI GPT; on 429/quota try gpt-4o-mini (often separate quota),
+  // then AI Gateway when configured, then persona fallback (always visible).
   if (preferOpenAiSdk()) {
     try {
       return await viaOpenAi();
     } catch (err) {
-      console.warn(
-        "[patient-agent] OpenAI chat failed:",
-        err instanceof Error ? err.message : String(err),
-      );
+      const kind = openaiErrorKind(err);
+      logPatientAgent("openai_chat_failed", {
+        ...errorDetails(err),
+        next: isRateLimitedOrQuota(err)
+          ? openAiFallbackChatModel()
+          : hasGatewayKey()
+            ? "gateway"
+            : "persona_fallback",
+      });
 
-      if (isRateLimited(err)) {
+      if (isRateLimitedOrQuota(err)) {
+        const fallbackModel = openAiFallbackChatModel();
         try {
-          console.warn(
-            "[patient-agent] retrying with gpt-4o-mini after rate limit",
-          );
-          return await viaOpenAi("gpt-4o-mini");
+          logPatientAgent("openai_model_failover", {
+            from: "primary",
+            to: fallbackModel,
+            reason: kind,
+          });
+          return await viaOpenAi(fallbackModel, kind);
         } catch (miniErr) {
-          console.warn(
-            "[patient-agent] gpt-4o-mini also failed:",
-            miniErr instanceof Error ? miniErr.message : String(miniErr),
-          );
+          logPatientAgent("openai_fallback_model_failed", {
+            model: fallbackModel,
+            ...errorDetails(miniErr),
+          });
         }
       }
 
       if (hasGatewayKey()) {
         try {
-          console.warn("[patient-agent] falling back to AI Gateway");
-          return await viaGateway();
+          logPatientAgent("gateway_failover", { reason: kind });
+          return await viaGateway(kind);
         } catch (gatewayErr) {
-          console.warn(
-            "[patient-agent] AI Gateway also failed; using persona fallback:",
-            gatewayErr instanceof Error
-              ? gatewayErr.message
-              : String(gatewayErr),
-          );
-          return pickFallback();
+          logPatientAgent("gateway_failed", {
+            ...errorDetails(gatewayErr),
+            next: "persona_fallback",
+          });
+          return pickFallback(kind);
         }
       }
-      return pickFallback();
+      return pickFallback(kind);
     }
   }
 
   try {
     return await viaGateway();
   } catch (err) {
-    console.warn(
-      "[patient-agent] AI reply failed; using persona fallback:",
-      err instanceof Error ? err.message : String(err),
-    );
-    return pickFallback();
+    const kind = openaiErrorKind(err);
+    logPatientAgent("gateway_failed", {
+      ...errorDetails(err),
+      next: "persona_fallback",
+    });
+    return pickFallback(kind);
   }
 }

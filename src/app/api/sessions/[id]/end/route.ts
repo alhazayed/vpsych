@@ -108,6 +108,15 @@ export async function POST(_request: Request, { params }: Params) {
     language: reportLanguage,
   });
 
+  console.info("[sessions/end] assessment", {
+    sessionId,
+    language: assessment.language,
+    aiSource: assessment.aiSource,
+    aiModel: assessment.model ?? null,
+    errorKind: assessment.errorKind ?? null,
+    failureDetail: assessment.failureDetail ?? null,
+  });
+
   // Keep session.language aligned when it was missing at create time.
   if (!typed.language && assessment.language) {
     await supabase
@@ -137,15 +146,38 @@ export async function POST(_request: Request, { params }: Params) {
     if (insertError) {
       // Unique violation → already created (race); treat as success.
       if (insertError.code === "23505") {
-        return NextResponse.json({ ok: true, alreadyExists: true });
+        return NextResponse.json({
+          ok: true,
+          alreadyExists: true,
+          aiSource: assessment.aiSource,
+          aiModel: assessment.model ?? null,
+          aiErrorKind: assessment.errorKind ?? null,
+          aiFailureDetail: assessment.failureDetail ?? null,
+        });
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      ok: true,
-      reportId: inserted?.id,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        reportId: inserted?.id,
+        // Additive — same AI pipeline provenance as conversation turns.
+        aiSource: assessment.aiSource,
+        aiModel: assessment.model ?? null,
+        aiErrorKind: assessment.errorKind ?? null,
+        aiFailureDetail: assessment.failureDetail ?? null,
+      },
+      {
+        headers: {
+          "X-AI-Source": assessment.aiSource,
+          ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
+          ...(assessment.errorKind
+            ? { "X-AI-Error-Kind": assessment.errorKind }
+            : {}),
+        },
+      },
+    );
   }
 
   if (!getReportWriteKey()) {
@@ -196,9 +228,24 @@ export async function POST(_request: Request, { params }: Params) {
       .eq("id", reportId);
   }
 
-  return NextResponse.json({
-    ok: true,
-    reportId,
-    // Do not return report content to therapist — admin only
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      reportId,
+      // Do not return report content to therapist — admin only
+      aiSource: assessment.aiSource,
+      aiModel: assessment.model ?? null,
+      aiErrorKind: assessment.errorKind ?? null,
+      aiFailureDetail: assessment.failureDetail ?? null,
+    },
+    {
+      headers: {
+        "X-AI-Source": assessment.aiSource,
+        ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
+        ...(assessment.errorKind
+          ? { "X-AI-Error-Kind": assessment.errorKind }
+          : {}),
+      },
+    },
+  );
 }

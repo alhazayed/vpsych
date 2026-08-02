@@ -111,6 +111,14 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  console.info("[sessions/message] assistant reply", {
+    sessionId,
+    language: typed.language,
+    aiSource: replyMeta.aiSource,
+    aiModel: replyMeta.model ?? null,
+    errorKind: replyMeta.errorKind ?? null,
+  });
+
   const { data: assistantMsg, error: assistantError } = await supabase.rpc(
     "insert_assistant_message",
     {
@@ -136,14 +144,18 @@ export async function POST(request: Request, { params }: Params) {
       ),
       // Additive: session language used for this turn (AR/EN pipeline).
       locale: typed.language ?? resolved.language,
-      // Additive observability — does not change the conversation contract.
-      aiSource: replyMeta.source,
+      // Additive observability — never hide persona fallback usage.
+      aiSource: replyMeta.aiSource,
       aiModel: replyMeta.model ?? null,
+      aiErrorKind: replyMeta.errorKind ?? null,
     },
     {
       headers: {
-        "X-AI-Source": replyMeta.source,
+        "X-AI-Source": replyMeta.aiSource,
         ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
+        ...(replyMeta.errorKind
+          ? { "X-AI-Error-Kind": replyMeta.errorKind }
+          : {}),
       },
     },
   );
