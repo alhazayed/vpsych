@@ -15,67 +15,255 @@
     ],
     "standard": "A persona is approved only if, after repair, its clinical accuracy exceeds 9.5/10 and its primary diagnosis has survived every attack attempted."
   },
-
   "attacks_on_the_diagnoses": {
     "VPSY-CASE-001": [
-      { "attack": "Reclassify as bipolar II depression (family history of probable bipolar in a maternal aunt, hypersomnia, heaviness, early-adult recurrent onset)", "outcome": "SURVIVED — no lifetime hypomanic period of ≥4 days, no decreased need for sleep, MDQ 3/13 without clustering, and 7 months of prior SSRI exposure with zero activation; the aunt's history correctly raises screening burden, not the diagnosis." },
-      { "attack": "Force the 'with atypical features' specifier (mood reactivity + hypersomnia + described 'leaden' heaviness would satisfy A plus two B symptoms)", "outcome": "SURVIVED AFTER REPAIR — as originally written the specifier was arguably met; the file conceded 'leaden paralysis arguably present'. Phenomenology was sharpened: on direct questioning her heaviness is global fatigue and slowed initiation, and she does not endorse the specific weighted-limb sensation. One B symptom (hypersomnia) is insufficient. The entry is now an explicit encoded near-miss." },
-      { "attack": "Force the 'with melancholic features' specifier", "outcome": "SURVIVED AFTER TIGHTENING — the original exclusion argued only A2 (reactivity) though criterion A is disjunctive; the rewritten entry defeats A1 as well (genuine pleasure, not mere reactivity, survives with the cat, the partner and one album)." },
-      { "attack": "Downgrade to adjustment disorder or uncomplicated bereavement", "outcome": "SURVIVED — full MDE criteria met for 4.5 months with progressive worsening; bereavement was 11 months ago with an initial return to function; adjustment disorder is excluded by definition when MDE criteria are met." },
-      { "attack": "Recode as prolonged grief disorder", "outcome": "SURVIVED — the 12-month duration gate is not reached and yearning is not the dominant daily experience; the file already flags re-evaluation at 12 months, which is the correct disposition." },
-      { "attack": "Attribute the syndrome to hypothyroidism, anaemia, vitamin D deficiency or OCP", "outcome": "SURVIVED — TSH 1.8, Hb 12.4 with normal MCV, D repleted for 6 weeks without mood change, no temporal drug relationship; ferritin 22 correctly held as contributory-at-most with a repletion plan." },
-      { "attack": "Challenge the recurrence coding (296.32/6A71.1) against the v1 single-episode coding", "outcome": "SURVIVED — the 2018–2019 episode met full criteria, was treated, and was followed by ~4 years of documented euthymia; recurrent coding is the only defensible call and the change from the v1 seed is documented in _meta." }
+      {
+        "attack": "Reclassify as bipolar II depression (family history of probable bipolar in a maternal aunt, hypersomnia, heaviness, early-adult recurrent onset)",
+        "outcome": "SURVIVED — no lifetime hypomanic period of ≥4 days, no decreased need for sleep, MDQ 3/13 without clustering, and 7 months of prior SSRI exposure with zero activation; the aunt's history correctly raises screening burden, not the diagnosis."
+      },
+      {
+        "attack": "Force the 'with atypical features' specifier (mood reactivity + hypersomnia + described 'leaden' heaviness would satisfy A plus two B symptoms)",
+        "outcome": "SURVIVED AFTER REPAIR — as originally written the specifier was arguably met; the file conceded 'leaden paralysis arguably present'. Phenomenology was sharpened: on direct questioning her heaviness is global fatigue and slowed initiation, and she does not endorse the specific weighted-limb sensation. One B symptom (hypersomnia) is insufficient. The entry is now an explicit encoded near-miss."
+      },
+      {
+        "attack": "Force the 'with melancholic features' specifier",
+        "outcome": "SURVIVED AFTER TIGHTENING — the original exclusion argued only A2 (reactivity) though criterion A is disjunctive; the rewritten entry defeats A1 as well (genuine pleasure, not mere reactivity, survives with the cat, the partner and one album)."
+      },
+      {
+        "attack": "Downgrade to adjustment disorder or uncomplicated bereavement",
+        "outcome": "SURVIVED — full MDE criteria met for 4.5 months with progressive worsening; bereavement was 11 months ago with an initial return to function; adjustment disorder is excluded by definition when MDE criteria are met."
+      },
+      {
+        "attack": "Recode as prolonged grief disorder",
+        "outcome": "SURVIVED — the 12-month duration gate is not reached and yearning is not the dominant daily experience; the file already flags re-evaluation at 12 months, which is the correct disposition."
+      },
+      {
+        "attack": "Attribute the syndrome to hypothyroidism, anaemia, vitamin D deficiency or OCP",
+        "outcome": "SURVIVED — TSH 1.8, Hb 12.4 with normal MCV, D repleted for 6 weeks without mood change, no temporal drug relationship; ferritin 22 correctly held as contributory-at-most with a repletion plan."
+      },
+      {
+        "attack": "Challenge the recurrence coding (296.32/6A71.1) against the v1 single-episode coding",
+        "outcome": "SURVIVED — the 2018–2019 episode met full criteria, was treated, and was followed by ~4 years of documented euthymia; recurrent coding is the only defensible call and the change from the v1 seed is documented in _meta."
+      }
     ],
     "VPSY-CASE-002": [
-      { "attack": "Convert to panic disorder (two full attacks, monthly limited-symptom attacks, an ED presentation)", "outcome": "SURVIVED — panic disorder criterion B fails on the encoded evidence: no month of persistent concern about further attacks, no maladaptive avoidance, attacks arise at worry peaks; 'with panic attacks' specifier is the correct coding and the discrimination is the case's teaching core." },
-      { "attack": "Recode as illness anxiety disorder (cardiac preoccupation, pulse-checking, self-initiated cardiology review)", "outcome": "SURVIVED — health is one of four worry domains, not the organising preoccupation, and normal investigations produced six weeks of genuine reassurance, atypical for IAD." },
-      { "attack": "Force comorbid MDD from PHQ-9 8, fatigue, poor sleep and 'I can't keep living like this'", "outcome": "SURVIVED — no anhedonia, reactive mood, no weight or psychomotor change, and the risk statement decodes to relief-seeking on direct enquiry; demoralisation only." },
-      { "attack": "Claim caffeine-induced anxiety disorder (450–600 mg/day)", "outcome": "SURVIVED — worry antedates the caffeine escalation and persists on low-caffeine days; caffeine is correctly held as a major aggravator and early treatment target, not the cause." },
-      { "attack": "Claim SSRI-induced hypomania from the day-12 activation", "outcome": "SURVIVED — jitteriness and insomnia without mood elevation, grandiosity or goal-directed increase, resolving on discontinuation: activation, not hypomania, and the file distinguishes them explicitly." },
-      { "attack": "Claim OCD from the checking and re-reading", "outcome": "SURVIVED — checking is worry-driven and logically connected to feared outcomes; no ego-dystonic intrusions, no neutralising rituals." },
-      { "attack": "Claim obsessive-compulsive personality disorder from the conscientiousness and over-preparation", "outcome": "SURVIVED AFTER REPAIR — the differential lacked a personality-disorder entry; an OCPD entry was added excluding it on episode-linkage, ego-dystonicity and inter-episode flexibility." },
-      { "attack": "Attribute to hyperthyroidism, arrhythmia, phaeochromocytoma or OSA", "outcome": "SURVIVED — TSH 2.1, normal echo, negative serial troponins, 48-hour monitor benign, STOP-BANG 2; the phaeochromocytoma exclusion originally overclaimed 'normal BP during the ED visit' and was corrected to a transient, mild, self-settling elevation, which is what a panic presentation actually shows." }
+      {
+        "attack": "Convert to panic disorder (two full attacks, monthly limited-symptom attacks, an ED presentation)",
+        "outcome": "SURVIVED — panic disorder criterion B fails on the encoded evidence: no month of persistent concern about further attacks, no maladaptive avoidance, attacks arise at worry peaks; 'with panic attacks' specifier is the correct coding and the discrimination is the case's teaching core."
+      },
+      {
+        "attack": "Recode as illness anxiety disorder (cardiac preoccupation, pulse-checking, self-initiated cardiology review)",
+        "outcome": "SURVIVED — health is one of four worry domains, not the organising preoccupation, and normal investigations produced six weeks of genuine reassurance, atypical for IAD."
+      },
+      {
+        "attack": "Force comorbid MDD from PHQ-9 8, fatigue, poor sleep and 'I can't keep living like this'",
+        "outcome": "SURVIVED — no anhedonia, reactive mood, no weight or psychomotor change, and the risk statement decodes to relief-seeking on direct enquiry; demoralisation only."
+      },
+      {
+        "attack": "Claim caffeine-induced anxiety disorder (450–600 mg/day)",
+        "outcome": "SURVIVED — worry antedates the caffeine escalation and persists on low-caffeine days; caffeine is correctly held as a major aggravator and early treatment target, not the cause."
+      },
+      {
+        "attack": "Claim SSRI-induced hypomania from the day-12 activation",
+        "outcome": "SURVIVED — jitteriness and insomnia without mood elevation, grandiosity or goal-directed increase, resolving on discontinuation: activation, not hypomania, and the file distinguishes them explicitly."
+      },
+      {
+        "attack": "Claim OCD from the checking and re-reading",
+        "outcome": "SURVIVED — checking is worry-driven and logically connected to feared outcomes; no ego-dystonic intrusions, no neutralising rituals."
+      },
+      {
+        "attack": "Claim obsessive-compulsive personality disorder from the conscientiousness and over-preparation",
+        "outcome": "SURVIVED AFTER REPAIR — the differential lacked a personality-disorder entry; an OCPD entry was added excluding it on episode-linkage, ego-dystonicity and inter-episode flexibility."
+      },
+      {
+        "attack": "Attribute to hyperthyroidism, arrhythmia, phaeochromocytoma or OSA",
+        "outcome": "SURVIVED — TSH 2.1, normal echo, negative serial troponins, 48-hour monitor benign, STOP-BANG 2; the phaeochromocytoma exclusion originally overclaimed 'normal BP during the ED visit' and was corrected to a transient, mild, self-settling elevation, which is what a panic presentation actually shows."
+      }
     ]
   },
-
   "findings_and_repairs": [
-    { "id": "F1", "case": "VPSY-CASE-001", "severity": "critical", "domain": "cross-locale consistency", "defect": "ليان's index depressive episode contradicted the language-neutral core on four immutable clinical quantities: age at onset (٢١ vs 20), episode dates (autumn 2019 vs October 2018 – March 2019), SSRI duration (خمس شهور vs ~7 months) and counselling dose (ست جلسات vs 8 sessions).", "repair": "ar-JO personality realigned to the core on all four quantities (persona_prompt, history_localization, immutable-facts list). Her precipitant remains culturally distinct — grandfather's death summer 2018 plus a public academic blow — and the core's description of the index precipitant was genericized to 'a painful personal loss combined with a public academic blow', which both personalities now satisfy." },
-    { "id": "F2", "case": "VPSY-CASE-001", "severity": "high", "domain": "DSM-5 specifier logic", "defect": "The atypical-features exclusion defeated itself: with mood reactivity conceded and 'leaden paralysis arguably present', criterion A plus two B symptoms were satisfiable from the file's own words.", "repair": "Phenomenology sharpened — heaviness is global fatigue, leaden paralysis explicitly not endorsed on direct questioning; entry rewritten as a deliberate near-miss; 'leaden heaviness' wording removed from the bipolar-screen positives." },
-    { "id": "F3", "case": "VPSY-CASE-002", "severity": "high", "domain": "timeline arithmetic", "defect": "Father's age failed arithmetic in both locales: MI at 58, six years ago, yet listed as 66 (en) / ٦٧ (ar).", "repair": "Both fathers corrected to 64/٦٤. Mother فتحية and the twins adjusted (٦٠ / توأم بالتوجيهي عمرهم ١٨) so maternal age at every birth is unremarkable." },
-    { "id": "F4", "case": "both", "severity": "high", "domain": "consistency-rule coherence", "defect": "The numerical-consistency rule demanded identical numbers 'in every language' while incomes, rents and currencies differ across locales by design — the rule contradicted the library's own parity principle.", "repair": "Rule rescoped in both files: clinical quantities identical across locales; biographical quantities are locale facts, immutable within each personality." },
-    { "id": "F5", "case": "VPSY-CASE-001", "severity": "moderate", "domain": "core/locale separation", "defect": "Locale-specific biography leaked into the language-neutral core: partner-of-3.5-years as an immutable fact, partner-employer insurance as a protective factor, avoided 'parents' weekly calls', 'sertraline from student health', the studio critique, escort-to-session by 'her partner', and a 4-year oral-contraceptive history asserted for both women.", "repair": "All genericized with explicit per-personality mapping. ليان additionally received the matching February 2026 co-regulation loss (فادي's pharmacy night duties ending their nightly calls), preserving exact clinical parity with Devin's night-shift rotation." },
-    { "id": "F6", "case": "VPSY-CASE-002", "severity": "moderate", "domain": "core/locale separation", "defect": "Core carried en-US biography as neutral fact: 'the mortgage' as a worry domain, 'property purchase', 'a four-year relationship ended, amicable, mutual', 'borrowed benzodiazepine' (رامي's was pharmacy-bought), a father who 'manages stress with alcohol' (رامي's father is a Muslim non-drinker), 'a dependent pet' (رامي has none), 'runs three times a week', 'redundancy at 12', and C6 sleep disruption attributed to alcohol.", "repair": "Each genericized with per-personality mapping; رامي's father given the modelled substance habit the core claimed — forty years of cigarettes no one may mention, even post-infarct." },
-    { "id": "F7", "case": "VPSY-CASE-002", "severity": "moderate", "domain": "plausibility", "defect": "Both 26-year-old index treatments were placed at 'a university counselling service' although neither patient was an enrolled student in 2017–2018; and رامي's employment chronology left 2016–2019 unaccounted (2014 + 2 + 7 ≠ 2026).", "repair": "Index CBT relocated to capped brief-therapy services — employer EAP (en) / مركز إرشاد أسري ومجتمعي بإربد (ar) — preserving the clinically load-bearing six-session cap. رامي's chronology corrected: five years across two smaller firms, joining the contractor in 2019; توجيهي moved to 2010 to fit the 2014 degree." },
-    { "id": "F8", "case": "VPSY-CASE-001", "severity": "moderate", "domain": "DSM-5 specifier logic", "defect": "Melancholic-features exclusion argued only lack-of-reactivity (A2) though criterion A is disjunctive; A1 was left open.", "repair": "A1 now explicitly defeated: genuine pleasure, not mere reactivity, survives in specific moments, so 'loss of pleasure in all or almost all activities' is not met." },
-    { "id": "F9", "case": "both", "severity": "minor", "domain": "measurement", "defect": "Screener bands sat unreconciled against clinician severity ratings (PHQ-9 16 vs 'moderate'; GAD-7 15 vs 'moderate').", "repair": "Explicit severity notes added to both diagnosis blocks, framing the band/rating gap as deliberate, examinable material." },
-    { "id": "F10", "case": "VPSY-CASE-001", "severity": "minor", "domain": "arithmetic", "defect": "Weight figures rounded incoherently (63→59 kg implies 4 kg against the stated 3.6 kg; 8/138 is 5.8%, not 5.5%); first relationship 'at nineteen, two years' collided with episode onset at 20; 'fifteen years of painting' collided with drawing-from-age-nine.", "repair": "Exact kilograms (62.6→59.0) and 5.8% throughout; Ethan moved to eighteen with the breakup placed in junior-year autumn; drawing at nine, painting at thirteen, and the Arabic prompt re-anchored to «من عمر تسع سنين»." },
-    { "id": "F11", "case": "VPSY-CASE-001", "severity": "minor", "domain": "clinical plan", "defect": "Medical screening said 'repeat ferritin after repletion' though iron repletion had never been started.", "repair": "Corrected to 'consider oral iron and recheck ferritin in 8–12 weeks'." },
-    { "id": "F12", "case": "VPSY-CASE-001", "severity": "minor", "domain": "internal consistency (ar)", "defect": "Hypnotic source wobbled between 'صيدلية صاحبتها' and 'صاحبتها رنا'; cousin زياد was 'ابن خال' in one place while the core codes a paternal cousin; father's drinking was 'بالمناسبات' against the core's weekly-weekend pattern.", "repair": "Unified to رنا the friend; زياد is ابن عم everywhere; the father drinks most weekends and the family calls it 'مناسبات' — the euphemism is now the datum." },
-    { "id": "F13", "case": "VPSY-CASE-002", "severity": "minor", "domain": "medical accuracy", "defect": "Phaeochromocytoma exclusion claimed normal blood pressure during an active panic presentation — physiologically wrong and an examiner giveaway.", "repair": "Corrected to transient mild elevation settling without treatment, normal between episodes." },
-    { "id": "F14", "case": "both", "severity": "trivial", "domain": "editorial", "defect": "The rupture-repair key was named 'her_default' — a gendered key applied to a they/them patient in CASE-002.", "repair": "Renamed 'patient_default' in both files. رامي's ambiguous 'الأخ الأكبر لخمسة' clarified to 'الأكبر بين خمسة إخوة'." }
+    {
+      "id": "F1",
+      "case": "VPSY-CASE-001",
+      "severity": "critical",
+      "domain": "cross-locale consistency",
+      "defect": "ليان's index depressive episode contradicted the language-neutral core on four immutable clinical quantities: age at onset (٢١ vs 20), episode dates (autumn 2019 vs October 2018 – March 2019), SSRI duration (خمس شهور vs ~7 months) and counselling dose (ست جلسات vs 8 sessions).",
+      "repair": "ar-JO personality realigned to the core on all four quantities (persona_prompt, history_localization, immutable-facts list). Her precipitant remains culturally distinct — grandfather's death summer 2018 plus a public academic blow — and the core's description of the index precipitant was genericized to 'a painful personal loss combined with a public academic blow', which both personalities now satisfy."
+    },
+    {
+      "id": "F2",
+      "case": "VPSY-CASE-001",
+      "severity": "high",
+      "domain": "DSM-5 specifier logic",
+      "defect": "The atypical-features exclusion defeated itself: with mood reactivity conceded and 'leaden paralysis arguably present', criterion A plus two B symptoms were satisfiable from the file's own words.",
+      "repair": "Phenomenology sharpened — heaviness is global fatigue, leaden paralysis explicitly not endorsed on direct questioning; entry rewritten as a deliberate near-miss; 'leaden heaviness' wording removed from the bipolar-screen positives."
+    },
+    {
+      "id": "F3",
+      "case": "VPSY-CASE-002",
+      "severity": "high",
+      "domain": "timeline arithmetic",
+      "defect": "Father's age failed arithmetic in both locales: MI at 58, six years ago, yet listed as 66 (en) / ٦٧ (ar).",
+      "repair": "Both fathers corrected to 64/٦٤. Mother فتحية and the twins adjusted (٦٠ / توأم بالتوجيهي عمرهم ١٨) so maternal age at every birth is unremarkable."
+    },
+    {
+      "id": "F4",
+      "case": "both",
+      "severity": "high",
+      "domain": "consistency-rule coherence",
+      "defect": "The numerical-consistency rule demanded identical numbers 'in every language' while incomes, rents and currencies differ across locales by design — the rule contradicted the library's own parity principle.",
+      "repair": "Rule rescoped in both files: clinical quantities identical across locales; biographical quantities are locale facts, immutable within each personality."
+    },
+    {
+      "id": "F5",
+      "case": "VPSY-CASE-001",
+      "severity": "moderate",
+      "domain": "core/locale separation",
+      "defect": "Locale-specific biography leaked into the language-neutral core: partner-of-3.5-years as an immutable fact, partner-employer insurance as a protective factor, avoided 'parents' weekly calls', 'sertraline from student health', the studio critique, escort-to-session by 'her partner', and a 4-year oral-contraceptive history asserted for both women.",
+      "repair": "All genericized with explicit per-personality mapping. ليان additionally received the matching February 2026 co-regulation loss (فادي's pharmacy night duties ending their nightly calls), preserving exact clinical parity with Devin's night-shift rotation."
+    },
+    {
+      "id": "F6",
+      "case": "VPSY-CASE-002",
+      "severity": "moderate",
+      "domain": "core/locale separation",
+      "defect": "Core carried en-US biography as neutral fact: 'the mortgage' as a worry domain, 'property purchase', 'a four-year relationship ended, amicable, mutual', 'borrowed benzodiazepine' (رامي's was pharmacy-bought), a father who 'manages stress with alcohol' (رامي's father is a Muslim non-drinker), 'a dependent pet' (رامي has none), 'runs three times a week', 'redundancy at 12', and C6 sleep disruption attributed to alcohol.",
+      "repair": "Each genericized with per-personality mapping; رامي's father given the modelled substance habit the core claimed — forty years of cigarettes no one may mention, even post-infarct."
+    },
+    {
+      "id": "F7",
+      "case": "VPSY-CASE-002",
+      "severity": "moderate",
+      "domain": "plausibility",
+      "defect": "Both 26-year-old index treatments were placed at 'a university counselling service' although neither patient was an enrolled student in 2017–2018; and رامي's employment chronology left 2016–2019 unaccounted (2014 + 2 + 7 ≠ 2026).",
+      "repair": "Index CBT relocated to capped brief-therapy services — employer EAP (en) / مركز إرشاد أسري ومجتمعي بإربد (ar) — preserving the clinically load-bearing six-session cap. رامي's chronology corrected: five years across two smaller firms, joining the contractor in 2019; توجيهي moved to 2010 to fit the 2014 degree."
+    },
+    {
+      "id": "F8",
+      "case": "VPSY-CASE-001",
+      "severity": "moderate",
+      "domain": "DSM-5 specifier logic",
+      "defect": "Melancholic-features exclusion argued only lack-of-reactivity (A2) though criterion A is disjunctive; A1 was left open.",
+      "repair": "A1 now explicitly defeated: genuine pleasure, not mere reactivity, survives in specific moments, so 'loss of pleasure in all or almost all activities' is not met."
+    },
+    {
+      "id": "F9",
+      "case": "both",
+      "severity": "minor",
+      "domain": "measurement",
+      "defect": "Screener bands sat unreconciled against clinician severity ratings (PHQ-9 16 vs 'moderate'; GAD-7 15 vs 'moderate').",
+      "repair": "Explicit severity notes added to both diagnosis blocks, framing the band/rating gap as deliberate, examinable material."
+    },
+    {
+      "id": "F10",
+      "case": "VPSY-CASE-001",
+      "severity": "minor",
+      "domain": "arithmetic",
+      "defect": "Weight figures rounded incoherently (63→59 kg implies 4 kg against the stated 3.6 kg; 8/138 is 5.8%, not 5.5%); first relationship 'at nineteen, two years' collided with episode onset at 20; 'fifteen years of painting' collided with drawing-from-age-nine.",
+      "repair": "Exact kilograms (62.6→59.0) and 5.8% throughout; Ethan moved to eighteen with the breakup placed in junior-year autumn; drawing at nine, painting at thirteen, and the Arabic prompt re-anchored to «من عمر تسع سنين»."
+    },
+    {
+      "id": "F11",
+      "case": "VPSY-CASE-001",
+      "severity": "minor",
+      "domain": "clinical plan",
+      "defect": "Medical screening said 'repeat ferritin after repletion' though iron repletion had never been started.",
+      "repair": "Corrected to 'consider oral iron and recheck ferritin in 8–12 weeks'."
+    },
+    {
+      "id": "F12",
+      "case": "VPSY-CASE-001",
+      "severity": "minor",
+      "domain": "internal consistency (ar)",
+      "defect": "Hypnotic source wobbled between 'صيدلية صاحبتها' and 'صاحبتها رنا'; cousin زياد was 'ابن خال' in one place while the core codes a paternal cousin; father's drinking was 'بالمناسبات' against the core's weekly-weekend pattern.",
+      "repair": "Unified to رنا the friend; زياد is ابن عم everywhere; the father drinks most weekends and the family calls it 'مناسبات' — the euphemism is now the datum."
+    },
+    {
+      "id": "F13",
+      "case": "VPSY-CASE-002",
+      "severity": "minor",
+      "domain": "medical accuracy",
+      "defect": "Phaeochromocytoma exclusion claimed normal blood pressure during an active panic presentation — physiologically wrong and an examiner giveaway.",
+      "repair": "Corrected to transient mild elevation settling without treatment, normal between episodes."
+    },
+    {
+      "id": "F14",
+      "case": "both",
+      "severity": "trivial",
+      "domain": "editorial",
+      "defect": "The rupture-repair key was named 'her_default' — a gendered key applied to a they/them patient in CASE-002.",
+      "repair": "Renamed 'patient_default' in both files. رامي's ambiguous 'الأخ الأكبر لخمسة' clarified to 'الأكبر بين خمسة إخوة'."
+    }
   ],
-
   "domain_verdicts": {
     "note": "Scores are post-repair, per case, both personalities examined. No domain below 9.5 remains.",
     "VPSY-CASE-001": {
-      "dsm5": 9.8, "icd11": 9.8, "differential_diagnosis": 9.7, "risk_assessment": 9.8,
-      "trauma": 9.6, "personality": 9.6, "psychosis": 9.8, "substance_use": 9.7,
-      "sleep": 9.7, "family_history": 9.8, "cultural_consistency": 9.6, "emotional_consistency": 9.7
+      "dsm5": 9.8,
+      "icd11": 9.8,
+      "differential_diagnosis": 9.7,
+      "risk_assessment": 9.8,
+      "trauma": 9.6,
+      "personality": 9.6,
+      "psychosis": 9.8,
+      "substance_use": 9.7,
+      "sleep": 9.7,
+      "family_history": 9.8,
+      "cultural_consistency": 9.6,
+      "emotional_consistency": 9.7
     },
     "VPSY-CASE-002": {
-      "dsm5": 9.8, "icd11": 9.7, "differential_diagnosis": 9.8, "risk_assessment": 9.8,
-      "trauma": 9.6, "personality": 9.7, "psychosis": 9.7, "substance_use": 9.8,
-      "sleep": 9.7, "family_history": 9.7, "cultural_consistency": 9.6, "emotional_consistency": 9.7
+      "dsm5": 9.8,
+      "icd11": 9.7,
+      "differential_diagnosis": 9.8,
+      "risk_assessment": 9.8,
+      "trauma": 9.6,
+      "personality": 9.7,
+      "psychosis": 9.7,
+      "substance_use": 9.8,
+      "sleep": 9.7,
+      "family_history": 9.7,
+      "cultural_consistency": 9.6,
+      "emotional_consistency": 9.7
     }
   },
-
   "verdicts": [
-    { "persona": "Maya Chen", "case": "VPSY-CASE-001", "locale": "en-US", "diagnosis": "MDD, recurrent, moderate, with anxious distress (296.32 / F33.1 / 6A71.1)", "diagnosis_survived": true, "clinical_accuracy": 9.7, "status": "APPROVED" },
-    { "persona": "ليان خوري", "case": "VPSY-CASE-001", "locale": "ar-JO", "diagnosis": "MDD, recurrent, moderate, with anxious distress (296.32 / F33.1 / 6A71.1)", "diagnosis_survived": true, "clinical_accuracy": 9.6, "status": "APPROVED" },
-    { "persona": "Jordan Hale", "case": "VPSY-CASE-002", "locale": "en-US", "diagnosis": "GAD, moderate, with panic attacks (300.02 / F41.1 / 6B00)", "diagnosis_survived": true, "clinical_accuracy": 9.7, "status": "APPROVED" },
-    { "persona": "رامي نصّار", "case": "VPSY-CASE-002", "locale": "ar-JO", "diagnosis": "GAD, moderate, with panic attacks (300.02 / F41.1 / 6B00)", "diagnosis_survived": true, "clinical_accuracy": 9.6, "status": "APPROVED" }
+    {
+      "persona": "Maya Chen",
+      "case": "VPSY-CASE-001",
+      "locale": "en-US",
+      "diagnosis": "MDD, recurrent, moderate, with anxious distress (296.32 / F33.1 / 6A71.1)",
+      "diagnosis_survived": true,
+      "clinical_accuracy": 9.7,
+      "status": "APPROVED"
+    },
+    {
+      "persona": "ليان خوري",
+      "case": "VPSY-CASE-001",
+      "locale": "ar-JO",
+      "diagnosis": "MDD, recurrent, moderate, with anxious distress (296.32 / F33.1 / 6A71.1)",
+      "diagnosis_survived": true,
+      "clinical_accuracy": 9.6,
+      "status": "APPROVED"
+    },
+    {
+      "persona": "Jordan Hale",
+      "case": "VPSY-CASE-002",
+      "locale": "en-US",
+      "diagnosis": "GAD, moderate, with panic attacks (300.02 / F41.1 / 6B00)",
+      "diagnosis_survived": true,
+      "clinical_accuracy": 9.7,
+      "status": "APPROVED"
+    },
+    {
+      "persona": "رامي نصّار",
+      "case": "VPSY-CASE-002",
+      "locale": "ar-JO",
+      "diagnosis": "GAD, moderate, with panic attacks (300.02 / F41.1 / 6B00)",
+      "diagnosis_survived": true,
+      "clinical_accuracy": 9.6,
+      "status": "APPROVED"
+    }
   ],
-
   "verdict_rationale": {
     "why_not_10": [
       "Standardized patients are necessarily cleaner than wild ones: each case's teaching traps make the material slightly more legible than an unselected clinic presentation would be.",
@@ -83,5 +271,88 @@
       "Live re-scoring of the embedded instruments (PHQ-9, GAD-7, MDQ, C-SSRS, AUDIT-C, STOP-BANG) against a simulated interview transcript is the one validation this document cannot perform on itself."
     ],
     "termination_of_iteration": "One full adversarial pass produced 14 findings; all were repaired in place and re-verified. A second pass over the repaired text found no remaining contradiction, no failed criterion argument, and no arithmetic error. All four personas exceed the 9.5 bar; iteration terminates per the examination standard."
+  },
+  "second_pass_core_delocalization": {
+    "date": "2026-08-02",
+    "scope": "Directed follow-up to audit findings F5 and F6, which were closed last pass by ANNOTATING locale-specific facts in the shared clinical cores rather than removing them. The annotations ('a locale fact: X in one personality, Y in the other') left both locales' specifics inside the language-neutral core — the same defect in a more legible form. This pass removes them.",
+    "principle_applied": "A shared clinical core states the clinical fact and its function in locale-neutral terms. Where a concrete realization is required it carries a bare pointer — '(see personality)' or '(per personality)' — and never enumerates what each locale does. Concrete detail lives only in the personality that owns it.",
+    "preserved_unchanged": [
+      "Diagnosis and all codes",
+      "Educational goals, session goals and rule-outs required of the trainee",
+      "Difficulty level and every teaching trap",
+      "Culture — no cultural content was removed or flattened",
+      "Language — each personality's authored language is untouched"
+    ],
+    "corrections": {
+      "maya-chen": 46,
+      "jordan-hale": 27,
+      "total": 73
+    },
+    "categories": [
+      {
+        "class": "Imperial units in the shared core",
+        "count": 5,
+        "case": "VPSY-CASE-001",
+        "detail": "Weight carried as '8 lb / 3.6 kg', '138 lb → 130 lb' and 'Eight pounds becomes a few pounds' in the neutral core. Core now states kg and % only; each personality states its own customary units, and the en-US personality keeps 'eight pounds' as the phrase Maya actually says."
+      },
+      {
+        "class": "'partner' asserted as a household fact",
+        "count": 26,
+        "case": "VPSY-CASE-001",
+        "detail": "The core repeatedly made the partner the observer, cook, corroborating informant, co-regulator and protective factor. ليان lives with her parents: her mother cooks, urges her to attend and waits outside. All such statements are now role-neutral ('the person closest to her', 'someone who lives with her', 'those who share her home'), which is true for both personalities and clinically identical."
+      },
+      {
+        "class": "F5/F6 annotations enumerating both locales",
+        "count": 13,
+        "case": "both",
+        "detail": "Every '(a locale fact: X in one personality, Y in the other)' construction replaced with a bare pointer. Covers care funding, index-episode precipitant, hormonal medication, relationship form, largest financial commitment, brief-therapy service type, the father's stress habit, exercise, daily routine, and the accompanying supporter."
+      },
+      {
+        "class": "Facts untrue in one locale",
+        "count": 22,
+        "case": "both",
+        "detail": "Alcohol and cannabis use asserted in cores where one personality has neither (ليان and رامي both abstain); a dog, running and a mortgage asserted for رامي who has none of them; 'no access to firearms' framed US-first; 'apartment' as the self-care setting. All neutralized to the clinical function, with the concrete substance or object moved into the owning personality."
+      },
+      {
+        "class": "Cross-locale substitution rule stated by example",
+        "count": 1,
+        "case": "VPSY-CASE-002",
+        "detail": "The rule named American alcohol versus Jordanian nicotine and water-pipe. Restated as a principle — a culturally unavailable coping behaviour is replaced by a locally true behaviour with the same clinical function, frequency and consequences — with no substance named."
+      },
+      {
+        "class": "Bilingual example inside a neutral rule",
+        "count": 1,
+        "case": "VPSY-CASE-001",
+        "detail": "numerical_consistency quoted both an English and an Arabic correction phrase. Replaced with 'in her own words and her own units'."
+      },
+      {
+        "class": "Residual inconsistency from the F7 repair",
+        "count": 1,
+        "case": "VPSY-CASE-002",
+        "detail": "previous_diagnoses[0].by still read 'University counselling service' after the index CBT was relocated to a capped brief-therapy service. Now 'Brief-therapy counselling service'."
+      },
+      {
+        "class": "Relocated detail given a home",
+        "count": 4,
+        "case": "both",
+        "detail": "Adding substance_and_medication_context to all four personalities so nothing removed from a core was lost: alcohol, cannabis, hypnotic, caffeine, nicotine, hormonal contraception and customary weight units, each stated in that personality's own language, including the explicit negatives for ليان and رامي."
+      }
+    ],
+    "not_corrected_deliberately": [
+      "Lab units (mIU/L, ng/mL, g/dL, pg/mL) and HbA1c — international, not locale-specific.",
+      "Instrument names (PHQ-9, GAD-7, MDQ, C-SSRS, AUDIT-C, STOP-BANG, PSWQ) — internationally used.",
+      "INN generic drug names (sertraline, escitalopram, alprazolam, propranolol, hydroxyzine, zolpidem) — international; the brand, prescriber and acquisition channel remain personality-level.",
+      "Family roles (mother, father, sister, brother, grandmother, aunt) — every personality has them and the family structure is clinically shared.",
+      "The cat in VPSY-CASE-001 — both personalities have one (Miso / بسبوسة).",
+      "University counselling for the index episode in VPSY-CASE-001 — both personalities attended one.",
+      "Z63.0 'Relationship distress with intimate partner' — the official ICD code wording, and both personalities have an intimate partner.",
+      "Educational goals, session goals and required rule-outs — preserved verbatim even where they name alcohol, since asking is valid in both locales and the goals were explicitly protected."
+    ],
+    "verification": [
+      "Both cores re-scanned: zero residual locale-specific facts (12 further regex hits reviewed and confirmed as false positives — 'Running' as a verb, 'austin' inside 'exhausting', and neutral '(per personality)' pointers).",
+      "All four personalities render through the live v2 prompt template with no unresolved placeholders.",
+      "Schema validation, symptom-id references and disclosure-rule enums all still pass.",
+      "No diagnosis, code, severity, specifier, risk level, session goal, rubric or teaching trap was altered."
+    ]
   }
 }
