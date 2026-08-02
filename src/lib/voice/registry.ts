@@ -55,11 +55,10 @@ export function resolveAvatarSpeechVoice(params: {
 
   if (isActiveVoiceProfile(profile)) {
     const profileLocale = normalizeSpeechLocale(profile.language);
-    // Use registry voice when it matches the session locale, or when there is
-    // no competing legacy id for the other locale (single-profile avatars).
-    const legacyForLocale =
-      locale === "ar" ? params.voiceIdAr : params.voiceId;
-    if (profileLocale === locale || !legacyForLocale) {
+    // Only use a registry profile when its language matches the session locale.
+    // Cross-locale profiles (e.g. Arabic Amira on an English turn) must not win —
+    // that routed EN sessions onto Voice Library ids that free API keys reject.
+    if (profileLocale === locale) {
       return {
         voiceId: profile.voice_id,
         source: "voice_profile",

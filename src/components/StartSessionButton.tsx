@@ -1,18 +1,22 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import type { AppLocale } from "@/i18n/config";
+import { LOCALE_COOKIE } from "@/i18n/config";
 
 function cookieLocale(): string | undefined {
   if (typeof document === "undefined") return undefined;
-  const match = document.cookie.match(/(?:^|; )locale=([^;]*)/);
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`),
+  );
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
 
-
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
+  const locale = useLocale() as AppLocale;
   const t = useTranslations("session.start");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,12 +25,14 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
     setLoading(true);
     setError(null);
     try {
+      // Prefer the live next-intl locale (UI language), then cookie fallback.
+      const sessionLocale = locale || cookieLocale();
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           avatarId,
-          locale: cookieLocale(),
+          locale: sessionLocale,
         }),
       });
       const data = await res.json();
