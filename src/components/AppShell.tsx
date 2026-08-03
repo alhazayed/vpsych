@@ -94,6 +94,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/analytics",
+      label: t("learningAnalytics"),
+      icon: "monitoring",
+      match: (p) => p.startsWith("/admin/analytics"),
+    },
   ];
 }
 
@@ -172,6 +178,8 @@ export function AppShell({
       return tShell("pageTitle.adaptiveCurriculum");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
+    if (pathname.startsWith("/admin/analytics"))
+      return tShell("pageTitle.learningAnalytics");
     if (pathname.startsWith("/learning/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning"))

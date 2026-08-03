@@ -92,8 +92,24 @@ export function LearnerDashboard() {
   }
 
   const radar = data?.analytics?.radar ?? [];
-  const top = [...radar].sort((a, b) => b.score - a.score).slice(0, 8);
-  const weak = [...radar].sort((a, b) => a.score - b.score).slice(0, 8);
+  const strengths = (data?.analytics?.strengths ?? []).map((id) => ({
+    competency_id: id,
+    score: radar.find((r) => r.competency_id === id)?.score ?? 0,
+  }));
+  const weaknesses = (data?.analytics?.weaknesses ?? []).map((id) => ({
+    competency_id: id,
+    score: radar.find((r) => r.competency_id === id)?.score ?? 0,
+  }));
+  // Fall back to assessed-looking radar sort only when analytics lists are empty
+  const top =
+    strengths.length > 0
+      ? strengths
+      : [...radar].filter((r) => r.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+  const weak =
+    weaknesses.length > 0
+      ? weaknesses
+      : [...radar].filter((r) => r.score > 0).sort((a, b) => a.score - b.score).slice(0, 8);
+  const curve = data?.analytics?.learning_curve ?? [];
 
   return (
     <div className="space-y-8">
@@ -134,6 +150,27 @@ export function LearnerDashboard() {
           <CompetencyBars title="Focus areas" items={weak} accent />
         </div>
       </section>
+
+      {curve.length > 0 && (
+        <section className="clinical-card p-5">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+            Assessment trend
+          </h2>
+          <div className="flex h-28 items-end gap-1">
+            {curve.map((p) => (
+              <div
+                key={p.n}
+                className="flex-1 rounded-t bg-[var(--primary)]"
+                style={{ height: `${Math.max(4, p.overall)}%` }}
+                title={`Session ${p.n}: ${p.overall}`}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-[var(--on-surface-variant)]">
+            Overall scores across {curve.length} assessed sessions
+          </p>
+        </section>
+      )}
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">

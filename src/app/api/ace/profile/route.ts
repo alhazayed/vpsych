@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
-  buildAnalytics,
   evaluateCertifications,
   generateLearningPlan,
 } from "@/lib/ace";
+import { analyticsForProfile } from "@/lib/learning-analytics";
 import { ensureLearnerProfile } from "@/lib/ace/persist";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -36,7 +36,7 @@ export async function GET() {
   }
 
   const profile = await ensureLearnerProfile(supabase, user.id);
-  const analytics = buildAnalytics(profile);
+  const analytics = analyticsForProfile(profile);
   const certifications = evaluateCertifications(profile);
   const plan = generateLearningPlan(profile);
 

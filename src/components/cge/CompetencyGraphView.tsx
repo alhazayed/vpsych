@@ -19,7 +19,14 @@ type LearnerNode = {
   confidence: number;
 };
 
-export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
+export function CompetencyGraphView({
+  admin = false,
+  userId,
+}: {
+  admin?: boolean;
+  /** Admin overlay: profiles.user id for selected learner */
+  userId?: string;
+}) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [learnerNodes, setLearnerNodes] = useState<LearnerNode[]>([]);
@@ -37,8 +44,13 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const res = await fetch("/api/cge/graph");
+        const qs = userId
+          ? `?userId=${encodeURIComponent(userId)}`
+          : "";
+        const res = await fetch(`/api/cge/graph${qs}`);
         const data = await res.json();
         if (!res.ok) {
           setError(data.error ?? "Failed to load graph");
@@ -56,7 +68,7 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [userId]);
 
   const domains = useMemo(
     () => ["all", ...new Set(nodes.map((n) => n.domain))],
@@ -89,7 +101,11 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
       const res = await fetch("/api/cge/rca", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ observedFailure: id, action: "supervisor" }),
+        body: JSON.stringify({
+          observedFailure: id,
+          action: "supervisor",
+          ...(userId ? { userId } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

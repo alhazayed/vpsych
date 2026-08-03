@@ -83,6 +83,7 @@ export function ingestSessionAssessment(
     sessionId?: string;
     diagnosisSlug?: string | null;
     correctDiagnosis?: boolean;
+    missFlags?: SessionPerformanceInput["missFlags"];
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
@@ -102,6 +103,7 @@ export function ingestSessionAssessment(
     competencyScores,
     diagnosisSlug: opts.diagnosisSlug,
     correctDiagnosis: opts.correctDiagnosis,
+    missFlags: opts.missFlags,
     durationSec: opts.durationSec,
     timeLimitSec: opts.timeLimitSec,
   };
@@ -110,20 +112,34 @@ export function ingestSessionAssessment(
   next = updateCertificationStatus(next);
 
   const coach = generateSupervisorFeedback(next, performance);
+
+  const priorCompleted =
+    ((profile.metadata?.completed_diagnoses as string[]) ?? []).filter(Boolean);
+  const priorMissed =
+    ((profile.metadata?.missed_diagnoses as string[]) ?? []).filter(Boolean);
+  const sessionCompleted =
+    opts.correctDiagnosis === false
+      ? []
+      : opts.correctDiagnosis === true && opts.diagnosisSlug
+        ? [opts.diagnosisSlug]
+        : [];
+  const sessionMissed =
+    opts.correctDiagnosis === false && opts.diagnosisSlug
+      ? [opts.diagnosisSlug]
+      : [];
+  const completedDiagnoses = [...new Set([...priorCompleted, ...sessionCompleted])];
+  const missedDiagnoses = [...new Set([...priorMissed, ...sessionMissed])].filter(
+    (d) => !completedDiagnoses.includes(d),
+  );
+
   const analytics = buildAnalytics(
     next,
     [
       ...((profile.metadata?.history_overall as number[]) ?? []),
       opts.overall,
     ],
-    opts.correctDiagnosis === false
-      ? []
-      : opts.diagnosisSlug
-        ? [opts.diagnosisSlug]
-        : [],
-    opts.correctDiagnosis === false && opts.diagnosisSlug
-      ? [opts.diagnosisSlug]
-      : [],
+    completedDiagnoses,
+    missedDiagnoses,
   );
 
   let path = generateCurriculum(next);
@@ -143,6 +159,8 @@ export function ingestSessionAssessment(
     metadata: {
       ...next.metadata,
       history_overall: analytics.learning_curve.map((p) => p.overall),
+      completed_diagnoses: completedDiagnoses,
+      missed_diagnoses: missedDiagnoses,
       last_next_case: nextCase,
       active_rules: selectActiveRules(next).map((r) => r.slug),
     },

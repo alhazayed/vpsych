@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ingestSessionAssessment } from "./engine";
+import {
+  inferDiagnosisCorrectness,
+  inferMissFlagsFromNarrative,
+  mapRubricToCompetencies,
+} from "./analytics";
 import { ensureLearnerProfile, persistLearnerUpdate } from "./persist";
 import {
   generateGraphAwareAdaptiveCase,
@@ -28,6 +33,8 @@ export async function runAceAfterAssessment(
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
+    /** Explicit diagnosis correctness when known; never inferred from overall alone. */
+    correctDiagnosis?: boolean;
   },
 ): Promise<{
   ok: boolean;
@@ -43,12 +50,23 @@ export async function runAceAfterAssessment(
       return { ok: true, learnerId: profile.id };
     }
 
+    const missFlags = opts.narrative
+      ? inferMissFlagsFromNarrative(opts.narrative)
+      : undefined;
+    const correctDiagnosis =
+      opts.correctDiagnosis ??
+      inferDiagnosisCorrectness(opts.narrative, opts.overall);
+    const sessionCompetencyIds = Object.keys(
+      mapRubricToCompetencies(opts.items, opts.overall),
+    );
+
     const result = ingestSessionAssessment(profile, {
       overall: opts.overall,
       items: opts.items,
       sessionId: opts.sessionId,
       diagnosisSlug: opts.diagnosisSlug,
-      correctDiagnosis: opts.overall >= 55,
+      correctDiagnosis,
+      missFlags,
       narrative: opts.narrative,
       durationSec: opts.durationSec,
       timeLimitSec: opts.timeLimitSec,
@@ -103,6 +121,7 @@ export async function runAceAfterAssessment(
       diagnosisSlug: nextCase.disorderSlug,
       difficulty: nextCase.difficulty,
       focus: nextCase.focusCompetencies,
+      sessionCompetencyIds,
       adaptation: {
         adaptations: nextCase.adaptations,
         rationale: nextCase.rationale,

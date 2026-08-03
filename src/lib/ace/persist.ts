@@ -138,6 +138,8 @@ export async function persistLearnerUpdate(
     difficulty?: string;
     focus?: string[];
     adaptation?: Record<string, unknown>;
+    /** Competencies actually scored this session — only these get competency_scores rows. */
+    sessionCompetencyIds?: string[];
   },
 ): Promise<void> {
   const { error } = await supabase
@@ -161,6 +163,12 @@ export async function persistLearnerUpdate(
     return;
   }
 
+  const sessionIds = new Set(
+    (opts?.sessionCompetencyIds ??
+      (profile.metadata?.last_session_competency_ids as string[]) ??
+      []) as string[],
+  );
+
   for (const c of profile.competencies) {
     if (c.samples <= 0) continue;
     await supabase.from("learner_competencies").upsert(
@@ -176,7 +184,9 @@ export async function persistLearnerUpdate(
       { onConflict: "learner_id,competency_id" },
     );
 
-    if (opts?.sessionId) {
+    // Session-scoped evidence only for competencies scored this session
+    // (avoids phantom rows that corrupt research/trend datasets).
+    if (opts?.sessionId && sessionIds.has(c.competency_id)) {
       await supabase.from("competency_scores").insert({
         learner_id: profile.id,
         competency_id: c.competency_id,

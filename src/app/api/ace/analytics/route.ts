@@ -46,17 +46,20 @@ export async function GET(request: Request) {
     .from("performance_trends")
     .select("*")
     .eq("learner_id", profile.id)
+    .eq("window_label", "rolling_10")
     .maybeSingle();
 
-  const completed = (history ?? [])
-    .map((h) => h.diagnosis_slug)
-    .filter(Boolean) as string[];
+  // Prefer assessment evidence in profile metadata over next-case recommendations
+  const completed =
+    ((profile.metadata?.completed_diagnoses as string[]) ?? []).filter(Boolean);
+  const missed =
+    ((profile.metadata?.missed_diagnoses as string[]) ?? []).filter(Boolean);
 
   const analytics = buildAnalytics(
     profile,
     ((profile.metadata?.history_overall as number[]) ?? []),
     completed,
-    [],
+    missed,
   );
 
   return NextResponse.json({

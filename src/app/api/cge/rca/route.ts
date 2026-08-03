@@ -30,9 +30,19 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     observedFailure?: string;
     action?: "rca" | "remediation" | "next" | "supervisor" | "mastery";
+    userId?: string;
   };
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const targetUserId =
+    body.userId && me?.role === "admin" ? body.userId : user.id;
+
+  const profile = await ensureLearnerProfile(supabase, targetUserId);
   const states = statesFromAceCompetencies(profile.competencies);
   const observed =
     body.observedFailure ??
