@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/admin";
+import { messageRpcClient } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await rateLimit(`start:${user.id}`, 30, 60 * 60 * 1000);
+  const limited = await rateLimit(`start:${user.id}`, 60, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -188,14 +188,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const privileged = createServiceClient();
-  if (!privileged) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
-  const { error: sysErr } = await privileged.rpc("insert_system_message", {
+  const writer = messageRpcClient(supabase);
+  const { error: sysErr } = await writer.rpc("insert_system_message", {
     p_session_id: session.id,
     p_content: "Session started. Speak with the patient avatar.",
   });

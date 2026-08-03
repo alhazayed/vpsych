@@ -1,7 +1,10 @@
 /**
  * Server-side TTS voice resolution:
  * Avatar (optional) → voice_profile → voice_id → ElevenLabs
- * Falls back to explicit voiceId / voiceIdAr for backward compatibility.
+ *
+ * Client-supplied voiceId / voiceIdAr are intentionally ignored so
+ * authenticated therapists cannot spend ElevenLabs quota on arbitrary
+ * catalogue voices. Resolution is avatar / voice_profile / env defaults only.
  */
 
 import { createClient } from "@/lib/supabase/server";
@@ -17,13 +20,16 @@ export async function resolveTtsVoice(params: {
   locale: SessionSpeechLocale;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  /** @deprecated Ignored — kept for request body backward compatibility. */
   voiceId?: string | null;
+  /** @deprecated Ignored — kept for request body backward compatibility. */
   voiceIdAr?: string | null;
 }): Promise<VoiceResolution> {
   let profile: VoiceProfile | null = null;
   let profileId = params.voiceProfileId ?? null;
-  let legacyVoiceId = params.voiceId ?? null;
-  let legacyVoiceIdAr = params.voiceIdAr ?? null;
+  // Never trust client-supplied ElevenLabs ids for therapy TTS.
+  let legacyVoiceId: string | null = null;
+  let legacyVoiceIdAr: string | null = null;
 
   const supabase = await createClient();
 
@@ -38,8 +44,8 @@ export async function resolveTtsVoice(params: {
 
     if (data) {
       profileId = profileId ?? (data.voice_profile_id as string | null);
-      legacyVoiceId = legacyVoiceId ?? (data.voice_id as string | null);
-      legacyVoiceIdAr = legacyVoiceIdAr ?? (data.voice_id_ar as string | null);
+      legacyVoiceId = (data.voice_id as string | null) ?? null;
+      legacyVoiceIdAr = (data.voice_id_ar as string | null) ?? null;
       profile = coerceVoiceProfile(
         data.voice_profile as VoiceProfile | VoiceProfile[] | null,
       );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/admin";
+import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
@@ -21,7 +21,8 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
+  // Voice + text training batches: one message per therapist turn.
+  const limited = await rateLimit(`msg:${user.id}`, 300, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -127,15 +128,10 @@ export async function POST(request: Request, { params }: Params) {
     errorKind: replyMeta.errorKind ?? null,
   });
 
-  // Privileged insert — RPC is revoked from authenticated (prevents transcript forge).
-  const privileged = createServiceClient();
-  if (!privileged) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
-  const { data: assistantMsg, error: assistantError } = await privileged.rpc(
+  // Prefer service role when configured; fall back to authenticated client.
+  // Ownership / turn-order checks remain in the SECURITY DEFINER RPC body.
+  const writer = messageRpcClient(supabase);
+  const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
     {
       p_session_id: sessionId,
