@@ -2,7 +2,8 @@
  * CLI-friendly runner: node via vitest inline would be heavy; export for tests.
  * Artifact writer used by certification test suite.
  */
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { runEducationalOutcomesCertification } from "./simulate";
 
 export function writeEducationalOutcomesArtifact(path: string): void {
@@ -24,5 +25,6 @@ export function writeEducationalOutcomesArtifact(path: string): void {
       })),
     })),
   };
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(compact, null, 2));
 }

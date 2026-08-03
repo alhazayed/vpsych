@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   MIN_SESSIONS_PER_LEARNER,
@@ -58,9 +59,14 @@ describe("Educational Outcomes Certification", () => {
       expect(report.board.effectiveness_score).toBeGreaterThanOrEqual(80);
       expect(report.board.verdict).not.toBe("FAILED");
 
-      writeEducationalOutcomesArtifact(
-        "/opt/cursor/artifacts/educational-outcomes-cert/outcomes-report.json",
-      );
+      // Evidence artifact is opt-in: CI runners have no writable artifact dir,
+      // so only emit when a destination is explicitly provided.
+      const artifactDir = process.env.EDU_OUTCOMES_ARTIFACT_DIR;
+      if (artifactDir) {
+        writeEducationalOutcomesArtifact(
+          join(artifactDir, "outcomes-report.json"),
+        );
+      }
     },
     180_000,
   );
