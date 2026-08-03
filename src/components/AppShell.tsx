@@ -94,6 +94,18 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/cfi",
+      label: t("clinicalFidelity"),
+      icon: "verified",
+      match: (p) => p.startsWith("/admin/cfi"),
+    },
+    {
+      href: "/admin/eri",
+      label: t("educationalReliability"),
+      icon: "school",
+      match: (p) => p.startsWith("/admin/eri"),
+    },
   ];
 }
 
@@ -170,6 +182,10 @@ export function AppShell({
       return tShell("pageTitle.instructorPresets");
     if (pathname.startsWith("/admin/curriculum"))
       return tShell("pageTitle.adaptiveCurriculum");
+    if (pathname.startsWith("/admin/cfi"))
+      return tShell("pageTitle.clinicalFidelity");
+    if (pathname.startsWith("/admin/eri"))
+      return tShell("pageTitle.educationalReliability");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))

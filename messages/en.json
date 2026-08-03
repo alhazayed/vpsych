@@ -40,7 +40,9 @@
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
       "apiIntegrations": "API Integrations",
-      "securityKeys": "Security & Keys"
+      "securityKeys": "Security & Keys",
+      "clinicalFidelity": "Clinical Fidelity Index",
+      "educationalReliability": "Educational Reliability Index"
     }
   },
   "nav": {
@@ -56,7 +58,9 @@
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
-    "securityKeys": "Security & Keys"
+    "securityKeys": "Security & Keys",
+    "clinicalFidelity": "Clinical Fidelity",
+    "educationalReliability": "Educational Reliability"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -668,6 +672,16 @@
         "cancel": "Cancel",
         "proceed": "Proceed with Change"
       }
+    },
+    "cfi": {
+      "eyebrow": "Clinical review board",
+      "title": "Clinical Fidelity Index",
+      "subtitle": "Weighted 0–100 scientific score of how faithfully each AI patient reproduces the intended psychiatric disorder, with confidence intervals and remediation guidance."
+    },
+    "eri": {
+      "eyebrow": "CBME / OSCE review board",
+      "title": "Educational Reliability Index",
+      "subtitle": "Weighted 0–100 scientific score of how reliable and educationally useful every AI assessment is — with confidence, evidence, learner trends, and instructor reports."
     }
   }
 }

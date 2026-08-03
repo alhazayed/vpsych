@@ -191,7 +191,7 @@ export function simulateVirtualLearners(
         }),
         sessionId: `sess-${i}-${s}`,
         diagnosisSlug: nextCase.disorderSlug,
-        correctDiagnosis: overall >= 60,
+        correctDiagnosis: undefined,
       });
       profile = result.profile;
       sessions += 1;
