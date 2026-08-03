@@ -104,9 +104,17 @@ export function VoiceSession({
   const stopPlayback = useCallback(() => {
     window.speechSynthesis?.cancel();
     if (audioRef.current) {
+      const src = audioRef.current.src;
       audioRef.current.pause();
       audioRef.current.src = "";
       audioRef.current = null;
+      if (src.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(src);
+        } catch {
+          /* ignore */
+        }
+      }
     }
   }, []);
 

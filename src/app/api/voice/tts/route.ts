@@ -15,7 +15,10 @@ import { rateLimit } from "@/lib/rate-limit";
 type TtsBody = {
   text?: string;
   locale?: string;
-  /** Legacy direct ElevenLabs ids (still supported). */
+  /**
+   * Deprecated client overrides — accepted for backward compatibility but
+   * ignored by resolveTtsVoice (avatar / voice_profile / env only).
+   */
   voiceId?: string;
   voiceIdAr?: string;
   /** Preferred: resolve Avatar → voice_profile → voice_id */
@@ -40,7 +43,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
+  // Voice training / certification batches need higher TTS throughput than
+  // the original 60/h cap when Upstash is unset (per-instance memory limits).
+  const limited = await rateLimit(`tts:${user.id}`, 400, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },

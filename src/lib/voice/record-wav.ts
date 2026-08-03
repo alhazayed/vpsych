@@ -52,11 +52,17 @@ function downsample(
 export type MicRecorder = {
   stop: () => Promise<Blob>;
   cancel: () => void;
+  /** True after max duration auto-stop or explicit stop/cancel. */
+  isStopped: () => boolean;
 };
 
 /**
  * Start recording from the default mic. Call stop() to get a WAV blob.
  * Uses ScriptProcessor for broad browser support.
+ *
+ * The processor is routed through a muted GainNode so the Web Audio graph
+ * stays alive without playing live mic monitoring into the speakers (echo).
+ * Recording auto-stops collecting after `maxMs`.
  */
 export async function startMicWavRecording(
   maxMs = 15000,
@@ -72,6 +78,9 @@ export async function startMicWavRecording(
   const audioContext = new AudioContext();
   const source = audioContext.createMediaStreamSource(stream);
   const processor = audioContext.createScriptProcessor(4096, 1, 1);
+  // Keep the graph running without audible mic feedback.
+  const mute = audioContext.createGain();
+  mute.gain.value = 0;
   const chunks: Float32Array[] = [];
   let stopped = false;
 
@@ -82,16 +91,19 @@ export async function startMicWavRecording(
   };
 
   source.connect(processor);
-  processor.connect(audioContext.destination);
+  processor.connect(mute);
+  mute.connect(audioContext.destination);
 
   const timer = window.setTimeout(() => {
-    // Soft-stop after max duration; caller should still invoke stop().
+    // Auto-cap capture length; caller still invokes stop() for the blob.
+    stopped = true;
   }, maxMs);
 
   function cleanup() {
     window.clearTimeout(timer);
     try {
       processor.disconnect();
+      mute.disconnect();
       source.disconnect();
     } catch {
       /* ignore */
@@ -101,6 +113,9 @@ export async function startMicWavRecording(
   }
 
   return {
+    isStopped() {
+      return stopped;
+    },
     cancel() {
       stopped = true;
       cleanup();

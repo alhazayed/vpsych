@@ -39,7 +39,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
+  // Align with multi-turn voice training throughput (STT is one call per turn).
+  const limited = await rateLimit(`stt:${user.id}`, 300, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },

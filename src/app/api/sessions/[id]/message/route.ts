@@ -21,7 +21,8 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
+  // Voice + text training batches: one message per therapist turn.
+  const limited = await rateLimit(`msg:${user.id}`, 300, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
