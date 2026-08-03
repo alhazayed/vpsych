@@ -185,7 +185,11 @@ export default function SignupPage() {
         </div>
       </nav>
 
-      <main className="flex flex-grow items-center justify-center px-5 py-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex flex-grow items-center justify-center px-5 py-8 outline-none"
+      >
         <div className="w-full max-w-[560px] overflow-hidden rounded-[14px] border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] shadow-sm fade-in-up">
           <div className="border-b border-[var(--outline-variant)] bg-[color-mix(in_srgb,var(--surface-container-low)_50%,transparent)] p-6 md:p-8">
             <h1 className="font-[family-name:var(--font-headline)] text-3xl font-bold tracking-tight text-[#12273C]">
@@ -506,8 +510,12 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex gap-6 text-xs text-[var(--on-surface-variant)]">
-            <span>{t("footer.terms")}</span>
-            <span>{t("footer.privacy")}</span>
+            <Link href="/terms" className="hover:text-[var(--primary)]">
+              {t("footer.terms")}
+            </Link>
+            <Link href="/privacy" className="hover:text-[var(--primary)]">
+              {t("footer.privacy")}
+            </Link>
             <span>{t("footer.support")}</span>
           </div>
         </div>

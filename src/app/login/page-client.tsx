@@ -69,7 +69,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="flex min-h-screen w-full">
+      <main id="main-content" tabIndex={-1} className="flex min-h-screen w-full outline-none">
         <section className="relative hidden flex-col justify-end overflow-hidden bg-[var(--primary-fixed)] p-16 md:flex md:w-[60%]">
           <Image
             src="/stitch/login-hero.png"
@@ -142,6 +142,8 @@ export default function LoginPage() {
                 <input
                   id="email"
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -153,7 +155,10 @@ export default function LoginPage() {
                   }`}
                 />
                 {error && (
-                  <p className="ms-1 text-xs font-medium text-[var(--error)]">
+                  <p
+                    role="alert"
+                    className="ms-1 text-xs font-medium text-[var(--error)]"
+                  >
                     {error}
                   </p>
                 )}
@@ -174,7 +179,9 @@ export default function LoginPage() {
                 <div className="relative">
                   <input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     required
                     minLength={6}
                     value={password}
@@ -253,9 +260,19 @@ export default function LoginPage() {
                   {t("createAccount")}
                 </Link>
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
-                <span className="text-[11px] font-medium">{t("privacy")}</span>
-                <span className="text-[11px] font-medium">{t("terms")}</span>
+              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[var(--on-surface-variant)]">
+                <Link
+                  href="/privacy"
+                  className="text-[11px] font-medium hover:text-[var(--primary)]"
+                >
+                  {t("privacy")}
+                </Link>
+                <Link
+                  href="/terms"
+                  className="text-[11px] font-medium hover:text-[var(--primary)]"
+                >
+                  {t("terms")}
+                </Link>
                 <span className="text-[11px] font-medium">
                   {t("copyright", { year: new Date().getFullYear() })}
                 </span>

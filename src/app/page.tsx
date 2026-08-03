@@ -94,7 +94,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-[1280px] overflow-hidden px-6 pb-20 pt-12 md:px-8 md:pt-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div className="z-10 fade-in-up">
@@ -188,9 +188,9 @@ export default async function HomePage() {
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-md">
                     {n}
                   </div>
-                  <h4 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
+                  <h3 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
                     {t(`how.steps.${n}.title`)}
-                  </h4>
+                  </h3>
                   <p className="text-[var(--on-surface-variant)]">
                     {t(`how.steps.${n}.body`)}
                   </p>
@@ -376,7 +376,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</h5>
+            <h3 className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</h3>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#features" className="hover:text-[var(--primary)]">
@@ -391,7 +391,7 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</h5>
+            <h3 className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</h3>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#faq" className="hover:text-[var(--primary)]">
@@ -406,7 +406,7 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</h5>
+            <h3 className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</h3>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#about" className="hover:text-[var(--primary)]">
@@ -422,9 +422,17 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="mx-auto mt-10 flex max-w-[1280px] flex-col items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] px-6 pt-6 md:flex-row md:px-8">
-          <p className="text-xs text-[var(--on-surface-variant)] opacity-70">
+          <p className="text-xs text-[var(--on-surface-variant)]">
             {t("footer.copyright", { year })}
           </p>
+          <div className="flex gap-4 text-xs text-[var(--on-surface-variant)]">
+            <Link href="/privacy" className="hover:text-[var(--primary)]">
+              {t("footer.privacy")}
+            </Link>
+            <Link href="/terms" className="hover:text-[var(--primary)]">
+              {t("footer.terms")}
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

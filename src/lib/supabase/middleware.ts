@@ -50,7 +50,14 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
   const isPublic =
-    path === "/" || isAuthPage || path.startsWith("/auth/");
+    path === "/" ||
+    isAuthPage ||
+    path.startsWith("/auth/") ||
+    path === "/robots.txt" ||
+    path === "/sitemap.xml" ||
+    path === "/privacy" ||
+    path === "/terms" ||
+    path.startsWith("/.well-known/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
