@@ -9,7 +9,7 @@ import {
   detectRepetitionLoop,
   ingestSessionAssessment,
 } from "./engine";
-import { generateAdaptiveCase } from "./adaptive";
+import { generateAdaptiveCase, contentSignatureFromFingerprint } from "./adaptive";
 import { scoreOf } from "./catalog";
 import type { CompetencyId, LearnerProfile } from "./types";
 import type { ScoreEntry } from "@/lib/types";
@@ -205,8 +205,10 @@ export function simulateVirtualLearners(
 
     if (detectRepetitionLoop(fingerprints, 6)) loopHits += 1;
 
-    const baseFps = fingerprints.map((f) => f.split("#")[0]!);
-    if (new Set(baseFps).size < Math.min(3, baseFps.length)) {
+    const contentKeys = fingerprints.map((f) =>
+      contentSignatureFromFingerprint(f),
+    );
+    if (new Set(contentKeys).size < Math.min(3, contentKeys.length)) {
       repeatHits += 1;
     }
 
@@ -363,3 +365,195 @@ export function verifySuccessCriteria(): string[] {
 
   return errors;
 }
+
+export type TierSimulationResult = {
+  tier: "poor" | "average" | "excellent";
+  assessments: number;
+  uniqueContent: number;
+  uniqueFocus: string[];
+  difficulties: string[];
+  siStyles: string[];
+  trapped: boolean;
+  contentLoop: boolean;
+  meanConfidence: number;
+  finalWeakScore: number;
+  explainable: boolean;
+};
+
+/**
+ * Mission 13 certification: poor / average / excellent learners, ≥100 assessments.
+ */
+export function simulateLearnerTiers(
+  assessmentsPerLearner = 100,
+): {
+  tiers: TierSimulationResult[];
+  curriculaDiffer: boolean;
+  failures: string[];
+} {
+  const failures: string[] = [];
+  const tiersSpec = [
+    {
+      tier: "poor" as const,
+      start: 35,
+      gain: 0.15,
+      noise: 8,
+      weakness: "suicide_assessment" as CompetencyId,
+    },
+    {
+      tier: "average" as const,
+      start: 55,
+      gain: 0.45,
+      noise: 6,
+      weakness: "differential_diagnosis" as CompetencyId,
+    },
+    {
+      tier: "excellent" as const,
+      start: 78,
+      gain: 0.7,
+      noise: 4,
+      weakness: "diagnostic_interview" as CompetencyId,
+    },
+  ];
+
+  const tiers: TierSimulationResult[] = [];
+  const curriculaKeys: string[] = [];
+
+  for (const spec of tiersSpec) {
+    const rng = createRng(`ace-tier-${spec.tier}`);
+    let profile = createLearnerProfile({
+      id: `tier-${spec.tier}`,
+      user_id: `user-${spec.tier}`,
+    });
+    profile = {
+      ...profile,
+      competencies: profile.competencies.map((c) => {
+        if (c.competency_id === spec.weakness) {
+          return { ...c, score: spec.start, samples: 1 };
+        }
+        if (
+          spec.weakness === "differential_diagnosis" &&
+          c.competency_id === "cbt_skills"
+        ) {
+          return { ...c, score: 90, samples: 4 };
+        }
+        return c;
+      }),
+    };
+
+    const fingerprints: string[] = [];
+    const contents = new Set<string>();
+    const focuses = new Set<string>();
+    const difficulties = new Set<string>();
+    const siStyles = new Set<string>();
+    let confSum = 0;
+    let explainable = true;
+    let trappedPassive = 0;
+
+    for (let s = 0; s < assessmentsPerLearner; s++) {
+      const nextCase = generateAdaptiveCase(profile, {
+        seed: `tier:${spec.tier}:${s}`,
+        priorFingerprints: fingerprints,
+        // Intentionally omit forced stepIndex — mirrors fixed API path
+      });
+      fingerprints.push(nextCase.fingerprint);
+      contents.add(contentSignatureFromFingerprint(nextCase.fingerprint));
+      focuses.add(nextCase.focusCompetencies.join(","));
+      difficulties.add(nextCase.difficulty);
+      if (nextCase.siStyle) siStyles.add(nextCase.siStyle);
+      confSum += nextCase.confidence ?? 0;
+      if (!nextCase.explainability?.decision) explainable = false;
+      if (nextCase.siStyle === "passive") trappedPassive += 1;
+
+      const progress = Math.min(
+        95,
+        spec.start + s * spec.gain + Math.floor(rng() * spec.noise),
+      );
+      const safety =
+        spec.weakness === "suicide_assessment"
+          ? Math.min(95, spec.start + s * spec.gain)
+          : 70 + s * 0.1;
+      const assessment =
+        spec.weakness === "differential_diagnosis" ||
+        spec.weakness === "diagnostic_interview"
+          ? Math.min(95, spec.start + s * spec.gain)
+          : 70;
+      const interventions =
+        spec.weakness === "differential_diagnosis" ? 90 : 65 + s * 0.2;
+
+      const result = ingestSessionAssessment(profile, {
+        overall: progress,
+        items: syntheticItems(progress, {
+          safety,
+          assessment,
+          interventions,
+          alliance: 60 + s * 0.2,
+          structure: 60 + s * 0.2,
+        }),
+        sessionId: `tier-${spec.tier}-${s}`,
+        diagnosisSlug: nextCase.disorderSlug,
+        correctDiagnosis: progress >= 55,
+      });
+      profile = result.profile;
+      // Carry fingerprints like API history
+      profile = {
+        ...profile,
+        metadata: {
+          ...profile.metadata,
+          prior_fingerprints: fingerprints.slice(-50),
+        },
+      };
+    }
+
+    const contentLoop = detectRepetitionLoop(fingerprints, 12);
+    // Trap = stuck on early Passive/beginner content after enough exposure
+    const recentContent = fingerprints
+      .slice(-12)
+      .map((f) => contentSignatureFromFingerprint(f));
+    const earlyTrap =
+      contentLoop &&
+      recentContent.every(
+        (c) => c.includes("passive") || c.includes("beginner"),
+      );
+    const trapped =
+      spec.weakness === "suicide_assessment"
+        ? earlyTrap || trappedPassive > assessmentsPerLearner * 0.7
+        : earlyTrap;
+
+    const row: TierSimulationResult = {
+      tier: spec.tier,
+      assessments: assessmentsPerLearner,
+      uniqueContent: contents.size,
+      uniqueFocus: [...focuses],
+      difficulties: [...difficulties],
+      siStyles: [...siStyles],
+      trapped,
+      contentLoop: earlyTrap,
+      meanConfidence: Math.round(confSum / assessmentsPerLearner),
+      finalWeakScore: scoreOf(profile.competencies, spec.weakness),
+      explainable,
+    };
+    tiers.push(row);
+    curriculaKeys.push(
+      [...focuses].sort().join(";") +
+        "|" +
+        [...difficulties].sort().join(",") +
+        "|" +
+        [...siStyles].sort().join(","),
+    );
+
+    if (trapped) failures.push(`${spec.tier}: trapped in Passive SI loop`);
+    if (earlyTrap) failures.push(`${spec.tier}: early-stage content repetition loop`);
+    if (contents.size < 3) {
+      failures.push(`${spec.tier}: insufficient case diversity (${contents.size})`);
+    }
+    if (!explainable) failures.push(`${spec.tier}: missing explainability`);
+  }
+
+  const curriculaDiffer = new Set(curriculaKeys).size === tiersSpec.length;
+  if (!curriculaDiffer) {
+    failures.push("Learner tiers received identical curricula signatures");
+  }
+
+  return { tiers, curriculaDiffer, failures };
+}
+
