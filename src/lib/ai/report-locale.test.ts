@@ -62,10 +62,21 @@ describe("heuristicCopy", () => {
     expect(copy.narrativeWithTurns).toContain("تقييم آلي");
   });
 
-  it("does not claim key missing when AI was unavailable", () => {
-    const copy = heuristicCopy("en", 2, "unavailable");
-    expect(copy.narrativeWithTurns).toContain("persona_fallback");
-    expect(copy.narrativeWithTurns).toContain("AI assessment failed");
-    expect(copy.narrativeWithTurns).not.toContain("AI key not configured");
+  it("does not leak env names or internal aiSource labels into stored narratives", () => {
+    for (const reason of ["unavailable", "unconfigured"] as const) {
+      for (const lang of ["en", "ar"] as const) {
+        const copy = heuristicCopy(lang, 2, reason);
+        expect(copy.narrativeWithTurns).not.toMatch(
+          /OPENAI_API_KEY|AI_GATEWAY_API_KEY|persona_fallback|aiSource=/i,
+        );
+        expect(copy.feedback).not.toMatch(
+          /OPENAI_API_KEY|AI_GATEWAY_API_KEY|persona_fallback|aiSource=/i,
+        );
+      }
+    }
+    const unavailable = heuristicCopy("en", 2, "unavailable");
+    expect(unavailable.narrativeWithTurns).toContain("AI assessment failed");
+    const unconfigured = heuristicCopy("en", 2, "unconfigured");
+    expect(unconfigured.narrativeWithTurns).toContain("unavailable");
   });
 });
