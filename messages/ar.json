@@ -21,6 +21,7 @@
   "shell": {
     "tagline": "الذكاء السريري",
     "newAssessment": "تقييم جديد",
+    "facultyConsole": "لوحة أعضاء هيئة التدريس",
     "signOut": "تسجيل الخروج",
     "role": {
       "admin": "مسؤول",

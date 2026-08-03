@@ -67,6 +67,8 @@ export async function updateSession(request: NextRequest) {
 
   const isAdminPath =
     path.startsWith("/admin") || path.startsWith("/api/admin");
+  const isFacultyPath =
+    path.startsWith("/faculty") || path.startsWith("/api/faculty");
 
   // Explicit locale cookie wins. LanguageSwitcher sets the cookie immediately and
   // syncs preferred_language asynchronously — never clobber a valid cookie with a
@@ -75,7 +77,7 @@ export async function updateSession(request: NextRequest) {
   let locale: AppLocale = defaultLocale;
   let profileRole: string | null = null;
 
-  if (user && (isAdminPath || !isAppLocale(cookieLocale))) {
+  if (user && (isAdminPath || isFacultyPath || !isAppLocale(cookieLocale))) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("preferred_language, role")

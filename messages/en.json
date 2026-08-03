@@ -21,6 +21,8 @@
   "shell": {
     "tagline": "Clinical Intelligence",
     "newAssessment": "New Assessment",
+    "privacySettings": "Privacy & data",
+    "facultyConsole": "Faculty console",
     "signOut": "Sign out",
     "role": {
       "admin": "Administrator",
