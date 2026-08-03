@@ -135,11 +135,10 @@ export async function PATCH(request: Request) {
 
   if (error) {
     console.warn("[ace/profile] update failed:", error.message);
-    return NextResponse.json({
-      ok: true,
-      profile: { ...profile, ...body },
-      source: "memory",
-    });
+    return NextResponse.json(
+      { error: "Profile update failed", ok: false },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true, profile: data ?? profile });

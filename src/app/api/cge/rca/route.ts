@@ -27,18 +27,34 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as {
+  let body: {
     observedFailure?: string;
     action?: "rca" | "remediation" | "next" | "supervisor" | "mastery";
   };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (
+    body.observedFailure !== undefined &&
+    (typeof body.observedFailure !== "string" ||
+      body.observedFailure.length > 500)
+  ) {
+    return NextResponse.json(
+      { error: "observedFailure must be a string ≤500 chars" },
+      { status: 400 },
+    );
+  }
 
   const profile = await ensureLearnerProfile(supabase, user.id);
   const states = statesFromAceCompetencies(profile.competencies);
   const observed =
-    body.observedFailure ??
+    body.observedFailure?.trim() ||
     [...states]
       .filter((s) => s.samples > 0)
-      .sort((a, b) => a.score - b.score)[0]?.competency_id ??
+      .sort((a, b) => a.score - b.score)[0]?.competency_id ||
     "diagnostic_interview";
 
   if (body.action === "next") {

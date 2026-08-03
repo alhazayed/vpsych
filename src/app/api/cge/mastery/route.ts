@@ -53,7 +53,11 @@ export async function GET(request: Request) {
   return NextResponse.json({ ok: true, learner_id: profile.id, mastery });
 }
 
-/** Update a competency score and return propagated graph state. */
+/**
+ * Preview mastery propagation for a hypothetical score update.
+ * Learner writes are locked by RLS — persistence happens via session assessment
+ * (ACE) or admin CGE routes. This endpoint never mutates the database.
+ */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -71,13 +75,30 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as {
-    competencyId?: string;
-    score?: number;
-  };
-  if (!body.competencyId || typeof body.score !== "number") {
+  let body: { competencyId?: string; score?: number };
+  try {
+    body = (await request.json()) as {
+      competencyId?: string;
+      score?: number;
+    };
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (
+    !body.competencyId ||
+    typeof body.competencyId !== "string" ||
+    body.competencyId.length > 128 ||
+    typeof body.score !== "number" ||
+    !Number.isFinite(body.score)
+  ) {
     return NextResponse.json(
-      { error: "competencyId and score required" },
+      { error: "competencyId and numeric score required" },
+      { status: 400 },
+    );
+  }
+  if (body.score < 0 || body.score > 100) {
+    return NextResponse.json(
+      { error: "score must be between 0 and 100" },
       { status: 400 },
     );
   }
@@ -96,6 +117,8 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
+    preview: true,
+    persisted: false,
     competency_id: body.competencyId,
     stage: target
       ? calculateMastery(target, graph, byId)

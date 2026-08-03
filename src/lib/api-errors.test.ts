@@ -28,5 +28,11 @@ describe("clientSafeError", () => {
         "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
       ),
     ).toBe("Failed");
+    expect(
+      clientSafeError("Failed", "permission denied for table sessions"),
+    ).toBe("Failed");
+    expect(
+      clientSafeError("Failed", "new row violates row-level security policy"),
+    ).toBe("Failed");
   });
 });

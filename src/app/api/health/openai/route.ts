@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { openAIService } from "@/lib/ai/openai";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * OpenAI SDK health check — admin only.
@@ -12,6 +13,18 @@ export async function GET(request: Request) {
     resourceType: "health",
   });
   if (!auth.ok) return auth.response;
+
+  const limited = await rateLimit(
+    `health-openai:${auth.user.id}`,
+    20,
+    60 * 60 * 1000,
+  );
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const status = await openAIService.healthCheck();
   // Never return raw provider error strings to the client.

@@ -7,11 +7,20 @@ import {
   type InstructorPreset,
 } from "@/lib/instructor-presets";
 import { validateInstructorPreset } from "@/lib/instructor-presets/validation";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
-  const { supabase } = auth;
+  const { supabase, user } = auth;
+
+  const limited = await rateLimit(`admin-presets:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data, error } = await supabase
     .from("instructor_presets")
@@ -36,7 +45,15 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
   const { supabase, user } = auth;
 
-  const body = (await request.json()) as {
+  const limited = await rateLimit(`admin-presets:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  let body: {
     action?:
       | "create"
       | "update"
@@ -67,6 +84,11 @@ export async function POST(request: Request) {
     changeNotes?: string;
     preset?: Partial<InstructorPreset>;
   };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
   if (body.action === "archive" && body.presetId) {
     const { error } = await supabase
@@ -133,14 +155,22 @@ export async function POST(request: Request) {
       created_by: user.id,
     });
     if (verErr) {
-      return NextResponse.json({ error: verErr.message }, { status: 500 });
+      console.warn("[admin/presets] version:", verErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(verErr.message) },
+        { status: 500 },
+      );
     }
     const { error: updErr } = await supabase
       .from("instructor_presets")
       .update({ version: nextVersion, updated_at: new Date().toISOString() })
       .eq("id", src.id);
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      console.warn("[admin/presets] version bump:", updErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(updErr.message) },
+        { status: 500 },
+      );
     }
     return NextResponse.json({ ok: true, version: nextVersion });
   }
@@ -188,8 +218,9 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (cloneErr || !cloned) {
+      console.warn("[admin/presets] clone:", cloneErr?.message);
       return NextResponse.json(
-        { error: cloneErr?.message ?? "Clone failed" },
+        { error: sanitizeDbError(cloneErr?.message) },
         { status: 500 },
       );
     }

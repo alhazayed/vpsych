@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { listBuiltinTemplates } from "@/lib/scenario-templates/catalog";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
-  const { supabase } = auth;
+  const { supabase, user } = auth;
+
+  const limited = await rateLimit(`admin-templates:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data, error } = await supabase
     .from("clinical_templates")
@@ -31,7 +40,15 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
   const { supabase, user } = auth;
 
-  const body = (await request.json()) as {
+  const limited = await rateLimit(`admin-templates:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  let body: {
     action?: "create" | "clone" | "archive" | "export";
     templateId?: string;
     slug?: string;
@@ -45,6 +62,11 @@ export async function POST(request: Request) {
     severity?: string;
     assessmentType?: string;
   };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
   if (body.action === "archive" && body.templateId) {
     const { error } = await supabase
@@ -113,7 +135,11 @@ export async function POST(request: Request) {
       .select("id, slug, name")
       .single();
     if (cloneErr) {
-      return NextResponse.json({ error: cloneErr.message }, { status: 500 });
+      console.warn("[admin/templates] clone:", cloneErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(cloneErr.message) },
+        { status: 500 },
+      );
     }
     await supabase.from("template_versions").insert({
       template_id: cloned.id,
@@ -155,7 +181,11 @@ export async function POST(request: Request) {
     .single();
 
   if (createErr) {
-    return NextResponse.json({ error: createErr.message }, { status: 500 });
+    console.warn("[admin/templates] create:", createErr.message);
+    return NextResponse.json(
+      { error: sanitizeDbError(createErr.message) },
+      { status: 500 },
+    );
   }
 
   await supabase.from("template_versions").insert({

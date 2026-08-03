@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { getBuiltinGraph } from "@/lib/cge";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request, {
@@ -9,7 +10,15 @@ export async function GET(request: Request) {
     resourceType: "cge",
   });
   if (!auth.ok) return auth.response;
-  const { supabase } = auth;
+  const { supabase, user } = auth;
+
+  const limited = await rateLimit(`admin-cge:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data: learners } = await supabase
     .from("learner_profiles")
@@ -43,9 +52,17 @@ export async function PATCH(request: Request) {
     resourceType: "cge",
   });
   if (!auth.ok) return auth.response;
-  const { supabase } = auth;
+  const { supabase, user } = auth;
 
-  const body = (await request.json()) as {
+  const limited = await rateLimit(`admin-cge:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  let body: {
     action?:
       | "lock"
       | "unlock"
@@ -56,12 +73,20 @@ export async function PATCH(request: Request) {
     competencyId?: string;
     observedFailure?: string;
   };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
   if (!body.learnerId || !body.competencyId) {
     return NextResponse.json(
       { error: "learnerId and competencyId required" },
       { status: 400 },
     );
+  }
+  if (body.competencyId.length > 128) {
+    return NextResponse.json({ error: "competencyId too long" }, { status: 400 });
   }
 
   if (body.action === "lock" || body.action === "unlock") {
@@ -122,6 +147,33 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "assign_remediation") {
+    const observed =
+      typeof body.observedFailure === "string" && body.observedFailure.trim()
+        ? body.observedFailure.trim().slice(0, 500)
+        : body.competencyId;
+    const { data: plan, error } = await supabase
+      .from("cge_remediation_plans")
+      .insert({
+        learner_id: body.learnerId,
+        observed_failure: observed,
+        root_cause_id: body.competencyId,
+        pathway: [body.competencyId],
+        recommended_cases: [],
+        status: "active",
+      })
+      .select("id")
+      .single();
+    if (error) {
+      console.warn("[admin/cge] assign_remediation:", error.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(error.message) },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, planId: plan?.id });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
