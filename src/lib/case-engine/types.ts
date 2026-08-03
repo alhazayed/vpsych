@@ -78,6 +78,8 @@ export type DisorderPackage = {
   disclosure_rules?: ClinicalCore["disclosure_rules"];
   /** Optional full clinical_core override template fields. */
   clinical_core_template?: Partial<ClinicalCore>;
+  /** When true, missing DSM-5 is allowed (e.g. ICD-11-only Complex PTSD). */
+  dsm5_optional?: boolean;
 };
 
 export type DisorderRow = {
