@@ -238,7 +238,8 @@ Remote has versions not present on `main` (certification branches applied ahead 
 | Tests | **173** passed (incl. devops invariants) |
 | Build | pass (`/api/health` in route map) |
 | Local smoke (`SMOKE_BASE_URL=http://127.0.0.1:3014`) | login 200 / health 200 / sessions 401 |
-| `npm ci` (Node 24) | pass after lockfile sync |
+| `npm ci` (Node 24 / npm 11.16) | pass after full optional-platform lockfile |
+| GitHub Actions CI `30788761056` | **success** (install → audit → lint → typecheck → test → migrations → build → smoke fail-closed) |
 | `npm audit --audit-level=high` | 0 vulnerabilities |
 | Preview SSO | enabled (blocks unauth fetch) |
 | Trigger RPC grants | revoked |
