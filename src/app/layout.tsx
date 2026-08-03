@@ -3,6 +3,7 @@ import { Inter, Montserrat, Geist_Mono, Noto_Sans_Arabic } from "next/font/googl
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
+import { CookieConsent } from "@/components/CookieConsent";
 import { absoluteUrl, getSiteOrigin, SITE_NAME } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -125,6 +126,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

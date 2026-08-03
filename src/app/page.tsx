@@ -66,10 +66,10 @@ const TESTIMONIAL_KEYS = [
 const FAQ_KEYS = ["1", "2", "3", "4"] as const;
 
 const STAT_KEYS = [
-  { value: "10,000+", key: "sessions" },
-  { value: "500+", key: "cases" },
+  { value: "Timed", key: "sessions" },
+  { value: "AI", key: "cases" },
   { value: "25+", key: "competencies" },
-  { value: "95%", key: "satisfaction" },
+  { value: "EN/AR", key: "satisfaction" },
 ] as const;
 
 export default async function HomePage() {
@@ -121,12 +121,12 @@ export default async function HomePage() {
               >
                 {t("nav.features")}
               </a>
-              <a
-                href="#pricing"
+              <Link
+                href="/pricing"
                 className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
               >
                 {t("nav.pricing")}
-              </a>
+              </Link>
               <a
                 href="#about"
                 className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
@@ -169,14 +169,14 @@ export default async function HomePage() {
               <p className="mt-4 max-w-xl text-lg leading-7 text-[var(--on-surface-variant)]">
                 {t("hero.body")}
               </p>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--on-surface-variant)]">
+                {t("hero.disclaimer")}
+              </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link href="/signup" className="btn-primary px-8 py-3 shadow-lg">
                   {t("hero.startFree")}
                 </Link>
-                <a
-                  href="#features"
-                  className="btn-secondary px-8 py-3"
-                >
+                <a href="#how" className="btn-secondary px-8 py-3">
                   <span className="material-symbols-outlined">play_circle</span>
                   {t("hero.watchDemo")}
                 </a>
@@ -236,7 +236,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8">
+        <section
+          id="how"
+          className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8"
+        >
           <h2 className="mb-10 font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)] md:text-2xl md:font-semibold">
             {t("how.title")}
           </h2>
@@ -287,12 +290,18 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+          <p className="mx-auto mt-8 max-w-3xl px-6 text-center text-xs leading-5 text-white/75 md:px-8">
+            {t("stats.footnote")}
+          </p>
         </section>
 
         <section className="mx-auto max-w-[1280px] px-6 py-16 md:px-8">
-          <h2 className="mb-10 text-center font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
+          <h2 className="mb-3 text-center font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
             {t("testimonials.title")}
           </h2>
+          <p className="mb-10 text-center text-sm text-[var(--on-surface-variant)]">
+            {t("testimonials.note")}
+          </p>
           <div className="grid gap-6 md:grid-cols-3">
             {TESTIMONIAL_KEYS.map((item) => (
               <div
@@ -398,11 +407,16 @@ export default async function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="btn-secondary w-full py-3">
+              <Link href="/contact" className="btn-secondary w-full py-3">
                 {t("pricing.institution.cta")}
               </Link>
             </div>
           </div>
+          <p className="mt-6 text-center text-sm">
+            <Link href="/pricing" className="text-[var(--primary)] underline">
+              {t("pricing.fullPage")}
+            </Link>
+          </p>
         </section>
 
         <section id="faq" className="mx-auto max-w-3xl px-6 py-16 md:px-8">
@@ -449,9 +463,14 @@ export default async function HomePage() {
                 </a>
               </li>
               <li>
-                <a href="#pricing" className="hover:text-[var(--primary)]">
+                <Link href="/pricing" className="hover:text-[var(--primary)]">
                   {t("footer.pricing")}
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/clinical" className="hover:text-[var(--primary)]">
+                  {t("footer.clinical")}
+                </Link>
               </li>
             </ul>
           </div>
@@ -464,13 +483,18 @@ export default async function HomePage() {
                 </Link>
               </li>
               <li>
-                <Link href="/site-map" className="hover:text-[var(--primary)]">
-                  {t("footer.sitemap")}
+                <Link href="/help" className="hover:text-[var(--primary)]">
+                  {t("footer.help")}
                 </Link>
               </li>
               <li>
-                <Link href="/llms.txt" className="hover:text-[var(--primary)]">
-                  llms.txt
+                <Link href="/research" className="hover:text-[var(--primary)]">
+                  {t("footer.research")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/site-map" className="hover:text-[var(--primary)]">
+                  {t("footer.sitemap")}
                 </Link>
               </li>
               <li>
@@ -489,8 +513,23 @@ export default async function HomePage() {
                 </Link>
               </li>
               <li>
+                <Link href="/contact" className="hover:text-[var(--primary)]">
+                  {t("footer.contact")}
+                </Link>
+              </li>
+              <li>
                 <Link href="/signup" className="hover:text-[var(--primary)]">
                   {t("footer.getStarted")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-[var(--primary)]">
+                  {t("footer.terms")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-[var(--primary)]">
+                  {t("footer.privacy")}
                 </Link>
               </li>
             </ul>

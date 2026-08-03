@@ -87,9 +87,12 @@ export default function LoginPage() {
         <div className="flex items-center gap-4 md:gap-8">
           <LanguageSwitcher />
           <div className="hidden items-center gap-8 md:flex">
-            <span className="text-base font-medium text-[var(--on-surface-variant)]">
+            <Link
+              href="/help"
+              className="text-base font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
+            >
               {t("support")}
-            </span>
+            </Link>
             <Link href="/signup" className="btn-primary rounded-xl px-6">
               {t("requestAccess")}
             </Link>
@@ -299,8 +302,18 @@ export default function LoginPage() {
                 </Link>
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
-                <span className="text-[11px] font-medium">{t("privacy")}</span>
-                <span className="text-[11px] font-medium">{t("terms")}</span>
+                <Link
+                  href="/privacy"
+                  className="text-[11px] font-medium hover:text-[var(--primary)]"
+                >
+                  {t("privacy")}
+                </Link>
+                <Link
+                  href="/terms"
+                  className="text-[11px] font-medium hover:text-[var(--primary)]"
+                >
+                  {t("terms")}
+                </Link>
                 <span className="text-[11px] font-medium">
                   {t("copyright", { year: new Date().getFullYear() })}
                 </span>

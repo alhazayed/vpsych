@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
+import { FirstRunOnboarding } from "@/components/FirstRunOnboarding";
 import { StartSessionButton } from "@/components/StartSessionButton";
 
 export default async function AvatarsPage() {
@@ -27,6 +28,7 @@ export default async function AvatarsPage() {
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
+      <FirstRunOnboarding />
       <section className="mb-8 fade-in-up">
         <p className="mb-1 text-sm font-medium uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
           {t("welcomeBack")}
