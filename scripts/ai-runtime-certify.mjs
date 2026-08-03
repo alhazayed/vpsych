@@ -83,7 +83,11 @@ async function warmShare() {
   }
 }
 
-async function api(path, init = {}) {
+async function sleep(ms) {
+  await new Promise((r) => setTimeout(r, ms));
+}
+
+async function api(path, init = {}, attempt = 0) {
   const t0 = Date.now();
   const res = await fetch(`${BASE}${path}`, {
     ...init,
@@ -99,6 +103,13 @@ async function api(path, init = {}) {
     json = JSON.parse(text);
   } catch {
     json = { raw: text.slice(0, 200) };
+  }
+  if (res.status === 429 && attempt < 3) {
+    const retryAfter = Number(res.headers.get("retry-after") || json.retryAfterSec || 5);
+    const waitMs = Math.min(120_000, Math.max(2_000, (retryAfter + 1) * 1000));
+    console.error(`429 on ${path}; waiting ${waitMs}ms (attempt ${attempt + 1})`);
+    await sleep(waitMs);
+    return api(path, init, attempt + 1);
   }
   return {
     status: res.status,
