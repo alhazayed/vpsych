@@ -76,6 +76,8 @@ export type DisorderPackage = {
   ideal_approach?: string;
   symptom_profile?: ClinicalCore["symptom_profile"];
   disclosure_rules?: ClinicalCore["disclosure_rules"];
+  /** When true, ICD-11-only constructs (e.g. Complex PTSD) may omit DSM-5. */
+  dsm5_optional?: boolean;
   /** Optional full clinical_core override template fields. */
   clinical_core_template?: Partial<ClinicalCore>;
 };

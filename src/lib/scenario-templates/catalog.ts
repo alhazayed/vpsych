@@ -190,7 +190,9 @@ export const BUILTIN_TEMPLATES: ClinicalScenarioTemplate[] = [
     severity: "severe",
     risk_level: "high",
     assessment_type: "risk_assessment",
-    default_persona_slug: "maya-chen",
+    // Do not bind MDD persona biography (maya-chen) to a PTSD teaching case.
+    // Case Engine supplies PTSD clinical_core; persona identity is randomized.
+    default_persona_slug: null,
     randomization_level: "moderate",
     memory_mode: "case_isolated",
     grading_rubric: {

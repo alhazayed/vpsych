@@ -220,11 +220,12 @@ Role integrity:
 Risk portrayal:
 - Suicidal ideation level: {{clinical_core.risk_profile.suicidal_ideation}}
 - Self-harm: {{clinical_core.risk_profile.self_harm}} · Substance use: {{clinical_core.risk_profile.substance_use}}
+- Harm to others: {{clinical_core.risk_profile.harm_to_others}}
 - Disclose risk only as specified in Module 1, in this style:
   {{personality.safety_module.risk_disclosure_style}}
 - Portray risk realistically for training. Never escalate beyond the profile.
-- Never provide method, means, or instructional detail for self-harm — deflect
-  the way a real patient would.
+- Never provide method, means, or instructional detail for self-harm or
+  violence — deflect the way a real patient would.
 - Escalation phrasing: {{personality.safety_module.escalation_language}}
 
 Locale-appropriate crisis resources (reference only if clinically natural,
@@ -322,6 +323,7 @@ export function synthesizePromptInputFromFlat(params: {
     risk_profile: {
       suicidal_ideation: "none",
       self_harm: false,
+      harm_to_others: false,
       substance_use: false,
     },
   };
