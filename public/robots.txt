@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /sessions/
+Disallow: /learning/
+Disallow: /avatars/
+Disallow: /auth/
+
+Sitemap: https://vpsych.vercel.app/sitemap.xml
