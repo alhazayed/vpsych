@@ -20,10 +20,16 @@ export default function NotFound() {
           Home
         </Link>
         <Link
-          href="/avatars"
+          href="/login"
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
         >
-          Patient library
+          Sign in
+        </Link>
+        <Link
+          href="/site-map"
+          className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm font-medium"
+        >
+          Site map
         </Link>
       </div>
     </main>
