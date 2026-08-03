@@ -25,6 +25,25 @@ describe("architecture invariants", () => {
       "utf8",
     );
     expect(route).not.toMatch(/aiFailureDetail:/);
+    expect(route).toMatch(/sanitizeDbError/);
+    expect(route).not.toMatch(
+      /return NextResponse\.json\(\{\s*error:\s*(updateError|hasErr)\.message/,
+    );
+  });
+
+  it("persists ACE scoring via service-role apply_ace_session_progress", () => {
+    const persist = readFileSync(join(root, "lib/ace/persist.ts"), "utf8");
+    expect(persist).toMatch(/createServiceClient/);
+    expect(persist).toMatch(/apply_ace_session_progress/);
+    expect(persist).not.toMatch(
+      /\.from\(["']learner_profiles["']\)\s*\.update\(/,
+    );
+  });
+
+  it("dedupes persisted therapist turns and expands mini failover in patient-agent", () => {
+    const agent = readFileSync(join(root, "lib/ai/patient-agent.ts"), "utf8");
+    expect(agent).toMatch(/withoutCurrent/);
+    expect(agent).toMatch(/shouldTryOpenAiMiniFailover/);
   });
 
   it("provides App Router error boundaries", () => {
