@@ -134,7 +134,8 @@ export function validateComorbidities(
 
 export function validateDsmIcd(disorder: DisorderRow): CaseValidationIssue[] {
   const out: CaseValidationIssue[] = [];
-  if (!disorder.dsm5_code) {
+  const dsm5Optional = Boolean(disorder.package?.dsm5_optional);
+  if (!disorder.dsm5_code && !dsm5Optional) {
     out.push(issue("dsm5_missing", `Missing DSM-5 code for ${disorder.slug}`, "dsm5_code"));
   }
   if (!disorder.icd11_code) {
