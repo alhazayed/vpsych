@@ -118,12 +118,15 @@ export function applySessionPerformance(
   }
 
   const competencies = [...byId.values()];
+  const assessed = competencies.filter((c) => c.samples > 0);
   const avg =
-    competencies.reduce((s, c) => s + c.score, 0) / competencies.length;
-  const positiveTrends = competencies.filter((c) => c.trend > 0).length;
+    assessed.length > 0
+      ? assessed.reduce((s, c) => s + c.score, 0) / assessed.length
+      : profile.confidence_score;
+  const positiveTrends = assessed.filter((c) => c.trend > 0).length;
   const velocity =
     profile.learning_velocity * 0.7 +
-    (positiveTrends / Math.max(1, competencies.length)) * 0.3 +
+    (positiveTrends / Math.max(1, assessed.length)) * 0.3 +
     (input.overallScore - 60) / 200;
 
   return {
@@ -150,17 +153,26 @@ export function buildAnalytics(
   missedDiagnoses: string[] = [],
 ): PerformanceAnalytics {
   const threshold = profile.min_competency_threshold;
-  const radar = COMPETENCY_IDS.map((id) => ({
-    competency_id: id,
-    score: scoreOf(profile.competencies, id),
-  }));
-  const sorted = [...radar].sort((a, b) => b.score - a.score);
-  const strengths = sorted.filter((r) => r.score >= 80).map((r) => r.competency_id);
-  const weaknesses = sorted
+  const assessed = profile.competencies.filter((c) => c.samples > 0);
+  const radar = COMPETENCY_IDS.map((id) => {
+    const row = profile.competencies.find((c) => c.competency_id === id);
+    return {
+      competency_id: id,
+      // Unassessed baselines must not read as mid-performance on charts
+      score: row && row.samples > 0 ? row.score : 0,
+    };
+  });
+  const assessedRadar = assessed
+    .map((c) => ({ competency_id: c.competency_id, score: c.score }))
+    .sort((a, b) => b.score - a.score);
+  const strengths = assessedRadar
+    .filter((r) => r.score >= 80)
+    .map((r) => r.competency_id);
+  const weaknesses = assessedRadar
     .filter((r) => r.score < threshold)
     .map((r) => r.competency_id);
   const blind_spots = profile.competencies
-    .filter((c) => c.samples < 2 && c.score < threshold)
+    .filter((c) => c.samples === 0 || (c.samples < 2 && c.score < threshold))
     .map((c) => c.competency_id);
 
   const readiness =

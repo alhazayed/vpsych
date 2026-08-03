@@ -13,12 +13,12 @@ export function generateSupervisorFeedback(
 ): CoachFeedback {
   const threshold = profile.min_competency_threshold;
   const weak = [...profile.competencies]
-    .filter((c) => c.score < threshold)
+    .filter((c) => c.samples > 0 && c.score < threshold)
     .sort((a, b) => a.score - b.score)
     .slice(0, 3);
 
   const strengths = [...profile.competencies]
-    .filter((c) => c.score >= 80)
+    .filter((c) => c.samples > 0 && c.score >= 80)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 

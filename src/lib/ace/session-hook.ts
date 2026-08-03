@@ -48,7 +48,9 @@ export async function runAceAfterAssessment(
       items: opts.items,
       sessionId: opts.sessionId,
       diagnosisSlug: opts.diagnosisSlug,
-      correctDiagnosis: opts.overall >= 55,
+      // Never fabricate diagnosis correctness from overall alone —
+      // leave undefined unless an explicit signal is provided upstream.
+      correctDiagnosis: undefined,
       narrative: opts.narrative,
       durationSec: opts.durationSec,
       timeLimitSec: opts.timeLimitSec,

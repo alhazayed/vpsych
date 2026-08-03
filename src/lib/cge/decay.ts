@@ -1,7 +1,8 @@
 import type { GraphCompetencyId, LearnerNodeState } from "./types";
 
 const DECAY_DAYS = 60;
-const DECAY_RATE_PER_30_DAYS = 8; // confidence points
+/** Soft fade — CBME retention should remain ≥85% after ~75 idle days for practiced skills. */
+const DECAY_RATE_PER_30_DAYS = 5; // confidence points
 
 export function daysSince(iso: string | null | undefined, now = Date.now()): number {
   if (!iso) return 0;
@@ -42,7 +43,12 @@ export function applyCompetencyDecay(
     }
     const periods = Math.floor(idle / 30);
     const prev = s.confidence;
-    const neu = Math.max(20, prev - periods * DECAY_RATE_PER_30_DAYS);
+    // Practiced competencies fade slower (CBME retention)
+    const practiceFactor = Math.max(0.4, 1 - Math.min(s.samples, 10) / 20);
+    const neu = Math.max(
+      25,
+      prev - periods * DECAY_RATE_PER_30_DAYS * practiceFactor,
+    );
     if (neu < prev) {
       events.push({
         competency_id: s.competency_id,
