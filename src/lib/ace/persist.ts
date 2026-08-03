@@ -127,6 +127,23 @@ function mapProfile(
   };
 }
 
+function coachToJson(coach: CoachFeedback) {
+  return {
+    supervisor_feedback: coach.supervisor_feedback,
+    reflective_questions: coach.reflective_questions ?? [],
+    missed_opportunities: coach.missed_opportunities ?? [],
+    suggested_reading: coach.suggested_reading ?? [],
+    suggested_next_cases: coach.suggested_next_cases ?? [],
+    learning_goals: coach.learning_goals ?? [],
+    improvement_plan: coach.improvement_plan,
+  };
+}
+
+/**
+ * Persist ACE progress after assessment.
+ * Prefers SECURITY DEFINER RPC (works without service role), then falls back
+ * to direct table writes (service role / admin).
+ */
 export async function persistLearnerUpdate(
   supabase: SupabaseClient,
   profile: LearnerProfile,
@@ -139,7 +156,46 @@ export async function persistLearnerUpdate(
     focus?: string[];
     adaptation?: Record<string, unknown>;
   },
-): Promise<void> {
+): Promise<boolean> {
+  const competencies = profile.competencies.map((c) => ({
+    competency_id: c.competency_id,
+    score: c.score,
+    samples: c.samples,
+    trend: c.trend,
+    last_assessed_at: c.last_assessed_at ?? new Date().toISOString(),
+    mastered_at: c.mastered_at ?? null,
+  }));
+
+  const { error: rpcError } = await supabase.rpc("apply_ace_session_progress", {
+    p_learner_id: profile.id,
+    p_session_id: opts?.sessionId ?? null,
+    p_completed_case_count: profile.completed_case_count,
+    p_learning_velocity: profile.learning_velocity,
+    p_confidence_score: profile.confidence_score,
+    p_certification_status: profile.certification_status,
+    p_metadata: profile.metadata ?? {},
+    p_competencies: competencies,
+    p_coach: opts?.coach ? coachToJson(opts.coach) : null,
+    p_next_fingerprint: opts?.nextFingerprint ?? null,
+    p_diagnosis_slug: opts?.diagnosisSlug ?? null,
+    p_difficulty: opts?.difficulty ?? null,
+    p_focus: opts?.focus ?? null,
+    p_adaptation: opts?.adaptation ?? null,
+  });
+
+  if (!rpcError) {
+    return true;
+  }
+
+  // RPC missing (migration not applied) — attempt direct writes.
+  if (
+    !rpcError.message?.includes("Could not find the function") &&
+    rpcError.code !== "PGRST202" &&
+    rpcError.code !== "42883"
+  ) {
+    console.warn("[ace] apply_ace_session_progress failed:", rpcError.message);
+  }
+
   const { error } = await supabase
     .from("learner_profiles")
     .update({
@@ -153,12 +209,11 @@ export async function persistLearnerUpdate(
     .eq("id", profile.id);
 
   if (error) {
-    // Table missing — soft fail
     if (error.message?.includes("does not exist") || error.code === "42P01") {
-      return;
+      return false;
     }
     console.warn("[ace] learner_profiles update failed:", error.message);
-    return;
+    return false;
   }
 
   for (const c of profile.competencies) {
@@ -233,4 +288,6 @@ export async function persistLearnerUpdate(
     },
     { onConflict: "learner_id,window_label" },
   );
+
+  return true;
 }

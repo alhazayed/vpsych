@@ -39,15 +39,16 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/error: "Server misconfigured"/);
   });
 
-  it("session end passes service-role writer into ACE persistence", () => {
+  it("ACE progress persists via authenticated RPC with service-role fallback", () => {
     const route = readFileSync(
       join(root, "app/api/sessions/[id]/end/route.ts"),
       "utf8",
     );
     const hook = readFileSync(join(root, "lib/ace/session-hook.ts"), "utf8");
+    const persist = readFileSync(join(root, "lib/ace/persist.ts"), "utf8");
     expect(route).toMatch(/writeClient:\s*admin/);
-    expect(hook).toMatch(/opts\.writeClient/);
-    expect(hook).toMatch(/persistLearnerUpdate\(writer/);
+    expect(hook).toMatch(/persistLearnerUpdate\(supabase/);
+    expect(persist).toMatch(/apply_ace_session_progress/);
   });
 
   it("provides App Router error boundaries", () => {

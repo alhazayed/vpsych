@@ -43,7 +43,6 @@ export async function runAceAfterAssessment(
   persisted?: boolean;
 }> {
   try {
-    const writer = opts.writeClient ?? supabase;
     const profile = await ensureLearnerProfile(supabase, opts.userId, {
       language: opts.language ?? undefined,
     });
@@ -104,7 +103,10 @@ export async function runAceAfterAssessment(
       fingerprint: graphCase.fingerprint,
     };
 
-    await persistLearnerUpdate(writer, result.profile, {
+    // Prefer authenticated RPC (apply_ace_session_progress). Fall back to
+    // service-role direct writes when the RPC is unavailable.
+    const persistClient = opts.writeClient ?? supabase;
+    let persisted = await persistLearnerUpdate(supabase, result.profile, {
       sessionId: opts.sessionId,
       coach,
       nextFingerprint: nextCase.fingerprint,
@@ -119,6 +121,23 @@ export async function runAceAfterAssessment(
         cge_pathway: graphCase.remediationPathway,
       },
     });
+    if (!persisted && opts.writeClient) {
+      persisted = await persistLearnerUpdate(persistClient, result.profile, {
+        sessionId: opts.sessionId,
+        coach,
+        nextFingerprint: nextCase.fingerprint,
+        diagnosisSlug: nextCase.disorderSlug,
+        difficulty: nextCase.difficulty,
+        focus: nextCase.focusCompetencies,
+        adaptation: {
+          adaptations: nextCase.adaptations,
+          rationale: nextCase.rationale,
+          siStyle: nextCase.siStyle,
+          cge_root: graphCase.rootCause,
+          cge_pathway: graphCase.remediationPathway,
+        },
+      });
+    }
 
     // Persist remediation plan when tables exist
     if (graphReport.root_cause) {
@@ -127,7 +146,8 @@ export async function runAceAfterAssessment(
         statesFromAceCompetencies(result.profile.competencies),
         graphReport.root_cause.observed_failure,
       );
-      await writer.from("cge_remediation_plans").insert({
+      const remWriter = opts.writeClient ?? supabase;
+      await remWriter.from("cge_remediation_plans").insert({
         learner_id: result.profile.id,
         observed_failure: remPlan.observed_failure,
         root_cause_id: remPlan.root_cause_id,
@@ -151,7 +171,7 @@ export async function runAceAfterAssessment(
       nextCase,
       coach,
       learnerId: result.profile.id,
-      persisted: Boolean(opts.writeClient),
+      persisted,
     };
   } catch (e) {
     console.warn(

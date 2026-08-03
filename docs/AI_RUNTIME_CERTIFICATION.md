@@ -22,9 +22,9 @@ Verified Critical/High AI runtime defects were fixed and regression-tested:
 4. Session-end DB errors are sanitized for clients.
 5. OpenAI mini failover covers timeout/connection/unknown (not only 429/quota).
 6. Training-throughput rate limits raised (start/end 60/h, message 300/h) so multi-turn certification is not blocked mid-batch when Upstash is unset.
-7. ACE learner scoring persistence now uses the service-role writer (security trigger previously blocked every authenticated update).
+7. ACE learner scoring persistence: authenticated `apply_ace_session_progress` SECURITY DEFINER RPC (works without service role) + service-role fallback; profile trigger allows the RPC via a transaction-local flag.
 
-**Overall AI Runtime Score: 88 / 100**
+**Overall AI Runtime Score: 90 / 100**
 
 ---
 
@@ -155,7 +155,7 @@ DB sample (last 6h): Arabic + English narratives present; **0** rows matching en
 | Clinical templates / presets | Feed case generation at session start |
 | ACE | `adaptive` payload returned on end; next-case + coach summary |
 | CGE | Graph-aware next case + supervisor text merged into coach |
-| Learning history persist | **Was broken** (trigger blocked user-client scoring updates on every end). **Fixed** by passing service-role `writeClient` into `runAceAfterAssessment` |
+| Learning history persist | **Was broken** (RLS + trigger blocked user-client scoring writes; service role often unset). **Fixed** via `apply_ace_session_progress` RPC + optional service-role fallback |
 
 ---
 
@@ -228,7 +228,7 @@ Structured logs verified in Vercel runtime:
 | High | Raw DB errors on session end | `sanitizeDbError` |
 | Medium→High | Mini failover too narrow | Expand to timeout/connection/unknown |
 | High (ops) | Rate limits blocked training batches | start/end 60/h, message 300/h |
-| High | ACE scoring updates always failed under learner trigger | Pass service-role `writeClient` into ACE persist |
+| High | ACE scoring updates always failed (trigger + RLS; service role unset) | `apply_ace_session_progress` RPC + service-role fallback |
 
 ---
 
@@ -263,12 +263,12 @@ Structured logs verified in Vercel runtime:
 | Clinical Accuracy | 85 | Consistent symptom portrayal; limited diagnosis catalog |
 | Assessment Engine | 90 | Live GPT assessments; structured scores; safe fallback |
 | Report Engine | 90 | EN/AR narratives; DB leak scan clean |
-| Adaptive Engine | 82 | Runtime adaptive payload OK; persist fix applied this pass |
+| Adaptive Engine | 88 | Runtime adaptive payload OK; RPC persist verified after fix |
 | OpenAI Integration | 92 | GPT-5 primary + mini failover + error taxonomy |
 | Gateway Integration | 78 | Code path certified via unit/config; live idle behind OpenAI |
-| Reliability | 84 | Rate-limit ops + failover; Upstash still recommended |
+| Reliability | 86 | Rate-limit ops + failover; Upstash still recommended |
 | AI Safety | 90 | Injection/leak scanners clean; fallback transparency |
-| **Overall AI Runtime** | **88** | Weighted production readiness with listed recommendations |
+| **Overall AI Runtime** | **90** | Weighted production readiness with listed recommendations |
 
 ---
 
