@@ -41,6 +41,12 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/learning/graph"),
     },
+    {
+      href: "/faculty",
+      label: t("facultyConsole"),
+      icon: "school",
+      match: (p) => p.startsWith("/faculty"),
+    },
   ];
 }
 

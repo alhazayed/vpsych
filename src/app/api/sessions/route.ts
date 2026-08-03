@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("preferred_language")
+    .select("preferred_language, primary_institution_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -133,6 +133,10 @@ export async function POST(request: Request) {
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
     instructor_preset_id: caseResult.preset?.id ?? null,
+    // Soft multi-tenant: stamp session with learner's primary institution.
+    institution_id:
+      (profile as { primary_institution_id?: string | null } | null)
+        ?.primary_institution_id ?? null,
   };
 
   let { data: session, error } = await supabase
@@ -144,12 +148,13 @@ export async function POST(request: Request) {
   // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
   if (
     error &&
-    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset/i.test(
+    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset|institution_id/i.test(
       error.message,
     )
   ) {
     const withoutPreset = { ...insertPayload };
     delete withoutPreset.instructor_preset_id;
+    delete withoutPreset.institution_id;
     const retry = await supabase
       .from("sessions")
       .insert(withoutPreset)

@@ -8,13 +8,23 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
-  const { data: learners, error } = await supabase
+  const url = new URL(request.url);
+  const institutionId = url.searchParams.get("institution_id");
+
+  let query = supabase
     .from("learner_profiles")
     .select(
-      "id, user_id, training_level, profession, institution, language, adaptive_mode, curriculum_mode, completed_case_count, learning_velocity, confidence_score, certification_status, min_competency_threshold, max_difficulty, updated_at",
+      "id, user_id, training_level, profession, institution, institution_id, language, adaptive_mode, curriculum_mode, completed_case_count, learning_velocity, confidence_score, certification_status, min_competency_threshold, max_difficulty, updated_at",
     )
     .order("updated_at", { ascending: false })
     .limit(100);
+
+  // Soft multi-tenant: platform admin may scope to one institution.
+  if (institutionId) {
+    query = query.eq("institution_id", institutionId);
+  }
+
+  const { data: learners, error } = await query;
 
   if (error) {
     return NextResponse.json({
