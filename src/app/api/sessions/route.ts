@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/admin";
+import { messageRpcClient } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -188,14 +188,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const privileged = createServiceClient();
-  if (!privileged) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
-  const { error: sysErr } = await privileged.rpc("insert_system_message", {
+  const writer = messageRpcClient(supabase);
+  const { error: sysErr } = await writer.rpc("insert_system_message", {
     p_session_id: session.id,
     p_content: "Session started. Speak with the patient avatar.",
   });
