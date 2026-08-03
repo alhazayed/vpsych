@@ -23,6 +23,7 @@ import {
 import { buildEriOfflineCorpus } from "@/lib/eri";
 import { buildAviOfflineCorpus } from "@/lib/avi";
 import { buildAleOfflineCorpus } from "@/lib/ale";
+import { buildRrsOfflineCorpus } from "@/lib/rrs";
 
 export type ScientificMetrics = {
   CFI: number;
@@ -171,16 +172,17 @@ export function runScientificValidation(): ScientificBoardResult {
   );
   const AIRS = clamp(airs);
 
-  // Research Readiness
-  let rrs = 50;
-  if (PROMPT_ENGINE_VERSION && ASSESSMENT_SCHEMA_VERSION) rrs += 15;
-  if (evidence.disorder_locks >= 10) rrs += 10;
-  rrs += 8; // anonymous export may exist on enterprise branch; version locks present here
-  rrs += 5; // seeded simulation reproducibility
-  high_remaining.push(
-    "Session reports historically omitted ai_source/model in DB — provenance now embedded in scores JSON",
+  // Research Readiness — weighted RRS v1.0 (platform snapshot mean; gaps disclosed)
+  const rrsCorpus = buildRrsOfflineCorpus().filter(
+    (r) => r.dataset_id === "vpsych-platform",
   );
-  const RRS = clamp(rrs);
+  const RRS = clamp(
+    rrsCorpus.reduce((a, r) => a + r.overall, 0) /
+      Math.max(1, rrsCorpus.length),
+  );
+  high_remaining.push(
+    "Anonymized research export API and GDPR DSAR productization remain gaps for publication datasets",
+  );
 
   // Institutional Readiness (educational/research deployment)
   let irs = 55;
@@ -264,7 +266,7 @@ export function runScientificValidation(): ScientificBoardResult {
         .join(",")}; outcome_improved=${improvedArch}/${Object.keys(outcomes.by_archetype).length}`,
       CMR: `Competency ingest across ${outcomes.sessions} sessions; α-linked reliability`,
       AIRS: `Prompt ${PROMPT_ENGINE_VERSION}; provenance builders; live multi-provider corpus deferred`,
-      RRS: `Version locks + evidence matrix + seeded sims; DB provenance remediation required`,
+      RRS: `RRS v1.0 platform mean n=${rrsCorpus.length}; export/GDPR gaps disclosed; version locks + evidence matrix + peer corpora`,
       IRS: `Suitable for supervised training pilots; not high-stakes solo scoring`,
       overall: `Unweighted mean of domain indices`,
     },

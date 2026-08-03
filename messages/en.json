@@ -44,7 +44,8 @@
       "clinicalFidelity": "Clinical Fidelity Index",
       "educationalReliability": "Educational Reliability Index",
       "assessmentValidity": "Assessment Validity Index",
-      "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness"
+      "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness",
+      "researchReadiness": "Research Readiness Score"
     }
   },
   "nav": {
@@ -64,7 +65,8 @@
     "clinicalFidelity": "Clinical Fidelity",
     "educationalReliability": "Educational Reliability",
     "assessmentValidity": "Assessment Validity",
-    "adaptiveLearningEffectiveness": "Adaptive Learning"
+    "adaptiveLearningEffectiveness": "Adaptive Learning",
+    "researchReadiness": "Research Readiness"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -696,6 +698,11 @@
       "eyebrow": "Learning analytics / adaptive curriculum",
       "title": "Adaptive Learning Effectiveness",
       "subtitle": "Weighted 0–100 scientific score of whether the Adaptive Curriculum selects increasingly appropriate learning experiences — with learning curves, difficulty curves, and curriculum quality reports."
+    },
+    "rrs": {
+      "eyebrow": "IRB / journal / biostatistics review",
+      "title": "Research Readiness Score",
+      "subtitle": "Weighted 0–100 scientific score of whether VPsych data can support scientific research and publication — with version and reproducibility matrices, honest export/GDPR gap disclosure."
     }
   }
 }

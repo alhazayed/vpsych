@@ -44,7 +44,8 @@
       "clinicalFidelity": "مؤشر الإخلاص السريري",
       "educationalReliability": "مؤشر الموثوقية التعليمية",
       "assessmentValidity": "مؤشر صلاحية التقييم",
-      "adaptiveLearningEffectiveness": "فعالية التعلم التكيفي"
+      "adaptiveLearningEffectiveness": "فعالية التعلم التكيفي",
+      "researchReadiness": "درجة جاهزية البحث"
     }
   },
   "nav": {
@@ -64,7 +65,8 @@
     "clinicalFidelity": "الإخلاص السريري",
     "educationalReliability": "الموثوقية التعليمية",
     "assessmentValidity": "صلاحية التقييم",
-    "adaptiveLearningEffectiveness": "التعلم التكيفي"
+    "adaptiveLearningEffectiveness": "التعلم التكيفي",
+    "researchReadiness": "جاهزية البحث"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -696,6 +698,11 @@
       "eyebrow": "تحليلات التعلم / المنهج التكيفي",
       "title": "فعالية التعلم التكيفي",
       "subtitle": "درجة علمية مرجحة من ٠–١٠٠ تقيس ما إذا كان المنهج التكيفي يختار تجارب تعلم أكثر ملاءمة تدريجياً، مع منحنيات التعلم والصعوبة وتقارير جودة المنهج."
+    },
+    "rrs": {
+      "eyebrow": "مراجعة لجان الأخلاقيات / المجلات / الإحصاء الحيوي",
+      "title": "درجة جاهزية البحث",
+      "subtitle": "درجة علمية مرجحة من ٠–١٠٠ تقيس ما إذا كانت بيانات VPsych تصلح للبحث والنشر العلمي، مع مصفوفات الإصدارات وقابلية التكرار والإفصاح الصريح عن فجوات التصدير وGDPR."
     }
   }
 }

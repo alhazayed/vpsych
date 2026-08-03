@@ -118,6 +118,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "trending_up",
       match: (p) => p.startsWith("/admin/ale"),
     },
+    {
+      href: "/admin/rrs",
+      label: t("researchReadiness"),
+      icon: "biotech",
+      match: (p) => p.startsWith("/admin/rrs"),
+    },
   ];
 }
 
@@ -202,6 +208,8 @@ export function AppShell({
       return tShell("pageTitle.assessmentValidity");
     if (pathname.startsWith("/admin/ale"))
       return tShell("pageTitle.adaptiveLearningEffectiveness");
+    if (pathname.startsWith("/admin/rrs"))
+      return tShell("pageTitle.researchReadiness");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))
