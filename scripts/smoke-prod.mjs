@@ -9,6 +9,11 @@
 
 const BASE = (process.env.SMOKE_BASE_URL || "").replace(/\/$/, "");
 const SHARE = process.env.SMOKE_SHARE || "";
+/** Vercel Deployment Protection automation bypass (preview/prod). */
+const BYPASS =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+  process.env.SMOKE_PROTECTION_BYPASS ||
+  "";
 
 if (!BASE) {
   console.error("SMOKE_BASE_URL is required");
@@ -21,6 +26,14 @@ function url(path) {
   return u.toString();
 }
 
+function baseHeaders(extra = {}) {
+  const headers = { ...extra };
+  if (BYPASS) {
+    headers["x-vercel-protection-bypass"] = BYPASS;
+  }
+  return headers;
+}
+
 async function check(name, path, opts = {}) {
   const expect = opts.expect ?? [200];
   const method = opts.method ?? "GET";
@@ -28,7 +41,7 @@ async function check(name, path, opts = {}) {
   const res = await fetch(url(path), {
     method,
     redirect: "manual",
-    headers: opts.headers,
+    headers: baseHeaders(opts.headers),
     body: opts.body,
   });
   const ms = Math.round(performance.now() - t0);

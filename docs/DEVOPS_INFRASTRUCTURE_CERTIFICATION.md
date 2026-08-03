@@ -12,15 +12,15 @@
 | Domain | Score (0–100) | Notes |
 |---|---|---|
 | GitHub repository health | **72** | Public `main`; CI green; branch protection / scanning not writable via token (ops) |
-| CI/CD pipeline | **90** | Lint/typecheck/tests/migrations/build + audit + Node 24 + least privilege |
+| CI/CD pipeline | **92** | Lint/typecheck/tests/migrations/build + audit + Node 24 + lockfile optional deps synced |
 | Vercel platform | **88** | Prod HTTPS; preview SSO enabled; domains live |
 | Supabase operations | **86** | `ACTIVE_HEALTHY`; Postgres 17; trigger RPC revoked |
 | Environment management | **78** | Drift: remote migrations ahead of `main` until cert PRs merge |
 | Monitoring & observability | **74** | Runtime logs + security_audit_events; no dedicated alert routing |
 | Operational readiness / DR | **80** | Runbooks in SECURITY.md + this report; Supabase PITR/plan-dependent |
 | Security operations | **84** | Preview SSO; health probe; secret docs; Dependabot |
-| Infra performance | **86** | Prod `/login` TTFB ~1.5s cold; health intended &lt;200ms post-deploy |
-| **Overall** | **83** | |
+| Infra performance | **86** | Prod `/login` TTFB ~1.5s cold; local health TTFB ~3ms post-build |
+| **Overall** | **84** | |
 
 ### Verdict
 
@@ -176,7 +176,11 @@ Remote has versions not present on `main` (certification branches applied ahead 
 | Probe | Result |
 |---|---|
 | Prod `/login` | HTTP 200, TTFB ~1.5s (cold) |
-| Prod `/api/health` (pre-fix) | **307** (middleware) → fixed in this branch |
+| Prod `/api/health` (pre-merge) | **307** → login (expected until this branch reaches `main`) |
+| Local smoke `/api/health` | **200**, TTFB ~3–4ms, payload `{ok,service:"vpsych"}` |
+| Local smoke unauth `/api/sessions` | **401** JSON |
+| Preview SSO gate | **302** → Vercel SSO (unauthenticated blocked — intended) |
+| Prod runtime (24h) | status mix includes 200 + 307 (pre-health-merge) |
 | Supabase Auth/API | Healthy 200s in recent logs |
 | CI duration | Typically minutes (Node cache) |
 
@@ -187,8 +191,10 @@ Remote has versions not present on `main` (certification branches applied ahead 
 | Simulation | Result |
 |---|---|
 | Missing `SMOKE_BASE_URL` | Exit 2 (CI step) |
-| Unauth API | 401 JSON (post-fix) |
+| Unauth API | 401 JSON (post-fix; local smoke) |
+| Preview without auth / invalid share | 302 SSO interstitial (protection holds) |
 | npm audit High+ | Would fail CI (currently 0) |
+| Node 24 `npm ci` vs stale lockfile | **Fixed** — regenerating optional platform entries |
 | Failed Vercel build | Preview not promoted; production untouched |
 | DB advisor on trigger RPC | Cleared via REVOKE |
 
@@ -200,11 +206,13 @@ Remote has versions not present on `main` (certification branches applied ahead 
 2. Unauthenticated `/api/*` → JSON **401** (not HTML 307)  
 3. CI hardening (Node 24, audit, permissions, concurrency, smoke fail-closed)  
 4. Dependabot for npm + GitHub Actions  
-5. `scripts/smoke-prod.mjs` + `npm run test:smoke`  
+5. `scripts/smoke-prod.mjs` + `npm run test:smoke` (supports `x-vercel-protection-bypass`)  
 6. Preview **Vercel Authentication (SSO)** enabled  
 7. Migration revoke `finish_session_on_report` RPC grants (applied)  
 8. `SECURITY.md` + this certification report  
 9. Regression tests: `src/lib/devops.test.ts`, architecture health invariants  
+10. Regenerated `package-lock.json` for npm 11 / Node 24 optional platform packages  
+11. `engines.node >=24` + `.nvmrc` aligned with Vercel `24.x`  
 
 ---
 
@@ -228,9 +236,11 @@ Remote has versions not present on `main` (certification branches applied ahead 
 | Lint | 0 errors |
 | Typecheck | pass |
 | Tests | **173** passed (incl. devops invariants) |
-| Build | pass |
+| Build | pass (`/api/health` in route map) |
+| Local smoke (`SMOKE_BASE_URL=http://127.0.0.1:3014`) | login 200 / health 200 / sessions 401 |
+| `npm ci` (Node 24) | pass after lockfile sync |
 | `npm audit --audit-level=high` | 0 vulnerabilities |
-| Preview SSO | enabled |
+| Preview SSO | enabled (blocks unauth fetch) |
 | Trigger RPC grants | revoked |
 
 ---
