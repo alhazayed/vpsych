@@ -40,14 +40,18 @@ export type AceCertificationStatus =
   | "expired";
 
 export type CompetencyId =
+  | "clinical_communication"
   | "diagnostic_interview"
   | "mental_status_examination"
   | "dsm5_reasoning"
   | "icd11_reasoning"
   | "differential_diagnosis"
+  | "case_formulation"
+  | "risk_screening"
   | "risk_assessment"
   | "suicide_assessment"
   | "violence_assessment"
+  | "safety_planning"
   | "medication_management"
   | "cbt_skills"
   | "dbt_skills"
@@ -59,7 +63,11 @@ export type CompetencyId =
   | "empathy"
   | "psychoeducation"
   | "treatment_planning"
+  | "follow_up_planning"
   | "documentation"
+  | "case_summary"
+  | "diagnostic_formulation"
+  | "treatment_documentation"
   | "professional_communication"
   | "time_management"
   | "ethical_decision_making"
@@ -82,6 +90,10 @@ export type LearnerCompetency = {
   trend: number;
   last_assessed_at?: string | null;
   mastered_at?: string | null;
+  locked?: boolean;
+  instructor_approved?: boolean;
+  confidence?: number;
+  mastery_stage?: string | null;
 };
 
 export type LearnerProfile = {

@@ -7,6 +7,13 @@ import type {
 
 export const COMPETENCY_DOMAINS: CompetencyDomain[] = [
   {
+    id: "clinical_communication",
+    label: "Clinical Communication",
+    description: "Foundational clinical communication skills",
+    category: "alliance",
+    sort_order: 5,
+  },
+  {
     id: "diagnostic_interview",
     label: "Diagnostic Interview",
     description: "Structured psychiatric interview",
@@ -42,6 +49,20 @@ export const COMPETENCY_DOMAINS: CompetencyDomain[] = [
     sort_order: 50,
   },
   {
+    id: "case_formulation",
+    label: "Case Formulation",
+    description: "Integrative case formulation",
+    category: "diagnosis",
+    sort_order: 55,
+  },
+  {
+    id: "risk_screening",
+    label: "Risk Screening",
+    description: "Initial risk screening for SI/HI and safety",
+    category: "safety",
+    sort_order: 58,
+  },
+  {
     id: "risk_assessment",
     label: "Risk Assessment",
     description: "General risk formulation",
@@ -61,6 +82,13 @@ export const COMPETENCY_DOMAINS: CompetencyDomain[] = [
     description: "Violence / harm-to-others assessment",
     category: "safety",
     sort_order: 80,
+  },
+  {
+    id: "safety_planning",
+    label: "Safety Planning",
+    description: "Collaborative safety planning",
+    category: "safety",
+    sort_order: 85,
   },
   {
     id: "medication_management",
@@ -140,6 +168,13 @@ export const COMPETENCY_DOMAINS: CompetencyDomain[] = [
     sort_order: 190,
   },
   {
+    id: "follow_up_planning",
+    label: "Follow-up Planning",
+    description: "Continuity and follow-up planning",
+    category: "treatment",
+    sort_order: 195,
+  },
+  {
     id: "documentation",
     label: "Documentation",
     description: "Clinical documentation quality",
@@ -147,18 +182,39 @@ export const COMPETENCY_DOMAINS: CompetencyDomain[] = [
     sort_order: 200,
   },
   {
+    id: "case_summary",
+    label: "Case Summary",
+    description: "Concise case summarization",
+    category: "professional",
+    sort_order: 205,
+  },
+  {
+    id: "diagnostic_formulation",
+    label: "Diagnostic Formulation",
+    description: "Written diagnostic formulation",
+    category: "professional",
+    sort_order: 210,
+  },
+  {
+    id: "treatment_documentation",
+    label: "Treatment Documentation",
+    description: "Documenting treatment plans and decisions",
+    category: "professional",
+    sort_order: 215,
+  },
+  {
     id: "professional_communication",
     label: "Professional Communication",
     description: "Clear professional communication",
     category: "professional",
-    sort_order: 210,
+    sort_order: 220,
   },
   {
     id: "time_management",
     label: "Time Management",
     description: "Station / session time use",
     category: "professional",
-    sort_order: 220,
+    sort_order: 225,
   },
   {
     id: "ethical_decision_making",
@@ -196,22 +252,45 @@ export const COMPETENCY_IDS: CompetencyId[] = COMPETENCY_DOMAINS.map(
 
 /** Map legacy session rubric item ids → ACE competencies. */
 export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
-  alliance: ["therapeutic_alliance", "empathy"],
-  assessment: ["diagnostic_interview", "mental_status_examination", "dsm5_reasoning"],
+  alliance: ["therapeutic_alliance", "empathy", "clinical_communication"],
+  assessment: [
+    "clinical_communication",
+    "diagnostic_interview",
+    "mental_status_examination",
+    "dsm5_reasoning",
+  ],
   interventions: ["cbt_skills", "treatment_planning", "psychoeducation"],
-  safety: ["risk_assessment", "suicide_assessment"],
+  safety: [
+    "risk_screening",
+    "risk_assessment",
+    "suicide_assessment",
+    "safety_planning",
+  ],
   structure: ["time_management", "documentation", "professional_communication"],
   // Instructor report dimensions
-  diagnostic_accuracy: ["dsm5_reasoning", "differential_diagnosis"],
+  diagnostic_accuracy: [
+    "dsm5_reasoning",
+    "differential_diagnosis",
+    "case_formulation",
+  ],
   dsm_reasoning: ["dsm5_reasoning"],
   icd_reasoning: ["icd11_reasoning"],
-  communication: ["professional_communication"],
+  communication: ["clinical_communication", "professional_communication"],
   empathy: ["empathy"],
-  therapeutic_alliance: ["therapeutic_alliance"],
-  risk_assessment: ["risk_assessment"],
-  safety_planning: ["suicide_assessment", "risk_assessment"],
-  documentation: ["documentation"],
-  treatment_planning: ["treatment_planning"],
+  therapeutic_alliance: ["therapeutic_alliance", "clinical_communication"],
+  risk_assessment: ["risk_screening", "risk_assessment"],
+  safety_planning: ["safety_planning", "suicide_assessment", "risk_assessment"],
+  documentation: [
+    "documentation",
+    "case_summary",
+    "diagnostic_formulation",
+    "treatment_documentation",
+  ],
+  treatment_planning: [
+    "treatment_planning",
+    "case_formulation",
+    "follow_up_planning",
+  ],
   medication_decisions: ["medication_management"],
   professionalism: ["ethical_decision_making", "professional_communication"],
   time_management: ["time_management"],

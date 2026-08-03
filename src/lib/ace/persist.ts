@@ -76,7 +76,9 @@ async function loadCompetencies(
 ): Promise<LearnerCompetency[]> {
   const { data } = await supabase
     .from("learner_competencies")
-    .select("competency_id, score, samples, trend, last_assessed_at, mastered_at")
+    .select(
+      "competency_id, score, samples, trend, last_assessed_at, mastered_at, locked, instructor_approved, confidence, mastery_stage",
+    )
     .eq("learner_id", learnerId);
   if (!data?.length) {
     return createLearnerProfile({ user_id: "x" }).competencies;
@@ -88,6 +90,11 @@ async function loadCompetencies(
     trend: Number(r.trend),
     last_assessed_at: r.last_assessed_at,
     mastered_at: r.mastered_at,
+    locked: Boolean(r.locked),
+    instructor_approved: Boolean(r.instructor_approved),
+    confidence:
+      r.confidence != null ? Number(r.confidence) : undefined,
+    mastery_stage: (r.mastery_stage as string | null) ?? null,
   }));
 }
 
@@ -172,12 +179,22 @@ export async function persistLearnerUpdate(
         trend: c.trend,
         last_assessed_at: c.last_assessed_at ?? new Date().toISOString(),
         mastered_at: c.mastered_at,
+        confidence: c.confidence ?? Math.round(c.score * 0.7 + 15),
+        mastery_stage: c.mastery_stage ?? null,
       },
       { onConflict: "learner_id,competency_id" },
     );
 
     if (opts?.sessionId) {
       await supabase.from("competency_scores").insert({
+        learner_id: profile.id,
+        competency_id: c.competency_id,
+        session_id: opts.sessionId,
+        score: c.score,
+        evidence: { source: "session_assessment" },
+      });
+      // CGE attempt audit trail (best-effort)
+      await supabase.from("cge_attempts").insert({
         learner_id: profile.id,
         competency_id: c.competency_id,
         session_id: opts.sessionId,
