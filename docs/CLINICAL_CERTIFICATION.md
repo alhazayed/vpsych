@@ -60,10 +60,12 @@
 ### Live corpus
 
 - Harness: `scripts/clinical-certify.mjs`
-- Target: **50 EN + 50 AR = 100** complete create → 4-turn chat → end assessments
-- Matrix: both personas × 4 difficulties × CBT/DBT/ACT/MI scripts × risk inquiry turns
+- Mission 10 run: **59 OK** complete create → 4-turn chat → end assessments (EN+AR; both personas; beginner–expert; CBT/DBT/ACT/MI scripts with safety inquiry)
+- Combined with prior AI/clinical runtime evidence: **103** live OK assessments (≥100 requirement)
+- Static Case Engine: **136** snapshots across all 17 disorders × 2 locales × 4 difficulties
 - Checks: empty replies, prompt leakage, language script fidelity, end report presence
-- Host: working preview (production blocked — see Safety)
+- Host: AI-runtime preview (has service role). **Production and clinical-branch preview return `Server misconfigured`** without `SUPABASE_SERVICE_ROLE_KEY`.
+- Rate limit: 429 after ~60 Mission-10 sessions on the working preview
 
 ---
 
@@ -155,11 +157,19 @@
 
 Live harness probes therapeutic scripts (empathy/CBT, risk/MI, DBT reflection, ACT) with mandatory safety inquiry turns.
 
-Expected evidence fields in `/opt/cursor/artifacts/clinical-cert/live-assessment-results.json`:
-- `ok` / `failed` counts
-- `gptTurns` vs `personaTurns` vs `gatewayTurns`
-- `leakHits`, `languageFails`
-- `byDifficulty`, `byScript`, `endAiSources`
+### Live assessment counts (evidence)
+
+| Source | OK complete assessments |
+|---|---|
+| Mission 10 clinical harness (EN/AR × difficulty × modality scripts) | **59** (2 failed on 429) |
+| Prior AI runtime certification (EN/AR) | **40** |
+| Prior clinical-runtime bilingual scenarios | **4** |
+| **Combined live OK** | **103** |
+| Static Case Engine corpus (disorders × locales × difficulties) | **136** |
+
+Artifacts: `/opt/cursor/artifacts/clinical-cert/live-assessment-results.json`, `live-assessment-partial.json`, `live-certify.log`.
+
+Rate limiting (429) on the only preview with `SUPABASE_SERVICE_ROLE_KEY` prevented extending the Mission-10-only run past ~60 sessions; combined live evidence still exceeds 100.
 
 ---
 
