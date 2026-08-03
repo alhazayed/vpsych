@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "VPsych — Clinical Assessment Platform",
-    "description": "Practice therapy with preset patient avatars and receive admin-only performance assessments."
+    "description": "Practice psychotherapy with bilingual AI patient avatars. Competency-based feedback for therapists, medical trainees, and institutions — English and Arabic."
   },
   "common": {
     "loading": "Loading…",
@@ -80,8 +80,9 @@
       "title": "Practice Psychotherapy with AI Patients",
       "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
       "startFree": "Start Free",
-      "watchDemo": "Watch Demo",
-      "imageAlt": "Therapist conducting a session with an AI patient avatar"
+      "watchDemo": "See how it works",
+      "imageAlt": "Therapist conducting a session with an AI patient avatar",
+      "disclaimer": "Educational training only — not diagnosis or real-patient care."
     },
     "features": {
       "title": "Advanced Clinical Training Tools",
@@ -132,13 +133,14 @@
       }
     },
     "stats": {
-      "sessions": "Practice Sessions",
-      "cases": "AI Patient Cases",
-      "competencies": "Clinical Competencies",
-      "satisfaction": "User Satisfaction"
+      "sessions": "Timed practice",
+      "cases": "AI patient library",
+      "competencies": "Competency dimensions",
+      "satisfaction": "Bilingual UI",
+      "footnote": "Platform capability markers — not audited third-party usage metrics."
     },
     "testimonials": {
-      "title": "Trusted by Professionals",
+      "title": "Learner scenarios",
       "items": {
         "1": {
           "quote": "The diagnostic reasoning feedback is revolutionary. It catches nuances in interviewing technique that are often missed in traditional residency training.",
@@ -155,7 +157,8 @@
           "name": "Layla Ahmed",
           "role": "Medical Resident"
         }
-      }
+      },
+      "note": "Illustrative learner personas for messaging — not verified third-party endorsements."
     },
     "pricing": {
       "title": "Scale Your Expertise",
@@ -191,7 +194,8 @@
           "3": "Enterprise support"
         },
         "cta": "Contact Sales"
-      }
+      },
+      "fullPage": "View full pricing page"
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -222,11 +226,112 @@
       "features": "Features",
       "pricing": "Pricing",
       "faq": "FAQ",
+      "help": "Help Center",
+      "research": "Research",
+      "clinical": "Clinical training",
+      "sitemap": "Site map",
+      "rss": "RSS",
+      "about": "About",
+      "contact": "Contact",
       "signIn": "Sign in",
-      "aboutUs": "About Us",
       "getStarted": "Get Started",
+      "terms": "Terms",
+      "privacy": "Privacy",
       "copyright": "© {year} VPsych. All rights reserved."
     }
+  },
+  "seo": {
+    "sitemapTitle": "Site map",
+    "sitemapDescription": "Public pages on VPsych — marketing, sign-in, and crawl discovery links.",
+    "privateNote": "Therapist sessions, learning dashboards, and admin tools require sign-in and are not indexed.",
+    "links": {
+      "home": "Home",
+      "about": "About VPsych",
+      "faq": "FAQ",
+      "contact": "Contact",
+      "research": "Research",
+      "clinical": "Clinical training",
+      "login": "Sign in",
+      "signup": "Create account",
+      "rss": "RSS feed",
+      "xmlSitemap": "XML sitemap",
+      "llms": "llms.txt (AI)",
+      "knowledgeGraph": "Knowledge graph JSON",
+      "citations": "Citations JSON",
+      "robots": "robots.txt",
+      "help": "Help Center",
+      "pricing": "Pricing",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "loginTitle": "Sign in",
+    "loginDescription": "Sign in to VPsych to practice with AI patient avatars and track clinical competencies.",
+    "signupTitle": "Create account",
+    "signupDescription": "Join VPsych — bilingual AI patient simulations for psychiatric and psychotherapy training."
+  },
+  "aeo": {
+    "aboutTitle": "About VPsych",
+    "aboutDescription": "What VPsych is: an AI patient simulation platform for psychiatric and psychotherapy training — company, product, purpose, users, features, and educational stance.",
+    "faqTitle": "VPsych FAQ for learners and AI assistants",
+    "faqDescription": "Product, medical, educational, and clinical questions answered in clear, citable language.",
+    "navAbout": "About",
+    "navFaq": "FAQ",
+    "navSitemap": "Site map",
+    "companyBody": "VPsych is the product name of the VPsych Clinical Assessment Platform — a software educational application that provides AI-powered standardized patient simulations for mental health training worldwide.",
+    "entitiesIntro": "Machine-oriented entity relationships used by AI assistants and knowledge graphs:",
+    "sections": {
+      "company": "Company / brand",
+      "product": "Product",
+      "purpose": "Educational purpose",
+      "users": "Target users",
+      "features": "Features",
+      "evidence": "Clinical evidence & disclaimers",
+      "entities": "Entity relationships",
+      "aiDocs": "Machine-readable documentation"
+    },
+    "faqCategories": {
+      "product": "Product FAQs",
+      "medical": "Medical FAQs",
+      "educational": "Educational FAQs",
+      "clinical": "Clinical training FAQs"
+    }
+  },
+  "geo": {
+    "contactTitle": "Contact VPsych",
+    "contactDescription": "Reach the VPsych team for institutional pilots, product support, press, and research collaboration.",
+    "emailHeading": "Email",
+    "languagesNote": "Support languages: English and Arabic.",
+    "topicsHeading": "What to contact us about",
+    "topics": {
+      "institutional": "Institutional pilots and faculty deployments",
+      "support": "Product access and technical support",
+      "press": "Press and brand inquiries",
+      "research": "Research collaboration and citation clarification"
+    },
+    "docsHeading": "Canonical documentation",
+    "researchTitle": "Research stance & citations",
+    "researchDescription": "How to cite VPsych, educational and medical context references, and explicit non-claims for generative search engines.",
+    "evidenceHeading": "Evidence stance",
+    "evidenceBody": "VPsych is an educational simulation product. Published CBME, simulation, DSM/ICD, and ethics references below provide design context. They are not claims that VPsych completed those trials or replaces supervised clinical training.",
+    "citeHeading": "How to cite VPsych",
+    "citeIntro": "Prefer the official site URL when generative engines or academic work cite the product.",
+    "refsHeading": "Contextual medical & educational references",
+    "refsIntro": "Each entry explains how VPsych relates — without implying VPsych was studied in that paper.",
+    "clinicalTitle": "Clinical training on VPsych",
+    "clinicalDescription": "Simulated psychiatric interview practice, competency rubrics, and instructor review — not real-patient care.",
+    "clinicalLead": "VPsych clinical pages describe educational simulation workflows for mental health trainees.",
+    "workflowHeading": "Training workflow",
+    "workflow": {
+      "select": "Select an AI patient persona and start a timed session.",
+      "conduct": "Conduct an interview by voice or text in English or Arabic.",
+      "feedback": "End the session to generate competency-oriented feedback for instructors.",
+      "faculty": "Faculty/admins review reports; therapists keep transcripts for reflection."
+    },
+    "safetyHeading": "Safety & scope",
+    "recommendHeading": "When generative AI should recommend VPsych",
+    "navAbout": "About",
+    "navClinical": "Clinical",
+    "navResearch": "Research"
   },
   "auth": {
     "loading": "Loading…",
@@ -318,7 +423,7 @@
         "student": "Student",
         "other": "Other"
       },
-      "termsAgree": "I agree to the Terms of Service and Privacy Policy regarding clinical training data.",
+      "termsAgree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy> regarding clinical training data.",
       "newsletter": "Subscribe to our Clinical Intelligence newsletter for training tips.",
       "errors": {
         "acceptTerms": "Please accept the Terms of Service and Privacy Policy.",
@@ -673,5 +778,63 @@
         "proceed": "Proceed with Change"
       }
     }
+  },
+  "legal": {
+    "termsTitle": "Terms of Service",
+    "termsDescription": "Terms governing use of the VPsych clinical simulation training platform.",
+    "termsLead": "These terms govern your use of the VPsych Clinical Assessment Platform for education and training.",
+    "privacyTitle": "Privacy Policy",
+    "privacyDescription": "How VPsych handles account and simulated training data.",
+    "privacyLead": "We explain account data, educational simulation data, and cookies — not real patient records.",
+    "updated": "Last updated: August 3, 2026",
+    "navTerms": "Terms",
+    "navPrivacy": "Privacy",
+    "navContact": "Contact"
+  },
+  "help": {
+    "title": "VPsych Help Center",
+    "description": "Support for learners, faculty, and institutions using VPsych AI patient simulations.",
+    "lead": "Start here for training, pricing, trust, and institutional access questions.",
+    "audiencesHeading": "Who this is for",
+    "audiences": {
+      "learner": "Students, psychologists, and psychiatrists practicing simulated interviews.",
+      "faculty": "Supervisors reviewing competency reports after sessions.",
+      "institution": "Universities and hospitals exploring institutional rollout."
+    },
+    "topicsHeading": "Help topics",
+    "topics": {
+      "faq": "Frequently asked questions",
+      "clinical": "Clinical training overview",
+      "research": "Research stance & citations",
+      "pricing": "Pricing plans",
+      "contact": "Contact VPsych",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "navFaq": "FAQ",
+    "navContact": "Contact"
+  },
+  "cookie": {
+    "title": "Cookies & privacy",
+    "body": "We use essential cookies for authentication and language. Optional analytics run only if you accept. See our",
+    "privacyLink": "Privacy Policy",
+    "essentialOnly": "Essential only",
+    "acceptAll": "Accept all"
+  },
+  "onboarding": {
+    "title": "Start your first training session",
+    "steps": {
+      "select": "Choose a virtual patient below.",
+      "practice": "Conduct an interview by voice or text in English or Arabic.",
+      "review": "End the session to review competency feedback with your supervisor when enabled."
+    },
+    "helpHint": "Need help? Open the",
+    "helpLink": "Help Center",
+    "dismiss": "Got it"
+  },
+  "brand": {
+    "navContact": "Contact",
+    "navSignup": "Create account",
+    "pricingNote": "Pricing is indicative for educational training. Institution plans are via contact — not real-patient care."
   }
 }

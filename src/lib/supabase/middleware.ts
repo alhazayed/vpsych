@@ -6,6 +6,7 @@ import {
   LOCALE_COOKIE,
   type AppLocale,
 } from "@/i18n/config";
+import { isPrivatePath } from "@/lib/seo/site";
 
 function applyLocaleCookie(
   response: NextResponse,
@@ -49,10 +50,10 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
-  const isPublic =
-    path === "/" || isAuthPage || path.startsWith("/auth/");
 
-  if (!user && !isPublic) {
+  // Private-prefix gating: unknown URLs return real 404s (SEO soft-404 fix)
+  // instead of redirecting every missing path to /login.
+  if (!user && isPrivatePath(path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
@@ -71,7 +72,9 @@ export async function updateSession(request: NextRequest) {
   // Explicit locale cookie wins. LanguageSwitcher sets the cookie immediately and
   // syncs preferred_language asynchronously — never clobber a valid cookie with a
   // stale profile value (that forced Arabic sessions back to en-US).
+  // Crawlable hreflang variants use ?hl=en|ar and win for this response.
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  const hlParam = request.nextUrl.searchParams.get("hl");
   let locale: AppLocale = defaultLocale;
   let profileRole: string | null = null;
 
@@ -91,6 +94,9 @@ export async function updateSession(request: NextRequest) {
 
   if (isAppLocale(cookieLocale)) {
     locale = cookieLocale;
+  }
+  if (isAppLocale(hlParam)) {
+    locale = hlParam;
   }
 
   // Defense-in-depth: admin UI + /api/admin require role=admin at the edge.

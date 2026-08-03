@@ -1,9 +1,50 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  articleSchema,
+  breadcrumbSchema,
+  faqPageSchema,
+  websiteSchema,
+} from "@/lib/seo/schema";
+import {
+  aeoMedicalOrganizationSchema,
+  aeoOrganizationSchema,
+  aeoSoftwareSchema,
+} from "@/lib/aeo/knowledge";
+import { absoluteUrl, hreflangUrl } from "@/lib/seo/site";
+import type { AppLocale } from "@/i18n/config";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  const locale = (await getLocale()) as AppLocale;
+  const title = t("title");
+  const description = t("description");
+  const canonical = absoluteUrl("/");
+  return {
+    title: { absolute: title },
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        en: hreflangUrl("/", "en"),
+        ar: hreflangUrl("/", "ar"),
+        "x-default": canonical,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      locale: locale === "ar" ? "ar_SA" : "en_US",
+    },
+  };
+}
 
 const FEATURE_KEYS = [
   { key: "simulations", icon: "psychology" },
@@ -25,10 +66,10 @@ const TESTIMONIAL_KEYS = [
 const FAQ_KEYS = ["1", "2", "3", "4"] as const;
 
 const STAT_KEYS = [
-  { value: "10,000+", key: "sessions" },
-  { value: "500+", key: "cases" },
+  { value: "Timed", key: "sessions" },
+  { value: "AI", key: "cases" },
   { value: "25+", key: "competencies" },
-  { value: "95%", key: "satisfaction" },
+  { value: "EN/AR", key: "satisfaction" },
 ] as const;
 
 export default async function HomePage() {
@@ -39,10 +80,31 @@ export default async function HomePage() {
   if (user) redirect("/avatars");
 
   const t = await getTranslations("landing");
+  const locale = (await getLocale()) as AppLocale;
   const year = new Date().getFullYear();
+  const faqItems = FAQ_KEYS.map((key) => ({
+    question: t(`faq.items.${key}.q`),
+    answer: t(`faq.items.${key}.a`),
+  }));
 
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--on-surface)]">
+      <JsonLd
+        data={[
+          aeoOrganizationSchema(),
+          aeoSoftwareSchema(),
+          aeoMedicalOrganizationSchema(),
+          websiteSchema(),
+          faqPageSchema(faqItems),
+          articleSchema({
+            title: t("hero.title"),
+            description: t("hero.body"),
+            path: "/",
+            inLanguage: locale,
+          }),
+          breadcrumbSchema([{ name: "VPsych", path: "/" }]),
+        ]}
+      />
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_srgb,var(--outline-variant)_20%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] backdrop-blur-md">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-8">
           <div className="flex items-center gap-8">
@@ -59,12 +121,12 @@ export default async function HomePage() {
               >
                 {t("nav.features")}
               </a>
-              <a
-                href="#pricing"
+              <Link
+                href="/pricing"
                 className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
               >
                 {t("nav.pricing")}
-              </a>
+              </Link>
               <a
                 href="#about"
                 className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
@@ -107,14 +169,14 @@ export default async function HomePage() {
               <p className="mt-4 max-w-xl text-lg leading-7 text-[var(--on-surface-variant)]">
                 {t("hero.body")}
               </p>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--on-surface-variant)]">
+                {t("hero.disclaimer")}
+              </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link href="/signup" className="btn-primary px-8 py-3 shadow-lg">
                   {t("hero.startFree")}
                 </Link>
-                <a
-                  href="#features"
-                  className="btn-secondary px-8 py-3"
-                >
+                <a href="#how" className="btn-secondary px-8 py-3">
                   <span className="material-symbols-outlined">play_circle</span>
                   {t("hero.watchDemo")}
                 </a>
@@ -128,6 +190,7 @@ export default async function HomePage() {
                   alt={t("hero.imageAlt")}
                   width={1376}
                   height={768}
+                  sizes="(max-width: 1024px) 100vw, 688px"
                   className="h-auto w-full object-cover"
                   priority
                 />
@@ -173,7 +236,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8">
+        <section
+          id="how"
+          className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8"
+        >
           <h2 className="mb-10 font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)] md:text-2xl md:font-semibold">
             {t("how.title")}
           </h2>
@@ -188,9 +254,9 @@ export default async function HomePage() {
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-md">
                     {n}
                   </div>
-                  <h4 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
+                  <h3 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
                     {t(`how.steps.${n}.title`)}
-                  </h4>
+                  </h3>
                   <p className="text-[var(--on-surface-variant)]">
                     {t(`how.steps.${n}.body`)}
                   </p>
@@ -204,7 +270,9 @@ export default async function HomePage() {
               alt={t("how.imageAlt")}
               width={1376}
               height={768}
+              sizes="(max-width: 1280px) 100vw, 1120px"
               className="h-auto w-full object-cover"
+              loading="lazy"
             />
           </div>
         </section>
@@ -222,12 +290,18 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+          <p className="mx-auto mt-8 max-w-3xl px-6 text-center text-xs leading-5 text-white/75 md:px-8">
+            {t("stats.footnote")}
+          </p>
         </section>
 
         <section className="mx-auto max-w-[1280px] px-6 py-16 md:px-8">
-          <h2 className="mb-10 text-center font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
+          <h2 className="mb-3 text-center font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
             {t("testimonials.title")}
           </h2>
+          <p className="mb-10 text-center text-sm text-[var(--on-surface-variant)]">
+            {t("testimonials.note")}
+          </p>
           <div className="grid gap-6 md:grid-cols-3">
             {TESTIMONIAL_KEYS.map((item) => (
               <div
@@ -333,11 +407,16 @@ export default async function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="btn-secondary w-full py-3">
+              <Link href="/contact" className="btn-secondary w-full py-3">
                 {t("pricing.institution.cta")}
               </Link>
             </div>
           </div>
+          <p className="mt-6 text-center text-sm">
+            <Link href="/pricing" className="text-[var(--primary)] underline">
+              {t("pricing.fullPage")}
+            </Link>
+          </p>
         </section>
 
         <section id="faq" className="mx-auto max-w-3xl px-6 py-16 md:px-8">
@@ -376,7 +455,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#features" className="hover:text-[var(--primary)]">
@@ -384,19 +463,39 @@ export default async function HomePage() {
                 </a>
               </li>
               <li>
-                <a href="#pricing" className="hover:text-[var(--primary)]">
+                <Link href="/pricing" className="hover:text-[var(--primary)]">
                   {t("footer.pricing")}
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/clinical" className="hover:text-[var(--primary)]">
+                  {t("footer.clinical")}
+                </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
-                <a href="#faq" className="hover:text-[var(--primary)]">
+                <Link href="/faq" className="hover:text-[var(--primary)]">
                   {t("footer.faq")}
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="hover:text-[var(--primary)]">
+                  {t("footer.help")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/research" className="hover:text-[var(--primary)]">
+                  {t("footer.research")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/site-map" className="hover:text-[var(--primary)]">
+                  {t("footer.sitemap")}
+                </Link>
               </li>
               <li>
                 <Link href="/login" className="hover:text-[var(--primary)]">
@@ -406,16 +505,31 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
-                <a href="#about" className="hover:text-[var(--primary)]">
-                  {t("footer.aboutUs")}
-                </a>
+                <Link href="/about" className="hover:text-[var(--primary)]">
+                  {t("footer.about")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-[var(--primary)]">
+                  {t("footer.contact")}
+                </Link>
               </li>
               <li>
                 <Link href="/signup" className="hover:text-[var(--primary)]">
                   {t("footer.getStarted")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-[var(--primary)]">
+                  {t("footer.terms")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-[var(--primary)]">
+                  {t("footer.privacy")}
                 </Link>
               </li>
             </ul>
