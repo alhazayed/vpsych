@@ -205,10 +205,7 @@ export async function POST(_request: Request, { params }: Params) {
 
   if (!getReportWriteKey()) {
     return NextResponse.json(
-      {
-        error:
-          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
-      },
+      { error: "Server misconfigured" },
       { status: 500 },
     );
   }

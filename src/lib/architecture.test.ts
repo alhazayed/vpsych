@@ -27,6 +27,18 @@ describe("architecture invariants", () => {
     expect(route).not.toMatch(/aiFailureDetail:/);
   });
 
+  it("session start/message RPCs fall back when service role is unset", () => {
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(start).toMatch(/messageRpcClient/);
+    expect(message).toMatch(/messageRpcClient/);
+    expect(start).not.toMatch(/error: "Server misconfigured"/);
+    expect(message).not.toMatch(/error: "Server misconfigured"/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),
