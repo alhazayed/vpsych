@@ -11,6 +11,12 @@ import {
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  isConcurrencyBusy,
+  serverBusy,
+  tooManyRequests,
+} from "@/lib/rate-limit-response";
+import { ttsGate } from "@/lib/concurrency";
 
 type TtsBody = {
   text?: string;
@@ -41,12 +47,7 @@ export async function POST(request: Request) {
   }
 
   const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  if (!limited.ok) return tooManyRequests(limited);
 
   const body = (await request.json().catch(() => ({}))) as TtsBody;
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
@@ -64,13 +65,15 @@ export async function POST(request: Request) {
     });
 
     // Resolved id already accounts for profile + legacy + env defaults.
-    const result = await elevenLabsService.synthesize({
-      text,
-      locale,
-      voiceId: resolved.voiceId,
-      voiceIdAr: resolved.voiceId,
-      stream: body.stream !== false,
-    });
+    const result = await ttsGate.run(() =>
+      elevenLabsService.synthesize({
+        text,
+        locale,
+        voiceId: resolved.voiceId,
+        voiceIdAr: resolved.voiceId,
+        stream: body.stream !== false,
+      }),
+    );
 
     return new NextResponse(result.body, {
       status: 200,
@@ -91,6 +94,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (isConcurrencyBusy(error)) return serverBusy(error);
     if (error instanceof ElevenLabsError) {
       console.warn("[tts]", error.code, error.detail ?? error.message);
       return NextResponse.json(

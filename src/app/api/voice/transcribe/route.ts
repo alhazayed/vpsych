@@ -7,6 +7,12 @@ import {
 } from "@/lib/ai/openai";
 import { rateLimit } from "@/lib/rate-limit";
 import {
+  isConcurrencyBusy,
+  serverBusy,
+  tooManyRequests,
+} from "@/lib/rate-limit-response";
+import { sttGate } from "@/lib/concurrency";
+import {
   audioTooLargeError,
   audioTypeNotAllowedError,
   emptyAudioError,
@@ -40,12 +46,7 @@ export async function POST(request: Request) {
   }
 
   const limited = await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  if (!limited.ok) return tooManyRequests(limited);
 
   if (!hasOpenAIApiKey()) {
     const err = notConfiguredError();
@@ -88,11 +89,13 @@ export async function POST(request: Request) {
 
   try {
     const ext = guessAudioExtension(audio.type || "audio/wav");
-    const result = await openAIService.speechToText({
-      audio,
-      filename: `speech.${ext}`,
-      language,
-    });
+    const result = await sttGate.run(() =>
+      openAIService.speechToText({
+        audio,
+        filename: `speech.${ext}`,
+        language,
+      }),
+    );
 
     const body: TranscribeSuccess = {
       transcript: result.transcript,
@@ -104,6 +107,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(body);
   } catch (error) {
+    if (isConcurrencyBusy(error)) return serverBusy(error);
     console.warn(
       "[stt]",
       error instanceof Error ? error.message : String(error),

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:migrations": "node scripts/verify-migration-parity.mjs"
+    "test:migrations": "node scripts/verify-migration-parity.mjs",
+    "test:load": "node scripts/load-stress-certify.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.24",

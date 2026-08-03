@@ -6,6 +6,12 @@ import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  isConcurrencyBusy,
+  serverBusy,
+  tooManyRequests,
+} from "@/lib/rate-limit-response";
+import { aiChatGate } from "@/lib/concurrency";
 import { clientSafeError } from "@/lib/api-errors";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
@@ -22,12 +28,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const limited = await rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  if (!limited.ok) return tooManyRequests(limited);
 
   const body = (await request.json()) as { message?: string };
   const message = body.message?.trim();
@@ -102,12 +103,15 @@ export async function POST(request: Request, { params }: Params) {
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
-    replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
-      userMessage: message,
-    });
+    replyMeta = await aiChatGate.run(() =>
+      generatePatientReplyDetailed({
+        avatar: resolved,
+        history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+        userMessage: message,
+      }),
+    );
   } catch (err) {
+    if (isConcurrencyBusy(err)) return serverBusy(err);
     console.error("[sessions/message] patient reply generation failed", {
       sessionId,
       language: typed.language,

@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { listBuiltinTemplates } from "@/lib/scenario-templates/catalog";
+import { rateLimit } from "@/lib/rate-limit";
+import { tooManyRequests } from "@/lib/rate-limit-response";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin:${auth.user.id}`, 120, 60 * 60 * 1000);
+  if (!limited.ok) return tooManyRequests(limited);
   const { supabase } = auth;
 
   const { data, error } = await supabase
@@ -29,6 +33,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin:${auth.user.id}`, 120, 60 * 60 * 1000);
+  if (!limited.ok) return tooManyRequests(limited);
   const { supabase, user } = auth;
 
   const body = (await request.json()) as {

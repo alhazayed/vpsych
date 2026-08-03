@@ -5,6 +5,12 @@ import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  isConcurrencyBusy,
+  serverBusy,
+  tooManyRequests,
+} from "@/lib/rate-limit-response";
+import { aiAssessGate } from "@/lib/concurrency";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
@@ -22,12 +28,7 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   const limited = await rateLimit(`end:${user.id}`, 20, 60 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  if (!limited.ok) return tooManyRequests(limited);
 
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
@@ -102,15 +103,23 @@ export async function POST(_request: Request, { params }: Params) {
   }
   reportLanguage = reportLanguage ?? resolved.locale;
 
-  const assessment = await assessSession({
-    avatar: resolved,
-    messages: (messages ?? []) as Pick<
-      SessionMessage,
-      "role" | "content" | "created_at"
-    >[],
-    durationSec,
-    language: reportLanguage,
-  });
+  let assessment: Awaited<ReturnType<typeof assessSession>>;
+  try {
+    assessment = await aiAssessGate.run(() =>
+      assessSession({
+        avatar: resolved,
+        messages: (messages ?? []) as Pick<
+          SessionMessage,
+          "role" | "content" | "created_at"
+        >[],
+        durationSec,
+        language: reportLanguage,
+      }),
+    );
+  } catch (err) {
+    if (isConcurrencyBusy(err)) return serverBusy(err);
+    throw err;
+  }
 
   console.info("[sessions/end] assessment", {
     sessionId,
