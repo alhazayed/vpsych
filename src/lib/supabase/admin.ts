@@ -4,9 +4,10 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
  * Privileged server client (service role). Prefer HMAC-signed
  * `create_session_report` RPC via `REPORT_WRITE_KEY` when possible.
  *
- * Allowed call sites: Route Handlers / Server Actions only.
- * Allowed tables today: `session_reports` privileged insert/update in
- * `POST /api/sessions/[id]/end`. Do not expand without an architecture review.
+ * Allowed call sites: Route Handlers / Server Actions / server-only libs only.
+ * Current uses: session message RPCs, session report privileged writes, and
+ * ACE `apply_ace_session_progress` (scoring must not be client-callable).
+ * Do not expand without an architecture review.
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
