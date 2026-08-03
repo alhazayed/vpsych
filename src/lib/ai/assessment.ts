@@ -201,6 +201,10 @@ type ModelAttempt = {
  * (from session.language). Uses the same OpenAI → mini → Gateway → heuristic
  * pipeline as patient conversation replies.
  */
+function assessmentBudgetMs(): number {
+  return Number(process.env.ASSESSMENT_BUDGET_MS ?? 35_000);
+}
+
 export async function assessSession(params: {
   avatar: Pick<
     ResolvedAvatar,
@@ -223,6 +227,52 @@ export async function assessSession(params: {
   if (!hasAnyAiKey()) {
     return heuristicAssessment(rubric, messages, language, "unconfigured");
   }
+
+  const budgetMs = assessmentBudgetMs();
+  try {
+    return await Promise.race([
+      assessSessionInner({
+        language,
+        avatar,
+        messages,
+        durationSec,
+        rubric,
+      }),
+      new Promise<never>((_, reject) => {
+        setTimeout(
+          () => reject(new Error(`assessment budget exceeded (${budgetMs}ms)`)),
+          budgetMs,
+        );
+      }),
+    ]);
+  } catch (err) {
+    console.warn("[assessment]", {
+      event: "budget_or_pipeline_failed",
+      ...errorDetails(err),
+      next: "heuristic",
+    });
+    return heuristicAssessment(
+      rubric,
+      messages,
+      language,
+      "unavailable",
+      openaiErrorKind(err),
+      err instanceof Error ? err.message.slice(0, 300) : String(err).slice(0, 300),
+    );
+  }
+}
+
+async function assessSessionInner(params: {
+  language: "en" | "ar";
+  avatar: Pick<
+    ResolvedAvatar,
+    "name" | "disorder" | "ideal_guidelines" | "rubric"
+  >;
+  messages: Pick<SessionMessage, "role" | "content" | "created_at">[];
+  durationSec: number;
+  rubric: RubricItem[];
+}): Promise<SessionAssessment> {
+  const { language, avatar, messages, durationSec, rubric } = params;
 
   const therapistLabel = language === "ar" ? "المعالج" : "THERAPIST";
   const patientLabel = language === "ar" ? "المريض" : "PATIENT";

@@ -11,6 +11,9 @@ import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
 
+/** Assessment + ACE + report can exceed default serverless budgets under load. */
+export const maxDuration = 60;
+
 export async function POST(_request: Request, { params }: Params) {
   const { id: sessionId } = await params;
   const supabase = await createClient();
@@ -133,18 +136,10 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // Adaptive Curriculum Engine — update learner competencies + next case
-  const ace = await runAceAfterAssessment(supabase, {
-    userId: user.id,
-    sessionId,
-    overall: assessment.scores.overall,
-    items: assessment.scores.items,
-    language: assessment.language ?? resolved.locale,
-    diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
-    narrative,
-    durationSec,
-    timeLimitSec: typed.max_duration_sec,
-  });
+  // Persist report BEFORE ACE so competency updates never risk report loss
+  // (ACE soft-fails; previously ACE ran on the critical path ahead of insert).
+  let reportId: string | null = null;
+  let alreadyExists = false;
 
   const admin = createServiceClient();
   if (admin) {
@@ -161,100 +156,108 @@ export async function POST(_request: Request, { params }: Params) {
       .maybeSingle();
 
     if (insertError) {
-      // Unique violation → already created (race); treat as success.
       if (insertError.code === "23505") {
-        return NextResponse.json({
-          ok: true,
-          alreadyExists: true,
-          aiSource: assessment.aiSource,
-          aiModel: assessment.model ?? null,
-          aiErrorKind: assessment.errorKind ?? null,
-        });
+        alreadyExists = true;
+      } else {
+        console.warn("[session-end] report insert:", insertError.message);
+        return NextResponse.json(
+          { error: sanitizeDbError(insertError.message) },
+          { status: 500 },
+        );
       }
-      console.warn("[session-end] report insert:", insertError.message);
-      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
+    } else {
+      reportId = inserted?.id ?? null;
+    }
+  } else {
+    if (!getReportWriteKey()) {
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json(
+    let sig: string;
+    try {
+      sig = signSessionReport({
+        sessionId,
+        narrative,
+        scoresJson,
+        excerptsJson,
+      });
+    } catch (e) {
+      console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
+      return NextResponse.json(
+        { error: "Report signing failed" },
+        { status: 500 },
+      );
+    }
+
+    const { data: rpcReportId, error: rpcError } = await supabase.rpc(
+      "create_session_report",
       {
-        ok: true,
-        reportId: inserted?.id,
-        // Additive — same AI pipeline provenance as conversation turns.
-        aiSource: assessment.aiSource,
-        aiModel: assessment.model ?? null,
-        aiErrorKind: assessment.errorKind ?? null,
-        adaptive: ace.ok
-          ? {
-              learnerId: ace.learnerId,
-              nextCase: ace.nextCase,
-              coachSummary: ace.coach?.supervisor_feedback ?? null,
-            }
-          : null,
-      },
-      {
-        headers: {
-          "X-AI-Source": assessment.aiSource,
-          ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
-          ...(assessment.errorKind
-            ? { "X-AI-Error-Kind": assessment.errorKind }
-            : {}),
-        },
+        p_session_id: sessionId,
+        p_scores_json: scoresJson,
+        p_narrative: narrative,
+        p_excerpts_json: excerptsJson,
+        p_sig: sig,
       },
     );
+
+    if (rpcError) {
+      console.warn("[session-end] report rpc:", rpcError.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(rpcError.message) },
+        { status: 500 },
+      );
+    }
+
+    reportId = typeof rpcReportId === "string" ? rpcReportId : null;
+
+    if (reportId) {
+      const privileged = createServiceClient();
+      if (privileged) {
+        await privileged
+          .from("session_reports")
+          .update({ language: resolved.locale })
+          .eq("id", reportId);
+      }
+    }
   }
 
-  if (!getReportWriteKey()) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
+  // ACE after report — soft-fail; never undoes report persistence.
+  const ace = await runAceAfterAssessment(supabase, {
+    userId: user.id,
+    sessionId,
+    overall: assessment.scores.overall,
+    items: assessment.scores.items,
+    language: assessment.language ?? resolved.locale,
+    diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+    narrative,
+    durationSec,
+    timeLimitSec: typed.max_duration_sec,
+  });
 
-  let sig: string;
-  try {
-    sig = signSessionReport({
-      sessionId,
-      narrative,
-      scoresJson,
-      excerptsJson,
+  if (alreadyExists) {
+    return NextResponse.json({
+      ok: true,
+      alreadyExists: true,
+      aiSource: assessment.aiSource,
+      aiModel: assessment.model ?? null,
+      aiErrorKind: assessment.errorKind ?? null,
+      adaptive: ace.ok
+        ? {
+            learnerId: ace.learnerId,
+            nextCase: ace.nextCase,
+            coachSummary: ace.coach?.supervisor_feedback ?? null,
+          }
+        : null,
     });
-  } catch (e) {
-    console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
-    return NextResponse.json(
-      { error: "Report signing failed" },
-      { status: 500 },
-    );
-  }
-
-  const { data: reportId, error: rpcError } = await supabase.rpc(
-    "create_session_report",
-    {
-      p_session_id: sessionId,
-      p_scores_json: scoresJson,
-      p_narrative: narrative,
-      p_excerpts_json: excerptsJson,
-      p_sig: sig,
-    },
-  );
-
-  if (rpcError) {
-    console.warn("[session-end] report rpc:", rpcError.message);
-    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
-  }
-
-  const privileged = createServiceClient();
-  if (reportId && privileged) {
-    await privileged
-      .from("session_reports")
-      .update({ language: resolved.locale })
-      .eq("id", reportId);
   }
 
   return NextResponse.json(
     {
       ok: true,
       reportId,
-      // Do not return report content to therapist — admin only
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,

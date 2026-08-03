@@ -112,8 +112,21 @@ async function rateLimitUpstash(
 /**
  * Distributed-aware rate limit. Same result shape as the original sync helper.
  * Call sites should `await` — Redis path is async; memory path resolves immediately.
+ *
+ * Production without Upstash: applies a tighter per-instance cap so a single
+ * isolate cannot silently accept the full distributed budget (backpressure).
  */
 let warnedMissingUpstash = false;
+
+/** Effective limit for in-memory fallback (stricter in production). */
+export function memoryFallbackLimit(limit: number): number {
+  if (process.env.VERCEL_ENV !== "production" && process.env.NODE_ENV !== "production") {
+    return limit;
+  }
+  const floor = Number(process.env.RATE_LIMIT_MEMORY_FLOOR ?? 5);
+  const scaled = Math.max(floor, Math.floor(limit * 0.5));
+  return Math.min(limit, scaled);
+}
 
 export async function rateLimit(
   key: string,
@@ -128,10 +141,10 @@ export async function rateLimit(
     ) {
       warnedMissingUpstash = true;
       console.warn(
-        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN unset in production; using per-instance memory limits (not horizontally safe)",
+        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN unset in production; using per-instance memory limits (not horizontally safe). Provision Upstash for enterprise scale.",
       );
     }
-    return rateLimitMemory(key, limit, windowMs);
+    return rateLimitMemory(key, memoryFallbackLimit(limit), windowMs);
   }
 
   try {
@@ -141,6 +154,6 @@ export async function rateLimit(
       "[rate-limit] Upstash unavailable; falling back to memory:",
       err instanceof Error ? err.message : String(err),
     );
-    return rateLimitMemory(key, limit, windowMs);
+    return rateLimitMemory(key, memoryFallbackLimit(limit), windowMs);
   }
 }

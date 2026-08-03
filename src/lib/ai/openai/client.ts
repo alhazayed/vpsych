@@ -20,10 +20,12 @@ export function getOpenAIClient(): OpenAI {
   }
 
   if (!client) {
+    // Keep SDK retries low — app-level withOpenAIRetry owns backoff.
+    // Stacked retries (SDK 3 × app 2) caused multi-minute hangs under load.
     client = new OpenAI({
       apiKey,
-      maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 3),
-      timeout: Number(process.env.OPENAI_TIMEOUT_MS ?? 60_000),
+      maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 1),
+      timeout: Number(process.env.OPENAI_TIMEOUT_MS ?? 45_000),
     });
   }
 

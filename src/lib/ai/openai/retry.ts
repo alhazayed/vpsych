@@ -1,7 +1,7 @@
 import { toOpenAIServiceError, type OpenAIServiceError } from "@/lib/ai/openai/errors";
 
 export type RetryOptions = {
-  /** Extra application-level attempts beyond the SDK's own retries. Default 2. */
+  /** Total attempts including the first try. Default 2 (1 retry). */
   attempts?: number;
   /** Base delay in ms for exponential backoff. Default 250. */
   baseDelayMs?: number;
@@ -15,7 +15,7 @@ function sleep(ms: number) {
 
 /**
  * Application-level retry with exponential backoff + jitter.
- * Complements the official SDK's built-in `maxRetries`.
+ * Prefer low SDK maxRetries (≤1) so total attempts stay bounded under load.
  */
 export async function withOpenAIRetry<T>(
   operation: () => Promise<T>,

@@ -13,15 +13,35 @@ import {
  * - Optional writer for `insert_system_message` / `insert_assistant_message`
  *   (ownership checks still run in the SECURITY DEFINER RPCs)
  */
-export function createServiceClient() {
+
+let serviceClient: SupabaseClient | null | undefined;
+
+/**
+ * Shared service-role client (singleton). Reuses one client per isolate
+ * instead of allocating a new supabase-js instance on every call.
+ * Returns `null` when URL/key are unset.
+ */
+export function createServiceClient(): SupabaseClient | null {
+  if (serviceClient !== undefined) {
+    return serviceClient;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
+    serviceClient = null;
     return null;
   }
-  return createSupabaseClient(url, key, {
+
+  serviceClient = createSupabaseClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  return serviceClient;
+}
+
+/** Reset singleton (tests). */
+export function resetServiceClient(): void {
+  serviceClient = undefined;
 }
 
 /**

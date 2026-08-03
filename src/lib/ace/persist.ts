@@ -161,29 +161,36 @@ export async function persistLearnerUpdate(
     return;
   }
 
-  for (const c of profile.competencies) {
-    if (c.samples <= 0) continue;
-    await supabase.from("learner_competencies").upsert(
-      {
-        learner_id: profile.id,
-        competency_id: c.competency_id,
-        score: c.score,
-        samples: c.samples,
-        trend: c.trend,
-        last_assessed_at: c.last_assessed_at ?? new Date().toISOString(),
-        mastered_at: c.mastered_at,
-      },
-      { onConflict: "learner_id,competency_id" },
+  // Batch competency writes — sequential N+1 was ~2×N RTTs on session-end.
+  const assessed = profile.competencies.filter((c) => c.samples > 0);
+  if (assessed.length) {
+    await Promise.all(
+      assessed.map((c) =>
+        supabase.from("learner_competencies").upsert(
+          {
+            learner_id: profile.id,
+            competency_id: c.competency_id,
+            score: c.score,
+            samples: c.samples,
+            trend: c.trend,
+            last_assessed_at: c.last_assessed_at ?? new Date().toISOString(),
+            mastered_at: c.mastered_at,
+          },
+          { onConflict: "learner_id,competency_id" },
+        ),
+      ),
     );
 
     if (opts?.sessionId) {
-      await supabase.from("competency_scores").insert({
-        learner_id: profile.id,
-        competency_id: c.competency_id,
-        session_id: opts.sessionId,
-        score: c.score,
-        evidence: { source: "session_assessment" },
-      });
+      await supabase.from("competency_scores").insert(
+        assessed.map((c) => ({
+          learner_id: profile.id,
+          competency_id: c.competency_id,
+          session_id: opts.sessionId,
+          score: c.score,
+          evidence: { source: "session_assessment" },
+        })),
+      );
     }
   }
 

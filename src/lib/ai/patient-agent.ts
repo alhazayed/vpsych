@@ -13,6 +13,10 @@ import {
   preferOpenAiSdk,
   type AiSource,
 } from "@/lib/ai/provider";
+import {
+  MESSAGE_HISTORY_WINDOW,
+  windowMessages,
+} from "@/lib/performance/resilience";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 
 const DEFAULT_FALLBACK_REPLIES = [
@@ -126,13 +130,13 @@ export async function generatePatientReplyDetailed(params: {
     return pickFallback();
   }
 
-  const prior = history
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .slice(-20)
-    .map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    }));
+  const prior = windowMessages(
+    history.filter((m) => m.role === "user" || m.role === "assistant"),
+    MESSAGE_HISTORY_WINDOW,
+  ).map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
 
   // Per-turn reinforcement is appended to the therapist turn (not stored).
   const reinforced = avatar.per_turn_reinforcement

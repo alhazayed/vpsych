@@ -52,6 +52,15 @@ describe("rateLimit (async facade)", () => {
     expect((await rateLimit(key, 1, 60_000)).ok).toBe(true);
     expect((await rateLimit(key, 1, 60_000)).ok).toBe(false);
   });
+
+  it("tightens memory fallback limit in production", async () => {
+    const { memoryFallbackLimit } = await import("./rate-limit");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(memoryFallbackLimit(120)).toBe(60);
+    expect(memoryFallbackLimit(8)).toBe(5); // floor when half < floor
+    expect(memoryFallbackLimit(4)).toBe(4); // never exceeds configured limit
+  });
 });
 
 describe("windowMsToDuration", () => {

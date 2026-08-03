@@ -7,6 +7,16 @@ import {
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import {
+  BackpressureError,
+  CircuitOpenError,
+  elevenLabsCircuit,
+  elevenLabsLimiter,
+} from "@/lib/performance/resilience";
+
+function elevenLabsTimeoutMs(): number {
+  return Number(process.env.ELEVENLABS_TIMEOUT_MS ?? 20_000);
+}
 
 export type ElevenLabsSynthesizeParams = {
   text: string;
@@ -199,64 +209,88 @@ export const elevenLabsService = {
       });
     }
 
-    const primaryVoiceId = resolveElevenLabsVoiceId({
-      locale: params.locale,
-      voiceId: params.voiceId,
-      voiceIdAr: params.voiceIdAr,
-    });
-    const fallbackVoiceId =
-      params.locale === "ar"
-        ? process.env.ELEVENLABS_VOICE_ID_AR || DEFAULT_ELEVENLABS_VOICE_AR
-        : process.env.ELEVENLABS_VOICE_ID_EN || DEFAULT_ELEVENLABS_VOICE_EN;
+    try {
+      return await elevenLabsLimiter.run(() =>
+        elevenLabsCircuit.exec(() => synthesizeOnce(params, text)),
+      );
+    } catch (err) {
+      if (err instanceof CircuitOpenError || err instanceof BackpressureError) {
+        throw new ElevenLabsError("ElevenLabs temporarily unavailable", {
+          code: "TTS_BACKPRESSURE",
+          status: 503,
+          detail: err.message,
+        });
+      }
+      throw err;
+    }
+  },
+};
 
-    // Prefer the resolved avatar voice; on Voice Library / plan errors, retry
-    // once with the account default premade voice (Rachel / Charlotte).
-    const voiceCandidates = [primaryVoiceId];
-    if (fallbackVoiceId && fallbackVoiceId !== primaryVoiceId) {
-      voiceCandidates.push(fallbackVoiceId);
+async function synthesizeOnce(
+  params: ElevenLabsSynthesizeParams,
+  text: string,
+): Promise<ElevenLabsSynthesizeResult> {
+  const primaryVoiceId = resolveElevenLabsVoiceId({
+    locale: params.locale,
+    voiceId: params.voiceId,
+    voiceIdAr: params.voiceIdAr,
+  });
+  const fallbackVoiceId =
+    params.locale === "ar"
+      ? process.env.ELEVENLABS_VOICE_ID_AR || DEFAULT_ELEVENLABS_VOICE_AR
+      : process.env.ELEVENLABS_VOICE_ID_EN || DEFAULT_ELEVENLABS_VOICE_EN;
+
+  // Prefer the resolved avatar voice; on Voice Library / plan errors, retry
+  // once with the account default premade voice (Rachel / Charlotte).
+  const voiceCandidates = [primaryVoiceId];
+  if (fallbackVoiceId && fallbackVoiceId !== primaryVoiceId) {
+    voiceCandidates.push(fallbackVoiceId);
+  }
+
+  const model = modelId();
+  let lastDetail = "";
+  let lastVoiceId = primaryVoiceId;
+  const timeoutMs = elevenLabsTimeoutMs();
+
+  for (let i = 0; i < voiceCandidates.length; i++) {
+    const voiceId = voiceCandidates[i]!;
+    lastVoiceId = voiceId;
+
+    // Defense-in-depth: never interpolate a malformed id into the upstream
+    // request path (guards env/DB-derived candidates too).
+    if (!isValidElevenLabsVoiceId(voiceId)) {
+      lastDetail = `invalid voice id: ${voiceId}`;
+      continue;
     }
 
-    const model = modelId();
-    let lastDetail = "";
-    let lastVoiceId = primaryVoiceId;
+    const key = cacheKey({
+      text,
+      voiceId,
+      modelId: model,
+      locale: params.locale,
+    });
 
-    for (let i = 0; i < voiceCandidates.length; i++) {
-      const voiceId = voiceCandidates[i]!;
-      lastVoiceId = voiceId;
+    const cached = readCache(key);
+    if (cached) {
+      return {
+        body: arrayBufferToStream(cached.buffer),
+        contentType: cached.contentType,
+        voiceId: cached.voiceId,
+        locale: cached.locale,
+        modelId: cached.modelId,
+        cached: true,
+        streamed: false,
+      };
+    }
 
-      // Defense-in-depth: never interpolate a malformed id into the upstream
-      // request path (guards env/DB-derived candidates too).
-      if (!isValidElevenLabsVoiceId(voiceId)) {
-        lastDetail = `invalid voice id: ${voiceId}`;
-        continue;
-      }
+    const wantStream = params.stream !== false;
+    const path = wantStream
+      ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
+      : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-      const key = cacheKey({
-        text,
-        voiceId,
-        modelId: model,
-        locale: params.locale,
-      });
-
-      const cached = readCache(key);
-      if (cached) {
-        return {
-          body: arrayBufferToStream(cached.buffer),
-          contentType: cached.contentType,
-          voiceId: cached.voiceId,
-          locale: cached.locale,
-          modelId: cached.modelId,
-          cached: true,
-          streamed: false,
-        };
-      }
-
-      const wantStream = params.stream !== false;
-      const path = wantStream
-        ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
-        : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-
-      const res = await fetch(path, {
+    let res: Response;
+    try {
+      res = await fetch(path, {
         method: "POST",
         headers: {
           "xi-api-key": apiKey(),
@@ -271,62 +305,75 @@ export const elevenLabsService = {
             similarity_boost: 0.75,
           },
         }),
+        signal: AbortSignal.timeout(timeoutMs),
       });
-
-      if (res.ok && res.body) {
-        if (i > 0) {
-          console.warn(
-            `[elevenlabs] voice ${primaryVoiceId} rejected; used fallback ${voiceId}`,
-          );
-        }
-
-        // Tee: stream to the client while filling the cache in the background.
-        const [toClient, toCache] = res.body.tee();
-        void collectStream(toCache)
-          .then((buffer) => {
-            writeCache(key, {
-              buffer,
-              contentType: "audio/mpeg",
-              voiceId,
-              modelId: model,
-              locale: params.locale,
-              createdAt: Date.now(),
-            });
-          })
-          .catch(() => {
-            /* cache fill is best-effort */
-          });
-
-        return {
-          body: toClient,
-          contentType: "audio/mpeg",
-          voiceId,
-          locale: params.locale,
-          modelId: model,
-          cached: false,
-          streamed: wantStream,
-        };
-      }
-
-      lastDetail = await res.text().catch(() => "");
-      const planBlocked =
-        res.status === 402 ||
-        /paid_plan_required|payment_required|library voices/i.test(lastDetail);
-
-      if (!planBlocked || i === voiceCandidates.length - 1) {
-        break;
-      }
-      console.warn(
-        `[elevenlabs] voice ${voiceId} unavailable (${res.status}); retrying default`,
+    } catch (err) {
+      const aborted =
+        err instanceof Error &&
+        (err.name === "TimeoutError" || err.name === "AbortError");
+      throw new ElevenLabsError(
+        aborted ? "ElevenLabs TTS timed out" : "ElevenLabs TTS request failed",
+        {
+          code: aborted ? "TTS_TIMEOUT" : "TTS_FAILED",
+          status: 504,
+          detail: err instanceof Error ? err.message.slice(0, 200) : String(err),
+        },
       );
     }
 
-    throw new ElevenLabsError("ElevenLabs TTS failed", {
-      code: /paid_plan_required|payment_required/i.test(lastDetail)
-        ? "TTS_PLAN_REQUIRED"
-        : "TTS_FAILED",
-      status: 502,
-      detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
-    });
-  },
-};
+    if (res.ok && res.body) {
+      if (i > 0) {
+        console.warn(
+          `[elevenlabs] voice ${primaryVoiceId} rejected; used fallback ${voiceId}`,
+        );
+      }
+
+      // Tee: stream to the client while filling the cache in the background.
+      const [toClient, toCache] = res.body.tee();
+      void collectStream(toCache)
+        .then((buffer) => {
+          writeCache(key, {
+            buffer,
+            contentType: "audio/mpeg",
+            voiceId,
+            modelId: model,
+            locale: params.locale,
+            createdAt: Date.now(),
+          });
+        })
+        .catch(() => {
+          /* cache fill is best-effort */
+        });
+
+      return {
+        body: toClient,
+        contentType: "audio/mpeg",
+        voiceId,
+        locale: params.locale,
+        modelId: model,
+        cached: false,
+        streamed: wantStream,
+      };
+    }
+
+    lastDetail = await res.text().catch(() => "");
+    const planBlocked =
+      res.status === 402 ||
+      /paid_plan_required|payment_required|library voices/i.test(lastDetail);
+
+    if (!planBlocked || i === voiceCandidates.length - 1) {
+      break;
+    }
+    console.warn(
+      `[elevenlabs] voice ${voiceId} unavailable (${res.status}); retrying default`,
+    );
+  }
+
+  throw new ElevenLabsError("ElevenLabs TTS failed", {
+    code: /paid_plan_required|payment_required/i.test(lastDetail)
+      ? "TTS_PLAN_REQUIRED"
+      : "TTS_FAILED",
+    status: 502,
+    detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
+  });
+}

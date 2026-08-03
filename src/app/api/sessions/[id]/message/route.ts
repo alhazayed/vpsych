@@ -7,6 +7,10 @@ import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import {
+  MESSAGE_HISTORY_WINDOW,
+  windowMessages,
+} from "@/lib/performance/resilience";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -94,17 +98,25 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: history } = await supabase
+  // Sliding window — avoid loading unbounded transcripts under long sessions.
+  const historyLimit = Math.max(MESSAGE_HISTORY_WINDOW, 1);
+  const { data: historyRows } = await supabase
     .from("session_messages")
     .select("role, content")
     .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(historyLimit);
+
+  const history = windowMessages(
+    ([...(historyRows ?? [])] as Pick<SessionMessage, "role" | "content">[]).reverse(),
+    historyLimit,
+  );
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
       avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+      history,
       userMessage: message,
     });
   } catch (err) {

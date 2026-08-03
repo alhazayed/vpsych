@@ -4,8 +4,32 @@ import {
   hasOpenAIApiKey,
   OpenAIConfigError,
 } from "@/lib/ai/openai/client";
-import { toOpenAIServiceError } from "@/lib/ai/openai/errors";
+import { toOpenAIServiceError, OpenAIServiceError } from "@/lib/ai/openai/errors";
 import { withOpenAIRetry } from "@/lib/ai/openai/retry";
+import {
+  openaiCircuit,
+  openaiLimiter,
+  CircuitOpenError,
+  BackpressureError,
+} from "@/lib/performance/resilience";
+
+async function withOpenAIProtection<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await openaiLimiter.run(() => openaiCircuit.exec(fn));
+  } catch (err) {
+    if (err instanceof CircuitOpenError || err instanceof BackpressureError) {
+      throw new OpenAIServiceError(err.message, {
+        code: "OPENAI_API",
+        kind: "api",
+        status: 503,
+        retryable: false,
+        providerCode: err.code,
+        cause: err,
+      });
+    }
+    throw err;
+  }
+}
 
 /** Default GPT-5 chat model; override with OPENAI_CHAT_MODEL. */
 export const DEFAULT_OPENAI_CHAT_MODEL = "gpt-5";
@@ -139,85 +163,89 @@ export const openAIService = {
 
   /** GPT-5 (or configured) chat completion via the official SDK. */
   async chat(params: ChatCompletionParams): Promise<ChatCompletionResult> {
-    return withOpenAIRetry(async () => {
-      try {
-        const client = getOpenAIClient();
-        const model = chatModelId(params.model);
-        const reasoning = isReasoningModel(model);
-        const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-          {
-            model,
-            messages: params.messages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-            max_completion_tokens: params.maxCompletionTokens,
-          };
-        // Only standard models accept a custom temperature. Reasoning models
-        // (gpt-5, o-series) 400 on any temperature != 1, so omit it and steer
-        // them with reasoning_effort instead.
-        if (reasoning) {
-          request.reasoning_effort = reasoningEffort();
-        } else if (params.temperature !== undefined) {
-          request.temperature = params.temperature;
-        }
-        if (params.json) {
-          request.response_format = { type: "json_object" };
-        }
-        const completion = await client.chat.completions.create(request);
+    return withOpenAIProtection(() =>
+      withOpenAIRetry(async () => {
+        try {
+          const client = getOpenAIClient();
+          const model = chatModelId(params.model);
+          const reasoning = isReasoningModel(model);
+          const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
+            {
+              model,
+              messages: params.messages.map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
+              max_completion_tokens: params.maxCompletionTokens,
+            };
+          // Only standard models accept a custom temperature. Reasoning models
+          // (gpt-5, o-series) 400 on any temperature != 1, so omit it and steer
+          // them with reasoning_effort instead.
+          if (reasoning) {
+            request.reasoning_effort = reasoningEffort();
+          } else if (params.temperature !== undefined) {
+            request.temperature = params.temperature;
+          }
+          if (params.json) {
+            request.response_format = { type: "json_object" };
+          }
+          const completion = await client.chat.completions.create(request);
 
-        const text = completion.choices[0]?.message?.content?.trim() ?? "";
-        return {
-          text,
-          model: completion.model || model,
-          provider: "openai" as const,
-          usage: completion.usage
-            ? {
-                promptTokens: completion.usage.prompt_tokens,
-                completionTokens: completion.usage.completion_tokens,
-                totalTokens: completion.usage.total_tokens,
-              }
-            : undefined,
-        };
-      } catch (error) {
-        throw toOpenAIServiceError(error);
-      }
-    });
+          const text = completion.choices[0]?.message?.content?.trim() ?? "";
+          return {
+            text,
+            model: completion.model || model,
+            provider: "openai" as const,
+            usage: completion.usage
+              ? {
+                  promptTokens: completion.usage.prompt_tokens,
+                  completionTokens: completion.usage.completion_tokens,
+                  totalTokens: completion.usage.total_tokens,
+                }
+              : undefined,
+          };
+        } catch (error) {
+          throw toOpenAIServiceError(error);
+        }
+      }),
+    );
   },
 
   /** Speech-to-text via OpenAI audio transcriptions. */
   async speechToText(
     params: SpeechToTextParams,
   ): Promise<SpeechToTextResult> {
-    return withOpenAIRetry(async () => {
-      try {
-        const client = getOpenAIClient();
-        const model = sttModelId(params.model);
-        const filename = params.filename || "audio.wav";
-        const file = await audioToUploadable(params.audio, filename);
-        const language = languageHint(params.language);
+    return withOpenAIProtection(() =>
+      withOpenAIRetry(async () => {
+        try {
+          const client = getOpenAIClient();
+          const model = sttModelId(params.model);
+          const filename = params.filename || "audio.wav";
+          const file = await audioToUploadable(params.audio, filename);
+          const language = languageHint(params.language);
 
-        const result = await client.audio.transcriptions.create({
-          file,
-          model,
-          ...(language ? { language } : {}),
-          ...(params.prompt ? { prompt: params.prompt } : {}),
-        });
+          const result = await client.audio.transcriptions.create({
+            file,
+            model,
+            ...(language ? { language } : {}),
+            ...(params.prompt ? { prompt: params.prompt } : {}),
+          });
 
-        const transcript = String(
-          (result as { text?: string }).text ?? result ?? "",
-        ).trim();
+          const transcript = String(
+            (result as { text?: string }).text ?? result ?? "",
+          ).trim();
 
-        return {
-          transcript,
-          model,
-          provider: "openai" as const,
-          language,
-        };
-      } catch (error) {
-        throw toOpenAIServiceError(error);
-      }
-    });
+          return {
+            transcript,
+            model,
+            provider: "openai" as const,
+            language,
+          };
+        } catch (error) {
+          throw toOpenAIServiceError(error);
+        }
+      }),
+    );
   },
 
   /**
