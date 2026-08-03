@@ -134,7 +134,9 @@ export async function POST(_request: Request, { params }: Params) {
   const narrative = assessment.narrative;
 
   // Adaptive Curriculum Engine — update learner competencies + next case
-  const ace = await runAceAfterAssessment(supabase, {
+  // Prefer service role so competency upserts survive learner UPDATE RLS lockdown.
+  const aceWriter = createServiceClient() ?? supabase;
+  const ace = await runAceAfterAssessment(aceWriter, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,

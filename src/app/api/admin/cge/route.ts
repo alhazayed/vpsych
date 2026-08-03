@@ -26,9 +26,54 @@ export async function GET(request: Request) {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  const learnerIds = (learners ?? []).map((l) => l.id);
+  let competencyRows: Array<{
+    learner_id: string;
+    competency_id: string;
+    score: number;
+    samples: number;
+    mastery_stage: string | null;
+  }> = [];
+  if (learnerIds.length) {
+    const { data } = await supabase
+      .from("learner_competencies")
+      .select("learner_id, competency_id, score, samples, mastery_stage")
+      .in("learner_id", learnerIds)
+      .gt("samples", 0);
+    competencyRows = (data as typeof competencyRows) ?? [];
+  }
+
+  const mastered = competencyRows.filter(
+    (r) =>
+      r.mastery_stage === "competent" ||
+      r.mastery_stage === "proficient" ||
+      r.mastery_stage === "expert" ||
+      (r.samples >= 3 && Number(r.score) >= 70),
+  ).length;
+
   return NextResponse.json({
     learners: learners ?? [],
     activePlans: plans ?? [],
+    institution: {
+      learner_count: learners?.length ?? 0,
+      institutions: [
+        ...new Set(
+          (learners ?? [])
+            .map((l) => l.institution)
+            .filter((x): x is string => Boolean(x)),
+        ),
+      ],
+      assessed_competency_rows: competencyRows.length,
+      mastered_competency_rows: mastered,
+      active_remediation_plans: plans?.length ?? 0,
+      mean_confidence:
+        learners && learners.length
+          ? Math.round(
+              learners.reduce((a, l) => a + Number(l.confidence_score ?? 0), 0) /
+                learners.length,
+            )
+          : 0,
+    },
     graphMeta: {
       nodes: getBuiltinGraph().nodes.length,
       edges: getBuiltinGraph().edges.length,
@@ -64,14 +109,27 @@ export async function PATCH(request: Request) {
     );
   }
 
+  const { data: existing } = await supabase
+    .from("learner_competencies")
+    .select(
+      "score, samples, mastery_stage, locked, instructor_approved, confidence",
+    )
+    .eq("learner_id", body.learnerId)
+    .eq("competency_id", body.competencyId)
+    .maybeSingle();
+
   if (body.action === "lock" || body.action === "unlock") {
     const { error } = await supabase.from("learner_competencies").upsert(
       {
         learner_id: body.learnerId,
         competency_id: body.competencyId,
         locked: body.action === "lock",
-        score: 70,
-        samples: 0,
+        // Preserve evidence — never reset on lock/unlock
+        score: existing?.score ?? 70,
+        samples: existing?.samples ?? 0,
+        mastery_stage: existing?.mastery_stage ?? "not_attempted",
+        confidence: existing?.confidence ?? 50,
+        instructor_approved: existing?.instructor_approved ?? false,
       },
       { onConflict: "learner_id,competency_id" },
     );
@@ -83,14 +141,18 @@ export async function PATCH(request: Request) {
   }
 
   if (body.action === "approve_mastery") {
+    const fromStage = existing?.mastery_stage ?? "not_attempted";
     const { error } = await supabase.from("learner_competencies").upsert(
       {
         learner_id: body.learnerId,
         competency_id: body.competencyId,
         instructor_approved: true,
         mastery_stage: "competent",
-        score: 80,
-        samples: 3,
+        // Preserve real scores/samples; do not fabricate evidence
+        score: existing?.score ?? 70,
+        samples: existing?.samples ?? 0,
+        confidence: existing?.confidence ?? 50,
+        locked: existing?.locked ?? false,
       },
       { onConflict: "learner_id,competency_id" },
     );
@@ -101,7 +163,7 @@ export async function PATCH(request: Request) {
     await supabase.from("cge_mastery_history").insert({
       learner_id: body.learnerId,
       competency_id: body.competencyId,
-      from_stage: "developing",
+      from_stage: fromStage,
       to_stage: "competent",
       reason: "instructor_approved",
     });
