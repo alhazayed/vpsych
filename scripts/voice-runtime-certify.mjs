@@ -315,15 +315,16 @@ async function failureInjection(avatarId) {
     code: empty.json?.code,
   });
 
-  // Unauthorized TTS without cookie — temporarily clear jar
-  const saved = new Map(jar);
-  jar.clear();
+  // Unauthorized TTS — drop only the Supabase auth cookie (keep share bypass).
+  const authKey = [...jar.keys()].find((k) => k.includes("auth-token"));
+  const savedAuth = authKey ? jar.get(authKey) : null;
+  if (authKey) jar.delete(authKey);
   const unauth = await api("/api/voice/tts", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text: "hi", locale: "en", avatarId }),
   });
-  for (const [k, v] of saved) jar.set(k, v);
+  if (authKey && savedAuth) jar.set(authKey, savedAuth);
   cases.push({
     name: "unauth_tts",
     ok: unauth.status === 401,
