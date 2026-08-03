@@ -170,8 +170,28 @@ export default async function AboutPage() {
                 </Link>
               </li>
               <li>
+                <Link href="/citations.json" className="text-[var(--primary)] underline">
+                  /citations.json
+                </Link>
+              </li>
+              <li>
                 <Link href="/faq" className="text-[var(--primary)] underline">
                   /faq
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-[var(--primary)] underline">
+                  /contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/research" className="text-[var(--primary)] underline">
+                  /research
+                </Link>
+              </li>
+              <li>
+                <Link href="/clinical" className="text-[var(--primary)] underline">
+                  /clinical
                 </Link>
               </li>
             </ul>

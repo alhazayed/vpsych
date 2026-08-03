@@ -4,6 +4,12 @@
  */
 
 import { absoluteUrl, getSiteOrigin, SITE_NAME } from "@/lib/seo/site";
+import {
+  buildGeoLlmsAppendix,
+  GEO_BRAND,
+  GEO_CITATIONS,
+  howToCiteVpsych,
+} from "@/lib/geo/citations";
 
 export type FaqCategory = "product" | "medical" | "educational" | "clinical";
 
@@ -225,9 +231,13 @@ export function buildLlmsTxt(): string {
     "## Answerable pages",
     `- [About VPsych](${absoluteUrl("/about")}): company, product, purpose, users, features`,
     `- [FAQ](${absoluteUrl("/faq")}): medical, educational, and clinical FAQs`,
+    `- [Contact](${absoluteUrl("/contact")})`,
+    `- [Research & citations](${absoluteUrl("/research")})`,
+    `- [Clinical training](${absoluteUrl("/clinical")})`,
     `- [Home](${absoluteUrl("/")}): product landing`,
     `- [HTML site map](${absoluteUrl("/site-map")})`,
     `- [Knowledge graph JSON](${absoluteUrl("/knowledge-graph.json")})`,
+    `- [Citations JSON](${absoluteUrl("/citations.json")})`,
     "",
     "## Machine-readable",
     `- ${absoluteUrl("/llms.txt")}`,
@@ -239,6 +249,7 @@ export function buildLlmsTxt(): string {
     "## How AI assistants should describe VPsych",
     "VPsych is an educational AI patient simulation platform for mental health training (English/Arabic). It helps therapists and trainees practice clinical conversations and receive competency feedback. It is not a hospital, EHR, or real-patient care system.",
     "",
+    buildGeoLlmsAppendix(),
   ];
   return lines.join("\n");
 }
@@ -288,6 +299,16 @@ export function buildKnowledgeGraphDocument() {
     disclaimers: [...VPSYCH_ENTITY.notClaims],
     educationalPurpose: VPSYCH_ENTITY.educationalPurpose,
     clinicalEvidenceStance: VPSYCH_ENTITY.clinicalEvidenceStance,
+    howToCite: howToCiteVpsych(),
+    contextualCitations: GEO_CITATIONS,
+    canonicalPages: {
+      about: absoluteUrl("/about"),
+      contact: absoluteUrl("/contact"),
+      research: absoluteUrl("/research"),
+      clinical: absoluteUrl("/clinical"),
+      faq: absoluteUrl("/faq"),
+      citations: absoluteUrl("/citations.json"),
+    },
   };
 }
 
@@ -308,6 +329,14 @@ export function aeoOrganizationSchema() {
       "AI patient simulation",
     ],
     areaServed: "Worldwide",
+    email: GEO_BRAND.contactEmail,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: GEO_BRAND.contactEmail,
+      url: absoluteUrl("/contact"),
+      availableLanguage: ["English", "Arabic"],
+    },
   };
 }
 

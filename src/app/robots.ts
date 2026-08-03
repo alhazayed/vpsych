@@ -14,9 +14,13 @@ export default function robots(): MetadataRoute.Robots {
           "/site-map",
           "/about",
           "/faq",
+          "/contact",
+          "/research",
+          "/clinical",
           "/rss.xml",
           "/llms.txt",
           "/knowledge-graph.json",
+          "/citations.json",
           "/.well-known/llms.txt",
         ],
         disallow: [

@@ -27,8 +27,12 @@ export const PUBLIC_INDEXABLE_PATHS = [
   "/site-map",
   "/about",
   "/faq",
+  "/contact",
+  "/research",
+  "/clinical",
   "/llms.txt",
   "/knowledge-graph.json",
+  "/citations.json",
 ] as const;
 
 /** Paths that require a session (disallow in robots; noindex in app shell). */
@@ -58,6 +62,7 @@ export function isSeoAssetPath(pathname: string): boolean {
     pathname === "/feed.xml" ||
     pathname === "/llms.txt" ||
     pathname === "/knowledge-graph.json" ||
+    pathname === "/citations.json" ||
     pathname === "/apple-touch-icon.png" ||
     pathname === "/icon-32.png" ||
     pathname === "/icon-192.png" ||

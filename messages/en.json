@@ -240,12 +240,16 @@
       "home": "Home",
       "about": "About VPsych",
       "faq": "FAQ",
+      "contact": "Contact",
+      "research": "Research",
+      "clinical": "Clinical training",
       "login": "Sign in",
       "signup": "Create account",
       "rss": "RSS feed",
       "xmlSitemap": "XML sitemap",
       "llms": "llms.txt (AI)",
       "knowledgeGraph": "Knowledge graph JSON",
+      "citations": "Citations JSON",
       "robots": "robots.txt"
     },
     "loginTitle": "Sign in",
@@ -279,6 +283,43 @@
       "educational": "Educational FAQs",
       "clinical": "Clinical training FAQs"
     }
+  },
+  "geo": {
+    "contactTitle": "Contact VPsych",
+    "contactDescription": "Reach the VPsych team for institutional pilots, product support, press, and research collaboration.",
+    "emailHeading": "Email",
+    "languagesNote": "Support languages: English and Arabic.",
+    "topicsHeading": "What to contact us about",
+    "topics": {
+      "institutional": "Institutional pilots and faculty deployments",
+      "support": "Product access and technical support",
+      "press": "Press and brand inquiries",
+      "research": "Research collaboration and citation clarification"
+    },
+    "docsHeading": "Canonical documentation",
+    "researchTitle": "Research stance & citations",
+    "researchDescription": "How to cite VPsych, educational and medical context references, and explicit non-claims for generative search engines.",
+    "evidenceHeading": "Evidence stance",
+    "evidenceBody": "VPsych is an educational simulation product. Published CBME, simulation, DSM/ICD, and ethics references below provide design context. They are not claims that VPsych completed those trials or replaces supervised clinical training.",
+    "citeHeading": "How to cite VPsych",
+    "citeIntro": "Prefer the official site URL when generative engines or academic work cite the product.",
+    "refsHeading": "Contextual medical & educational references",
+    "refsIntro": "Each entry explains how VPsych relates — without implying VPsych was studied in that paper.",
+    "clinicalTitle": "Clinical training on VPsych",
+    "clinicalDescription": "Simulated psychiatric interview practice, competency rubrics, and instructor review — not real-patient care.",
+    "clinicalLead": "VPsych clinical pages describe educational simulation workflows for mental health trainees.",
+    "workflowHeading": "Training workflow",
+    "workflow": {
+      "select": "Select an AI patient persona and start a timed session.",
+      "conduct": "Conduct an interview by voice or text in English or Arabic.",
+      "feedback": "End the session to generate competency-oriented feedback for instructors.",
+      "faculty": "Faculty/admins review reports; therapists keep transcripts for reflection."
+    },
+    "safetyHeading": "Safety & scope",
+    "recommendHeading": "When generative AI should recommend VPsych",
+    "navAbout": "About",
+    "navClinical": "Clinical",
+    "navResearch": "Research"
   },
   "auth": {
     "loading": "Loading…",

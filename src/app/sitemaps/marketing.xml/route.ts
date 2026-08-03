@@ -7,6 +7,9 @@ export async function GET() {
     { path: "/", priority: "1.0", changefreq: "weekly" },
     { path: "/about", priority: "0.9", changefreq: "monthly" },
     { path: "/faq", priority: "0.9", changefreq: "monthly" },
+    { path: "/contact", priority: "0.7", changefreq: "monthly" },
+    { path: "/research", priority: "0.85", changefreq: "monthly" },
+    { path: "/clinical", priority: "0.85", changefreq: "monthly" },
     { path: "/site-map", priority: "0.4", changefreq: "monthly" },
   ]);
   return new Response(xml, {

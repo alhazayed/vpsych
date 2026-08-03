@@ -10,6 +10,7 @@ export async function GET() {
     `${origin}/llms.txt`,
     `${origin}/.well-known/llms.txt`,
     `${origin}/knowledge-graph.json`,
+    `${origin}/citations.json`,
     absoluteUrl("/rss.xml"),
   ];
   const urls = assets
