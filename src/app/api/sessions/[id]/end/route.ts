@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
+import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
@@ -147,6 +148,57 @@ export async function POST(_request: Request, { params }: Params) {
   });
 
   const admin = createServiceClient();
+
+  // Quality Ledger — immutable scientific audit trail (best-effort; never blocks report)
+  let ledgerId: string | null = null;
+  try {
+    const ledgerResult = await sealAssessmentQualityLedger(admin ?? supabase, {
+      sessionId,
+      learnerId: user.id,
+      instructorId: user.id,
+      assessment,
+      clinicalSnapshot: typed.clinical_snapshot ?? null,
+      durationSec,
+      messages: (
+        (messages ?? []) as Array<{ role: string; content: string }>
+      ).map((m) => ({ role: m.role, content: m.content })),
+      language: assessment.language ?? typed.language ?? null,
+      locale: resolved.locale,
+      voiceProfileId:
+        (
+          typed.avatars as Avatar & {
+            voice_profile?: { id?: string } | null;
+          }
+        )?.voice_profile?.id ?? null,
+      templateId: typed.clinical_snapshot?.template?.id ?? null,
+      templateVersion: typed.clinical_snapshot?.template?.version ?? null,
+      personaId: typed.clinical_snapshot?.persona?.id ?? null,
+      competencyAfter: ace.ok
+        ? {
+            mean: assessment.scores.overall,
+            nextCase: ace.nextCase ?? null,
+          }
+        : { mean: assessment.scores.overall },
+      createdBy: user.id,
+    });
+    if (ledgerResult?.ok) {
+      ledgerId = ledgerResult.ledger.id;
+      console.info("[sessions/end] quality ledger", {
+        sessionId,
+        ledgerId,
+        persisted: ledgerResult.persisted,
+        vqi: ledgerResult.ledger.vqi,
+      });
+    } else if (ledgerResult) {
+      console.warn("[sessions/end] quality ledger:", ledgerResult.error);
+    }
+  } catch (e) {
+    console.warn(
+      "[sessions/end] quality ledger error:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")
@@ -179,6 +231,7 @@ export async function POST(_request: Request, { params }: Params) {
       {
         ok: true,
         reportId: inserted?.id,
+        ledgerId,
         // Additive — same AI pipeline provenance as conversation turns.
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
@@ -198,6 +251,7 @@ export async function POST(_request: Request, { params }: Params) {
           ...(assessment.errorKind
             ? { "X-AI-Error-Kind": assessment.errorKind }
             : {}),
+          ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
         },
       },
     );
@@ -257,6 +311,7 @@ export async function POST(_request: Request, { params }: Params) {
     {
       ok: true,
       reportId,
+      ledgerId,
       // Do not return report content to therapist — admin only
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
@@ -276,6 +331,7 @@ export async function POST(_request: Request, { params }: Params) {
         ...(assessment.errorKind
           ? { "X-AI-Error-Kind": assessment.errorKind }
           : {}),
+        ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
       },
     },
   );

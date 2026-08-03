@@ -46,7 +46,8 @@
       "assessmentValidity": "مؤشر صلاحية التقييم",
       "adaptiveLearningEffectiveness": "فعالية التعلم التكيفي",
       "researchReadiness": "درجة جاهزية البحث",
-      "vpsychQuality": "مؤشر جودة VPsych"
+      "vpsychQuality": "مؤشر جودة VPsych",
+      "qualityLedger": "سجل الجودة"
     }
   },
   "nav": {
@@ -68,7 +69,8 @@
     "assessmentValidity": "صلاحية التقييم",
     "adaptiveLearningEffectiveness": "التعلم التكيفي",
     "researchReadiness": "جاهزية البحث",
-    "vpsychQuality": "جودة VPsych"
+    "vpsychQuality": "جودة VPsych",
+    "qualityLedger": "سجل الجودة"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -710,6 +712,11 @@
       "eyebrow": "مقياس الجودة الرئيسي",
       "title": "مؤشر جودة VPsych",
       "subtitle": "مركب هرمي من CFI وERI وAVI وALE وRRS مع أوزان مُصدَّرة وإثبات أصلي وفترات ثقة وشهادة جودة — وليس متوسطاً بسيطاً."
+    },
+    "qualityLedger": {
+      "eyebrow": "مسار التدقيق العلمي",
+      "title": "سجل الجودة",
+      "subtitle": "مصدر حقيقة غير قابل للتغيير لكل مقياس جودة تقييم — قابل لإعادة الإنتاج ومُصدَّر ولا يُستبدل أبداً."
     }
   }
 }

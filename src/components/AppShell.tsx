@@ -130,6 +130,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "military_tech",
       match: (p) => p.startsWith("/admin/vqi"),
     },
+    {
+      href: "/admin/quality-ledger",
+      label: t("qualityLedger"),
+      icon: "menu_book",
+      match: (p) => p.startsWith("/admin/quality-ledger"),
+    },
   ];
 }
 
@@ -218,6 +224,8 @@ export function AppShell({
       return tShell("pageTitle.researchReadiness");
     if (pathname.startsWith("/admin/vqi"))
       return tShell("pageTitle.vpsychQuality");
+    if (pathname.startsWith("/admin/quality-ledger"))
+      return tShell("pageTitle.qualityLedger");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))

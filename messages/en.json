@@ -46,7 +46,8 @@
       "assessmentValidity": "Assessment Validity Index",
       "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness",
       "researchReadiness": "Research Readiness Score",
-      "vpsychQuality": "VPsych Quality Index"
+      "vpsychQuality": "VPsych Quality Index",
+      "qualityLedger": "Quality Ledger"
     }
   },
   "nav": {
@@ -68,7 +69,8 @@
     "assessmentValidity": "Assessment Validity",
     "adaptiveLearningEffectiveness": "Adaptive Learning",
     "researchReadiness": "Research Readiness",
-    "vpsychQuality": "VPsych Quality"
+    "vpsychQuality": "VPsych Quality",
+    "qualityLedger": "Quality Ledger"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -710,6 +712,11 @@
       "eyebrow": "Master quality metric",
       "title": "VPsych Quality Index",
       "subtitle": "Hierarchical composite of CFI, ERI, AVI, ALE, and RRS with versioned weights, provenance, confidence intervals, and quality certification — not a simple average."
+    },
+    "qualityLedger": {
+      "eyebrow": "Scientific audit trail",
+      "title": "Quality Ledger",
+      "subtitle": "Immutable source of truth for every assessment quality metric — reproducible, versioned, and never overwritten."
     }
   }
 }
