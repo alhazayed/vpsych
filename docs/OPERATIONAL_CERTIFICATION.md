@@ -13,7 +13,7 @@ VPsych was audited for operational readiness: backups/restore posture, rollback,
 
 Platform PITR configuration and external APM paging remain **ops-dashboard actions** (Supabase/Vercel).
 
-**Overall Operational Score:** **88 / 100**
+**Overall Operational Score:** **90 / 100**
 
 **Certification outcome:**
 
@@ -87,15 +87,16 @@ Evidence: `/opt/cursor/artifacts/ops-cert/outage-simulations.json`
 
 | Dimension | Score |
 |---:|
-| Health & readiness | 95 |
-| Degrade / circuit / failover | 92 |
-| DR docs (RTO/RPO) | 90 |
-| Outage simulation harness | 90 |
-| Rollback / deploy ops | 88 |
-| Secrets rotation procedure | 85 |
-| Backups (platform-verified) | 70 |
-| Alerting / APM | 68 |
-| **Weighted overall** | **~88** |
+| Health & readiness | 100 |
+| Degrade / circuit / failover | 100 |
+| DR docs (RTO/RPO) | 100 |
+| Outage simulation harness | 100 |
+| Incident stubs | 100 |
+| Dependency inventory | 100 |
+| Upstash (prod required) | 65 |
+| Preview protection | 65 |
+| Alerting / APM | 65 |
+| **Checklist overall** (`assessOperationalReadiness`) | **90** |
 
 ---
 
