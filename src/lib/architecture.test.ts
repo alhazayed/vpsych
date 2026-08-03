@@ -19,6 +19,26 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/OpenAI health probe failed|not configured/);
   });
 
+  it("exposes a public liveness probe and JSON 401 for unauth APIs", () => {
+    const health = readFileSync(join(root, "app/api/health/route.ts"), "utf8");
+    expect(health).toMatch(/service:\s*["']vpsych["']/);
+
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/\/api\/health/);
+    expect(mw).toMatch(/Unauthorized/);
+    expect(mw).toMatch(/status:\s*401/);
+  });
+
+  it("gates expensive AI/voice work with concurrency limits", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).toMatch(/aiChatGate/);
+    const tts = readFileSync(join(root, "app/api/voice/tts/route.ts"), "utf8");
+    expect(tts).toMatch(/ttsGate/);
+  });
+
   it("does not return raw AI failure detail from session end", () => {
     const route = readFileSync(
       join(root, "app/api/sessions/[id]/end/route.ts"),
