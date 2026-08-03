@@ -5,6 +5,53 @@ import {
 } from "@/lib/voice/config";
 
 /**
+ * Consume a streamed TTS body into a playable object URL.
+ * Prefer res.blob() (streams into memory once) over buffering wrappers.
+ */
+export async function objectUrlFromAudioResponse(
+  res: Response,
+): Promise<string> {
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * First speakable sentence/clause for low-latency lead-in TTS.
+ * Full reply can follow as a second clip when longer than this budget.
+ */
+export function ttsLeadInText(text: string, maxChars = 180): {
+  lead: string;
+  rest: string;
+} {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) return { lead: trimmed, rest: "" };
+
+  const window = trimmed.slice(0, maxChars + 1);
+  const breakAt = Math.max(
+    window.lastIndexOf(". "),
+    window.lastIndexOf("! "),
+    window.lastIndexOf("? "),
+    window.lastIndexOf("。"),
+    window.lastIndexOf("؟"),
+    window.lastIndexOf("\n"),
+  );
+  if (breakAt >= 24) {
+    return {
+      lead: trimmed.slice(0, breakAt + 1).trim(),
+      rest: trimmed.slice(breakAt + 1).trim(),
+    };
+  }
+  const space = window.lastIndexOf(" ");
+  if (space >= 24) {
+    return {
+      lead: trimmed.slice(0, space).trim(),
+      rest: trimmed.slice(space).trim(),
+    };
+  }
+  return { lead: trimmed.slice(0, maxChars).trim(), rest: trimmed.slice(maxChars).trim() };
+}
+
+/**
  * Request TTS from /api/voice/tts with graceful browser fallback.
  * Does not break text mode — callers may ignore audio entirely.
  */
@@ -32,10 +79,8 @@ export async function synthesizeSpeech(params: {
     });
 
     if (res.ok && res.body) {
-      // Consume the (possibly streamed) body into a playable blob.
-      // MediaSource progressive playback is optional; blob keeps broad support.
-      const blob = await new Response(res.body).blob();
-      return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
+      const objectUrl = await objectUrlFromAudioResponse(res);
+      return { mode: "elevenlabs", objectUrl };
     }
 
     if (res.status !== 501) {

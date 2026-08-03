@@ -12,6 +12,7 @@ import {
   passwordChecks,
   passwordStrengthLevel,
 } from "@/lib/password-policy";
+import "@/styles/material-symbols.css";
 
 const COUNTRIES = [
   { value: "US", key: "us" },
@@ -149,7 +150,8 @@ export default function SignupPage() {
         <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-10">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/vpsych-logo.png"
+              src="/vpsych-logo.webp"
+              unoptimized
               alt="VPsych"
               width={32}
               height={32}

@@ -1,9 +1,25 @@
 import { notFound, redirect } from "next/navigation";
-import { VoiceSession } from "@/components/VoiceSession";
+import dynamic from "next/dynamic";
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+
+const VoiceSession = dynamic(
+  () =>
+    import("@/components/VoiceSession").then((m) => ({
+      default: m.VoiceSession,
+    })),
+  {
+    loading: () => (
+      <main className="mx-auto flex min-h-[50vh] max-w-[960px] items-center justify-center px-4">
+        <p className="text-sm text-[var(--on-surface-variant)]">
+          Loading session…
+        </p>
+      </main>
+    ),
+  },
+);
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -34,7 +50,7 @@ export default async function SessionPage({ params }: Props) {
 
   const { data: messages } = await supabase
     .from("session_messages")
-    .select("*")
+    .select("id, role, content, created_at, session_id")
     .eq("session_id", id)
     .order("created_at", { ascending: true });
 

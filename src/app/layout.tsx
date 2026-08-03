@@ -8,7 +8,7 @@ import "./globals.css";
 const headline = Montserrat({
   variable: "--font-headline",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["600", "700"],
 });
 
 const body = Inter({
@@ -44,11 +44,22 @@ export default async function RootLayout({
   const messages = await getMessages();
   const dir = localeDirection(locale);
 
+  // Only attach Arabic font CSS variable on AR locales so EN pages do not
+  // preload Noto Sans Arabic (saves a render-critical font request).
+  const fontVars = [
+    headline.variable,
+    body.variable,
+    locale === "ar" ? arabic.variable : null,
+    mono.variable,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <html
       lang={locale}
       dir={dir}
-      className={`${headline.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
+      className={`${fontVars} h-full antialiased`}
     >
       <body
         className={`min-h-full flex flex-col font-[family-name:var(--font-body)] ${

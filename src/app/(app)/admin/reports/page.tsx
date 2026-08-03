@@ -26,7 +26,8 @@ export default async function AdminReportsPage() {
       )
     `,
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   const list = reports ?? [];
   const avg =

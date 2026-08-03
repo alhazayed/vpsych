@@ -7,7 +7,15 @@ import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import {
+  PATIENT_HISTORY_LIMIT,
+  takeRecentMessages,
+} from "@/lib/session-messages";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+
+/** Columns required for ownership/timer checks + Case Engine resolveAvatar. */
+const SESSION_MESSAGE_SELECT =
+  "id, therapist_id, avatar_id, status, started_at, ended_at, created_at, max_duration_sec, language, clinical_snapshot, avatars(id, name, slug, disorder, age, gender, language, default_locale, schema_version, clinical_core, personalities, voice_id, voice_id_ar, voice_profile_id, persona_prompt, ideal_guidelines, rubric, voice_profile:voice_profiles(*))";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -43,7 +51,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .select("*, avatars(*, voice_profile:voice_profiles(*))")
+    .select(SESSION_MESSAGE_SELECT)
     .eq("id", sessionId)
     .single();
 
@@ -51,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const typed = session as TherapySession & { avatars: Avatar };
+  const typed = session as unknown as TherapySession & { avatars: Avatar };
   if (typed.therapist_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -80,7 +88,7 @@ export async function POST(request: Request, { params }: Params) {
       role: "user",
       content: message,
     })
-    .select("*")
+    .select("id, role, content, created_at, session_id")
     .single();
 
   if (userMsgError || !userMsg) {
@@ -94,17 +102,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: history } = await supabase
+  // Newest-first page, then reverse — avoids loading full long transcripts.
+  const { data: recentDesc } = await supabase
     .from("session_messages")
     .select("role, content")
     .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(PATIENT_HISTORY_LIMIT);
+
+  const history = takeRecentMessages(
+    [...(recentDesc ?? [])].reverse(),
+    PATIENT_HISTORY_LIMIT,
+  );
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
       avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+      history: history as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
   } catch (err) {

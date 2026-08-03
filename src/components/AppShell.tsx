@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import "@/styles/material-symbols.css";
 
 type NavItem = {
   href: string;
@@ -191,12 +192,13 @@ export function AppShell({
         <div className="mb-8 px-6">
           <Link href="/avatars" className="flex items-center gap-3">
             <Image
-              src="/vpsych-logo.png"
+              src="/vpsych-logo.webp"
               alt="VPsych"
               width={40}
               height={40}
               className="h-10 w-10 rounded-lg object-cover"
               priority
+              unoptimized
             />
             <div>
               <p className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
@@ -245,11 +247,13 @@ export function AppShell({
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
         <Link href="/avatars" className="flex items-center gap-2">
           <Image
-            src="/vpsych-logo.png"
+            src="/vpsych-logo.webp"
             alt="VPsych"
             width={32}
             height={32}
             className="h-8 w-8 rounded-md object-cover"
+            priority
+            unoptimized
           />
           <span className="font-[family-name:var(--font-headline)] text-lg font-bold text-[var(--primary)]">
             VPsych

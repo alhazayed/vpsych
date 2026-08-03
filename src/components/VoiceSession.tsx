@@ -415,7 +415,8 @@ export function VoiceSession({
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href="/avatars" className="flex items-center gap-3">
           <Image
-            src="/vpsych-logo.png"
+            src="/vpsych-logo.webp"
+            unoptimized
             alt="VPsych"
             width={28}
             height={28}

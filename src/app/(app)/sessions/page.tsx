@@ -16,7 +16,8 @@ export default async function SessionsListPage() {
     .from("sessions")
     .select("id, status, started_at, ended_at, avatars(name, disorder)")
     .eq("therapist_id", user.id)
-    .order("started_at", { ascending: false });
+    .order("started_at", { ascending: false })
+    .limit(50);
 
   const list =
     (sessions as

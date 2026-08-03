@@ -15,6 +15,7 @@ import {
   sessionLocaleFrom,
   synthesizeSpeech,
   speakWithBrowser,
+  ttsLeadInText,
 } from "@/lib/voice/client";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
@@ -134,6 +135,31 @@ export async function submitConversationTurn(params: {
  * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
  * No-op safe when voice is disabled by the caller.
  */
+async function playObjectUrl(params: {
+  objectUrl: string;
+  audioRef?: { current: HTMLAudioElement | null };
+}): Promise<boolean> {
+  const audio = new Audio(params.objectUrl);
+  if (params.audioRef) params.audioRef.current = audio;
+  return await new Promise<boolean>((resolve) => {
+    audio.onended = () => {
+      URL.revokeObjectURL(params.objectUrl);
+      if (params.audioRef) params.audioRef.current = null;
+      resolve(true);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(params.objectUrl);
+      if (params.audioRef) params.audioRef.current = null;
+      resolve(false);
+    };
+    void audio.play().catch(() => {
+      URL.revokeObjectURL(params.objectUrl);
+      if (params.audioRef) params.audioRef.current = null;
+      resolve(false);
+    });
+  });
+}
+
 export async function playPatientSpeech(params: {
   text: string;
   locale: SessionSpeechLocale;
@@ -147,60 +173,51 @@ export async function playPatientSpeech(params: {
   const handlers = params.handlers ?? {};
   handlers.onstart?.();
 
-  const result = await synthesizeSpeech({
-    text: params.text,
+  const { lead, rest } = ttsLeadInText(params.text);
+  const synthArgs = {
     locale: params.locale,
     voiceId: params.voiceId,
     voiceIdAr: params.voiceIdAr,
     voiceProfileId: params.voiceProfileId,
     avatarId: params.avatarId,
-  });
+  };
 
-  if (result.mode === "elevenlabs" && result.objectUrl) {
-    const audio = new Audio(result.objectUrl);
-    if (params.audioRef) params.audioRef.current = audio;
+  // Start lead-in TTS immediately; prefetch remainder while it plays.
+  const leadPromise = synthesizeSpeech({ ...synthArgs, text: lead });
+  const restPromise = rest
+    ? synthesizeSpeech({ ...synthArgs, text: rest })
+    : Promise.resolve(null);
 
-    return await new Promise<"elevenlabs" | "browser">((resolve) => {
-      let settled = false;
-      const finish = (mode: "elevenlabs" | "browser") => {
-        if (settled) return;
-        settled = true;
-        URL.revokeObjectURL(result.objectUrl!);
-        if (params.audioRef) params.audioRef.current = null;
-        if (mode === "elevenlabs") handlers.onend?.();
-        resolve(mode);
-      };
-
-      audio.onended = () => finish("elevenlabs");
-      audio.onerror = () => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
-      };
-
-      void audio.play().catch(() => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
-      });
+  const leadResult = await leadPromise;
+  if (leadResult.mode === "elevenlabs" && leadResult.objectUrl) {
+    const leadOk = await playObjectUrl({
+      objectUrl: leadResult.objectUrl,
+      audioRef: params.audioRef,
     });
+    if (leadOk) {
+      const restResult = await restPromise;
+      if (restResult?.mode === "elevenlabs" && restResult.objectUrl) {
+        const restOk = await playObjectUrl({
+          objectUrl: restResult.objectUrl,
+          audioRef: params.audioRef,
+        });
+        if (!restOk) {
+          speakWithBrowser(rest, params.locale, {
+            onend: handlers.onend,
+            onerror: handlers.onerror,
+          });
+          return "browser";
+        }
+      }
+      handlers.onend?.();
+      return "elevenlabs";
+    }
   }
+
+  // Cancel unused rest object URL if lead failed.
+  void restPromise.then((r) => {
+    if (r?.objectUrl) URL.revokeObjectURL(r.objectUrl);
+  });
 
   speakWithBrowser(params.text, params.locale, {
     onstart: handlers.onstart,
