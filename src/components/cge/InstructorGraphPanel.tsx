@@ -10,12 +10,26 @@ type Learner = {
   training_level: string;
   completed_case_count: number;
   confidence_score: number;
+  institution?: string | null;
+};
+
+type InstitutionSummary = {
+  learner_count: number;
+  institutions: string[];
+  assessed_competency_rows: number;
+  mastered_competency_rows: number;
+  active_remediation_plans: number;
+  mean_confidence: number;
 };
 
 export function InstructorGraphPanel() {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [selected, setSelected] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [competencyId, setCompetencyId] = useState("diagnostic_interview");
+  const [institution, setInstitution] = useState<InstitutionSummary | null>(
+    null,
+  );
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +39,11 @@ export function InstructorGraphPanel() {
       const data = await res.json();
       if (res.ok) {
         setLearners(data.learners ?? []);
-        if (data.learners?.[0]) setSelected(data.learners[0].id);
+        setInstitution(data.institution ?? null);
+        if (data.learners?.[0]) {
+          setSelected(data.learners[0].id);
+          setSelectedUserId(data.learners[0].user_id);
+        }
       }
     })();
   }, []);
@@ -55,6 +73,23 @@ export function InstructorGraphPanel() {
 
   return (
     <div className="space-y-8">
+      {institution && (
+        <section className="clinical-card space-y-2 p-5">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+            Institution cohort summary
+          </h2>
+          <p className="text-sm text-[var(--on-surface-variant)]">
+            {institution.learner_count} learners · mean confidence{" "}
+            {institution.mean_confidence} · {institution.mastered_competency_rows}{" "}
+            mastered rows · {institution.active_remediation_plans} active
+            remediation plans
+            {institution.institutions.length
+              ? ` · ${institution.institutions.join(", ")}`
+              : ""}
+          </p>
+        </section>
+      )}
+
       <section className="clinical-card space-y-3 p-5">
         <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
           Instructor controls
@@ -63,7 +98,12 @@ export function InstructorGraphPanel() {
           Learner
           <select
             value={selected}
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelected(id);
+              const row = learners.find((l) => l.id === id);
+              setSelectedUserId(row?.user_id ?? "");
+            }}
             className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
           >
             {learners.length === 0 && (
@@ -127,7 +167,7 @@ export function InstructorGraphPanel() {
         <h2 className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
           Cohort / learner competency graph
         </h2>
-        <CompetencyGraphView admin />
+        <CompetencyGraphView admin userId={selectedUserId || undefined} />
       </section>
     </div>
   );
