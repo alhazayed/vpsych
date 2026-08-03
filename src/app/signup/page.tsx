@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
+import { LEGAL_PATHS } from "@/lib/compliance/constants";
 import {
   isPasswordPolicySatisfied,
   passwordChecks,
@@ -111,6 +112,10 @@ export default function SignupPage() {
           profession: profession || null,
           organization: organization || null,
           newsletter,
+          terms_accepted: true,
+          privacy_accepted: true,
+          ai_processing_accepted: true,
+          legal_version: "2026-08-03",
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -415,7 +420,26 @@ export default function SignupPage() {
                   required
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
-                  {t("termsAgree")}
+                  {t("termsAgreePrefix")}{" "}
+                  <Link href={LEGAL_PATHS.terms} className="underline">
+                    {t("footer.terms")}
+                  </Link>
+                  {", "}
+                  <Link href={LEGAL_PATHS.privacy} className="underline">
+                    {t("footer.privacy")}
+                  </Link>
+                  {", "}
+                  <Link href={LEGAL_PATHS.aiDisclosure} className="underline">
+                    {t("aiDisclosure")}
+                  </Link>
+                  {", "}
+                  <Link
+                    href={LEGAL_PATHS.clinicalDisclaimer}
+                    className="underline"
+                  >
+                    {t("clinicalDisclaimer")}
+                  </Link>
+                  , {t("termsAgreeSuffix")}
                 </span>
               </label>
               <label className="flex cursor-pointer items-start gap-3">
@@ -506,9 +530,16 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex gap-6 text-xs text-[var(--on-surface-variant)]">
-            <span>{t("footer.terms")}</span>
-            <span>{t("footer.privacy")}</span>
-            <span>{t("footer.support")}</span>
+            <Link href={LEGAL_PATHS.terms} className="hover:underline">
+              {t("footer.terms")}
+            </Link>
+            <Link href={LEGAL_PATHS.privacy} className="hover:underline">
+              {t("footer.privacy")}
+            </Link>
+            <Link href={LEGAL_PATHS.cookies} className="hover:underline">
+              {t("footer.cookies")}
+            </Link>
+            <a href="mailto:support@vpsych.app">{t("footer.support")}</a>
           </div>
         </div>
       </footer>

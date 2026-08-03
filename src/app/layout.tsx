@@ -3,6 +3,7 @@ import { Inter, Montserrat, Geist_Mono, Noto_Sans_Arabic } from "next/font/googl
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "./globals.css";
 
 const headline = Montserrat({
@@ -57,6 +58,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
+          <CookieConsentBanner />
         </NextIntlClientProvider>
       </body>
     </html>
