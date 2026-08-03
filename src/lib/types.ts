@@ -179,6 +179,18 @@ export type AvatarPersonality = {
   language_module: LanguageModule;
   safety_module: SafetyModule;
   voice: PersonalityVoice;
+  /**
+   * Locale-authored case localization (F5/F6). Runtime prompt Module 2 reads
+   * history_localization.substance_and_medication_context so "see personality"
+   * pointers in the shared clinical_core are resolvable.
+   */
+  case_file?: {
+    history_localization?: {
+      substance_and_medication_context?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  } | null;
   rubric_labels?: Record<string, string>;
   clinical_review?: {
     status: "draft" | "in_review" | "approved";
