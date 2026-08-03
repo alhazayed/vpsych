@@ -40,7 +40,8 @@
       "adaptiveLearning": "تعلّمي",
       "competencyGraph": "رسم الكفاءات",
       "apiIntegrations": "تكاملات واجهة البرمجة",
-      "securityKeys": "الأمان والمفاتيح"
+      "securityKeys": "الأمان والمفاتيح",
+      "clinicalFidelity": "مؤشر الإخلاص السريري"
     }
   },
   "nav": {
@@ -56,7 +57,8 @@
     "instructorPresets": "إعدادات المدرب",
     "adaptiveCurriculum": "المنهج التكيفي",
     "apiIntegrations": "تكاملات واجهة البرمجة",
-    "securityKeys": "الأمان والمفاتيح"
+    "securityKeys": "الأمان والمفاتيح",
+    "clinicalFidelity": "الإخلاص السريري"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -668,6 +670,11 @@
         "cancel": "إلغاء",
         "proceed": "المتابعة بالتغيير"
       }
+    },
+    "cfi": {
+      "eyebrow": "مجلس المراجعة السريرية",
+      "title": "مؤشر الإخلاص السريري",
+      "subtitle": "درجة علمية مرجحة من ٠–١٠٠ تقيس مدى وفاء كل مريض ذكي بالاضطراب النفسي المقصود، مع فترات ثقة وتوصيات للتحسين."
     }
   }
 }

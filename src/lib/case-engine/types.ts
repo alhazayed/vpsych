@@ -204,6 +204,18 @@ export type CaseInstanceSnapshot = {
   generated_at: string;
   /** Scientific reproducibility locks (Mission 19). */
   scientific_meta?: Record<string, unknown>;
+  /** Educational clinical teaching cues (optional; improves CFI MSE dimensions). */
+  clinical_teaching?: {
+    differentials: string[];
+    rule_outs: string[];
+    teaching_points: string[];
+    common_mistakes: string[];
+    insight_expectation: string;
+    judgment_expectation: string;
+    speech_behavior_cue: string;
+  };
+  /** Clinical Fidelity Index result when computed at generation. */
+  clinical_fidelity?: Record<string, unknown>;
   /** Present when generated from a Clinical Scenario Template. */
   template?: {
     id: string;
