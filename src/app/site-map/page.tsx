@@ -31,11 +31,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const LINKS = [
   { href: "/", key: "home" as const },
+  { href: "/about", key: "about" as const },
+  { href: "/faq", key: "faq" as const },
   { href: "/login", key: "login" as const },
   { href: "/signup", key: "signup" as const },
+  { href: "/llms.txt", key: "llms" as const },
+  { href: "/knowledge-graph.json", key: "knowledgeGraph" as const },
   { href: "/rss.xml", key: "rss" as const },
   { href: "/sitemap.xml", key: "xmlSitemap" as const },
-  { href: "/sitemaps/marketing.xml", key: "xmlSitemap" as const },
   { href: "/robots.txt", key: "robots" as const },
 ] as const;
 

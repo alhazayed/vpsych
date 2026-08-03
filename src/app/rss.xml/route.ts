@@ -14,9 +14,17 @@ export async function GET() {
       pubDate: new Date("2026-07-30").toUTCString(),
     },
     {
-      title: "VPsych site map",
-      link: absoluteUrl("/site-map"),
-      description: "Public pages and crawl map for VPsych.",
+      title: "About VPsych — product entity for AI assistants",
+      link: absoluteUrl("/about"),
+      description:
+        "Company, product, purpose, target users, features, and clinical/educational disclaimers.",
+      pubDate: new Date().toUTCString(),
+    },
+    {
+      title: "VPsych FAQ — medical, educational, clinical",
+      link: absoluteUrl("/faq"),
+      description:
+        "Answerable FAQ chunks for AI search engines and assistants.",
       pubDate: new Date().toUTCString(),
     },
   ];

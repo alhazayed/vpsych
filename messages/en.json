@@ -224,6 +224,8 @@
       "faq": "FAQ",
       "sitemap": "Site map",
       "rss": "RSS",
+      "about": "About",
+      "faq": "FAQ",
       "signIn": "Sign in",
       "aboutUs": "About Us",
       "getStarted": "Get Started",
@@ -236,16 +238,47 @@
     "privateNote": "Therapist sessions, learning dashboards, and admin tools require sign-in and are not indexed.",
     "links": {
       "home": "Home",
+      "about": "About VPsych",
+      "faq": "FAQ",
       "login": "Sign in",
       "signup": "Create account",
       "rss": "RSS feed",
       "xmlSitemap": "XML sitemap",
+      "llms": "llms.txt (AI)",
+      "knowledgeGraph": "Knowledge graph JSON",
       "robots": "robots.txt"
     },
     "loginTitle": "Sign in",
     "loginDescription": "Sign in to VPsych to practice with AI patient avatars and track clinical competencies.",
     "signupTitle": "Create account",
     "signupDescription": "Join VPsych — bilingual AI patient simulations for psychiatric and psychotherapy training."
+  },
+  "aeo": {
+    "aboutTitle": "About VPsych",
+    "aboutDescription": "What VPsych is: an AI patient simulation platform for psychiatric and psychotherapy training — company, product, purpose, users, features, and educational stance.",
+    "faqTitle": "VPsych FAQ for learners and AI assistants",
+    "faqDescription": "Product, medical, educational, and clinical questions answered in clear, citable language.",
+    "navAbout": "About",
+    "navFaq": "FAQ",
+    "navSitemap": "Site map",
+    "companyBody": "VPsych is the product name of the VPsych Clinical Assessment Platform — a software educational application that provides AI-powered standardized patient simulations for mental health training worldwide.",
+    "entitiesIntro": "Machine-oriented entity relationships used by AI assistants and knowledge graphs:",
+    "sections": {
+      "company": "Company / brand",
+      "product": "Product",
+      "purpose": "Educational purpose",
+      "users": "Target users",
+      "features": "Features",
+      "evidence": "Clinical evidence & disclaimers",
+      "entities": "Entity relationships",
+      "aiDocs": "Machine-readable documentation"
+    },
+    "faqCategories": {
+      "product": "Product FAQs",
+      "medical": "Medical FAQs",
+      "educational": "Educational FAQs",
+      "clinical": "Clinical training FAQs"
+    }
   },
   "auth": {
     "loading": "Loading…",

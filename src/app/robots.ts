@@ -7,7 +7,18 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/login", "/signup", "/site-map", "/rss.xml"],
+        allow: [
+          "/",
+          "/login",
+          "/signup",
+          "/site-map",
+          "/about",
+          "/faq",
+          "/rss.xml",
+          "/llms.txt",
+          "/knowledge-graph.json",
+          "/.well-known/llms.txt",
+        ],
         disallow: [
           "/api/",
           "/admin/",

@@ -25,6 +25,10 @@ export const PUBLIC_INDEXABLE_PATHS = [
   "/login",
   "/signup",
   "/site-map",
+  "/about",
+  "/faq",
+  "/llms.txt",
+  "/knowledge-graph.json",
 ] as const;
 
 /** Paths that require a session (disallow in robots; noindex in app shell). */
@@ -52,6 +56,8 @@ export function isSeoAssetPath(pathname: string): boolean {
     pathname === "/manifest.json" ||
     pathname === "/rss.xml" ||
     pathname === "/feed.xml" ||
+    pathname === "/llms.txt" ||
+    pathname === "/knowledge-graph.json" ||
     pathname === "/apple-touch-icon.png" ||
     pathname === "/icon-32.png" ||
     pathname === "/icon-192.png" ||
@@ -59,6 +65,7 @@ export function isSeoAssetPath(pathname: string): boolean {
   ) {
     return true;
   }
+  if (pathname.startsWith("/.well-known/")) return true;
   if (pathname.startsWith("/sitemap")) return true;
   if (pathname.startsWith("/sitemaps/")) return true;
   return false;

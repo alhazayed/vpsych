@@ -10,11 +10,13 @@ import {
   articleSchema,
   breadcrumbSchema,
   faqPageSchema,
-  medicalOrganizationSchema,
-  organizationSchema,
-  softwareApplicationSchema,
   websiteSchema,
 } from "@/lib/seo/schema";
+import {
+  aeoMedicalOrganizationSchema,
+  aeoOrganizationSchema,
+  aeoSoftwareSchema,
+} from "@/lib/aeo/knowledge";
 import { absoluteUrl, hreflangUrl } from "@/lib/seo/site";
 import type { AppLocale } from "@/i18n/config";
 
@@ -89,9 +91,9 @@ export default async function HomePage() {
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--on-surface)]">
       <JsonLd
         data={[
-          organizationSchema(),
-          softwareApplicationSchema(),
-          medicalOrganizationSchema(),
+          aeoOrganizationSchema(),
+          aeoSoftwareSchema(),
+          aeoMedicalOrganizationSchema(),
           websiteSchema(),
           faqPageSchema(faqItems),
           articleSchema({
@@ -457,9 +459,9 @@ export default async function HomePage() {
             <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
-                <a href="#faq" className="hover:text-[var(--primary)]">
+                <Link href="/faq" className="hover:text-[var(--primary)]">
                   {t("footer.faq")}
-                </a>
+                </Link>
               </li>
               <li>
                 <Link href="/site-map" className="hover:text-[var(--primary)]">
@@ -467,8 +469,8 @@ export default async function HomePage() {
                 </Link>
               </li>
               <li>
-                <Link href="/rss.xml" className="hover:text-[var(--primary)]">
-                  {t("footer.rss")}
+                <Link href="/llms.txt" className="hover:text-[var(--primary)]">
+                  llms.txt
                 </Link>
               </li>
               <li>
@@ -482,9 +484,9 @@ export default async function HomePage() {
             <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
-                <a href="#about" className="hover:text-[var(--primary)]">
-                  {t("footer.aboutUs")}
-                </a>
+                <Link href="/about" className="hover:text-[var(--primary)]">
+                  {t("footer.about")}
+                </Link>
               </li>
               <li>
                 <Link href="/signup" className="hover:text-[var(--primary)]">
