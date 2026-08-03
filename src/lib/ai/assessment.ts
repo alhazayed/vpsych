@@ -28,6 +28,10 @@ import {
   buildAssessmentProvenance,
   ASSESSMENT_SCHEMA_VERSION,
 } from "@/lib/scientific/versions";
+import {
+  computeEducationalReliabilityIndex,
+  eriInputFromAssessment,
+} from "@/lib/eri";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -141,6 +145,9 @@ function heuristicAssessment(
     aiSource: "persona_fallback",
     model: null,
   });
+  const narrative =
+    turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns;
+  const excerpts = therapistTurns.slice(0, 3).map((m) => m.content);
   return {
     language,
     scores: {
@@ -148,9 +155,18 @@ function heuristicAssessment(
       items,
       scientific_provenance: provenance,
       assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+      educational_reliability: attachEducationalReliability({
+        overall,
+        items,
+        narrative,
+        excerpts,
+        language,
+        assessment_mode: "heuristic_fallback",
+        model: null,
+      }),
     },
-    narrative: turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns,
-    excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
+    narrative,
+    excerpts,
     aiSource: "persona_fallback" as const,
     errorKind,
     failureDetail,
@@ -199,6 +215,21 @@ export type SessionAssessment = {
     /** Scientific reproducibility / disclosure (Mission 19). */
     scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
     assessment_schema_version?: string;
+    /** Educational Reliability Index (Mission ERI). */
+    educational_reliability?: {
+      overall: number;
+      confidence_interval: { lower: number; upper: number; level: 0.95 };
+      eri_version: string;
+      recommendations: string[];
+      educational_reasoning: string;
+      versions: Record<string, unknown>;
+      subscores: Array<{
+        id: string;
+        score: number;
+        weight: number;
+        confidence: number;
+      }>;
+    };
   };
   narrative: string;
   excerpts: string[];
@@ -209,6 +240,47 @@ export type SessionAssessment = {
   /** Short failure reason when aiSource is persona_fallback (ops / verification). */
   failureDetail?: string;
 };
+
+function attachEducationalReliability(opts: {
+  overall: number;
+  items: ScoreEntry[];
+  narrative: string;
+  excerpts: string[];
+  language: "en" | "ar";
+  assessment_mode: "llm_examiner" | "heuristic_fallback";
+  model?: string | null;
+}): NonNullable<SessionAssessment["scores"]["educational_reliability"]> {
+  const eri = computeEducationalReliabilityIndex(
+    eriInputFromAssessment({
+      overall: opts.overall,
+      items: opts.items,
+      narrative: opts.narrative,
+      excerpts: opts.excerpts,
+      locale: opts.language === "ar" ? "ar-JO" : "en-US",
+      assessment_mode: opts.assessment_mode,
+      learning_objectives_count: 2,
+      model_version: opts.model ?? null,
+    }),
+  );
+  return {
+    overall: eri.overall,
+    confidence_interval: {
+      lower: eri.confidence_interval.lower,
+      upper: eri.confidence_interval.upper,
+      level: 0.95,
+    },
+    eri_version: eri.versions.eri_version,
+    recommendations: eri.recommendations,
+    educational_reasoning: eri.educational_reasoning,
+    versions: eri.versions as unknown as Record<string, unknown>,
+    subscores: eri.subscores.map((s) => ({
+      id: s.id,
+      score: s.score,
+      weight: s.weight,
+      confidence: s.confidence,
+    })),
+  };
+}
 
 type ModelAttempt = {
   output: AssessmentModelOutput;
@@ -350,16 +422,26 @@ export async function assessSession(params: {
       errorKind: errorKind ?? null,
     });
 
+    const overall = weightedOverall(items);
     return {
       language,
       scores: {
-        overall: weightedOverall(items),
+        overall,
         items,
         scientific_provenance: buildAssessmentProvenance({
           aiSource,
           model,
         }),
         assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+        educational_reliability: attachEducationalReliability({
+          overall,
+          items,
+          narrative: output.narrative,
+          excerpts: output.excerpts.slice(0, 5),
+          language,
+          assessment_mode: "llm_examiner",
+          model,
+        }),
       },
       narrative: output.narrative,
       excerpts: output.excerpts.slice(0, 5),
