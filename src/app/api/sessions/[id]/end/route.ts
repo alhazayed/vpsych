@@ -59,7 +59,11 @@ export async function POST(_request: Request, { params }: Params) {
       .eq("id", sessionId);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      console.warn("[session-end] status update:", updateError.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(updateError.message) },
+        { status: 500 },
+      );
     }
     typed.status = expired ? "expired" : "completed";
     typed.ended_at = now.toISOString();
@@ -70,7 +74,11 @@ export async function POST(_request: Request, { params }: Params) {
     { p_session_id: sessionId },
   );
   if (hasErr) {
-    return NextResponse.json({ error: hasErr.message }, { status: 500 });
+    console.warn("[session-end] session_has_report:", hasErr.message);
+    return NextResponse.json(
+      { error: sanitizeDbError(hasErr.message) },
+      { status: 500 },
+    );
   }
   if (alreadyHasReport) {
     return NextResponse.json({ ok: true, alreadyExists: true });
@@ -205,10 +213,7 @@ export async function POST(_request: Request, { params }: Params) {
 
   if (!getReportWriteKey()) {
     return NextResponse.json(
-      {
-        error:
-          "Server misconfigured: set REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY",
-      },
+      { error: "Server misconfigured" },
       { status: 500 },
     );
   }

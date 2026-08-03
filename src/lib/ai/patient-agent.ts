@@ -47,6 +47,13 @@ function isRateLimitedOrQuota(err: unknown): boolean {
   return /rate limit|429|too many requests|insufficient.?quota/i.test(msg);
 }
 
+/** Failures worth retrying on the OpenAI mini failover model. */
+function shouldTryOpenAiMiniFailover(err: unknown): boolean {
+  if (isRateLimitedOrQuota(err)) return true;
+  const kind = openaiErrorKind(err);
+  return kind === "timeout" || kind === "connection" || kind === "unknown";
+}
+
 function errorDetails(err: unknown) {
   if (isOpenAIServiceError(err)) {
     return {
@@ -126,13 +133,21 @@ export async function generatePatientReplyDetailed(params: {
     return pickFallback();
   }
 
-  const prior = history
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .slice(-20)
-    .map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    }));
+  // Route persists the therapist turn before calling us. Drop that trailing
+  // duplicate so the reinforced user turn is sent once.
+  const conversational = history.filter(
+    (m) => m.role === "user" || m.role === "assistant",
+  );
+  const withoutCurrent =
+    conversational.length > 0 &&
+    conversational[conversational.length - 1]?.role === "user" &&
+    conversational[conversational.length - 1]?.content === userMessage
+      ? conversational.slice(0, -1)
+      : conversational;
+  const prior = withoutCurrent.slice(-20).map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
 
   // Per-turn reinforcement is appended to the therapist turn (not stored).
   const reinforced = avatar.per_turn_reinforcement
@@ -191,7 +206,7 @@ export async function generatePatientReplyDetailed(params: {
     };
   };
 
-  // Prefer OpenAI GPT; on 429/quota try gpt-4o-mini (often separate quota),
+  // Prefer OpenAI GPT; on 429/quota/timeout/connection try gpt-4o-mini,
   // then AI Gateway when configured, then persona fallback (always visible).
   if (preferOpenAiSdk()) {
     try {
@@ -200,14 +215,14 @@ export async function generatePatientReplyDetailed(params: {
       const kind = openaiErrorKind(err);
       logPatientAgent("openai_chat_failed", {
         ...errorDetails(err),
-        next: isRateLimitedOrQuota(err)
+        next: shouldTryOpenAiMiniFailover(err)
           ? openAiFallbackChatModel()
           : hasGatewayKey()
             ? "gateway"
             : "persona_fallback",
       });
 
-      if (isRateLimitedOrQuota(err)) {
+      if (shouldTryOpenAiMiniFailover(err)) {
         const fallbackModel = openAiFallbackChatModel();
         try {
           logPatientAgent("openai_model_failover", {
