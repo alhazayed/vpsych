@@ -52,6 +52,18 @@ export async function ensureLearnerProfile(
     .single();
 
   if (error || !inserted) {
+    // Concurrent first-assessment race: unique(user_id) — re-read winner.
+    if (error?.code === "23505") {
+      const { data: raced } = await supabase
+        .from("learner_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (raced) {
+        const competencies = await loadCompetencies(supabase, raced.id);
+        return mapProfile(raced, competencies);
+      }
+    }
     // Migration not applied — return in-memory profile
     return draft;
   }
@@ -177,28 +189,36 @@ export async function persistLearnerUpdate(
     );
 
     if (opts?.sessionId) {
-      await supabase.from("competency_scores").insert({
-        learner_id: profile.id,
-        competency_id: c.competency_id,
-        session_id: opts.sessionId,
-        score: c.score,
-        evidence: { source: "session_assessment" },
-      });
+      // Unique (session_id, competency_id) — ignore duplicate concurrent ends.
+      await supabase.from("competency_scores").upsert(
+        {
+          learner_id: profile.id,
+          competency_id: c.competency_id,
+          session_id: opts.sessionId,
+          score: c.score,
+          evidence: { source: "session_assessment" },
+        },
+        { onConflict: "session_id,competency_id", ignoreDuplicates: true },
+      );
     }
   }
 
   if (opts?.coach && opts.sessionId) {
-    await supabase.from("coach_feedback").insert({
-      learner_id: profile.id,
-      session_id: opts.sessionId,
-      supervisor_feedback: opts.coach.supervisor_feedback,
-      reflective_questions: opts.coach.reflective_questions,
-      missed_opportunities: opts.coach.missed_opportunities,
-      suggested_reading: opts.coach.suggested_reading,
-      suggested_next_cases: opts.coach.suggested_next_cases,
-      learning_goals: opts.coach.learning_goals,
-      improvement_plan: opts.coach.improvement_plan,
-    });
+    // Unique (session_id) — one coach packet per assessment session.
+    await supabase.from("coach_feedback").upsert(
+      {
+        learner_id: profile.id,
+        session_id: opts.sessionId,
+        supervisor_feedback: opts.coach.supervisor_feedback,
+        reflective_questions: opts.coach.reflective_questions,
+        missed_opportunities: opts.coach.missed_opportunities,
+        suggested_reading: opts.coach.suggested_reading,
+        suggested_next_cases: opts.coach.suggested_next_cases,
+        learning_goals: opts.coach.learning_goals,
+        improvement_plan: opts.coach.improvement_plan,
+      },
+      { onConflict: "session_id", ignoreDuplicates: true },
+    );
   }
 
   if (opts?.nextFingerprint) {

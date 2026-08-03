@@ -132,13 +132,33 @@ export function validateComorbidities(
   return out;
 }
 
+/**
+ * Clinical coding integrity.
+ * ICD-11-only constructs (e.g. Complex PTSD / 6B41) are valid without DSM-5.
+ * At least one of DSM-5 or ICD-11 must be present.
+ */
 export function validateDsmIcd(disorder: DisorderRow): CaseValidationIssue[] {
   const out: CaseValidationIssue[] = [];
-  if (!disorder.dsm5_code) {
-    out.push(issue("dsm5_missing", `Missing DSM-5 code for ${disorder.slug}`, "dsm5_code"));
+  const dsm5 = disorder.dsm5_code?.trim() || "";
+  const icd11 = disorder.icd11_code?.trim() || "";
+  if (!dsm5 && !icd11) {
+    out.push(
+      issue(
+        "clinical_code_missing",
+        `Missing both DSM-5 and ICD-11 codes for ${disorder.slug}`,
+        "dsm5_code",
+      ),
+    );
+    return out;
   }
-  if (!disorder.icd11_code) {
-    out.push(issue("icd11_missing", `Missing ICD-11 code for ${disorder.slug}`, "icd11_code"));
+  if (!icd11) {
+    out.push(
+      issue(
+        "icd11_missing",
+        `Missing ICD-11 code for ${disorder.slug}`,
+        "icd11_code",
+      ),
+    );
   }
   return out;
 }

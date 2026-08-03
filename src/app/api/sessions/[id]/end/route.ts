@@ -73,6 +73,21 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: hasErr.message }, { status: 500 });
   }
   if (alreadyHasReport) {
+    // Integrity recovery: a report must never leave the session "active"
+    // (covers races where the report landed before status was finalized).
+    const now = new Date();
+    const elapsedSec = Math.floor(
+      (now.getTime() - new Date(typed.started_at).getTime()) / 1000,
+    );
+    const expired = elapsedSec >= typed.max_duration_sec;
+    await supabase
+      .from("sessions")
+      .update({
+        status: expired ? "expired" : "completed",
+        ended_at: typed.ended_at ?? now.toISOString(),
+      })
+      .eq("id", sessionId)
+      .eq("status", "active");
     return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
