@@ -19,6 +19,13 @@ function applyLocaleCookie(
 }
 
 export async function updateSession(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Liveness probe — no auth, no Supabase round-trip (SRE / CI smoke).
+  if (path === "/api/health") {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -46,13 +53,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
+  const isApi = path.startsWith("/api/");
   const isPublic =
     path === "/" || isAuthPage || path.startsWith("/auth/");
 
   if (!user && !isPublic) {
+    // APIs return JSON 401 (not HTML login redirects) for ops/clients.
+    if (isApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
