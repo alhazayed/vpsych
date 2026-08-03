@@ -17,7 +17,7 @@
 | Locale / localization consistency | **86** | Null languages repaired; EN/AR CHECK; voice registry AR-primary by design |
 | Concurrency / race safety | **88** | Report unique + ACE session uniqueness + finish-on-report trigger |
 | Recovery / partial failure | **84** | Report/status repair; expired-without-report remains historical |
-| Historical integrity | **82** | Scores/coach history append; 33 completed/expired without reports (mostly abandoned) |
+| Historical integrity | **82** | Scores/coach history append; 40 completed/expired without reports (mostly abandoned / newly expired stale) |
 | Educational integrity | **80** | ACE/CGE FKs sound; template competency_id is text (no FK) |
 | Analytics integrity | **84** | Dashboards read FK-backed tables; no duplicate score/coach rows |
 | **Overall** | **86** | |
@@ -115,7 +115,7 @@ FK patterns: CASCADE for messages/reports; RESTRICT for avatar/disorder bindings
 | Interrupted session past timer | Migration expired stale actives; `expireStaleSession` on list |
 | Duplicate `/end` | Report unique + ACE upserts ignoreDuplicates |
 | ACE soft-fail | Never blocks report persistence |
-| Completed/expired without report | 33 remain (4 completed short; 29 expired — abandoned / failed end). Recommendation: batch backfill heuristic reports for ≥4-message expired sessions |
+| Completed/expired without report | 40 remain after stale-active expiry (abandoned / failed end). Recommendation: batch backfill heuristic reports for ≥4-message expired sessions |
 
 ---
 
