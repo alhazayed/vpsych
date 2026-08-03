@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     (body.templateId ? findTemplateById(body.templateId) : undefined) ??
     (body.templateSlug ? findTemplateBySlug(body.templateSlug) : undefined);
 
-  // Prefer DB template when available
+  // Prefer DB template when available; fall back to builtin metadata when
+  // child rows (objectives/competencies) were never seeded.
   let resolved = template;
   if (body.templateId || body.templateSlug) {
     const q = supabase.from("clinical_templates").select("*");
@@ -42,6 +43,11 @@ export async function POST(request: Request) {
       ? await q.eq("id", body.templateId!).maybeSingle()
       : await q.eq("slug", body.templateSlug!).maybeSingle();
     if (trow) {
+      const builtin =
+        findTemplateBySlug(trow.slug) ??
+        (body.templateSlug ? findTemplateBySlug(body.templateSlug) : undefined) ??
+        (body.templateId ? findTemplateById(body.templateId) : undefined) ??
+        template;
       const { data: primary } = await supabase
         .from("disorders")
         .select("slug")
@@ -62,48 +68,63 @@ export async function POST(request: Request) {
         .select("disorders(slug)")
         .eq("template_id", trow.id);
 
+      const dbObjectives = (objectives ?? []) as never[];
+      const dbCompetencies = (competencies ?? []).map((c) => ({
+        competency_id: c.competency_id,
+        label: c.label,
+        weight: Number(c.weight),
+        max_score: Number(c.max_score),
+        critical: c.critical,
+        auto_deduction: c.auto_deduction ? Number(c.auto_deduction) : 0,
+        excellent_marker: c.excellent_marker ?? undefined,
+      }));
+      const dbComorbidities = (comorb ?? [])
+        .map((c) => {
+          const d = c.disorders as { slug?: string } | { slug?: string }[] | null;
+          if (Array.isArray(d)) return d[0]?.slug;
+          return d?.slug;
+        })
+        .filter(Boolean) as string[];
+
       resolved = {
         id: trow.id,
         slug: trow.slug,
         name: trow.name,
         description: trow.description,
         specialty: trow.specialty,
-        target_learners: trow.target_learners ?? [],
+        target_learners: trow.target_learners ?? builtin?.target_learners ?? [],
         estimated_duration_minutes: trow.estimated_duration_minutes,
         difficulty: trow.difficulty,
         language: trow.language,
         culture: trow.culture,
         therapy_modality: trow.therapy_modality,
         primary_diagnosis_id: trow.primary_diagnosis_id,
-        primary_diagnosis_slug: primary?.slug ?? template?.primary_diagnosis_slug,
-        allowed_comorbidity_slugs: (comorb ?? [])
-          .map((c) => {
-            const d = c.disorders as { slug?: string } | { slug?: string }[] | null;
-            if (Array.isArray(d)) return d[0]?.slug;
-            return d?.slug;
-          })
-          .filter(Boolean) as string[],
-        excluded_diagnosis_slugs: template?.excluded_diagnosis_slugs ?? [],
+        primary_diagnosis_slug:
+          primary?.slug ?? builtin?.primary_diagnosis_slug ?? template?.primary_diagnosis_slug,
+        allowed_comorbidity_slugs:
+          dbComorbidities.length > 0
+            ? dbComorbidities
+            : (builtin?.allowed_comorbidity_slugs ?? []),
+        excluded_diagnosis_slugs: builtin?.excluded_diagnosis_slugs ?? [],
         severity: trow.severity,
         risk_level: trow.risk_level,
         assessment_type: trow.assessment_type,
         randomization_level: trow.randomization_level,
         memory_mode: trow.memory_mode,
-        grading_rubric: trow.grading_rubric,
-        report_template: trow.report_template ?? {},
-        learning_objectives: (objectives ?? []) as never[],
-        clinical_competencies: (competencies ?? []).map((c) => ({
-          competency_id: c.competency_id,
-          label: c.label,
-          weight: Number(c.weight),
-          max_score: Number(c.max_score),
-          critical: c.critical,
-          auto_deduction: c.auto_deduction ? Number(c.auto_deduction) : 0,
-          excellent_marker: c.excellent_marker ?? undefined,
-        })),
+        grading_rubric: trow.grading_rubric ?? builtin?.grading_rubric,
+        report_template: trow.report_template ?? builtin?.report_template ?? {},
+        learning_objectives:
+          dbObjectives.length > 0
+            ? dbObjectives
+            : (builtin?.learning_objectives ?? []),
+        clinical_competencies:
+          dbCompetencies.length > 0
+            ? dbCompetencies
+            : (builtin?.clinical_competencies ?? []),
         allow_medical_simulation: trow.allow_medical_simulation,
         enabled: trow.enabled,
         version: trow.version,
+        default_persona_slug: builtin?.default_persona_slug ?? null,
       };
     }
   }
