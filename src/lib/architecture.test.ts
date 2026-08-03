@@ -19,6 +19,12 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/OpenAI health probe failed|not configured/);
   });
 
+  it("exposes a public liveness health endpoint", () => {
+    const route = readFileSync(join(root, "app/api/health/route.ts"), "utf8");
+    expect(route).toMatch(/status:\s*"ok"/);
+    expect(route).not.toMatch(/requireApiAdmin|requireApiUser/);
+  });
+
   it("does not return raw AI failure detail from session end", () => {
     const route = readFileSync(
       join(root, "app/api/sessions/[id]/end/route.ts"),
