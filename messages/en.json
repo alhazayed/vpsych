@@ -45,7 +45,8 @@
       "educationalReliability": "Educational Reliability Index",
       "assessmentValidity": "Assessment Validity Index",
       "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness",
-      "researchReadiness": "Research Readiness Score"
+      "researchReadiness": "Research Readiness Score",
+      "vpsychQuality": "VPsych Quality Index"
     }
   },
   "nav": {
@@ -66,7 +67,8 @@
     "educationalReliability": "Educational Reliability",
     "assessmentValidity": "Assessment Validity",
     "adaptiveLearningEffectiveness": "Adaptive Learning",
-    "researchReadiness": "Research Readiness"
+    "researchReadiness": "Research Readiness",
+    "vpsychQuality": "VPsych Quality"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -703,6 +705,11 @@
       "eyebrow": "IRB / journal / biostatistics review",
       "title": "Research Readiness Score",
       "subtitle": "Weighted 0–100 scientific score of whether VPsych data can support scientific research and publication — with version and reproducibility matrices, honest export/GDPR gap disclosure."
+    },
+    "vqi": {
+      "eyebrow": "Master quality metric",
+      "title": "VPsych Quality Index",
+      "subtitle": "Hierarchical composite of CFI, ERI, AVI, ALE, and RRS with versioned weights, provenance, confidence intervals, and quality certification — not a simple average."
     }
   }
 }

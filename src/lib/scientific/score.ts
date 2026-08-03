@@ -24,6 +24,11 @@ import { buildEriOfflineCorpus } from "@/lib/eri";
 import { buildAviOfflineCorpus } from "@/lib/avi";
 import { buildAleOfflineCorpus } from "@/lib/ale";
 import { buildRrsOfflineCorpus } from "@/lib/rrs";
+import {
+  computeVPsychQualityIndex,
+  createDefaultWeightSet,
+  VQI_VERSION,
+} from "@/lib/vqi";
 
 export type ScientificMetrics = {
   CFI: number;
@@ -207,6 +212,22 @@ export function runScientificValidation(): ScientificBoardResult {
     }
   }
 
+  // Master VQI — hierarchical weighted composite (CFI/ERI/AVI/ALE/RRS), not a simple mean
+  const vqi = computeVPsychQualityIndex({
+    entity_type: "platform",
+    entity_id: "scientific-board",
+    metrics: [
+      { metric_id: "CFI", score: CFI, confidence: 82, version: "board" },
+      { metric_id: "ERI", score: ERI, confidence: 80, version: "board" },
+      { metric_id: "AVI", score: AVI, confidence: 78, version: "board" },
+      { metric_id: "ALE", score: ALE, confidence: 80, version: "board" },
+      { metric_id: "RRS", score: RRS, confidence: 75, version: "board" },
+    ],
+    weight_set: createDefaultWeightSet(),
+    assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+    prompt_version: PROMPT_ENGINE_VERSION,
+  });
+
   const metrics: ScientificMetrics = {
     CFI,
     ERI,
@@ -217,11 +238,8 @@ export function runScientificValidation(): ScientificBoardResult {
     AIRS,
     RRS,
     IRS,
-    overall: 0,
+    overall: clamp(vqi.overall),
   };
-  metrics.overall = clamp(
-    (CFI + ERI + AVI + PQI + ALE + CMR + AIRS + RRS + IRS) / 9,
-  );
 
   let verdict: ScientificVerdict =
     "SCIENTIFICALLY_VALIDATED_FOR_EDUCATIONAL_AND_RESEARCH_USE";
@@ -268,7 +286,7 @@ export function runScientificValidation(): ScientificBoardResult {
       AIRS: `Prompt ${PROMPT_ENGINE_VERSION}; provenance builders; live multi-provider corpus deferred`,
       RRS: `RRS v1.0 platform mean n=${rrsCorpus.length}; export/GDPR gaps disclosed; version locks + evidence matrix + peer corpora`,
       IRS: `Suitable for supervised training pilots; not high-stakes solo scoring`,
-      overall: `Unweighted mean of domain indices`,
+      overall: `VQI ${VQI_VERSION} weighted hierarchical composite (CFI 30% / ERI 25% / AVI 20% / ALE 15% / RRS 10%); maturity=${vqi.maturity}; CI=[${vqi.confidence_interval.lower},${vqi.confidence_interval.upper}]`,
     },
   };
 }

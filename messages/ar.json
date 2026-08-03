@@ -45,7 +45,8 @@
       "educationalReliability": "مؤشر الموثوقية التعليمية",
       "assessmentValidity": "مؤشر صلاحية التقييم",
       "adaptiveLearningEffectiveness": "فعالية التعلم التكيفي",
-      "researchReadiness": "درجة جاهزية البحث"
+      "researchReadiness": "درجة جاهزية البحث",
+      "vpsychQuality": "مؤشر جودة VPsych"
     }
   },
   "nav": {
@@ -66,7 +67,8 @@
     "educationalReliability": "الموثوقية التعليمية",
     "assessmentValidity": "صلاحية التقييم",
     "adaptiveLearningEffectiveness": "التعلم التكيفي",
-    "researchReadiness": "جاهزية البحث"
+    "researchReadiness": "جاهزية البحث",
+    "vpsychQuality": "جودة VPsych"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -703,6 +705,11 @@
       "eyebrow": "مراجعة لجان الأخلاقيات / المجلات / الإحصاء الحيوي",
       "title": "درجة جاهزية البحث",
       "subtitle": "درجة علمية مرجحة من ٠–١٠٠ تقيس ما إذا كانت بيانات VPsych تصلح للبحث والنشر العلمي، مع مصفوفات الإصدارات وقابلية التكرار والإفصاح الصريح عن فجوات التصدير وGDPR."
+    },
+    "vqi": {
+      "eyebrow": "مقياس الجودة الرئيسي",
+      "title": "مؤشر جودة VPsych",
+      "subtitle": "مركب هرمي من CFI وERI وAVI وALE وRRS مع أوزان مُصدَّرة وإثبات أصلي وفترات ثقة وشهادة جودة — وليس متوسطاً بسيطاً."
     }
   }
 }

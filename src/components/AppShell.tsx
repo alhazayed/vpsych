@@ -124,6 +124,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "biotech",
       match: (p) => p.startsWith("/admin/rrs"),
     },
+    {
+      href: "/admin/vqi",
+      label: t("vpsychQuality"),
+      icon: "military_tech",
+      match: (p) => p.startsWith("/admin/vqi"),
+    },
   ];
 }
 
@@ -210,6 +216,8 @@ export function AppShell({
       return tShell("pageTitle.adaptiveLearningEffectiveness");
     if (pathname.startsWith("/admin/rrs"))
       return tShell("pageTitle.researchReadiness");
+    if (pathname.startsWith("/admin/vqi"))
+      return tShell("pageTitle.vpsychQuality");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))
