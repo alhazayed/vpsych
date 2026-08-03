@@ -12,6 +12,7 @@ import type {
   DifficultyModifiers,
   RandomizedContext,
 } from "@/lib/case-engine/types";
+import { buildGenerationScientificMeta } from "@/lib/scientific/versions";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
 
 /** Simple seeded PRNG (mulberry32). */
@@ -279,6 +280,9 @@ export function generateCaseInstance(
     randomized_context: randomized,
     memory_scope: "case_instance",
     generated_at: new Date().toISOString(),
+    scientific_meta: buildGenerationScientificMeta({
+      disorder_package_version: "catalog-builtin-1",
+    }),
   };
 
   return { ok: true, snapshot };

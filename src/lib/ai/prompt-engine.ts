@@ -2,6 +2,9 @@ import type {
   AvatarPersonality,
   ClinicalCore,
 } from "@/lib/types";
+import { PROMPT_ENGINE_VERSION } from "@/lib/scientific/versions";
+
+export { PROMPT_ENGINE_VERSION };
 
 export type PromptSessionContext = {
   /** BCP-47 locale for this session (e.g. en-US, ar-JO). */
@@ -99,8 +102,9 @@ export function renderPromptTemplate(
 }
 
 const SYSTEM_PROMPT_TEMPLATE = `════════════════════════════════════════════════════════════════
-VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v2 (multilingual)
+VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v2.0.0 (multilingual)
 Assembled per session. Modules are concatenated in this order.
+Prompt engine version: 2.0.0 — see src/lib/scientific/versions.ts
 ════════════════════════════════════════════════════════════════
 
 ──────────────────────────────────────────────
