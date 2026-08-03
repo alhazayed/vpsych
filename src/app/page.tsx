@@ -1,9 +1,48 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  articleSchema,
+  breadcrumbSchema,
+  faqPageSchema,
+  medicalOrganizationSchema,
+  organizationSchema,
+  softwareApplicationSchema,
+  websiteSchema,
+} from "@/lib/seo/schema";
+import { absoluteUrl, hreflangUrl } from "@/lib/seo/site";
+import type { AppLocale } from "@/i18n/config";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  const locale = (await getLocale()) as AppLocale;
+  const title = t("title");
+  const description = t("description");
+  const canonical = absoluteUrl("/");
+  return {
+    title: { absolute: title },
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        en: hreflangUrl("/", "en"),
+        ar: hreflangUrl("/", "ar"),
+        "x-default": canonical,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      locale: locale === "ar" ? "ar_SA" : "en_US",
+    },
+  };
+}
 
 const FEATURE_KEYS = [
   { key: "simulations", icon: "psychology" },
@@ -39,10 +78,31 @@ export default async function HomePage() {
   if (user) redirect("/avatars");
 
   const t = await getTranslations("landing");
+  const locale = (await getLocale()) as AppLocale;
   const year = new Date().getFullYear();
+  const faqItems = FAQ_KEYS.map((key) => ({
+    question: t(`faq.items.${key}.q`),
+    answer: t(`faq.items.${key}.a`),
+  }));
 
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--on-surface)]">
+      <JsonLd
+        data={[
+          organizationSchema(),
+          softwareApplicationSchema(),
+          medicalOrganizationSchema(),
+          websiteSchema(),
+          faqPageSchema(faqItems),
+          articleSchema({
+            title: t("hero.title"),
+            description: t("hero.body"),
+            path: "/",
+            inLanguage: locale,
+          }),
+          breadcrumbSchema([{ name: "VPsych", path: "/" }]),
+        ]}
+      />
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_srgb,var(--outline-variant)_20%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] backdrop-blur-md">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-8">
           <div className="flex items-center gap-8">
@@ -128,6 +188,7 @@ export default async function HomePage() {
                   alt={t("hero.imageAlt")}
                   width={1376}
                   height={768}
+                  sizes="(max-width: 1024px) 100vw, 688px"
                   className="h-auto w-full object-cover"
                   priority
                 />
@@ -188,9 +249,9 @@ export default async function HomePage() {
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-md">
                     {n}
                   </div>
-                  <h4 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
+                  <h3 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
                     {t(`how.steps.${n}.title`)}
-                  </h4>
+                  </h3>
                   <p className="text-[var(--on-surface-variant)]">
                     {t(`how.steps.${n}.body`)}
                   </p>
@@ -204,7 +265,9 @@ export default async function HomePage() {
               alt={t("how.imageAlt")}
               width={1376}
               height={768}
+              sizes="(max-width: 1280px) 100vw, 1120px"
               className="h-auto w-full object-cover"
+              loading="lazy"
             />
           </div>
         </section>
@@ -376,7 +439,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#features" className="hover:text-[var(--primary)]">
@@ -391,12 +454,22 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#faq" className="hover:text-[var(--primary)]">
                   {t("footer.faq")}
                 </a>
+              </li>
+              <li>
+                <Link href="/site-map" className="hover:text-[var(--primary)]">
+                  {t("footer.sitemap")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/rss.xml" className="hover:text-[var(--primary)]">
+                  {t("footer.rss")}
+                </Link>
               </li>
               <li>
                 <Link href="/login" className="hover:text-[var(--primary)]">
@@ -406,7 +479,7 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</h5>
+            <div className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</div>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#about" className="hover:text-[var(--primary)]">
