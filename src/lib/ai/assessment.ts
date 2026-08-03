@@ -24,6 +24,10 @@ import {
   preferOpenAiSdk,
   type AiSource,
 } from "@/lib/ai/provider";
+import {
+  buildAssessmentProvenance,
+  ASSESSMENT_SCHEMA_VERSION,
+} from "@/lib/scientific/versions";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -133,9 +137,18 @@ function heuristicAssessment(
     errorKind: errorKind ?? null,
     failureDetail: failureDetail ?? null,
   });
+  const provenance = buildAssessmentProvenance({
+    aiSource: "persona_fallback",
+    model: null,
+  });
   return {
     language,
-    scores: { overall, items },
+    scores: {
+      overall,
+      items,
+      scientific_provenance: provenance,
+      assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+    },
     narrative: turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns,
     excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
     aiSource: "persona_fallback" as const,
@@ -180,7 +193,13 @@ function errorDetails(err: unknown) {
 
 export type SessionAssessment = {
   language: "en" | "ar";
-  scores: { overall: number; items: ScoreEntry[] };
+  scores: {
+    overall: number;
+    items: ScoreEntry[];
+    /** Scientific reproducibility / disclosure (Mission 19). */
+    scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
+    assessment_schema_version?: string;
+  };
   narrative: string;
   excerpts: string[];
   /** Same provenance contract as patient chat (never hide heuristic). */
@@ -333,7 +352,15 @@ export async function assessSession(params: {
 
     return {
       language,
-      scores: { overall: weightedOverall(items), items },
+      scores: {
+        overall: weightedOverall(items),
+        items,
+        scientific_provenance: buildAssessmentProvenance({
+          aiSource,
+          model,
+        }),
+        assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+      },
       narrative: output.narrative,
       excerpts: output.excerpts.slice(0, 5),
       aiSource,

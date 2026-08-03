@@ -351,7 +351,7 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Borderline Personality Disorder",
     dsm5_code: "301.83",
     icd10_code: "F60.3",
-    icd11_code: "6D10.0",
+    icd11_code: "6D10.1/6D11.5",
     category: "personality",
     min_age: 18,
     max_age: 65,
@@ -411,7 +411,8 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Bipolar I Disorder, current manic episode",
     dsm5_code: "296.44",
     icd10_code: "F31.2",
-    icd11_code: "6A60.1",
+    // Align ICD-11 with DSM-5/ICD-10 psychotic features (6A60.1 = without psychosis).
+    icd11_code: "6A60.2",
     category: "mood",
     min_age: 16,
     max_age: 70,

@@ -40,7 +40,8 @@
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
       "apiIntegrations": "API Integrations",
-      "securityKeys": "Security & Keys"
+      "securityKeys": "Security & Keys",
+      "clinicalFidelity": "Clinical Fidelity Index"
     }
   },
   "nav": {
@@ -56,7 +57,8 @@
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
-    "securityKeys": "Security & Keys"
+    "securityKeys": "Security & Keys",
+    "clinicalFidelity": "Clinical Fidelity"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -668,6 +670,11 @@
         "cancel": "Cancel",
         "proceed": "Proceed with Change"
       }
+    },
+    "cfi": {
+      "eyebrow": "Clinical review board",
+      "title": "Clinical Fidelity Index",
+      "subtitle": "Weighted 0–100 scientific score of how faithfully each AI patient reproduces the intended psychiatric disorder, with confidence intervals and remediation guidance."
     }
   }
 }
