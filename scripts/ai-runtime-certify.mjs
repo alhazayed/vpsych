@@ -254,6 +254,7 @@ async function main() {
         );
         en += 1;
         console.error(`done ${results[results.length - 1].label} ok=${results[results.length - 1].ok}`);
+        await sleep(750);
       }
       if (ar < AR_COUNT) {
         results.push(
@@ -266,6 +267,7 @@ async function main() {
         );
         ar += 1;
         console.error(`done ${results[results.length - 1].label} ok=${results[results.length - 1].ok}`);
+        await sleep(750);
       }
       if (en >= EN_COUNT && ar >= AR_COUNT) break;
     }

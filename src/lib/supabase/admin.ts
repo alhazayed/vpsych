@@ -10,6 +10,7 @@ import {
  * Allowed call sites: Route Handlers / Server Actions only.
  * Allowed uses today:
  * - `session_reports` privileged insert/update in `POST /api/sessions/[id]/end`
+ * - ACE/CGE learner scoring writes after assessment (`learner_profiles` guard)
  * - Optional writer for `insert_system_message` / `insert_assistant_message`
  *   (ownership checks still run in the SECURITY DEFINER RPCs)
  */

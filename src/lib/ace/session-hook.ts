@@ -15,6 +15,10 @@ import type { ScoreEntry } from "@/lib/types";
 /**
  * Best-effort ACE update after a session assessment.
  * Never throws; never blocks report persistence.
+ *
+ * Scoring fields on `learner_profiles` are guarded so authenticated learners
+ * cannot self-write them. Pass `writeClient` as the service-role client when
+ * available so post-assessment competency updates actually persist.
  */
 export async function runAceAfterAssessment(
   supabase: SupabaseClient,
@@ -28,19 +32,23 @@ export async function runAceAfterAssessment(
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
+    /** Privileged writer (service role). Falls back to `supabase`. */
+    writeClient?: SupabaseClient | null;
   },
 ): Promise<{
   ok: boolean;
   nextCase?: AdaptiveCaseRequest;
   coach?: CoachFeedback;
   learnerId?: string;
+  persisted?: boolean;
 }> {
   try {
+    const writer = opts.writeClient ?? supabase;
     const profile = await ensureLearnerProfile(supabase, opts.userId, {
       language: opts.language ?? undefined,
     });
     if (!profile.adaptive_mode) {
-      return { ok: true, learnerId: profile.id };
+      return { ok: true, learnerId: profile.id, persisted: true };
     }
 
     const result = ingestSessionAssessment(profile, {
@@ -96,7 +104,7 @@ export async function runAceAfterAssessment(
       fingerprint: graphCase.fingerprint,
     };
 
-    await persistLearnerUpdate(supabase, result.profile, {
+    await persistLearnerUpdate(writer, result.profile, {
       sessionId: opts.sessionId,
       coach,
       nextFingerprint: nextCase.fingerprint,
@@ -119,7 +127,7 @@ export async function runAceAfterAssessment(
         statesFromAceCompetencies(result.profile.competencies),
         graphReport.root_cause.observed_failure,
       );
-      await supabase.from("cge_remediation_plans").insert({
+      await writer.from("cge_remediation_plans").insert({
         learner_id: result.profile.id,
         observed_failure: remPlan.observed_failure,
         root_cause_id: remPlan.root_cause_id,
@@ -129,7 +137,7 @@ export async function runAceAfterAssessment(
       });
     }
 
-    // Soft-link session to learner profile
+    // Soft-link session to learner profile (therapist owns the row)
     await supabase
       .from("sessions")
       .update({
@@ -143,6 +151,7 @@ export async function runAceAfterAssessment(
       nextCase,
       coach,
       learnerId: result.profile.id,
+      persisted: Boolean(opts.writeClient),
     };
   } catch (e) {
     console.warn(
