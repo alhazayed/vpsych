@@ -14,6 +14,7 @@ import {
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { sealSessionStartLedgers } from "@/lib/ledgers";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -211,8 +212,32 @@ export async function POST(request: Request) {
     );
   }
 
+  // Multi-ledger: Operational + Educational start (best-effort)
+  let correlationId: string | null = null;
+  try {
+    const sealed = await sealSessionStartLedgers(privileged, {
+      sessionId: session.id,
+      learnerId: user.id,
+      instructorId: user.id,
+      templateId: caseResult.snapshot.template?.id ?? body.templateId ?? null,
+      presetId: caseResult.preset?.id ?? body.presetId ?? null,
+      personaId: caseResult.snapshot.persona?.id ?? null,
+      diagnosisSlug: caseResult.snapshot.primary_diagnosis?.slug ?? null,
+      difficulty: caseResult.difficulty,
+      language: caseResult.snapshot.locale?.startsWith("ar") ? "ar" : "en",
+      locale: caseResult.snapshot.locale || effectiveLocale,
+    });
+    correlationId = sealed.correlationId;
+  } catch (e) {
+    console.warn(
+      "[sessions] multi-ledger start:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   return NextResponse.json({
     sessionId: session.id,
+    correlationId,
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,

@@ -136,6 +136,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "menu_book",
       match: (p) => p.startsWith("/admin/quality-ledger"),
     },
+    {
+      href: "/admin/ledgers",
+      label: t("multiLedger"),
+      icon: "account_balance",
+      match: (p) => p.startsWith("/admin/ledgers"),
+    },
   ];
 }
 
@@ -226,6 +232,8 @@ export function AppShell({
       return tShell("pageTitle.vpsychQuality");
     if (pathname.startsWith("/admin/quality-ledger"))
       return tShell("pageTitle.qualityLedger");
+    if (pathname.startsWith("/admin/ledgers"))
+      return tShell("pageTitle.multiLedger");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))

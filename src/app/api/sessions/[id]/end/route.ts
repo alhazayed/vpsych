@@ -5,6 +5,7 @@ import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
+import { sealSessionCompleteLedgers } from "@/lib/ledgers";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
@@ -195,6 +196,40 @@ export async function POST(_request: Request, { params }: Params) {
   } catch (e) {
     console.warn(
       "[sessions/end] quality ledger error:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
+  // Multi-ledger: Operational + Educational completion + correlation
+  try {
+    await sealSessionCompleteLedgers(admin ?? supabase, {
+      sessionId,
+      learnerId: user.id,
+      instructorId: user.id,
+      templateId: typed.clinical_snapshot?.template?.id ?? null,
+      personaId: typed.clinical_snapshot?.persona?.id ?? null,
+      diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+      difficulty: typed.clinical_snapshot?.difficulty ?? null,
+      language: assessment.language ?? typed.language ?? null,
+      locale: resolved.locale,
+      durationSec,
+      scientificLedgerId: ledgerId,
+      overallScore: assessment.scores.overall,
+      competenciesAfter: ace.ok
+        ? {
+            mean: assessment.scores.overall,
+            nextCase: ace.nextCase ?? null,
+          }
+        : { mean: assessment.scores.overall },
+      adaptiveDecision: ace.ok
+        ? { nextCase: ace.nextCase ?? null, learnerId: ace.learnerId }
+        : {},
+      aiModel: assessment.model ?? null,
+      fallbackUsed: assessment.aiSource === "persona_fallback",
+    });
+  } catch (e) {
+    console.warn(
+      "[sessions/end] multi-ledger complete:",
       e instanceof Error ? e.message : e,
     );
   }

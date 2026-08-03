@@ -47,7 +47,8 @@
       "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness",
       "researchReadiness": "Research Readiness Score",
       "vpsychQuality": "VPsych Quality Index",
-      "qualityLedger": "Quality Ledger"
+      "qualityLedger": "Quality Ledger",
+      "multiLedger": "Multi-Ledger Platform"
     }
   },
   "nav": {
@@ -70,7 +71,8 @@
     "adaptiveLearningEffectiveness": "Adaptive Learning",
     "researchReadiness": "Research Readiness",
     "vpsychQuality": "VPsych Quality",
-    "qualityLedger": "Quality Ledger"
+    "qualityLedger": "Quality Ledger",
+    "multiLedger": "Multi-Ledger"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -717,6 +719,11 @@
       "eyebrow": "Scientific audit trail",
       "title": "Quality Ledger",
       "subtitle": "Immutable source of truth for every assessment quality metric — reproducible, versioned, and never overwritten."
+    },
+    "multiLedger": {
+      "eyebrow": "Enterprise architecture",
+      "title": "Multi-Ledger Platform",
+      "subtitle": "Operational, Educational, and Scientific Quality ledgers with correlation IDs, replay, and institutional audit exports."
     }
   }
 }

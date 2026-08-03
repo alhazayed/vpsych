@@ -47,7 +47,8 @@
       "adaptiveLearningEffectiveness": "فعالية التعلم التكيفي",
       "researchReadiness": "درجة جاهزية البحث",
       "vpsychQuality": "مؤشر جودة VPsych",
-      "qualityLedger": "سجل الجودة"
+      "qualityLedger": "سجل الجودة",
+      "multiLedger": "منصة السجلات المتعددة"
     }
   },
   "nav": {
@@ -70,7 +71,8 @@
     "adaptiveLearningEffectiveness": "التعلم التكيفي",
     "researchReadiness": "جاهزية البحث",
     "vpsychQuality": "جودة VPsych",
-    "qualityLedger": "سجل الجودة"
+    "qualityLedger": "سجل الجودة",
+    "multiLedger": "السجلات المتعددة"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -717,6 +719,11 @@
       "eyebrow": "مسار التدقيق العلمي",
       "title": "سجل الجودة",
       "subtitle": "مصدر حقيقة غير قابل للتغيير لكل مقياس جودة تقييم — قابل لإعادة الإنتاج ومُصدَّر ولا يُستبدل أبداً."
+    },
+    "multiLedger": {
+      "eyebrow": "هندسة المؤسسات",
+      "title": "منصة السجلات المتعددة",
+      "subtitle": "سجلات تشغيلية وتعليمية وعلمية مع معرفات ارتباط وإعادة تشغيل وتصدير تدقيق مؤسسي."
     }
   }
 }
