@@ -15,6 +15,9 @@ export async function synthesizeSpeech(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -28,6 +31,9 @@ export async function synthesizeSpeech(params: {
         voiceProfileId: params.voiceProfileId ?? undefined,
         avatarId: params.avatarId ?? undefined,
         stream: true,
+        stability: params.stability,
+        similarityBoost: params.similarityBoost,
+        style: params.style,
       }),
     });
 

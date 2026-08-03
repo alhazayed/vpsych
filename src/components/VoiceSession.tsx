@@ -15,11 +15,13 @@ import {
   resolvePipelineLocale,
   runVoiceConversationTurn,
   submitConversationTurn,
+  type PipelineTurnResult,
 } from "@/lib/voice/conversation-pipeline";
 import {
   startMicWavRecording,
   type MicRecorder,
 } from "@/lib/voice/record-wav";
+import { createVadMicPipeline, type VadMicRecorder } from "@/lib/voice/vad";
 import type {
   ResolvedAvatar,
   SessionMessage,
@@ -99,6 +101,7 @@ export function VoiceSession({
   const micRecorderRef = useRef<MicRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
+  const bargeInRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const stopPlayback = useCallback(() => {
@@ -170,7 +173,10 @@ export function VoiceSession({
   }, [stopPlayback]);
 
   const speak = useCallback(
-    async (text: string) => {
+    async (
+      text: string,
+      voiceHints?: PipelineTurnResult["voiceHints"],
+    ) => {
       if (!voiceEnabled) return;
       stopPlayback();
       setSpeaking(true);
@@ -182,6 +188,7 @@ export function VoiceSession({
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
         audioRef,
+        voiceHints,
         handlers: {
           onstart: () => setSpeaking(true),
           onend: () => setSpeaking(false),
@@ -212,7 +219,9 @@ export function VoiceSession({
         const turn = await submitConversationTurn({
           sessionId: session.id,
           message: trimmed,
+          therapistBargeIn: bargeInRef.current,
         });
+        bargeInRef.current = false;
         if (!turn.ok) {
           if (turn.expired) {
             await endSession();
@@ -227,7 +236,7 @@ export function VoiceSession({
           turn.data.assistantMessage,
         ]);
         if (voiceEnabled) {
-          void speak(turn.data.assistantMessage.content);
+          void speak(turn.data.assistantMessage.content, turn.data.voiceHints);
         }
         setStatus(
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
@@ -265,6 +274,7 @@ export function VoiceSession({
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
         audioRef,
+        therapistBargeIn: bargeInRef.current,
         onTranscript: (transcript) => setDraft(transcript),
         onMessages: (userMessage, assistantMessage) => {
           setMessages((prev) => [...prev, userMessage, assistantMessage]);
@@ -295,6 +305,7 @@ export function VoiceSession({
       }
 
       setDraft("");
+      bargeInRef.current = false;
       setStatus(
         voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
       );
@@ -377,9 +388,22 @@ export function VoiceSession({
       return;
     }
 
+    if (speaking) {
+      stopPlayback();
+      setSpeaking(false);
+      bargeInRef.current = true;
+    }
+
     try {
-      const recorder = await startMicWavRecording(20000);
-      micRecorderRef.current = recorder;
+      const vadRecorder: VadMicRecorder = await createVadMicPipeline({
+        silenceMs: 1300,
+        onUtteranceEnd: () => {
+          if (micRecorderRef.current && listening) {
+            void stopOpenAIListen();
+          }
+        },
+      });
+      micRecorderRef.current = vadRecorder as MicRecorder;
       setListening(true);
       setDraft("");
       setStatus(
@@ -389,7 +413,16 @@ export function VoiceSession({
       );
       startBrowserListen({ autoSend: false, interimOnly: true });
     } catch {
-      startBrowserListen({ autoSend: true });
+      try {
+        const recorder = await startMicWavRecording(20000);
+        micRecorderRef.current = recorder;
+        setListening(true);
+        setDraft("");
+        setStatus(t("status.speakNow"));
+        startBrowserListen({ autoSend: false, interimOnly: true });
+      } catch {
+        startBrowserListen({ autoSend: true });
+      }
     }
   }
 

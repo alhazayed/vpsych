@@ -27,6 +27,16 @@ export type PipelineTurnResult = {
   assistantMessage: SessionMessage;
   remainingSeconds?: number;
   locale: SessionSpeechLocale;
+  voiceHints?: {
+    stability: number;
+    similarity_boost: number;
+    style: number;
+    pause_before_ms: number;
+    speech_rate?: number;
+    stream_chunks?: string[];
+  };
+  patientInterrupt?: boolean;
+  therapistBargeInSuggested?: boolean;
 };
 
 export type SpeakHandlers = {
@@ -84,6 +94,7 @@ export async function transcribeTherapistSpeech(params: {
 export async function submitConversationTurn(params: {
   sessionId: string;
   message: string;
+  therapistBargeIn?: boolean;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
   | { ok: false; error: string; expired?: boolean; status: number }
@@ -91,7 +102,10 @@ export async function submitConversationTurn(params: {
   const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: params.message }),
+    body: JSON.stringify({
+      message: params.message,
+      therapistBargeIn: params.therapistBargeIn ?? false,
+    }),
   });
   const data = (await res.json().catch(() => ({}))) as {
     error?: string;
@@ -100,6 +114,8 @@ export async function submitConversationTurn(params: {
     assistantMessage?: SessionMessage;
     remainingSeconds?: number;
     locale?: string;
+    voiceHints?: PipelineTurnResult["voiceHints"];
+    patientInterrupt?: boolean;
   };
 
   if (!res.ok) {
@@ -126,13 +142,30 @@ export async function submitConversationTurn(params: {
       assistantMessage: data.assistantMessage,
       remainingSeconds: data.remainingSeconds,
       locale: resolvePipelineLocale(data.locale),
+      voiceHints: data.voiceHints,
+      patientInterrupt: data.patientInterrupt,
     },
   };
 }
 
+async function playAudioUrl(
+  objectUrl: string,
+  params: {
+    audioRef?: { current: HTMLAudioElement | null };
+    handlers?: SpeakHandlers;
+  },
+): Promise<boolean> {
+  const audio = new Audio(objectUrl);
+  if (params.audioRef) params.audioRef.current = audio;
+  return await new Promise<boolean>((resolve) => {
+    audio.onended = () => resolve(true);
+    audio.onerror = () => resolve(false);
+    void audio.play().catch(() => resolve(false));
+  });
+}
+
 /**
- * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
- * No-op safe when voice is disabled by the caller.
+ * Stages 3–4 — ElevenLabs speech → browser audio (chunked streaming when available).
  */
 export async function playPatientSpeech(params: {
   text: string;
@@ -143,71 +176,67 @@ export async function playPatientSpeech(params: {
   avatarId?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
+  voiceHints?: PipelineTurnResult["voiceHints"];
 }): Promise<"elevenlabs" | "browser"> {
   const handlers = params.handlers ?? {};
   handlers.onstart?.();
 
-  const result = await synthesizeSpeech({
-    text: params.text,
-    locale: params.locale,
-    voiceId: params.voiceId,
-    voiceIdAr: params.voiceIdAr,
-    voiceProfileId: params.voiceProfileId,
-    avatarId: params.avatarId,
-  });
-
-  if (result.mode === "elevenlabs" && result.objectUrl) {
-    const audio = new Audio(result.objectUrl);
-    if (params.audioRef) params.audioRef.current = audio;
-
-    return await new Promise<"elevenlabs" | "browser">((resolve) => {
-      let settled = false;
-      const finish = (mode: "elevenlabs" | "browser") => {
-        if (settled) return;
-        settled = true;
-        URL.revokeObjectURL(result.objectUrl!);
-        if (params.audioRef) params.audioRef.current = null;
-        if (mode === "elevenlabs") handlers.onend?.();
-        resolve(mode);
-      };
-
-      audio.onended = () => finish("elevenlabs");
-      audio.onerror = () => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
-      };
-
-      void audio.play().catch(() => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
-      });
-    });
+  const pauseMs = params.voiceHints?.pause_before_ms ?? 0;
+  if (pauseMs > 0) {
+    await new Promise((r) => setTimeout(r, Math.min(pauseMs, 6000)));
   }
 
-  speakWithBrowser(params.text, params.locale, {
-    onstart: handlers.onstart,
-    onend: handlers.onend,
-    onerror: handlers.onerror,
-  });
-  return "browser";
+  const chunks =
+    params.voiceHints?.stream_chunks?.length
+      ? params.voiceHints.stream_chunks
+      : [params.text];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]!.trim();
+    if (!chunk) continue;
+    if (i > 0) {
+      await new Promise((r) => setTimeout(r, 280));
+    }
+
+    const result = await synthesizeSpeech({
+      text: chunk,
+      locale: params.locale,
+      voiceId: params.voiceId,
+      voiceIdAr: params.voiceIdAr,
+      voiceProfileId: params.voiceProfileId,
+      avatarId: params.avatarId,
+      stability: params.voiceHints?.stability,
+      similarityBoost: params.voiceHints?.similarity_boost,
+      style: params.voiceHints?.style,
+    });
+
+    if (result.mode === "elevenlabs" && result.objectUrl) {
+      const ok = await playAudioUrl(result.objectUrl, {
+        audioRef: params.audioRef,
+        handlers,
+      });
+      URL.revokeObjectURL(result.objectUrl);
+      if (params.audioRef) params.audioRef.current = null;
+      if (!ok && i === 0) {
+        speakWithBrowser(params.text, params.locale, {
+          onstart: handlers.onstart,
+          onend: handlers.onend,
+          onerror: handlers.onerror,
+        });
+        return "browser";
+      }
+    } else if (i === 0) {
+      speakWithBrowser(params.text, params.locale, {
+        onstart: handlers.onstart,
+        onend: handlers.onend,
+        onerror: handlers.onerror,
+      });
+      return "browser";
+    }
+  }
+
+  handlers.onend?.();
+  return "elevenlabs";
 }
 
 /**
@@ -225,6 +254,7 @@ export async function runVoiceConversationTurn(params: {
   voiceProfileId?: string | null;
   avatarId?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
+  therapistBargeIn?: boolean;
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
   speakHandlers?: SpeakHandlers;
@@ -266,6 +296,7 @@ export async function runVoiceConversationTurn(params: {
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
+    therapistBargeIn: params.therapistBargeIn,
   });
 
   if (!turn.ok) {
@@ -289,6 +320,7 @@ export async function runVoiceConversationTurn(params: {
       avatarId: params.avatarId,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      voiceHints: turn.data.voiceHints,
     });
   }
 

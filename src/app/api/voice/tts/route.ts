@@ -24,6 +24,10 @@ type TtsBody = {
   preview?: boolean;
   /** Request streaming synthesis (default true). */
   stream?: boolean;
+  /** HCE voice hints (optional). */
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
 };
 
 /**
@@ -70,6 +74,9 @@ export async function POST(request: Request) {
       voiceId: resolved.voiceId,
       voiceIdAr: resolved.voiceId,
       stream: body.stream !== false,
+      stability: body.stability,
+      similarityBoost: body.similarityBoost,
+      style: body.style,
     });
 
     return new NextResponse(result.body, {
