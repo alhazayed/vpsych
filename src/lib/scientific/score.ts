@@ -18,10 +18,10 @@ import { simulateEducationalOutcomes } from "@/lib/scientific/outcomes-simulate"
 import {
   ASSESSMENT_SCHEMA_VERSION,
   PROMPT_ENGINE_VERSION,
-  buildAssessmentProvenance,
   buildGenerationScientificMeta,
 } from "@/lib/scientific/versions";
 import { buildEriOfflineCorpus } from "@/lib/eri";
+import { buildAviOfflineCorpus } from "@/lib/avi";
 
 export type ScientificMetrics = {
   CFI: number;
@@ -112,23 +112,18 @@ export function runScientificValidation(): ScientificBoardResult {
     high_remaining.push("Educational outcome improvement fraction < 0.5");
   }
 
-  // Assessment Validity — LLM path exists; heuristic documented as non-validated
-  const prov = buildAssessmentProvenance({
-    aiSource: "openai",
-    model: "gpt-test",
-  });
-  let avi = 58;
-  if (prov.assessment_schema_version === ASSESSMENT_SCHEMA_VERSION) avi += 8;
-  if (PROMPT_ENGINE_VERSION) avi += 6;
-  // Content validity partial via rubrics; criterion validity external missing
-  avi += 8; // face/content via OSCE-style dimensions
+  // Assessment Validity — weighted AVI v1.0 corpus mean (not arbitrary stub)
+  const aviCorpus = buildAviOfflineCorpus();
+  const AVI = clamp(
+    aviCorpus.reduce((a, r) => a + r.overall, 0) /
+      Math.max(1, aviCorpus.length),
+  );
   high_remaining.push(
     "No external criterion validity study vs human OSCE examiners published",
   );
   high_remaining.push(
     "Heuristic fallback (persona_fallback) is not a validated instrument — must be disclosed",
   );
-  const AVI = clamp(avi);
 
   // Psychometric Quality
   const psy = outcomes.psychometrics;
@@ -251,7 +246,13 @@ export function runScientificValidation(): ScientificBoardResult {
     justifications: {
       CFI: `Mean package fidelity across ${BUILTIN_DISORDERS.length} builtins; evidence locks ${evidence.disorder_locks}; grades A=${evidence.grades.A} B=${evidence.grades.B}`,
       ERI: `ERI v1.0 corpus mean n=${eriCorpus.length}; templates=${BUILTIN_TEMPLATES.length}; presets=${BUILTIN_PRESETS.length}; improved_fraction=${outcomes.overall_improved_fraction}`,
-      AVI: `Schema ${ASSESSMENT_SCHEMA_VERSION}; LLM examiner primary; heuristic disclosed as non-validated; no external criterion study`,
+      AVI: `AVI v1.0 corpus mean n=${aviCorpus.length}; mean_variance=${
+        Math.round(
+          (aviCorpus.reduce((a, r) => a + (r.variance ?? 0), 0) /
+            Math.max(1, aviCorpus.length)) *
+            100,
+        ) / 100
+      }; criterion=disclosed_absent; schema ${ASSESSMENT_SCHEMA_VERSION}`,
       PQI: `n=${psy.n_scores}, α=${psy.cronbach_alpha}, retest_r=${psy.test_retest_r}, sd=${psy.sd}`,
       ALE: `${improvedArch}/${Object.keys(outcomes.by_archetype).length} archetypes improved; adaptive_decisions=${outcomes.adaptive_decisions}`,
       CMR: `Competency ingest across ${outcomes.sessions} sessions; α-linked reliability`,

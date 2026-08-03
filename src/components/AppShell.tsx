@@ -106,6 +106,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "school",
       match: (p) => p.startsWith("/admin/eri"),
     },
+    {
+      href: "/admin/avi",
+      label: t("assessmentValidity"),
+      icon: "fact_check",
+      match: (p) => p.startsWith("/admin/avi"),
+    },
   ];
 }
 
@@ -186,6 +192,8 @@ export function AppShell({
       return tShell("pageTitle.clinicalFidelity");
     if (pathname.startsWith("/admin/eri"))
       return tShell("pageTitle.educationalReliability");
+    if (pathname.startsWith("/admin/avi"))
+      return tShell("pageTitle.assessmentValidity");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))
