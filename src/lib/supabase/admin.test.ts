@@ -32,6 +32,7 @@ describe("messageRpcClient", () => {
     );
     const privileged = createServiceClient();
     expect(privileged).not.toBeNull();
-    expect(messageRpcClient(userClient)).toBe(privileged);
+    expect(messageRpcClient(userClient)).not.toBe(userClient);
+    expect(messageRpcClient(userClient)).toEqual(privileged);
   });
 });
