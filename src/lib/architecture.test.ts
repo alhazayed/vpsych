@@ -38,4 +38,12 @@ describe("architecture invariants", () => {
       readFileSync(join(root, "app/global-error.tsx"), "utf8"),
     ).not.toThrow();
   });
+
+  it("ACE post-assessment persistence uses RPC and avoids overall≥55 diagnosis hack", () => {
+    const hook = readFileSync(join(root, "lib/ace/session-hook.ts"), "utf8");
+    const persist = readFileSync(join(root, "lib/ace/persist.ts"), "utf8");
+    expect(persist).toMatch(/apply_ace_session_progress/);
+    expect(hook).not.toMatch(/correctDiagnosis:\s*opts\.overall\s*>=\s*55/);
+    expect(hook).toMatch(/inferMissFlagsFromNarrative/);
+  });
 });

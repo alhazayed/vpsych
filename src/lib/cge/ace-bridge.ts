@@ -1,9 +1,13 @@
 /**
  * Bridge: Competency Graph Engine ↔ Adaptive Curriculum Engine.
  * Additive — does not remove flat ACE scoring.
+ *
+ * Educational integrity: never fabricate weakness scores. Prefer
+ * focusCompetencies / required_competencies from root-cause analysis
+ * without mutating the learner's assessed EMA evidence.
  */
 
-import type { AdaptiveCaseRequest, LearnerProfile } from "@/lib/ace/types";
+import type { AdaptiveCaseRequest, CompetencyId, LearnerProfile } from "@/lib/ace/types";
 import { generateAdaptiveCase } from "@/lib/ace/adaptive";
 import {
   analyzeRootCause,
@@ -11,6 +15,7 @@ import {
   generateLearningPathFromGraph,
   statesFromAceCompetencies,
 } from "./engine";
+import { blockedCompetencies } from "./rca";
 import type { SupervisorGraphReport } from "./types";
 
 /**
@@ -46,70 +51,36 @@ export function generateGraphAwareAdaptiveCase(
     );
     pathway = plan.pathway.map((p) => p.title);
 
-    // Temporarily bias required competencies toward root cause
+    // Prioritize root cause in required competencies WITHOUT inventing scores.
+    const rootAsComp = rootCause as CompetencyId;
     const biased: LearnerProfile = {
       ...profile,
       required_competencies: [
-        rootCause as LearnerProfile["required_competencies"][number],
-        ...(profile.required_competencies ?? []),
+        rootAsComp,
+        ...(profile.required_competencies ?? []).filter((c) => c !== rootAsComp),
       ],
-      competencies: profile.competencies.map((c) =>
-        c.competency_id === rootCause ||
-        c.competency_id === (observed as typeof c.competency_id)
-          ? c
-          : c,
-      ),
     };
 
-    // Ensure root cause appears weak so ACE rules/focus pick it
-    const comps = biased.competencies.map((c) => {
-      if (c.competency_id === rootCause) {
-        return {
-          ...c,
-          score: Math.min(c.score, 55),
-          samples: Math.max(c.samples, 1),
-        };
-      }
-      return c;
+    const base = generateAdaptiveCase(biased, {
+      seed: opts?.seed,
+      priorFingerprints: opts?.priorFingerprints,
+      preferredFocus: filterEducationalFocus(
+        [
+          rootAsComp,
+          ...plan.pathway.map((p) => p.competency_id as CompetencyId),
+        ],
+        biased,
+      ),
     });
-    // If root cause not in ACE flat list, keep ACE generation but annotate
-    const hasRoot = comps.some((c) => c.competency_id === rootCause);
-    const base = generateAdaptiveCase(
-      { ...biased, competencies: comps },
-      {
-        seed: opts?.seed,
-        priorFingerprints: opts?.priorFingerprints,
-      },
-    );
 
-    if (!hasRoot) {
-      return {
-        ...base,
-        focusCompetencies: [
-          rootCause as (typeof base.focusCompetencies)[number],
-          ...base.focusCompetencies,
-        ],
-        rationale: `CGE root cause ${rootCause}: ${base.rationale}`,
-        adaptations: [
-          ...base.adaptations,
-          `cge_root:${rootCause}`,
-          `cge_observed:${observed}`,
-        ],
-        rootCause,
-        remediationPathway: pathway,
-      };
-    }
+    const focus = uniqueFocus([
+      rootAsComp,
+      ...base.focusCompetencies,
+    ]);
 
     return {
       ...base,
-      focusCompetencies: base.focusCompetencies.includes(
-        rootCause as (typeof base.focusCompetencies)[number],
-      )
-        ? base.focusCompetencies
-        : [
-            rootCause as (typeof base.focusCompetencies)[number],
-            ...base.focusCompetencies,
-          ],
+      focusCompetencies: focus,
       rationale: `CGE root cause ${rootCause} ← observed ${observed}. ${base.rationale}`,
       adaptations: [
         ...base.adaptations,
@@ -125,6 +96,34 @@ export function generateGraphAwareAdaptiveCase(
     seed: opts?.seed,
     priorFingerprints: opts?.priorFingerprints,
   });
+}
+
+function uniqueFocus(ids: CompetencyId[]): CompetencyId[] {
+  const seen = new Set<string>();
+  const out: CompetencyId[] = [];
+  for (const id of ids) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/** Drop never-attempted CGE-blocked competencies from educational focus lists. */
+export function filterEducationalFocus(
+  focus: CompetencyId[],
+  profile: LearnerProfile,
+): CompetencyId[] {
+  const states = statesFromAceCompetencies(profile.competencies);
+  const blocked = new Set(blockedCompetencies(states));
+  const byId = new Map(
+    profile.competencies.map((c) => [c.competency_id, c] as const),
+  );
+  const filtered = focus.filter((f) => {
+    if (!blocked.has(f)) return true;
+    return (byId.get(f)?.samples ?? 0) > 0;
+  });
+  return filtered.length ? filtered : focus.slice(0, 1);
 }
 
 export function graphSupervisorForProfile(

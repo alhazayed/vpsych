@@ -133,7 +133,10 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // Adaptive Curriculum Engine — update learner competencies + next case
+  // Adaptive Curriculum Engine — update learner competencies + next case.
+  // Scoring columns are trigger-guarded for authenticated users; use service
+  // role when configured. persistLearnerUpdate also prefers apply_ace_session_progress RPC.
+  const admin = createServiceClient();
   const ace = await runAceAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
@@ -144,9 +147,9 @@ export async function POST(_request: Request, { params }: Params) {
     narrative,
     durationSec,
     timeLimitSec: typed.max_duration_sec,
+    writeClient: admin,
   });
 
-  const admin = createServiceClient();
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")

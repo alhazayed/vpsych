@@ -352,7 +352,9 @@ export const CERTIFICATION_BADGES: CertificationBadge[] = [
   {
     badge_slug: "trauma-specialist",
     title: "Trauma Specialist",
-    competency_id: "risk_assessment",
+    // Trauma-informed practice is assessed via alliance/empathy + safety,
+    // not generic risk_assessment alone (prior catalog bug).
+    competency_id: "empathy",
     threshold: 80,
     min_samples: 4,
   },

@@ -83,6 +83,7 @@ export function ingestSessionAssessment(
     sessionId?: string;
     diagnosisSlug?: string | null;
     correctDiagnosis?: boolean;
+    missFlags?: SessionPerformanceInput["missFlags"];
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
@@ -102,6 +103,7 @@ export function ingestSessionAssessment(
     competencyScores,
     diagnosisSlug: opts.diagnosisSlug,
     correctDiagnosis: opts.correctDiagnosis,
+    missFlags: opts.missFlags,
     durationSec: opts.durationSec,
     timeLimitSec: opts.timeLimitSec,
   };

@@ -12,6 +12,8 @@ import type {
   CompetencyId,
   LearnerProfile,
 } from "./types";
+import { blockedCompetencies } from "@/lib/cge/rca";
+import { statesFromAceCompetencies } from "@/lib/cge/engine";
 
 const DIFFICULTY_ORDER: CaseDifficulty[] = [
   "beginner",
@@ -114,6 +116,8 @@ export function generateAdaptiveCase(
     priorFingerprints?: string[];
     rules?: AdaptiveRule[];
     stepIndex?: number;
+    /** Preferred focus competencies (e.g. CGE root cause) — still subject to prereq gate. */
+    preferredFocus?: CompetencyId[];
   },
 ): AdaptiveCaseRequest {
   if (!profile.adaptive_mode && profile.curriculum_mode === "manual") {
@@ -152,11 +156,16 @@ export function generateAdaptiveCase(
       );
   const weakest = [...pool].sort((a, b) => a.score - b.score)[0];
 
-  const focus: CompetencyId[] = primary?.adaptation.focus?.length
-    ? primary.adaptation.focus
-    : weakest
-      ? [weakest.competency_id]
-      : ["diagnostic_interview"];
+  let focus: CompetencyId[] = opts?.preferredFocus?.length
+    ? opts.preferredFocus
+    : primary?.adaptation.focus?.length
+      ? primary.adaptation.focus
+      : weakest
+        ? [weakest.competency_id]
+        : ["diagnostic_interview"];
+
+  // CBME prerequisite gate — do not assign blocked (prereq-unmet) competencies
+  focus = gateFocusByPrerequisites(profile, focus);
 
   // Locked objectives / diagnoses from instructor controls
   let diagnosisPool =
@@ -307,4 +316,39 @@ export function detectRepetitionLoop(
   const recent = fingerprints.slice(-window).map((f) => f.split("#")[0]);
   const unique = new Set(recent);
   return unique.size <= 2;
+}
+
+/**
+ * CBME prerequisite gate: remove never-attempted competencies whose required
+ * prerequisites are unmet. Already-assessed competencies may continue remediation
+ * (e.g. suicide curriculum) even if the graph still lists them as blocked.
+ */
+export function gateFocusByPrerequisites(
+  profile: LearnerProfile,
+  focus: CompetencyId[],
+): CompetencyId[] {
+  const states = statesFromAceCompetencies(profile.competencies);
+  const blocked = new Set(blockedCompetencies(states));
+  const byId = new Map(
+    profile.competencies.map((c) => [c.competency_id, c] as const),
+  );
+
+  const allowed = focus.filter((f) => {
+    if (!blocked.has(f)) return true;
+    // Active remediation: learner already has evidence on this competency
+    return (byId.get(f)?.samples ?? 0) > 0;
+  });
+  if (allowed.length) return allowed;
+
+  const foundation: CompetencyId[] = [
+    "diagnostic_interview",
+    "mental_status_examination",
+    "therapeutic_alliance",
+    "empathy",
+    "professional_communication",
+  ];
+  for (const id of foundation) {
+    if (!blocked.has(id)) return [id];
+  }
+  return focus.slice(0, 1);
 }
