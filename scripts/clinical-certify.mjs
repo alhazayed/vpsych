@@ -458,10 +458,7 @@ async function main() {
     results,
   };
 
-  fs.mkdirSync(new URL(".", `file://${OUT}`).pathname === "." ? "/tmp" : require("node:path").dirname(OUT), {
-    recursive: true,
-  });
-  fs.mkdirSync(require("node:path").dirname(OUT), { recursive: true });
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(summary, null, 2));
   console.log(
     JSON.stringify(
