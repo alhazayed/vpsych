@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "VPsych — Clinical Assessment Platform",
-    "description": "Practice therapy with preset patient avatars and receive admin-only performance assessments."
+    "description": "Practice psychotherapy with bilingual AI patient avatars. Competency-based feedback for therapists, medical trainees, and institutions — English and Arabic."
   },
   "common": {
     "loading": "Loading…",
@@ -222,11 +222,30 @@
       "features": "Features",
       "pricing": "Pricing",
       "faq": "FAQ",
+      "sitemap": "Site map",
+      "rss": "RSS",
       "signIn": "Sign in",
       "aboutUs": "About Us",
       "getStarted": "Get Started",
       "copyright": "© {year} VPsych. All rights reserved."
     }
+  },
+  "seo": {
+    "sitemapTitle": "Site map",
+    "sitemapDescription": "Public pages on VPsych — marketing, sign-in, and crawl discovery links.",
+    "privateNote": "Therapist sessions, learning dashboards, and admin tools require sign-in and are not indexed.",
+    "links": {
+      "home": "Home",
+      "login": "Sign in",
+      "signup": "Create account",
+      "rss": "RSS feed",
+      "xmlSitemap": "XML sitemap",
+      "robots": "robots.txt"
+    },
+    "loginTitle": "Sign in",
+    "loginDescription": "Sign in to VPsych to practice with AI patient avatars and track clinical competencies.",
+    "signupTitle": "Create account",
+    "signupDescription": "Join VPsych — bilingual AI patient simulations for psychiatric and psychotherapy training."
   },
   "auth": {
     "loading": "Loading…",
