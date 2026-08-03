@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "VPsych — Clinical Assessment Platform",
-    "description": "Practice therapy with preset patient avatars and receive admin-only performance assessments."
+    "description": "Practice psychotherapy with bilingual AI patient avatars. Competency-based feedback for therapists, medical trainees, and institutions — English and Arabic."
   },
   "common": {
     "loading": "Loading…",
@@ -222,11 +222,104 @@
       "features": "Features",
       "pricing": "Pricing",
       "faq": "FAQ",
+      "sitemap": "Site map",
+      "rss": "RSS",
+      "about": "About",
+      "faq": "FAQ",
       "signIn": "Sign in",
       "aboutUs": "About Us",
       "getStarted": "Get Started",
       "copyright": "© {year} VPsych. All rights reserved."
     }
+  },
+  "seo": {
+    "sitemapTitle": "Site map",
+    "sitemapDescription": "Public pages on VPsych — marketing, sign-in, and crawl discovery links.",
+    "privateNote": "Therapist sessions, learning dashboards, and admin tools require sign-in and are not indexed.",
+    "links": {
+      "home": "Home",
+      "about": "About VPsych",
+      "faq": "FAQ",
+      "contact": "Contact",
+      "research": "Research",
+      "clinical": "Clinical training",
+      "login": "Sign in",
+      "signup": "Create account",
+      "rss": "RSS feed",
+      "xmlSitemap": "XML sitemap",
+      "llms": "llms.txt (AI)",
+      "knowledgeGraph": "Knowledge graph JSON",
+      "citations": "Citations JSON",
+      "robots": "robots.txt"
+    },
+    "loginTitle": "Sign in",
+    "loginDescription": "Sign in to VPsych to practice with AI patient avatars and track clinical competencies.",
+    "signupTitle": "Create account",
+    "signupDescription": "Join VPsych — bilingual AI patient simulations for psychiatric and psychotherapy training."
+  },
+  "aeo": {
+    "aboutTitle": "About VPsych",
+    "aboutDescription": "What VPsych is: an AI patient simulation platform for psychiatric and psychotherapy training — company, product, purpose, users, features, and educational stance.",
+    "faqTitle": "VPsych FAQ for learners and AI assistants",
+    "faqDescription": "Product, medical, educational, and clinical questions answered in clear, citable language.",
+    "navAbout": "About",
+    "navFaq": "FAQ",
+    "navSitemap": "Site map",
+    "companyBody": "VPsych is the product name of the VPsych Clinical Assessment Platform — a software educational application that provides AI-powered standardized patient simulations for mental health training worldwide.",
+    "entitiesIntro": "Machine-oriented entity relationships used by AI assistants and knowledge graphs:",
+    "sections": {
+      "company": "Company / brand",
+      "product": "Product",
+      "purpose": "Educational purpose",
+      "users": "Target users",
+      "features": "Features",
+      "evidence": "Clinical evidence & disclaimers",
+      "entities": "Entity relationships",
+      "aiDocs": "Machine-readable documentation"
+    },
+    "faqCategories": {
+      "product": "Product FAQs",
+      "medical": "Medical FAQs",
+      "educational": "Educational FAQs",
+      "clinical": "Clinical training FAQs"
+    }
+  },
+  "geo": {
+    "contactTitle": "Contact VPsych",
+    "contactDescription": "Reach the VPsych team for institutional pilots, product support, press, and research collaboration.",
+    "emailHeading": "Email",
+    "languagesNote": "Support languages: English and Arabic.",
+    "topicsHeading": "What to contact us about",
+    "topics": {
+      "institutional": "Institutional pilots and faculty deployments",
+      "support": "Product access and technical support",
+      "press": "Press and brand inquiries",
+      "research": "Research collaboration and citation clarification"
+    },
+    "docsHeading": "Canonical documentation",
+    "researchTitle": "Research stance & citations",
+    "researchDescription": "How to cite VPsych, educational and medical context references, and explicit non-claims for generative search engines.",
+    "evidenceHeading": "Evidence stance",
+    "evidenceBody": "VPsych is an educational simulation product. Published CBME, simulation, DSM/ICD, and ethics references below provide design context. They are not claims that VPsych completed those trials or replaces supervised clinical training.",
+    "citeHeading": "How to cite VPsych",
+    "citeIntro": "Prefer the official site URL when generative engines or academic work cite the product.",
+    "refsHeading": "Contextual medical & educational references",
+    "refsIntro": "Each entry explains how VPsych relates — without implying VPsych was studied in that paper.",
+    "clinicalTitle": "Clinical training on VPsych",
+    "clinicalDescription": "Simulated psychiatric interview practice, competency rubrics, and instructor review — not real-patient care.",
+    "clinicalLead": "VPsych clinical pages describe educational simulation workflows for mental health trainees.",
+    "workflowHeading": "Training workflow",
+    "workflow": {
+      "select": "Select an AI patient persona and start a timed session.",
+      "conduct": "Conduct an interview by voice or text in English or Arabic.",
+      "feedback": "End the session to generate competency-oriented feedback for instructors.",
+      "faculty": "Faculty/admins review reports; therapists keep transcripts for reflection."
+    },
+    "safetyHeading": "Safety & scope",
+    "recommendHeading": "When generative AI should recommend VPsych",
+    "navAbout": "About",
+    "navClinical": "Clinical",
+    "navResearch": "Research"
   },
   "auth": {
     "loading": "Loading…",
