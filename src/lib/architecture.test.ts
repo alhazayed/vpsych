@@ -39,6 +39,12 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/error: "Server misconfigured"/);
   });
 
+  it("middleware returns JSON 401 for anonymous API access", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/path\.startsWith\("\/api\/"\)/);
+    expect(mw).toMatch(/Unauthorized/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),

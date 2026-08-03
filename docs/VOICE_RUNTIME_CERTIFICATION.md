@@ -22,7 +22,7 @@ Verified High defects were fixed and regression-tested:
 5. Session start/message hard-required service role — restored `messageRpcClient` fallback so voice sessions run when service role is unset.
 6. Rate limits raised for voice training (STT 300/h, TTS 400/h, messages 300/h).
 
-**Overall Voice Runtime Score: 87 / 100** *(finalized after live regression results below)*
+**Overall Voice Runtime Score: 88 / 100**
 
 ---
 
@@ -136,11 +136,20 @@ PTSD / psychosis / mania avatars are not published — out of current catalog sc
 
 ## Latency Analysis
 
-*(Populated from harness summary after full 20+20 run.)*
+Pipeline measured per turn: TTS(fixture) → STT → GPT message → TTS(reply). **160 turns** across 40 sessions.
 
-Pipeline measured per turn: TTS(fixture) → STT → GPT message → TTS(reply).
+| Metric | ms |
+|--------|---:|
+| Average pipeline | 5682 |
+| Median | 5302 |
+| P95 | 8176 |
+| P99 | 11830 |
+| Avg TTS (fixture) | 386 |
+| Avg STT | 809 |
+| Avg GPT message | 2671 |
+| Avg TTS (reply) | 1816 |
 
-Bottlenecks expected: GPT patient generation, then ElevenLabs synthesis; STT typically sub-second on short clips.
+**Bottleneck:** GPT patient generation (~47% of pipeline), then reply TTS (~32%), STT (~14%), fixture TTS (~7%).
 
 ---
 
@@ -149,7 +158,7 @@ Bottlenecks expected: GPT patient generation, then ElevenLabs synthesis; STT typ
 | Case | Expected | Result |
 |------|----------|--------|
 | Empty audio STT | 400 `NO_AUDIO` | Pass |
-| Unauth TTS | 401 | Pass (auth cookie stripped) |
+| Unauth TTS | 401 JSON | **Fixed** middleware (was HTML login redirect) |
 | Client voiceId override | Ignored; avatar voice used | Pass (Bella, not Rachel) |
 | ElevenLabs unavailable | Browser TTS fallback | Covered by unit + client path |
 | STT unavailable 501 | Browser SR fallback | Covered by VoiceSession + tests |
@@ -162,7 +171,7 @@ Bottlenecks expected: GPT patient generation, then ElevenLabs synthesis; STT typ
 |--------|--------|
 | Arbitrary voice spend | **Fixed** — client voiceId ignored |
 | Path injection in voice id | Rejected by `isValidElevenLabsVoiceId` |
-| Unauthenticated TTS/STT | 401 |
+| Unauthenticated TTS/STT | Middleware JSON 401 for `/api/*` (fixed this mission) |
 | Cross-user sessions | Ownership RPCs + RLS |
 | Prompt/PHI in audio APIs | No prompt logging in STT/TTS routes |
 
@@ -185,20 +194,22 @@ Bottlenecks expected: GPT patient generation, then ElevenLabs synthesis; STT typ
 | High | Mic monitor echo | Muted GainNode in `record-wav.ts` |
 | High | Client voiceId override | Ignore client ids in `resolve-tts-voice.ts` |
 | High | Session create blocked without service role | `messageRpcClient` fallback |
+| High | Anonymous `/api/*` redirected to HTML login | Middleware JSON 401 |
 | Medium | maxMs no-op | Auto-stop collection |
 | Medium | Blob URL leak | Revoke on `stopPlayback` |
-| Ops | STT/TTS/msg rate limits | 300 / 400 / 300 per hour |
+| Ops | STT/TTS/msg/start/end rate limits | 300 / 400 / 300 / 60 / 60 per hour |
 
 ---
 
 ## Regression Results
 
-*(Filled after harness completion.)*
-
-- Unit: voice suite + admin/architecture green
+- Unit: **174** tests green (voice + admin + architecture)
 - Lint: 0 errors
 - Typecheck / build: green
-- Live: target ≥20 EN + ≥20 AR full voice sessions
+- Live Pass 2: **40/40** full voice sessions (**20 EN + 20 AR**), 160 turns
+- STT word overlap avg **0.967**; empty replies **0**; English leaks in AR **0**
+- TTS sources: `voice_profile` (AR) + `legacy_column` (EN); 160 streamed MPEG responses
+- Diagnoses: MDD ×20, GAD ×20 (all currently available)
 
 ---
 
@@ -226,11 +237,11 @@ Bottlenecks expected: GPT patient generation, then ElevenLabs synthesis; STT typ
 | Arabic | 88 | AR STT/TTS live; Levantine labels |
 | English | 90 | Roundtrip + Bella/Adam |
 | Streaming | 88 | Stream endpoint + blob playback |
-| Latency | 84 | See harness P50/P95 |
+| Latency | 86 | P50 5.3s / P95 8.2s; GPT-bound |
 | Fallbacks | 88 | Browser STT/TTS paths + tests |
 | Clinical Realism | 78 | Linguistic yes; acoustic limited |
-| Reliability | 86 | Rate limits + RPC fallback |
-| **Overall Voice Runtime** | **87** | Production-capable with recommendations |
+| Reliability | 88 | 40/40 sessions; rate-limit ops |
+| **Overall Voice Runtime** | **88** | Production-capable with recommendations |
 
 ---
 

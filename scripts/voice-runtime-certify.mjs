@@ -90,12 +90,22 @@ async function api(path, init = {}, attempt = 0) {
   const t0 = Date.now();
   const res = await fetch(`${BASE}${path}`, {
     ...init,
+    redirect: "manual",
     headers: {
       cookie: cookieHeader(),
       ...(init.headers || {}),
     },
   });
   const ms = Date.now() - t0;
+  if ([301, 302, 303, 307, 308].includes(res.status)) {
+    return {
+      status: res.status,
+      json: { error: "Redirect", location: res.headers.get("location") },
+      buf: null,
+      ms,
+      headers: {},
+    };
+  }
   const ct = res.headers.get("content-type") || "";
   let json = null;
   let buf = null;
