@@ -11,6 +11,7 @@ import {
 import {
   calculateMastery,
   propagatePerformance,
+  recalculateAllMasteryStages,
 } from "./mastery";
 import { blockedCompetencies, runRootCauseAnalysis } from "./rca";
 import {
@@ -61,14 +62,7 @@ export function getLearnerGraph(
   graph: CompetencyGraph = getBuiltinGraph(),
 ): LearnerGraph {
   const { states: decayed, atRisk } = applyCompetencyDecay(states);
-  const withStages = decayed.map((s) => ({
-    ...s,
-    stage: calculateMastery(
-      s,
-      graph,
-      new Map(decayed.map((x) => [x.competency_id, x])),
-    ),
-  }));
+  const withStages = recalculateAllMasteryStages(decayed, graph);
   const summary = summarizeLearnerGraph(withStages, graph);
   return {
     learner_id: learnerId,
@@ -139,29 +133,33 @@ export function statesFromAceCompetencies(
     samples: number;
     trend?: number;
     last_assessed_at?: string | null;
+    locked?: boolean;
+    instructor_approved?: boolean;
+    confidence?: number;
+    mastery_stage?: string | null;
   }>,
   graph: CompetencyGraph = getBuiltinGraph(),
 ): LearnerNodeState[] {
   const byId = new Map(competencies.map((c) => [c.competency_id, c]));
   const base = createEmptyLearnerStates(graph);
-  return base.map((s) => {
+  const mapped = base.map((s) => {
     const src = byId.get(s.competency_id);
     if (!src) return s;
-    const next = {
+    return {
       ...s,
       score: src.score,
       samples: src.samples,
       trend: src.trend ?? 0,
       last_practiced_at: src.last_assessed_at ?? null,
-      confidence: Math.round(src.score * 0.7 + 15),
+      confidence:
+        typeof src.confidence === "number"
+          ? src.confidence
+          : Math.round(src.score * 0.7 + 15),
+      locked: Boolean(src.locked),
+      instructor_approved: Boolean(src.instructor_approved),
     };
-    next.stage = calculateMastery(
-      next,
-      graph,
-      new Map([[s.competency_id, next]]),
-    );
-    return next;
   });
+  return recalculateAllMasteryStages(mapped, graph);
 }
 
 export {
@@ -172,6 +170,7 @@ export {
   runRootCauseAnalysis,
   generateRemediationPlan,
   calculateMastery,
+  recalculateAllMasteryStages,
   applyCompetencyDecay,
   blockedCompetencies,
 };

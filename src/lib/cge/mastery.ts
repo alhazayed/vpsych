@@ -1,4 +1,4 @@
-import { descendants, getBuiltinGraph, nodeById } from "./graph";
+import { descendants, getBuiltinGraph, nodeById, topologicalOrder } from "./graph";
 import type {
   CompetencyGraph,
   GraphCompetencyId,
@@ -89,6 +89,25 @@ export function calculateMastery(
 }
 
 /**
+ * Recalculate mastery stages in topological order so prerequisite gates
+ * see updated prerequisite stages (not stale not_attempted defaults).
+ */
+export function recalculateAllMasteryStages(
+  states: LearnerNodeState[],
+  graph: CompetencyGraph = getBuiltinGraph(),
+): LearnerNodeState[] {
+  const order = topologicalOrder(graph);
+  const map = new Map(states.map((s) => [s.competency_id, { ...s }]));
+  for (const id of order) {
+    const cur = map.get(id);
+    if (!cur) continue;
+    cur.stage = calculateMastery(cur, graph, map);
+    map.set(id, cur);
+  }
+  return [...map.values()];
+}
+
+/**
  * Propagate confidence downward through dependents when a prerequisite is weak.
  * Strong communication does NOT inflate diagnostic formulation.
  */
@@ -101,6 +120,11 @@ export function propagatePerformance(
   const map = new Map(states.map((s) => [s.competency_id, { ...s }]));
   const current = map.get(updatedId);
   if (!current) return states;
+
+  // Instructor lock blocks score mutation (practice still visible as blocked).
+  if (current.locked) {
+    return states;
+  }
 
   const prevScore = current.score;
   current.score = newScore;
@@ -132,7 +156,7 @@ export function propagatePerformance(
     }
   }
 
-  return [...map.values()];
+  return recalculateAllMasteryStages([...map.values()], graph);
 }
 
 export function isMastered(stage: MasteryStage): boolean {
