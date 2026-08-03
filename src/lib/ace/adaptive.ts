@@ -103,6 +103,48 @@ function fingerprintFor(
   ].join("|");
 }
 
+/** Content identity ignoring salt suffixes and learner id. */
+export function contentSignature(
+  disorder: string,
+  difficulty: string,
+  focus: string[],
+  adaptations: string[],
+  siStyle: string | undefined,
+): string {
+  const cleaned = adaptations
+    .filter((a) => !a.startsWith("cge_") && !a.startsWith("explain:"))
+    .slice()
+    .sort();
+  return [
+    disorder,
+    difficulty,
+    focus.slice().sort().join(","),
+    cleaned.join(","),
+    siStyle ?? "",
+  ].join("|");
+}
+
+export function contentSignatureFromFingerprint(fp: string): string {
+  const base = fp.split("#")[0] ?? fp;
+  const parts = base.split("|");
+  // learner|disorder|difficulty|focus|adaptations|siStyle|step
+  if (parts.length < 6) return base;
+  return [parts[1], parts[2], parts[3], parts[4], parts[5]].join("|");
+}
+
+/**
+ * Suicide / risk ladder step from exposure count — no modulo wrap
+ * (wrapping caused Passive-SI repetition traps).
+ */
+export function remediationStepIndex(
+  samples: number,
+  ladderLength: number,
+  explicit?: number,
+): number {
+  const raw = explicit ?? samples;
+  return Math.min(ladderLength - 1, Math.max(0, Math.floor(raw)));
+}
+
 /**
  * Generate the next adaptive case request for a learner.
  * Targets competency deficits — does not blindly raise difficulty.
@@ -131,6 +173,12 @@ export function generateAdaptiveCase(
         undefined,
         opts?.stepIndex ?? 0,
       ),
+      confidence: 40,
+      explainability: {
+        active_rules: [],
+        decision:
+          "Adaptive mode disabled; returning manual curriculum placeholder.",
+      },
     };
   }
 
@@ -138,6 +186,9 @@ export function generateAdaptiveCase(
     opts?.seed ?? `${profile.id}:${profile.completed_case_count}`,
   );
   const prior = new Set(opts?.priorFingerprints ?? []);
+  const priorContent = new Set(
+    [...prior].map((f) => contentSignatureFromFingerprint(f)),
+  );
   const active = selectActiveRules(profile, opts?.rules);
   const primary = active[0];
 
@@ -152,13 +203,23 @@ export function generateAdaptiveCase(
       );
   const weakest = [...pool].sort((a, b) => a.score - b.score)[0];
 
-  const focus: CompetencyId[] = primary?.adaptation.focus?.length
-    ? primary.adaptation.focus
+  let focus: CompetencyId[] = primary?.adaptation.focus?.length
+    ? [...primary.adaptation.focus]
     : weakest
       ? [weakest.competency_id]
       : ["diagnostic_interview"];
 
-  // Locked objectives / diagnoses from instructor controls
+  // Instructor-locked objectives force curriculum focus (High H2).
+  if (profile.locked_objectives.length) {
+    const locked = profile.locked_objectives.filter((o): o is CompetencyId =>
+      profile.competencies.some((c) => c.competency_id === o),
+    );
+    if (locked.length) {
+      focus = [...new Set([...locked, ...focus])];
+    }
+  }
+
+  // Locked diagnoses from instructor controls
   let diagnosisPool =
     primary?.adaptation.diagnosis_pool ??
     ["mdd-recurrent-moderate", "gad-with-panic", "ptsd"];
@@ -172,21 +233,60 @@ export function generateAdaptiveCase(
   const adaptations: string[] = [
     ...(primary?.adaptation.adaptations ?? []),
   ];
+  let ladderStep = opts?.stepIndex ?? profile.completed_case_count;
 
   if (focus.includes("suicide_assessment")) {
-    const rawStep =
-      opts?.stepIndex ??
-      (profile.competencies.find((c) => c.competency_id === "suicide_assessment")
-        ?.samples ?? 0);
-    const step = Math.min(
-      SUICIDE_CURRICULUM_STEPS.length - 1,
-      Math.max(0, rawStep % SUICIDE_CURRICULUM_STEPS.length),
+    const samples =
+      profile.competencies.find((c) => c.competency_id === "suicide_assessment")
+        ?.samples ?? 0;
+    // Prefer explicit step, else exposure samples — never modulo-wrap.
+    let step = remediationStepIndex(
+      samples,
+      SUICIDE_CURRICULUM_STEPS.length,
+      opts?.stepIndex,
     );
+    // Skip ladder stages whose content already appeared (anti-trap).
+    for (let probe = step; probe < SUICIDE_CURRICULUM_STEPS.length; probe++) {
+      const staged = SUICIDE_CURRICULUM_STEPS[probe]!;
+      const sig = contentSignature(
+        staged.diagnosis,
+        staged.difficulty,
+        focus,
+        [...adaptations, `si_style:${staged.si_style}`],
+        staged.si_style,
+      );
+      if (!priorContent.has(sig) || probe === SUICIDE_CURRICULUM_STEPS.length - 1) {
+        step = probe;
+        break;
+      }
+    }
     const staged = SUICIDE_CURRICULUM_STEPS[step]!;
-    diagnosisPool = [staged.diagnosis];
+    // Locked diagnoses still win over suicide staging when set.
+    if (!profile.locked_diagnoses.length) {
+      diagnosisPool = [staged.diagnosis];
+      // After ladder ceiling, rotate secondary diagnoses to avoid content traps.
+      if (
+        step >= SUICIDE_CURRICULUM_STEPS.length - 1 &&
+        profile.completed_case_count >= SUICIDE_CURRICULUM_STEPS.length
+      ) {
+        const rotate = [
+          staged.diagnosis,
+          "bpd",
+          "ptsd",
+          "mdd-recurrent-moderate",
+          "alcohol-use-disorder",
+        ];
+        diagnosisPool = rotate.filter((d) => findDisorderBySlug(d));
+        const cycle = profile.completed_case_count % 3;
+        if (cycle === 1) adaptations.push("comorbidity");
+        if (cycle === 2) adaptations.push("time_pressure");
+        adaptations.push(`exposure_cycle:${cycle}`);
+      }
+    }
     siStyle = staged.si_style;
     difficulty = staged.difficulty;
     adaptations.push(`si_style:${staged.si_style}`);
+    ladderStep = step;
   }
 
   if (primary?.adaptation.increase) {
@@ -196,7 +296,6 @@ export function generateAdaptiveCase(
     adaptations.push(...primary.adaptation.reduce.map((r) => `reduce:${r}`));
   }
 
-  // Hold unrelated therapy complexity when remediating differential with strong CBT
   if (primary?.adaptation.hold_therapy_complexity) {
     adaptations.push("hold_cbt_complexity");
   }
@@ -211,29 +310,21 @@ export function generateAdaptiveCase(
     difficulty = clampDifficulty(difficulty, 0, profile.max_difficulty);
   }
 
-  // Pick non-repeating diagnosis
+  // Pick non-repeating diagnosis by content signature
   let disorderSlug = diagnosisPool[0]!;
   const shuffled = [...diagnosisPool].sort(() => rng() - 0.5);
   for (const d of shuffled) {
-    const fp = fingerprintFor(
-      profile.id,
-      d,
-      difficulty,
-      focus,
-      adaptations,
-      siStyle,
-      opts?.stepIndex ?? profile.completed_case_count,
-    );
-    if (!prior.has(fp) && findDisorderBySlug(d)) {
+    const sig = contentSignature(d, difficulty, focus, adaptations, siStyle);
+    if (!priorContent.has(sig) && findDisorderBySlug(d)) {
       disorderSlug = d;
       break;
     }
+    if (findDisorderBySlug(d)) disorderSlug = d;
   }
   if (!findDisorderBySlug(disorderSlug)) {
     disorderSlug = "mdd-recurrent-moderate";
   }
 
-  // Comorbidity only when adaptation asks — not blanket difficulty hike
   const comorbiditySlugs: string[] = [];
   if (
     adaptations.includes("comorbidity") ||
@@ -268,16 +359,32 @@ export function generateAdaptiveCase(
     focus,
     adaptations,
     siStyle,
-    opts?.stepIndex ?? profile.completed_case_count,
+    ladderStep,
   );
 
-  // Ensure uniqueness under repetition pressure
   let uniqueFp = fp;
   let salt = 0;
   while (prior.has(uniqueFp) && salt < 50) {
     salt += 1;
     uniqueFp = `${fp}#${salt}`;
   }
+
+  const focusScore = scoreOf(profile.competencies, focus[0]!);
+  const decisionConfidence = Math.max(
+    35,
+    Math.min(
+      95,
+      Math.round(
+        (primary ? 70 : 55) +
+          Math.min(20, (profile.competencies.find((c) => c.competency_id === focus[0])?.samples ?? 0) * 3) -
+          Math.max(0, profile.min_competency_threshold - focusScore) * 0.4,
+      ),
+    ),
+  );
+
+  const decision = primary
+    ? `Activated rule "${primary.slug}" (priority ${primary.priority}) because ${primary.trigger_competency_id} ${primary.trigger_operator} ${primary.trigger_threshold} with assessed samples. Focus=${focus.join(", ")}; case=${disorderSlug}@${difficulty}${siStyle ? `; SI=${siStyle}` : ""}.`
+    : `No remediation rule matched; selected weakest assessed competency ${focus[0]} → ${disorderSlug}@${difficulty}.`;
 
   return {
     presetSlug,
@@ -295,16 +402,31 @@ export function generateAdaptiveCase(
       ? `Rule ${primary.slug}: focus ${focus.join(", ")} via ${disorderSlug} (${difficulty})`
       : `Weakest competency ${focus[0]} → ${disorderSlug}`,
     fingerprint: uniqueFp,
+    confidence: decisionConfidence,
+    explainability: {
+      active_rules: active.map((r) => r.slug),
+      decision,
+      ladder_step: focus.includes("suicide_assessment") ? ladderStep : undefined,
+      content_signature: contentSignature(
+        disorderSlug,
+        difficulty,
+        focus,
+        adaptations,
+        siStyle,
+      ),
+    },
   };
 }
 
-/** Detect infinite remediation loops (same fingerprint family repeated). */
+/** Detect infinite remediation loops by content identity (not salt). */
 export function detectRepetitionLoop(
   fingerprints: string[],
   window = 8,
 ): boolean {
   if (fingerprints.length < window) return false;
-  const recent = fingerprints.slice(-window).map((f) => f.split("#")[0]);
+  const recent = fingerprints
+    .slice(-window)
+    .map((f) => contentSignatureFromFingerprint(f));
   const unique = new Set(recent);
   return unique.size <= 2;
 }

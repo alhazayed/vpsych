@@ -208,6 +208,15 @@ export type AdaptiveCaseRequest = {
   feedbackMode?: string;
   rationale: string;
   fingerprint: string;
+  /** Model confidence in this recommendation (0–100). */
+  confidence?: number;
+  /** Human-readable decision trace for accreditation audit. */
+  explainability?: {
+    active_rules: string[];
+    decision: string;
+    ladder_step?: number;
+    content_signature?: string;
+  };
 };
 
 export type CoachFeedback = {

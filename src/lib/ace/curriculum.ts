@@ -82,22 +82,34 @@ export function buildRemediationCurriculum(
 
 export function generateCurriculum(profile: LearnerProfile): LearningPath {
   const threshold = profile.min_competency_threshold;
+  // Only assessed competencies count as weak (avoid cold-start noise).
   const weak = [...profile.competencies]
-    .filter((c) => c.score < threshold)
+    .filter((c) => c.samples > 0 && c.score < threshold)
     .sort((a, b) => a.score - b.score)[0];
 
+  const lockedFocus = profile.locked_objectives[0] as CompetencyId | undefined;
   const focus =
+    lockedFocus ??
     (profile.required_competencies[0] as CompetencyId | undefined) ??
     weak?.competency_id ??
     "diagnostic_interview";
 
-  return buildRemediationCurriculum(profile, focus);
+  const path = buildRemediationCurriculum(profile, focus);
+  // Seed current_step from exposure so API callers are not stuck at 0.
+  const samples =
+    profile.competencies.find((c) => c.competency_id === focus)?.samples ?? 0;
+  const current_step = Math.min(
+    Math.max(0, path.steps.length - 1),
+    Math.max(0, samples),
+  );
+  return { ...path, current_step };
 }
 
 export function advanceCurriculum(
   path: LearningPath,
   competencyScore: number,
   threshold: number,
+  opts?: { advanceOnExposure?: boolean },
 ): LearningPath {
   if (path.status !== "active") return path;
   const steps = path.steps.map((s) => ({ ...s }));
@@ -106,15 +118,18 @@ export function advanceCurriculum(
     return { ...path, status: "completed" };
   }
 
-  if (competencyScore >= threshold) {
-    current.completed = true;
+  const shouldAdvance =
+    competencyScore >= threshold || opts?.advanceOnExposure === true;
+
+  if (shouldAdvance) {
+    current.completed = competencyScore >= threshold;
     const next = path.current_step + 1;
     if (next >= steps.length) {
       return {
         ...path,
         steps,
-        current_step: next,
-        status: "completed",
+        current_step: Math.min(next, steps.length),
+        status: competencyScore >= threshold ? "completed" : "active",
       };
     }
     return { ...path, steps, current_step: next };

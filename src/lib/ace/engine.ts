@@ -131,11 +131,18 @@ export function ingestSessionAssessment(
     next.competencies.find(
       (c) => c.competency_id === path.focus_competency_id,
     )?.score ?? opts.overall;
+  // Advance on mastery; exposure progression is already encoded in
+  // generateCurriculum(current_step ← samples).
   path = advanceCurriculum(path, focusScore, next.min_competency_threshold);
+
+  const priorFingerprints = Array.isArray(next.metadata?.prior_fingerprints)
+    ? (next.metadata.prior_fingerprints as string[])
+    : [];
 
   const nextCase = generateAdaptiveCase(next, {
     seed: `next:${next.id}:${next.completed_case_count}`,
     stepIndex: path.current_step,
+    priorFingerprints,
   });
 
   next = {
@@ -145,6 +152,9 @@ export function ingestSessionAssessment(
       history_overall: analytics.learning_curve.map((p) => p.overall),
       last_next_case: nextCase,
       active_rules: selectActiveRules(next).map((r) => r.slug),
+      prior_fingerprints: [...priorFingerprints, nextCase.fingerprint].slice(
+        -50,
+      ),
     },
   };
 
