@@ -42,22 +42,37 @@ export async function POST(request: Request) {
       .eq("id", body.presetId)
       .maybeSingle();
     if (data) {
-      preset = listBuiltinPresets().find((p) => p.slug === data.slug) ?? {
-        ...findPresetBySlug(data.slug)!,
-        id: data.id,
-        slug: data.slug,
-        name: data.name,
-        primary_objective: data.primary_objective,
-        difficulty: data.difficulty,
-        time_limit_minutes: data.time_limit_minutes,
-        language: data.language,
-        therapy_modality: data.therapy_modality,
-        grading_mode: data.grading_mode,
-        feedback_mode: data.feedback_mode,
-        allow_hints: data.allow_hints,
-        enabled: data.enabled,
-        version: data.version,
-      };
+      const builtin =
+        listBuiltinPresets().find((p) => p.slug === data.slug) ??
+        findPresetBySlug(data.slug);
+      if (builtin) {
+        preset = {
+          ...builtin,
+          id: data.id,
+          slug: data.slug,
+          name: data.name,
+          primary_objective: data.primary_objective,
+          difficulty: data.difficulty,
+          time_limit_minutes: data.time_limit_minutes,
+          language: data.language,
+          therapy_modality: data.therapy_modality,
+          grading_mode: data.grading_mode,
+          feedback_mode: data.feedback_mode,
+          allow_hints: data.allow_hints,
+          enabled: data.enabled,
+          version: data.version,
+        };
+      } else {
+        // DB-only preset without builtin twin — insufficient children for
+        // generateFromPreset; reject rather than crashing on undefined spread.
+        return NextResponse.json(
+          {
+            error:
+              "Preset exists in database but lacks builtin metadata; re-import or seed children",
+          },
+          { status: 422 },
+        );
+      }
     }
   }
 

@@ -133,14 +133,22 @@ export async function POST(request: Request) {
       created_by: user.id,
     });
     if (verErr) {
-      return NextResponse.json({ error: verErr.message }, { status: 500 });
+      console.warn("[api] preset version:", verErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(verErr.message) },
+        { status: 500 },
+      );
     }
     const { error: updErr } = await supabase
       .from("instructor_presets")
       .update({ version: nextVersion, updated_at: new Date().toISOString() })
       .eq("id", src.id);
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      console.warn("[api] preset version bump:", updErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(updErr.message) },
+        { status: 500 },
+      );
     }
     return NextResponse.json({ ok: true, version: nextVersion });
   }
@@ -188,8 +196,9 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (cloneErr || !cloned) {
+      console.warn("[api] preset clone:", cloneErr?.message);
       return NextResponse.json(
-        { error: cloneErr?.message ?? "Clone failed" },
+        { error: sanitizeDbError(cloneErr?.message ?? "Clone failed") },
         { status: 500 },
       );
     }
@@ -224,6 +233,24 @@ export async function POST(request: Request) {
       await supabase
         .from("preset_grading")
         .insert({ ...grading, preset_id: cloned.id });
+    }
+    const { data: templates } = await supabase
+      .from("preset_templates")
+      .select("template_id, priority")
+      .eq("preset_id", body.presetId);
+    if (templates?.length) {
+      await supabase.from("preset_templates").insert(
+        templates.map((t) => ({ ...t, preset_id: cloned.id })),
+      );
+    }
+    const { data: constraints } = await supabase
+      .from("preset_constraints")
+      .select("constraint_type, value")
+      .eq("preset_id", body.presetId);
+    if (constraints?.length) {
+      await supabase.from("preset_constraints").insert(
+        constraints.map((c) => ({ ...c, preset_id: cloned.id })),
+      );
     }
 
     return NextResponse.json({ ok: true, preset: cloned });
