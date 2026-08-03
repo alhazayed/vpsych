@@ -249,26 +249,39 @@ function scoreReport(edge, api) {
     login1k.errorRate < 0.05 &&
     (login1k.p95 ?? Infinity) < 5000;
 
+  const healthStatuses = health100?.byStatus || {};
+  const health200 = healthStatuses[200] || 0;
   const healthOk =
     health100 &&
-    health100.errorRate < 0.02 &&
+    health200 / health100.n >= 0.95 &&
     (health100.p95 ?? Infinity) < 2000;
 
-  let score = 70;
+  // Unauth API should prefer 401 JSON (not 5xx). 307 counts as soft fail for APIs.
+  const apiRedirectHeavy = api.some((a) => (a.byStatus[307] || 0) / a.n > 0.5);
+
+  let score = 68;
   if (edgeOk) score += 10;
   if (healthOk) score += 8;
-  if (unauthOk) score += 7;
-  // Recommendations remain for AI provider scale + Upstash ops
-  score = Math.min(92, score);
+  if (unauthOk) score += 6;
+  if (!apiRedirectHeavy) score += 4;
+  // Cap below perfect while AI/voice 250–1000 soak + Upstash remain ops recommendations
+  score = Math.min(88, score);
 
   const verdict =
-    score >= 90 && edgeOk && healthOk
+    score >= 90 && edgeOk && healthOk && !apiRedirectHeavy
       ? "✅ LOAD CERTIFIED FOR PRODUCTION"
       : score >= 75
         ? "⚠ LOAD CERTIFIED WITH RECOMMENDATIONS"
         : "❌ LOAD CERTIFICATION FAILED";
 
-  return { score, verdict, edgeOk, healthOk, unauthOk };
+  return {
+    score,
+    verdict,
+    edgeOk: Boolean(edgeOk),
+    healthOk: Boolean(healthOk),
+    unauthOk,
+    apiRedirectHeavy,
+  };
 }
 
 async function main() {
