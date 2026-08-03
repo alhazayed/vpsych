@@ -22,6 +22,7 @@ import {
 } from "@/lib/scientific/versions";
 import { buildEriOfflineCorpus } from "@/lib/eri";
 import { buildAviOfflineCorpus } from "@/lib/avi";
+import { buildAleOfflineCorpus } from "@/lib/ale";
 
 export type ScientificMetrics = {
   CFI: number;
@@ -136,16 +137,20 @@ export function runScientificValidation(): ScientificBoardResult {
   if (psy.sd > 3 && psy.sd < 25) pqi += 5;
   const PQI = clamp(pqi);
 
-  // Adaptive Learning Effectiveness
+  // Adaptive Learning Effectiveness — weighted ALE v1.0 corpus mean
+  const aleCorpus = buildAleOfflineCorpus();
+  const ALE = clamp(
+    aleCorpus.reduce((a, r) => a + r.overall, 0) /
+      Math.max(1, aleCorpus.length),
+  );
   const improvedArch = Object.values(outcomes.by_archetype).filter(
     (a) => a.improved,
   ).length;
-  const ALE = clamp(
-    40 +
-      improvedArch * 8 +
-      (outcomes.overall_improved_fraction >= 0.75 ? 15 : 5) +
-      (outcomes.adaptive_decisions >= outcomes.sessions * 0.5 ? 10 : 0),
-  );
+  if (improvedArch < Object.keys(outcomes.by_archetype).length) {
+    high_remaining.push(
+      "Not all educational archetypes improved under outcome simulation",
+    );
+  }
 
   // Competency Measurement Reliability
   const CMR = clamp(
@@ -254,7 +259,9 @@ export function runScientificValidation(): ScientificBoardResult {
         ) / 100
       }; criterion=disclosed_absent; schema ${ASSESSMENT_SCHEMA_VERSION}`,
       PQI: `n=${psy.n_scores}, α=${psy.cronbach_alpha}, retest_r=${psy.test_retest_r}, sd=${psy.sd}`,
-      ALE: `${improvedArch}/${Object.keys(outcomes.by_archetype).length} archetypes improved; adaptive_decisions=${outcomes.adaptive_decisions}`,
+      ALE: `ALE v1.0 corpus mean n=${aleCorpus.length}; archetypes=${aleCorpus
+        .map((r) => r.learner_archetype)
+        .join(",")}; outcome_improved=${improvedArch}/${Object.keys(outcomes.by_archetype).length}`,
       CMR: `Competency ingest across ${outcomes.sessions} sessions; α-linked reliability`,
       AIRS: `Prompt ${PROMPT_ENGINE_VERSION}; provenance builders; live multi-provider corpus deferred`,
       RRS: `Version locks + evidence matrix + seeded sims; DB provenance remediation required`,

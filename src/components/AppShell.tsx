@@ -112,6 +112,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "fact_check",
       match: (p) => p.startsWith("/admin/avi"),
     },
+    {
+      href: "/admin/ale",
+      label: t("adaptiveLearningEffectiveness"),
+      icon: "trending_up",
+      match: (p) => p.startsWith("/admin/ale"),
+    },
   ];
 }
 
@@ -194,6 +200,8 @@ export function AppShell({
       return tShell("pageTitle.educationalReliability");
     if (pathname.startsWith("/admin/avi"))
       return tShell("pageTitle.assessmentValidity");
+    if (pathname.startsWith("/admin/ale"))
+      return tShell("pageTitle.adaptiveLearningEffectiveness");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning/graph"))

@@ -43,7 +43,8 @@
       "securityKeys": "Security & Keys",
       "clinicalFidelity": "Clinical Fidelity Index",
       "educationalReliability": "Educational Reliability Index",
-      "assessmentValidity": "Assessment Validity Index"
+      "assessmentValidity": "Assessment Validity Index",
+      "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness"
     }
   },
   "nav": {
@@ -62,7 +63,8 @@
     "securityKeys": "Security & Keys",
     "clinicalFidelity": "Clinical Fidelity",
     "educationalReliability": "Educational Reliability",
-    "assessmentValidity": "Assessment Validity"
+    "assessmentValidity": "Assessment Validity",
+    "adaptiveLearningEffectiveness": "Adaptive Learning"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -689,6 +691,11 @@
       "eyebrow": "Psychometrics / assessment science",
       "title": "Assessment Validity Index",
       "subtitle": "Weighted 0–100 scientific score of whether VPsych evaluates the competencies it claims — with confidence, variance from repeated assessments, and validity reports."
+    },
+    "ale": {
+      "eyebrow": "Learning analytics / adaptive curriculum",
+      "title": "Adaptive Learning Effectiveness",
+      "subtitle": "Weighted 0–100 scientific score of whether the Adaptive Curriculum selects increasingly appropriate learning experiences — with learning curves, difficulty curves, and curriculum quality reports."
     }
   }
 }
