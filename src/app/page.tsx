@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { CookiePreferencesButton } from "@/components/CookiePreferencesButton";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { JsonLd } from "@/components/JsonLd";
 import {
@@ -532,6 +533,11 @@ export default async function HomePage() {
                   {t("footer.privacy")}
                 </Link>
               </li>
+              <li>
+                <Link href="/release-notes" className="hover:text-[var(--primary)]">
+                  {t("footer.releaseNotes")}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -539,6 +545,7 @@ export default async function HomePage() {
           <p className="text-xs text-[var(--on-surface-variant)] opacity-70">
             {t("footer.copyright", { year })}
           </p>
+          <CookiePreferencesButton />
         </div>
       </footer>
     </div>

@@ -21,9 +21,34 @@ export const PERMISSIONS_POLICY = [
  * `'unsafe-inline'` / `'unsafe-eval'` are required by Next.js client runtime
  * today; tighten further once nonces are wired.
  */
+/** Consent-gated marketing / product analytics hosts (GA4, Clarity, Meta, LinkedIn). */
+export const ANALYTICS_SCRIPT_SRC = [
+  "https://www.googletagmanager.com",
+  "https://www.google-analytics.com",
+  "https://www.clarity.ms",
+  "https://scripts.clarity.ms",
+  "https://connect.facebook.net",
+  "https://snap.licdn.com",
+] as const;
+
+export const ANALYTICS_CONNECT_SRC = [
+  "https://www.google-analytics.com",
+  "https://analytics.google.com",
+  "https://www.googletagmanager.com",
+  "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+  "https://*.clarity.ms",
+  "https://www.facebook.com",
+  "https://*.facebook.com",
+  "https://px.ads.linkedin.com",
+  "https://www.linkedin.com",
+] as const;
+
 export function buildContentSecurityPolicy(options?: {
   /** Extra connect-src hosts (e.g. analytics). */
   extraConnectSrc?: string[];
+  /** Extra script-src hosts. */
+  extraScriptSrc?: string[];
 }): string {
   const connect = [
     "'self'",
@@ -33,12 +58,21 @@ export function buildContentSecurityPolicy(options?: {
     "https://api.elevenlabs.io",
     "https://*.vercel-insights.com",
     "https://vitals.vercel-insights.com",
+    ...ANALYTICS_CONNECT_SRC,
     ...(options?.extraConnectSrc ?? []),
+  ];
+
+  const script = [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    ...ANALYTICS_SCRIPT_SRC,
+    ...(options?.extraScriptSrc ?? []),
   ];
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    `script-src ${script.join(" ")}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",

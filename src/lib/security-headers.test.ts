@@ -42,4 +42,12 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("https://api.openai.com");
     expect(csp).toContain("media-src 'self' blob:");
   });
+
+  it("allows consent-gated analytics script hosts", () => {
+    const csp = buildContentSecurityPolicy();
+    expect(csp).toContain("https://www.googletagmanager.com");
+    expect(csp).toContain("https://www.clarity.ms");
+    expect(csp).toContain("https://connect.facebook.net");
+    expect(csp).toContain("https://snap.licdn.com");
+  });
 });

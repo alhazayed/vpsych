@@ -3,7 +3,9 @@ import { Inter, Montserrat, Geist_Mono, Noto_Sans_Arabic } from "next/font/googl
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
+import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 import { CookieConsent } from "@/components/CookieConsent";
+import { getLaunchAnalyticsConfig } from "@/lib/launch/config";
 import { absoluteUrl, getSiteOrigin, SITE_NAME } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -36,6 +38,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = t("title");
   const description = t("description");
   const ogImage = absoluteUrl("/stitch/landing-hero.png");
+  const launch = getLaunchAnalyticsConfig();
+  const verification: Metadata["verification"] = {};
+  if (launch.googleSiteVerification) {
+    verification.google = launch.googleSiteVerification;
+  }
+  if (launch.bingSiteVerification) {
+    verification.other = { "msvalidate.01": launch.bingSiteVerification };
+  }
 
   return {
     metadataBase: new URL(origin),
@@ -80,6 +90,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       images: [ogImage],
     },
+    verification,
     robots: {
       index: true,
       follow: true,
@@ -112,6 +123,7 @@ export default async function RootLayout({
   const locale = (await getLocale()) as AppLocale;
   const messages = await getMessages();
   const dir = localeDirection(locale);
+  const analyticsConfig = getLaunchAnalyticsConfig();
 
   return (
     <html
@@ -127,6 +139,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
           <CookieConsent />
+          <AnalyticsScripts config={analyticsConfig} />
         </NextIntlClientProvider>
       </body>
     </html>

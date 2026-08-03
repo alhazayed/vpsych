@@ -3,45 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-
-const STORAGE_KEY = "vpsych_cookie_consent_v1";
-
-export type CookieConsentValue = {
-  essential: true;
-  analytics: boolean;
-  decidedAt: string;
-};
-
-function readConsent(): CookieConsentValue | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CookieConsentValue;
-    if (parsed && parsed.essential === true && typeof parsed.analytics === "boolean") {
-      return parsed;
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
-function writeConsent(analytics: boolean) {
-  const value: CookieConsentValue = {
-    essential: true,
-    analytics,
-    decidedAt: new Date().toISOString(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  window.dispatchEvent(new CustomEvent("vpsych:cookie-consent", { detail: value }));
-}
+import {
+  COOKIE_CONSENT_OPEN_EVENT,
+  readCookieConsent,
+  writeCookieConsent,
+} from "@/lib/consent/cookie-consent";
 
 export function CookieConsent() {
   const t = useTranslations("cookie");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(readConsent() === null);
+    setVisible(readCookieConsent() === null);
+    const onOpen = () => setVisible(true);
+    window.addEventListener(COOKIE_CONSENT_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(COOKIE_CONSENT_OPEN_EVENT, onOpen);
   }, []);
 
   if (!visible) return null;
@@ -74,7 +50,7 @@ export function CookieConsent() {
             type="button"
             className="btn-secondary px-4 py-2 text-sm"
             onClick={() => {
-              writeConsent(false);
+              writeCookieConsent(false);
               setVisible(false);
             }}
           >
@@ -84,7 +60,7 @@ export function CookieConsent() {
             type="button"
             className="btn-primary px-4 py-2 text-sm"
             onClick={() => {
-              writeConsent(true);
+              writeCookieConsent(true);
               setVisible(false);
             }}
           >

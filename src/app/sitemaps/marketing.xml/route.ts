@@ -14,6 +14,7 @@ export async function GET() {
     { path: "/pricing", priority: "0.9", changefreq: "monthly" },
     { path: "/terms", priority: "0.5", changefreq: "yearly" },
     { path: "/privacy", priority: "0.5", changefreq: "yearly" },
+    { path: "/release-notes", priority: "0.55", changefreq: "weekly" },
     { path: "/site-map", priority: "0.4", changefreq: "monthly" },
   ]);
   return new Response(xml, {
