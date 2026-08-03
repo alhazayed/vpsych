@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ingestSessionAssessment } from "./engine";
 import { ensureLearnerProfile, persistLearnerUpdate } from "./persist";
+import { generateAdaptiveCase, selectActiveRules } from "./adaptive";
 import {
   generateGraphAwareAdaptiveCase,
   graphSupervisorForProfile,
@@ -9,6 +10,7 @@ import {
   generateLearningPathFromGraph,
   statesFromAceCompetencies,
 } from "@/lib/cge/engine";
+import { createServiceClient } from "@/lib/supabase/admin";
 import type { AdaptiveCaseRequest, CoachFeedback } from "./types";
 import type { ScoreEntry } from "@/lib/types";
 
@@ -54,11 +56,54 @@ export async function runAceAfterAssessment(
       timeLimitSec: opts.timeLimitSec,
     });
 
-    // Competency Graph Engine — root-cause next case + supervisor report
+    const { data: history } = await supabase
+      .from("adaptive_case_history")
+      .select("fingerprint")
+      .eq("learner_id", result.profile.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const priorFingerprints = (history ?? []).map((h) => h.fingerprint);
+
+    const aceCase = generateAdaptiveCase(result.profile, {
+      seed: `ace:${opts.sessionId}`,
+      priorFingerprints,
+    });
     const graphCase = generateGraphAwareAdaptiveCase(result.profile, {
       seed: `cge:${opts.sessionId}`,
       observedFailure: result.analytics.weaknesses[0],
+      priorFingerprints,
     });
+
+    // Prefer ACE remediation when high-priority rules fire; otherwise CGE-aware.
+    const active = selectActiveRules(result.profile);
+    const preferAce = (active[0]?.priority ?? 0) >= 80;
+    const nextCase: AdaptiveCaseRequest = preferAce
+      ? {
+          ...aceCase,
+          adaptations: [
+            ...aceCase.adaptations,
+            ...(graphCase.rootCause
+              ? [
+                  `cge_root:${graphCase.rootCause}`,
+                  `cge_observed:${result.analytics.weaknesses[0] ?? ""}`,
+                ]
+              : []),
+          ],
+          rationale: graphCase.rootCause
+            ? `${aceCase.rationale} [CGE annotate: ${graphCase.rootCause}]`
+            : aceCase.rationale,
+          explainability: {
+            active_rules: aceCase.explainability?.active_rules ?? [],
+            decision: `${aceCase.explainability?.decision ?? aceCase.rationale} Session-hook preferred ACE remediation over CGE override.`,
+            ladder_step: aceCase.explainability?.ladder_step,
+            content_signature: aceCase.explainability?.content_signature,
+          },
+        }
+      : {
+          ...graphCase,
+          fingerprint: graphCase.fingerprint,
+        };
+
     const graphReport = graphSupervisorForProfile(
       result.profile,
       result.analytics.weaknesses[0],
@@ -68,7 +113,10 @@ export async function runAceAfterAssessment(
       supervisor_feedback: [
         graphReport.supervisor_feedback,
         result.coach.supervisor_feedback,
-      ].join(" "),
+        nextCase.explainability?.decision,
+      ]
+        .filter(Boolean)
+        .join(" "),
       learning_goals: [
         ...graphReport.learning_plan.slice(0, 3),
         ...result.coach.learning_goals,
@@ -91,11 +139,6 @@ export async function runAceAfterAssessment(
         .join("\n"),
     };
 
-    const nextCase: AdaptiveCaseRequest = {
-      ...graphCase,
-      fingerprint: graphCase.fingerprint,
-    };
-
     await persistLearnerUpdate(supabase, result.profile, {
       sessionId: opts.sessionId,
       coach,
@@ -107,19 +150,23 @@ export async function runAceAfterAssessment(
         adaptations: nextCase.adaptations,
         rationale: nextCase.rationale,
         siStyle: nextCase.siStyle,
+        confidence: nextCase.confidence,
+        explainability: nextCase.explainability,
         cge_root: graphCase.rootCause,
         cge_pathway: graphCase.remediationPathway,
+        preferred: preferAce ? "ace" : "cge",
       },
     });
 
-    // Persist remediation plan when tables exist
+    // Persist remediation plan with privileged writer when available (RLS).
     if (graphReport.root_cause) {
+      const writer = createServiceClient() ?? supabase;
       const remPlan = generateLearningPathFromGraph(
         result.profile.id,
         statesFromAceCompetencies(result.profile.competencies),
         graphReport.root_cause.observed_failure,
       );
-      await supabase.from("cge_remediation_plans").insert({
+      const { error: remErr } = await writer.from("cge_remediation_plans").insert({
         learner_id: result.profile.id,
         observed_failure: remPlan.observed_failure,
         root_cause_id: remPlan.root_cause_id,
@@ -127,9 +174,11 @@ export async function runAceAfterAssessment(
         recommended_cases: remPlan.recommended_cases,
         status: "active",
       });
+      if (remErr) {
+        console.warn("[ace] cge_remediation_plans insert:", remErr.message);
+      }
     }
 
-    // Soft-link session to learner profile
     await supabase
       .from("sessions")
       .update({
