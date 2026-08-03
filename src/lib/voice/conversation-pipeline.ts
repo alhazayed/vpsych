@@ -27,6 +27,12 @@ export type PipelineTurnResult = {
   assistantMessage: SessionMessage;
   remainingSeconds?: number;
   locale: SessionSpeechLocale;
+  voiceHints?: {
+    stability: number;
+    similarity_boost: number;
+    style: number;
+    pause_before_ms: number;
+  };
 };
 
 export type SpeakHandlers = {
@@ -100,6 +106,7 @@ export async function submitConversationTurn(params: {
     assistantMessage?: SessionMessage;
     remainingSeconds?: number;
     locale?: string;
+    voiceHints?: PipelineTurnResult["voiceHints"];
   };
 
   if (!res.ok) {
@@ -126,6 +133,7 @@ export async function submitConversationTurn(params: {
       assistantMessage: data.assistantMessage,
       remainingSeconds: data.remainingSeconds,
       locale: resolvePipelineLocale(data.locale),
+      voiceHints: data.voiceHints,
     },
   };
 }
@@ -143,9 +151,15 @@ export async function playPatientSpeech(params: {
   avatarId?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
+  voiceHints?: PipelineTurnResult["voiceHints"];
 }): Promise<"elevenlabs" | "browser"> {
   const handlers = params.handlers ?? {};
   handlers.onstart?.();
+
+  const pauseMs = params.voiceHints?.pause_before_ms ?? 0;
+  if (pauseMs > 0) {
+    await new Promise((r) => setTimeout(r, Math.min(pauseMs, 2000)));
+  }
 
   const result = await synthesizeSpeech({
     text: params.text,
@@ -154,6 +168,9 @@ export async function playPatientSpeech(params: {
     voiceIdAr: params.voiceIdAr,
     voiceProfileId: params.voiceProfileId,
     avatarId: params.avatarId,
+    stability: params.voiceHints?.stability,
+    similarityBoost: params.voiceHints?.similarity_boost,
+    style: params.voiceHints?.style,
   });
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
@@ -289,6 +306,7 @@ export async function runVoiceConversationTurn(params: {
       avatarId: params.avatarId,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      voiceHints: turn.data.voiceHints,
     });
   }
 

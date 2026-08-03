@@ -47,6 +47,8 @@ export type ChatCompletionParams = {
   maxCompletionTokens?: number;
   /** Request JSON object mode when the model supports it (assessment). */
   json?: boolean;
+  /** Override reasoning effort for gpt-5 / o-series models. */
+  reasoningEffort?: ReasoningEffort;
 };
 
 export type ChatCompletionResult = {
@@ -157,7 +159,8 @@ export const openAIService = {
         // (gpt-5, o-series) 400 on any temperature != 1, so omit it and steer
         // them with reasoning_effort instead.
         if (reasoning) {
-          request.reasoning_effort = reasoningEffort();
+          request.reasoning_effort =
+            params.reasoningEffort ?? reasoningEffort();
         } else if (params.temperature !== undefined) {
           request.temperature = params.temperature;
         }
