@@ -28,7 +28,8 @@ export type TargetLearner =
   | "social_worker"
   | "occupational_therapist"
   | "medical_educator"
-  | "osce_candidate";
+  | "osce_candidate"
+  | "consultant_psychiatrist";
 
 export type LearningLevel =
   | "undergraduate"
@@ -132,6 +133,7 @@ export const TARGET_LEARNERS: TargetLearner[] = [
   "occupational_therapist",
   "medical_educator",
   "osce_candidate",
+  "consultant_psychiatrist",
 ];
 
 export const PRESET_TIME_LIMITS = [10, 20, 30, 40, 45, 60, 90] as const;

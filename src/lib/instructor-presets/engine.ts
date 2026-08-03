@@ -190,18 +190,23 @@ function pickTemplate(
   const pool = templates.filter((t) => t.enabled);
   if (!pool.length) return null;
 
-  // 1. Explicit pin
+  const compatible = (t: ClinicalScenarioTemplate) =>
+    !t.primary_diagnosis_slug || t.primary_diagnosis_slug === disorderSlug;
+
+  // 1. Explicit pin — only when the pinned template's primary diagnosis
+  // matches the objective-selected disorder. Otherwise instructors get a
+  // PTSD/OSCE shell with an unrelated diagnosis overlay (Critical defect).
   if (preset.scenario_template_id) {
     const pinned =
       pool.find((t) => t.id === preset.scenario_template_id) ??
       findTemplateById(preset.scenario_template_id);
-    if (pinned) return pinned;
+    if (pinned && compatible(pinned)) return pinned;
   }
   if (preset.scenario_template_slug) {
     const pinned =
       pool.find((t) => t.slug === preset.scenario_template_slug) ??
       findTemplateBySlug(preset.scenario_template_slug);
-    if (pinned) return pinned;
+    if (pinned && compatible(pinned)) return pinned;
   }
 
   // 2. Preferred slugs that match language + diagnosis when possible
@@ -225,12 +230,14 @@ function pickTemplate(
     return exactDx[Math.floor(rng() * exactDx.length)]!;
   }
 
-  const langPref = byPref.filter(langMatch);
+  const langPref = byPref.filter((t) => langMatch(t) && compatible(t));
   if (langPref.length) {
     return langPref[Math.floor(rng() * langPref.length)]!;
   }
-  if (byPref.length) {
-    return byPref[Math.floor(rng() * byPref.length)]!;
+
+  const compatiblePref = byPref.filter(compatible);
+  if (compatiblePref.length) {
+    return compatiblePref[Math.floor(rng() * compatiblePref.length)]!;
   }
 
   // 3. Any template matching language + diagnosis
@@ -239,6 +246,15 @@ function pickTemplate(
   );
   if (matchDxLang.length) {
     return matchDxLang[Math.floor(rng() * matchDxLang.length)]!;
+  }
+
+  // Prefer any diagnosis-compatible template before language-only fallback
+  // (language-only / pool fallback reintroduces mismatched shell overlays).
+  const anyCompatible = pool.filter(compatible);
+  if (anyCompatible.length) {
+    const langCompat = anyCompatible.filter(langMatch);
+    const compatPool = langCompat.length ? langCompat : anyCompatible;
+    return compatPool[Math.floor(rng() * compatPool.length)]!;
   }
 
   const matchLang = pool.filter(langMatch);
