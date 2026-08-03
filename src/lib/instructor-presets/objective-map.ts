@@ -60,7 +60,7 @@ export const OBJECTIVE_DISORDER_CANDIDATES: Record<
   trauma_assessment: ["ptsd", "bpd"],
   substance_use_assessment: ["alcohol-use-disorder", "mdd-recurrent-moderate"],
   adhd_assessment: ["adult-adhd", "gad-with-panic"],
-  autism_assessment: ["adult-adhd"], // ASD package may be DB-only; ADHD as fallback candidate
+  autism_assessment: ["asd", "adult-adhd"],
   personality_assessment: ["bpd", "mdd-recurrent-moderate"],
   family_assessment: ["mdd-recurrent-moderate", "bpd"],
   breaking_bad_news: ["mdd-recurrent-moderate"],

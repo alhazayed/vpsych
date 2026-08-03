@@ -12,7 +12,45 @@ import type {
   DifficultyModifiers,
   RandomizedContext,
 } from "@/lib/case-engine/types";
+import { clinicalCuesForDisorder } from "@/lib/clinical/scenario-cues";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
+
+/**
+ * Disorder-aware onset timelines. Randomization must never invent impossible
+ * DSM/ICD course (e.g. PDD as "10 weeks", delirium as "months").
+ */
+export function buildOnsetDuration(
+  slug: string,
+  randomized: RandomizedContext,
+  rng: () => number,
+): string {
+  switch (slug) {
+    case "pdd":
+      return `chronic low mood most of the day for about ${2 + Math.floor(rng() * 4)} years (DSM-5 ≥2-year criterion preserved; contextual colour only)`;
+    case "delirium":
+      return `acute fluctuating disturbance of attention over about ${6 + Math.floor(rng() * 42)} hours (hours–days medical course; not a weeks-long psychiatric episode)`;
+    case "bipolar-mania":
+      return `current manic episode about ${5 + Math.floor(rng() * 10)} days with decreased need for sleep`;
+    case "schizophrenia":
+    case "schizoaffective":
+      return `psychotic symptoms evolving over about ${3 + Math.floor(rng() * 9)} months with functional decline`;
+    case "complex-ptsd":
+      return `trauma-related symptoms with affect dysregulation over years since prolonged trauma; recent intensification about ${randomized.timeline_offset_weeks} weeks`;
+    case "ptsd":
+      return `symptoms since index trauma about ${3 + Math.floor(rng() * 21)} months ago; recent exacerbation about ${randomized.timeline_offset_weeks} weeks`;
+    case "asd":
+    case "adult-adhd":
+      return `lifelong neurodevelopmental pattern; current functional impact highlighted over the past ${randomized.timeline_offset_weeks + 4} weeks`;
+    case "eating-disorders":
+      return `restrictive eating and body-image disturbance evolving over about ${4 + Math.floor(rng() * 14)} months`;
+    case "bpd":
+      return `longstanding affective instability and interpersonal sensitivity (years); recent crisis intensification about ${randomized.timeline_offset_weeks} weeks`;
+    case "alcohol-use-disorder":
+      return `problematic alcohol use escalating over about ${6 + Math.floor(rng() * 18)} months with recent consequences`;
+    default:
+      return `current episode about ${randomized.timeline_offset_weeks + 8} weeks (randomized timeline; DSM criteria unchanged)`;
+  }
+}
 
 /** Simple seeded PRNG (mulberry32). */
 export function createRng(seed: string | number): () => number {
@@ -174,6 +212,18 @@ function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
       ? ` Comorbid presentations active: ${comorbidities.map((c) => c.name).join("; ")}.`
       : "";
 
+  const differentials = pkg.differentials ?? [];
+  const teachingBits = [
+    differentials.length
+      ? `Differentials to keep in mind (do not announce): ${differentials.join("; ")}.`
+      : "",
+    (pkg.teaching_points ?? []).length
+      ? `Teaching focus: ${(pkg.teaching_points ?? []).slice(0, 4).join("; ")}.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return {
     disorder: primary.name,
     dsm5_code: primary.dsm5_code ?? legacy?.dsm5_code,
@@ -190,7 +240,8 @@ function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
     ].slice(0, 10),
     ideal_approach:
       (pkg.ideal_approach ?? legacy?.ideal_approach ?? "Supportive collaborative interview.") +
-      comorbidityNote,
+      comorbidityNote +
+      (teachingBits ? ` ${teachingBits}` : ""),
     risk_profile: risk,
   };
 }
@@ -225,13 +276,18 @@ export function generateCaseInstance(
   const randomized = randomizeContext(rng);
 
   let clinical_core = mergeClinicalCore(req);
+  const onset = buildOnsetDuration(
+    req.primaryDisorder.slug,
+    randomized,
+    rng,
+  );
   clinical_core = {
     ...clinical_core,
     disclosure_rules: applyDifficultyToDisclosure(
       clinical_core.disclosure_rules,
       difficultyProfile.modifiers,
     ),
-    onset_duration: `current episode about ${randomized.timeline_offset_weeks + 8} weeks (randomized timeline; DSM criteria unchanged)`,
+    onset_duration: onset,
     ideal_approach: [
       clinical_core.ideal_approach,
       `Therapy modality: ${therapyProfile.label}.`,
@@ -244,6 +300,33 @@ export function generateCaseInstance(
   };
 
   const assessment_id = `VPSY-ASM-${randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+
+  const pkg = req.primaryDisorder.package ?? {};
+  const cues = clinicalCuesForDisorder(req.primaryDisorder.slug);
+  const difficultyInsightNote = `Difficulty insight modifier: ${difficultyProfile.modifiers.insight}.`;
+  const clinical_teaching = {
+    differentials: pkg.differentials ?? [],
+    rule_outs: pkg.rule_outs ?? [],
+    teaching_points: [
+      ...(pkg.teaching_points ?? []),
+      `MSE focus: ${cues.mse_focus.join(", ")}.`,
+      cues.medication_history_cue,
+      cues.family_history_cue,
+      cues.social_history_cue,
+      cues.trauma_cue,
+      cues.culture_religion_cue,
+    ],
+    common_mistakes: pkg.common_therapist_mistakes ?? [],
+    insight_expectation: `${cues.insight_expectation} ${difficultyInsightNote}`,
+    judgment_expectation:
+      req.difficulty === "expert" || req.difficulty === "advanced"
+        ? `${cues.judgment_expectation} Advanced/expert: judgment may be more impaired relative to baseline; assess decision-making and safety.`
+        : cues.judgment_expectation,
+    speech_behavior_cue:
+      req.therapyModality === "crisis_intervention"
+        ? `${cues.speech_behavior_cue} Crisis modality: speech may be pressured or sparse; behaviour oriented to safety.`
+        : cues.speech_behavior_cue,
+  };
 
   const snapshot: CaseInstanceSnapshot = {
     version: 2,
@@ -277,6 +360,7 @@ export function generateCaseInstance(
     severity: clinical_core.severity ?? "moderate",
     clinical_core,
     randomized_context: randomized,
+    clinical_teaching,
     memory_scope: "case_instance",
     generated_at: new Date().toISOString(),
   };

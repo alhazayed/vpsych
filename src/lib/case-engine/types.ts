@@ -60,6 +60,8 @@ export type PersonaRow = {
 /** Module 2 — diagnosis-specific package. */
 export type DisorderPackage = {
   severity_default?: CaseSeverity;
+  /** When true, missing DSM-5 code is intentional (e.g. ICD-11-only CPTSD). */
+  dsm5_optional?: boolean;
   symptom_domains?: string[];
   risk_defaults?: {
     suicidal_ideation?: ClinicalCore["risk_profile"]["suicidal_ideation"];
@@ -198,6 +200,16 @@ export type CaseInstanceSnapshot = {
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
+  /** Educational clinical teaching cues (differentials, insight/judgment expectations). */
+  clinical_teaching?: {
+    differentials: string[];
+    rule_outs: string[];
+    teaching_points: string[];
+    common_mistakes: string[];
+    insight_expectation: string;
+    judgment_expectation: string;
+    speech_behavior_cue: string;
+  };
   /** Present when generated from a Clinical Scenario Template. */
   template?: {
     id: string;

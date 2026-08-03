@@ -55,6 +55,7 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
         suicidal_ideation: "passive",
         self_harm: false,
         harm_to_others: false,
+        substance_use: false,
       },
       differentials: [
         "Bipolar disorder",
@@ -141,6 +142,7 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
         suicidal_ideation: "none",
         self_harm: false,
         harm_to_others: false,
+        substance_use: false,
       },
       differentials: ["Panic disorder", "Social anxiety", "OCD", "ADHD"],
       rule_outs: ["Medical causes of autonomic arousal"],
@@ -205,8 +207,18 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "passive" },
-      differentials: ["Acute stress disorder", "MDD", "Panic disorder"],
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules: "Active SI or unsafe trauma flooding → pause narrative; safety first",
+      },
+      differentials: ["Acute stress disorder", "MDD", "Panic disorder", "Complex PTSD"],
+      rule_outs: [
+        "Coding CPTSD (6B41) features as simple PTSD without DSO assessment",
+        "Forced trauma narrative for completeness",
+      ],
       session_goals: ["Establish safety", "Gently map trauma impact", "Assess SI"],
       ideal_approach:
         "Trauma-informed supportive/CBT hybrid; titration; no flooding.",
@@ -237,6 +249,14 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           notes: "Never flood; titrate.",
         },
       ],
+      teaching_points: [
+        "DSM-5 309.81 / ICD-10 F43.10 / ICD-11 6B40",
+        "Titrate trauma content; risk assessment without flooding",
+      ],
+      common_therapist_mistakes: [
+        "Forced trauma disclosure",
+        "Missing SI screen in trauma cases",
+      ],
     },
   },
   {
@@ -253,8 +273,17 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "none" },
-      differentials: ["GAD", "MDD with concentration loss"],
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["GAD", "MDD with concentration loss", "Bipolar hypomania", "Sleep deprivation"],
+      rule_outs: [
+        "Manic episode mislabelled as ADHD",
+        "Adult-onset-only without childhood evidence when claiming ADHD",
+      ],
       session_goals: [
         "Developmental history",
         "Map impairment domains",
@@ -275,9 +304,23 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "cognition",
           salience: "elicited",
         },
+        {
+          id: "restlessness",
+          description: "Inner restlessness or fidgeting",
+          domain: "behavioral",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
         { topic: "childhood school difficulties", condition: "on_direct_question" },
+      ],
+      teaching_points: [
+        "DSM-5 314.00 / ICD-10 F90.0 / ICD-11 6A05.0",
+        "Require childhood onset evidence for ADHD teaching cases",
+      ],
+      common_therapist_mistakes: [
+        "Missing childhood developmental history",
+        "Confusing mania with ADHD",
       ],
     },
   },
@@ -295,8 +338,19 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "mild",
-      risk_defaults: { suicidal_ideation: "none", substance_use: true },
-      session_goals: ["Assess use pattern", "Explore ambivalence"],
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: true,
+        escalation_rules: "Withdrawal risk or SI → medical/safety framing",
+      },
+      differentials: ["Bipolar disorder", "MDD with self-medication", "Other SUD"],
+      rule_outs: [
+        "Ignoring withdrawal risk",
+        "Moralising stance that blocks disclosure",
+      ],
+      session_goals: ["Assess use pattern", "Explore ambivalence", "Screen withdrawal"],
       ideal_approach: "Motivational interviewing; curiosity over confrontation.",
       symptom_profile: [
         {
@@ -305,6 +359,18 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "behavioral",
           salience: "hidden",
         },
+        {
+          id: "craving",
+          description: "Craving or strong desire to drink",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "role_interference",
+          description: "Use interfering with work/family roles",
+          domain: "social",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
         {
@@ -312,6 +378,14 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           condition: "on_direct_question",
           notes: "Non-judgemental stance required.",
         },
+      ],
+      teaching_points: [
+        "DSM-5 305.00 / ICD-10 F10.10 / ICD-11 6C40.1",
+        "MI stance; assess withdrawal and dual diagnosis",
+      ],
+      common_therapist_mistakes: [
+        "Confrontation that increases resistance",
+        "Missing withdrawal screen",
       ],
     },
   },
@@ -329,8 +403,18 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "none" },
-      session_goals: ["Map panic phenomenology", "Identify avoidance"],
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["GAD", "Cardiac disease (medical)", "PTSD", "Social anxiety"],
+      rule_outs: [
+        "Untreated medical causes of acute somatic spikes",
+        "Labelling expected panic as psychosis",
+      ],
+      session_goals: ["Map panic phenomenology", "Identify avoidance", "Medical reassurance limits"],
       ideal_approach: "CBT with interoceptive exposure readiness.",
       symptom_profile: [
         {
@@ -339,9 +423,29 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "anxiety",
           salience: "presenting",
         },
+        {
+          id: "fear_of_recurrence",
+          description: "Persistent concern about additional attacks",
+          domain: "anxiety",
+          salience: "elicited",
+        },
+        {
+          id: "avoidance_agoraphobia",
+          description: "Avoidance of situations related to panic",
+          domain: "behavioral",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
         { topic: "panic attack details", condition: "on_direct_question" },
+      ],
+      teaching_points: [
+        "DSM-5 300.01 / ICD-10 F41.0 / ICD-11 6B01",
+        "Differentiate unexpected panic from situationally bound fear",
+      ],
+      common_therapist_mistakes: [
+        "Endless reassurance loops",
+        "Missing agoraphobic avoidance",
       ],
     },
   },
@@ -351,7 +455,8 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Borderline Personality Disorder",
     dsm5_code: "301.83",
     icd10_code: "F60.3",
-    icd11_code: "6D10.0",
+    // ICD-11: severity (6D10.1 moderate) + borderline pattern qualifier (6D11.5).
+    icd11_code: "6D10.1/6D11.5",
     category: "personality",
     min_age: 18,
     max_age: 65,
@@ -359,8 +464,23 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "passive", self_harm: true },
-      session_goals: ["Assess identity disturbance", "Safety plan"],
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        self_harm: true,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules: "Active SI, self-harm escalation, or interpersonal crisis → safety plan",
+      },
+      differentials: ["Complex PTSD", "Bipolar disorder", "MDD", "ADHD"],
+      rule_outs: [
+        "Primary bipolar mania without personality course",
+        "ICD-11 6D10.0 alone without borderline pattern when teaching BPD",
+      ],
+      session_goals: [
+        "Assess identity disturbance",
+        "Safety plan",
+        "Validate then structure",
+      ],
       ideal_approach: "DBT-informed; validation before change.",
       symptom_profile: [
         {
@@ -369,9 +489,36 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "mood",
           salience: "presenting",
         },
+        {
+          id: "fear_abandonment",
+          description: "Frantic efforts to avoid abandonment",
+          domain: "social",
+          salience: "hidden",
+        },
+        {
+          id: "self_harm_urges",
+          description: "Recurrent self-harm urges or behaviours",
+          domain: "behavioral",
+          salience: "hidden",
+        },
+        {
+          id: "identity_disturbance",
+          description: "Unstable self-image / sense of self",
+          domain: "cognition",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
         { topic: "self-harm", condition: "on_safety_assessment" },
+      ],
+      teaching_points: [
+        "ICD-11 requires severity (6D10.x) plus borderline pattern 6D11.5 when teaching BPD",
+        "Differentiate from CPTSD DSO features carefully",
+      ],
+      common_therapist_mistakes: [
+        "Missing self-harm/SI inquiry",
+        "Invalidation that escalates affective crisis",
+        "Immediate deep trauma exploration",
       ],
     },
   },
@@ -389,19 +536,70 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "passive" },
-      session_goals: ["Assess psychosis", "Risk", "Function"],
-      ideal_approach: "Supportive; reality-testing without confrontation.",
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules:
+          "If command hallucinations to harm self/others → safety assessment and containment framing",
+      },
+      differentials: [
+        "Schizoaffective disorder",
+        "Bipolar mania with psychosis",
+        "Substance/medication-induced psychotic disorder",
+        "Delirium",
+      ],
+      rule_outs: [
+        "Acute medical/delirium causes of psychosis",
+        "Mood episode–only psychosis without schizophrenia course",
+      ],
+      teaching_points: [
+        "DSM-5 295.90 / ICD-10 F20.9 / ICD-11 6A20",
+        "Assess positive, negative, and disorganisation domains",
+        "Do not confront delusions; explore impact and risk",
+      ],
+      common_therapist_mistakes: [
+        "Reality confrontation that escalates paranoia",
+        "Missing command hallucination / risk inquiry",
+        "Treating as personality disorder without psychosis screen",
+      ],
+      session_goals: [
+        "Assess psychosis domains",
+        "Risk to self/others",
+        "Function and supports",
+        "Medication adherence history",
+      ],
+      ideal_approach: "Supportive; reality-testing without confrontation; safety first.",
       symptom_profile: [
         {
           id: "delusions",
-          description: "Delusional beliefs",
+          description: "Delusional beliefs (e.g. persecutory)",
           domain: "psychotic",
+          salience: "elicited",
+        },
+        {
+          id: "hallucinations",
+          description: "Auditory hallucinations",
+          domain: "psychotic",
+          salience: "hidden",
+        },
+        {
+          id: "disorganised_thinking",
+          description: "Disorganised thinking or speech",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "negative_symptoms",
+          description: "Negative symptoms (avolition, blunted affect)",
+          domain: "behavioral",
           salience: "elicited",
         },
       ],
       disclosure_rules: [
         { topic: "voices/content", condition: "on_direct_question" },
+        { topic: "persecutory beliefs", condition: "on_empathic_rapport" },
       ],
     },
   },
@@ -411,7 +609,8 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Bipolar I Disorder, current manic episode",
     dsm5_code: "296.44",
     icd10_code: "F31.2",
-    icd11_code: "6A60.1",
+    // Align ICD-11 with DSM-5/ICD-10 psychotic features (6A60.1 = without psychosis).
+    icd11_code: "6A60.2",
     category: "mood",
     min_age: 16,
     max_age: 70,
@@ -419,8 +618,25 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "severe",
-      risk_defaults: { suicidal_ideation: "none" },
-      session_goals: ["Assess mania", "Risk", "Sleep"],
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules:
+          "Impaired judgment, aggression, or psychotic agitation → safety and medical review framing",
+      },
+      differentials: [
+        "Schizophrenia",
+        "Schizoaffective disorder",
+        "Substance-induced mania",
+        "ADHD (chronic, not episodic)",
+      ],
+      rule_outs: [
+        "Antidepressant-only framing without mood-stabiliser consideration",
+        "Primary ADHD when episodic elevated mood + decreased sleep need present",
+      ],
+      session_goals: ["Assess mania", "Risk to self/others", "Sleep", "Psychotic features"],
       ideal_approach: "Containment; brief questions; safety first.",
       symptom_profile: [
         {
@@ -429,9 +645,466 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "mood",
           salience: "presenting",
         },
+        {
+          id: "decreased_sleep_need",
+          description: "Decreased need for sleep",
+          domain: "sleep",
+          salience: "elicited",
+        },
+        {
+          id: "pressured_speech",
+          description: "Pressured speech / flight of ideas",
+          domain: "cognition",
+          salience: "presenting",
+        },
+        {
+          id: "grandiose_psychosis",
+          description: "Grandiose or mood-congruent psychotic features",
+          domain: "psychotic",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
         { topic: "spending/impulsivity", condition: "on_direct_question" },
+        { topic: "psychotic content", condition: "on_direct_question" },
+      ],
+      teaching_points: [
+        "296.44 / F31.2 / 6A60.2 = manic episode with psychotic features",
+        "ICD-11 6A60.1 is without psychosis — do not use for this package",
+      ],
+      common_therapist_mistakes: [
+        "Missing sleep/need-for-sleep inquiry",
+        "Confronting grandiosity early",
+        "Treating as unipolar depression",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.pdd,
+    slug: "pdd",
+    name: "Persistent Depressive Disorder (Dysthymia)",
+    dsm5_code: "300.4",
+    icd10_code: "F34.1",
+    icd11_code: "6A72",
+    category: "mood",
+    min_age: 14,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "mild",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["MDD", "Cyclothymia", "Personality-related chronic dysphoria"],
+      rule_outs: [
+        "Acute MDD episode coded as PDD without ≥2-year course",
+        "ICD-11 6A71.x for dysthymia",
+      ],
+      session_goals: ["Map chronic course", "Differentiate from MDD episode", "Function"],
+      ideal_approach: "Supportive CBT; validate chronicity.",
+      symptom_profile: [
+        {
+          id: "chronic_low_mood",
+          description: "Depressed mood for most of the day for ≥2 years",
+          domain: "mood",
+          salience: "presenting",
+        },
+        {
+          id: "low_energy",
+          description: "Low energy or fatigue most days",
+          domain: "somatic",
+          salience: "elicited",
+        },
+        {
+          id: "low_self_esteem",
+          description: "Low self-esteem / hopelessness chronic",
+          domain: "cognition",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        { topic: "chronic low mood", condition: "volunteered" },
+      ],
+      teaching_points: [
+        "ICD-11 dysthymic disorder is 6A72 (not 6A71.x single-episode MDD)",
+        "Timeline must remain ≥2 years — never randomise to weeks-only course",
+      ],
+      common_therapist_mistakes: [
+        "Treating as acute first-episode MDD only",
+        "Ignoring superimposed major depressive episodes",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.socialAnxiety,
+    slug: "social-anxiety",
+    name: "Social Anxiety Disorder",
+    dsm5_code: "300.23",
+    icd10_code: "F40.10",
+    icd11_code: "6B04",
+    category: "anxiety",
+    min_age: 12,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["Avoidant personality disorder", "ASD", "Panic disorder", "Agoraphobia"],
+      rule_outs: [
+        "Psychotic paranoia mislabelled as social anxiety",
+        "ASD without developmental history",
+      ],
+      session_goals: ["Map feared situations", "Assess avoidance", "Substance to cope"],
+      ideal_approach: "Collaborative CBT; graded exposure framing.",
+      symptom_profile: [
+        {
+          id: "social_fear",
+          description: "Fear of negative evaluation in social situations",
+          domain: "anxiety",
+          salience: "presenting",
+        },
+        {
+          id: "social_avoidance",
+          description: "Avoidance of social/performance situations",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "anticipatory_anxiety",
+          description: "Anticipatory anxiety before social events",
+          domain: "anxiety",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        { topic: "social avoidance", condition: "on_empathic_rapport" },
+      ],
+      teaching_points: [
+        "DSM-5 300.23 / ICD-10 F40.10 / ICD-11 6B04",
+        "Differentiate from ASD and from panic-only presentations",
+      ],
+      common_therapist_mistakes: [
+        "Forced exposure without hierarchy",
+        "Confusing shyness with ASD",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.ocd,
+    slug: "ocd",
+    name: "Obsessive-Compulsive Disorder",
+    dsm5_code: "300.3",
+    icd10_code: "F42",
+    icd11_code: "6B20",
+    category: "obsessive-compulsive",
+    min_age: 10,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["GAD", "OCPD", "Body dysmorphic disorder", "Psychotic disorder"],
+      rule_outs: [
+        "OCPD (ego-syntonic perfectionism) without true obsessions/compulsions",
+        "Reassurance as primary intervention",
+      ],
+      session_goals: ["Map obsessions/compulsions", "Assess insight", "Time consumed"],
+      ideal_approach: "ERP-informed assessment; avoid reassurance loops.",
+      symptom_profile: [
+        {
+          id: "obsessions",
+          description: "Intrusive unwanted thoughts",
+          domain: "cognition",
+          salience: "hidden",
+        },
+        {
+          id: "compulsions",
+          description: "Repetitive behaviours to reduce distress",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "avoidance_ocd",
+          description: "Avoidance of obsession triggers",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        {
+          topic: "content of obsessions",
+          condition: "on_empathic_rapport",
+        },
+      ],
+      teaching_points: [
+        "DSM-5 300.3 / ICD-10 F42 / ICD-11 6B20",
+        "Insight usually preserved; content may be shameful — pace disclosure",
+      ],
+      common_therapist_mistakes: [
+        "Reassurance-seeking loops",
+        "Forcing obsession content too early",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.complexPtsd,
+    slug: "complex-ptsd",
+    name: "Complex PTSD",
+    // CPTSD is an ICD-11 construct (6B41); DSM-5-TR has no equivalent code.
+    dsm5_code: null,
+    icd10_code: null,
+    icd11_code: "6B41",
+    category: "trauma",
+    min_age: 16,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "severe",
+      dsm5_optional: true,
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        self_harm: true,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["PTSD", "BPD", "MDD"],
+      rule_outs: ["Do not code as DSM-5 PTSD 309.81 alone for CPTSD teaching cases"],
+      session_goals: ["Safety first", "Map affect dysregulation", "Assess DSO triad"],
+      ideal_approach: "Trauma-informed; phase-based; no flooding.",
+      symptom_profile: [
+        {
+          id: "affect_dysregulation",
+          description: "Persistent affect dysregulation",
+          domain: "mood",
+          salience: "elicited",
+        },
+        {
+          id: "negative_self",
+          description: "Persistent negative self-concept",
+          domain: "cognition",
+          salience: "hidden",
+        },
+        {
+          id: "relationship_disturbance",
+          description: "Persistent difficulties in sustaining relationships",
+          domain: "social",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        { topic: "trauma narrative", condition: "on_empathic_rapport" },
+      ],
+      teaching_points: [
+        "ICD-11 6B41 requires PTSD core + DSO (affect, self, relationships)",
+        "No DSM-5 code — do not substitute 309.81 without noting limitation",
+      ],
+      common_therapist_mistakes: [
+        "Coding as DSM-5 PTSD only",
+        "Flooding trauma narrative in phase 1",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.asd,
+    slug: "asd",
+    name: "Autism Spectrum Disorder",
+    dsm5_code: "299.00",
+    icd10_code: "F84.0",
+    icd11_code: "6A02",
+    category: "neurodevelopmental",
+    min_age: 5,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: ["Social anxiety", "ADHD", "Intellectual disability"],
+      rule_outs: [
+        "Labelling social anxiety alone as ASD without developmental history",
+        "Caricatured speech/prosody stereotypes",
+      ],
+      session_goals: ["Developmental history", "Sensory/social profile", "Supports"],
+      ideal_approach: "Concrete language; reduce figurative overload.",
+      symptom_profile: [
+        {
+          id: "social_communication",
+          description: "Social communication differences",
+          domain: "social",
+          salience: "presenting",
+        },
+        {
+          id: "restricted_interests",
+          description: "Restricted interests or repetitive behaviours",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "sensory_sensitivity",
+          description: "Sensory hyper- or hypo-reactivity",
+          domain: "somatic",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        { topic: "sensory overload", condition: "on_direct_question" },
+      ],
+      teaching_points: [
+        "DSM-5 299.00 / ICD-10 F84.0 / ICD-11 6A02",
+        "Developmental history is essential",
+      ],
+      common_therapist_mistakes: [
+        "Infantilising language",
+        "Confusing social anxiety with ASD",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.schizoaffective,
+    slug: "schizoaffective",
+    name: "Schizoaffective Disorder",
+    dsm5_code: "295.70",
+    icd10_code: "F25.9",
+    icd11_code: "6A21",
+    category: "psychotic",
+    min_age: 16,
+    max_age: 65,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+      },
+      differentials: [
+        "Bipolar with psychosis",
+        "Schizophrenia",
+        "MDD with psychosis",
+      ],
+      rule_outs: [
+        "Mood-only psychosis without independent psychotic period when teaching schizoaffective",
+      ],
+      session_goals: ["Map mood vs psychosis timeline", "Risk", "Medication history"],
+      ideal_approach: "Supportive structured assessment.",
+      symptom_profile: [
+        {
+          id: "mood_episode_with_psychosis",
+          description: "Major mood episode concurrent with psychotic symptoms",
+          domain: "mood",
+          salience: "presenting",
+        },
+        {
+          id: "psychosis_outside_mood",
+          description: "Psychotic symptoms for ≥2 weeks in absence of major mood episode",
+          domain: "psychotic",
+          salience: "elicited",
+        },
+        {
+          id: "functional_decline",
+          description: "Occupational/social functional impairment",
+          domain: "social",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        { topic: "mood episode timing", condition: "on_direct_question" },
+      ],
+      teaching_points: [
+        "DSM-5 295.70 / ICD-10 F25.9 / ICD-11 6A21",
+        "Timeline of mood vs psychosis is the teaching core",
+      ],
+      common_therapist_mistakes: [
+        "Skipping independent psychosis period inquiry",
+        "Collapsing into bipolar or schizophrenia without timeline",
+      ],
+    },
+  },
+  {
+    id: DISORDER_IDS.eating,
+    slug: "eating-disorders",
+    name: "Anorexia Nervosa",
+    dsm5_code: "307.1",
+    icd10_code: "F50.0",
+    icd11_code: "6B80",
+    category: "eating",
+    min_age: 12,
+    max_age: 60,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules: "Medical instability / SI → urgent medical/safety framing",
+      },
+      differentials: ["Bulimia nervosa", "ARFID", "Medical hyperthyroidism"],
+      rule_outs: [
+        "Appearance comments that reinforce shape concern",
+        "Collusion with under-eating goals",
+      ],
+      session_goals: ["Medical safety screen", "Map eating behaviours", "Body image"],
+      ideal_approach: "Non-collusive; collaborative; medical risk aware.",
+      symptom_profile: [
+        {
+          id: "restriction",
+          description: "Energy intake restriction with body image disturbance",
+          domain: "somatic",
+          salience: "hidden",
+        },
+        {
+          id: "fear_weight_gain",
+          description: "Intense fear of gaining weight",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "body_image_disturbance",
+          description: "Disturbance in body weight/shape experience",
+          domain: "cognition",
+          salience: "hidden",
+        },
+      ],
+      disclosure_rules: [
+        {
+          topic: "weight/shape concerns",
+          condition: "on_empathic_rapport",
+        },
+      ],
+      teaching_points: [
+        "Codes are AN-specific (307.1 / F50.0 / 6B80); not a full ED spectrum",
+        "Medical risk overrides motivational debate",
+      ],
+      common_therapist_mistakes: [
+        "Commenting on appearance/weight approvingly",
+        "Missing medical red flags",
       ],
     },
   },
@@ -449,8 +1122,19 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "severe",
-      risk_defaults: { suicidal_ideation: "none" },
-      session_goals: ["Medical workup framing", "Fluctuating cognition"],
+      risk_defaults: {
+        suicidal_ideation: "none",
+        self_harm: false,
+        harm_to_others: false,
+        substance_use: false,
+        escalation_rules: "Fluctuating cognition → medical workup framing, not psychotherapy OSCE",
+      },
+      differentials: ["Dementia", "Primary psychotic disorder", "Substance intoxication/withdrawal"],
+      rule_outs: [
+        "Chronic schizophrenia course labelled as delirium",
+        "Weeks-long psychiatric episode timeline for delirium",
+      ],
+      session_goals: ["Medical workup framing", "Fluctuating cognition", "Orientation/attention"],
       ideal_approach: "Medical simulation only when template allows.",
       symptom_profile: [
         {
@@ -459,8 +1143,28 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
           domain: "cognition",
           salience: "presenting",
         },
+        {
+          id: "disorientation",
+          description: "Disorientation to time/place",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "perceptual_disturbance",
+          description: "Acute perceptual disturbances (often visual)",
+          domain: "psychotic",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [{ topic: "orientation", condition: "volunteered" }],
+      teaching_points: [
+        "DSM-5 293.0 / ICD-10 F05 / ICD-11 6D70",
+        "Course is hours–days; generator must not use weeks-only onset",
+      ],
+      common_therapist_mistakes: [
+        "Treating as outpatient psychotherapy primary",
+        "Missing medical urgency framing",
+      ],
     },
   },
 ];

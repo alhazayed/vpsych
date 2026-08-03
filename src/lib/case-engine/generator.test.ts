@@ -161,8 +161,10 @@ describe("Dynamic Clinical Case Engine", () => {
       expect(assessmentIds.has(snap.assessment_id)).toBe(false);
       assessmentIds.add(snap.assessment_id);
 
-      expect(snap.primary_diagnosis.dsm5_code).toBeTruthy();
       expect(snap.primary_diagnosis.icd11_code).toBeTruthy();
+      if (primary.dsm5_code != null) {
+        expect(snap.primary_diagnosis.dsm5_code).toBeTruthy();
+      }
       expect(snap.clinical_core.disorder).toBe(primary.name);
       expect(snap.locale).toBe(locale);
       expect(snap.difficulty).toBe(difficulty);
