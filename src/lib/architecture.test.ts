@@ -40,6 +40,20 @@ describe("architecture invariants", () => {
     );
   });
 
+  it("allows session message RPCs without hard service-role dependency", () => {
+    const admin = readFileSync(join(root, "lib/supabase/admin.ts"), "utf8");
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(admin).toMatch(/messageRpcClient/);
+    expect(start).toMatch(/messageRpcClient/);
+    expect(message).toMatch(/messageRpcClient/);
+    expect(start).not.toMatch(/Server misconfigured/);
+    expect(message).not.toMatch(/Server misconfigured/);
+  });
+
   it("dedupes persisted therapist turns and expands mini failover in patient-agent", () => {
     const agent = readFileSync(join(root, "lib/ai/patient-agent.ts"), "utf8");
     expect(agent).toMatch(/withoutCurrent/);
