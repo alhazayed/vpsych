@@ -67,6 +67,17 @@ export async function POST(request: Request) {
         .from("template_comorbidities")
         .select("disorders(slug)")
         .eq("template_id", trow.id);
+      const { data: diagnoses } = await supabase
+        .from("template_diagnoses")
+        .select("role, disorders(slug)")
+        .eq("template_id", trow.id);
+
+      const slugFromJoin = (
+        value: { slug?: string } | { slug?: string }[] | null | undefined,
+      ): string | undefined => {
+        if (Array.isArray(value)) return value[0]?.slug;
+        return value?.slug;
+      };
 
       const dbObjectives = (objectives ?? []) as never[];
       const dbCompetencies = (competencies ?? []).map((c) => ({
@@ -79,12 +90,19 @@ export async function POST(request: Request) {
         excellent_marker: c.excellent_marker ?? undefined,
       }));
       const dbComorbidities = (comorb ?? [])
-        .map((c) => {
-          const d = c.disorders as { slug?: string } | { slug?: string }[] | null;
-          if (Array.isArray(d)) return d[0]?.slug;
-          return d?.slug;
-        })
+        .map((c) => slugFromJoin(c.disorders as never))
         .filter(Boolean) as string[];
+      const dbAllowedFromDiagnoses = (diagnoses ?? [])
+        .filter((d) => d.role === "allowed_comorbidity")
+        .map((d) => slugFromJoin(d.disorders as never))
+        .filter(Boolean) as string[];
+      const dbExcluded = (diagnoses ?? [])
+        .filter((d) => d.role === "excluded")
+        .map((d) => slugFromJoin(d.disorders as never))
+        .filter(Boolean) as string[];
+      const allowedMerged = Array.from(
+        new Set([...dbComorbidities, ...dbAllowedFromDiagnoses]),
+      );
 
       resolved = {
         id: trow.id,
@@ -102,10 +120,13 @@ export async function POST(request: Request) {
         primary_diagnosis_slug:
           primary?.slug ?? builtin?.primary_diagnosis_slug ?? template?.primary_diagnosis_slug,
         allowed_comorbidity_slugs:
-          dbComorbidities.length > 0
-            ? dbComorbidities
+          allowedMerged.length > 0
+            ? allowedMerged
             : (builtin?.allowed_comorbidity_slugs ?? []),
-        excluded_diagnosis_slugs: builtin?.excluded_diagnosis_slugs ?? [],
+        excluded_diagnosis_slugs:
+          dbExcluded.length > 0
+            ? dbExcluded
+            : (builtin?.excluded_diagnosis_slugs ?? []),
         severity: trow.severity,
         risk_level: trow.risk_level,
         assessment_type: trow.assessment_type,

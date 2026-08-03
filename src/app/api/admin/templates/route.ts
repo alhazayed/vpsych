@@ -119,6 +119,53 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Copy child rows so the clone is a complete Scenario Template, not an
+    // empty parent that fails validateTemplate once enabled.
+    const [
+      { data: srcObjectives },
+      { data: srcCompetencies },
+      { data: srcDiagnoses },
+      { data: srcComorbidities },
+    ] = await Promise.all([
+      supabase.from("template_objectives").select("category, statement, sort_order").eq("template_id", body.templateId),
+      supabase
+        .from("template_competencies")
+        .select(
+          "competency_id, label, weight, max_score, critical, auto_deduction, excellent_marker, sort_order",
+        )
+        .eq("template_id", body.templateId),
+      supabase
+        .from("template_diagnoses")
+        .select("disorder_id, role")
+        .eq("template_id", body.templateId),
+      supabase
+        .from("template_comorbidities")
+        .select("disorder_id, tier")
+        .eq("template_id", body.templateId),
+    ]);
+
+    if (srcObjectives?.length) {
+      await supabase.from("template_objectives").insert(
+        srcObjectives.map((row) => ({ ...row, template_id: cloned.id })),
+      );
+    }
+    if (srcCompetencies?.length) {
+      await supabase.from("template_competencies").insert(
+        srcCompetencies.map((row) => ({ ...row, template_id: cloned.id })),
+      );
+    }
+    if (srcDiagnoses?.length) {
+      await supabase.from("template_diagnoses").insert(
+        srcDiagnoses.map((row) => ({ ...row, template_id: cloned.id })),
+      );
+    }
+    if (srcComorbidities?.length) {
+      await supabase.from("template_comorbidities").insert(
+        srcComorbidities.map((row) => ({ ...row, template_id: cloned.id })),
+      );
+    }
+
     await supabase.from("template_versions").insert({
       template_id: cloned.id,
       version: 1,

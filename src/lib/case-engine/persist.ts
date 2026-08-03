@@ -443,6 +443,12 @@ export async function createCaseForSession(
           .maybeSingle();
 
     if (trow) {
+      const builtin =
+        findTemplateBySlug(trow.slug) ??
+        (opts.templateSlug ? findTemplateBySlug(opts.templateSlug) : undefined) ??
+        (opts.templateId ? findTemplateById(opts.templateId) : undefined) ??
+        null;
+
       const { data: objectives } = await supabase
         .from("template_objectives")
         .select("category, statement, sort_order")
@@ -459,11 +465,54 @@ export async function createCaseForSession(
         .from("template_comorbidities")
         .select("disorder_id, tier, disorders(slug)")
         .eq("template_id", trow.id);
+      const { data: diagnoses } = await supabase
+        .from("template_diagnoses")
+        .select("role, disorders(slug)")
+        .eq("template_id", trow.id);
       const { data: primaryDisorder } = await supabase
         .from("disorders")
         .select("slug")
         .eq("id", trow.primary_diagnosis_id)
         .maybeSingle();
+
+      const disorderSlugFromJoin = (
+        value: { slug?: string } | { slug?: string }[] | null | undefined,
+      ): string | undefined => {
+        if (Array.isArray(value)) return value[0]?.slug;
+        return value?.slug;
+      };
+
+      const dbAllowedFromComorbidities = (comorbidities ?? [])
+        .map((c) => disorderSlugFromJoin(c.disorders as never))
+        .filter(Boolean) as string[];
+      const dbAllowedFromDiagnoses = (diagnoses ?? [])
+        .filter((d) => d.role === "allowed_comorbidity")
+        .map((d) => disorderSlugFromJoin(d.disorders as never))
+        .filter(Boolean) as string[];
+      const dbExcluded = (diagnoses ?? [])
+        .filter((d) => d.role === "excluded")
+        .map((d) => disorderSlugFromJoin(d.disorders as never))
+        .filter(Boolean) as string[];
+
+      const dbObjectives = (objectives ?? []).map((o) => ({
+        category: o.category,
+        statement: o.statement,
+        sort_order: o.sort_order,
+      }));
+      const dbCompetencies = (competencies ?? []).map((c) => ({
+        competency_id: c.competency_id,
+        label: c.label,
+        weight: Number(c.weight),
+        max_score: Number(c.max_score),
+        critical: c.critical,
+        auto_deduction: c.auto_deduction ? Number(c.auto_deduction) : 0,
+        excellent_marker: c.excellent_marker ?? undefined,
+        sort_order: c.sort_order,
+      }));
+
+      const allowedMerged = Array.from(
+        new Set([...dbAllowedFromComorbidities, ...dbAllowedFromDiagnoses]),
+      );
 
       resolvedTemplate = {
         id: trow.id,
@@ -471,49 +520,45 @@ export async function createCaseForSession(
         name: trow.name,
         description: trow.description,
         specialty: trow.specialty,
-        target_learners: trow.target_learners ?? [],
+        target_learners: trow.target_learners ?? builtin?.target_learners ?? [],
         estimated_duration_minutes: trow.estimated_duration_minutes,
         difficulty: trow.difficulty,
         language: opts.locale || trow.language,
         culture: trow.culture,
         therapy_modality: trow.therapy_modality,
         primary_diagnosis_id: trow.primary_diagnosis_id,
-        primary_diagnosis_slug: primaryDisorder?.slug,
-        allowed_comorbidity_slugs: (comorbidities ?? [])
-          .map((c) => {
-            const d = c.disorders as { slug?: string } | { slug?: string }[] | null;
-            if (Array.isArray(d)) return d[0]?.slug;
-            return d?.slug;
-          })
-          .filter(Boolean) as string[],
-        excluded_diagnosis_slugs: [],
+        primary_diagnosis_slug:
+          primaryDisorder?.slug ?? builtin?.primary_diagnosis_slug,
+        allowed_comorbidity_slugs:
+          allowedMerged.length > 0
+            ? allowedMerged
+            : (builtin?.allowed_comorbidity_slugs ?? []),
+        excluded_diagnosis_slugs:
+          dbExcluded.length > 0
+            ? dbExcluded
+            : (builtin?.excluded_diagnosis_slugs ?? []),
         severity: trow.severity,
         risk_level: trow.risk_level,
         assessment_type: trow.assessment_type,
         voice_profile_id: trow.voice_profile_id,
         default_persona_id: trow.default_persona_id,
+        default_persona_slug: builtin?.default_persona_slug ?? null,
         randomization_level: trow.randomization_level,
         memory_mode: trow.memory_mode,
-        grading_rubric: trow.grading_rubric ?? {
-          pass_threshold: 60,
-          outstanding_threshold: 85,
-        },
-        report_template: trow.report_template ?? {},
-        learning_objectives: (objectives ?? []).map((o) => ({
-          category: o.category,
-          statement: o.statement,
-          sort_order: o.sort_order,
-        })),
-        clinical_competencies: (competencies ?? []).map((c) => ({
-          competency_id: c.competency_id,
-          label: c.label,
-          weight: Number(c.weight),
-          max_score: Number(c.max_score),
-          critical: c.critical,
-          auto_deduction: c.auto_deduction ? Number(c.auto_deduction) : 0,
-          excellent_marker: c.excellent_marker ?? undefined,
-          sort_order: c.sort_order,
-        })),
+        grading_rubric: trow.grading_rubric ??
+          builtin?.grading_rubric ?? {
+            pass_threshold: 60,
+            outstanding_threshold: 85,
+          },
+        report_template: trow.report_template ?? builtin?.report_template ?? {},
+        learning_objectives:
+          dbObjectives.length > 0
+            ? dbObjectives
+            : (builtin?.learning_objectives ?? []),
+        clinical_competencies:
+          dbCompetencies.length > 0
+            ? dbCompetencies
+            : (builtin?.clinical_competencies ?? []),
         allow_medical_simulation: trow.allow_medical_simulation,
         enabled: trow.enabled,
         version: trow.version,
