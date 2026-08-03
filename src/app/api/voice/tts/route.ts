@@ -53,15 +53,39 @@ export async function POST(request: Request) {
   const text = (body.text?.trim() ||
     (body.preview ? previewSampleText(locale) : "")) as string;
 
+  if (!text) {
+    return NextResponse.json({ error: "text required" }, { status: 400 });
+  }
+  if (text.length > 2500) {
+    return NextResponse.json(
+      { error: "text too long (max 2500 characters)" },
+      { status: 400 },
+    );
+  }
+  if (!body.avatarId && !body.voiceProfileId) {
+    return NextResponse.json(
+      { error: "avatarId or voiceProfileId required" },
+      { status: 400 },
+    );
+  }
+
   try {
-    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
+    // Resolve only from avatar / voice_profile registry — never honor
+    // client-supplied ElevenLabs voice ids (cost / abuse surface).
     const resolved = await resolveTtsVoice({
       locale,
       voiceProfileId: body.voiceProfileId,
       avatarId: body.avatarId,
-      voiceId: body.voiceId,
-      voiceIdAr: body.voiceIdAr,
+      voiceId: null,
+      voiceIdAr: null,
     });
+
+    if (!resolved.voiceId) {
+      return NextResponse.json(
+        { error: "No voice configured for avatar" },
+        { status: 422 },
+      );
+    }
 
     // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({

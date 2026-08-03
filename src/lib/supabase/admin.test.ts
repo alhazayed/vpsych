@@ -12,10 +12,10 @@ describe("supabase admin helpers", () => {
     expect(createServiceClient()).toBeNull();
   });
 
-  it("falls back to the authenticated client for message RPCs", () => {
+  it("does not fall back to authenticated client for message RPCs", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     const userClient = { tag: "user" } as never;
-    expect(messageRpcClient(userClient)).toBe(userClient);
+    expect(messageRpcClient(userClient)).toBeNull();
   });
 });

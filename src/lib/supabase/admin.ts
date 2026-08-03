@@ -10,8 +10,8 @@ import {
  * Allowed call sites: Route Handlers / Server Actions only.
  * Allowed uses today:
  * - `session_reports` privileged insert/update in `POST /api/sessions/[id]/end`
- * - Optional writer for `insert_system_message` / `insert_assistant_message`
- *   (ownership checks still run in the SECURITY DEFINER RPCs)
+ * - Required writer for `insert_system_message` / `insert_assistant_message`
+ *   (EXECUTE revoked from authenticated; RPCs require service_role)
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,13 +25,12 @@ export function createServiceClient() {
 }
 
 /**
- * Prefer service role for message RPCs when configured; otherwise use the
- * authenticated request client. Session message RPCs enforce ownership /
- * active-session / turn-order in the function body, and authenticated EXECUTE
- * is intentionally granted for this fallback (see restore_session_message_rpc_grants).
+ * Message RPCs are service_role-only (Mission 20). Never fall back to the
+ * authenticated client — that path enabled transcript forge via PostgREST.
+ * Returns null when SUPABASE_SERVICE_ROLE_KEY is unset (caller must 500).
  */
 export function messageRpcClient(
-  userClient: SupabaseClient,
-): SupabaseClient {
-  return createServiceClient() ?? userClient;
+  _userClient?: SupabaseClient,
+): SupabaseClient | null {
+  return createServiceClient();
 }

@@ -189,6 +189,12 @@ export async function POST(request: Request) {
   }
 
   const writer = messageRpcClient(supabase);
+  if (!writer) {
+    return NextResponse.json(
+      { error: "Server misconfigured" },
+      { status: 500 },
+    );
+  }
   const { error: sysErr } = await writer.rpc("insert_system_message", {
     p_session_id: session.id,
     p_content: "Session started. Speak with the patient avatar.",

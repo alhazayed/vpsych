@@ -15,6 +15,7 @@ function applyLocaleCookie(
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
   });
 }
 
@@ -53,6 +54,10 @@ export async function updateSession(request: NextRequest) {
     path === "/" || isAuthPage || path.startsWith("/auth/");
 
   if (!user && !isPublic) {
+    // APIs must return JSON 401 — never HTML login redirects (OWASP API1/API2).
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);

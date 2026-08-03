@@ -127,9 +127,14 @@ export async function POST(request: Request, { params }: Params) {
     errorKind: replyMeta.errorKind ?? null,
   });
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
+  // Privileged insert — RPC is service_role-only (blocks transcript forge).
   const writer = messageRpcClient(supabase);
+  if (!writer) {
+    return NextResponse.json(
+      { error: "Server misconfigured" },
+      { status: 500 },
+    );
+  }
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
     {
