@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
@@ -101,16 +102,19 @@ function NavLink({
   item,
   pathname,
   compact,
+  onNavigate,
 }: {
   item: NavItem;
   pathname: string;
   compact?: boolean;
+  onNavigate?: () => void;
 }) {
   const active = item.match ? item.match(pathname) : pathname === item.href;
   return (
     <Link
       href={item.href}
-      className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200 ${
+      onClick={onNavigate}
+      className={`flex min-h-11 min-w-11 items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200 ${
         active
           ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
           : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--primary)]"
@@ -119,6 +123,7 @@ function NavLink({
       <span
         className="material-symbols-outlined text-[22px]"
         style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        aria-hidden
       >
         {item.icon}
       </span>
@@ -140,13 +145,28 @@ export function AppShell({
   const router = useRouter();
   const tNav = useTranslations("nav");
   const tShell = useTranslations("shell");
+  const tA11y = useTranslations("a11y");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreTitleId = useId();
   const isImmersiveSession =
     /^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete");
 
-  const nav = [
-    ...therapistNav(tNav),
-    ...(profile.role === "admin" ? adminNav(tNav) : []),
-  ];
+  const primaryNav = therapistNav(tNav);
+  const adminItems =
+    profile.role === "admin" ? adminNav(tNav) : [];
+  const desktopNav = [...primaryNav, ...adminItems];
+  const moreActive = adminItems.some((item) =>
+    item.match ? item.match(pathname) : pathname === item.href,
+  );
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMoreOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
 
   async function signOut() {
     const supabase = createClient();
@@ -181,7 +201,11 @@ export function AppShell({
   }
 
   if (isImmersiveSession) {
-    return <div className="min-h-screen bg-[var(--background)]">{children}</div>;
+    return (
+      <div className="min-h-screen bg-[var(--background)]">
+        <div id="main-content">{children}</div>
+      </div>
+    );
   }
 
   return (
@@ -209,8 +233,8 @@ export function AppShell({
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 px-2">
-          {nav.map((item) => (
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2" aria-label="Primary">
+          {desktopNav.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
@@ -227,7 +251,9 @@ export function AppShell({
             </p>
           </div>
           <Link href="/avatars" className="btn-primary w-full">
-            <span className="material-symbols-outlined text-[20px]">add</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden>
+              add
+            </span>
             {tShell("newAssessment")}
           </Link>
           <button
@@ -235,7 +261,9 @@ export function AppShell({
             onClick={() => void signOut()}
             className="btn-secondary w-full"
           >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden>
+              logout
+            </span>
             {tShell("signOut")}
           </button>
         </div>
@@ -260,7 +288,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => void signOut()}
-            className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)]"
+            className="min-h-11 rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)]"
           >
             {tShell("signOut")}
           </button>
@@ -284,21 +312,108 @@ export function AppShell({
                   : tShell("role.therapist")}
               </p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--primary-fixed)] bg-[var(--surface-container)] font-[family-name:var(--font-headline)] text-sm font-bold text-[var(--primary)]">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--primary-fixed)] bg-[var(--surface-container)] font-[family-name:var(--font-headline)] text-sm font-bold text-[var(--primary)]"
+              aria-hidden
+            >
               {profile.display_name.slice(0, 1).toUpperCase()}
             </div>
           </div>
         </header>
 
-        <div className="pb-24 pt-16 md:pb-0 md:pt-0">{children}</div>
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className="pb-24 pt-16 outline-none md:pb-0 md:pt-0"
+        >
+          {children}
+        </div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
-        {nav.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} compact />
+      {/* Mobile bottom nav — primary destinations only; admin via More sheet */}
+      <nav
+        className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden"
+        aria-label="Primary"
+      >
+        {primaryNav.map((item) => (
+          <NavLink
+            key={item.href}
+            item={item}
+            pathname={pathname}
+            compact
+            onNavigate={() => setMoreOpen(false)}
+          />
         ))}
+        {adminItems.length > 0 && (
+          <button
+            type="button"
+            aria-expanded={moreOpen}
+            aria-controls={moreTitleId}
+            onClick={() => setMoreOpen((v) => !v)}
+            className={`flex min-h-11 min-w-11 flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] transition-colors ${
+              moreActive || moreOpen
+                ? "font-semibold text-[var(--primary)]"
+                : "font-medium text-[var(--on-surface-variant)]"
+            }`}
+          >
+            <span
+              className="material-symbols-outlined text-[22px]"
+              style={
+                moreActive || moreOpen
+                  ? { fontVariationSettings: "'FILL' 1" }
+                  : undefined
+              }
+              aria-hidden
+            >
+              more_horiz
+            </span>
+            <span className="tracking-wide">{tA11y("moreNavigation")}</span>
+          </button>
+        )}
       </nav>
+
+      {moreOpen && adminItems.length > 0 && (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label={tA11y("closeMore")}
+            onClick={() => setMoreOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={moreTitleId}
+            className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 pb-8 shadow-xl"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2
+                id={moreTitleId}
+                className="font-[family-name:var(--font-headline)] text-base font-semibold text-[var(--primary)]"
+              >
+                {tA11y("adminTools")}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="btn-secondary min-h-11 px-3 py-2 text-xs"
+              >
+                {tA11y("closeMore")}
+              </button>
+            </div>
+            <nav className="space-y-1" aria-label={tA11y("adminTools")}>
+              {adminItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={() => setMoreOpen(false)}
+                />
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
