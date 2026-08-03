@@ -7,6 +7,16 @@ import {
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import {
+  BackpressureError,
+  CircuitOpenError,
+  elevenLabsCircuit,
+  elevenLabsLimiter,
+} from "@/lib/performance/resilience";
+
+function elevenLabsTimeoutMs(): number {
+  return Number(process.env.ELEVENLABS_TIMEOUT_MS ?? 20_000);
+}
 
 export type ElevenLabsSynthesizeParams = {
   text: string;
@@ -199,6 +209,27 @@ export const elevenLabsService = {
       });
     }
 
+    try {
+      return await elevenLabsLimiter.run(() =>
+        elevenLabsCircuit.exec(() => synthesizeInner(params, text)),
+      );
+    } catch (err) {
+      if (err instanceof CircuitOpenError || err instanceof BackpressureError) {
+        throw new ElevenLabsError("ElevenLabs temporarily unavailable", {
+          code: "TTS_BACKPRESSURE",
+          status: 503,
+          detail: err.message,
+        });
+      }
+      throw err;
+    }
+  },
+};
+
+async function synthesizeInner(
+  params: ElevenLabsSynthesizeParams,
+  text: string,
+): Promise<ElevenLabsSynthesizeResult> {
     const primaryVoiceId = resolveElevenLabsVoiceId({
       locale: params.locale,
       voiceId: params.voiceId,
@@ -219,6 +250,7 @@ export const elevenLabsService = {
     const model = modelId();
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
+    const timeoutMs = elevenLabsTimeoutMs();
 
     for (let i = 0; i < voiceCandidates.length; i++) {
       const voiceId = voiceCandidates[i]!;
@@ -256,22 +288,41 @@ export const elevenLabsService = {
         ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
         : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-      const res = await fetch(path, {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey(),
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-        },
-        body: JSON.stringify({
-          text,
-          model_id: model,
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
+      let res: Response;
+      try {
+        res = await fetch(path, {
+          method: "POST",
+          headers: {
+            "xi-api-key": apiKey(),
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
           },
-        }),
-      });
+          body: JSON.stringify({
+            text,
+            model_id: model,
+            voice_settings: {
+              stability: 0.4,
+              similarity_boost: 0.75,
+            },
+          }),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (err) {
+        const aborted =
+          err instanceof Error &&
+          (err.name === "TimeoutError" || err.name === "AbortError");
+        throw new ElevenLabsError(
+          aborted
+            ? "ElevenLabs TTS timed out"
+            : "ElevenLabs TTS request failed",
+          {
+            code: aborted ? "TTS_TIMEOUT" : "TTS_FAILED",
+            status: 504,
+            detail:
+              err instanceof Error ? err.message.slice(0, 200) : String(err),
+          },
+        );
+      }
 
       if (res.ok && res.body) {
         if (i > 0) {
@@ -328,5 +379,4 @@ export const elevenLabsService = {
       status: 502,
       detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
     });
-  },
-};
+}
