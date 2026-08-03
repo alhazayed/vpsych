@@ -196,6 +196,51 @@ describe("resolveAvatar", () => {
     expect(resolved.system_prompt).toContain("MODULE 1 — CLINICAL");
     expect(resolved.system_prompt).toContain("legacy v1");
   });
+
+  it("preserves persona age and gender when a case snapshot overrides diagnosis", () => {
+    const resolved = resolveAvatar(v2Avatar, "en-US", {
+      caseSnapshot: {
+        version: 2,
+        assessment_id: "00000000-0000-4000-8000-000000000099",
+        persona: {
+          id: "p1",
+          slug: "maya-chen",
+          display_name: "Maya Chen",
+          avatar_id: v2Avatar.id,
+        },
+        primary_diagnosis: {
+          id: "d1",
+          slug: "ptsd",
+          name: "Post-Traumatic Stress Disorder",
+          dsm5_code: "309.81",
+          icd10_code: "F43.10",
+          icd11_code: "6B40",
+        },
+        comorbidities: [],
+        difficulty: "standard",
+        difficulty_modifiers: {},
+        therapy_modality: "cbt",
+        therapy_reaction_rules: {},
+        locale: "en-US",
+        severity: "moderate",
+        clinical_core: {
+          ...core,
+          disorder: "Post-Traumatic Stress Disorder",
+          age: 55,
+          gender: "male",
+        },
+        randomized_context: {},
+        rubric: v2Avatar.rubric,
+        memory_scope: "case_instance",
+        generated_at: new Date().toISOString(),
+      },
+    });
+    expect(resolved.disorder).toBe("Post-Traumatic Stress Disorder");
+    expect(resolved.age).toBe(28);
+    expect(resolved.gender).toBe("female");
+    expect(resolved.clinical_core?.age).toBe(28);
+    expect(resolved.clinical_core?.gender).toBe("female");
+  });
 });
 
 describe("listAvailableLocales", () => {
