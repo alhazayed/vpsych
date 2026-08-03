@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
+import { LEGAL_PATHS } from "@/lib/compliance/constants";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export default function LoginPage() {
@@ -299,8 +300,24 @@ export default function LoginPage() {
                 </Link>
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
-                <span className="text-[11px] font-medium">{t("privacy")}</span>
-                <span className="text-[11px] font-medium">{t("terms")}</span>
+                <Link
+                  href={LEGAL_PATHS.privacy}
+                  className="text-[11px] font-medium hover:underline"
+                >
+                  {t("privacy")}
+                </Link>
+                <Link
+                  href={LEGAL_PATHS.terms}
+                  className="text-[11px] font-medium hover:underline"
+                >
+                  {t("terms")}
+                </Link>
+                <Link
+                  href={LEGAL_PATHS.cookies}
+                  className="text-[11px] font-medium hover:underline"
+                >
+                  Cookies
+                </Link>
                 <span className="text-[11px] font-medium">
                   {t("copyright", { year: new Date().getFullYear() })}
                 </span>

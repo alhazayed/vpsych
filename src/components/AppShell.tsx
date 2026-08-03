@@ -230,6 +230,12 @@ export function AppShell({
             <span className="material-symbols-outlined text-[20px]">add</span>
             {tShell("newAssessment")}
           </Link>
+          <Link href="/account/privacy" className="btn-secondary w-full">
+            <span className="material-symbols-outlined text-[20px]">
+              privacy_tip
+            </span>
+            {tShell("privacySettings")}
+          </Link>
           <button
             type="button"
             onClick={() => void signOut()}

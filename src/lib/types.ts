@@ -13,6 +13,12 @@ export type Profile = {
   display_name: string;
   role: UserRole;
   preferred_language?: PreferredLanguage | null;
+  terms_accepted_at?: string | null;
+  privacy_accepted_at?: string | null;
+  ai_processing_accepted_at?: string | null;
+  marketing_opt_in?: boolean;
+  organization?: string | null;
+  data_retention_days?: number;
   created_at: string;
   updated_at: string;
 };

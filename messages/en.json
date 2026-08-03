@@ -21,6 +21,7 @@
   "shell": {
     "tagline": "Clinical Intelligence",
     "newAssessment": "New Assessment",
+    "privacySettings": "Privacy & data",
     "signOut": "Sign out",
     "role": {
       "admin": "Administrator",
@@ -319,6 +320,10 @@
         "other": "Other"
       },
       "termsAgree": "I agree to the Terms of Service and Privacy Policy regarding clinical training data.",
+      "termsAgreePrefix": "I agree to the",
+      "termsAgreeSuffix": "and Educational Disclaimer for clinical training simulation data.",
+      "aiDisclosure": "AI Disclosure",
+      "clinicalDisclaimer": "Clinical Disclaimer",
       "newsletter": "Subscribe to our Clinical Intelligence newsletter for training tips.",
       "errors": {
         "acceptTerms": "Please accept the Terms of Service and Privacy Policy.",
@@ -340,6 +345,7 @@
         "copyright": "© {year} VPsych. All rights reserved.",
         "terms": "Terms of Service",
         "privacy": "Privacy Policy",
+        "cookies": "Cookie Policy",
         "support": "Contact Support"
       }
     }
