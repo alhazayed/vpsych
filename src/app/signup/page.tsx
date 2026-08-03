@@ -185,7 +185,7 @@ export default function SignupPage() {
         </div>
       </nav>
 
-      <main className="flex flex-grow items-center justify-center px-5 py-8">
+      <main id="main-content" tabIndex={-1} className="flex flex-grow items-center justify-center px-5 py-8 outline-none">
         <div className="w-full max-w-[560px] overflow-hidden rounded-[14px] border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] shadow-sm fade-in-up">
           <div className="border-b border-[var(--outline-variant)] bg-[color-mix(in_srgb,var(--surface-container-low)_50%,transparent)] p-6 md:p-8">
             <h1 className="font-[family-name:var(--font-headline)] text-3xl font-bold tracking-tight text-[#12273C]">
@@ -415,7 +415,18 @@ export default function SignupPage() {
                   required
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
-                  {t("termsAgree")}
+                  {t.rich("termsAgreeRich", {
+                    terms: (chunks) => (
+                      <Link href="/terms" className="font-semibold text-[var(--primary)] hover:underline">
+                        {chunks}
+                      </Link>
+                    ),
+                    privacy: (chunks) => (
+                      <Link href="/privacy" className="font-semibold text-[var(--primary)] hover:underline">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </span>
               </label>
               <label className="flex cursor-pointer items-start gap-3">
@@ -506,9 +517,15 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex gap-6 text-xs text-[var(--on-surface-variant)]">
-            <span>{t("footer.terms")}</span>
-            <span>{t("footer.privacy")}</span>
-            <span>{t("footer.support")}</span>
+            <Link href="/terms" className="hover:text-[var(--primary)]">
+              {t("footer.terms")}
+            </Link>
+            <Link href="/privacy" className="hover:text-[var(--primary)]">
+              {t("footer.privacy")}
+            </Link>
+            <Link href="/#faq" className="hover:text-[var(--primary)]">
+              {t("footer.support")}
+            </Link>
           </div>
         </div>
       </footer>
