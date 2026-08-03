@@ -24,11 +24,17 @@ type ReplyMeta = {
   hceEnabled?: boolean;
   reasoningMode?: string;
   alliance?: number;
+  trust?: number;
+  directorAction?: string;
+  disclosureClass?: string;
+  patientInterrupt?: boolean;
   voiceHints?: {
     stability: number;
     similarity_boost: number;
     style: number;
     pause_before_ms: number;
+    speech_rate?: number;
+    stream_chunks?: string[];
   };
 };
 
@@ -50,7 +56,10 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const body = (await request.json()) as { message?: string };
+  const body = (await request.json()) as {
+    message?: string;
+    therapistBargeIn?: boolean;
+  };
   const message = body.message?.trim();
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
@@ -135,6 +144,7 @@ export async function POST(request: Request, { params }: Params) {
       let memoryRow: {
         case_instance_id: string;
         memory: Record<string, unknown>;
+        longitudinal_group_id?: string | null;
       } | null = null;
 
       const { data: mem } = await writer
@@ -147,6 +157,7 @@ export async function POST(request: Request, { params }: Params) {
         memoryRow = mem as {
           case_instance_id: string;
           memory: Record<string, unknown>;
+          longitudinal_group_id?: string | null;
         };
       }
 
@@ -164,6 +175,7 @@ export async function POST(request: Request, { params }: Params) {
         maxDurationSec: typed.max_duration_sec,
         memoryRow,
         writer,
+        therapistBargeIn: body.therapistBargeIn ?? false,
       });
 
       replyMeta = {
@@ -174,11 +186,17 @@ export async function POST(request: Request, { params }: Params) {
         hceEnabled: true,
         reasoningMode: hceResult.reasoningMode,
         alliance: hceResult.alliance,
+        trust: hceResult.trust,
+        directorAction: hceResult.directorAction,
+        disclosureClass: hceResult.disclosureClass,
+        patientInterrupt: hceResult.patientInterrupt,
         voiceHints: {
           stability: hceResult.voiceHints.stability,
           similarity_boost: hceResult.voiceHints.similarity_boost,
           style: hceResult.voiceHints.style,
           pause_before_ms: hceResult.voiceHints.pause_before_ms,
+          speech_rate: hceResult.voiceHints.speech_rate,
+          stream_chunks: hceResult.voiceHints.stream_chunks,
         },
       };
     } else {
@@ -252,6 +270,10 @@ export async function POST(request: Request, { params }: Params) {
       hceEnabled: replyMeta.hceEnabled ?? false,
       reasoningMode: replyMeta.reasoningMode ?? null,
       alliance: replyMeta.alliance ?? null,
+      trust: replyMeta.trust ?? null,
+      directorAction: replyMeta.directorAction ?? null,
+      disclosureClass: replyMeta.disclosureClass ?? null,
+      patientInterrupt: replyMeta.patientInterrupt ?? false,
       voiceHints: replyMeta.voiceHints ?? null,
     },
     {

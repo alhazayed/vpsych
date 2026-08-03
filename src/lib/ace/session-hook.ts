@@ -28,6 +28,8 @@ export async function runAceAfterAssessment(
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
+    hceWeaknessTags?: string[];
+    hceStrengthTags?: string[];
   },
 ): Promise<{
   ok: boolean;
@@ -55,20 +57,29 @@ export async function runAceAfterAssessment(
     });
 
     // Competency Graph Engine — root-cause next case + supervisor report
+    const hceWeak = opts.hceWeaknessTags ?? [];
+    const observedFailure =
+      hceWeak[0] ?? result.analytics.weaknesses[0];
+
     const graphCase = generateGraphAwareAdaptiveCase(result.profile, {
       seed: `cge:${opts.sessionId}`,
-      observedFailure: result.analytics.weaknesses[0],
+      observedFailure,
     });
     const graphReport = graphSupervisorForProfile(
       result.profile,
-      result.analytics.weaknesses[0],
+      observedFailure,
     );
     const coach: CoachFeedback = {
       ...result.coach,
       supervisor_feedback: [
         graphReport.supervisor_feedback,
+        hceWeak.length
+          ? `HCE signals: focus on ${hceWeak.slice(0, 3).join(", ")}.`
+          : "",
         result.coach.supervisor_feedback,
-      ].join(" "),
+      ]
+        .filter(Boolean)
+        .join(" "),
       learning_goals: [
         ...graphReport.learning_plan.slice(0, 3),
         ...result.coach.learning_goals,

@@ -92,11 +92,14 @@ export async function generateHcePatientTurn(params: {
 {
   "patient_utterance": "what the patient says aloud (1-4 sentences, ~${params.hceState.behavior.turn_length_target} words max)",
   "memory_writes": [{"key":"topic","value":"brief fact"}],
+  "emotional_memory_writes": [{"feeling":"sad","trigger":"grandmother","intensity":7}],
   "emotion_delta": {"intensity_delta": 0},
   "clinical_events": [{"type":"disclosed_topic","topic":"..."}],
+  "delivery_tags": ["hesitation","trail_off"],
   "voice_markup": {"breaks":[]}
 }
-Do not include internal_note in output. patient_utterance must be natural speech only.`;
+Director action: ${params.turnBrief.director_action}. Disclosure class: ${params.turnBrief.disclosure_class}.
+Include delivery_tags from delivery directives. Sound imperfect — fillers, false starts, not eloquent.`;
 
   const viaOpenAi = async (
     model?: string,
@@ -181,7 +184,10 @@ function buildHceSystemPrompt(params: {
   memory: MemoryEngineOutput;
   hceState: HceMemoryState;
 }): string {
-  const episodic = summarizeEpisodicForPrompt(params.hceState.episodic);
+  const episodic = summarizeEpisodicForPrompt(
+    params.hceState.episodic,
+    params.hceState.emotional_episodic,
+  );
   return [
     `You are ${params.avatar.name}, a patient in a therapy training simulation.`,
     `Condition (authored): ${params.avatar.disorder}`,

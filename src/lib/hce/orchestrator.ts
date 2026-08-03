@@ -1,11 +1,12 @@
 /**
- * HCE orchestrator — runTurn coordinates engines, reasoning, persistence hooks.
+ * HCE orchestrator — Phases A–D integrated turn pipeline.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isCaseSnapshot } from "@/lib/case-engine/persist";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { HCE_MAX_UTTERANCE_CHARS } from "@/lib/hce/config";
+import { splitUtteranceForStreaming } from "@/lib/hce/delivery";
 import {
   scanPatientUtterance,
   scanTherapistMessageForManipulation,
@@ -20,15 +21,22 @@ import {
 import { emotionTick, applyEmotionDelta } from "@/lib/hce/engines/emotion";
 import { environmentTick, applyEnvironment } from "@/lib/hce/engines/environment";
 import {
+  applyInternalDeltas,
+  internalTick,
+} from "@/lib/hce/engines/internal-state";
+import {
   memoryTick,
   applyMemoryWrites,
 } from "@/lib/hce/engines/memory";
+import { timingTick } from "@/lib/hce/engines/timing";
 import { voiceTick } from "@/lib/hce/engines/voice";
+import { hydrateLongitudinalMemory } from "@/lib/hce/longitudinal";
 import { classifyTherapistMove } from "@/lib/hce/reasoning/classify-therapist-move";
 import { generateHcePatientTurn } from "@/lib/hce/reasoning/patient-reasoner";
 import { extractHceState, mergeCaseMemory } from "@/lib/hce/state";
 import type {
   CaseMemoryRow,
+  DeliveryTag,
   EngineSnapshots,
   HceTurnInput,
   HceTurnResult,
@@ -54,6 +62,12 @@ export async function runHceTurn(
   }
 
   let state = extractHceState(params.memoryRow);
+  state = await hydrateLongitudinalMemory(
+    params.writer,
+    params.memoryRow?.longitudinal_group_id,
+    state,
+  );
+
   const therapistMove = classifyTherapistMove(params.userMessage);
 
   const memoryOut = memoryTick(state, params.userMessage);
@@ -82,19 +96,45 @@ export async function runHceTurn(
     emotionOut,
     environmentOut,
   );
-  const voiceOut = voiceTick(emotionOut, behaviorOut);
+  const timingOut = timingTick(snapshot, emotionOut, turnIndex);
+  const internalOut = internalTick(state);
 
-  const turnBrief = buildTurnBrief({
+  const turnBriefPreVoice = buildTurnBrief({
+    snapshot,
     therapistMove,
     memory: memoryOut,
     clinical: clinicalOut,
     emotion: emotionOut,
     environment: environmentOut,
     behavior: behaviorOut,
-    voice: voiceOut,
+    voice: {
+      stability: 0.4,
+      similarity_boost: 0.75,
+      style: 0.2,
+      pause_before_ms: timingOut.pause_before_ms,
+      speech_rate: timingOut.speech_rate,
+      volume_hint: 1,
+      tremor_hint: 0,
+      breathiness_hint: 0,
+      directives: [],
+    },
+    timing: timingOut,
+    internal: internalOut,
     sessionLanguage: params.sessionLanguage,
     locale: snapshot.locale,
+    therapistBargeIn: params.therapistBargeIn,
   });
+
+  const deliveryTags = parseDeliveryTags(turnBriefPreVoice.delivery_directives);
+  const voiceOut = voiceTick(
+    emotionOut,
+    behaviorOut,
+    timingOut.pause_before_ms,
+    timingOut.speech_rate,
+    deliveryTags,
+  );
+
+  const turnBrief = { ...turnBriefPreVoice, voice_directives: voiceOut.directives };
 
   const engineSnapshots: EngineSnapshots = {
     memory: memoryOut,
@@ -103,6 +143,8 @@ export async function runHceTurn(
     environment: environmentOut,
     behavior: behaviorOut,
     voice: voiceOut,
+    timing: timingOut,
+    internal: internalOut,
   };
 
   let reasoner = await generateHcePatientTurn({
@@ -119,6 +161,8 @@ export async function runHceTurn(
     0,
     HCE_MAX_UTTERANCE_CHARS,
   );
+  const outputTags: DeliveryTag[] =
+    reasoner.output.delivery_tags ?? deliveryTags;
 
   const clinicalValidation = validateClinicalUtterance(
     utterance,
@@ -164,9 +208,11 @@ export async function runHceTurn(
     clinicalOut,
   );
   state = applyBehavior(state, behaviorOut, therapistMove);
+  state = applyInternalDeltas(state, therapistMove, emotionOut, environmentOut);
   state = applyMemoryWrites(
     state,
     reasoner.output.memory_writes,
+    reasoner.output.emotional_memory_writes,
     turnIndex,
     params.userMessage,
   );
@@ -178,11 +224,17 @@ export async function runHceTurn(
     therapistMessage: params.userMessage,
     patientUtterance: utterance,
     turnBrief,
-    engineSnapshots,
+    engineSnapshots: {
+      ...engineSnapshots,
+      internal: state.internal,
+    },
     reasoningMode: turnBrief.reasoning_mode,
     model: reasoner.model,
     latencyMs: Date.now() - start,
   });
+
+  const streamChunks = splitUtteranceForStreaming(utterance);
+  const finalTags = reasoner.output.delivery_tags ?? outputTags;
 
   return {
     text: utterance,
@@ -193,10 +245,44 @@ export async function runHceTurn(
     voiceHints: {
       ...voiceOut,
       voice_markup: reasoner.output.voice_markup,
+      delivery_tags: finalTags,
+      stream_chunks: streamChunks.length > 1 ? streamChunks : undefined,
     },
     alliance: state.relationship.alliance,
+    trust: state.internal.trust,
+    directorAction: turnBrief.director_action,
+    disclosureClass: turnBrief.disclosure_class,
+    emotionVector: state.emotion.vector,
+    deliveryTags: finalTags,
+    patientInterrupt: turnBrief.patient_should_interrupt,
     hceEnabled: true,
   };
+}
+
+function parseDeliveryTags(directives: string[]): DeliveryTag[] {
+  const tags: DeliveryTag[] = [];
+  const line = directives.find((d) => d.startsWith("tags:"));
+  if (!line) return tags;
+  const raw = line.replace("tags:", "").split(",");
+  const allowed: DeliveryTag[] = [
+    "hesitation",
+    "trail_off",
+    "self_correct",
+    "sigh",
+    "nervous_laugh",
+    "whisper",
+    "repeat_word",
+    "false_start",
+    "topic_shift",
+    "filler_words",
+    "cry",
+    "long_pause",
+  ];
+  for (const t of raw) {
+    const key = t.trim() as DeliveryTag;
+    if (allowed.includes(key)) tags.push(key);
+  }
+  return tags;
 }
 
 async function persistHceState(
@@ -252,17 +338,13 @@ async function logHceTurn(
     latency_ms: row.latencyMs,
   });
 
-  if (error?.code === "42P01") {
-    return;
-  }
+  if (error?.code === "42P01") return;
   if (error) {
     console.warn("[hce] turn log insert failed", { error: error.message });
   }
 }
 
-export function parseCaseSnapshot(
-  raw: unknown,
-): CaseInstanceSnapshot | null {
+export function parseCaseSnapshot(raw: unknown): CaseInstanceSnapshot | null {
   if (!raw || typeof raw !== "object") return null;
   if (!isCaseSnapshot(raw)) return null;
   return raw as CaseInstanceSnapshot;

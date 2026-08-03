@@ -4,6 +4,11 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
+import {
+  extractHceSessionSignals,
+  finalizeHceSessionMemory,
+  hceSignalsToAceHints,
+} from "@/lib/hce/integrate/ace-hce";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
@@ -112,6 +117,35 @@ export async function POST(_request: Request, { params }: Params) {
     language: reportLanguage,
   });
 
+  const adminWriter = createServiceClient() ?? supabase;
+  let hceSignals: Awaited<ReturnType<typeof extractHceSessionSignals>> = null;
+  if (typed.case_instance_id) {
+    hceSignals = await extractHceSessionSignals(
+      adminWriter,
+      sessionId,
+      typed.case_instance_id,
+    );
+    const endedWell =
+      assessment.scores.overall >= 55 &&
+      !hceSignals?.missed_safety &&
+      (hceSignals?.alliance_ruptures ?? 0) <= (hceSignals?.successful_repairs ?? 0);
+    const { data: memRow } = await adminWriter
+      .from("case_memory")
+      .select("memory")
+      .eq("case_instance_id", typed.case_instance_id)
+      .maybeSingle();
+    if (memRow?.memory) {
+      await finalizeHceSessionMemory(
+        adminWriter,
+        typed.case_instance_id,
+        memRow.memory as Record<string, unknown>,
+        endedWell,
+      );
+    }
+  }
+
+  const hceAceHints = hceSignals ? hceSignalsToAceHints(hceSignals) : null;
+
   console.info("[sessions/end] assessment", {
     sessionId,
     language: assessment.language,
@@ -141,9 +175,11 @@ export async function POST(_request: Request, { params }: Params) {
     items: assessment.scores.items,
     language: assessment.language ?? resolved.locale,
     diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
-    narrative,
+    narrative: narrative,
     durationSec,
     timeLimitSec: typed.max_duration_sec,
+    hceWeaknessTags: hceAceHints?.weaknessTags,
+    hceStrengthTags: hceAceHints?.strengthTags,
   });
 
   const admin = createServiceClient();
