@@ -82,7 +82,7 @@ export function validateTemplate(
       issue("primary_diagnosis_invalid", "Primary diagnosis missing or inactive", "primary_diagnosis"),
     );
   } else {
-    if (!primary.dsm5_code) {
+    if (!primary.dsm5_code && !primary.package?.dsm5_optional) {
       issues.push(issue("dsm5_missing", "Primary diagnosis missing DSM-5", "primary_diagnosis"));
     }
     if (!primary.icd11_code) {

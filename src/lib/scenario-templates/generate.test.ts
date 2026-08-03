@@ -80,8 +80,14 @@ describe("Clinical Scenario Template Engine", () => {
       expect(assessmentIds.has(snapshot.assessment_id)).toBe(false);
       assessmentIds.add(snapshot.assessment_id);
 
-      expect(snapshot.primary_diagnosis.dsm5_code).toBeTruthy();
-      expect(snapshot.primary_diagnosis.icd11_code).toBeTruthy();
+      // CPTSD is ICD-11-only (no DSM-5 code); other templates require DSM-5.
+      if (snapshot.primary_diagnosis.slug === "complex-ptsd") {
+        expect(snapshot.primary_diagnosis.dsm5_code).toBeNull();
+        expect(snapshot.primary_diagnosis.icd11_code).toBe("6B41");
+      } else {
+        expect(snapshot.primary_diagnosis.dsm5_code).toBeTruthy();
+        expect(snapshot.primary_diagnosis.icd11_code).toBeTruthy();
+      }
       expect(snapshot.primary_diagnosis.slug).toBe(
         template.primary_diagnosis_slug,
       );
@@ -93,8 +99,10 @@ describe("Clinical Scenario Template Engine", () => {
       expect(meta.grading_rubric.pass_threshold).toBeGreaterThan(0);
       expect(snapshot.rubric?.length).toBeGreaterThan(0);
 
-      // Culture / language never rewrite DSM codes from the disorder package
-      expect(Boolean(snapshot.primary_diagnosis.dsm5_code)).toBe(true);
+      // Culture / language never rewrite ICD-11; DSM-5 may be null only for CPTSD
+      if (snapshot.primary_diagnosis.slug !== "complex-ptsd") {
+        expect(Boolean(snapshot.primary_diagnosis.dsm5_code)).toBe(true);
+      }
       expect(Boolean(snapshot.primary_diagnosis.icd11_code)).toBe(true);
 
       // Excluded diagnoses never appear
