@@ -29,4 +29,22 @@ describe("clientSafeError", () => {
       ),
     ).toBe("Failed");
   });
+
+  it("strips PostgREST and RLS schema leakage", () => {
+    expect(
+      clientSafeError(
+        "Failed",
+        'relation "case_instances" does not exist',
+      ),
+    ).toBe("Failed");
+    expect(
+      clientSafeError(
+        "Failed",
+        'new row violates row-level security policy for table "session_messages"',
+      ),
+    ).toBe("Failed");
+    expect(
+      clientSafeError("Failed", "PGRST116: JSON object requested"),
+    ).toBe("Failed");
+  });
 });
