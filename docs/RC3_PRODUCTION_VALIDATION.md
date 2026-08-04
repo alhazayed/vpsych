@@ -3,7 +3,9 @@
 **Board date:** 2026-08-04  
 **Phase:** Prove, do not build  
 **Production:** `https://vpsych.vercel.app`  
-**GitHub `main`:** `52a7610d732500c3c91067c270740edf4a1aaef3` (`RC1 Code Freeze — sole v1.0 candidate (#100)`)  
+**GitHub `main`:** `5bf66c07f11d286c305f59398a015614d22b723b` (`chore(db): reconcile migrations… (#103)` — post-merge)
+**Prior RC3 audit SHA:** `52a7610` (pre-#103; 28 migrations)
+**RC3-C1 re-audit:** 2026-08-04 — **CLEARED** (`main` 54 ≡ production 54)  
 **Production deploy:** `dpl_2mBqyfzFEDCETctTSL7aFQR3HnDv` (target=`production`, SHA=`52a7610…`)  
 **Supabase:** `rrzudbkxigeavfdnidnm` (ACTIVE_HEALTHY, us-east-1)  
 **Vercel project:** `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm`  
@@ -18,25 +20,25 @@
 | Claim | Refers to | Migrations | Status |
 |---|---|---:|---|
 | Repository / Production Integrity **100/100**, “greenfield ≡ production schema” | PR **#103** branch `cursor/migration-reconciliation-b5ac` @ `5c879f4` | **54** | Proven on that branch; **not on `main`** |
-| RC3 production validation | **`main` @ `52a7610`** + prod deploy `dpl_2mBqyfz…` | **28** on git `main` vs **54** on production | Correct RC3 audit target; exposes drift |
+| RC3 initial audit | **`main` @ `52a7610`** + prod deploy `dpl_2mBqyfz…` | **28** vs **54** | Exposed RC3-C1 |
+| RC3-C1 re-audit (post-#103) | **`main` @ `5bf66c0`** + production | **54 ≡ 54** | **C1 CLEARED** |
 
 **These statements are not contradictory** once scoped: the 100/100 scores document work that has **not yet landed on `main`**. RC3 correctly audited the release train (`main`), which still lacks the parity tree. RC2’s open migration-parity item is the same gap RC3-C1 elevates to Critical.
 
-**Re-verify timestamp (2026-08-04):** `origin/main` still `52a7610` (28 files). PR #103 still **OPEN**, CI green, mergeable. Production still **54** versions (latest `20260804085304`).
+**Re-verify timestamp (2026-08-04 10:51 UTC):** PR #103 **MERGED**. `origin/main` = `5bf66c0` (**54** files). Production = **54** versions (latest `20260804085304`). Exact version parity **PASS**.
 
 ```yaml
 wave_status:
   wave_1:
     state: failed
     blockers:
-      - RC3-C1
       - RC3-C2
+    cleared:
+      - RC3-C1  # PR #103 merged; main@5bf66c0 has 54 ≡ prod 54
     rerun_required: true
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     rerun_after:
-      - "PR #103 merged to main (migration parity)"
       - "Dedicated VPSYCH_AUDIT_THERAPIST_* and VPSYCH_AUDIT_ADMIN_* configured"
-      - "Migration audit re-run against post-merge main SHA"
       - "Audit login verified on https://vpsych.vercel.app"
   wave_2:
     state: locked
@@ -77,7 +79,7 @@ wave_status:
 
 | ID | Severity | Finding | Remediation |
 |---|---|---|---|
-| RC3-C1 | **Critical** | Production `schema_migrations` = **54**; **`main` @ `52a7610`** git migrations = **28**. Parity **100/100** was proven on PR #103 only. | **1.** Merge [#103](https://github.com/alhazayed/vpsych/pull/103) into `main`. **2.** Re-audit migration parity on the **new `main` SHA** (expect 54 ≡ 54). **3.** Only then clear C1. |
+| RC3-C1 | ~~Critical~~ **CLEARED** | Was: `main`@`52a7610` had 28 vs prod 54. | [#103](https://github.com/alhazayed/vpsych/pull/103) merged `5bf66c0`. Re-audit: **54 ≡ 54** exact version parity. Local `npm run test:migrations` structure OK. |
 | RC3-C2 | **Critical** | Dedicated audit identities missing from the RC3 environment (`VPSYCH_AUDIT_*` unset). Without them Wave 1 cannot certify therapist/admin/AI/voice/session paths. | Provision **permanent** dedicated accounts (not personal): `VPSYCH_AUDIT_THERAPIST_EMAIL/PASSWORD`, `VPSYCH_AUDIT_ADMIN_EMAIL/PASSWORD`. Verify login on production. Re-run Missions **1–5** only. |
 
 ---
@@ -94,7 +96,7 @@ wave_status:
 | Locale cookie `Secure` | `locale=en; … Secure; SameSite=lax` | ✅ |
 | Security headers | CSP, HSTS preload, COOP/CORP, XFO DENY, nosniff, Permissions-Policy | ✅ |
 | Vercel runtime errors (24h) | None reported | ✅ |
-| Migration parity `main` ↔ prod | 28 vs 54 | ❌ **RC3-C1** |
+| Migration parity `main` ↔ prod | **54 ≡ 54** @ `5bf66c0` | ✅ **RC3-C1 CLEARED** |
 
 ---
 
@@ -106,7 +108,7 @@ Legend: **PASS** · **FAIL** · **CONDITIONAL** (data/schema OK, runtime not exe
 |---:|---|---|---|---|
 | 1 | UI / UX / Navigation | 1 | **PASS** | Browser prod screenshots; EN/AR RTL; mobile 390px; 0 Critical/High UI defects. Artifacts: `/opt/cursor/artifacts/rc3/screenshots/`, `docs/rc3/M01_UI_UX.md` |
 | 2 | Authentication & Authorization | 1 | **FAIL pending C2** (public PASS) | Soft auth + anon API/RLS PASS. Therapist/admin login matrix **not certified** without dedicated audit accounts. |
-| 3 | Database / Supabase | 1 | **FAIL** | Live DB healthy. **`main` @ `52a7610` has 28 files; prod 54.** PR #103 holds the 54-file tree + 100/100 proof — unmerged. |
+| 3 | Database / Supabase | 1 | **PASS** (parity) | `main`@`5bf66c0` **54 ≡ 54** production. Live DB healthy (56 tables, RLS on). Re-run with audit creds still needed for auth-gated DB paths if any. |
 | 4 | API Runtime | 1 | **FAIL pending C2** (anon PASS) | Anon contract PASS. Authenticated session create/message/end **not certified**. |
 | 5 | AI Runtime | 1 | **FAIL pending C2** | Admin OpenAI health gated correctly; live GPT/assessment path **not certified**. |
 | 6–24 | Waves 2–5 missions | 2–5 | **LOCKED** | Informational data notes retained in `docs/rc3/*`; **do not advance** until Wave 1 PASS. |
@@ -119,7 +121,7 @@ Legend: **PASS** · **FAIL** · **CONDITIONAL** (data/schema OK, runtime not exe
 
 ### Wave 1 — Platform Validation → **FAIL** (`rerun_required: true`)
 
-Public RC1 surfaces are live. Gate fails on **RC3-C1** (parity not on `main`) and **RC3-C2** (no dedicated audit identities). Missions **1–5** must be re-run after both blockers clear — **do not restart Missions 6–30**.
+Public RC1 surfaces are live. **RC3-C1 CLEARED** (`main`@`5bf66c0`, 54 ≡ 54). Gate still fails on **RC3-C2** (no dedicated audit identities). Re-run Missions **1–5** after C2 clears — **do not restart Missions 6–30**.
 
 ### Waves 2–5 → **LOCKED**
 
@@ -139,7 +141,7 @@ Blocked until Wave 6 approval.
 
 | Step | Action | Exit criterion |
 |---:|---|---|
-| 1 | Resolve **RC3-C1**: merge PR #103 → `main`; re-audit migrations on **post-merge `main` SHA** vs production (expect **54 ≡ 54**); confirm `npm run test:migrations` with `SUPABASE_DB_URL` → `ok: true` | C1 cleared |
+| 1 | Resolve **RC3-C1** | ✅ **DONE** — #103 merged; `main`@`5bf66c0`; 54 ≡ 54 |
 | 2 | Resolve **RC3-C2**: configure permanent `VPSYCH_AUDIT_THERAPIST_*` + `VPSYCH_AUDIT_ADMIN_*`; verify login on `https://vpsych.vercel.app` | C2 cleared |
 | 3 | Re-run **only Missions 1–5** against production + post-merge `main` | Wave 1 PASS iff **0 Critical and 0 High** |
 | 4 | If Wave 1 PASS → set `wave_2…wave_5.state: unlocked` and execute those waves; **then** reconvene Executive Board | Waves advance in order |

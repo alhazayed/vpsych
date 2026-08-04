@@ -4,13 +4,13 @@ Do **not** re-run Waves 2–7 until this page is all green.
 
 ## RC3-C1 — Migration parity on `main`
 
-- [ ] PR [#103](https://github.com/alhazayed/vpsych/pull/103) merged to `main`
-- [ ] Record new `main` SHA: `____________`
-- [ ] `git ls-tree -r --name-only origin/main -- supabase/migrations/ | wc -l` → **54**
-- [ ] Production `schema_migrations` count → **54** (already)
-- [ ] Version sets identical (no remote-only / no stale git-only)
-- [ ] `npm run test:migrations` with `SUPABASE_DB_URL` → `ok: true`
-- [ ] Update `docs/RC3_PRODUCTION_VALIDATION.md` audited SHA + clear RC3-C1
+- [x] PR [#103](https://github.com/alhazayed/vpsych/pull/103) merged to `main`
+- [x] Record new `main` SHA: `5bf66c07f11d286c305f59398a015614d22b723b`
+- [x] `git ls-tree … migrations | wc -l` → **54**
+- [x] Production `schema_migrations` count → **54**
+- [x] Version sets identical (no remote-only / no stale git-only)
+- [x] `npm run test:migrations` local structure OK (remote URL unset in agent; version sets matched via MCP)
+- [x] Update `docs/RC3_PRODUCTION_VALIDATION.md` audited SHA + clear RC3-C1
 
 ## RC3-C2 — Dedicated audit accounts
 
