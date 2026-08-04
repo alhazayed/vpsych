@@ -40,7 +40,14 @@
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
       "apiIntegrations": "API Integrations",
-      "securityKeys": "Security & Keys"
+      "securityKeys": "Security & Keys",
+      "clinicalFidelity": "Clinical Fidelity Index",
+      "educationalReliability": "Educational Reliability Index",
+      "assessmentValidity": "Assessment Validity Index",
+      "adaptiveLearningEffectiveness": "Adaptive Learning Effectiveness",
+      "researchReadiness": "Research Readiness Score",
+      "vpsychQuality": "VPsych Quality Index",
+      "qualityLedger": "Quality Ledger"
     }
   },
   "nav": {
@@ -56,7 +63,14 @@
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
-    "securityKeys": "Security & Keys"
+    "securityKeys": "Security & Keys",
+    "clinicalFidelity": "Clinical Fidelity",
+    "educationalReliability": "Educational Reliability",
+    "assessmentValidity": "Assessment Validity",
+    "adaptiveLearningEffectiveness": "Adaptive Learning",
+    "researchReadiness": "Research Readiness",
+    "vpsychQuality": "VPsych Quality",
+    "qualityLedger": "Quality Ledger"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -672,6 +686,41 @@
         "cancel": "Cancel",
         "proceed": "Proceed with Change"
       }
+    },
+    "cfi": {
+      "eyebrow": "Clinical review board",
+      "title": "Clinical Fidelity Index",
+      "subtitle": "Weighted 0–100 scientific score of how faithfully each AI patient reproduces the intended psychiatric disorder, with confidence intervals and remediation guidance."
+    },
+    "eri": {
+      "eyebrow": "CBME / OSCE review board",
+      "title": "Educational Reliability Index",
+      "subtitle": "Weighted 0–100 scientific score of how reliable and educationally useful every AI assessment is — with confidence, evidence, learner trends, and instructor reports."
+    },
+    "avi": {
+      "eyebrow": "Psychometrics / assessment science",
+      "title": "Assessment Validity Index",
+      "subtitle": "Weighted 0–100 scientific score of whether VPsych evaluates the competencies it claims — with confidence, variance from repeated assessments, and validity reports."
+    },
+    "ale": {
+      "eyebrow": "Learning analytics / adaptive curriculum",
+      "title": "Adaptive Learning Effectiveness",
+      "subtitle": "Weighted 0–100 scientific score of whether the Adaptive Curriculum selects increasingly appropriate learning experiences — with learning curves, difficulty curves, and curriculum quality reports."
+    },
+    "rrs": {
+      "eyebrow": "IRB / journal / biostatistics review",
+      "title": "Research Readiness Score",
+      "subtitle": "Weighted 0–100 scientific score of whether VPsych data can support scientific research and publication — with version and reproducibility matrices, honest export/GDPR gap disclosure."
+    },
+    "vqi": {
+      "eyebrow": "Master quality metric",
+      "title": "VPsych Quality Index",
+      "subtitle": "Hierarchical composite of CFI, ERI, AVI, ALE, and RRS with versioned weights, provenance, confidence intervals, and quality certification — not a simple average."
+    },
+    "qualityLedger": {
+      "eyebrow": "Scientific audit trail",
+      "title": "Quality Ledger",
+      "subtitle": "Immutable source of truth for every assessment quality metric — reproducible, versioned, and never overwritten."
     }
   },
   "legal": {
