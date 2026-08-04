@@ -277,4 +277,5 @@ update public.profiles set role = 'admin' where id = '<user-uuid>';
 `docs/ARCHITECTURE_CERTIFICATION.md`, `docs/PRODUCTION_SECURITY_CERTIFICATION.md`,
 and `docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
 constraints above, including the specific regressions that motivated the
-guardrail tests.
+guardrail tests. `docs/RELEASE_MANIFEST.md` is the machine-readable v1.0
+release inventory (SHA, deploy IDs, migration snapshot hash, engine versions).

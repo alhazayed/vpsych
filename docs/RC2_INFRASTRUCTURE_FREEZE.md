@@ -119,6 +119,8 @@ Owner should confirm Upstash keys in Vercel project settings if multi-instance r
 
 **RC2 COMPLETE.** Proceed to **RC3 — Production Validation** (no feature work).
 
+**Release inventory:** `docs/RELEASE_MANIFEST.md` (machine-readable YAML) records SHA, Vercel `dpl_*`, Supabase ref, migration snapshot hash, engine versions, deferred v1.1 items, and rollback target for this cut.
+
 ### Residual ops (not RC2 blockers)
 
 - Configure external uptime + 5xx alerts (RC4).  
