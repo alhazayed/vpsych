@@ -6,6 +6,7 @@ import {
   LOCALE_COOKIE,
   type AppLocale,
 } from "@/i18n/config";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 function applyLocaleCookie(
   response: NextResponse,
@@ -15,10 +16,36 @@ function applyLocaleCookie(
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
+    // Never send this cookie over plaintext HTTP once deployed; skip in local
+    // dev where http://localhost has no TLS.
+    secure: process.env.NODE_ENV === "production",
   });
 }
 
+function isPublicPath(path: string): boolean {
+  if (path === "/" || path.startsWith("/login") || path.startsWith("/signup")) {
+    return true;
+  }
+  if (path.startsWith("/auth/")) return true;
+  if (path.startsWith("/legal/")) return true;
+  if (path === "/privacy" || path === "/terms") return true;
+  if (path === "/robots.txt" || path === "/sitemap.xml") return true;
+  if (path === "/manifest.webmanifest" || path === "/manifest.json") return true;
+  if (path === "/rss.xml" || path === "/feed.xml") return true;
+  if (path.startsWith("/sitemap") || path.startsWith("/sitemaps/")) return true;
+  if (path.startsWith("/.well-known/")) return true;
+  if (path === "/api/health") return true;
+  return false;
+}
+
 export async function updateSession(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Liveness probe — no auth, no Supabase round-trip (SRE / CI smoke).
+  if (path === "/api/health") {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -46,23 +73,27 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
-  const isPublic =
-    path === "/" || isAuthPage || path.startsWith("/auth/");
+  const isApi = path.startsWith("/api/");
+  const isPublic = isPublicPath(path);
 
   if (!user && !isPublic) {
+    // APIs return JSON 401 (not HTML login redirects) for ops/clients.
+    if (isApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", path);
+    const nextTarget = `${path}${request.nextUrl.search}`;
+    url.search = "";
+    url.searchParams.set("next", nextTarget);
     return NextResponse.redirect(url);
   }
 
   if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/avatars";
-    return NextResponse.redirect(url);
+    const next = safeRedirectPath(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(next, request.url));
   }
 
   const isAdminPath =

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { getBuiltinCatalog } from "@/lib/case-engine/catalog";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request, {
@@ -8,7 +9,15 @@ export async function GET(request: Request) {
     resourceType: "disorders",
   });
   if (!auth.ok) return auth.response;
-  const { supabase } = auth;
+  const { supabase, user } = auth;
+
+  const limited = await rateLimit(`admin-disorders:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data: rows, error } = await supabase
     .from("disorders")

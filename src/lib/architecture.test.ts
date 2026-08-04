@@ -50,4 +50,21 @@ describe("architecture invariants", () => {
       readFileSync(join(root, "app/global-error.tsx"), "utf8"),
     ).not.toThrow();
   });
+
+  it("exposes a public liveness probe at /api/health", () => {
+    const route = readFileSync(join(root, "app/api/health/route.ts"), "utf8");
+    expect(route).toMatch(/ok:\s*true/);
+    expect(route).toMatch(/service:\s*"vpsych"/);
+  });
+
+  it("middleware returns JSON 401 for unauthenticated APIs and keeps SEO/legal public", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/Unauthorized/);
+    expect(mw).toMatch(/status:\s*401/);
+    expect(mw).toMatch(/\/api\/health/);
+    expect(mw).toMatch(/\/robots\.txt/);
+    expect(mw).toMatch(/\/privacy/);
+    expect(mw).toMatch(/\/terms/);
+    expect(mw).toMatch(/secure:\s*process\.env\.NODE_ENV === "production"/);
+  });
 });

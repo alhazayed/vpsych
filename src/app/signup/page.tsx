@@ -506,8 +506,12 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex gap-6 text-xs text-[var(--on-surface-variant)]">
-            <span>{t("footer.terms")}</span>
-            <span>{t("footer.privacy")}</span>
+            <Link href="/terms" className="hover:underline">
+              {t("footer.terms")}
+            </Link>
+            <Link href="/privacy" className="hover:underline">
+              {t("footer.privacy")}
+            </Link>
             <span>{t("footer.support")}</span>
           </div>
         </div>
