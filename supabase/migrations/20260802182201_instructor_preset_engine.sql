@@ -1,3 +1,7 @@
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+-- (enriched only when production statements were empty/placeholder).
+
 -- =============================================================================
 -- VPsych Instructor Preset Engine (v2.0)
 -- Educators configure learning objectives; the engine selects diagnosis +
@@ -83,15 +87,11 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- Extend therapy_modality if needed
 DO $$ BEGIN
   ALTER TYPE public.therapy_modality ADD VALUE IF NOT EXISTS 'medication_management';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Instructor presets
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.instructor_presets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text NOT NULL UNIQUE,
@@ -119,7 +119,6 @@ CREATE TABLE IF NOT EXISTS public.instructor_presets (
   allow_pause boolean NOT NULL DEFAULT true,
   allow_restart boolean NOT NULL DEFAULT true,
   advanced_mode boolean NOT NULL DEFAULT false,
-  -- Optional pinned template; null = engine auto-selects
   scenario_template_id uuid REFERENCES public.clinical_templates (id) ON DELETE SET NULL,
   clinical_constraints jsonb NOT NULL DEFAULT '{}'::jsonb,
   grading_config jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -200,7 +199,6 @@ CREATE TABLE IF NOT EXISTS public.preset_grading (
   report_sections jsonb NOT NULL DEFAULT '["score","strengths","weaknesses","missed_opportunities","recommendations"]'::jsonb
 );
 
--- Link generated cases to presets
 ALTER TABLE public.case_instances
   ADD COLUMN IF NOT EXISTS instructor_preset_id uuid
     REFERENCES public.instructor_presets (id) ON DELETE SET NULL;
@@ -214,9 +212,6 @@ ALTER TABLE public.sessions
   ADD COLUMN IF NOT EXISTS instructor_preset_id uuid
     REFERENCES public.instructor_presets (id) ON DELETE SET NULL;
 
--- ---------------------------------------------------------------------------
--- Seed presets
--- ---------------------------------------------------------------------------
 INSERT INTO public.instructor_presets (
   id, slug, name, description, specialty, target_learner, learning_level,
   clinical_rotation, assessment_type, primary_objective, difficulty,
@@ -321,9 +316,6 @@ WHERE slug IN (
 )
 ON CONFLICT (preset_id, version) DO NOTHING;
 
--- ---------------------------------------------------------------------------
--- RLS
--- ---------------------------------------------------------------------------
 ALTER TABLE public.instructor_presets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.preset_objectives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.preset_competencies ENABLE ROW LEVEL SECURITY;

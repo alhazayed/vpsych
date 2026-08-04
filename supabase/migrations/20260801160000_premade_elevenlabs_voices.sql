@@ -1,3 +1,6 @@
+-- Enriched from git history: production recorded a placeholder/empty statement.
+-- Restored full SQL for greenfield parity.
+
 -- Point TTS at premade ElevenLabs voices that work without Voice Library
 -- paid access. Classic defaults (Rachel / Charlotte / Sam) return
 -- paid_plan_required on restricted API keys.

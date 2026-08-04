@@ -1,8 +1,6 @@
--- =============================================================================
--- VPsych Adaptive Curriculum Engine (ACE) v3.0
--- Personalized psychiatric training: competency tracking, adaptive case
--- generation, learning pathways, AI coach. Additive / backward compatible.
--- =============================================================================
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+-- (enriched only when production statements were empty/placeholder).
 
 DO $$ BEGIN
   CREATE TYPE public.ace_training_level AS ENUM (
@@ -37,9 +35,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Competency catalog (global)
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.competency_domains (
   id text PRIMARY KEY,
   label text NOT NULL,
@@ -65,9 +60,6 @@ CREATE TABLE IF NOT EXISTS public.adaptive_rules (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- ---------------------------------------------------------------------------
--- Learner profile + competencies
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.learner_profiles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL UNIQUE REFERENCES public.profiles (id) ON DELETE CASCADE,
@@ -94,10 +86,8 @@ CREATE TABLE IF NOT EXISTS public.learner_profiles (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS learner_profiles_institution_idx
-  ON public.learner_profiles (institution);
-CREATE INDEX IF NOT EXISTS learner_profiles_adaptive_mode_idx
-  ON public.learner_profiles (adaptive_mode) WHERE adaptive_mode = true;
+CREATE INDEX IF NOT EXISTS learner_profiles_institution_idx ON public.learner_profiles (institution);
+CREATE INDEX IF NOT EXISTS learner_profiles_adaptive_mode_idx ON public.learner_profiles (adaptive_mode) WHERE adaptive_mode = true;
 
 CREATE TABLE IF NOT EXISTS public.learner_competencies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -111,8 +101,7 @@ CREATE TABLE IF NOT EXISTS public.learner_competencies (
   UNIQUE (learner_id, competency_id)
 );
 
-CREATE INDEX IF NOT EXISTS learner_competencies_score_idx
-  ON public.learner_competencies (learner_id, score);
+CREATE INDEX IF NOT EXISTS learner_competencies_score_idx ON public.learner_competencies (learner_id, score);
 
 CREATE TABLE IF NOT EXISTS public.competency_scores (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -124,20 +113,15 @@ CREATE TABLE IF NOT EXISTS public.competency_scores (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS competency_scores_learner_created_idx
-  ON public.competency_scores (learner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS competency_scores_learner_created_idx ON public.competency_scores (learner_id, created_at DESC);
 
--- ---------------------------------------------------------------------------
--- Curriculum + adaptive history
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.learning_paths (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   learner_id uuid NOT NULL REFERENCES public.learner_profiles (id) ON DELETE CASCADE,
   slug text NOT NULL,
   name text NOT NULL,
   focus_competency_id text REFERENCES public.competency_domains (id),
-  status text NOT NULL DEFAULT 'active'
-    CHECK (status IN ('active', 'completed', 'paused', 'archived')),
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused', 'archived')),
   steps jsonb NOT NULL DEFAULT '[]'::jsonb,
   current_step int NOT NULL DEFAULT 0,
   instructor_preset_id uuid REFERENCES public.instructor_presets (id) ON DELETE SET NULL,
@@ -147,8 +131,7 @@ CREATE TABLE IF NOT EXISTS public.learning_paths (
   completed_at timestamptz
 );
 
-CREATE INDEX IF NOT EXISTS learning_paths_learner_status_idx
-  ON public.learning_paths (learner_id, status);
+CREATE INDEX IF NOT EXISTS learning_paths_learner_status_idx ON public.learning_paths (learner_id, status);
 
 CREATE TABLE IF NOT EXISTS public.curriculum_progress (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -156,8 +139,7 @@ CREATE TABLE IF NOT EXISTS public.curriculum_progress (
   step_index int NOT NULL,
   session_id uuid REFERENCES public.sessions (id) ON DELETE SET NULL,
   case_instance_id uuid REFERENCES public.case_instances (id) ON DELETE SET NULL,
-  status text NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped')),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped')),
   outcome jsonb NOT NULL DEFAULT '{}'::jsonb,
   completed_at timestamptz,
   UNIQUE (learning_path_id, step_index)
@@ -176,10 +158,8 @@ CREATE TABLE IF NOT EXISTS public.adaptive_case_history (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS adaptive_case_history_fingerprint_idx
-  ON public.adaptive_case_history (learner_id, fingerprint);
-CREATE INDEX IF NOT EXISTS adaptive_case_history_learner_idx
-  ON public.adaptive_case_history (learner_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS adaptive_case_history_fingerprint_idx ON public.adaptive_case_history (learner_id, fingerprint);
+CREATE INDEX IF NOT EXISTS adaptive_case_history_learner_idx ON public.adaptive_case_history (learner_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.performance_trends (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -217,19 +197,15 @@ CREATE TABLE IF NOT EXISTS public.coach_feedback (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS coach_feedback_learner_idx
-  ON public.coach_feedback (learner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS coach_feedback_learner_idx ON public.coach_feedback (learner_id, created_at DESC);
 
--- Link sessions optionally to ACE
-ALTER TABLE public.sessions
-  ADD COLUMN IF NOT EXISTS learner_profile_id uuid
-    REFERENCES public.learner_profiles (id) ON DELETE SET NULL;
-ALTER TABLE public.sessions
-  ADD COLUMN IF NOT EXISTS adaptive_focus text[];
+ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS learner_profile_id uuid REFERENCES public.learner_profiles (id) ON DELETE SET NULL;
+ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS adaptive_focus text[];
 
--- ---------------------------------------------------------------------------
--- Seed competency domains
--- ---------------------------------------------------------------------------
+-- Restored seed data omitted from production statements but present in live DB
+-- (was part of the consolidated ACE migration applied out-of-band / split incompletely).
+-- Required for greenfield parity; idempotent ON CONFLICT.
+
 INSERT INTO public.competency_domains (id, label, description, category, sort_order) VALUES
   ('diagnostic_interview', 'Diagnostic Interview', 'Structured psychiatric interview', 'assessment', 10),
   ('mental_status_examination', 'Mental Status Examination', 'MSE completeness and accuracy', 'assessment', 20),
@@ -263,7 +239,6 @@ ON CONFLICT (id) DO UPDATE SET
   category = EXCLUDED.category,
   sort_order = EXCLUDED.sort_order;
 
--- Seed adaptive rules
 INSERT INTO public.adaptive_rules (slug, name, description, trigger_competency_id, trigger_operator, trigger_threshold, adaptation, priority) VALUES
 (
   'remediate-suicide-assessment',
@@ -301,185 +276,3 @@ ON CONFLICT (slug) DO UPDATE SET
   adaptation = EXCLUDED.adaptation,
   trigger_threshold = EXCLUDED.trigger_threshold,
   enabled = true;
-
--- ---------------------------------------------------------------------------
--- RLS
--- ---------------------------------------------------------------------------
-ALTER TABLE public.competency_domains ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.adaptive_rules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learner_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learner_competencies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.competency_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learning_paths ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.curriculum_progress ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.adaptive_case_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.performance_trends ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.certifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coach_feedback ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Read competency domains" ON public.competency_domains;
-CREATE POLICY "Read competency domains" ON public.competency_domains
-  FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS "Admin write competency domains" ON public.competency_domains;
-CREATE POLICY "Admin write competency domains" ON public.competency_domains
-  FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'))
-  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
-
-DROP POLICY IF EXISTS "Read adaptive rules" ON public.adaptive_rules;
-CREATE POLICY "Read adaptive rules" ON public.adaptive_rules
-  FOR SELECT TO authenticated USING (enabled = true OR EXISTS (
-    SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-  ));
-DROP POLICY IF EXISTS "Admin write adaptive rules" ON public.adaptive_rules;
-CREATE POLICY "Admin write adaptive rules" ON public.adaptive_rules
-  FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'))
-  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
-
-DROP POLICY IF EXISTS "Learner own profile" ON public.learner_profiles;
-CREATE POLICY "Learner own profile" ON public.learner_profiles
-  FOR ALL TO authenticated
-  USING (
-    user_id = auth.uid()
-    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  )
-  WITH CHECK (
-    user_id = auth.uid()
-    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
-
-DROP POLICY IF EXISTS "Learner own competencies" ON public.learner_competencies;
-CREATE POLICY "Learner own competencies" ON public.learner_competencies
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id
-      AND (lp.user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-      ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id
-      AND (lp.user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-      ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own competency_scores" ON public.competency_scores;
-CREATE POLICY "Learner own competency_scores" ON public.competency_scores
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own learning_paths" ON public.learning_paths;
-CREATE POLICY "Learner own learning_paths" ON public.learning_paths
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own curriculum_progress" ON public.curriculum_progress;
-CREATE POLICY "Learner own curriculum_progress" ON public.curriculum_progress
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learning_paths path
-    JOIN public.learner_profiles lp ON lp.id = path.learner_id
-    WHERE path.id = learning_path_id
-      AND (lp.user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-      ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learning_paths path
-    JOIN public.learner_profiles lp ON lp.id = path.learner_id
-    WHERE path.id = learning_path_id
-      AND (lp.user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-      ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own adaptive_case_history" ON public.adaptive_case_history;
-CREATE POLICY "Learner own adaptive_case_history" ON public.adaptive_case_history
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own performance_trends" ON public.performance_trends;
-CREATE POLICY "Learner own performance_trends" ON public.performance_trends
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own certifications" ON public.certifications;
-CREATE POLICY "Learner own certifications" ON public.certifications
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));
-
-DROP POLICY IF EXISTS "Learner own coach_feedback" ON public.coach_feedback;
-CREATE POLICY "Learner own coach_feedback" ON public.coach_feedback
-  FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.learner_profiles lp
-    WHERE lp.id = learner_id AND (lp.user_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'
-    ))
-  ));

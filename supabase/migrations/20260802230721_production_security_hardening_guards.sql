@@ -1,5 +1,6 @@
--- 2) Session guard: case_instance_id freeze + ownership check
--- ---------------------------------------------------------------------------
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+
 create or replace function public.enforce_session_update_guard()
 returns trigger
 language plpgsql
@@ -28,7 +29,6 @@ begin
     raise exception 'Cannot reopen or change a finished session';
   end if;
 
-  -- Freeze case binding once set; new binding must belong to this therapist.
   if new.case_instance_id is distinct from old.case_instance_id then
     if old.case_instance_id is not null then
       raise exception 'Cannot rebind case_instance_id';
@@ -55,9 +55,6 @@ CREATE POLICY "Authenticated insert case_instances" ON public.case_instances
   FOR INSERT TO authenticated
   WITH CHECK (created_by = auth.uid());
 
--- ---------------------------------------------------------------------------
--- 3) profiles.role immutable for non-admins (defense in depth)
--- ---------------------------------------------------------------------------
 create or replace function public.enforce_profile_role_guard()
 returns trigger
 language plpgsql
@@ -77,9 +74,6 @@ CREATE TRIGGER profiles_role_guard
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_profile_role_guard();
 
--- ---------------------------------------------------------------------------
--- 4) learner_profiles: block self-service instructor/scoring column writes
--- ---------------------------------------------------------------------------
 create or replace function public.enforce_learner_profile_guard()
 returns trigger
 language plpgsql
@@ -90,7 +84,6 @@ begin
     return new;
   end if;
 
-  -- Service role bypasses RLS but still fires triggers; allow trusted server writes.
   if auth.role() = 'service_role' then
     return new;
   end if;
@@ -118,5 +111,3 @@ CREATE TRIGGER learner_profiles_guard
   BEFORE UPDATE ON public.learner_profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_learner_profile_guard();
-
--- ---------------------------------------------------------------------------

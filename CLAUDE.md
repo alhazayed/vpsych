@@ -68,7 +68,7 @@ src/
   i18n/                   next-intl config (cookie-driven locale)
   middleware.ts           auth gate + admin gate + locale cookie
 messages/{en,ar}.json     UI strings
-supabase/migrations/      27 SQL migrations — mirror of the deployed schema
+supabase/migrations/      54 SQL migrations — mirror of the deployed schema
 supabase/functions/       Deno edge functions (send-email-hook)
 personas/                 authoritative clinical case library (JSON)
 calibration/              expert-scored transcripts for assessment reliability
