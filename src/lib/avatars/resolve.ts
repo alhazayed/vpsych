@@ -171,13 +171,14 @@ export function resolveAvatar(
         idealApproach: avatar.ideal_guidelines?.ideal_approach,
       }).clinical_core;
 
-    // Preserve persona age/gender from personality/identity when case overrides diagnosis only
+    // Preserve persona demographics from the avatar clinical core when a case
+    // snapshot overrides diagnosis/presentation only. Identity age/gender live
+    // on clinical_core (personalities do not carry numeric demographics).
     const mergedCore: ClinicalCore = snapshot
       ? {
           ...core,
-          age: personality.identity
-            ? (avatar.clinical_core?.age ?? core.age)
-            : core.age,
+          age: avatar.clinical_core?.age ?? core.age,
+          gender: avatar.clinical_core?.gender ?? core.gender,
         }
       : core;
 

@@ -38,6 +38,7 @@ const core: ClinicalCore = {
   risk_profile: {
     suicidal_ideation: "passive",
     self_harm: false,
+    harm_to_others: false,
     substance_use: false,
   },
 };
@@ -143,6 +144,7 @@ describe("assembleSystemPrompt", () => {
     expect(prompt).toContain("You are Maya Chen from Seattle");
     expect(prompt).toContain("Language rules — mandatory");
     expect(prompt).toContain("MODULE 4 — SAFETY");
+    expect(prompt).toContain("Harm to others: false");
     expect(prompt).toContain("988");
     expect(prompt).not.toContain("قواعد اللغة — إلزامية");
     expect(prompt).toContain("feeling heavy");
@@ -161,6 +163,24 @@ describe("assembleSystemPrompt", () => {
     expect(prompt).toContain("أنتِ ليان");
     expect(prompt).not.toContain("Language rules — mandatory");
     expect(prompt).toContain("الطوارئ");
+  });
+
+  it("injects locale substance facts from personality history_localization", () => {
+    const ar = personality("ar-JO");
+    ar.case_file = {
+      history_localization: {
+        substance_and_medication_context:
+          "الكحول: ما ذاقته ولا مرة بحياتها، لا بالمناسبات ولا غيرها.",
+      },
+    };
+    const prompt = assembleSystemPrompt({
+      clinical_core: core,
+      personality: ar,
+      session: { locale: "ar-JO" },
+    });
+    expect(prompt).toContain("Locale-specific substance & medication facts");
+    expect(prompt).toContain("الكحول: ما ذاقته ولا مرة بحياتها");
+    expect(prompt).not.toContain("glasses of wine");
   });
 });
 
