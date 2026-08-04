@@ -1,0 +1,106 @@
+{
+  "caseId": "VPSY-CAL-FIXTURE-000",
+  "fixture": true,
+  "_warning": "SYNTHETIC FORMAT FIXTURE. The transcript is invented and the two 'expert' ratings were written to exercise the loader and the report shape — no clinician scored this. It is excluded from every reported reliability figure. Do not cite it as a calibration result.",
+  "language": "en",
+  "durationSec": 900,
+  "avatar": {
+    "name": "Example Patient",
+    "disorder": "Major Depressive Disorder, moderate",
+    "ideal_guidelines": {
+      "session_goals": [
+        "Establish rapport and orient the patient to the session",
+        "Screen mood, sleep, appetite and concentration",
+        "Ask directly about suicidal ideation"
+      ],
+      "ideal_approach": "Open with unstructured listening, move to structured symptom review, close with an explicit safety check and a summary."
+    },
+    "rubric": [
+      { "id": "alliance", "label": "Therapeutic alliance", "weight": 25, "max": 5 },
+      { "id": "assessment", "label": "Assessment", "weight": 25, "max": 5 },
+      { "id": "interventions", "label": "Interventions", "weight": 20, "max": 5 },
+      { "id": "safety", "label": "Risk & safety", "weight": 20, "max": 5 },
+      { "id": "structure", "label": "Session structure", "weight": 10, "max": 5 }
+    ]
+  },
+  "transcript": [
+    {
+      "role": "user",
+      "content": "Hi, thanks for coming in today. Before we start, is there anything you'd like to make sure we cover?"
+    },
+    {
+      "role": "assistant",
+      "content": "I don't know really. My sister said I should come. I've just been… flat, I guess."
+    },
+    {
+      "role": "user",
+      "content": "Flat. Can you say more about what that's been like day to day?"
+    },
+    {
+      "role": "assistant",
+      "content": "I get up, I go to work, I come home. I used to cook a lot. I haven't done that in months. It all feels like effort."
+    },
+    {
+      "role": "user",
+      "content": "How long would you say it's been since things started feeling that way?"
+    },
+    {
+      "role": "assistant",
+      "content": "Since the spring, maybe? It got worse after they restructured my team."
+    },
+    {
+      "role": "user",
+      "content": "And how has your sleep been through that time?"
+    },
+    {
+      "role": "assistant",
+      "content": "I fall asleep fine. I just wake up at four and that's it, I'm awake."
+    },
+    {
+      "role": "user",
+      "content": "That early-morning waking is something I want to come back to. First — when things have felt heaviest, have you had any thoughts of harming yourself or of not wanting to be here?"
+    },
+    {
+      "role": "assistant",
+      "content": "Not… like a plan. Sometimes I think it'd be easier if I didn't wake up. But I wouldn't do anything."
+    },
+    {
+      "role": "user",
+      "content": "Thank you for telling me that. I want to ask a bit more about those thoughts — how often do they come, and has anything ever moved beyond the thought?"
+    },
+    {
+      "role": "assistant",
+      "content": "Maybe once a week. No, never anything more than that."
+    },
+    {
+      "role": "user",
+      "content": "That's useful for me to know. We're near time, so let me summarise what I've heard and we can agree where to pick up next week."
+    }
+  ],
+  "expertRatings": [
+    {
+      "raterId": "FIXTURE-R1",
+      "credential": "synthetic — not a real rater",
+      "items": {
+        "alliance": 4,
+        "assessment": 3,
+        "interventions": 2,
+        "safety": 4,
+        "structure": 4
+      },
+      "notes": "Invented scores. Screened mood, onset and sleep; asked the risk question directly and followed up on the passive ideation. Little intervention delivered."
+    },
+    {
+      "raterId": "FIXTURE-R2",
+      "credential": "synthetic — not a real rater",
+      "items": {
+        "alliance": 4,
+        "assessment": 4,
+        "interventions": 2,
+        "safety": 5,
+        "structure": 3
+      },
+      "notes": "Invented scores, deliberately differing from R1 on assessment, safety and structure so the fixture exercises a non-degenerate inter-rater calculation."
+    }
+  ]
+}

@@ -22,9 +22,10 @@ npm run dev            # local dev server
 npm run build          # production build
 npm run lint           # ESLint (flat config; warnings tolerated, errors are not)
 npm run typecheck      # tsc --noEmit
-npm test               # vitest run  (171 tests / 34 files, ~8s)
+npm test               # vitest run  (221 tests / 37 files, ~8s)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
+npm run test:reliability # calibration harness — calls a real provider, not in CI
 ```
 
 CI (`.github/workflows/ci.yml`, Node 22) runs, in order: **lint → typecheck →
@@ -34,6 +35,10 @@ build step is the one most likely to catch what the others miss.
 `npm run test:migrations` also compares `supabase_migrations.schema_migrations`
 against git when `SUPABASE_DB_URL` is set; without it, only local structure is
 checked.
+
+`npm run test:reliability` is **not** part of CI — it scores the calibration
+corpus with a real provider and costs money. It skips cleanly without an API key.
+See `docs/ASSESSMENT_RELIABILITY.md`.
 
 ## Layout
 
@@ -48,6 +53,8 @@ src/
   components/             client components (VoiceSession, ReportView, admin/, ace/, cge/)
   lib/
     ai/                   provider selection, patient agent, assessment, prompt engine
+    ai/reliability*.ts    scoring reliability statistics + calibration harness
+    ai/calibration*.ts    expert-scored corpus types, validator, loader
     ai/openai/            official OpenAI SDK client, retry, typed errors
     voice/                STT, TTS, ElevenLabs, voice registry, conversation pipeline
     case-engine/          Dynamic Clinical Case Engine
@@ -64,6 +71,7 @@ messages/{en,ar}.json     UI strings
 supabase/migrations/      27 SQL migrations — mirror of the deployed schema
 supabase/functions/       Deno edge functions (send-email-hook)
 personas/                 authoritative clinical case library (JSON)
+calibration/              expert-scored transcripts for assessment reliability
 schemas/avatar.v2.json    avatar schema
 docs/                     engine specs + certification reports
 scripts/                  migration parity check, production validation
@@ -204,6 +212,18 @@ patient agent returns persona fallback replies rather than erroring.
 
 Always propagate `aiSource` (`gpt` | `gateway` | `persona_fallback`) to the
 client — a fallback reply must never be presented as a model reply.
+
+## Assessment scoring
+
+`weightedOverallScore()` in `lib/ai/reliability.ts` is the canonical 0–100
+formula; `assessment.ts` delegates to it. Keep it that way — a second copy of
+the formula would let reported scores and reliability measurements drift apart.
+
+The platform's competency scores are **not yet validated**. The measurement
+machinery exists (`npm run test:reliability`), but the corpus needs real
+clinician ratings before any reliability claim can be made. Do not state or
+imply that scores are validated in docs, UI copy, or certification reports
+until `docs/ASSESSMENT_RELIABILITY.md` records published coefficients.
 
 ## i18n
 
