@@ -7,9 +7,10 @@
  *   - versions are unique
  *   - files are non-empty
  *
- * When SUPABASE_DB_URL (Postgres connection string) is set, also compares
- * local versions to supabase_migrations.schema_migrations and fails if the
- * remote has versions that are not in git (drift).
+ * Remote parity (fails if remote has versions not in git):
+ *   - When SUPABASE_DB_URL is set: query schema_migrations live.
+ *   - Else: compare against scripts/remote-schema-migrations.snapshot.json
+ *     (set VERIFY_REMOTE_SNAPSHOT=0 to skip).
  *
  * Exit 0 on success, 1 on failure.
  */
@@ -100,15 +101,37 @@ async function main() {
     process.exit(1);
   }
 
+  const localVersions = migrations.map((m) => m.version);
+  let remote = null;
+  let remoteSource = null;
+
   const dbUrl = process.env.SUPABASE_DB_URL?.trim();
-  if (!dbUrl) {
-    console.log("\nSkipping remote parity (SUPABASE_DB_URL unset). Local structure OK.");
+  if (dbUrl) {
+    console.log("\nComparing to remote supabase_migrations.schema_migrations …");
+    remote = await fetchRemoteVersions(dbUrl);
+    remoteSource = "SUPABASE_DB_URL";
+  } else if (process.env.VERIFY_REMOTE_SNAPSHOT !== "0") {
+    // Offline gate: compare against the checked-in production export.
+    // Refresh scripts/remote-schema-migrations.snapshot.json after applying
+    // new migrations to production (MCP list_migrations or schema_migrations).
+    const snapshotPath = join(root, "scripts/remote-schema-migrations.snapshot.json");
+    try {
+      const snap = JSON.parse(readFileSync(snapshotPath, "utf8"));
+      remote = (snap.migrations ?? []).map((m) => String(m.version));
+      remoteSource = `snapshot ${snap.capturedAt ?? ""} (${snap.project ?? ""})`.trim();
+      console.log(`\nComparing to checked-in remote snapshot (${remoteSource}) …`);
+    } catch (err) {
+      console.log(
+        "\nSkipping remote parity (SUPABASE_DB_URL unset; snapshot unreadable).",
+      );
+      console.log(err instanceof Error ? err.message : String(err));
+      process.exit(0);
+    }
+  } else {
+    console.log("\nSkipping remote parity (SUPABASE_DB_URL unset; snapshot disabled).");
     process.exit(0);
   }
 
-  console.log("\nComparing to remote supabase_migrations.schema_migrations …");
-  const remote = await fetchRemoteVersions(dbUrl);
-  const localVersions = migrations.map((m) => m.version);
   const { ok, missingLocal, missingRemote } = compare(localVersions, remote);
 
   if (missingRemote.length) {
@@ -127,7 +150,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Migration parity OK.");
+  console.log(`Migration parity OK (source: ${remoteSource}).`);
   process.exit(0);
 }
 

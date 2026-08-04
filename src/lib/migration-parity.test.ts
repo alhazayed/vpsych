@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { join } from "path";
+import { readFileSync } from "fs";
 import {
   compareMigrationParity,
   loadLocalMigrations,
@@ -28,6 +29,23 @@ describe("loadLocalMigrations", () => {
     expect(migrations.length).toBeGreaterThan(10);
     const versions = migrations.map((m) => m.version);
     expect(new Set(versions).size).toBe(versions.length);
+  });
+
+  it("covers every version in the production remote snapshot (RC2)", () => {
+    const snap = JSON.parse(
+      readFileSync(
+        join(process.cwd(), "scripts/remote-schema-migrations.snapshot.json"),
+        "utf8",
+      ),
+    ) as { migrations: { version: string }[] };
+    const dir = join(process.cwd(), "supabase/migrations");
+    const { migrations, errors } = loadLocalMigrations(dir);
+    expect(errors).toEqual([]);
+    const local = new Set(migrations.map((m) => m.version));
+    const remoteVersions = snap.migrations.map((m) => m.version);
+    expect(remoteVersions.length).toBe(53);
+    const missing = remoteVersions.filter((v) => !local.has(v));
+    expect(missing).toEqual([]);
   });
 });
 

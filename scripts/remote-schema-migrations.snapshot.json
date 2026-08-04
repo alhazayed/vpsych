@@ -1,0 +1,219 @@
+{
+  "project": "rrzudbkxigeavfdnidnm",
+  "capturedAt": "2026-08-04T08:40:00Z",
+  "source": "Supabase MCP list_migrations",
+  "migrations": [
+    {
+      "version": "20260730132727",
+      "name": "vpsych_initial_schema"
+    },
+    {
+      "version": "20260730133755",
+      "name": "seed_preset_avatars"
+    },
+    {
+      "version": "20260730152831",
+      "name": "harden_security_definer_grants"
+    },
+    {
+      "version": "20260730181421",
+      "name": "harden_session_reports"
+    },
+    {
+      "version": "20260730181603",
+      "name": "fix_session_guard_search_path"
+    },
+    {
+      "version": "20260731095540",
+      "name": "add_preferred_language_to_profiles"
+    },
+    {
+      "version": "20260731102805",
+      "name": "multilingual_support"
+    },
+    {
+      "version": "20260731110213",
+      "name": "optimize_rls_initplan_and_fk_index"
+    },
+    {
+      "version": "20260731180158",
+      "name": "avatar_schema_v2"
+    },
+    {
+      "version": "20260731181033",
+      "name": "avatar_v2_seed_personalities"
+    },
+    {
+      "version": "20260731181632",
+      "name": "avatar_voice_ids"
+    },
+    {
+      "version": "20260731184908",
+      "name": "report_language_from_session"
+    },
+    {
+      "version": "20260731191943",
+      "name": "avatar_voice_casting_and_available_locales"
+    },
+    {
+      "version": "20260731205101",
+      "name": "voice_profiles_registry"
+    },
+    {
+      "version": "20260801123356",
+      "name": "reban_demo_accounts"
+    },
+    {
+      "version": "20260801160000",
+      "name": "premade_elevenlabs_voices"
+    },
+    {
+      "version": "20260802085425",
+      "name": "security_audit_events"
+    },
+    {
+      "version": "20260802180922",
+      "name": "dynamic_clinical_case_engine"
+    },
+    {
+      "version": "20260802181535",
+      "name": "clinical_scenario_templates"
+    },
+    {
+      "version": "20260802182201",
+      "name": "instructor_preset_engine"
+    },
+    {
+      "version": "20260802182947",
+      "name": "adaptive_curriculum_engine_schema"
+    },
+    {
+      "version": "20260802183019",
+      "name": "adaptive_curriculum_engine_rls"
+    },
+    {
+      "version": "20260802183726",
+      "name": "competency_graph_engine_schema"
+    },
+    {
+      "version": "20260802183803",
+      "name": "competency_graph_engine_seed_nodes_a"
+    },
+    {
+      "version": "20260802183817",
+      "name": "competency_graph_engine_seed_nodes_b"
+    },
+    {
+      "version": "20260802183823",
+      "name": "competency_graph_engine_seed_edges"
+    },
+    {
+      "version": "20260802183840",
+      "name": "competency_graph_engine_rls"
+    },
+    {
+      "version": "20260802230703",
+      "name": "production_security_hardening"
+    },
+    {
+      "version": "20260802230721",
+      "name": "production_security_hardening_guards"
+    },
+    {
+      "version": "20260802230739",
+      "name": "production_security_hardening_ace_rls"
+    },
+    {
+      "version": "20260802230748",
+      "name": "production_security_hardening_cge_rls"
+    },
+    {
+      "version": "20260802232358",
+      "name": "restore_session_message_rpc_grants"
+    },
+    {
+      "version": "20260803011144",
+      "name": "ace_session_progress_rpc"
+    },
+    {
+      "version": "20260803021426",
+      "name": "database_certification_hardening"
+    },
+    {
+      "version": "20260803033503",
+      "name": "clinical_certification_coding_fixes"
+    },
+    {
+      "version": "20260803044719",
+      "name": "performance_indexes_and_rls_initplan"
+    },
+    {
+      "version": "20260803050605",
+      "name": "data_integrity_certification"
+    },
+    {
+      "version": "20260803050919",
+      "name": "devops_revoke_trigger_rpc_grants"
+    },
+    {
+      "version": "20260803164011",
+      "name": "fix_profiles_update_rls_recursion"
+    },
+    {
+      "version": "20260803171321",
+      "name": "supabase_cert_revoke_privileged_rpcs"
+    },
+    {
+      "version": "20260803175005",
+      "name": "restore_session_message_rpc_grants"
+    },
+    {
+      "version": "20260803180636",
+      "name": "seed_template_objectives_competencies"
+    },
+    {
+      "version": "20260803181537",
+      "name": "persona_engine_maya_voice_casting"
+    },
+    {
+      "version": "20260803182858",
+      "name": "seed_template_diagnoses_comorbidities"
+    },
+    {
+      "version": "20260803183449",
+      "name": "clinical_certification_coding_fixes"
+    },
+    {
+      "version": "20260803185203",
+      "name": "instructor_presets_consultant_learner"
+    },
+    {
+      "version": "20260803185358",
+      "name": "instructor_presets_cbme_seed"
+    },
+    {
+      "version": "20260803194707",
+      "name": "enterprise_security_cert_hardening"
+    },
+    {
+      "version": "20260803201325",
+      "name": "enterprise_compliance_consent_retention"
+    },
+    {
+      "version": "20260803202305",
+      "name": "enterprise_institutional_foundation"
+    },
+    {
+      "version": "20260803202511",
+      "name": "enterprise_institutional_foundation_m18"
+    },
+    {
+      "version": "20260803202534",
+      "name": "institutional_session_tenancy_m23"
+    },
+    {
+      "version": "20260804055602",
+      "name": "restore_session_message_rpc_grants_v1"
+    }
+  ]
+}
