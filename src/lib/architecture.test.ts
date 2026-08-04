@@ -67,4 +67,21 @@ describe("architecture invariants", () => {
     expect(mw).toMatch(/\/terms/);
     expect(mw).toMatch(/secure:\s*process\.env\.NODE_ENV === "production"/);
   });
+
+  it("surfaces clinical/educational/AI disclaimers on the privacy page", () => {
+    const privacy = readFileSync(join(root, "app/privacy/page.tsx"), "utf8");
+    expect(privacy).toMatch(/clinical\.title/);
+    expect(privacy).toMatch(/educational\.title/);
+    expect(privacy).toMatch(/ai\.title/);
+  });
+
+  it("rate-limits admin CGE and ACE learner mutates", () => {
+    const cge = readFileSync(join(root, "app/api/admin/cge/route.ts"), "utf8");
+    const ace = readFileSync(
+      join(root, "app/api/admin/ace/learners/route.ts"),
+      "utf8",
+    );
+    expect(cge).toMatch(/rateLimit/);
+    expect(ace).toMatch(/rateLimit/);
+  });
 });

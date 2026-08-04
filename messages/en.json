@@ -225,7 +225,9 @@
       "signIn": "Sign in",
       "aboutUs": "About Us",
       "getStarted": "Get Started",
-      "copyright": "© {year} VPsych. All rights reserved."
+      "copyright": "© {year} VPsych. All rights reserved.",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
     }
   },
   "auth": {

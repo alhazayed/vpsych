@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -45,8 +46,9 @@ export async function PATCH(request: Request, { params }: Params) {
     .single();
 
   if (error || !data) {
+    console.warn("[admin/voice-profiles] update:", error?.message);
     return NextResponse.json(
-      { error: error?.message ?? "Update failed" },
+      { error: sanitizeDbError(error?.message) || "Update failed" },
       { status: 500 },
     );
   }

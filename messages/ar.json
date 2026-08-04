@@ -225,7 +225,9 @@
       "signIn": "تسجيل الدخول",
       "aboutUs": "من نحن",
       "getStarted": "ابدأ الآن",
-      "copyright": "© {year} VPsych. جميع الحقوق محفوظة."
+      "copyright": "© {year} VPsych. جميع الحقوق محفوظة.",
+      "privacy": "سياسة الخصوصية",
+      "terms": "شروط الخدمة"
     }
   },
   "auth": {
