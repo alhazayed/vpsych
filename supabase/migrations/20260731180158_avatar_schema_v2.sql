@@ -1,3 +1,7 @@
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+-- (enriched only when production statements were empty/placeholder).
+
 -- Avatar schema v2: multi-personality, natively authored per locale.
 -- Additive only. Flat v1 columns remain populated for backward compatibility.
 
@@ -18,8 +22,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS avatars_slug_key
   ON public.avatars (slug)
   WHERE slug IS NOT NULL;
 
--- Keep flat projection in sync when v2 documents are written.
--- Uses default_locale personality for name/persona/voice; clinical_core for disorder/guidelines.
 CREATE OR REPLACE FUNCTION public.sync_avatar_flat_from_v2()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -45,7 +47,6 @@ BEGIN
   loc := COALESCE(NULLIF(NEW.default_locale, ''), 'en-US');
   personality := NEW.personalities -> loc;
   IF personality IS NULL THEN
-    -- Fall back to first personality key
     SELECT value INTO personality
     FROM jsonb_each(NEW.personalities)
     LIMIT 1;
@@ -75,11 +76,6 @@ BEGIN
     'session_goals', goals,
     'ideal_approach', approach
   );
-
-  IF NEW.rubric IS NULL OR NEW.rubric = '[]'::jsonb THEN
-    -- Leave existing rubric; v2 keeps rubric on the row as language-neutral.
-    NULL;
-  END IF;
 
   NEW.updated_at := now();
   RETURN NEW;

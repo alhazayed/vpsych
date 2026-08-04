@@ -1,3 +1,7 @@
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+-- (enriched only when production statements were empty/placeholder).
+
 -- =============================================================================
 -- VPsych Clinical Scenario Template Engine (v2.0)
 -- Additive layer on Dynamic Clinical Case Engine.

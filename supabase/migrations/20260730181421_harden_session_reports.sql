@@ -1,11 +1,9 @@
--- Full hardening: insert-once signed reports, session timer guard,
--- message role constraints, report existence helper, ban demo accounts.
+-- Canonical migration recovered for Release Configuration Board reconciliation.
+-- Source: production supabase_migrations.schema_migrations statements
+-- (enriched only when production statements were empty/placeholder).
 
 create extension if not exists pgcrypto with schema extensions;
 
--- ---------------------------------------------------------------------------
--- 0) Vault HMAC key for report writes (server must sign with REPORT_WRITE_KEY)
--- ---------------------------------------------------------------------------
 do $$
 begin
   if not exists (
@@ -20,9 +18,6 @@ begin
 end;
 $$;
 
--- ---------------------------------------------------------------------------
--- 1) Owner-callable report existence check (no content leaked)
--- ---------------------------------------------------------------------------
 create or replace function public.session_has_report(p_session_id uuid)
 returns boolean
 language plpgsql
@@ -48,10 +43,6 @@ $$;
 revoke all on function public.session_has_report(uuid) from public, anon;
 grant execute on function public.session_has_report(uuid) to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- 2) Signed, insert-once report writer (JSON as text for stable HMAC)
--- ---------------------------------------------------------------------------
--- Remove prior overloads so only the signed form remains.
 drop function if exists public.create_session_report(uuid, jsonb, text, jsonb);
 drop function if exists public.create_session_report(uuid, jsonb, text, jsonb, text);
 
@@ -140,13 +131,9 @@ $function$;
 revoke all on function public.create_session_report(uuid, text, text, text, text) from public, anon;
 grant execute on function public.create_session_report(uuid, text, text, text, text) to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- 3) Session update guard (timer / reopen bypass)
--- ---------------------------------------------------------------------------
 create or replace function public.enforce_session_update_guard()
 returns trigger
 language plpgsql
-set search_path to 'public'
 as $$
 begin
   if public.is_admin() then
@@ -179,9 +166,6 @@ create trigger session_update_guard
   for each row
   execute function public.enforce_session_update_guard();
 
--- ---------------------------------------------------------------------------
--- 4) Message role hardening + definer helpers for assistant/system
--- ---------------------------------------------------------------------------
 drop policy if exists "Therapists can insert messages on own sessions" on public.session_messages;
 drop policy if exists "Therapists can insert user messages on own sessions" on public.session_messages;
 create policy "Therapists can insert user messages on own sessions"
@@ -286,9 +270,6 @@ revoke all on function public.insert_system_message(uuid, text) from public, ano
 grant execute on function public.insert_assistant_message(uuid, text) to authenticated, service_role;
 grant execute on function public.insert_system_message(uuid, text) to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- 5) Disable demo accounts on the live project
--- ---------------------------------------------------------------------------
 update auth.users
 set
   banned_until = '2099-01-01 00:00:00+00',
