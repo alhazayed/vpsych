@@ -33,11 +33,11 @@
 ```yaml
 wave_status:
   wave_1:
-    state: failed
+    state: waiting          # not an app FAIL — evidence collection blocked on ops prerequisite
     blockers:
-      - RC3-C2
+      - RC3-C2              # operational prerequisite, not application defect
     cleared:
-      - RC3-C1  # PR #103 merged; main@5bf66c0 has 54 ≡ prod 54
+      - RC3-C1              # PR #103 merged; main@5bf66c0 has 54 ≡ prod 54
     rerun_required: true
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     rerun_after:
@@ -69,21 +69,31 @@ wave_status:
 
 ## Executive verdict
 
-### ❌ RC3 NOT PASSED — Wave 1 gate failed
+### ⏸ RC3 NOT PASSED — Wave 1 waiting (evidence collection blocked)
 
 | Gate | Result |
 |---|---|
-| Wave 1 — Zero Critical or High technical defects | **FAIL** (`wave_status.wave_1.state: failed`) |
-| Wave 2–5 | **LOCKED** pending Wave 1 PASS (prior CONDITIONAL notes are informational only) |
+| Wave 1 — Zero Critical or High **application** defects | **WAITING** (`wave_status.wave_1.state: waiting`) — cannot certify auth-gated missions until RC3-C2 secrets land |
+| Wave 2–5 | **LOCKED** pending Wave 1 PASS |
 | Wave 6 — Executive approval | **LOCKED / NOT APPROVED** |
 | Wave 7 — Public launch readiness | **LOCKED** |
 
-**Blocking Critical (must clear before Wave 1 re-run):**
+**Status board:**
 
-| ID | Severity | Finding | Remediation |
-|---|---|---|---|
-| RC3-C1 | ~~Critical~~ **CLEARED** | Was: `main`@`52a7610` had 28 vs prod 54. | [#103](https://github.com/alhazayed/vpsych/pull/103) merged `5bf66c0`. Re-audit: **54 ≡ 54** exact version parity. Local `npm run test:migrations` structure OK. |
-| RC3-C2 | **Critical** | Permanent Auth users exist (`audit.therapist@vpsych.dev` / `audit.admin@vpsych.dev`, roles correct) but `VPSYCH_AUDIT_*` secrets are **not injected** into the RC3 agent — login matrix and authenticated Missions 2/4/5 cannot run. | Release Manager: inject four env vars from vault; verify login on `https://vpsych.vercel.app`; then re-run Missions **1–5** only. See `docs/AUDIT_ACCOUNTS.md`. |
+| RC3 Item | Status |
+|---|---|
+| RC3-C1 – Migration parity | ✅ CLOSED |
+| RC3-C2 – Audit secrets | 🔴 OPEN (operational prerequisite) |
+| Wave 1 | 🟡 Waiting |
+| Waves 2–7 | 🔒 Locked |
+| RC4 / RC5 | 🔒 Locked |
+
+**Findings:**
+
+| ID | Class | Severity | Finding | Remediation |
+|---|---|---|---|---|
+| RC3-C1 | Application / schema governance | ~~Critical~~ **CLEARED** | Was: `main`@`52a7610` had 28 vs prod 54. | [#103](https://github.com/alhazayed/vpsych/pull/103) merged `5bf66c0`. Re-audit: **54 ≡ 54**, schema diff 0. Integrity 100/100 rebound allowed. |
+| RC3-C2 | **Operational prerequisite** — Release Infrastructure · Owner: **Release Manager** · **Not an application defect** | Critical (blocks evidence) | **Evidence collection blocked.** Production audit accounts exist and are correctly configured (`audit.therapist@vpsych.dev` / `audit.admin@vpsych.dev`, roles correct). Automated certification cannot proceed until the audit environment receives the required vault-managed credentials (`VPSYCH_AUDIT_*`). | Release Manager injects four env vars; verify login on `https://vpsych.vercel.app`; then execute Missions **1–5** only. See `docs/AUDIT_ACCOUNTS.md` + `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md`. |
 
 ---
 
@@ -110,10 +120,10 @@ Legend: **PASS** · **FAIL** · **CONDITIONAL** (data/schema OK, runtime not exe
 | # | Mission | Wave | Verdict | Evidence |
 |---:|---|---|---|---|
 | 1 | UI / UX / Navigation | 1 | **PASS** | Browser prod screenshots; EN/AR RTL; mobile 390px; 0 Critical/High UI defects. Artifacts: `/opt/cursor/artifacts/rc3/screenshots/`, `docs/rc3/M01_UI_UX.md` |
-| 2 | Authentication & Authorization | 1 | **FAIL pending C2** (public PASS) | Soft auth + anon API/RLS PASS. Therapist/admin login matrix **not certified** without dedicated audit accounts. |
-| 3 | Database / Supabase | 1 | **PASS** (parity) | `main`@`5bf66c0` **54 ≡ 54** production. Live DB healthy (56 tables, RLS on). Re-run with audit creds still needed for auth-gated DB paths if any. |
-| 4 | API Runtime | 1 | **FAIL pending C2** (anon PASS) | Anon contract PASS. Authenticated session create/message/end **not certified**. |
-| 5 | AI Runtime | 1 | **FAIL pending C2** | Admin OpenAI health gated correctly; live GPT/assessment path **not certified**. |
+| 2 | Authentication & Authorization | 1 | **BLOCKED (C2 ops)** (public PASS) | Soft auth + anon API/RLS PASS. Therapist/admin login matrix awaits vault `VPSYCH_AUDIT_*` (accounts exist). |
+| 3 | Database / Supabase | 1 | **PASS** (parity) | `main`@`5bf66c0` **54 ≡ 54** production. Live DB healthy (56 tables, RLS on). Re-run with audit creds for any auth-gated DB paths. |
+| 4 | API Runtime | 1 | **BLOCKED (C2 ops)** (anon PASS) | Anon contract PASS. Authenticated session create/message/end awaits secrets. |
+| 5 | AI Runtime | 1 | **BLOCKED (C2 ops)** | Admin OpenAI health gated correctly; live GPT/assessment path awaits secrets. |
 | 6–24 | Waves 2–5 missions | 2–5 | **LOCKED** | Informational data notes retained in `docs/rc3/*`; **do not advance** until Wave 1 PASS. |
 | 25 | Executive Release Board | 6 | **LOCKED** | Reconvene only after Waves 1–5. |
 | 26–30 | Public launch | 7 | **LOCKED** | After Wave 6. |
@@ -122,9 +132,9 @@ Legend: **PASS** · **FAIL** · **CONDITIONAL** (data/schema OK, runtime not exe
 
 ## Wave gates (detail)
 
-### Wave 1 — Platform Validation → **FAIL** (`rerun_required: true`)
+### Wave 1 — Platform Validation → **WAITING** (`rerun_required: true`)
 
-Public RC1 surfaces are live. **RC3-C1 CLEARED** (`main`@`5bf66c0`, 54 ≡ 54). Gate still fails on **RC3-C2** (no dedicated audit identities). Re-run Missions **1–5** after C2 clears — **do not restart Missions 6–30**.
+Public RC1 surfaces are live. **RC3-C1 CLEARED** (`main`@`5bf66c0`, 54 ≡ 54, schema diff 0, integrity 100/100 rebound). **RC3-C2 — Evidence collection blocked** (ops prerequisite; not a VPsych defect). After vault injection + login verify → Missions **1–5** only — **do not restart** completed infrastructure work or Missions 6–30.
 
 ### Waves 2–5 → **LOCKED**
 
@@ -145,9 +155,9 @@ Blocked until Wave 6 approval.
 | Step | Action | Exit criterion |
 |---:|---|---|
 | 1 | Resolve **RC3-C1** | ✅ **DONE** — #103 merged; `main`@`5bf66c0`; 54 ≡ 54 |
-| 2 | Resolve **RC3-C2**: inject `VPSYCH_AUDIT_*` for existing `audit.*@vpsych.dev` accounts; verify login on `https://vpsych.vercel.app` | C2 cleared |
-| 3 | Re-run **only Missions 1–5** against production + post-merge `main` | Wave 1 PASS iff **0 Critical and 0 High** |
-| 4 | If Wave 1 PASS → set `wave_2…wave_5.state: unlocked` and execute those waves; **then** reconvene Executive Board | Waves advance in order |
+| 2 | Resolve **RC3-C2** (ops): inject `VPSYCH_AUDIT_*`; verify therapist then admin login on `https://vpsych.vercel.app` | C2 cleared — unlock Wave 1 execution |
+| 3 | Execute **only Missions 1–5** against production + `main`@`5bf66c0` | Wave 1 PASS iff **0 Critical and 0 High** application findings |
+| 4 | If Wave 1 PASS → unlock Waves 2–7 in order; **do not** restart C1 / integrity work | Continue RC3 evidence collection |
 
 **RC4 / RC5 remain locked** until Wave 1 PASS. No exceptions.
 

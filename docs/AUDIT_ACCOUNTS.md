@@ -39,7 +39,7 @@ rotation:
     logins — so every RC cycle and automated audit hits the same identities.
 
 provisioning:
-  status: accounts_ready_secrets_pending  # RC3-C2 remaining: inject secrets + verify login
+  status: accounts_ready_secrets_pending  # RC3-C2: vault injection + login verify
   verified_2026_08_04:
     auth_users: present
     profiles_role:
@@ -49,13 +49,14 @@ provisioning:
     - Inject the four env vars into the RC agent / CI secrets
       (emails above; passwords from Release Manager vault — never commit)
     - Verify login on https://vpsych.vercel.app/login for both accounts
-    - Check the WAVE1_UNLOCK_CHECKLIST RC3-C2 boxes
+    - Check docs/rc3/WAVE1_UNLOCK_CHECKLIST.md injection + login boxes
     - Set provisioning.status: ready and clear RC3-C2
 ```
 
 ## Governance
 
 - Auth users and `profiles.role` are **already provisioned** in production (`rrzudbkxigeavfdnidnm`).
-- Until secrets are injected and login is verified, Wave 1 remains **failed** on **RC3-C2** (environment / operational gate, not missing users).
+- **RC3-C2 is an operational prerequisite**, not a VPsych application defect: evidence collection is blocked until the audit runner receives vault-managed `VPSYCH_AUDIT_*` credentials.
+- Owner: **Release Manager**. Category: **Release Infrastructure**. Severity: Critical (blocks certification evidence, not platform correctness).
 - RC4 / RC5 stay locked until Wave 1 PASS.
 - Never commit real password values to this file.

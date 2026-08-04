@@ -1,47 +1,38 @@
-# RC3 Wave 1 unlock checklist
+# RC3 Wave 1 Unlock
 
-Do **not** re-run Waves 2–7 until this page is all green.
+Do **not** advance Waves 2–7 until every box below is checked and Wave 1 Missions 1–5 pass with zero Critical and zero High findings.
 
-## RC3-C1 — Migration parity on `main`
+## Prerequisites (infrastructure — done)
 
-- [x] PR [#103](https://github.com/alhazayed/vpsych/pull/103) merged to `main`
-- [x] Record new `main` SHA: `5bf66c07f11d286c305f59398a015614d22b723b`
-- [x] `git ls-tree … migrations | wc -l` → **54**
-- [x] Production `schema_migrations` count → **54**
-- [x] Version sets identical (no remote-only / no stale git-only)
-- [x] `npm run test:migrations` local structure OK (remote URL unset in agent; version sets matched via MCP)
-- [x] Update `docs/RC3_PRODUCTION_VALIDATION.md` audited SHA + clear RC3-C1
+- [x] Production SHA verified (`5bf66c0` / `dpl_5F6pBTi…` on `vpsych.vercel.app`)
+- [x] Migration parity verified (repo **54** ≡ production **54**)
+- [x] Schema diff = 0
+- [x] Audit therapist account exists (`audit.therapist@vpsych.dev` → `therapist`)
+- [x] Audit admin account exists (`audit.admin@vpsych.dev` → `admin`)
 
-## RC3-C2 — Dedicated audit accounts
+## RC3-C2 — Operational prerequisite (Release Manager)
 
-See `docs/AUDIT_ACCOUNTS.md` (no secrets in git).
+Not an application defect. Category: **Release Infrastructure**.  
+See `docs/AUDIT_ACCOUNTS.md` (no passwords in git).
 
-Permanent identities (not personal developer accounts):
+- [ ] `VPSYCH_AUDIT_THERAPIST_EMAIL` injected
+- [ ] `VPSYCH_AUDIT_THERAPIST_PASSWORD` injected
+- [ ] `VPSYCH_AUDIT_ADMIN_EMAIL` injected
+- [ ] `VPSYCH_AUDIT_ADMIN_PASSWORD` injected
+- [ ] Login verification completed (therapist + admin on `https://vpsych.vercel.app/login`)
 
-```text
-VPSYCH_AUDIT_THERAPIST_EMAIL=audit.therapist@vpsych.dev
-VPSYCH_AUDIT_THERAPIST_PASSWORD=<vault — never commit>
-VPSYCH_AUDIT_ADMIN_EMAIL=audit.admin@vpsych.dev
-VPSYCH_AUDIT_ADMIN_PASSWORD=<vault — never commit>
-```
+↓
 
-- [x] Accounts created in production Supabase Auth (`audit.therapist@vpsych.dev`, `audit.admin@vpsych.dev`)
-- [x] Therapist role in `profiles.role`
-- [x] Admin role in `profiles.role` (`admin`)
-- [ ] Secrets injected into RC3 agent / CI environment (`VPSYCH_AUDIT_*` still unset in this agent)
-- [ ] Login verified on `https://vpsych.vercel.app/login` (both accounts)
-- [ ] Clear RC3-C2
+**Unlock Wave 1 execution** (Missions 1–5 only)
 
-## Wave 1 re-run (Missions 1–5 only)
+## After secrets are injected
 
-- [ ] Mission 1 UI/UX
-- [ ] Mission 2 AuthZ (therapist + admin)
-- [ ] Mission 3 Database (post-merge parity)
-- [ ] Mission 4 API runtime (authenticated session path)
-- [ ] Mission 5 AI runtime (admin health + live reply `aiSource`)
-- [ ] **Zero Critical and Zero High** → set `wave_1.state: passed`
-- [ ] Unlock Waves 2–5
+1. Verify therapist login  
+2. Verify admin login  
+3. Execute Missions **1–5** only  
+4. If **0 Critical and 0 High** → record `wave_1.state: passed` → unlock Waves 2–7  
+5. Continue RC3 without restarting completed infrastructure work (C1 / integrity 100/100)
 
-## Still locked
+## Still locked until Wave 1 PASS
 
 RC4 · RC5 · Wave 6 Executive Board · Wave 7 Public Launch

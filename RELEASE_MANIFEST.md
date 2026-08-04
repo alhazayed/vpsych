@@ -13,19 +13,20 @@ approval:
   sign_off_status: not_approved
   board_date: "2026-08-04"
   rc3_report: "docs/RC3_PRODUCTION_VALIDATION.md"
-  reason: "RC3 Wave 1 failed — RC3-C1 CLEARED (54≡54, schema diff 0, integrity 100/100 rebound to main@5bf66c0); RC3-C2 remains"
+  reason: "RC3 Wave 1 waiting — evidence collection blocked on RC3-C2 operational prerequisite (vault VPSYCH_AUDIT_*); C1 CLEARED (54≡54, schema diff 0, integrity 100/100 rebound to main@5bf66c0); C2 is Release Infrastructure not an application defect"
 rc_phase: "RC3"
 package_version: "0.1.0"
 tag: null
 release_timestamp: null
 wave_status:
   wave_1:
-    state: failed
-    blockers: [RC3-C2]
+    state: waiting
+    blockers: [RC3-C2]  # operational prerequisite / Release Infrastructure / owner Release Manager
     cleared: [RC3-C1]
     rerun_required: true
     rerun_after:
-      - "Audit credentials configured (see docs/AUDIT_ACCOUNTS.md)"
+      - "VPSYCH_AUDIT_* injected (see docs/AUDIT_ACCOUNTS.md)"
+      - "Login verification on https://vpsych.vercel.app"
   wave_2: { state: locked }
   wave_3: { state: locked }
   wave_4: { state: locked }
