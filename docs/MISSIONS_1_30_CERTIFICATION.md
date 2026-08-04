@@ -2,9 +2,10 @@
 
 **Phases:** 1–6  
 **Date:** 2026-08-04  
-**Release vehicle:** PR #100 (`cursor/v1-release-certification-0579`)  
+**Release vehicles:** #100 **MERGED** · [#102](https://github.com/alhazayed/vpsych/pull/102) High seals · [#101](https://github.com/alhazayed/vpsych/pull/101) RC2  
+**Executive board:** [`docs/MISSION_25_EXECUTIVE_BOARD.md`](./MISSION_25_EXECUTIVE_BOARD.md)  
 **Rule:** Fix only verified defects. No feature expansion.  
-**Regression:** `vitest` + `typecheck` on RC (see latest CI / local run)
+**Regression:** `vitest` **182** PASS · `tsc --noEmit` PASS · prod `/api/health` **200** (post-#100)
 
 ---
 
@@ -47,7 +48,7 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 |--:|---------|---------|-------|
 | 01 | Architecture | ⚠ | Engines layered; ACE↔CGE cycle guard; error boundaries present |
 | 02 | Security | ⚠ | Headers, RLS, admin gate, password policy; RC-H4/H5 close remaining API DB-leak Highs; HIBP still off (ops) |
-| 03 | Functional | ⚠ | Auth, sessions, ACE/CGE, EN/AR paths; session create errors sanitized; prod awaits #100 merge |
+| 03 | Functional | ⚠ | Auth, sessions, ACE/CGE, EN/AR paths; session create errors sanitized; #100 live on prod |
 
 ### Phase 2
 
@@ -68,7 +69,7 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | 11 | Performance | ⚠ | Indexes exist remotely; CWV field monitoring not configured (ops) |
 | 12 | Load / stress | ❌ | Documented 100–5000 user evidence **not** executed this cycle |
 | 13 | Data integrity | ⚠ | Case immutability model; report insert-once contract |
-| 14 | DevOps | ⚠ | CI verify green on RC; public health on RC; prod health pending merge |
+| 14 | DevOps | ⚠ | CI verify green; public `/api/health` **200** on production after #100 |
 
 ### Phase 4
 
@@ -89,13 +90,13 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | 22 | Compliance | ⚠ | Privacy/terms + clinical/edu/AI disclaimers on RC; full DSAR **v1.1** (#87) |
 | 23 | Institutional | ⏸ | **v1.1** (#88) |
 | 24 | DR / Ops | ⏸→⚠ | Essential health/rollback notes on RC; full DR playbook **v1.1** (#89) |
-| 25 | Executive board | ⚠ | RC1 freeze + sole merge vehicle #100; public launch still gated by RC2–RC5 |
+| 25 | Executive board | ⚠ | **Board sat** — public v1.0 ❌ NOT APPROVED; RC2→RC5 ✅ APPROVED; see `MISSION_25_EXECUTIVE_BOARD.md` |
 
 ### Phase 6
 
 | # | Mission | Verdict | Notes |
 |--:|---------|---------|-------|
-| 26 | Technical SEO | ⚠ | robots/sitemap/privacy/terms on RC; full suite **v1.1** (#93); **prod still 307 until merge** |
+| 26 | Technical SEO | ⚠ | robots/sitemap/privacy/terms **live** on prod; full suite **v1.1** (#93); disclaimer/footer via #102 |
 | 27 | AEO | ⏸ | **v1.1** (#94) |
 | 28 | GEO | ⏸ | **v1.1** (#95) |
 | 29 | Brand / conversion | ⏸ | **v1.1** (#97) |
@@ -118,25 +119,27 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 
 | Check | State |
 |-------|-------|
-| RC code certified for merge | **Yes — after human review of #100** |
-| Production already equals RC | **No** — prod still `3765103` |
-| Public Version 1.0 announcement | **No** — complete RC2→RC5 |
+| RC1 Critical remediations on production | **Yes** — #100 @ `52a7610`; health/robots/privacy **200** |
+| High seals (#102) on production | **No** — merge pending |
+| Migration parity / RC2 | **No** — #101 + ops checklist |
+| Public Version 1.0 announcement | **No** — Mission 25 **NOT APPROVED** until RC2→RC5 |
 
-### Recommended sequence (unchanged)
+### Binding sequence (Mission 25)
 
-1. Merge #100  
-2. RC2 — migration recovery files + env + monitoring + backups + email proof  
-3. RC3 — full browser/API/clinical/voice/security regression + **documented load test**  
-4. RC4 — analytics, GSC, Bing, alerts, support  
-5. RC5 — tag `v1.0.0`
+1. Merge **#102** (High seals)  
+2. RC2 — **#101** migration recovery + env + monitoring + backups + email proof  
+3. RC3 — full regression + **documented load test** (clears M12)  
+4. RC4 — analytics, GSC, Bing, alerts, support (clears M30)  
+5. RC5 — tag `v1.0.0` + announcement only after re-sign-off  
 
 ---
 
 ## Conclude
 
-**Missions 1–30 executed against the sole v1.0 RC.**  
-Verified High defects fixed: admin sanitization/rate limits, legal/disclaimer surfacing, session persist DB-leak, `clientSafeError` PostgREST fail-open.  
-Load testing (M12) and public launch ops (M30) remain **❌** (ops evidence, not code defects).  
+**Missions 1–30 executed; Mission 25 Executive Board convened.**  
+Verified High defects fixed on #102; Critical RC1 fixes live on production.  
+Load testing (M12) and public launch ops (M30) remain **❌**.  
 Scientific / HCE / full SEO-AEO-GEO / institutional remain **⏸ v1.1**.
 
-**Board position:** RC application code ready for human review/merge of #100 — **do not** announce public v1.0 until RC2→RC5.
+**Board position:** ❌ **NOT APPROVED for public Version 1.0** · ✅ **APPROVED to proceed RC2→RC5** · ⚠ **CONDITIONAL GO for internal training use**.  
+Full minutes: [`docs/MISSION_25_EXECUTIVE_BOARD.md`](./MISSION_25_EXECUTIVE_BOARD.md).

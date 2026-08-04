@@ -1,8 +1,9 @@
 # RC2 — Infrastructure Freeze (checklist + evidence)
 
-**Status:** IN PROGRESS (blocked on merge of #100 for production code parity)  
+**Status:** IN PROGRESS (RC1 #100 **merged & live**; continue ops/parity)  
 **Rule:** No feature work. Ops and synchronization only.  
-**Owner:** alhazayed (Aladdin Zayed)
+**Owner:** alhazayed (Aladdin Zayed)  
+**Executive mandate:** Mission 25 approved RC2→RC5; public v1.0 still **NOT APPROVED**.
 
 ---
 
@@ -10,11 +11,11 @@
 
 | Gate | State |
 |------|-------|
-| RC1 #100 review | Ready to merge when human review passes |
-| Production code SHA | Still `3765103` until #100 merges — RC1 remediations **not** live yet |
-| Feature PRs | Frozen: only #100 is release-critical |
+| RC1 #100 | **MERGED** — production probes: `/api/health` 200, `/robots.txt` 200, `/privacy` 200 |
+| High seals #102 | Open — merge after CI (Mission 25 D2/D3) |
+| Feature PRs | Frozen: only #102 (app High) + #101 (RC2) on the v1.0 train |
 
-**Do not start RC3 load/browser certification against production until #100 is deployed.**
+**RC3 load/browser certification may start only after #102 is live and RC2 migration parity gate is green.**
 
 ---
 
@@ -24,8 +25,8 @@
 
 | Check | Evidence (2026-08-04) | Pass? |
 |-------|----------------------|-------|
-| `main` == production deploy SHA | Prod still on `3765103`; #100 not merged | ⚠ pending merge |
-| Preview deploy for #100 | Vercel preview exists for RC branch | ✅ |
+| `main` == production deploy SHA | #100 merged (`52a7610`); health/robots/privacy live **200** | ✅ RC1 |
+| Preview deploy for #100 | Merged to production | ✅ |
 | Supabase project | `rrzudbkxigeavfdnidnm` ACTIVE_HEALTHY us-east-1 | ✅ |
 | Domain / DNS | `vpsych.vercel.app` resolves (Vercel anycast) | ✅ |
 | TLS / HSTS | HTTP/2 200 + `strict-transport-security` preload | ✅ |
@@ -65,7 +66,7 @@ Required for production (verify in Vercel project settings):
 
 | Check | Pass? |
 |-------|-------|
-| Public `/api/health` on production after #100 | ☐ (currently **307** pre-merge) |
+| Public `/api/health` on production after #100 | ✅ **200** JSON `{ok:true}` (2026-08-04 probe) |
 | Error tracking (Sentry or Vercel log drains) | ☐ not configured |
 | Uptime check on `/api/health` | ☐ |
 | Alert on 5xx / health fail | ☐ |

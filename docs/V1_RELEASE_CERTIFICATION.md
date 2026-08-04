@@ -325,6 +325,22 @@ Not calendar-estimated. Remaining technical gates:
 
 ---
 
+## Addendum — Mission 25 Executive Board (2026-08-04)
+
+The first sitting above is **superseded for decisions** by [`docs/MISSION_25_EXECUTIVE_BOARD.md`](./MISSION_25_EXECUTIVE_BOARD.md), which incorporates RC1 merge (#100 live), Missions 1–30 scorecard, and High seals (#102).
+
+| Decision | Mission 25 |
+|----------|------------|
+| Public Version 1.0 announcement | ❌ **NOT APPROVED** (unchanged outcome) |
+| RC2→RC5 progression | ✅ **APPROVED** |
+| Internal training use on production | ⚠ **CONDITIONAL GO** |
+| Platform maturity (re-scored) | **84 / 100** (was 71) |
+| Confidence (re-scored) | **88 / 100** (was 78) |
+
+Historical evidence in sections 1–22 remains valid as the pre-RC1 baseline.
+
+---
+
 ## Appendix — Local regression evidence (this branch)
 
 ```
