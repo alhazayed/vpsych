@@ -1,6 +1,12 @@
 # RC3 Mission 03 — Database / Supabase
 
-**Verdict: FAIL (Critical — git/`main` migration drift)**
+**Verdict: FAIL (Critical — git `main` migration drift)**  
+**Audited release train:** `main` @ `52a7610` (28 migration files)  
+**Parity proof (separate):** PR #103 @ `5c879f4` (54 files, Integrity 100/100 — **not merged**)
+
+## Scope note
+
+RC3 audits **`main`**, not the unmerged reconciliation branch. The earlier “greenfield ≡ production” PASS applies only to PR #103. That is why RC3-C1 remains Critical on the release train.
 
 ## Live production (healthy)
 
@@ -9,23 +15,18 @@
 | `schema_migrations` | **54** (latest `20260804085304`) |
 | Public tables | 56 |
 | RLS disabled | **0** |
-| Disorders / templates / presets | 17 / 3 / 8 |
-| CGE nodes / edges | 34 / 42 |
-| Sessions / reports / messages | 390 / 333 / 3117 |
-| `insert_*_message` EXECUTE | `authenticated` + `service_role` ✅ |
+| Message RPC EXECUTE | `authenticated` + `service_role` ✅ |
 
-## Git `main` (release train)
+## Git states (re-verified 2026-08-04)
 
-| Metric | Value |
-|---|---:|
-| Migration files on `main` @ `52a7610` | **28** |
-| Reconciliation PR | [#103](https://github.com/alhazayed/vpsych/pull/103) OPEN (greenfield structural PASS on that branch) |
+| Ref | Migrations | Notes |
+|---|---:|---|
+| `origin/main` @ `52a7610` | **28** | RC3 audit target |
+| `origin/cursor/migration-reconciliation-b5ac` @ `5c879f4` | **54** | PR #103 — CI green, mergeable, unmerged |
+| Production DB | **54** | Matches #103 tree versions |
 
-## Defect
+## Clear C1
 
-**RC3-C1 Critical:** Production history is ahead of `main`. Until #103 merges, a brand-new project built only from `main` does **not** match production, and `npm run test:migrations` with `SUPABASE_DB_URL` will fail remote-ahead checks.
-
-## Advisors (non-blocking for this mission)
-
-- WARN: intentional SECURITY DEFINER RPCs executable by authenticated
-- WARN: Auth leaked-password protection disabled → tracked as RC3-H1 under Mission 20
+1. Merge PR #103 into `main`.  
+2. Re-run migration parity against the **new `main` SHA** (expect 54 ≡ 54).  
+3. Do **not** claim C1 cleared while `main` remains at `52a7610`.

@@ -13,35 +13,72 @@
 
 ---
 
+## Audited commit scope (resolves RC2 ↔ RC3 apparent contradiction)
+
+| Claim | Refers to | Migrations | Status |
+|---|---|---:|---|
+| Repository / Production Integrity **100/100**, “greenfield ≡ production schema” | PR **#103** branch `cursor/migration-reconciliation-b5ac` @ `5c879f4` | **54** | Proven on that branch; **not on `main`** |
+| RC3 production validation | **`main` @ `52a7610`** + prod deploy `dpl_2mBqyfz…` | **28** on git `main` vs **54** on production | Correct RC3 audit target; exposes drift |
+
+**These statements are not contradictory** once scoped: the 100/100 scores document work that has **not yet landed on `main`**. RC3 correctly audited the release train (`main`), which still lacks the parity tree. RC2’s open migration-parity item is the same gap RC3-C1 elevates to Critical.
+
+**Re-verify timestamp (2026-08-04):** `origin/main` still `52a7610` (28 files). PR #103 still **OPEN**, CI green, mergeable. Production still **54** versions (latest `20260804085304`).
+
+```yaml
+wave_status:
+  wave_1:
+    state: failed
+    blockers:
+      - RC3-C1
+      - RC3-C2
+    rerun_required: true
+    rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
+    rerun_after:
+      - "PR #103 merged to main (migration parity)"
+      - "Dedicated VPSYCH_AUDIT_THERAPIST_* and VPSYCH_AUDIT_ADMIN_* configured"
+      - "Migration audit re-run against post-merge main SHA"
+      - "Audit login verified on https://vpsych.vercel.app"
+  wave_2:
+    state: locked
+    unlock_when: "wave_1.state == passed"
+  wave_3:
+    state: locked
+    unlock_when: "wave_1.state == passed"
+  wave_4:
+    state: locked
+    unlock_when: "wave_1.state == passed"
+  wave_5:
+    state: locked
+    unlock_when: "wave_1.state == passed"
+  wave_6:
+    state: locked
+    unlock_when: "waves_1_through_5 board-accepted"
+  wave_7:
+    state: locked
+    unlock_when: "wave_6 executive approval"
+```
+
+**Governance:** RC4 and RC5 remain **LOCKED** until `wave_1.state == passed`. No exceptions.
+
+---
+
 ## Executive verdict
 
 ### ❌ RC3 NOT PASSED — Wave 1 gate failed
 
 | Gate | Result |
 |---|---|
-| Wave 1 — Zero Critical or High technical defects | **FAIL** |
-| Wave 2 — Disorders/scenarios certification | **CONDITIONAL** (data PASS; runtime BLOCKED) |
-| Wave 3 — Competency / adaptive / analytics E2E | **CONDITIONAL** (schema PASS; runtime BLOCKED) |
-| Wave 4 — Scientific reproducibility | **FAIL** (not production-demonstrable) |
-| Wave 5 — Enterprise requirements | **CONDITIONAL** (security baseline PASS; gaps remain) |
-| Wave 6 — Executive approval | **NOT APPROVED** |
-| Wave 7 — Public launch readiness | **CONDITIONAL** (public SEO surface partial PASS) |
+| Wave 1 — Zero Critical or High technical defects | **FAIL** (`wave_status.wave_1.state: failed`) |
+| Wave 2–5 | **LOCKED** pending Wave 1 PASS (prior CONDITIONAL notes are informational only) |
+| Wave 6 — Executive approval | **LOCKED / NOT APPROVED** |
+| Wave 7 — Public launch readiness | **LOCKED** |
 
-**Blocking Critical (must clear before re-running RC3 Wave 1):**
+**Blocking Critical (must clear before Wave 1 re-run):**
 
 | ID | Severity | Finding | Remediation |
 |---|---|---|---|
-| RC3-C1 | **Critical** | Production `schema_migrations` = **54**; `main` git migrations = **28**. Git is not yet the deployed code-line’s migration source of truth on `main`. Reconciliation proven on PR #103 but **not merged**. | Merge [#103](https://github.com/alhazayed/vpsych/pull/103), redeploy if needed, re-run `npm run test:migrations` with `SUPABASE_DB_URL`. |
-| RC3-C2 | **Critical** | Authenticated therapist/admin/AI/voice/session E2E **could not be executed**: no `VPSYCH_AUDIT_*` credentials in the RC3 environment; signup rejects `@example.com`. | Inject production audit therapist + admin secrets; re-run Missions 4–5, 10, 11–15 runtime paths. |
-
-**Non-blocking High / Medium (do not alone fail Wave 1 if C1/C2 cleared, but must be tracked):**
-
-| ID | Severity | Finding |
-|---|---|---|
-| RC3-H1 | High | Supabase Auth **leaked-password protection disabled** (HaveIBeenPwned). |
-| RC3-M1 | Medium | Landing HTML lacks Open Graph tags (`og:*`). |
-| RC3-M2 | Medium | Advisor WARN: many intentional `SECURITY DEFINER` RPCs callable by `authenticated` (expected for session/report helpers; review `purge_training_sessions_older_than` remains admin-gated in body — OK). |
-| RC3-M3 | Medium | Runtime clone preset `cbt-skills-gp-en-copy-msdflwu3` exists disabled — not migration-sourced. |
+| RC3-C1 | **Critical** | Production `schema_migrations` = **54**; **`main` @ `52a7610`** git migrations = **28**. Parity **100/100** was proven on PR #103 only. | **1.** Merge [#103](https://github.com/alhazayed/vpsych/pull/103) into `main`. **2.** Re-audit migration parity on the **new `main` SHA** (expect 54 ≡ 54). **3.** Only then clear C1. |
+| RC3-C2 | **Critical** | Dedicated audit identities missing from the RC3 environment (`VPSYCH_AUDIT_*` unset). Without them Wave 1 cannot certify therapist/admin/AI/voice/session paths. | Provision **permanent** dedicated accounts (not personal): `VPSYCH_AUDIT_THERAPIST_EMAIL/PASSWORD`, `VPSYCH_AUDIT_ADMIN_EMAIL/PASSWORD`. Verify login on production. Re-run Missions **1–5** only. |
 
 ---
 
@@ -68,89 +105,55 @@ Legend: **PASS** · **FAIL** · **CONDITIONAL** (data/schema OK, runtime not exe
 | # | Mission | Wave | Verdict | Evidence |
 |---:|---|---|---|---|
 | 1 | UI / UX / Navigation | 1 | **PASS** | Browser prod screenshots; EN/AR RTL; mobile 390px; 0 Critical/High UI defects. Artifacts: `/opt/cursor/artifacts/rc3/screenshots/`, `docs/rc3/M01_UI_UX.md` |
-| 2 | Authentication & Authorization | 1 | **PASS** (public + API gates) | Soft auth: `/avatars|/admin|/sessions|/learning` → **307** `/login?next=…`. APIs → **401 JSON**. Anon PostgREST → permission denied on all probed tables. Authenticated role matrix **BLOCKED** (no audit user). |
-| 3 | Database / Supabase | 1 | **FAIL** | Live DB healthy (56 tables, RLS on all, 54 migrations, message RPC grants include `authenticated`). **Git `main` migration tree diverges** → RC3-C1. Detail: `docs/rc3/M03_DATABASE.md` |
-| 4 | API Runtime | 1 | **CONDITIONAL** | Anon contract PASS (401 JSON, `no-store`). Authenticated session create/message/end **BLOCKED**. |
-| 5 | AI Runtime | 1 | **BLOCKED** | `/api/health/openai` correctly admin-gated (401). Live GPT path not probed without admin. |
-| 6 | Clinical Templates | 2 | **PASS** (data) | 3 enabled templates; all have objectives + diagnoses; comorbidities present. |
-| 7 | Persona Engine | 2 | **PASS** (data) | 2 active avatars (`jordan-hale`, `maya-chen`) with `en-US` + `ar-JO`. |
-| 8 | Scenario Engine | 2 | **CONDITIONAL** | Catalog/templates ready; generation path needs auth. |
-| 9 | DSM-5 / ICD-11 Integrity | 2 | **PASS** | 17 disorders; all have ICD-11; only `complex-ptsd` lacks DSM-5 (ICD-11-only construct — accepted). |
-| 10 | Voice & Conversation | 2 | **BLOCKED** | TTS/STT APIs 401 without auth; 3 active voice profiles in DB. |
-| 11 | Instructor Presets | 3 | **PASS** (data) | 7 enabled presets across learner roles; all have objectives. |
-| 12 | Competency Graph | 3 | **PASS** (data) | 34 nodes, 42 edges, 0 orphan edges, 34 domains. |
-| 13 | Adaptive Curriculum | 3 | **PASS** (data) | ACE tables present; 4 adaptive rules; `apply_ace_session_progress` service_role-only. |
-| 14 | Learning Analytics | 3 | **CONDITIONAL** | 390 sessions / 333 reports / 98.2% report coverage (14d); UI analytics **BLOCKED**. |
-| 15 | Educational Outcomes | 3 | **CONDITIONAL** | CBME schema + seeds present; outcome dashboards **BLOCKED**. |
-| 16 | Scientific Validation | 4 | **FAIL** | Assessment reliability **not validated**; corpus needs clinician ratings (`docs/ASSESSMENT_RELIABILITY` posture on `main`). |
-| 17 | Scientific Metrics | 4 | **FAIL** | Weighted metrics engines largely deferred to v1.1 branches — not on production code SHA. |
-| 18 | Quality Ledger | 4 | **FAIL** | Not on production `main` SHA. |
-| 19 | Research Readiness | 4 | **FAIL** | Not demonstrated on production release train. |
-| 20 | Security | 5 | **CONDITIONAL** | Headers, RLS, anon denial, JSON 401, RPC restore: PASS. Leaked-password protection OFF → RC3-H1. Definer advisories → RC3-M2. |
-| 21 | Performance & Scalability | 5 | **CONDITIONAL** | Public p50 ~70–130ms; health max spike 752ms. **No declared-scale load test** executed. |
-| 22 | Compliance | 5 | **CONDITIONAL** | `/privacy` `/terms` live; consent/DSAR surfaces incomplete vs enterprise cert drafts. |
-| 23 | Institutional Readiness | 5 | **CONDITIONAL** | 5 institutions in DB; faculty UX **BLOCKED**. |
-| 24 | Disaster Recovery | 5 | **CONDITIONAL** | Supabase ACTIVE_HEALTHY; backup/restore drill **not evidenced** in this run. |
-| 25 | Executive Release Board | 6 | **NOT APPROVED** | See below. |
-| 26 | Technical SEO | 7 | **CONDITIONAL** | robots/sitemap/title/description PASS; OG tags missing (RC3-M1). |
-| 27 | AEO | 7 | **FAIL** | No production AEO artifact pack on `main`. |
-| 28 | GEO | 7 | **FAIL** | No production GEO artifact pack on `main`. |
-| 29 | Brand / Conversion | 7 | **PASS** (public) | Brand-first login/landing, legal links, bilingual — browser PASS. |
-| 30 | Public Launch | 7 | **FAIL** | Blocked by RC3 Waves 1/4/6. |
+| 2 | Authentication & Authorization | 1 | **FAIL pending C2** (public PASS) | Soft auth + anon API/RLS PASS. Therapist/admin login matrix **not certified** without dedicated audit accounts. |
+| 3 | Database / Supabase | 1 | **FAIL** | Live DB healthy. **`main` @ `52a7610` has 28 files; prod 54.** PR #103 holds the 54-file tree + 100/100 proof — unmerged. |
+| 4 | API Runtime | 1 | **FAIL pending C2** (anon PASS) | Anon contract PASS. Authenticated session create/message/end **not certified**. |
+| 5 | AI Runtime | 1 | **FAIL pending C2** | Admin OpenAI health gated correctly; live GPT/assessment path **not certified**. |
+| 6–24 | Waves 2–5 missions | 2–5 | **LOCKED** | Informational data notes retained in `docs/rc3/*`; **do not advance** until Wave 1 PASS. |
+| 25 | Executive Release Board | 6 | **LOCKED** | Reconvene only after Waves 1–5. |
+| 26–30 | Public launch | 7 | **LOCKED** | After Wave 6. |
 
 ---
 
 ## Wave gates (detail)
 
-### Wave 1 — Platform Validation → **FAIL**
+### Wave 1 — Platform Validation → **FAIL** (`rerun_required: true`)
 
-Public platform surfaces from RC1 are live and correct. The Wave 1 gate still fails on **RC3-C1** (migration source-of-truth) and cannot clear authenticated API/AI (**RC3-C2**).
+Public RC1 surfaces are live. Gate fails on **RC3-C1** (parity not on `main`) and **RC3-C2** (no dedicated audit identities). Missions **1–5** must be re-run after both blockers clear — **do not restart Missions 6–30**.
 
-### Wave 2 — Clinical Validation → **CONDITIONAL**
+### Waves 2–5 → **LOCKED**
 
-Disorder/template/persona **data integrity PASS** on production Postgres. Scenario generation + voice conversation runtime **not proven** without audit sessions.
+Prior catalog/schema observations (templates, personas, CGE/ACE seeds, etc.) remain on file as **informational** only. They do **not** unlock these waves. Unlock condition: `wave_1.state == passed` with **zero Critical or High**.
 
-### Wave 3 — Educational Validation → **CONDITIONAL**
+### Wave 6 — Executive Release Board → **LOCKED / NOT APPROVED**
 
-Presets/CGE/ACE **schema + seeds PASS**. Competency tracking / adaptive learning / analytics **E2E not executed**.
+Do not reconvene until Waves 1–5 are board-accepted.
 
-### Wave 4 — Scientific Validation → **FAIL**
+### Wave 7 — Public Launch → **LOCKED**
 
-Scientific ledgers/metrics/reliability claims are **not** on the production release train at `52a7610`. Do not imply validated scores.
-
-### Wave 5 — Enterprise Validation → **CONDITIONAL**
-
-Security baseline strong; enterprise compliance/DR/load incomplete.
-
-### Wave 6 — Executive Release Board → **NOT APPROVED**
-
-| Seat | Vote |
-|---|---|
-| CTO | **NO** — migration drift on `main` |
-| CISO | **CONDITIONAL NO** — HIBP off; auth E2E missing |
-| CMO | **CONDITIONAL** — catalog OK; live clinical session not witnessed |
-| Medical Education | **CONDITIONAL** — engines seeded; outcomes E2E missing |
-| CSO | **NO** — scientific validation absent on prod |
-| QA | **NO** — Wave 1 gate failed; authenticated suite blocked |
-| Product / Launch | **NO** — public launch not cleared |
-
-**Executive Certification Score:** **52 / 100**  
-**Confidence Score:** **58 / 100** (strong public/prod SHA sync; weak migration git sync + no auth E2E)
-
-### Wave 7 — Public Launch → **FAIL**
-
-Discoverability basics exist; launch blocked until RC3 Waves 1+6 pass.
+Blocked until Wave 6 approval.
 
 ---
 
-## Required actions before RC3 re-run
+## RC3 re-run strategy (Wave 1 only)
 
-1. **Merge PR #103** (migration reconciliation) into `main` and confirm deploy/parity.  
-2. **Provision RC3 audit secrets:** `VPSYCH_AUDIT_THERAPIST_EMAIL/PASSWORD`, `VPSYCH_AUDIT_ADMIN_EMAIL/PASSWORD`.  
-3. Re-execute Missions **4, 5, 8, 10–15** with `scripts/prod-validate-sessions.mjs` against `https://vpsych.vercel.app` only.  
-4. Enable Supabase **leaked password protection** (RC3-H1).  
-5. Optionally add OG tags (RC3-M1) before Wave 7 re-score.  
-6. Keep scientific ledgers on **v1.1** unless explicitly promoted — do not claim Wave 4 PASS without clinician-rated reliability.
+| Step | Action | Exit criterion |
+|---:|---|---|
+| 1 | Resolve **RC3-C1**: merge PR #103 → `main`; re-audit migrations on **post-merge `main` SHA** vs production (expect **54 ≡ 54**); confirm `npm run test:migrations` with `SUPABASE_DB_URL` → `ok: true` | C1 cleared |
+| 2 | Resolve **RC3-C2**: configure permanent `VPSYCH_AUDIT_THERAPIST_*` + `VPSYCH_AUDIT_ADMIN_*`; verify login on `https://vpsych.vercel.app` | C2 cleared |
+| 3 | Re-run **only Missions 1–5** against production + post-merge `main` | Wave 1 PASS iff **0 Critical and 0 High** |
+| 4 | If Wave 1 PASS → set `wave_2…wave_5.state: unlocked` and execute those waves; **then** reconvene Executive Board | Waves advance in order |
+
+**RC4 / RC5 remain locked** until Wave 1 PASS. No exceptions.
+
+### Tracked non-blockers (after Wave 1, still fix)
+
+| ID | Severity | Finding |
+|---|---|---|
+| RC3-H1 | High | Supabase Auth leaked-password protection disabled — treat as Wave 1 High if still open at re-run; otherwise Wave 5 |
+| RC3-M1 | Medium | Landing HTML lacks Open Graph tags |
+| RC3-M2 | Medium | Advisor WARN on intentional SECURITY DEFINER RPCs |
+| RC3-M3 | Medium | Runtime clone preset `cbt-skills-gp-en-copy-msdflwu3` (disabled) |
 
 ---
 
@@ -163,12 +166,12 @@ Discoverability basics exist; launch blocked until RC3 Waves 1+6 pass.
 | `/opt/cursor/artifacts/rc3/waves_2_7_evidence.json` | SEO/perf/API samples |
 | `/opt/cursor/artifacts/rc3/db_inventory_summary.json` | Live DB counts |
 | `docs/rc3/*` | Per-mission briefs |
-| `docs/RC4_BUGFIX_FREEZE.md` | Post-RC3 freeze rules |
-| `docs/RC5_RELEASE_CHECKLIST.md` | Tag/release tasks |
+| `docs/RC4_BUGFIX_FREEZE.md` | Post-RC3 freeze rules (**locked**) |
+| `docs/RC5_RELEASE_CHECKLIST.md` | Tag/release tasks (**locked**) |
 
 ---
 
 ## RC4 / RC5 pointer
 
-- **RC4** starts only after a **PASS** RC3 Wave 1 re-run (and board acceptance of remaining CONDITIONAL waves or their promotion to PASS).  
-- **RC5** (`v1.0.0` tag, GitHub Release, `package.json`, `RELEASE_MANIFEST.md` sign-off) is **forbidden** while this document’s verdict is NOT PASSED.
+- **RC4** and **RC5** MUST NOT START until `wave_status.wave_1.state == passed`.  
+- No waivers. No partial exceptions for tagging `v1.0.0`.
