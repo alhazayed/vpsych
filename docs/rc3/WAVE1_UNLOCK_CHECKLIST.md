@@ -14,6 +14,8 @@ Do **not** re-run Waves 2–7 until this page is all green.
 
 ## RC3-C2 — Dedicated audit accounts
 
+See `docs/AUDIT_ACCOUNTS.md` (no secrets in git).
+
 Permanent identities (not personal developer accounts):
 
 ```text

@@ -5,8 +5,11 @@
 **Production:** `https://vpsych.vercel.app`  
 **GitHub `main`:** `5bf66c07f11d286c305f59398a015614d22b723b` (`chore(db): reconcile migrations… (#103)` — post-merge)
 **Prior RC3 audit SHA:** `52a7610` (pre-#103; 28 migrations)
-**RC3-C1 re-audit:** 2026-08-04 — **CLEARED** (`main` 54 ≡ production 54)  
-**Production deploy:** `dpl_2mBqyfzFEDCETctTSL7aFQR3HnDv` (target=`production`, SHA=`52a7610…`)  
+**RC3-C1 re-audit:** 2026-08-04 — **CLEARED** (`main` 54 ≡ production 54)
+**Integrity 100/100 rebound:** Allowed for `main`@`5bf66c0` — see `docs/RC3_EVIDENCE_SCOPE.md` (repo 54, prod 54, schema diff 0, prod deploy SHA match).
+**Evidence scope:** `docs/RC3_EVIDENCE_SCOPE.md` · **Audit accounts:** `docs/AUDIT_ACCOUNTS.md`  
+**Production deploy:** `dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4` (target=`production`, SHA=`5bf66c0…`)
+**Prior prod deploy (RC1):** `dpl_2mBqyfz…` @ `52a7610`  
 **Supabase:** `rrzudbkxigeavfdnidnm` (ACTIVE_HEALTHY, us-east-1)  
 **Vercel project:** `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm`  
 **Branch (this report):** `cursor/rc3-production-validation-b5ac`
@@ -89,7 +92,7 @@ wave_status:
 | Check | Evidence | Pass? |
 |---|---|---|
 | #100 on `main` | `52a7610` | ✅ |
-| Production deploy SHA == `main` | `dpl_2mBqyfz…` meta `githubCommitSha` = `52a7610…` | ✅ |
+| Production deploy SHA == `main` | `dpl_5F6pBTi…` = `5bf66c0…` (post-#103) | ✅ |
 | `/api/health` | 200 `{"ok":true,"service":"vpsych",…}` | ✅ |
 | `/robots.txt`, `/sitemap.xml`, `/privacy`, `/terms` | 200 | ✅ |
 | Anon `/api/sessions` | **401 JSON** `{"error":"Unauthorized"}` (not 307 HTML) | ✅ |
