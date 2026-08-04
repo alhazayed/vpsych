@@ -22,13 +22,13 @@
 
 | Claim | Refers to | Migrations | Status |
 |---|---|---:|---|
-| Repository / Production Integrity **100/100**, “greenfield ≡ production schema” | PR **#103** branch `cursor/migration-reconciliation-b5ac` @ `5c879f4` | **54** | Proven on that branch; **not on `main`** |
-| RC3 initial audit | **`main` @ `52a7610`** + prod deploy `dpl_2mBqyfz…` | **28** vs **54** | Exposed RC3-C1 |
+| Repository / Production Integrity **100/100**, “greenfield ≡ production schema” | Proven on PR **#103** @ `5c879f4`; **rebound to** `main` @ `5bf66c0` | **54** | **BOUND** — see `docs/RC3_EVIDENCE_SCOPE.md` |
+| RC3 initial audit | **`main` @ `52a7610`** + prod deploy `dpl_2mBqyfz…` | **28** vs **54** | Historical — exposed RC3-C1 |
 | RC3-C1 re-audit (post-#103) | **`main` @ `5bf66c0`** + production | **54 ≡ 54** | **C1 CLEARED** |
 
-**These statements are not contradictory** once scoped: the 100/100 scores document work that has **not yet landed on `main`**. RC3 correctly audited the release train (`main`), which still lacks the parity tree. RC2’s open migration-parity item is the same gap RC3-C1 elevates to Critical.
+**Scope rule:** Feature-branch scores are not release-candidate evidence until rebound after merge. Post-#103, integrity **100/100** may be cited for `main` @ `5bf66c0` only (repo 54 ≡ prod 54, schema diff 0, prod deploy SHA match).
 
-**Re-verify timestamp (2026-08-04 10:51 UTC):** PR #103 **MERGED**. `origin/main` = `5bf66c0` (**54** files). Production = **54** versions (latest `20260804085304`). Exact version parity **PASS**.
+**Re-verify timestamp (2026-08-04):** PR #103 **MERGED**. `origin/main` = `5bf66c0` (**54** files). Production = **54** versions (latest `20260804085304`). Exact version parity **PASS**. Prod deploy `dpl_5F6pBTi…` READY on `vpsych.vercel.app`.
 
 ```yaml
 wave_status:
@@ -41,7 +41,7 @@ wave_status:
     rerun_required: true
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     rerun_after:
-      - "Dedicated VPSYCH_AUDIT_THERAPIST_* and VPSYCH_AUDIT_ADMIN_* configured"
+      - "VPSYCH_AUDIT_* secrets injected for audit.therapist@vpsych.dev / audit.admin@vpsych.dev"
       - "Audit login verified on https://vpsych.vercel.app"
   wave_2:
     state: locked
@@ -83,7 +83,7 @@ wave_status:
 | ID | Severity | Finding | Remediation |
 |---|---|---|---|
 | RC3-C1 | ~~Critical~~ **CLEARED** | Was: `main`@`52a7610` had 28 vs prod 54. | [#103](https://github.com/alhazayed/vpsych/pull/103) merged `5bf66c0`. Re-audit: **54 ≡ 54** exact version parity. Local `npm run test:migrations` structure OK. |
-| RC3-C2 | **Critical** | Dedicated audit identities missing from the RC3 environment (`VPSYCH_AUDIT_*` unset). Without them Wave 1 cannot certify therapist/admin/AI/voice/session paths. | Provision **permanent** dedicated accounts (not personal): `VPSYCH_AUDIT_THERAPIST_EMAIL/PASSWORD`, `VPSYCH_AUDIT_ADMIN_EMAIL/PASSWORD`. Verify login on production. Re-run Missions **1–5** only. |
+| RC3-C2 | **Critical** | Permanent Auth users exist (`audit.therapist@vpsych.dev` / `audit.admin@vpsych.dev`, roles correct) but `VPSYCH_AUDIT_*` secrets are **not injected** into the RC3 agent — login matrix and authenticated Missions 2/4/5 cannot run. | Release Manager: inject four env vars from vault; verify login on `https://vpsych.vercel.app`; then re-run Missions **1–5** only. See `docs/AUDIT_ACCOUNTS.md`. |
 
 ---
 
@@ -145,7 +145,7 @@ Blocked until Wave 6 approval.
 | Step | Action | Exit criterion |
 |---:|---|---|
 | 1 | Resolve **RC3-C1** | ✅ **DONE** — #103 merged; `main`@`5bf66c0`; 54 ≡ 54 |
-| 2 | Resolve **RC3-C2**: configure permanent `VPSYCH_AUDIT_THERAPIST_*` + `VPSYCH_AUDIT_ADMIN_*`; verify login on `https://vpsych.vercel.app` | C2 cleared |
+| 2 | Resolve **RC3-C2**: inject `VPSYCH_AUDIT_*` for existing `audit.*@vpsych.dev` accounts; verify login on `https://vpsych.vercel.app` | C2 cleared |
 | 3 | Re-run **only Missions 1–5** against production + post-merge `main` | Wave 1 PASS iff **0 Critical and 0 High** |
 | 4 | If Wave 1 PASS → set `wave_2…wave_5.state: unlocked` and execute those waves; **then** reconvene Executive Board | Waves advance in order |
 

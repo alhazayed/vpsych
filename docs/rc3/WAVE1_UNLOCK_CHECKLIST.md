@@ -19,16 +19,16 @@ See `docs/AUDIT_ACCOUNTS.md` (no secrets in git).
 Permanent identities (not personal developer accounts):
 
 ```text
-VPSYCH_AUDIT_THERAPIST_EMAIL=
-VPSYCH_AUDIT_THERAPIST_PASSWORD=
-VPSYCH_AUDIT_ADMIN_EMAIL=
-VPSYCH_AUDIT_ADMIN_PASSWORD=
+VPSYCH_AUDIT_THERAPIST_EMAIL=audit.therapist@vpsych.dev
+VPSYCH_AUDIT_THERAPIST_PASSWORD=<vault — never commit>
+VPSYCH_AUDIT_ADMIN_EMAIL=audit.admin@vpsych.dev
+VPSYCH_AUDIT_ADMIN_PASSWORD=<vault — never commit>
 ```
 
-- [ ] Accounts created in production Supabase Auth
-- [ ] Therapist role in `profiles.role`
-- [ ] Admin role in `profiles.role` (`admin`)
-- [ ] Secrets injected into RC3 agent / CI environment
+- [x] Accounts created in production Supabase Auth (`audit.therapist@vpsych.dev`, `audit.admin@vpsych.dev`)
+- [x] Therapist role in `profiles.role`
+- [x] Admin role in `profiles.role` (`admin`)
+- [ ] Secrets injected into RC3 agent / CI environment (`VPSYCH_AUDIT_*` still unset in this agent)
 - [ ] Login verified on `https://vpsych.vercel.app/login` (both accounts)
 - [ ] Clear RC3-C2
 
