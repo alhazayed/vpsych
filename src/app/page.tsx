@@ -425,6 +425,14 @@ export default async function HomePage() {
           <p className="text-xs text-[var(--on-surface-variant)] opacity-70">
             {t("footer.copyright", { year })}
           </p>
+          <div className="flex flex-wrap gap-4 text-xs text-[var(--on-surface-variant)]">
+            <Link href="/privacy" className="hover:text-[var(--primary)]">
+              {t("footer.privacy")}
+            </Link>
+            <Link href="/terms" className="hover:text-[var(--primary)]">
+              {t("footer.terms")}
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

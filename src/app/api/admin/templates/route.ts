@@ -135,7 +135,11 @@ export async function POST(request: Request) {
       .select("id, slug, name")
       .single();
     if (cloneErr) {
-      return NextResponse.json({ error: cloneErr.message }, { status: 500 });
+      console.warn("[admin/templates] clone:", cloneErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(cloneErr.message) },
+        { status: 500 },
+      );
     }
     await supabase.from("template_versions").insert({
       template_id: cloned.id,
@@ -177,7 +181,11 @@ export async function POST(request: Request) {
     .single();
 
   if (createErr) {
-    return NextResponse.json({ error: createErr.message }, { status: 500 });
+    console.warn("[admin/templates] create:", createErr.message);
+    return NextResponse.json(
+      { error: sanitizeDbError(createErr.message) },
+      { status: 500 },
+    );
   }
 
   await supabase.from("template_versions").insert({

@@ -155,14 +155,22 @@ export async function POST(request: Request) {
       created_by: user.id,
     });
     if (verErr) {
-      return NextResponse.json({ error: verErr.message }, { status: 500 });
+      console.warn("[admin/presets] version:", verErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(verErr.message) },
+        { status: 500 },
+      );
     }
     const { error: updErr } = await supabase
       .from("instructor_presets")
       .update({ version: nextVersion, updated_at: new Date().toISOString() })
       .eq("id", src.id);
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      console.warn("[admin/presets] update:", updErr.message);
+      return NextResponse.json(
+        { error: sanitizeDbError(updErr.message) },
+        { status: 500 },
+      );
     }
     return NextResponse.json({ ok: true, version: nextVersion });
   }
@@ -211,7 +219,7 @@ export async function POST(request: Request) {
       .single();
     if (cloneErr || !cloned) {
       return NextResponse.json(
-        { error: cloneErr?.message ?? "Clone failed" },
+        { error: sanitizeDbError(cloneErr?.message) || "Clone failed" },
         { status: 500 },
       );
     }

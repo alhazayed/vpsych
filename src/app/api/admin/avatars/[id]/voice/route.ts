@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 import {
   clearLegacyColumnsFromProfile,
   coerceVoiceProfile,
@@ -98,8 +99,9 @@ export async function PATCH(request: Request, { params }: Params) {
     .single();
 
   if (error || !data) {
+    console.warn("[admin/avatar-voice] assign:", error?.message);
     return NextResponse.json(
-      { error: error?.message ?? "Assign failed" },
+      { error: sanitizeDbError(error?.message) || "Assign failed" },
       { status: 500 },
     );
   }
