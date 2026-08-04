@@ -100,7 +100,7 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | 27 | AEO | ⏸ | **v1.1** (#94) |
 | 28 | GEO | ⏸ | **v1.1** (#95) |
 | 29 | Brand / conversion | ⏸ | **v1.1** (#97) |
-| 30 | Public launch | ❌ | Analytics/GSC/Bing/monitoring/email proof incomplete; do not announce |
+| 30 | Public launch | ❌ | **FAILED** 2026-08-04 — see `MISSION_30_PUBLIC_LAUNCH.md`; Web Analytics off; GSC/Bing/Sentry/load/parity/#102 open; **v1.0 not released** |
 
 ---
 
@@ -122,7 +122,7 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | RC1 Critical remediations on production | **Yes** — #100 @ `52a7610`; health/robots/privacy **200** |
 | High seals (#102) on production | **No** — merge pending |
 | Migration parity / RC2 | **No** — #101 + ops checklist |
-| Public Version 1.0 announcement | **No** — Mission 25 **NOT APPROVED** until RC2→RC5 |
+| Public Version 1.0 announcement | **No** — Mission 25 **NOT APPROVED**; Mission 30 **FAILED** (no tag) |
 
 ### Binding sequence (Mission 25)
 
@@ -142,4 +142,5 @@ Load testing (M12) and public launch ops (M30) remain **❌**.
 Scientific / HCE / full SEO-AEO-GEO / institutional remain **⏸ v1.1**.
 
 **Board position:** ❌ **NOT APPROVED for public Version 1.0** · ✅ **APPROVED to proceed RC2→RC5** · ⚠ **CONDITIONAL GO for internal training use**.  
-Full minutes: [`docs/MISSION_25_EXECUTIVE_BOARD.md`](./MISSION_25_EXECUTIVE_BOARD.md).
+Mission 30 executed on request: ❌ **FAILED** — **no `v1.0.0` tag / release created** ([`MISSION_30_PUBLIC_LAUNCH.md`](./MISSION_30_PUBLIC_LAUNCH.md)).  
+Full Mission 25 minutes: [`docs/MISSION_25_EXECUTIVE_BOARD.md`](./MISSION_25_EXECUTIVE_BOARD.md).

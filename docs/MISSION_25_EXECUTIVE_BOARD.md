@@ -170,3 +170,18 @@ Repo admin should still run `bash scripts/create-v1.1-milestone.sh` when API per
 ## 8. One-sentence board position
 
 **VPsych has cleared release-management failure and Critical production defects, and may proceed through RC2–RC5; it is not approved to announce public Version 1.0 until load evidence, launch ops, migration parity, and High seals (#102) are closed and `v1.0.0` is tagged.**
+
+---
+
+## Addendum — Mission 30 request (2026-08-04)
+
+A follow-up instruction asked to perform Public Launch Certification and release v1.0 **if approved**.
+
+| Item | Outcome |
+|------|---------|
+| Mission 25 approval for public GA | Still ❌ **NOT APPROVED** |
+| Mission 30 certification | Executed — ❌ **FAILED** (composite **42 / 100**) |
+| Tag / GitHub Release `v1.0.0` | **REFUSED** (would violate D1) |
+| Evidence | [`docs/MISSION_30_PUBLIC_LAUNCH.md`](./MISSION_30_PUBLIC_LAUNCH.md) |
+
+Hard fails confirmed live: Vercel Web Analytics **not enabled**; no GSC/Bing/Sentry/uptime proof; #102 and #101 still open; M12 load evidence absent.
