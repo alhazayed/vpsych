@@ -2,6 +2,8 @@
 
 Do **not** advance Waves 2–7 until every box below is checked and Wave 1 Missions 1–5 pass with zero Critical and zero High findings.
 
+**Full Release Manager runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md`
+
 ## Prerequisites (infrastructure — done)
 
 - [x] Production SHA verified (`5bf66c0` / `dpl_5F6pBTi…` on `vpsych.vercel.app`)
@@ -27,11 +29,19 @@ See `docs/AUDIT_ACCOUNTS.md` (no passwords in git).
 
 ## After secrets are injected
 
-1. Verify therapist login  
-2. Verify admin login  
+1. Verify therapist login → PASS  
+2. Verify admin login → PASS (record timestamp, environment, production SHA, auditor)  
 3. Execute Missions **1–5** only  
-4. If **0 Critical and 0 High** → record `wave_1.state: passed` → unlock Waves 2–7  
-5. Continue RC3 without restarting completed infrastructure work (C1 / integrity 100/100)
+4. If **0 Critical and 0 High** →
+
+```yaml
+wave_1:
+  state: passed
+  unlocked_by:
+    release_manager: <name>
+```
+
+5. Unlock Wave 2 → continue RC3 without restarting completed infrastructure work
 
 ## Still locked until Wave 1 PASS
 

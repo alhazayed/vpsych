@@ -42,4 +42,5 @@ Therefore RC3 **may reuse** the 100/100 integrity evidence for `main` @ `5bf66c0
 - `docs/RC3_PRODUCTION_VALIDATION.md` — master verdict + `wave_status`
 - `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md` — unlock steps
 - `docs/AUDIT_ACCOUNTS.md` — permanent certification identities (no secrets)
+- `docs/RELEASE_OPERATIONS_CHECKLIST.md` — Release Manager runbook (RC3 + every future release)
 - `RELEASE_MANIFEST.md` — machine-readable inventory

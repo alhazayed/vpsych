@@ -58,5 +58,6 @@ provisioning:
 - Auth users and `profiles.role` are **already provisioned** in production (`rrzudbkxigeavfdnidnm`).
 - **RC3-C2 is an operational prerequisite**, not a VPsych application defect: evidence collection is blocked until the audit runner receives vault-managed `VPSYCH_AUDIT_*` credentials.
 - Owner: **Release Manager**. Category: **Release Infrastructure**. Severity: Critical (blocks certification evidence, not platform correctness).
+- Formal runbook: `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
 - RC4 / RC5 stay locked until Wave 1 PASS.
 - Never commit real password values to this file.
