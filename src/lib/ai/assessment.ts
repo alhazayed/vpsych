@@ -24,6 +24,7 @@ import {
   preferOpenAiSdk,
   type AiSource,
 } from "@/lib/ai/provider";
+import { weightedOverallScore } from "@/lib/ai/reliability";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -144,13 +145,12 @@ function heuristicAssessment(
   };
 }
 
+/**
+ * Canonical weighted score. Delegates to `lib/ai/reliability` so the reported
+ * score and every reliability measurement always use one formula.
+ */
 function weightedOverall(items: ScoreEntry[]) {
-  const totalWeight = items.reduce((s, i) => s + i.weight, 0) || 1;
-  const sum = items.reduce(
-    (s, i) => s + (i.score / i.max) * 100 * (i.weight / totalWeight),
-    0,
-  );
-  return Math.round(sum);
+  return weightedOverallScore(items);
 }
 
 function isRateLimitedOrQuota(err: unknown): boolean {
