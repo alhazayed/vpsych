@@ -33,9 +33,18 @@ Every open PR at freeze start was classified as exactly one of:
 
 ---
 
-## Move to v1.1
+## Move to v1.1 (tight rule)
 
-Do **not** merge before `v1.0.0`. Rebase onto post-v1.0 `main` when scheduled.
+Do **not** merge before `v1.0.0`. Nothing deferred may remain an ambiguous open PR.
+
+Each deferred PR must have:
+
+1. Title prefix `[v1.1]`
+2. Status = `Deferred`
+3. Owner = `alhazayed`
+4. Written deferral reason
+5. Canonical row in [`docs/V1_1_BACKLOG.md`](./V1_1_BACKLOG.md)
+6. (Admin) GitHub milestone `v1.1` + labels via `scripts/create-v1.1-milestone.sh`
 
 | PR | Topic | Why deferred |
 |----|-------|--------------|
