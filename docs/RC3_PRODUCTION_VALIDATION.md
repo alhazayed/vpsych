@@ -20,6 +20,8 @@
 
 **Role split:** Release Manager owns secrets/login/trigger · Cursor owns Missions 1–5 evidence + PASS/FAIL (no speculative fixes) · Executive Board owns Wave 1 review and Wave 2 unlock. See `docs/RELEASE_DECISION_LOG.md`.
 
+**Wave 1 attempt (2026-08-04):** STOPPED at preconditions — all four `VPSYCH_AUDIT_*` unset in audit environment. **RC3-C2 — Evidence collection blocked.** Missions 1–5 not executed. See RDL-006.
+
 ---
 
 ## Audited commit scope (resolves RC2 ↔ RC3 apparent contradiction)
