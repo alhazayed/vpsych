@@ -391,9 +391,13 @@ export async function createCaseForSession(
           maxDurationSec: fromPreset.assessment.maxDurationSec,
         };
       }
+      console.warn(
+        "[case-engine] case_instances insert failed:",
+        insertErr?.message,
+      );
       return {
         ok: false,
-        error: insertErr?.message ?? "Failed to persist case instance",
+        error: "Failed to persist case instance",
         status: 500,
       };
     }
@@ -597,9 +601,13 @@ export async function createCaseForSession(
           therapyModality,
         };
       }
+      console.warn(
+        "[case-engine] case_instances insert failed:",
+        insertErr?.message,
+      );
       return {
         ok: false,
-        error: insertErr?.message ?? "Failed to persist case instance",
+        error: "Failed to persist case instance",
         status: 500,
       };
     }
@@ -777,9 +785,13 @@ export async function createCaseForSession(
         therapyModality,
       };
     }
+    console.warn(
+      "[case-engine] case_instances insert failed:",
+      insertErr?.message,
+    );
     return {
       ok: false,
-      error: insertErr?.message ?? "Failed to persist case instance",
+      error: "Failed to persist case instance",
       status: 500,
     };
   }

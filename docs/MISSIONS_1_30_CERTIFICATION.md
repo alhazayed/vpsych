@@ -4,7 +4,7 @@
 **Date:** 2026-08-04  
 **Release vehicle:** PR #100 (`cursor/v1-release-certification-0579`)  
 **Rule:** Fix only verified defects. No feature expansion.  
-**Regression:** `vitest` 179 PASS · `typecheck` PASS · `build` PASS (prior) · local `/api/health` 200
+**Regression:** `vitest` + `typecheck` on RC (see latest CI / local run)
 
 ---
 
@@ -28,9 +28,11 @@
 | RC-H1 | High | 02, 08 | Admin presets/templates/avatars/voice-profiles returned raw DB `error.message` | `sanitizeDbError` + server log |
 | RC-H2 | High | 02, 08 | `admin/cge` and `admin/ace/learners` lacked rate limits | Per-user hourly `rateLimit` |
 | RC-H3 | High | 22, 26, 30 | Clinical/educational/AI disclaimer copy unused; landing lacked legal footer links | Rendered on `/privacy`; landing footer → `/privacy` `/terms` |
+| RC-H4 | High | 02, 03, 08 | `case-engine/persist` returned raw PostgREST `insertErr.message` on session create | Fixed client string + server `console.warn` (all 3 persist paths) |
+| RC-H5 | High | 02, 08 | `clientSafeError` fail-open allowed relation/RLS/PGRST text through | Expanded denylist; regression tests |
 | Prior | Crit/High | 03–08, 26 | Session RPC grants, JSON 401, health, robots/sitemap, TTS allowlist, persona integrity | Already on #100 (RC1) |
 
-**Critical open on this cycle:** none in application code.  
+**Critical open in application code:** none after RC-H4/H5.  
 **Critical ops residual:** migration history drift (Mission 07) — ledger only; see `docs/MIGRATION_PARITY.md`.
 
 ---
@@ -44,8 +46,8 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | # | Mission | Verdict | Notes |
 |--:|---------|---------|-------|
 | 01 | Architecture | ⚠ | Engines layered; ACE↔CGE cycle guard; error boundaries present |
-| 02 | Security | ⚠ | Headers, RLS, admin gate, password policy, sanitization extended this cycle; HIBP still off (ops) |
-| 03 | Functional | ⚠ | Auth, sessions, ACE/CGE, EN/AR paths; prod awaits #100 merge |
+| 02 | Security | ⚠ | Headers, RLS, admin gate, password policy; RC-H4/H5 close remaining API DB-leak Highs; HIBP still off (ops) |
+| 03 | Functional | ⚠ | Auth, sessions, ACE/CGE, EN/AR paths; session create errors sanitized; prod awaits #100 merge |
 
 ### Phase 2
 
@@ -60,7 +62,7 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 | # | Mission | Verdict | Notes |
 |--:|---------|---------|-------|
 | 07 | Database | ⚠ | RLS on tables; **parity drift documented** (`MIGRATION_PARITY.md`); recovery plan ops-only |
-| 08 | API | ⚠ | Auth matrix; JSON 401; admin RL + sanitization completed for remaining High leaks |
+| 08 | API | ⚠ | Auth matrix; JSON 401; admin RL + session/persist sanitization (RC-H1–H5) |
 | 09 | UI/UX | ⚠ | Bilingual; responsive landing; disclaimers visible |
 | 10 | Clinical | ⚠ | DSM/ICD on personas; substance localization + harm_to_others in prompts |
 | 11 | Performance | ⚠ | Indexes exist remotely; CWV field monitoring not configured (ops) |
@@ -133,8 +135,8 @@ Legend: ✅ CERTIFIED · ⚠ WITH RECOMMENDATIONS · ❌ NOT READY · ⏸ DEFERR
 ## Conclude
 
 **Missions 1–30 executed against the sole v1.0 RC.**  
-Verified High defects in API sanitization, admin rate limits, and legal/disclaimer surfacing were fixed.  
-Load testing (M12) and public launch ops (M30) remain **❌**.  
+Verified High defects fixed: admin sanitization/rate limits, legal/disclaimer surfacing, session persist DB-leak, `clientSafeError` PostgREST fail-open.  
+Load testing (M12) and public launch ops (M30) remain **❌** (ops evidence, not code defects).  
 Scientific / HCE / full SEO-AEO-GEO / institutional remain **⏸ v1.1**.
 
-**Board position:** Continue structured release candidate process — **do not** resume feature development on the v1.0 train.
+**Board position:** RC application code ready for human review/merge of #100 — **do not** announce public v1.0 until RC2→RC5.
