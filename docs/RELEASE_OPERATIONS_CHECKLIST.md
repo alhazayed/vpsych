@@ -22,7 +22,16 @@ VPsych itself is **not** failing certification. Automated certification cannot c
 
 RC3 Wave 1 unlock detail: `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md`  
 Audit identities (no passwords): `docs/AUDIT_ACCOUNTS.md`  
-Evidence SHA scope: `docs/RC3_EVIDENCE_SCOPE.md`
+Evidence SHA scope: `docs/RC3_EVIDENCE_SCOPE.md`  
+Decision log (append-only): `docs/RELEASE_DECISION_LOG.md`
+
+### Roles
+
+| Role | Owns |
+|---|---|
+| Release Manager | Vault → inject → login verify → trigger Wave 1 |
+| Cursor | Missions 1–5 evidence, verified defects only, PASS/FAIL — no speculative work |
+| Executive Board | Review Wave 1; unlock Wave 2 only on PASS; process integrity |
 
 ---
 
@@ -141,7 +150,7 @@ Use this for v1.0 cutover and for v1.1 / v1.2 / … so releases do not depend on
 ### Cutover (after Executive Board approval)
 
 - [ ] Confirm monitoring and alerting
-- [ ] Record Executive Board approval
+- [ ] Record Executive Board approval (append row to `docs/RELEASE_DECISION_LOG.md`)
 - [ ] Update `RELEASE_MANIFEST.md`
 - [ ] Create Git tag
 - [ ] Publish GitHub Release
@@ -164,4 +173,5 @@ Use this for v1.0 cutover and for v1.1 / v1.2 / … so releases do not depend on
 | `docs/RC3_EVIDENCE_SCOPE.md` | Which SHA/branch a result is valid for |
 | `docs/RC4_BUGFIX_FREEZE.md` | Post-RC3 freeze (**locked** until Wave 1 PASS) |
 | `docs/RC5_RELEASE_CHECKLIST.md` | Tag / GitHub Release tasks (**locked**) |
+| `docs/RELEASE_DECISION_LOG.md` | Append-only governance trail |
 | `RELEASE_MANIFEST.md` | Machine-readable inventory |

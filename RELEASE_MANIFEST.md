@@ -49,5 +49,6 @@ production_deploy:
   ready_state: READY
 audit_accounts: "docs/AUDIT_ACCOUNTS.md"  # secrets not in git
 release_operations: "docs/RELEASE_OPERATIONS_CHECKLIST.md"
+release_decision_log: "docs/RELEASE_DECISION_LOG.md"
 wave1_unlock: "docs/rc3/WAVE1_UNLOCK_CHECKLIST.md"
 ```

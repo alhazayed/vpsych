@@ -7,7 +7,7 @@
 **Prior RC3 audit SHA:** `52a7610` (pre-#103; 28 migrations)
 **RC3-C1 re-audit:** 2026-08-04 — **CLEARED** (`main` 54 ≡ production 54)
 **Integrity 100/100 rebound:** Allowed for `main`@`5bf66c0` — see `docs/RC3_EVIDENCE_SCOPE.md` (repo 54, prod 54, schema diff 0, prod deploy SHA match).
-**Evidence scope:** `docs/RC3_EVIDENCE_SCOPE.md` · **Audit accounts:** `docs/AUDIT_ACCOUNTS.md` · **Ops runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md`  
+**Evidence scope:** `docs/RC3_EVIDENCE_SCOPE.md` · **Audit accounts:** `docs/AUDIT_ACCOUNTS.md` · **Ops runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md` · **Decision log:** `docs/RELEASE_DECISION_LOG.md`  
 **Production deploy:** `dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4` (target=`production`, SHA=`5bf66c0…`)
 **Prior prod deploy (RC1):** `dpl_2mBqyfz…` @ `52a7610`  
 **Supabase:** `rrzudbkxigeavfdnidnm` (ACTIVE_HEALTHY, us-east-1)  
@@ -17,6 +17,8 @@
 **Rule:** Evidence collected only against production / `main` / production Supabase / production Vercel. No localhost, preview deployments, or feature-branch app binaries.
 
 **Engineering status:** Nothing further to build for RC3 unlock. Platform, infrastructure, production, and repository are ready. RC3 is **waiting on operational execution** (Release Manager vault injection).
+
+**Role split:** Release Manager owns secrets/login/trigger · Cursor owns Missions 1–5 evidence + PASS/FAIL (no speculative fixes) · Executive Board owns Wave 1 review and Wave 2 unlock. See `docs/RELEASE_DECISION_LOG.md`.
 
 ---
 
@@ -184,6 +186,7 @@ Blocked until Wave 6 approval.
 | `/opt/cursor/artifacts/rc3/db_inventory_summary.json` | Live DB counts |
 | `docs/rc3/*` | Per-mission briefs |
 | `docs/RELEASE_OPERATIONS_CHECKLIST.md` | Permanent Release Manager runbook (RC3 unlock + every future release) |
+| `docs/RELEASE_DECISION_LOG.md` | Append-only release decision trail (RDL-001…) |
 | `docs/RC4_BUGFIX_FREEZE.md` | Post-RC3 freeze rules (**locked**) |
 | `docs/RC5_RELEASE_CHECKLIST.md` | Tag/release tasks (**locked**) |
 
