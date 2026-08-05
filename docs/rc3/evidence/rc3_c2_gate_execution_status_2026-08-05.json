@@ -1,0 +1,102 @@
+{
+  "record_type": "credential_verification_gate_execution_status",
+  "checked_at": "2026-08-05T12:05:00Z",
+  "auditor": "independent-executive-release-auditor",
+  "branch": "claude/vpsych-rc3-c2-audit-8bukic",
+  "board_direction": {
+    "date": "2026-08-05",
+    "runbook_adopted": true,
+    "modification": "RC3 documentation must NOT be merged into main until RC3-RC5 complete and Executive Board approval granted",
+    "instructions_received": [
+      "adopt runbook as operational recovery procedure",
+      "execute runbook through the Credential Verification Gate",
+      "dispatch a fresh Wave 1 certification agent",
+      "preserve all evidence in the release package"
+    ]
+  },
+  "target": {
+    "production_url": "https://vpsych.vercel.app",
+    "production_sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+    "production_deployment": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+    "supabase_project": "rrzudbkxigeavfdnidnm",
+    "migrations": 54
+  },
+  "execution_outcome": {
+    "runbook_adopted": true,
+    "board_modification_applied": true,
+    "evidence_preserved": true,
+    "gate_executed": false,
+    "gate_status": "FAILED — unexecuted, unchanged from RDL-008",
+    "wave1_agent_dispatched": false,
+    "production_modified": false
+  },
+  "blocking_capabilities": [
+    {
+      "capability": "network_egress_to_production",
+      "available": false,
+      "evidence": "CONNECT rejected by environment gateway policy",
+      "probes": [
+        { "host": "rrzudbkxigeavfdnidnm.supabase.co:443", "result": "HTTP 000 connect_rejected" },
+        { "host": "vpsych.vercel.app:443", "result": "HTTP 000 connect_rejected" },
+        { "host": "github.com:443", "result": "reachable — confirms host-scoped policy, not general network failure" }
+      ],
+      "blocks_runbook_phases": ["1", "3a", "3b", "3c", "3d"]
+    },
+    {
+      "capability": "vercel_environment_variable_write",
+      "available": false,
+      "evidence": "No environment-variable tool exists in this session. Available Vercel write operations are limited to deployment protection, purchases, and deploy.",
+      "blocks_runbook_phases": ["2"]
+    },
+    {
+      "capability": "audit_credential_values",
+      "available": false,
+      "evidence": "All four VPSYCH_AUDIT_* variables absent from audit environment; full environment enumeration performed. Not present in Supabase Vault (only report_write_key). Not referenced anywhere in repository source.",
+      "blocks_runbook_phases": ["0", "2", "3a", "3b", "3c", "3d"]
+    }
+  ],
+  "runbook_phase_status": {
+    "phase_0_readonly_diagnostic": "NOT RUN — no candidate passwords available to test",
+    "phase_1_password_reset": "NOT RUN — deliberately withheld; see withheld_action",
+    "phase_2_env_injection": "IMPOSSIBLE — no environment-variable write capability",
+    "phase_3a_primary_gate": "IMPOSSIBLE — no egress",
+    "phase_3b_canonical_matrix": "IMPOSSIBLE — no egress",
+    "phase_3c_role_separation": "IMPOSSIBLE — no egress",
+    "phase_3d_browser_login": "IMPOSSIBLE — no egress"
+  },
+  "withheld_action": {
+    "action": "direct SQL password reset against auth.users",
+    "technically_possible": true,
+    "executed": false,
+    "rationale": [
+      "Would not clear the gate: injected values cannot reach the Vercel environment and no verification could be performed, so the gate would remain FAILED with an unverified production credential mutation in place.",
+      "Would destroy evidence: audit.therapist@vpsych.dev has updated_at 13ms after its last successful sign-in (2026-08-03 04:40:24), meaning its stored hash still corresponds to a password that provably authenticated in production. Overwriting forecloses the lowest-cost recovery path identified by the audit.",
+      "Bypasses GoTrue: a raw UPDATE circumvents the Admin API that owns auth.users invariants. Runbook Phase 1 specifies the Admin API for this reason.",
+      "Irreversible: the prior bcrypt hash is not recoverable once overwritten."
+    ]
+  },
+  "wave1_dispatch": {
+    "dispatched": false,
+    "rationale": [
+      "Gate precondition not satisfied. Adopted runbook rule: 'Any unchecked box -> gate FAILS, Wave 1 stays closed.' Zero of six pass criteria are met.",
+      "A subagent dispatched from this session inherits the same environment, the same network policy, and the same absent credentials — it would encounter identical blockers and terminate with a fourth consecutive STOP report.",
+      "That outcome is the failure loop the audit documented as OPS-3: three agent cycles consumed by a condition detectable at injection time."
+    ],
+    "dispatch_precondition": "All six gate pass criteria in RC3_C2_CREDENTIAL_GATE_RUNBOOK.md satisfied, evidenced by a recorded 2x2 canonical matrix showing exactly two diagonal HTTP 200 results plus role-separation confirmation."
+  },
+  "rc3_c2_classification": {
+    "verdict": "OPERATIONAL PREREQUISITE",
+    "application_defect": false,
+    "unchanged_by_this_record": true
+  },
+  "package_artifacts": [
+    "docs/rc3/RC3_C2_INDEPENDENT_AUDIT.md",
+    "docs/rc3/RC3_C2_CREDENTIAL_GATE_RUNBOOK.md",
+    "docs/rc3/evidence/rc3_c2_gate_execution_status_2026-08-05.json"
+  ],
+  "merge_policy": {
+    "merge_to_main": "BLOCKED until RC3-RC5 complete and Executive Board approval granted",
+    "package_location": "branch-resident",
+    "compensating_control": "package must be complete and self-contained on branch; every artifact records the SHA it was produced against; no artifact depends on main to be interpreted"
+  }
+}
