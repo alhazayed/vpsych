@@ -9,6 +9,7 @@ import { ALE_VERSION } from "@/lib/ale/weights";
 import { RRS_VERSION } from "@/lib/rrs/weights";
 import { HCFI_VERSION } from "@/lib/hcfi/weights";
 import { PMFI_VERSION } from "@/lib/pmfi/weights";
+import { TRI_VERSION } from "@/lib/tre/types";
 import {
   LAS_VERSION,
   PAS_VERSION,
@@ -88,6 +89,15 @@ const REGISTRY: MetricDefinition[] = [
     description:
       "Whether patient psychology is owned by the Patient Mind Engine with consistent dynamics",
     version: PMFI_VERSION,
+    domain: "clinical",
+    enabled: true,
+  },
+  {
+    id: "TRI",
+    name: "Therapy Response Index",
+    description:
+      "Believable longitudinal therapeutic change across modalities (Excellence Program 1 — TRE)",
+    version: TRI_VERSION,
     domain: "clinical",
     enabled: true,
   },

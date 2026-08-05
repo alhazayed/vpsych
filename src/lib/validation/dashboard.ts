@@ -5,6 +5,14 @@
 import { listMetricDefinitions } from "@/lib/vqi/registry";
 import { buildHcfiDashboard, listHcfiHistory, buildHcfiOfflineCorpus } from "@/lib/hcfi";
 import { buildPmfiDashboard, listPmfiHistory } from "@/lib/pmfi";
+import {
+  buildTriDashboard,
+  computeTherapyResponseIndex,
+  listTriHistory,
+  recordTriHistory,
+  seedTriOfflineSample,
+  simulateTreatmentCourse,
+} from "@/lib/tre";
 import { assessBetaReadiness } from "@/lib/validation/beta-readiness";
 import { computePsychiatristAuthenticityScore } from "@/lib/validation/pas";
 import { computeLearnerAuthenticityScore } from "@/lib/validation/las";
@@ -25,6 +33,7 @@ export type ValidationDashboard = {
   indices: {
     HCFI: { mean: number | null; n: number };
     PMFI: { mean: number | null; n: number };
+    TRI: { mean: number | null; n: number };
     PAS: ReturnType<typeof computePsychiatristAuthenticityScore>;
     LAS: ReturnType<typeof computeLearnerAuthenticityScore>;
     PAB: ReturnType<typeof computePatientAuthenticityBenchmark>;
@@ -51,6 +60,17 @@ export function buildValidationDashboard(opts?: {
 
   const pmfiRecords = listPmfiHistory(500);
   const pmfiDash = buildPmfiDashboard(pmfiRecords);
+
+  let triRecords = listTriHistory(500);
+  if (!triRecords.length) {
+    seedTriOfflineSample(
+      simulateTreatmentCourse,
+      computeTherapyResponseIndex,
+      recordTriHistory,
+    );
+    triRecords = listTriHistory(500);
+  }
+  const triDash = buildTriDashboard(triRecords);
 
   // Structural PAB arms using offline PME trajectory vs legacy-empty
   let mind = createInitialMindState({
@@ -203,6 +223,7 @@ export function buildValidationDashboard(opts?: {
     indices: {
       HCFI: { mean: hcfiDash.mean_overall, n: hcfiDash.n },
       PMFI: { mean: pmfiDash.mean_overall, n: pmfiDash.n },
+      TRI: { mean: triDash.mean_overall, n: triDash.n },
       PAS: pas,
       LAS: las,
       PAB: pab,
@@ -222,6 +243,10 @@ export function buildValidationDashboard(opts?: {
           at: r.computed_at.slice(0, 10),
           value: r.overall,
         })),
+      },
+      {
+        metric: "TRI",
+        points: triDash.timeline.map((t) => ({ at: t.at, value: t.mean })),
       },
     ],
   };

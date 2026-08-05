@@ -3,7 +3,10 @@
  */
 
 /** Patient-avatar system prompt template version (see prompt-engine.ts header). */
-export const PROMPT_ENGINE_VERSION = "4.0.0";
+export const PROMPT_ENGINE_VERSION = "4.1.0";
+
+/** Therapy Response Engine scientific contract version (Excellence Program 1). */
+export const TRE_ENGINE_VERSION = "1.0.0";
 
 /** Examiner assessment structured output / scoring schema version. */
 export const ASSESSMENT_SCHEMA_VERSION = "1.1.0";
@@ -26,6 +29,7 @@ export type ScientificProvenance = {
   case_snapshot_version: number;
   ace_engine_version: string;
   cge_engine_version: string;
+  tre_engine_version?: string;
   rubric_schema_version: string;
   /** Set at assessment time */
   ai_source?: string;
@@ -48,6 +52,7 @@ export function buildGenerationScientificMeta(extra?: {
     case_snapshot_version: CASE_SNAPSHOT_VERSION,
     ace_engine_version: ACE_ENGINE_VERSION,
     cge_engine_version: CGE_ENGINE_VERSION,
+    tre_engine_version: TRE_ENGINE_VERSION,
     rubric_schema_version: RUBRIC_SCHEMA_VERSION,
     template_version: extra?.template_version ?? null,
     preset_version: extra?.preset_version ?? null,
@@ -67,6 +72,7 @@ export function buildAssessmentProvenance(input: {
     case_snapshot_version: CASE_SNAPSHOT_VERSION,
     ace_engine_version: ACE_ENGINE_VERSION,
     cge_engine_version: CGE_ENGINE_VERSION,
+    tre_engine_version: TRE_ENGINE_VERSION,
     rubric_schema_version: RUBRIC_SCHEMA_VERSION,
     ai_source: input.aiSource,
     ai_model: input.model ?? null,

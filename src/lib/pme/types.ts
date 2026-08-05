@@ -117,6 +117,7 @@ export type TurnTrace = {
 
 /**
  * Hidden evolving psychology. Expression engine receives a projection of this.
+ * Optional `treatment` is owned by the Therapy Response Engine (TRE).
  */
 export type PatientMindState = {
   pme_version: string;
@@ -147,6 +148,8 @@ export type PatientMindState = {
     preferred_topics: string[];
   };
   turn_traces: TurnTrace[];
+  /** Longitudinal treatment trajectory (TRE) — optional for backward compatibility. */
+  treatment?: import("@/lib/tre/types").TreatmentState;
   updated_at: string;
   created_at: string;
 };

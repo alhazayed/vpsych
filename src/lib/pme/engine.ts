@@ -24,6 +24,11 @@ import type {
   PatientMindState,
   TurnTrace,
 } from "@/lib/pme/types";
+import {
+  applyTherapyResponseToMind,
+  ensureTreatmentState,
+  formatTreExpressionBlock,
+} from "@/lib/tre/bridge";
 
 export type ProcessTherapistTurnResult = {
   mind: PatientMindState;
@@ -104,11 +109,21 @@ export function processTherapistTurn(
   const carried = markLifeEventCarried(next);
   next = carried.mind;
 
+  // Ensure TRE state exists; expression layer must honour trajectory.
+  next.treatment = ensureTreatmentState(next, next.treatment?.modality);
+
   const directive = buildExpressionDirective(next, carried.carryText);
+  let expressionBlock = formatExpressionBlock(directive);
+  expressionBlock +=
+    "\n" +
+    formatTreExpressionBlock(next.treatment, [
+      `Trajectory ${next.treatment.trajectory}; express gradual change only.`,
+    ]);
+
   return {
     mind: next,
     directive,
-    expressionBlock: formatExpressionBlock(directive),
+    expressionBlock,
     signals,
   };
 }
@@ -116,11 +131,27 @@ export function processTherapistTurn(
 /** Prepare mind for a returning patient (new session). */
 export function beginNextSession(
   mind: PatientMindState,
-  opts?: { seed?: string; priorAllianceMean?: number },
+  opts?: {
+    seed?: string;
+    priorAllianceMean?: number;
+    modality?: string | null;
+  },
 ): PatientMindState {
-  return applyLongitudinalUpdate(mind, {
+  // Life events + session bookkeeping; TRE owns therapeutic change.
+  const afterLife = applyLongitudinalUpdate(mind, {
     priorAllianceMean: opts?.priorAllianceMean ?? mind.relationship.alliance,
     generateEvent: true,
     seed: opts?.seed,
+    skipTherapyQualityDelta: true,
   });
+
+  const { mind: withTre } = applyTherapyResponseToMind(afterLife, {
+    modality: opts?.modality ?? afterLife.treatment?.modality ?? "supportive",
+  });
+
+  // Fresh turn traces for the new encounter (competence already scored).
+  withTre.turn_traces = [];
+  withTre.therapy.phase = "opening";
+  withTre.therapy.turns_in_phase = 0;
+  return withTre;
 }

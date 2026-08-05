@@ -153,6 +153,8 @@ describe("Beta readiness + dashboard", () => {
     expect(dash.indices.PAB.arms.length).toBeGreaterThanOrEqual(2);
     expect(dash.beta.verdict).toMatch(/GO|NO_GO|CONDITIONAL/);
     expect(dash.metrics_registry.some((m) => m.id === "PMFI")).toBe(true);
+    expect(dash.metrics_registry.some((m) => m.id === "TRI")).toBe(true);
     expect(dash.metrics_registry.some((m) => m.id === "PAS")).toBe(true);
+    expect(dash.indices.TRI.n).toBeGreaterThan(0);
   });
 });

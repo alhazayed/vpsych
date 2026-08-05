@@ -79,6 +79,11 @@ export function applyLongitudinalUpdate(
     priorAllianceMean: number;
     generateEvent?: boolean;
     seed?: string;
+    /**
+     * When true, skip coarse alliance→symptom deltas.
+     * Prefer Therapy Response Engine (`applyTherapyResponseToMind`) instead.
+     */
+    skipTherapyQualityDelta?: boolean;
   },
 ): PatientMindState {
   const next: PatientMindState = structuredClone(mind);
@@ -87,29 +92,30 @@ export function applyLongitudinalUpdate(
   next.therapy.turns_in_phase = 0;
   next.relationship.sessions_together += 1;
 
-  // Symptom trajectory from therapy quality
-  const quality = opts.priorAllianceMean;
-  let symptomDelta = 0;
-  if (quality >= 70) symptomDelta = -6;
-  else if (quality >= 55) symptomDelta = -2;
-  else if (quality < 40) symptomDelta = 5;
-  else symptomDelta = 1;
+  // Coarse trajectory only when TRE is not handling treatment response
+  if (!opts.skipTherapyQualityDelta) {
+    const quality = opts.priorAllianceMean;
+    let symptomDelta = 0;
+    if (quality >= 70) symptomDelta = -6;
+    else if (quality >= 55) symptomDelta = -2;
+    else if (quality < 40) symptomDelta = 5;
+    else symptomDelta = 1;
 
-  // Disorder-specific recovery tempo
-  const slug = next.diagnosis.slug;
-  if (/mdd|depress/i.test(slug)) symptomDelta *= 0.7; // slow recovery
-  if (/mania|bipolar/i.test(slug)) symptomDelta *= 1.1;
-  if (/bpd|borderline/i.test(slug)) symptomDelta *= 0.9;
+    const slug = next.diagnosis.slug;
+    if (/mdd|depress/i.test(slug)) symptomDelta *= 0.7;
+    if (/mania|bipolar/i.test(slug)) symptomDelta *= 1.1;
+    if (/bpd|borderline/i.test(slug)) symptomDelta *= 0.9;
 
-  next.therapy.symptom_burden = clamp01to100(
-    next.therapy.symptom_burden + symptomDelta,
-  );
-  next.therapy.motivation = clamp01to100(
-    next.therapy.motivation + (quality >= 60 ? 4 : -2),
-  );
-  next.therapy.insight = clamp01to100(
-    next.therapy.insight + (quality >= 65 ? 3 : 0),
-  );
+    next.therapy.symptom_burden = clamp01to100(
+      next.therapy.symptom_burden + symptomDelta,
+    );
+    next.therapy.motivation = clamp01to100(
+      next.therapy.motivation + (quality >= 60 ? 4 : -2),
+    );
+    next.therapy.insight = clamp01to100(
+      next.therapy.insight + (quality >= 65 ? 3 : 0),
+    );
+  }
 
   if (opts.generateEvent !== false) {
     const event = generateInterSessionLifeEvent(

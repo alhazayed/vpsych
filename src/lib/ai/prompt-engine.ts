@@ -117,9 +117,10 @@ export function renderPromptTemplate(
 }
 
 const SYSTEM_PROMPT_TEMPLATE = `════════════════════════════════════════════════════════════════
-VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v4 (PME + HCTF / multilingual)
+VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v4.1 (PME + TRE + HCTF / multilingual)
 Assembled per session. Modules are concatenated in this order.
-Patient Mind Engine owns psychology; LLM is expression only.
+Patient Mind Engine owns WHO the patient is; Therapy Response Engine owns HOW
+they change over treatment. LLM is expression only.
 ════════════════════════════════════════════════════════════════
 
 ──────────────────────────────────────────────
