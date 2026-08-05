@@ -260,6 +260,110 @@ export const BUILTIN_PRESETS: InstructorPreset[] = [
     enabled: true,
     version: 1,
   },
+  {
+    id: "f1000000-0000-4000-8000-000000000007",
+    slug: "complex-formulation-consultant-en",
+    name: "Complex Formulation — Consultant Psychiatrist",
+    description:
+      "Fellowship-level formulation and differential for complex mood/psychosis presentations.",
+    specialty: "general_adult_psychiatry",
+    target_learner: "consultant_psychiatrist",
+    learning_level: "fellowship",
+    clinical_rotation: "consultation_liaison",
+    assessment_type: "initial_assessment",
+    primary_objective: "differential_diagnosis",
+    secondary_objectives: [
+      "treatment_planning",
+      "diagnostic_interview",
+      "risk_assessment",
+    ],
+    difficulty: "expert",
+    time_limit_minutes: 45,
+    language: "en-US",
+    culture: "north_american_urban",
+    therapy_modality: "psychodynamic",
+    randomization_level: "high",
+    grading_mode: "supervisor_review",
+    feedback_mode: "supervisor_only",
+    voice_enabled: true,
+    assessment_enabled: true,
+    record_session: false,
+    allow_hints: false,
+    allow_pause: true,
+    allow_restart: false,
+    advanced_mode: true,
+    scenario_template_id: "e1000000-0000-4000-8000-000000000001",
+    preferred_template_slugs: [
+      "adult-mdd-initial-en",
+      "ptsd-risk-assessment-en",
+    ],
+    clinical_constraints: [],
+    required_competencies: [
+      {
+        competency_id: "differential_diagnosis",
+        label: "Differential diagnosis",
+        required: true,
+        weight: 2,
+        max_score: 5,
+      },
+      {
+        competency_id: "case_formulation",
+        label: "Case formulation",
+        required: true,
+        weight: 1.8,
+        max_score: 5,
+      },
+      {
+        competency_id: "therapeutic_alliance",
+        label: "Therapeutic alliance",
+        required: true,
+        weight: 1.2,
+        max_score: 5,
+      },
+    ],
+    optional_competencies: [
+      {
+        competency_id: "dsm5_reasoning",
+        label: "DSM-5 diagnostic reasoning",
+        required: false,
+        weight: 1,
+        max_score: 5,
+      },
+    ],
+    grading: {
+      pass_threshold: 80,
+      outstanding_threshold: 95,
+      critical_mistakes: [
+        "missed_si",
+        "unsafe_medication_combination",
+        "premature_closure",
+      ],
+      automatic_deductions: {},
+      dimensions: [
+        "diagnostic_accuracy",
+        "dsm_reasoning",
+        "differential",
+        "formulation",
+        "communication",
+        "empathy",
+        "therapeutic_alliance",
+        "risk_assessment",
+        "treatment_planning",
+        "documentation",
+        "professionalism",
+        "time_management",
+      ],
+      report_sections: [
+        "score",
+        "strengths",
+        "weaknesses",
+        "missed_opportunities",
+        "recommendations",
+      ],
+    },
+    enabled: true,
+    version: 1,
+  },
 ];
 
 export function findPresetBySlug(slug: string): InstructorPreset | undefined {
@@ -272,4 +376,72 @@ export function findPresetById(id: string): InstructorPreset | undefined {
 
 export function listBuiltinPresets(): InstructorPreset[] {
   return BUILTIN_PRESETS.filter((p) => p.enabled);
+}
+
+/**
+ * Map a DB instructor_presets row into a valid InstructorPreset.
+ * Used when a seeded preset exists in Postgres but is missing from builtins
+ * (or builtins are stale). Never leave target_learner / assessment_type undefined.
+ */
+export function mapDbRowToPreset(row: Record<string, unknown>): InstructorPreset {
+  const secondary = Array.isArray(row.secondary_objectives)
+    ? (row.secondary_objectives as InstructorPreset["secondary_objectives"])
+    : [];
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    name: String(row.name),
+    description: (row.description as string) ?? null,
+    specialty: (row.specialty as InstructorPreset["specialty"]) ?? "general_adult_psychiatry",
+    target_learner:
+      (row.target_learner as InstructorPreset["target_learner"]) ??
+      "psychiatry_resident",
+    learning_level:
+      (row.learning_level as InstructorPreset["learning_level"]) ?? "residency",
+    clinical_rotation: (row.clinical_rotation as string) ?? null,
+    assessment_type:
+      (row.assessment_type as InstructorPreset["assessment_type"]) ??
+      "initial_assessment",
+    primary_objective:
+      (row.primary_objective as InstructorPreset["primary_objective"]) ??
+      "diagnostic_interview",
+    secondary_objectives: secondary,
+    difficulty: (row.difficulty as InstructorPreset["difficulty"]) ?? "intermediate",
+    time_limit_minutes:
+      (row.time_limit_minutes as InstructorPreset["time_limit_minutes"]) ?? 30,
+    language: String(row.language ?? "en-US"),
+    culture: (row.culture as string) ?? null,
+    therapy_modality:
+      (row.therapy_modality as InstructorPreset["therapy_modality"]) ?? "supportive",
+    randomization_level:
+      (row.randomization_level as InstructorPreset["randomization_level"]) ??
+      "moderate",
+    grading_mode: (row.grading_mode as InstructorPreset["grading_mode"]) ?? "practice",
+    feedback_mode:
+      (row.feedback_mode as InstructorPreset["feedback_mode"]) ?? "end_of_session",
+    voice_enabled: Boolean(row.voice_enabled ?? true),
+    assessment_enabled: Boolean(row.assessment_enabled ?? true),
+    record_session: Boolean(row.record_session ?? true),
+    allow_hints: Boolean(row.allow_hints ?? false),
+    allow_pause: Boolean(row.allow_pause ?? true),
+    allow_restart: Boolean(row.allow_restart ?? false),
+    advanced_mode: Boolean(row.advanced_mode ?? false),
+    scenario_template_id: (row.scenario_template_id as string) ?? null,
+    preferred_template_slugs: Array.isArray(row.preferred_template_slugs)
+      ? (row.preferred_template_slugs as string[])
+      : [],
+    clinical_constraints: [],
+    required_competencies: [],
+    optional_competencies: [],
+    grading: {
+      pass_threshold: 70,
+      outstanding_threshold: 90,
+      critical_mistakes: [],
+      automatic_deductions: {},
+      dimensions: ["alliance", "assessment"],
+      report_sections: ["narrative", "scores"],
+    },
+    enabled: Boolean(row.enabled ?? true),
+    version: Number(row.version ?? 1),
+  };
 }

@@ -20,6 +20,114 @@ export type ResolveAvatarOptions = {
   caseSnapshot?: CaseInstanceSnapshot | null;
 };
 
+/** Avatar slug → default disorder slug when no case override is applied. */
+const AVATAR_DEFAULT_DISORDER_SLUG: Record<string, string> = {
+  "maya-chen": "mdd-recurrent-moderate",
+  "jordan-hale": "gad-with-panic",
+};
+
+/**
+ * True when the session case diagnosis differs from the avatar's authored
+ * default syndrome (Case Engine invariant: persona ≠ permanent diagnosis).
+ */
+export function isCaseDiagnosisOverride(
+  avatar: Avatar,
+  snapshot: CaseInstanceSnapshot,
+): boolean {
+  const caseSlug = snapshot.primary_diagnosis?.slug;
+  if (!caseSlug) return false;
+  if (avatar.slug && AVATAR_DEFAULT_DISORDER_SLUG[avatar.slug]) {
+    return AVATAR_DEFAULT_DISORDER_SLUG[avatar.slug] !== caseSlug;
+  }
+  const caseName = (snapshot.clinical_core?.disorder || "").toLowerCase();
+  const avatarDis = (avatar.disorder || "").toLowerCase();
+  if (!caseName || !avatarDis) return Boolean(caseSlug);
+  const avatarKey = avatarDis.split(",")[0]?.trim() ?? avatarDis;
+  return !caseName.includes(avatarKey.slice(0, 18)) && !avatarKey.includes(caseName.slice(0, 18));
+}
+
+/**
+ * Remove authored "how you are right now" blocks that lock the persona to its
+ * default syndrome (e.g. Maya MDD hypersomnia). Identity / talk / response
+ * sections stay. EN + AR section headers from natively authored personas.
+ */
+export function stripPersonaCurrentStateBlock(prompt: string): string {
+  let out = prompt;
+  out = out.replace(
+    /\nHOW YOU ARE RIGHT NOW\n[\s\S]*?(?=\n(?:HOW YOU TALK|WHAT YOU DO AND DO NOT SAY|HOW YOU RESPOND TO THE THERAPIST)\n)/,
+    "\n",
+  );
+  out = out.replace(
+    /\nكيف حالك هلأ\n[\s\S]*?(?=\n(?:كيف بتحكي|شو بتحكي وشو ما بتحكي|كيف بتردّي على المعالج)\n)/,
+    "\n",
+  );
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+const MANIA_OR_PSYCHOSIS = new Set([
+  "bipolar-mania",
+  "schizophrenia",
+  "schizoaffective",
+]);
+
+/**
+ * On diagnosis override, strip syndrome-bound personality overlays that fight
+ * Module 1 (MDD idioms during mania/psychosis) and append a current-state
+ * override block. Identity / culture / dialect are preserved.
+ */
+export function adaptPersonalityForCaseSnapshot(
+  personality: AvatarPersonality,
+  snapshot: CaseInstanceSnapshot,
+  avatar: Avatar,
+): AvatarPersonality {
+  if (!isCaseDiagnosisOverride(avatar, snapshot)) return personality;
+
+  const symptomIds = new Set(
+    (snapshot.clinical_core?.symptom_profile ?? []).map((s) => s.id),
+  );
+  const presenting = (snapshot.clinical_core?.symptom_profile ?? [])
+    .filter((s) => s.salience === "presenting")
+    .map((s) => s.description);
+  const slug = snapshot.primary_diagnosis?.slug ?? "";
+  const pace =
+    slug === "bipolar-mania"
+      ? "fast"
+      : slug === "schizophrenia" || slug === "schizoaffective"
+        ? "variable"
+        : personality.speech?.pace;
+
+  const strippedPrompt = stripPersonaCurrentStateBlock(personality.persona_prompt);
+  const overrideBlock = [
+    "",
+    "CURRENT STATE FOR THIS SESSION (sole authority for mood, sleep, energy, psychosis):",
+    ...presenting.map((d) => `- ${d}`),
+    "Keep your identity, biography, culture, and dialect.",
+    MANIA_OR_PSYCHOSIS.has(slug)
+      ? "Do NOT lead with depressive hypersomnia, grey flat anhedonia, MDD fogginess, or 'haven't painted since April' — those are not this session's syndrome unless Module 1 lists them."
+      : "If Module 2 current-state conflicted with Module 1, follow Module 1.",
+    "Your CURRENT SYNDROME is Module 1 only.",
+  ].join("\n");
+
+  return {
+    ...personality,
+    persona_prompt: `${strippedPrompt}\n${overrideBlock}`,
+    clinical_localization: (personality.clinical_localization ?? []).filter(
+      (row) => symptomIds.has(row.symptom_id),
+    ),
+    // Clear authored base-syndrome idioms; Module 1 carries phenotype language.
+    idioms_of_distress: [],
+    speech: {
+      ...personality.speech,
+      pace: pace ?? personality.speech?.pace,
+      // Authored sample lines are default-syndrome (often MDD); clear on override
+      // so Module 1 presentation is not primed by depressive utterances.
+      sample_utterances: MANIA_OR_PSYCHOSIS.has(slug)
+        ? []
+        : personality.speech?.sample_utterances,
+    },
+  };
+}
+
 const LOCALE_ALIASES: Record<string, string> = {
   en: "en-US",
   "en-us": "en-US",
@@ -155,7 +263,10 @@ export function resolveAvatar(
       : null;
 
   if (picked) {
-    const { locale, personality } = picked;
+    const { locale, personality: basePersonality } = picked;
+    const personality = snapshot
+      ? adaptPersonalityForCaseSnapshot(basePersonality, snapshot, avatar)
+      : basePersonality;
     const core: ClinicalCore =
       snapshot?.clinical_core ??
       avatar.clinical_core ??

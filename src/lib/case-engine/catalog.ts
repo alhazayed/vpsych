@@ -376,6 +376,76 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     },
   },
   {
+    id: DISORDER_IDS.complexPtsd,
+    slug: "complex-ptsd",
+    name: "Complex PTSD",
+    // ICD-11-only construct (6B41); no DSM-5 equivalent code.
+    dsm5_code: null,
+    icd10_code: null,
+    icd11_code: "6B41",
+    category: "trauma",
+    min_age: 16,
+    max_age: 90,
+    allowed_genders: ALL_GENDERS,
+    is_active: true,
+    package: {
+      severity_default: "moderate",
+      risk_defaults: { suicidal_ideation: "passive", self_harm: true },
+      differentials: ["PTSD", "BPD", "MDD"],
+      session_goals: [
+        "Map prolonged trauma impact",
+        "Affect regulation",
+        "Assess SI/self-harm",
+      ],
+      ideal_approach:
+        "Trauma-informed; titrate; validate chronic interpersonal threat without flooding.",
+      symptom_profile: [
+        {
+          id: "reexperiencing",
+          description:
+            "Intrusive memories or nightmares tied to prolonged trauma — not ordinary worry",
+          domain: "trauma",
+          salience: "elicited",
+        },
+        {
+          id: "avoidance",
+          description: "Avoids people/places that feel like the old danger",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "sense_of_threat",
+          description: "Persistent sense of being unsafe or on guard with others",
+          domain: "anxiety",
+          salience: "presenting",
+        },
+        {
+          id: "affect_dysregulation",
+          description: "Emotions swing hard or go numb when reminded of the past",
+          domain: "mood",
+          salience: "presenting",
+        },
+        {
+          id: "negative_self",
+          description: "Deep belief of being damaged, worthless, or permanently different",
+          domain: "cognition",
+          salience: "elicited",
+        },
+      ],
+      disclosure_rules: [
+        {
+          topic: "trauma narrative details",
+          condition: "on_empathic_rapport",
+          notes: "Never flood; titrate. CPTSD is prolonged/repeated trauma.",
+        },
+        {
+          topic: "self-harm",
+          condition: "on_safety_assessment",
+        },
+      ],
+    },
+  },
+  {
     id: DISORDER_IDS.schizophrenia,
     slug: "schizophrenia",
     name: "Schizophrenia",
@@ -389,19 +459,72 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "moderate",
-      risk_defaults: { suicidal_ideation: "passive" },
-      session_goals: ["Assess psychosis", "Risk", "Function"],
-      ideal_approach: "Supportive; reality-testing without confrontation.",
+      risk_defaults: {
+        suicidal_ideation: "passive",
+        harm_to_others: false,
+      },
+      differentials: ["Schizoaffective", "Bipolar with psychosis", "Substance-induced psychosis"],
+      session_goals: [
+        "Assess positive symptoms without confrontation",
+        "Map negative symptoms and function",
+        "Safety / insight",
+      ],
+      ideal_approach:
+        "Supportive; curious reality-testing without arguing delusions; short clear questions.",
+      // Patient-language Module 1 content (DSM-5 Criterion A domains). Variability
+      // across sessions comes from salience + disclosure — not identical scripts.
       symptom_profile: [
         {
           id: "delusions",
-          description: "Delusional beliefs",
+          description:
+            "Fixed unusual beliefs (e.g. being watched, messages meant for them) that feel real and hard to shake — not ordinary sadness or low mood",
           domain: "psychotic",
+          salience: "presenting",
+        },
+        {
+          id: "hallucinations",
+          description:
+            "Hearing voices or noises others do not hear; may deny or minimize until asked carefully",
+          domain: "psychotic",
+          salience: "elicited",
+        },
+        {
+          id: "disorganization",
+          description:
+            "Speech can drift, answers go sideways, or thoughts feel jumbled mid-sentence",
+          domain: "cognition",
+          salience: "presenting",
+        },
+        {
+          id: "negative_symptoms",
+          description:
+            "Flat or restricted affect, reduced drive, social withdrawal — negative symptoms of psychosis (not a classic depressive episode narrative)",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "functional_decline",
+          description:
+            "Work/school/self-care slipped because concentration and reality feel unreliable",
+          domain: "behavioral",
           salience: "elicited",
         },
       ],
       disclosure_rules: [
-        { topic: "voices/content", condition: "on_direct_question" },
+        {
+          topic: "voices/content",
+          condition: "on_direct_question",
+          notes: "Progressive disclosure; do not dump textbook command hallucinations unprompted.",
+        },
+        {
+          topic: "delusional conviction",
+          condition: "on_empathic_rapport",
+          notes: "Defend belief if challenged; do not suddenly accept therapist's reality-testing.",
+        },
+        {
+          topic: "passive SI",
+          condition: "on_safety_assessment",
+        },
       ],
     },
   },
@@ -411,7 +534,7 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Bipolar I Disorder, current manic episode",
     dsm5_code: "296.44",
     icd10_code: "F31.2",
-    icd11_code: "6A60.1",
+    icd11_code: "6A60.2",
     category: "mood",
     min_age: 16,
     max_age: 70,
@@ -419,19 +542,86 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     is_active: true,
     package: {
       severity_default: "severe",
-      risk_defaults: { suicidal_ideation: "none" },
-      session_goals: ["Assess mania", "Risk", "Sleep"],
-      ideal_approach: "Containment; brief questions; safety first.",
+      risk_defaults: {
+        suicidal_ideation: "none",
+        harm_to_others: false,
+        substance_use: true,
+      },
+      differentials: ["Hypomania", "ADHD", "Substance intoxication", "Schizophrenia"],
+      session_goals: [
+        "Assess manic episode criteria",
+        "Sleep need and energy",
+        "Impulsivity / judgement / safety",
+      ],
+      ideal_approach:
+        "Containment; brief questions; do not mirror pressured pace; safety and sleep first.",
+      // DSM-5 manic episode Criterion A/B — patient language for Module 1.
       symptom_profile: [
         {
           id: "elevated_mood",
-          description: "Elevated/irritable mood with increased energy",
+          description:
+            "Mood is elevated, expansive, OR sharply irritable — feels wired/on fire, NOT grey, foggy, or heavy-depressed",
           domain: "mood",
           salience: "presenting",
         },
+        {
+          id: "increased_energy",
+          description:
+            "Markedly increased energy and goal-directed activity despite little sleep",
+          domain: "behavioral",
+          salience: "presenting",
+        },
+        {
+          id: "decreased_sleep_need",
+          description:
+            "Sleeping only a few hours and waking energized — decreased need for sleep, not sleeping more",
+          domain: "somatic",
+          salience: "presenting",
+        },
+        {
+          id: "pressured_speech",
+          description:
+            "Talks fast, hard to interrupt, jumps topics; speech feels pushed out",
+          domain: "behavioral",
+          salience: "presenting",
+        },
+        {
+          id: "flight_of_ideas",
+          description:
+            "Thoughts race; ideas feel brilliant and urgent; distractible mid-sentence",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "grandiosity",
+          description:
+            "Inflated confidence or special plans that feel obvious — may resist challenge",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "impulsivity",
+          description:
+            "Risky spending, sudden trips, or impulsive decisions — judgement impaired",
+          domain: "behavioral",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
-        { topic: "spending/impulsivity", condition: "on_direct_question" },
+        {
+          topic: "spending/impulsivity",
+          condition: "on_direct_question",
+          notes: "May minimize consequences or justify as 'finally living'.",
+        },
+        {
+          topic: "decreased sleep need",
+          condition: "volunteered",
+          notes: "Should endorse reduced sleep need when asked; never claim depressive hypersomnia.",
+        },
+        {
+          topic: "substance use in episode",
+          condition: "on_direct_question",
+        },
       ],
     },
   },

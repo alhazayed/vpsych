@@ -161,8 +161,11 @@ describe("Dynamic Clinical Case Engine", () => {
       expect(assessmentIds.has(snap.assessment_id)).toBe(false);
       assessmentIds.add(snap.assessment_id);
 
-      expect(snap.primary_diagnosis.dsm5_code).toBeTruthy();
+      // ICD-11 required; DSM-5 optional for ICD-11-only constructs (e.g. CPTSD)
       expect(snap.primary_diagnosis.icd11_code).toBeTruthy();
+      expect(Boolean(snap.primary_diagnosis.dsm5_code || snap.primary_diagnosis.icd11_code)).toBe(
+        true,
+      );
       expect(snap.clinical_core.disorder).toBe(primary.name);
       expect(snap.locale).toBe(locale);
       expect(snap.difficulty).toBe(difficulty);
