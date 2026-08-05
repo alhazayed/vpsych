@@ -15,7 +15,8 @@
 | `/opt/cursor/artifacts/rc3/wave2-recert/wave2_recert_harness.py` | Independent production harness |
 | `/opt/cursor/artifacts/rc3/wave2-recert/tts_en_US.bin` | TTS EN regression artifact |
 | `/opt/cursor/artifacts/rc3/wave2-recert/tts_ar_JO.bin` | TTS AR regression artifact |
-| `/opt/cursor/artifacts/rc3/wave2-recert/login-blocked-user-banned.webp` | Browser attempt with **banned demo** emails (invalid for gate; audit accounts used via API) |
+| `docs/rc3/evidence/w2r-therapist-login.png` | Browser therapist login (audit.therapist@) — PASS |
+| `docs/rc3/evidence/w2r-admin-login.png` | Browser admin login (audit.admin@) — PASS |
 
 ## Key raw results (excerpt)
 

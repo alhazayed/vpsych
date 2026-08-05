@@ -11,14 +11,15 @@
 | W2-H4 | High | Certain on SZ sessions | False schizophrenia teaching | **Open** | Depression-dominant; psychosis denied |
 | Deploy lag | High (process) | Certain until merge | Remediations invisible to prod cert | **Open** | PR #112 not on `main`/production |
 | Start rate-limit | Low/Medium | During heavy cert | Incomplete scripted assessment pair | Residual | TTS + report generation still observed |
-| Demo account ban | Low (ops) | If wrong emails used | Browser login confusion | Controlled | `*.vpsych.test` correctly banned |
 
 ## Risk to Wave 3
 
-**Unacceptable.** Wave 3 must not start while W2-H1–H4 remain open on production.
+**Unacceptable.** Wave 3 must not start while W2-H1–H4 remain open on production (`unlock_wave_3: false`).
 
-## Residual accepted from Wave 1 (unchanged)
+## Closed gates (do not reopen)
 
-| ID | Notes |
+| Gate | Status |
 |---|---|
-| RC3-H1 | Auth leaked-password protection off (ops) — not re-litigated here |
+| RC3-C2 credential gate | **CLOSED** |
+| Wave 1 | Closed — do not revisit |
+| Authentication / browser login | **PASS** — not a Wave 2 blocker |
