@@ -2,9 +2,16 @@ import {
   assemblePerTurnReinforcement,
   assembleSystemPrompt,
   synthesizePromptInputFromFlat,
+  type PromptFidelityContext,
 } from "@/lib/ai/prompt-engine";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { isCaseSnapshot } from "@/lib/case-engine/persist";
+import {
+  formatAllianceForPrompt,
+  formatSpeechProfileForPrompt,
+  speechProfileForDisorder,
+  type AllianceEstimate,
+} from "@/lib/conversation-fidelity";
 import type {
   Avatar,
   AvatarPersonality,
@@ -18,6 +25,10 @@ import { projectAvatarVoiceFields } from "@/lib/voice/registry";
 export type ResolveAvatarOptions = {
   /** Immutable CaseInstance snapshot — diagnosis comes from here, not the avatar. */
   caseSnapshot?: CaseInstanceSnapshot | null;
+  /** Live alliance estimate for therapeutic reactivity (Mission 20). */
+  alliance?: AllianceEstimate | null;
+  /** Mission 21 — PME expression block (psychology owned outside the LLM). */
+  pmeExpressionBlock?: string | null;
 };
 
 /** Avatar slug → default disorder slug when no case override is applied. */
@@ -293,10 +304,38 @@ export function resolveAvatar(
         }
       : core;
 
+    const slug = snapshot?.primary_diagnosis?.slug ?? null;
+    const category = snapshot?.primary_diagnosis?.category ?? null;
+    const speechProfile = speechProfileForDisorder(slug, category);
+    const fidelity: PromptFidelityContext = {
+      speech_profile_block: formatSpeechProfileForPrompt(speechProfile),
+      speech_behavior_cue:
+        snapshot?.clinical_teaching?.speech_behavior_cue ??
+        speechProfile.behaviour_lines[0],
+      alliance_block: options?.alliance
+        ? formatAllianceForPrompt(options.alliance)
+        : undefined,
+      educational_openings: snapshot?.clinical_teaching
+        ? `Session goals to leave room for (do not teach): ${(snapshot.clinical_core?.session_goals ?? []).slice(0, 4).join("; ")}`
+        : undefined,
+      pme_expression_block: options?.pmeExpressionBlock?.trim() || undefined,
+    };
+
     const assembly = {
       clinical_core: mergedCore,
-      personality,
+      personality: {
+        ...personality,
+        speech: {
+          ...personality.speech,
+          pace: speechProfile.pace === "pressured"
+            ? "fast"
+            : speechProfile.pace === "variable"
+              ? personality.speech.pace
+              : speechProfile.pace,
+        },
+      },
       session: { locale },
+      fidelity,
     };
 
     // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.

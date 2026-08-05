@@ -8,6 +8,13 @@ import {
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
 
+export type ElevenLabsVoiceSettings = {
+  stability: number;
+  similarity_boost: number;
+  style?: number;
+  use_speaker_boost?: boolean;
+};
+
 export type ElevenLabsSynthesizeParams = {
   text: string;
   locale: SessionSpeechLocale;
@@ -15,6 +22,8 @@ export type ElevenLabsSynthesizeParams = {
   voiceIdAr?: string | null;
   /** Prefer streaming endpoint (default true). */
   stream?: boolean;
+  /** Clinical voice settings (Mission 20) — defaults preserve prior behaviour. */
+  voiceSettings?: ElevenLabsVoiceSettings | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -90,7 +99,11 @@ function cacheKey(params: {
   voiceId: string;
   modelId: string;
   locale: SessionSpeechLocale;
+  voiceSettings?: ElevenLabsVoiceSettings | null;
 }) {
+  const settingsKey = params.voiceSettings
+    ? JSON.stringify(params.voiceSettings)
+    : "default";
   return createHash("sha256")
     .update(params.text)
     .update("\0")
@@ -99,7 +112,20 @@ function cacheKey(params: {
     .update(params.modelId)
     .update("\0")
     .update(params.locale)
+    .update("\0")
+    .update(settingsKey)
     .digest("hex");
+}
+
+function resolveVoiceSettings(
+  settings?: ElevenLabsVoiceSettings | null,
+): Required<ElevenLabsVoiceSettings> {
+  return {
+    stability: settings?.stability ?? 0.4,
+    similarity_boost: settings?.similarity_boost ?? 0.75,
+    style: settings?.style ?? 0.35,
+    use_speaker_boost: settings?.use_speaker_boost ?? true,
+  };
 }
 
 function readCache(key: string): CacheEntry | null {
@@ -231,11 +257,13 @@ export const elevenLabsService = {
         continue;
       }
 
+      const voiceSettings = resolveVoiceSettings(params.voiceSettings);
       const key = cacheKey({
         text,
         voiceId,
         modelId: model,
         locale: params.locale,
+        voiceSettings,
       });
 
       const cached = readCache(key);
@@ -267,8 +295,10 @@ export const elevenLabsService = {
           text,
           model_id: model,
           voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
+            stability: voiceSettings.stability,
+            similarity_boost: voiceSettings.similarity_boost,
+            style: voiceSettings.style,
+            use_speaker_boost: voiceSettings.use_speaker_boost,
           },
         }),
       });

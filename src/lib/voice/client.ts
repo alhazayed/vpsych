@@ -15,6 +15,11 @@ export async function synthesizeSpeech(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  /** Mission 20 clinical voice fidelity */
+  disorderSlug?: string | null;
+  disorderCategory?: string | null;
+  speechPace?: string | null;
+  allianceBand?: "low" | "moderate" | "high" | null;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -27,6 +32,10 @@ export async function synthesizeSpeech(params: {
         voiceIdAr: params.voiceIdAr ?? undefined,
         voiceProfileId: params.voiceProfileId ?? undefined,
         avatarId: params.avatarId ?? undefined,
+        disorderSlug: params.disorderSlug ?? undefined,
+        disorderCategory: params.disorderCategory ?? undefined,
+        speechPace: params.speechPace ?? undefined,
+        allianceBand: params.allianceBand ?? undefined,
         stream: true,
       }),
     });

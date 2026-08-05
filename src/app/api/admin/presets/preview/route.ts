@@ -36,6 +36,17 @@ export async function POST(request: Request) {
     (body.presetId ? findPresetById(body.presetId) : undefined) ??
     (body.presetSlug ? findPresetBySlug(body.presetSlug) : undefined);
 
+  async function resolveFromDbRow(data: Record<string, unknown>) {
+    // Prefer full builtin (includes competencies/grading). Fall back to DB
+    // row mapped with required fields — never spread an undefined builtin.
+    const slug = String(data.slug ?? "");
+    return (
+      listBuiltinPresets().find((p) => p.slug === slug) ??
+      findPresetBySlug(slug) ??
+      mapDbRowToPreset(data)
+    );
+  }
+
   if (!preset && body.presetId) {
     const { data } = await supabase
       .from("instructor_presets")
@@ -43,21 +54,36 @@ export async function POST(request: Request) {
       .eq("id", body.presetId)
       .maybeSingle();
     if (data) {
-      // Prefer full builtin (includes competencies/grading). Fall back to DB
-      // row mapped with required fields — never spread an undefined builtin.
-      preset =
-        listBuiltinPresets().find((p) => p.slug === data.slug) ??
-        findPresetBySlug(data.slug) ??
-        mapDbRowToPreset(data);
+      preset = await resolveFromDbRow(data as Record<string, unknown>);
     }
   }
 
+  // W3-H1: slug must resolve DB-seeded presets the same way as presetId.
   if (!preset && body.presetSlug) {
     preset = findPresetBySlug(body.presetSlug);
+    if (!preset) {
+      const { data } = await supabase
+        .from("instructor_presets")
+        .select("*")
+        .eq("slug", body.presetSlug)
+        .maybeSingle();
+      if (data) {
+        preset = await resolveFromDbRow(data as Record<string, unknown>);
+      }
+    }
   }
 
   if (!preset) {
     return NextResponse.json({ error: "Preset not found" }, { status: 404 });
+  }
+  if (!preset.target_learner || !preset.assessment_type) {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid instructor preset: target_learner and assessment_type are required",
+      },
+      { status: 400 },
+    );
   }
 
   const { data: avatar } = body.avatarId

@@ -141,6 +141,10 @@ export async function playPatientSpeech(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  disorderSlug?: string | null;
+  disorderCategory?: string | null;
+  speechPace?: string | null;
+  allianceBand?: "low" | "moderate" | "high" | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
 }): Promise<"elevenlabs" | "browser"> {
@@ -154,6 +158,10 @@ export async function playPatientSpeech(params: {
     voiceIdAr: params.voiceIdAr,
     voiceProfileId: params.voiceProfileId,
     avatarId: params.avatarId,
+    disorderSlug: params.disorderSlug,
+    disorderCategory: params.disorderCategory,
+    speechPace: params.speechPace,
+    allianceBand: params.allianceBand,
   });
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
@@ -224,6 +232,9 @@ export async function runVoiceConversationTurn(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  disorderSlug?: string | null;
+  disorderCategory?: string | null;
+  speechPace?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
@@ -287,6 +298,9 @@ export async function runVoiceConversationTurn(params: {
       voiceIdAr: params.voiceIdAr,
       voiceProfileId: params.voiceProfileId,
       avatarId: params.avatarId,
+      disorderSlug: params.disorderSlug,
+      disorderCategory: params.disorderCategory,
+      speechPace: params.speechPace,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
     });
