@@ -1,0 +1,2341 @@
+{
+  "preset_rows": [
+    {
+      "id": "f1000000-0000-4000-8000-000000000002",
+      "slug": "osce-diagnostic-interview-ar",
+      "target_learner": "osce_candidate",
+      "enabled": true
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000003",
+      "slug": "cbt-skills-gp-en",
+      "target_learner": "general_practitioner",
+      "enabled": true
+    },
+    {
+      "id": "4e9bda16-b6bc-4ef4-9dc7-1013295d420b",
+      "slug": "cbt-skills-gp-en-copy-msdflwu3",
+      "target_learner": "general_practitioner",
+      "enabled": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000001",
+      "slug": "suicide-risk-resident-en",
+      "target_learner": "psychiatry_resident",
+      "enabled": true
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000004",
+      "slug": "foundation-interview-medstudent-en",
+      "target_learner": "medical_student",
+      "enabled": true
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000005",
+      "slug": "mi-counselor-en",
+      "target_learner": "counselor",
+      "enabled": true
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000006",
+      "slug": "cbt-psychologist-en",
+      "target_learner": "psychologist",
+      "enabled": true
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000007",
+      "slug": "complex-formulation-consultant-en",
+      "target_learner": "consultant_psychiatrist",
+      "enabled": true
+    }
+  ],
+  "preset_by_id": {
+    "foundation-interview-medstudent-en": {
+      "id": "f1000000-0000-4000-8000-000000000004",
+      "target": "medical_student",
+      "bySlug": {
+        "status": 404,
+        "error": "Preset not found",
+        "keys": [
+          "error"
+        ]
+      },
+      "byId": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ],
+        "assessment_keys": [
+          "diagnosis",
+          "comorbidities",
+          "difficulty",
+          "locale",
+          "therapyModality",
+          "randomizedContext",
+          "template",
+          "instructorPreset",
+          "assessmentId",
+          "clinicalCore",
+          "resolution",
+          "maxDurationSec"
+        ],
+        "has_report": false
+      }
+    },
+    "cbt-psychologist-en": {
+      "id": "f1000000-0000-4000-8000-000000000006",
+      "target": "psychologist",
+      "bySlug": {
+        "status": 404,
+        "error": "Preset not found",
+        "keys": [
+          "error"
+        ]
+      },
+      "byId": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ],
+        "assessment_keys": [
+          "diagnosis",
+          "comorbidities",
+          "difficulty",
+          "locale",
+          "therapyModality",
+          "randomizedContext",
+          "template",
+          "instructorPreset",
+          "assessmentId",
+          "clinicalCore",
+          "resolution",
+          "maxDurationSec"
+        ],
+        "has_report": false
+      }
+    },
+    "mi-counselor-en": {
+      "id": "f1000000-0000-4000-8000-000000000005",
+      "target": "counselor",
+      "bySlug": {
+        "status": 404,
+        "error": "Preset not found",
+        "keys": [
+          "error"
+        ]
+      },
+      "byId": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ],
+        "assessment_keys": [
+          "diagnosis",
+          "comorbidities",
+          "difficulty",
+          "locale",
+          "therapyModality",
+          "randomizedContext",
+          "template",
+          "instructorPreset",
+          "assessmentId",
+          "clinicalCore",
+          "resolution",
+          "maxDurationSec"
+        ],
+        "has_report": false
+      }
+    },
+    "suicide-risk-resident-en": {
+      "id": "f1000000-0000-4000-8000-000000000001",
+      "target": "psychiatry_resident",
+      "bySlug": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ]
+      },
+      "byId": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ],
+        "assessment_keys": [
+          "diagnosis",
+          "comorbidities",
+          "difficulty",
+          "locale",
+          "therapyModality",
+          "randomizedContext",
+          "template",
+          "instructorPreset",
+          "assessmentId",
+          "clinicalCore",
+          "resolution",
+          "maxDurationSec"
+        ],
+        "has_report": false
+      }
+    },
+    "complex-formulation-consultant-en": {
+      "id": "f1000000-0000-4000-8000-000000000007",
+      "target": "consultant_psychiatrist",
+      "bySlug": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ]
+      },
+      "byId": {
+        "status": 200,
+        "error": null,
+        "keys": [
+          "ok",
+          "assessment",
+          "report"
+        ],
+        "assessment_keys": [
+          "diagnosis",
+          "comorbidities",
+          "difficulty",
+          "locale",
+          "therapyModality",
+          "randomizedContext",
+          "template",
+          "instructorPreset",
+          "assessmentId",
+          "clinicalCore",
+          "resolution",
+          "maxDurationSec"
+        ],
+        "has_report": false
+      }
+    },
+    "cbt-skills-gp-en": {
+      "id": "f1000000-0000-4000-8000-000000000003",
+      "target": "general_practitioner",
+      "bySlug": {
+        "status": 400,
+        "error": [
+          {
+            "code": "comorbidity_unlisted",
+            "message": "No comorbidity rule for gad-with-panic + alcohol-use-disorder",
+            "path": "comorbidities"
+          }
+        ],
+        "keys": [
+          "error"
+        ]
+      },
+      "byId": {
+        "status": 400,
+        "error": [
+          {
+            "code": "comorbidity_unlisted",
+            "message": "No comorbidity rule for gad-with-panic + alcohol-use-disorder",
+            "path": "comorbidities"
+          }
+        ],
+        "keys": [
+          "error"
+        ],
+        "assessment_keys": null,
+        "has_report": false
+      }
+    }
+  },
+  "templates": [
+    {
+      "id": "e1000000-0000-4000-8000-000000000001",
+      "slug": "adult-mdd-initial-en",
+      "name": "Adult MDD — Initial Assessment (English)",
+      "language": "en-US"
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000002",
+      "slug": "adult-gad-osce-ar",
+      "name": "Adult GAD — OSCE (Arabic)",
+      "language": "ar-JO"
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000003",
+      "slug": "ptsd-risk-assessment-en",
+      "name": "PTSD — Risk Assessment (English)",
+      "language": "en-US"
+    }
+  ],
+  "template_checks": [
+    {
+      "slug": "adult-mdd-initial-en",
+      "preview_status": 200,
+      "preview_error": null,
+      "preview_keys": [
+        "patient",
+        "exportJson"
+      ],
+      "create_status": 200,
+      "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+      "create_error": null
+    },
+    {
+      "slug": "adult-gad-osce-ar",
+      "preview_status": 200,
+      "preview_error": null,
+      "preview_keys": [
+        "patient",
+        "exportJson"
+      ],
+      "create_status": 429,
+      "diagnosis": null,
+      "create_error": "Too many requests"
+    },
+    {
+      "slug": "ptsd-risk-assessment-en",
+      "preview_status": 200,
+      "preview_error": null,
+      "preview_keys": [
+        "patient",
+        "exportJson"
+      ],
+      "create_status": 429,
+      "diagnosis": null,
+      "create_error": "Too many requests"
+    }
+  ],
+  "m9_create": {
+    "status": 429,
+    "error": "Too many requests"
+  },
+  "ace_profile": {
+    "status": 200,
+    "body": {
+      "profile": {
+        "id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "user_id": "1ed008c2-9ac0-4343-b1ca-a16db4eabb4d",
+        "training_level": "residency",
+        "profession": "psychiatry_resident",
+        "institution": null,
+        "language": "en-US",
+        "preferred_therapy_models": [
+          "cbt",
+          "supportive"
+        ],
+        "adaptive_mode": true,
+        "curriculum_mode": "automatic",
+        "min_competency_threshold": 70,
+        "max_difficulty": "expert",
+        "locked_diagnoses": [],
+        "locked_objectives": [],
+        "required_competencies": [],
+        "optional_competencies": [],
+        "completed_case_count": 61,
+        "learning_velocity": 0.34,
+        "confidence_score": 66,
+        "certification_status": "in_progress",
+        "competencies": [
+          {
+            "competency_id": "risk_assessment",
+            "score": 42,
+            "samples": 61,
+            "trend": -22,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": "2026-08-03T03:55:00.658+00:00"
+          },
+          {
+            "competency_id": "suicide_assessment",
+            "score": 42,
+            "samples": 61,
+            "trend": -22,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": "2026-08-03T03:55:00.658+00:00"
+          },
+          {
+            "competency_id": "cbt_skills",
+            "score": 57,
+            "samples": 61,
+            "trend": 1,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "psychoeducation",
+            "score": 57,
+            "samples": 61,
+            "trend": 1,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "treatment_planning",
+            "score": 57,
+            "samples": 61,
+            "trend": 1,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "documentation",
+            "score": 63,
+            "samples": 61,
+            "trend": -2,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "professional_communication",
+            "score": 63,
+            "samples": 61,
+            "trend": -2,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "time_management",
+            "score": 63,
+            "samples": 61,
+            "trend": -2,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "icd11_reasoning",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "differential_diagnosis",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "violence_assessment",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "medication_management",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "dbt_skills",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "act_skills",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "motivational_interviewing",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "psychodynamic_interviewing",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "supportive_therapy",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "ethical_decision_making",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "cultural_competence",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "family_interviewing",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "emergency_psychiatry",
+            "score": 70,
+            "samples": 0,
+            "trend": 0,
+            "last_assessed_at": null,
+            "mastered_at": null
+          },
+          {
+            "competency_id": "therapeutic_alliance",
+            "score": 70,
+            "samples": 61,
+            "trend": 5,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "empathy",
+            "score": 70,
+            "samples": 61,
+            "trend": 5,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "diagnostic_interview",
+            "score": 73,
+            "samples": 61,
+            "trend": 4,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "mental_status_examination",
+            "score": 73,
+            "samples": 61,
+            "trend": 4,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          },
+          {
+            "competency_id": "dsm5_reasoning",
+            "score": 73,
+            "samples": 61,
+            "trend": 4,
+            "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+            "mastered_at": null
+          }
+        ],
+        "metadata": {
+          "active_rules": [
+            "remediate-suicide-assessment"
+          ],
+          "last_overall": 64,
+          "last_diagnosis": "gad-with-panic",
+          "last_next_case": {
+            "siStyle": "passive",
+            "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)",
+            "difficulty": "beginner",
+            "presetSlug": "suicide-risk-resident-en",
+            "adaptations": [
+              "si_style:passive",
+              "reduce_unrelated_complexity"
+            ],
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|beginner|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:passive|passive|0",
+            "disorderSlug": "mdd-recurrent-moderate",
+            "therapyModality": "cbt",
+            "comorbiditySlugs": [],
+            "timeLimitMinutes": 40,
+            "focusCompetencies": [
+              "suicide_assessment",
+              "risk_assessment"
+            ]
+          },
+          "history_overall": [
+            76,
+            74,
+            60,
+            58,
+            78,
+            60,
+            76,
+            73,
+            78,
+            64,
+            76,
+            51,
+            76,
+            82,
+            69,
+            44,
+            76,
+            44,
+            76,
+            57,
+            67,
+            82,
+            76,
+            51,
+            78,
+            64,
+            76,
+            64,
+            72,
+            69,
+            76,
+            64,
+            78,
+            60,
+            76,
+            49,
+            58,
+            69,
+            76,
+            44,
+            67,
+            60,
+            76,
+            64,
+            67,
+            69,
+            76,
+            64,
+            78,
+            82,
+            76,
+            49,
+            76,
+            54,
+            76,
+            69,
+            78,
+            49,
+            60,
+            64,
+            64
+          ]
+        }
+      },
+      "analytics": {
+        "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "radar": [
+          {
+            "competency_id": "diagnostic_interview",
+            "score": 73
+          },
+          {
+            "competency_id": "mental_status_examination",
+            "score": 73
+          },
+          {
+            "competency_id": "dsm5_reasoning",
+            "score": 73
+          },
+          {
+            "competency_id": "icd11_reasoning",
+            "score": 70
+          },
+          {
+            "competency_id": "differential_diagnosis",
+            "score": 70
+          },
+          {
+            "competency_id": "risk_assessment",
+            "score": 42
+          },
+          {
+            "competency_id": "suicide_assessment",
+            "score": 42
+          },
+          {
+            "competency_id": "violence_assessment",
+            "score": 70
+          },
+          {
+            "competency_id": "medication_management",
+            "score": 70
+          },
+          {
+            "competency_id": "cbt_skills",
+            "score": 57
+          },
+          {
+            "competency_id": "dbt_skills",
+            "score": 70
+          },
+          {
+            "competency_id": "act_skills",
+            "score": 70
+          },
+          {
+            "competency_id": "motivational_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "psychodynamic_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "supportive_therapy",
+            "score": 70
+          },
+          {
+            "competency_id": "therapeutic_alliance",
+            "score": 70
+          },
+          {
+            "competency_id": "empathy",
+            "score": 70
+          },
+          {
+            "competency_id": "psychoeducation",
+            "score": 57
+          },
+          {
+            "competency_id": "treatment_planning",
+            "score": 57
+          },
+          {
+            "competency_id": "documentation",
+            "score": 63
+          },
+          {
+            "competency_id": "professional_communication",
+            "score": 63
+          },
+          {
+            "competency_id": "time_management",
+            "score": 63
+          },
+          {
+            "competency_id": "ethical_decision_making",
+            "score": 70
+          },
+          {
+            "competency_id": "cultural_competence",
+            "score": 70
+          },
+          {
+            "competency_id": "family_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "emergency_psychiatry",
+            "score": 70
+          }
+        ],
+        "strengths": [],
+        "weaknesses": [
+          "documentation",
+          "professional_communication",
+          "time_management",
+          "cbt_skills",
+          "psychoeducation",
+          "treatment_planning",
+          "risk_assessment",
+          "suicide_assessment"
+        ],
+        "blind_spots": [],
+        "learning_curve": [],
+        "completed_diagnoses": [],
+        "missed_diagnoses": [],
+        "learning_velocity": 0.34,
+        "confidence_score": 66,
+        "certification_readiness": 39,
+        "certification_status": "in_progress"
+      },
+      "certifications": [
+        {
+          "badge_slug": "suicide-assessment-certified",
+          "title": "Suicide Assessment Certified",
+          "status": "in_progress",
+          "competency_id": "suicide_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "cbt-level-1",
+          "title": "CBT Level 1",
+          "status": "in_progress",
+          "competency_id": "cbt_skills",
+          "score": 57,
+          "samples": 61
+        },
+        {
+          "badge_slug": "risk-assessment-expert",
+          "title": "Risk Assessment Expert",
+          "status": "in_progress",
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "differential-diagnosis-master",
+          "title": "Differential Diagnosis Master",
+          "status": "not_started",
+          "competency_id": "differential_diagnosis",
+          "score": 70,
+          "samples": 0
+        },
+        {
+          "badge_slug": "trauma-specialist",
+          "title": "Trauma Specialist",
+          "status": "in_progress",
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "medication-management-certified",
+          "title": "Medication Management Certified",
+          "status": "not_started",
+          "competency_id": "medication_management",
+          "score": 70,
+          "samples": 0
+        }
+      ],
+      "plan": {
+        "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "primary_focus": "risk_assessment",
+        "goals": [
+          "Raise risk assessment above 70",
+          "Strengthen suicide assessment (now 42)",
+          "Strengthen cbt skills (now 57)"
+        ],
+        "next_cases": [
+          {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "mdd-recurrent-moderate",
+            "comorbiditySlugs": [],
+            "difficulty": "beginner",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:passive",
+              "reduce_unrelated_complexity"
+            ],
+            "siStyle": "passive",
+            "timeLimitMinutes": 40,
+            "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|beginner|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:passive|passive|0"
+          },
+          {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "mdd-recurrent-moderate",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:hidden_protective",
+              "reduce_unrelated_complexity"
+            ],
+            "siStyle": "hidden_protective",
+            "timeLimitMinutes": 40,
+            "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:hidden_protective|hidden_protective|1"
+          },
+          {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|2"
+          }
+        ],
+        "reading": [
+          "APA Practice Guidelines (relevant module)",
+          "Clinical interviewing skills — structured MSE review"
+        ],
+        "estimated_sessions_to_threshold": 4
+      }
+    }
+  },
+  "ace_analytics": {
+    "status": 200,
+    "body": {
+      "analytics": {
+        "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "radar": [
+          {
+            "competency_id": "diagnostic_interview",
+            "score": 73
+          },
+          {
+            "competency_id": "mental_status_examination",
+            "score": 73
+          },
+          {
+            "competency_id": "dsm5_reasoning",
+            "score": 73
+          },
+          {
+            "competency_id": "icd11_reasoning",
+            "score": 70
+          },
+          {
+            "competency_id": "differential_diagnosis",
+            "score": 70
+          },
+          {
+            "competency_id": "risk_assessment",
+            "score": 42
+          },
+          {
+            "competency_id": "suicide_assessment",
+            "score": 42
+          },
+          {
+            "competency_id": "violence_assessment",
+            "score": 70
+          },
+          {
+            "competency_id": "medication_management",
+            "score": 70
+          },
+          {
+            "competency_id": "cbt_skills",
+            "score": 57
+          },
+          {
+            "competency_id": "dbt_skills",
+            "score": 70
+          },
+          {
+            "competency_id": "act_skills",
+            "score": 70
+          },
+          {
+            "competency_id": "motivational_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "psychodynamic_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "supportive_therapy",
+            "score": 70
+          },
+          {
+            "competency_id": "therapeutic_alliance",
+            "score": 70
+          },
+          {
+            "competency_id": "empathy",
+            "score": 70
+          },
+          {
+            "competency_id": "psychoeducation",
+            "score": 57
+          },
+          {
+            "competency_id": "treatment_planning",
+            "score": 57
+          },
+          {
+            "competency_id": "documentation",
+            "score": 63
+          },
+          {
+            "competency_id": "professional_communication",
+            "score": 63
+          },
+          {
+            "competency_id": "time_management",
+            "score": 63
+          },
+          {
+            "competency_id": "ethical_decision_making",
+            "score": 70
+          },
+          {
+            "competency_id": "cultural_competence",
+            "score": 70
+          },
+          {
+            "competency_id": "family_interviewing",
+            "score": 70
+          },
+          {
+            "competency_id": "emergency_psychiatry",
+            "score": 70
+          }
+        ],
+        "strengths": [],
+        "weaknesses": [
+          "documentation",
+          "professional_communication",
+          "time_management",
+          "cbt_skills",
+          "psychoeducation",
+          "treatment_planning",
+          "risk_assessment",
+          "suicide_assessment"
+        ],
+        "blind_spots": [],
+        "learning_curve": [
+          {
+            "n": 1,
+            "overall": 76
+          },
+          {
+            "n": 2,
+            "overall": 74
+          },
+          {
+            "n": 3,
+            "overall": 60
+          },
+          {
+            "n": 4,
+            "overall": 58
+          },
+          {
+            "n": 5,
+            "overall": 78
+          },
+          {
+            "n": 6,
+            "overall": 60
+          },
+          {
+            "n": 7,
+            "overall": 76
+          },
+          {
+            "n": 8,
+            "overall": 73
+          },
+          {
+            "n": 9,
+            "overall": 78
+          },
+          {
+            "n": 10,
+            "overall": 64
+          },
+          {
+            "n": 11,
+            "overall": 76
+          },
+          {
+            "n": 12,
+            "overall": 51
+          },
+          {
+            "n": 13,
+            "overall": 76
+          },
+          {
+            "n": 14,
+            "overall": 82
+          },
+          {
+            "n": 15,
+            "overall": 69
+          },
+          {
+            "n": 16,
+            "overall": 44
+          },
+          {
+            "n": 17,
+            "overall": 76
+          },
+          {
+            "n": 18,
+            "overall": 44
+          },
+          {
+            "n": 19,
+            "overall": 76
+          },
+          {
+            "n": 20,
+            "overall": 57
+          },
+          {
+            "n": 21,
+            "overall": 67
+          },
+          {
+            "n": 22,
+            "overall": 82
+          },
+          {
+            "n": 23,
+            "overall": 76
+          },
+          {
+            "n": 24,
+            "overall": 51
+          },
+          {
+            "n": 25,
+            "overall": 78
+          },
+          {
+            "n": 26,
+            "overall": 64
+          },
+          {
+            "n": 27,
+            "overall": 76
+          },
+          {
+            "n": 28,
+            "overall": 64
+          },
+          {
+            "n": 29,
+            "overall": 72
+          },
+          {
+            "n": 30,
+            "overall": 69
+          },
+          {
+            "n": 31,
+            "overall": 76
+          },
+          {
+            "n": 32,
+            "overall": 64
+          },
+          {
+            "n": 33,
+            "overall": 78
+          },
+          {
+            "n": 34,
+            "overall": 60
+          },
+          {
+            "n": 35,
+            "overall": 76
+          },
+          {
+            "n": 36,
+            "overall": 49
+          },
+          {
+            "n": 37,
+            "overall": 58
+          },
+          {
+            "n": 38,
+            "overall": 69
+          },
+          {
+            "n": 39,
+            "overall": 76
+          },
+          {
+            "n": 40,
+            "overall": 44
+          },
+          {
+            "n": 41,
+            "overall": 67
+          },
+          {
+            "n": 42,
+            "overall": 60
+          },
+          {
+            "n": 43,
+            "overall": 76
+          },
+          {
+            "n": 44,
+            "overall": 64
+          },
+          {
+            "n": 45,
+            "overall": 67
+          },
+          {
+            "n": 46,
+            "overall": 69
+          },
+          {
+            "n": 47,
+            "overall": 76
+          },
+          {
+            "n": 48,
+            "overall": 64
+          },
+          {
+            "n": 49,
+            "overall": 78
+          },
+          {
+            "n": 50,
+            "overall": 82
+          },
+          {
+            "n": 51,
+            "overall": 76
+          },
+          {
+            "n": 52,
+            "overall": 49
+          },
+          {
+            "n": 53,
+            "overall": 76
+          },
+          {
+            "n": 54,
+            "overall": 54
+          },
+          {
+            "n": 55,
+            "overall": 76
+          },
+          {
+            "n": 56,
+            "overall": 69
+          },
+          {
+            "n": 57,
+            "overall": 78
+          },
+          {
+            "n": 58,
+            "overall": 49
+          },
+          {
+            "n": 59,
+            "overall": 60
+          },
+          {
+            "n": 60,
+            "overall": 64
+          },
+          {
+            "n": 61,
+            "overall": 64
+          }
+        ],
+        "completed_diagnoses": [
+          "mdd-recurrent-moderate",
+          "ptsd",
+          "gad-with-panic"
+        ],
+        "missed_diagnoses": [],
+        "learning_velocity": 0.34,
+        "confidence_score": 66,
+        "certification_readiness": 39,
+        "certification_status": "in_progress"
+      },
+      "certifications": [
+        {
+          "badge_slug": "suicide-assessment-certified",
+          "title": "Suicide Assessment Certified",
+          "status": "in_progress",
+          "competency_id": "suicide_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "cbt-level-1",
+          "title": "CBT Level 1",
+          "status": "in_progress",
+          "competency_id": "cbt_skills",
+          "score": 57,
+          "samples": 61
+        },
+        {
+          "badge_slug": "risk-assessment-expert",
+          "title": "Risk Assessment Expert",
+          "status": "in_progress",
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "differential-diagnosis-master",
+          "title": "Differential Diagnosis Master",
+          "status": "not_started",
+          "competency_id": "differential_diagnosis",
+          "score": 70,
+          "samples": 0
+        },
+        {
+          "badge_slug": "trauma-specialist",
+          "title": "Trauma Specialist",
+          "status": "in_progress",
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61
+        },
+        {
+          "badge_slug": "medication-management-certified",
+          "title": "Medication Management Certified",
+          "status": "not_started",
+          "competency_id": "medication_management",
+          "score": 70,
+          "samples": 0
+        }
+      ],
+      "caseHistory": [
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "suicide_assessment",
+            "risk_assessment"
+          ],
+          "created_at": "2026-08-03T04:12:36.674513+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "beginner",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "suicide_assessment",
+            "risk_assessment"
+          ],
+          "created_at": "2026-08-03T04:12:19.661466+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "advanced",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "suicide_assessment",
+            "risk_assessment"
+          ],
+          "created_at": "2026-08-03T04:11:45.376314+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:11:30.786808+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "advanced",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:10:53.387518+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:10:36.278954+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:10:08.110592+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:09:54.117495+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:09:30.216656+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:09:10.946584+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "advanced",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:08:51.935823+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "advanced",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:08:38.663662+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:08:15.748819+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:08:01.406127+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:07:40.76267+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:07:26.691102+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:07:02.117738+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:06:46.519822+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:06:27.523825+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "documentation"
+          ],
+          "created_at": "2026-08-03T04:06:15.283012+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:05:46.352189+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:05:28.248508+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:05:08.848826+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:04:55.913954+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:04:34.557127+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:04:20.594249+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:03:52.514184+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:03:37.458837+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:03:14.332104+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:02:58.357429+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:02:37.046001+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:02:21.660081+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:01:51.205028+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:01:35.200053+00:00"
+        },
+        {
+          "diagnosis_slug": "gad-with-panic",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:01:11.836754+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview"
+          ],
+          "created_at": "2026-08-03T04:00:55.99459+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T04:00:33.601423+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "diagnostic_interview",
+            "cbt_skills"
+          ],
+          "created_at": "2026-08-03T04:00:15.238901+00:00"
+        },
+        {
+          "diagnosis_slug": "mdd-recurrent-moderate",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T03:59:57.757196+00:00"
+        },
+        {
+          "diagnosis_slug": "ptsd",
+          "difficulty": "intermediate",
+          "focus_competencies": [
+            "therapeutic_alliance"
+          ],
+          "created_at": "2026-08-03T03:59:44.180841+00:00"
+        }
+      ],
+      "trends": {
+        "id": "be160eaa-d4d8-4a9f-9aad-193cd74d9a18",
+        "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "window_label": "rolling_10",
+        "metrics": {
+          "velocity": 0.34,
+          "completed": 61,
+          "confidence": 66,
+          "competencies": [
+            {
+              "score": 57,
+              "trend": 1,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "cbt_skills",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 57,
+              "trend": 1,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "psychoeducation",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 57,
+              "trend": 1,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "treatment_planning",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 42,
+              "trend": -22,
+              "samples": 61,
+              "mastered_at": "2026-08-03T03:55:00.658+00:00",
+              "competency_id": "risk_assessment",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 42,
+              "trend": -22,
+              "samples": 61,
+              "mastered_at": "2026-08-03T03:55:00.658+00:00",
+              "competency_id": "suicide_assessment",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 63,
+              "trend": -2,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "documentation",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 63,
+              "trend": -2,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "professional_communication",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 63,
+              "trend": -2,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "time_management",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 70,
+              "trend": 5,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "therapeutic_alliance",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 70,
+              "trend": 5,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "empathy",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 73,
+              "trend": 4,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "diagnostic_interview",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 73,
+              "trend": 4,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "mental_status_examination",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 73,
+              "trend": 4,
+              "samples": 61,
+              "mastered_at": null,
+              "competency_id": "dsm5_reasoning",
+              "last_assessed_at": "2026-08-03T04:12:36.653Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "icd11_reasoning",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "differential_diagnosis",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "violence_assessment",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "medication_management",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "dbt_skills",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "act_skills",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "motivational_interviewing",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "psychodynamic_interviewing",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "supportive_therapy",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "ethical_decision_making",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "cultural_competence",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "family_interviewing",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            },
+            {
+              "score": 70,
+              "trend": 0,
+              "samples": 0,
+              "mastered_at": null,
+              "competency_id": "emergency_psychiatry",
+              "last_assessed_at": "2026-08-03T04:12:36.654Z"
+            }
+          ]
+        },
+        "computed_at": "2026-08-03T04:12:36.674513+00:00"
+      },
+      "heatMap": [
+        {
+          "competency": "documentation",
+          "intensity": 37
+        },
+        {
+          "competency": "professional_communication",
+          "intensity": 37
+        },
+        {
+          "competency": "time_management",
+          "intensity": 37
+        },
+        {
+          "competency": "cbt_skills",
+          "intensity": 43
+        },
+        {
+          "competency": "psychoeducation",
+          "intensity": 43
+        },
+        {
+          "competency": "treatment_planning",
+          "intensity": 43
+        },
+        {
+          "competency": "risk_assessment",
+          "intensity": 58
+        },
+        {
+          "competency": "suicide_assessment",
+          "intensity": 58
+        }
+      ],
+      "strengthMap": []
+    }
+  },
+  "cge_mastery": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+      "mastery": [
+        {
+          "competency_id": "clinical_communication",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "diagnostic_interview",
+          "score": 73,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 66
+        },
+        {
+          "competency_id": "mental_status_examination",
+          "score": 73,
+          "samples": 61,
+          "stage": "competent",
+          "confidence": 66
+        },
+        {
+          "competency_id": "dsm5_reasoning",
+          "score": 73,
+          "samples": 61,
+          "stage": "competent",
+          "confidence": 66
+        },
+        {
+          "competency_id": "icd11_reasoning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "differential_diagnosis",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "case_formulation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "treatment_planning",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "medication_management",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "follow_up_planning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "risk_screening",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61,
+          "stage": "novice",
+          "confidence": 44
+        },
+        {
+          "competency_id": "suicide_assessment",
+          "score": 42,
+          "samples": 61,
+          "stage": "novice",
+          "confidence": 44
+        },
+        {
+          "competency_id": "violence_assessment",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "safety_planning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "emergency_psychiatry",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "therapeutic_alliance",
+          "score": 70,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 64
+        },
+        {
+          "competency_id": "empathy",
+          "score": 70,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 64
+        },
+        {
+          "competency_id": "cbt_skills",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "dbt_skills",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "act_skills",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "psychodynamic_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "supportive_therapy",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "motivational_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "documentation",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "case_summary",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "diagnostic_formulation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "treatment_documentation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "psychoeducation",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "professional_communication",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "time_management",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "ethical_decision_making",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "cultural_competence",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "family_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        }
+      ]
+    }
+  },
+  "ace_adaptive": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "case": {
+        "presetSlug": "suicide-risk-resident-en",
+        "disorderSlug": "mdd-recurrent-moderate",
+        "comorbiditySlugs": [],
+        "difficulty": "beginner",
+        "therapyModality": "cbt",
+        "focusCompetencies": [
+          "suicide_assessment",
+          "risk_assessment"
+        ],
+        "adaptations": [
+          "si_style:passive",
+          "reduce_unrelated_complexity"
+        ],
+        "siStyle": "passive",
+        "timeLimitMinutes": 40,
+        "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)",
+        "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|beginner|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:passive|passive|0"
+      },
+      "curriculum": {
+        "id": "path-a100746e-ce8e-4a23-8205-e6d28d84ead5-risk_assessment",
+        "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+        "slug": "auto-risk_assessment",
+        "name": "Remediation: risk assessment",
+        "focus_competency_id": "risk_assessment",
+        "status": "active",
+        "steps": [
+          {
+            "index": 0,
+            "title": "Passive SI",
+            "focus": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "diagnosis_slug": "mdd-recurrent-moderate",
+            "difficulty": "beginner",
+            "si_style": "passive",
+            "preset_slug": "suicide-risk-resident-en",
+            "time_limit_minutes": 40,
+            "completed": false
+          },
+          {
+            "index": 1,
+            "title": "Hidden SI",
+            "focus": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "diagnosis_slug": "mdd-recurrent-moderate",
+            "difficulty": "intermediate",
+            "si_style": "hidden_protective",
+            "preset_slug": "suicide-risk-resident-en",
+            "time_limit_minutes": 40,
+            "completed": false
+          },
+          {
+            "index": 2,
+            "title": "BPD with chronic SI",
+            "focus": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "diagnosis_slug": "bpd",
+            "difficulty": "intermediate",
+            "si_style": "variable_risk",
+            "preset_slug": "suicide-risk-resident-en",
+            "time_limit_minutes": 40,
+            "completed": false
+          },
+          {
+            "index": 3,
+            "title": "Psychotic depression risk",
+            "focus": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "diagnosis_slug": "mdd-recurrent-moderate",
+            "difficulty": "advanced",
+            "si_style": "indirect_hopelessness",
+            "preset_slug": "suicide-risk-resident-en",
+            "time_limit_minutes": 40,
+            "completed": false
+          },
+          {
+            "index": 4,
+            "title": "High-risk crisis",
+            "focus": [
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "diagnosis_slug": "ptsd",
+            "difficulty": "advanced",
+            "si_style": "variable_risk",
+            "preset_slug": "suicide-risk-resident-en",
+            "time_limit_minutes": 30,
+            "completed": false
+          }
+        ],
+        "current_step": 0
+      },
+      "startSessionHint": {
+        "presetSlug": "suicide-risk-resident-en",
+        "disorderSlug": "mdd-recurrent-moderate",
+        "comorbiditySlugs": [],
+        "difficulty": "beginner",
+        "therapyModality": "cbt"
+      }
+    }
+  },
+  "m10_sample_report": {
+    "overall": 64,
+    "items": [
+      {
+        "id": "alliance",
+        "max": 5,
+        "label": "Therapeutic alliance & empathy",
+        "score": 3,
+        "weight": 25,
+        "feedback": ""
+      },
+      {
+        "id": "assessment",
+        "max": 5,
+        "label": "Clinical assessment & exploration",
+        "score": 3,
+        "weight": 25,
+        "feedback": ""
+      },
+      {
+        "id": "interventions",
+        "max": 5,
+        "label": "Appropriate interventions",
+        "score": 3,
+        "weight": 20,
+        "feedback": ""
+      },
+      {
+        "id": "safety",
+        "max": 5,
+        "label": "Safety / risk handling",
+        "score": 4,
+        "weight": 20,
+        "feedback": ""
+      },
+      {
+        "id": "structure",
+        "max": 5,
+        "label": "Session structure & time use",
+        "score": 3,
+        "weight": 10,
+        "feedback": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "m9_create": {
+    "status": 429,
+    "error": "Too many requests"
+  },
+  "template_adult-gad-osce-ar": {
+    "status": 429,
+    "error": "Too many requests"
+  },
+  "template_ptsd-risk-assessment-en": {
+    "status": 429,
+    "error": "Too many requests"
+  },
+  "medstudent_by_id_create": {
+    "status": 429,
+    "error": "Too many requests"
+  },
+  "ace_profile_summary": {
+    "status": 200,
+    "adaptive_mode": true,
+    "competency_count": 26,
+    "analytics_present": true
+  },
+  "analytics_summary": {
+    "status": 200,
+    "heatMap": true,
+    "strengthMap": true,
+    "trends": null,
+    "caseHistory": 40
+  },
+  "mastery_summary": {
+    "status": 200,
+    "mastery_count": 34,
+    "sample": [
+      {
+        "competency_id": "clinical_communication",
+        "score": 70,
+        "samples": 0,
+        "stage": "not_attempted",
+        "confidence": 50
+      },
+      {
+        "competency_id": "diagnostic_interview",
+        "score": 73,
+        "samples": 61,
+        "stage": "developing",
+        "confidence": 66
+      },
+      {
+        "competency_id": "mental_status_examination",
+        "score": 73,
+        "samples": 61,
+        "stage": "competent",
+        "confidence": 66
+      },
+      {
+        "competency_id": "dsm5_reasoning",
+        "score": 73,
+        "samples": 61,
+        "stage": "competent",
+        "confidence": 66
+      },
+      {
+        "competency_id": "icd11_reasoning",
+        "score": 70,
+        "samples": 0,
+        "stage": "not_attempted",
+        "confidence": 64
+      }
+    ]
+  }
+}

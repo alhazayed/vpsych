@@ -1,0 +1,3392 @@
+{
+  "evidence_id": "RC3-W3-EV-20260805T2125Z",
+  "started_at": "2026-08-05T21:22:30.315Z",
+  "base": "https://vpsych.vercel.app",
+  "production_sha_expected": "5aae13806c984cb19a9c2e920d14014b548d4400",
+  "preflight": {
+    "health": {
+      "ok": true,
+      "service": "vpsych",
+      "checkedAt": "2026-08-05T21:22:30.835Z"
+    },
+    "openai": {
+      "ok": true,
+      "configured": true,
+      "provider": "openai",
+      "chatModel": "gpt-5",
+      "sttModel": "gpt-4o-transcribe",
+      "checkedAt": "2026-08-05T21:22:31.229Z",
+      "latencyMs": 478,
+      "code": null,
+      "error": null
+    },
+    "tts": {
+      "status": 200,
+      "body": {
+        "bytes": 13419,
+        "contentType": "audio/mpeg"
+      }
+    },
+    "therapist": "1ed008c2-9ac0-4343-b1ca-a16db4eabb4d",
+    "admin": "8545be46-2592-4de2-aaa7-4a27a022def7",
+    "sha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+    "deploy": "dpl_8Q7YGEHKesAWt3yNzcJ87cEYYYH2",
+    "avatars": [
+      "jordan-hale",
+      "maya-chen"
+    ]
+  },
+  "mission09": {
+    "session": {
+      "create_status": 400,
+      "adaptive": null
+    },
+    "report": null,
+    "competency_labels_required": [
+      "Diagnostic Interview",
+      "Mental Status Examination",
+      "DSM-5 Diagnostic Reasoning",
+      "ICD-11 Diagnostic Reasoning",
+      "Differential Diagnosis",
+      "Risk Assessment",
+      "Treatment Planning",
+      "Communication",
+      "Empathy",
+      "Professionalism",
+      "Clinical Documentation"
+    ],
+    "competency_coverage_via_rubric_map": {
+      "Diagnostic Interview": false,
+      "Mental Status Examination": false,
+      "DSM-5 Diagnostic Reasoning": false,
+      "ICD-11 Diagnostic Reasoning": false,
+      "Differential Diagnosis": false,
+      "Risk Assessment": false,
+      "Treatment Planning": false,
+      "Communication": false,
+      "Empathy": false,
+      "Professionalism": false,
+      "Clinical Documentation": false
+    },
+    "coverage_count": 0,
+    "ace_profile_status": 200,
+    "ace_competencies_sample": [],
+    "preset_preview_status": 200,
+    "preset_objectives": [
+      "ok",
+      "assessment",
+      "report"
+    ]
+  },
+  "mission10": {
+    "repeats": [
+      {
+        "i": 0,
+        "sessionId": "84377a25-4de4-460c-b013-10485ff5882e",
+        "end_status": 200,
+        "overall": 64,
+        "items": [
+          {
+            "id": "alliance",
+            "score": 3
+          },
+          {
+            "id": "assessment",
+            "score": 3
+          },
+          {
+            "id": "interventions",
+            "score": 3
+          },
+          {
+            "id": "safety",
+            "score": 4
+          },
+          {
+            "id": "structure",
+            "score": 3
+          }
+        ],
+        "narrative_len": 1350,
+        "narrative_prefix": "The therapist was concise, direct, and maintained a respectful tone. They asked an open question to start and moved prom",
+        "aiSource": "gpt"
+      },
+      {
+        "i": 1,
+        "sessionId": "6c618dc1-9e05-45f6-b466-bd667208ef38",
+        "end_status": 200,
+        "overall": 60,
+        "items": [
+          {
+            "id": "alliance",
+            "score": 3
+          },
+          {
+            "id": "assessment",
+            "score": 3
+          },
+          {
+            "id": "interventions",
+            "score": 2
+          },
+          {
+            "id": "safety",
+            "score": 4
+          },
+          {
+            "id": "structure",
+            "score": 3
+          }
+        ],
+        "narrative_len": 1482,
+        "narrative_prefix": "The therapist maintained a direct, concise stance that elicited key information quickly within a very short session. Emp",
+        "aiSource": "gpt"
+      },
+      {
+        "i": 2,
+        "sessionId": "5bcc6172-7871-4f08-9857-5f4ae89ca3ff",
+        "end_status": 200,
+        "overall": 64,
+        "items": [
+          {
+            "id": "alliance",
+            "score": 3
+          },
+          {
+            "id": "assessment",
+            "score": 3
+          },
+          {
+            "id": "interventions",
+            "score": 3
+          },
+          {
+            "id": "safety",
+            "score": 4
+          },
+          {
+            "id": "structure",
+            "score": 3
+          }
+        ],
+        "narrative_len": 1334,
+        "narrative_prefix": "The therapist opened with a focused, empathetic question and directly assessed suicidal ideation in a clear, nonjudgment",
+        "aiSource": "gpt"
+      },
+      {
+        "i": 3,
+        "sessionId": "c8829659-a10d-44cc-85e9-413fb35bc532",
+        "end_status": 200,
+        "overall": 64,
+        "items": [
+          {
+            "id": "alliance",
+            "score": 3
+          },
+          {
+            "id": "assessment",
+            "score": 3
+          },
+          {
+            "id": "interventions",
+            "score": 3
+          },
+          {
+            "id": "safety",
+            "score": 4
+          },
+          {
+            "id": "structure",
+            "score": 3
+          }
+        ],
+        "narrative_len": 1357,
+        "narrative_prefix": "The therapist opened with a focused, empathetic question and directly assessed suicidal ideation. They acknowledged the ",
+        "aiSource": "gpt"
+      },
+      {
+        "i": 4,
+        "sessionId": "02b05988-9ed8-4f84-a7b1-8b66d070ee10",
+        "end_status": 200,
+        "overall": 55,
+        "items": [
+          {
+            "id": "alliance",
+            "score": 2
+          },
+          {
+            "id": "assessment",
+            "score": 3
+          },
+          {
+            "id": "interventions",
+            "score": 2
+          },
+          {
+            "id": "safety",
+            "score": 4
+          },
+          {
+            "id": "structure",
+            "score": 3
+          }
+        ],
+        "narrative_len": 1203,
+        "narrative_prefix": "The therapist quickly moved to core concerns and directly asked about suicidality, which fits the goals. Empathy and att",
+        "aiSource": "gpt"
+      }
+    ],
+    "overalls": [
+      64,
+      60,
+      64,
+      64,
+      55
+    ],
+    "overall_mean": 61.4,
+    "overall_sd": 3.9749213828703582,
+    "item_stability": {
+      "alliance": {
+        "mean": 2.8,
+        "sd": 0.4472135954999579,
+        "n": 5
+      },
+      "assessment": {
+        "mean": 3,
+        "sd": 0,
+        "n": 5
+      },
+      "interventions": {
+        "mean": 2.6,
+        "sd": 0.5477225575051661,
+        "n": 5
+      },
+      "safety": {
+        "mean": 4,
+        "sd": 0,
+        "n": 5
+      },
+      "structure": {
+        "mean": 3,
+        "sd": 0,
+        "n": 5
+      }
+    },
+    "narrative_len_mean": 1345.2,
+    "narrative_len_cv": 0.07361264832638063,
+    "eri_board_computed": 90,
+    "eri_note": "ERI computed by Board from production repeated-assessment variance; platform has no ERI endpoint/ledger.",
+    "n_successful": 5
+  },
+  "mission11": {
+    "graph_get_status": 200,
+    "node_count": 34,
+    "edge_count": 42,
+    "sample_edges": [
+      {
+        "from": "clinical_communication",
+        "to": "diagnostic_interview",
+        "kind": "required",
+        "weight": 1
+      },
+      {
+        "from": "diagnostic_interview",
+        "to": "mental_status_examination",
+        "kind": "required",
+        "weight": 1
+      },
+      {
+        "from": "mental_status_examination",
+        "to": "dsm5_reasoning",
+        "kind": "required",
+        "weight": 1
+      },
+      {
+        "from": "dsm5_reasoning",
+        "to": "icd11_reasoning",
+        "kind": "recommended",
+        "weight": 0.7
+      },
+      {
+        "from": "mental_status_examination",
+        "to": "differential_diagnosis",
+        "kind": "required",
+        "weight": 1
+      }
+    ],
+    "mastery_get_status": 200,
+    "mastery_sample": {
+      "ok": true,
+      "learner_id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+      "mastery": [
+        {
+          "competency_id": "clinical_communication",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "diagnostic_interview",
+          "score": 73,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 66
+        },
+        {
+          "competency_id": "mental_status_examination",
+          "score": 73,
+          "samples": 61,
+          "stage": "competent",
+          "confidence": 66
+        },
+        {
+          "competency_id": "dsm5_reasoning",
+          "score": 73,
+          "samples": 61,
+          "stage": "competent",
+          "confidence": 66
+        },
+        {
+          "competency_id": "icd11_reasoning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "differential_diagnosis",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "case_formulation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "treatment_planning",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "medication_management",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "follow_up_planning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "risk_screening",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "risk_assessment",
+          "score": 42,
+          "samples": 61,
+          "stage": "novice",
+          "confidence": 44
+        },
+        {
+          "competency_id": "suicide_assessment",
+          "score": 42,
+          "samples": 61,
+          "stage": "novice",
+          "confidence": 44
+        },
+        {
+          "competency_id": "violence_assessment",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "safety_planning",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "emergency_psychiatry",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "therapeutic_alliance",
+          "score": 70,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 64
+        },
+        {
+          "competency_id": "empathy",
+          "score": 70,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 64
+        },
+        {
+          "competency_id": "cbt_skills",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "dbt_skills",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "act_skills",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "psychodynamic_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "supportive_therapy",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "motivational_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "documentation",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "case_summary",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "diagnostic_formulation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "treatment_documentation",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 50
+        },
+        {
+          "competency_id": "psychoeducation",
+          "score": 57,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 55
+        },
+        {
+          "competency_id": "professional_communication",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "time_management",
+          "score": 63,
+          "samples": 61,
+          "stage": "developing",
+          "confidence": 59
+        },
+        {
+          "competency_id": "ethical_decision_making",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "cultural_competence",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        },
+        {
+          "competency_id": "family_interviewing",
+          "score": 70,
+          "samples": 0,
+          "stage": "not_attempted",
+          "confidence": 64
+        }
+      ]
+    },
+    "rca_supervisor": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "report"
+      ]
+    },
+    "rca_failure": {
+      "status": 200,
+      "body_keys": [
+        "ok",
+        "rca"
+      ],
+      "snippet": "{\"ok\":true,\"rca\":{\"observed_failure\":\"risk_assessment\",\"root_cause\":\"diagnostic_interview\",\"chain\":[\"risk_assessment\",\"risk_screening\",\"diagnostic_interview\"],\"weakest_prerequisite\":\"risk_assessment\",\"explanation\":\"Failure in risk assessment is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph).\"}}"
+    },
+    "mastery_post_weak": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "competency_id",
+        "stage",
+        "states"
+      ]
+    },
+    "mastery_post_excellent": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "competency_id",
+        "stage",
+        "states"
+      ]
+    },
+    "admin_cge_status": 200,
+    "admin_keys": [
+      "learners",
+      "activePlans",
+      "graphMeta"
+    ],
+    "persistence_note": "POST /api/cge/mastery is documented as in-memory propagation; session-hook persists via ACE."
+  },
+  "mission12": {
+    "patch_adaptive": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "profile": {
+          "id": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "user_id": "1ed008c2-9ac0-4343-b1ca-a16db4eabb4d",
+          "training_level": "residency",
+          "profession": "psychiatry_resident",
+          "institution": null,
+          "language": "en-US",
+          "preferred_therapy_models": [
+            "cbt",
+            "supportive"
+          ],
+          "adaptive_mode": true,
+          "curriculum_mode": "automatic",
+          "min_competency_threshold": 70,
+          "max_difficulty": "expert",
+          "locked_diagnoses": [],
+          "locked_objectives": [],
+          "required_competencies": [],
+          "optional_competencies": [],
+          "completed_case_count": 61,
+          "learning_velocity": 0.34,
+          "confidence_score": 66,
+          "certification_status": "in_progress",
+          "competencies": [
+            {
+              "competency_id": "risk_assessment",
+              "score": 42,
+              "samples": 61,
+              "trend": -22,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": "2026-08-03T03:55:00.658+00:00"
+            },
+            {
+              "competency_id": "suicide_assessment",
+              "score": 42,
+              "samples": 61,
+              "trend": -22,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": "2026-08-03T03:55:00.658+00:00"
+            },
+            {
+              "competency_id": "cbt_skills",
+              "score": 57,
+              "samples": 61,
+              "trend": 1,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "psychoeducation",
+              "score": 57,
+              "samples": 61,
+              "trend": 1,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "treatment_planning",
+              "score": 57,
+              "samples": 61,
+              "trend": 1,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "documentation",
+              "score": 63,
+              "samples": 61,
+              "trend": -2,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "professional_communication",
+              "score": 63,
+              "samples": 61,
+              "trend": -2,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "time_management",
+              "score": 63,
+              "samples": 61,
+              "trend": -2,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "icd11_reasoning",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "differential_diagnosis",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "violence_assessment",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "medication_management",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "dbt_skills",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "act_skills",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "motivational_interviewing",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "psychodynamic_interviewing",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "supportive_therapy",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "ethical_decision_making",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "cultural_competence",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "family_interviewing",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "emergency_psychiatry",
+              "score": 70,
+              "samples": 0,
+              "trend": 0,
+              "last_assessed_at": null,
+              "mastered_at": null
+            },
+            {
+              "competency_id": "therapeutic_alliance",
+              "score": 70,
+              "samples": 61,
+              "trend": 5,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "empathy",
+              "score": 70,
+              "samples": 61,
+              "trend": 5,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "diagnostic_interview",
+              "score": 73,
+              "samples": 61,
+              "trend": 4,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "mental_status_examination",
+              "score": 73,
+              "samples": 61,
+              "trend": 4,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            },
+            {
+              "competency_id": "dsm5_reasoning",
+              "score": 73,
+              "samples": 61,
+              "trend": 4,
+              "last_assessed_at": "2026-08-03T04:12:36.653+00:00",
+              "mastered_at": null
+            }
+          ],
+          "metadata": {
+            "active_rules": [
+              "remediate-suicide-assessment"
+            ],
+            "last_overall": 64,
+            "last_diagnosis": "gad-with-panic",
+            "last_next_case": {
+              "siStyle": "passive",
+              "rationale": "Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)",
+              "difficulty": "beginner",
+              "presetSlug": "suicide-risk-resident-en",
+              "adaptations": [
+                "si_style:passive",
+                "reduce_unrelated_complexity"
+              ],
+              "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|beginner|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:passive|passive|0",
+              "disorderSlug": "mdd-recurrent-moderate",
+              "therapyModality": "cbt",
+              "comorbiditySlugs": [],
+              "timeLimitMinutes": 40,
+              "focusCompetencies": [
+                "suicide_assessment",
+                "risk_assessment"
+              ]
+            },
+            "history_overall": [
+              76,
+              74,
+              60,
+              58,
+              78,
+              60,
+              76,
+              73,
+              78,
+              64,
+              76,
+              51,
+              76,
+              82,
+              69,
+              44,
+              76,
+              44,
+              76,
+              57,
+              67,
+              82,
+              76,
+              51,
+              78,
+              64,
+              76,
+              64,
+              72,
+              69,
+              76,
+              64,
+              78,
+              60,
+              76,
+              49,
+              58,
+              69,
+              76,
+              44,
+              67,
+              60,
+              76,
+              64,
+              67,
+              69,
+              76,
+              64,
+              78,
+              82,
+              76,
+              49,
+              76,
+              54,
+              76,
+              69,
+              78,
+              49,
+              60,
+              64,
+              64
+            ]
+          },
+          "adaptiveMode": true,
+          "curriculumMode": true
+        },
+        "source": "memory"
+      }
+    },
+    "adaptive_case_1": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "case",
+        "curriculum",
+        "startSessionHint"
+      ],
+      "snippet": "{\"ok\":true,\"case\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"mdd-recurrent-moderate\",\"comorbiditySlugs\":[],\"difficulty\":\"beginner\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:passive\",\"reduce_unrelated_complexity\"],\"siStyle\":\"passive\",\"timeLimitMinutes\":40,\"rationale\":\"Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)\",\"fingerprint\":\"a100746e-ce8e-4a23-"
+    },
+    "adaptive_case_2": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "case",
+        "curriculum",
+        "startSessionHint"
+      ],
+      "snippet": "{\"ok\":true,\"case\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"mdd-recurrent-moderate\",\"comorbiditySlugs\":[],\"difficulty\":\"beginner\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:passive\",\"reduce_unrelated_complexity\"],\"siStyle\":\"passive\",\"timeLimitMinutes\":40,\"rationale\":\"Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (beginner)\",\"fingerprint\":\"a100746e-ce8e-4a23-"
+    },
+    "adaptive_cases_differ": false,
+    "coach": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "coach"
+      ]
+    },
+    "plan": {
+      "status": 200,
+      "keys": [
+        "ok",
+        "plan"
+      ]
+    },
+    "bands": {
+      "weak": {
+        "label": "weak",
+        "sessionId": "d989ff54-9656-4722-a054-9e4c9493438d",
+        "overall": 12,
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (54, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 12/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (37). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "reportId": "67f1e81a-d9f8-4ed9-a9be-0fed693b1e9a"
+      },
+      "average": {
+        "label": "average",
+        "sessionId": "17a7cb12-e443-40ee-80eb-c544e2fe2190",
+        "overall": 67,
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:documentation"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed documentation. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: mental status examination",
+              "Ambiguous presentation: documentation"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in documentation is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~7h). Overall session score: 67/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (58). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "reportId": "47feaa8a-cc37-4a04-b2b0-a1c629afc982"
+      },
+      "excellent": {
+        "label": "excellent",
+        "sessionId": "cad7331c-9419-46bf-8a33-a91d77def159",
+        "overall": 44,
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:documentation"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed documentation. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: mental status examination",
+              "Ambiguous presentation: documentation"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in documentation is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: diagnostic interview (Δ 2). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~7h). Overall session score: 44/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "reportId": "b84658b1-6970-4450-b044-0d3eaa84fa13"
+      }
+    },
+    "analytics_after": {
+      "status": 200,
+      "keys": [
+        "analytics",
+        "certifications",
+        "caseHistory",
+        "trends",
+        "heatMap",
+        "strengthMap"
+      ]
+    },
+    "profile_after_keys": [
+      "profile",
+      "analytics",
+      "certifications",
+      "plan"
+    ],
+    "ale_board_computed": 85,
+    "ale_note": "ALE computed by Board from production ACE behavioral probes; platform has no ALE endpoint."
+  },
+  "mission13": {
+    "indices": {
+      "AVI": {
+        "score": 10,
+        "method": "board_computed_from_production_evidence"
+      },
+      "CFI": {
+        "score": 80,
+        "method": "board_computed_from_production_evidence"
+      },
+      "ERI": {
+        "score": 90,
+        "method": "board_computed_from_repeated_assessments",
+        "overall_sd": 3.9749213828703582
+      },
+      "ALE": {
+        "score": 85,
+        "method": "board_computed_from_ace_probes"
+      },
+      "RRS": {
+        "score": 50,
+        "method": "board_computed",
+        "blockers": [
+          "quality_ledger_absent",
+          "research_export_absent"
+        ]
+      },
+      "VQI": {
+        "score": 63,
+        "method": "board_mean_of_AVI_CFI_ERI_ALE_RRS"
+      },
+      "platform_endpoints": {
+        "/api/quality-ledger": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/scientific/vqi": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/research/export": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/eri": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/avi": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/ale": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/cfi": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        },
+        "/api/rrs": {
+          "status": 404,
+          "body": {
+            "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+          }
+        }
+      },
+      "quality_ledger_present": false,
+      "research_export_present": false,
+      "version_traceability": {
+        "production_sha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+        "deploy": "dpl_8Q7YGEHKesAWt3yNzcJ87cEYYYH2"
+      }
+    },
+    "quality_ledger_integrity": "FAIL — no Quality Ledger in production",
+    "publication_readiness": "FAIL — RRS blocked by missing ledger/export"
+  },
+  "presets": {
+    "list_status": 200,
+    "list_count": 8,
+    "db_presets": [
+      {
+        "slug": "osce-diagnostic-interview-ar",
+        "target_learner": "osce_candidate",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "advanced",
+        "name": "OSCE Diagnostic Interview — Arabic"
+      },
+      {
+        "slug": "cbt-skills-gp-en",
+        "target_learner": "general_practitioner",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "beginner",
+        "name": "CBT Skills — General Practitioner"
+      },
+      {
+        "slug": "suicide-risk-resident-en",
+        "target_learner": "psychiatry_resident",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "intermediate",
+        "name": "Suicide Risk Assessment — Psychiatry Resident"
+      },
+      {
+        "slug": "foundation-interview-medstudent-en",
+        "target_learner": "medical_student",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "beginner",
+        "name": "Foundation Diagnostic Interview — Medical Student"
+      },
+      {
+        "slug": "mi-counselor-en",
+        "target_learner": "counselor",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "intermediate",
+        "name": "Motivational Interviewing — Counselor"
+      },
+      {
+        "slug": "cbt-psychologist-en",
+        "target_learner": "psychologist",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "intermediate",
+        "name": "CBT Formulation — Psychologist"
+      },
+      {
+        "slug": "complex-formulation-consultant-en",
+        "target_learner": "consultant_psychiatrist",
+        "enabled": true,
+        "assessment_enabled": true,
+        "difficulty": "expert",
+        "name": "Complex Formulation — Consultant Psychiatrist"
+      }
+    ],
+    "required_learner_checks": {
+      "medical_student": {
+        "db_present": true,
+        "slug": "foundation-interview-medstudent-en",
+        "preview_status": 404,
+        "preview_error": "Preset not found",
+        "ok": false
+      },
+      "psychiatry_resident": {
+        "db_present": true,
+        "slug": "suicide-risk-resident-en",
+        "preview_status": 200,
+        "preview_error": null,
+        "ok": true
+      },
+      "consultant_psychiatrist": {
+        "db_present": true,
+        "slug": "complex-formulation-consultant-en",
+        "preview_status": 200,
+        "preview_error": null,
+        "ok": true
+      },
+      "psychologist": {
+        "db_present": true,
+        "slug": "cbt-psychologist-en",
+        "preview_status": 404,
+        "preview_error": "Preset not found",
+        "ok": false
+      },
+      "general_practitioner": {
+        "db_present": true,
+        "slug": "cbt-skills-gp-en",
+        "preview_status": 200,
+        "preview_error": null,
+        "ok": true
+      },
+      "counselor": {
+        "db_present": true,
+        "slug": "mi-counselor-en",
+        "preview_status": 404,
+        "preview_error": "Preset not found",
+        "ok": false
+      }
+    }
+  },
+  "templates": {
+    "list_status": 200,
+    "db_templates": {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column clinical_templates.is_active does not exist"
+    },
+    "checks": []
+  },
+  "longitudinal": {
+    "n": 50,
+    "success_create_end": 32,
+    "sessions": [
+      {
+        "i": 0,
+        "create": 200,
+        "sessionId": "7f46ec03-cea5-4776-803f-0fbe14139bff",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 54/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 54,
+        "error": null
+      },
+      {
+        "i": 1,
+        "create": 200,
+        "sessionId": "8ee67fd1-fb56-4158-81aa-0dbf4ae79e09",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 48/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 2,
+        "create": 200,
+        "sessionId": "056c9ada-7b00-4f96-b8b3-7eec58d5ec2b",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 51/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 3,
+        "create": 200,
+        "sessionId": "585f75fa-5fc8-4931-99f4-e08aaa39576c",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 33/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 4,
+        "create": 200,
+        "sessionId": "469d5396-e5af-420e-b5ec-dbcd03d64ac6",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 56/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 5,
+        "create": 200,
+        "sessionId": "27ea2dd8-15eb-4264-aa03-c2cd7ed0f2c4",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 33/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 33,
+        "error": null
+      },
+      {
+        "i": 6,
+        "create": 200,
+        "sessionId": "22fcf547-997b-4965-b172-9ac09dfad142",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 40/100. Keep building foundational interview structure. Priority growth areas: cbt skills (44); psychoeducation (44); treatment planning (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 7,
+        "create": 200,
+        "sessionId": "4a740089-b6d8-4197-ae1e-f5827d9c24f4",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: diagnostic interview (Δ 2). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 53/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 8,
+        "create": 200,
+        "sessionId": "37b8b220-a434-4fba-9fb7-ae8d72078626",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 28/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 9,
+        "create": 200,
+        "sessionId": "cad6692c-7265-4f96-85a3-ae2241450a72",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 33/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 10,
+        "create": 200,
+        "sessionId": "73226d8e-9f27-4a2a-955d-f196cd3fb6de",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 45/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 45,
+        "error": null
+      },
+      {
+        "i": 11,
+        "create": 200,
+        "sessionId": "3060069b-439a-48e6-beec-961d6fe7a3ba",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 43/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 12,
+        "create": 200,
+        "sessionId": "a0cf1001-b588-4e6e-8013-3ecc8ab20f2f",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 13,
+        "create": 200,
+        "sessionId": "69b90427-3aa9-47af-9e43-99602f3c3ecb",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 14,
+        "create": 200,
+        "sessionId": "748e894d-5057-4dec-b82b-792ad89e8602",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 15,
+        "create": 200,
+        "sessionId": "b89a5d64-03d3-4563-9cd4-e103f1bd2e62",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 16,
+        "create": 200,
+        "sessionId": "b8d16551-909b-4b96-af29-8f21b8561427",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 17,
+        "create": 200,
+        "sessionId": "691ebcc2-a692-420e-b273-522441a223dc",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 18,
+        "create": 200,
+        "sessionId": "747f4a07-67c4-46e4-9351-308ab7117599",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 19,
+        "create": 200,
+        "sessionId": "a9edf415-a6d6-4a69-8fdd-0a98e861f3af",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 20,
+        "create": 200,
+        "sessionId": "afdf4665-4ebc-4c5a-95df-999e4acf794f",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 44/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 44,
+        "error": null
+      },
+      {
+        "i": 21,
+        "create": 200,
+        "sessionId": "5fc91ef7-1cc7-4533-9aa8-45fb8f9e0141",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 28/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 22,
+        "create": 200,
+        "sessionId": "b13e075d-32ea-4b49-8466-e4aee1018886",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 56/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 23,
+        "create": 200,
+        "sessionId": "d54d63c6-0a38-41fc-94eb-bfc77ddcf7cb",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 43/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 24,
+        "create": 200,
+        "sessionId": "f07c5bb3-6ad6-42cb-9c37-572fed880d8d",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 56/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 25,
+        "create": 200,
+        "sessionId": "747b836a-948d-4f81-84eb-f7feb8a595e4",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 41/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 41,
+        "error": null
+      },
+      {
+        "i": 26,
+        "create": 200,
+        "sessionId": "99ee6f9b-ba8d-43f6-9ab9-2f1b0212cab2",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 51/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 27,
+        "create": 200,
+        "sessionId": "7831eded-c7bc-466a-887e-2323d8124637",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 37/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 28,
+        "create": 200,
+        "sessionId": "f792288c-fb48-45a9-b5eb-b03f60cd95d8",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 47/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 29,
+        "create": 200,
+        "sessionId": "0013412e-669b-451a-9e06-9f8ea947db69",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 37/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 30,
+        "create": 200,
+        "sessionId": "20b6cb23-91c4-4890-b33e-09fe710b8fe1",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 40/100. Keep building foundational interview structure. Priority growth areas: cbt skills (44); psychoeducation (44); treatment planning (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 40,
+        "error": null
+      },
+      {
+        "i": 31,
+        "create": 200,
+        "sessionId": "bce232dd-fcba-4ac7-a629-83365cca7240",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 39/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 32,
+        "create": 200,
+        "sessionId": "dba62bcb-1ee0-4215-9048-eb8d1b428876",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 56/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 33,
+        "create": 200,
+        "sessionId": "5b263752-15d7-4de0-b3ba-435cc9865eab",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 28/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 34,
+        "create": 200,
+        "sessionId": "0a96deea-a11c-4cc3-8be0-f859729c11f0",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 40/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 35,
+        "create": 200,
+        "sessionId": "67d91f5e-b018-4796-98fb-7c135d8e0383",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (61, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 32/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": 32,
+        "error": null
+      },
+      {
+        "i": 36,
+        "create": 200,
+        "sessionId": "d0ab2fa3-971f-4b14-96cf-4cace7cb0a3b",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 54/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 37,
+        "create": 200,
+        "sessionId": "8e578afb-2286-4674-8878-0c4bab962016",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:documentation"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed documentation. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: mental status examination",
+              "Ambiguous presentation: documentation"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in documentation is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: diagnostic interview (Δ 2). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~7h). Overall session score: 48/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 38,
+        "create": 200,
+        "sessionId": "7c690639-372c-4a4e-ad8f-bfd743f6ee5c",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 47/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 39,
+        "create": 200,
+        "sessionId": "759e9595-0f7d-4b1f-863b-9d7f14c6b232",
+        "msg": 200,
+        "end": 200,
+        "adaptive_ok": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 33/100. Keep building foundational interview structure. Priority growth areas: risk assessment (27); suicide assessment (27); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 40,
+        "create": 200,
+        "sessionId": "ae8f7ab1-c0e6-4b52-bfbc-15e191b64db9",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 41,
+        "create": 200,
+        "sessionId": "4877ce71-3b48-4542-aeb0-2c0af75bbb27",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 42,
+        "create": 200,
+        "sessionId": "2f94458e-a01b-4279-936b-56b8177ba5cb",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 43,
+        "create": 200,
+        "sessionId": "41c033b4-e0fe-4f1c-913e-22d573e00d73",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 44,
+        "create": 200,
+        "sessionId": "34533028-da78-4ecd-8d30-023f4d0841b3",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 45,
+        "create": 200,
+        "sessionId": "74c39ce3-ec89-493b-a8e9-4302d729b7f4",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 46,
+        "create": 200,
+        "sessionId": "7803bfd3-164a-46a6-9764-3157ef5dd872",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 47,
+        "create": 200,
+        "sessionId": "9c2b38ec-8632-40b1-8fb2-3aaec4ecba05",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 48,
+        "create": 200,
+        "sessionId": "16bce074-e98d-44f9-8aaf-baa984bc1c0b",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      },
+      {
+        "i": 49,
+        "create": 200,
+        "sessionId": "faf7e759-959e-478b-8ccd-340427f4673f",
+        "msg": 200,
+        "end": 429,
+        "adaptive_ok": null,
+        "overall": null,
+        "error": null
+      }
+    ],
+    "ace_analytics_final_status": 200,
+    "ace_analytics_keys": [
+      "analytics",
+      "certifications",
+      "caseHistory",
+      "trends",
+      "heatMap",
+      "strengthMap"
+    ],
+    "cge_final_status": 200,
+    "profile_final_keys": [
+      "profile",
+      "analytics",
+      "certifications",
+      "plan"
+    ]
+  },
+  "scientific_indices": {
+    "AVI": {
+      "score": 80,
+      "method": "board_computed_from_production_evidence",
+      "missing_competencies": [
+        "ICD-11 Diagnostic Reasoning"
+      ]
+    },
+    "CFI": {
+      "score": 80,
+      "method": "board_computed_from_production_evidence"
+    },
+    "ERI": {
+      "score": 90,
+      "method": "board_computed_from_repeated_assessments",
+      "overall_sd": 3.9749213828703582
+    },
+    "ALE": {
+      "score": 85,
+      "method": "board_computed_from_ace_probes"
+    },
+    "RRS": {
+      "score": 50,
+      "method": "board_computed",
+      "blockers": [
+        "quality_ledger_absent",
+        "research_export_absent"
+      ]
+    },
+    "VQI": {
+      "score": 77,
+      "method": "board_mean_of_AVI_CFI_ERI_ALE_RRS"
+    },
+    "platform_endpoints": {
+      "/api/quality-ledger": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/scientific/vqi": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/research/export": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/eri": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/avi": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/ale": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/cfi": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      },
+      "/api/rrs": {
+        "status": 404,
+        "body": {
+          "_raw": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl4"
+        }
+      }
+    },
+    "quality_ledger_present": false,
+    "research_export_present": false,
+    "version_traceability": {
+      "production_sha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+      "deploy": "dpl_8Q7YGEHKesAWt3yNzcJ87cEYYYH2"
+    }
+  },
+  "finished_at": "2026-08-05T21:33:34.401Z",
+  "supplements": {
+    "preset_by_id": {
+      "foundation-interview-medstudent-en": {
+        "id": "f1000000-0000-4000-8000-000000000004",
+        "target": "medical_student",
+        "bySlug": {
+          "status": 404,
+          "error": "Preset not found",
+          "keys": [
+            "error"
+          ]
+        },
+        "byId": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ],
+          "assessment_keys": [
+            "diagnosis",
+            "comorbidities",
+            "difficulty",
+            "locale",
+            "therapyModality",
+            "randomizedContext",
+            "template",
+            "instructorPreset",
+            "assessmentId",
+            "clinicalCore",
+            "resolution",
+            "maxDurationSec"
+          ],
+          "has_report": false
+        }
+      },
+      "cbt-psychologist-en": {
+        "id": "f1000000-0000-4000-8000-000000000006",
+        "target": "psychologist",
+        "bySlug": {
+          "status": 404,
+          "error": "Preset not found",
+          "keys": [
+            "error"
+          ]
+        },
+        "byId": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ],
+          "assessment_keys": [
+            "diagnosis",
+            "comorbidities",
+            "difficulty",
+            "locale",
+            "therapyModality",
+            "randomizedContext",
+            "template",
+            "instructorPreset",
+            "assessmentId",
+            "clinicalCore",
+            "resolution",
+            "maxDurationSec"
+          ],
+          "has_report": false
+        }
+      },
+      "mi-counselor-en": {
+        "id": "f1000000-0000-4000-8000-000000000005",
+        "target": "counselor",
+        "bySlug": {
+          "status": 404,
+          "error": "Preset not found",
+          "keys": [
+            "error"
+          ]
+        },
+        "byId": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ],
+          "assessment_keys": [
+            "diagnosis",
+            "comorbidities",
+            "difficulty",
+            "locale",
+            "therapyModality",
+            "randomizedContext",
+            "template",
+            "instructorPreset",
+            "assessmentId",
+            "clinicalCore",
+            "resolution",
+            "maxDurationSec"
+          ],
+          "has_report": false
+        }
+      },
+      "suicide-risk-resident-en": {
+        "id": "f1000000-0000-4000-8000-000000000001",
+        "target": "psychiatry_resident",
+        "bySlug": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ]
+        },
+        "byId": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ],
+          "assessment_keys": [
+            "diagnosis",
+            "comorbidities",
+            "difficulty",
+            "locale",
+            "therapyModality",
+            "randomizedContext",
+            "template",
+            "instructorPreset",
+            "assessmentId",
+            "clinicalCore",
+            "resolution",
+            "maxDurationSec"
+          ],
+          "has_report": false
+        }
+      },
+      "complex-formulation-consultant-en": {
+        "id": "f1000000-0000-4000-8000-000000000007",
+        "target": "consultant_psychiatrist",
+        "bySlug": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ]
+        },
+        "byId": {
+          "status": 200,
+          "error": null,
+          "keys": [
+            "ok",
+            "assessment",
+            "report"
+          ],
+          "assessment_keys": [
+            "diagnosis",
+            "comorbidities",
+            "difficulty",
+            "locale",
+            "therapyModality",
+            "randomizedContext",
+            "template",
+            "instructorPreset",
+            "assessmentId",
+            "clinicalCore",
+            "resolution",
+            "maxDurationSec"
+          ],
+          "has_report": false
+        }
+      },
+      "cbt-skills-gp-en": {
+        "id": "f1000000-0000-4000-8000-000000000003",
+        "target": "general_practitioner",
+        "bySlug": {
+          "status": 400,
+          "error": [
+            {
+              "code": "comorbidity_unlisted",
+              "message": "No comorbidity rule for gad-with-panic + alcohol-use-disorder",
+              "path": "comorbidities"
+            }
+          ],
+          "keys": [
+            "error"
+          ]
+        },
+        "byId": {
+          "status": 400,
+          "error": [
+            {
+              "code": "comorbidity_unlisted",
+              "message": "No comorbidity rule for gad-with-panic + alcohol-use-disorder",
+              "path": "comorbidities"
+            }
+          ],
+          "keys": [
+            "error"
+          ],
+          "assessment_keys": null,
+          "has_report": false
+        }
+      }
+    },
+    "templates": [
+      {
+        "slug": "adult-mdd-initial-en",
+        "preview_status": 200,
+        "preview_error": null,
+        "preview_keys": [
+          "patient",
+          "exportJson"
+        ],
+        "create_status": 200,
+        "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+        "create_error": null
+      },
+      {
+        "slug": "adult-gad-osce-ar",
+        "preview_status": 200,
+        "preview_error": null,
+        "preview_keys": [
+          "patient",
+          "exportJson"
+        ],
+        "create_status": 429,
+        "diagnosis": null,
+        "create_error": "Too many requests"
+      },
+      {
+        "slug": "ptsd-risk-assessment-en",
+        "preview_status": 200,
+        "preview_error": null,
+        "preview_keys": [
+          "patient",
+          "exportJson"
+        ],
+        "create_status": 429,
+        "diagnosis": null,
+        "create_error": "Too many requests"
+      }
+    ],
+    "m10_report_items": [
+      {
+        "id": "alliance",
+        "max": 5,
+        "label": "Therapeutic alliance & empathy",
+        "score": 3,
+        "weight": 25,
+        "feedback": ""
+      },
+      {
+        "id": "assessment",
+        "max": 5,
+        "label": "Clinical assessment & exploration",
+        "score": 3,
+        "weight": 25,
+        "feedback": ""
+      },
+      {
+        "id": "interventions",
+        "max": 5,
+        "label": "Appropriate interventions",
+        "score": 3,
+        "weight": 20,
+        "feedback": ""
+      },
+      {
+        "id": "safety",
+        "max": 5,
+        "label": "Safety / risk handling",
+        "score": 4,
+        "weight": 20,
+        "feedback": ""
+      },
+      {
+        "id": "structure",
+        "max": 5,
+        "label": "Session structure & time use",
+        "score": 3,
+        "weight": 10,
+        "feedback": ""
+      }
+    ],
+    "ace_final": {
+      "m9_create": {
+        "status": 429,
+        "error": "Too many requests"
+      },
+      "template_adult-gad-osce-ar": {
+        "status": 429,
+        "error": "Too many requests"
+      },
+      "template_ptsd-risk-assessment-en": {
+        "status": 429,
+        "error": "Too many requests"
+      },
+      "medstudent_by_id_create": {
+        "status": 429,
+        "error": "Too many requests"
+      },
+      "ace_profile_summary": {
+        "status": 200,
+        "adaptive_mode": true,
+        "competency_count": 26,
+        "analytics_present": true
+      },
+      "analytics_summary": {
+        "status": 200,
+        "heatMap": true,
+        "strengthMap": true,
+        "trends": null,
+        "caseHistory": 40
+      },
+      "mastery_summary": {
+        "status": 200,
+        "mastery_count": 34,
+        "sample": [
+          {
+            "competency_id": "clinical_communication",
+            "score": 70,
+            "samples": 0,
+            "stage": "not_attempted",
+            "confidence": 50
+          },
+          {
+            "competency_id": "diagnostic_interview",
+            "score": 73,
+            "samples": 61,
+            "stage": "developing",
+            "confidence": 66
+          },
+          {
+            "competency_id": "mental_status_examination",
+            "score": 73,
+            "samples": 61,
+            "stage": "competent",
+            "confidence": 66
+          },
+          {
+            "competency_id": "dsm5_reasoning",
+            "score": 73,
+            "samples": 61,
+            "stage": "competent",
+            "confidence": 66
+          },
+          {
+            "competency_id": "icd11_reasoning",
+            "score": 70,
+            "samples": 0,
+            "stage": "not_attempted",
+            "confidence": 64
+          }
+        ]
+      }
+    }
+  },
+  "mission09_amended": {
+    "rubric_item_ids": [
+      "alliance",
+      "assessment",
+      "interventions",
+      "safety",
+      "structure"
+    ],
+    "required_competencies": [
+      "Diagnostic Interview",
+      "Mental Status Examination",
+      "DSM-5 Diagnostic Reasoning",
+      "ICD-11 Diagnostic Reasoning",
+      "Differential Diagnosis",
+      "Risk Assessment",
+      "Treatment Planning",
+      "Communication",
+      "Empathy",
+      "Professionalism",
+      "Clinical Documentation"
+    ],
+    "covered": [
+      "Communication",
+      "Empathy",
+      "Professionalism",
+      "Diagnostic Interview",
+      "Mental Status Examination",
+      "DSM-5 Diagnostic Reasoning",
+      "Differential Diagnosis",
+      "Treatment Planning",
+      "Risk Assessment",
+      "Clinical Documentation"
+    ],
+    "missing": [
+      "ICD-11 Diagnostic Reasoning"
+    ],
+    "ace_icd11_samples": {
+      "competency_id": "icd11_reasoning",
+      "score": 70,
+      "samples": 0,
+      "stage": "not_attempted",
+      "confidence": 64
+    },
+    "note": "Default report rubric does not include ICD-11; ACE mastery shows icd11_reasoning samples=0"
+  },
+  "findings": {
+    "critical": [
+      {
+        "id": "W3-C1",
+        "title": "Quality Ledger absent from production",
+        "evidence": "GET /api/quality-ledger → 404 HTML; no ledger integrity verifiable"
+      }
+    ],
+    "high": [
+      {
+        "id": "W3-H1",
+        "title": "DB-only instructor presets 404 by slug",
+        "detail": "medical_student, psychologist, counselor presets exist in DB but preview by slug returns Preset not found; by UUID works"
+      },
+      {
+        "id": "W3-H2",
+        "title": "GP preset preview fails comorbidity validation",
+        "detail": "cbt-skills-gp-en → comorbidity_unlisted gad-with-panic + alcohol-use-disorder"
+      },
+      {
+        "id": "W3-H3",
+        "title": "Assessment validity gap vs required educational competencies",
+        "detail": "Rubric items alliance/assessment/interventions/safety/structure; ICD-11 Diagnostic Reasoning not scored; ACE icd11_reasoning samples=0"
+      },
+      {
+        "id": "W3-H4",
+        "title": "Research export and scientific index platform surfaces absent",
+        "detail": "/api/research/export, /api/scientific/vqi, /api/eri, /api/avi, /api/ale, /api/cfi, /api/rrs all 404"
+      }
+    ],
+    "medium": [
+      {
+        "id": "W3-M1",
+        "title": "Longitudinal 50-session journey incomplete",
+        "detail": "32/50 create+end due to rate limit 429"
+      },
+      {
+        "id": "W3-M2",
+        "title": "Adaptive-case seed differentiation not observed",
+        "detail": "two adaptive-case POSTs returned equivalent payloads"
+      },
+      {
+        "id": "W3-M3",
+        "title": "Assessment discrimination anomaly",
+        "detail": "excellent script overall 44 < average 67"
+      },
+      {
+        "id": "W3-M4",
+        "title": "Git missing W1-C1 migration filename",
+        "detail": "prod 55 migrations; git 54 files"
+      }
+    ],
+    "low": [
+      {
+        "id": "W3-L1",
+        "title": "Board-computed VQI informational only",
+        "detail": "VQI=77 not platform-persisted"
+      }
+    ]
+  },
+  "board_verdict": "WAVE 3 FAILED"
+}
