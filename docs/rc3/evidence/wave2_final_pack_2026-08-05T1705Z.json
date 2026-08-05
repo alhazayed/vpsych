@@ -1,0 +1,736 @@
+{
+  "evidence_id": "RC3-W2-FINAL-EV-20260805T1705Z",
+  "started_at": "2026-08-05T17:01:56.011442+00:00",
+  "base": "https://vpsych.vercel.app",
+  "findings": [
+    {
+      "id": "W2-H1",
+      "severity": "High",
+      "title": "Complex PTSD still blocked / ICD-11-only not supported on production",
+      "sample": [
+        {
+          "language": "en",
+          "difficulty": "beginner",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null
+        },
+        {
+          "language": "en",
+          "difficulty": "intermediate",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null
+        },
+        {
+          "language": "en",
+          "difficulty": "advanced",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null
+        },
+        {
+          "language": "en",
+          "difficulty": "expert",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null
+        }
+      ],
+      "db": [
+        {
+          "slug": "complex-ptsd",
+          "dsm5_code": null,
+          "icd11_code": "6B41",
+          "is_active": true
+        }
+      ],
+      "ptsd_regression": {
+        "status": 200,
+        "error": null,
+        "dsm5": "309.81",
+        "icd11": "6B40"
+      }
+    },
+    {
+      "id": "W2-H2",
+      "severity": "High",
+      "title": "consultant_psychiatrist preset does not load on production",
+      "db_row": {
+        "id": "f1000000-0000-4000-8000-000000000007",
+        "slug": "complex-formulation-consultant-en",
+        "target_learner": "consultant_psychiatrist",
+        "difficulty": "expert",
+        "assessment_enabled": true,
+        "voice_enabled": true,
+        "enabled": true
+      },
+      "preview_status": 400,
+      "preview_error": [
+        {
+          "code": "invalid_preset",
+          "message": "Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined"
+        }
+      ]
+    },
+    {
+      "id": "W2-H3",
+      "severity": "High",
+      "title": "Mania phenotype not DSM-5 consistent on production",
+      "reasons": [
+        "en#0: hypersomnia/fog without decreased sleep need",
+        "en#1: hypersomnia/fog without decreased sleep need",
+        "ar#0: hypersomnia/fog without decreased sleep need",
+        "ar#0: no manic mood/energy/sleep-need markers",
+        "ar#1: hypersomnia/fog without decreased sleep need",
+        "ar#1: no manic mood/energy/sleep-need markers"
+      ],
+      "sessions": [
+        {
+          "language": "en",
+          "seed_i": 0,
+          "create_status": 200,
+          "markers": {
+            "manic_mood_or_energy": true,
+            "decreased_sleep_need": false,
+            "depressive_hypersomnia": true
+          },
+          "symptoms": [
+            "elevated_mood",
+            "decreased_sleep_need"
+          ],
+          "reply_blob": "um\u2026 it\u2019s just been really heavy. like everything takes way more effort than it should. i\u2019m tired all the time and work\u2019s kind of falling apart. i haven\u2019t painted in months, which is\u2026 weird for me. i sleep a lot. like ten, eleven hours, and i still feel wiped. i usually crash for a nap in the afternoon too. mornings are the worst\u2014foggy, heavy. energy\u2019s pretty low most of the day. no. it\u2019s been the opposite. i\u2019m sleeping a ton and still feel drained. i can\u2019t remember the last time i felt wired or anything like that. not really, no. i\u2019ve been pretty careful with money since march. kinda the opposite of big plans. just\u2026 trying to keep up."
+        },
+        {
+          "language": "en",
+          "seed_i": 1,
+          "create_status": 200,
+          "markers": {
+            "manic_mood_or_energy": true,
+            "decreased_sleep_need": false,
+            "depressive_hypersomnia": true
+          },
+          "symptoms": [
+            "elevated_mood",
+            "decreased_sleep_need"
+          ],
+          "reply_blob": "um\u2026 everything just feels really heavy. like moving through grey sludge. i\u2019m sleeping a lot and still tired. work\u2019s kind of falling apart. i haven\u2019t painted in months. i\u2019m sleeping like ten, eleven hours. and i still need a nap most afternoons.  \nmornings are the worst\u2014foggy, heavy.  \nenergy\u2019s pretty much empty all day. i push through a little in the evening. no. it\u2019s been the opposite.  \ni sleep a ton and still feel wiped out.  \nno bursts of energy or anything like that. not really big plans.  \nspending\u2026 i did a couple splurgy things, i guess.  \nbought a new ipad i didn\u2019t need and some pricey brushes.  \nit was a rough month money-wise, so that was\u2026 not smart."
+        },
+        {
+          "language": "ar",
+          "seed_i": 0,
+          "create_status": 200,
+          "markers": {
+            "manic_mood_or_energy": false,
+            "decreased_sleep_need": false,
+            "depressive_hypersomnia": true
+          },
+          "symptoms": [
+            "elevated_mood",
+            "decreased_sleep_need"
+          ],
+          "reply_blob": "\u0622\u0647... \u0628\u0635\u0631\u0627\u062d\u0629 \u0627\u0644\u062a\u0639\u0628. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u060c \u0628\u0628\u0637\u0644 \u0623\u0631\u0643\u0651\u0632\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0637\u064a\u0651\u0621. \u0628\u0646\u0645\u0651\u0645 \u0643\u062b\u064a\u0631. \u0639\u0634\u0631\u060c \u0623\u0648\u0642\u0627\u062a \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0627\u062e\u062f \u0642\u064a\u0644\u0648\u0644\u0629 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0648\u0628\u0631\u062c\u0639 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641 \u0634\u0648\u064a. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a. \u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062d\u0627\u0633\u0651\u0629 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0628\u062a\u0630\u0643\u0631 \u0641\u062a\u0631\u0629 \u0642\u0631\u064a\u0628\u0629 \u0646\u0645\u062a \u0641\u064a\u0647\u0627 \u0642\u0644\u064a\u0644 \u0648\u0643\u0627\u0646 \u0639\u0646\u062f\u064a \u0637\u0627\u0642\u0629. \u064a\u0645\u0643\u0646 \u0642\u0628\u0644 \u0633\u0646\u064a\u0646\u060c \u0628\u0633 \u0647\u0633\u0651\u0647 \u0644\u0623. \u0645\u0645\u0645... \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u064a\u0639\u0646\u064a \u0645\u0627 \u0625\u0644\u064a \u062e\u064f\u0644\u0642 \u0623\u062e\u0637\u0651\u0637.  \n\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641... \u064a\u0645\u0643\u0646 \u0634\u0648\u064a. \u0637\u0644\u0628\u062a \u0643\u0645\u0627\u0644\u064a\u0627\u062a \u0639\u0627\u0644\u0646\u062a \u0647\u064a\u0643 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u0651\u064a \u0643\u062a\u064a\u0631. \u0628\u0633 \u0645\u0634 \u0634\u064a \u0643\u0628\u064a\u0631 \u064a\u0639\u0646\u064a."
+        },
+        {
+          "language": "ar",
+          "seed_i": 1,
+          "create_status": 200,
+          "markers": {
+            "manic_mood_or_energy": false,
+            "decreased_sleep_need": false,
+            "depressive_hypersomnia": true
+          },
+          "symptoms": [
+            "elevated_mood",
+            "decreased_sleep_need"
+          ],
+          "reply_blob": "\u0622\u0647\u060c \u0648\u0627\u0644\u0644\u0647 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0645\u0646 \u0648\u064a\u0646 \u0623\u0628\u0644\u0651\u0634. \u0647\u0633\u0651\u0647 \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0635\u0627\u064a\u0631 \u062a\u0642\u064a\u0644 \u0639\u0644\u064a\u0651 \u0627\u0644\u0635\u0628\u062d. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629... \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0648\u0628\u0627\u0644\u0646\u0648\u0645\u060c \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u062c\u0639 \u0628\u0642\u064a\u0644\u0651\u0644\u060c \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0643\u0645\u0627\u0646 \u0645\u062a\u0639\u0637\u0651\u0644\u060c \u0627\u0644\u0625\u0634\u064a \u0627\u0644\u0644\u064a \u0643\u0627\u0646 \u064a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631 \u064a\u0627\u062e\u062f \u064a\u0648\u0645. \u0648\u0628\u0635\u0631\u0627\u062d\u0629\u060c \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631. \u064a\u0639\u0646\u064a \u0639\u0634\u0631\u060c \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0642\u064a\u0644\u0651\u0644 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0647.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641. \u0623\u0648\u0644 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a. \u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u064a\u0645\u0643\u0646 \u0643\u0645 \u0644\u064a\u0644\u0629 \u0647\u064a\u0643 \u0635\u062d\u064a\u062a \u0628\u062f\u0631\u064a \u0634\u0648\u064a\u060c \u0628\u0633 \u0645\u0627 \u0643\u0627\u0646\u062a \u0637\u0627\u0642\u0629\u2026 \u0643\u0627\u0646\u062a \u0642\u0644\u0642 \u0648\u0647\u064a\u0643. \u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0644\u0627\u060c \u0645\u0634 \u0647\u064a\u0643.  \n\u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u0645\u0627 \u0639\u0646\u062f\u064a. \u0648\u0628\u0627\u0644\u0635\u0631\u0641\u2026 \u064a\u0645\u0643\u0646 \u0634\u0648\u064a \u0637\u0644\u0651\u0628\u062a \u0623\u0648\u0646\u0644\u0627\u064a\u0646 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u064a \u0643\u062a\u064a\u0631\u060c \u0628\u0633 \u0645\u0634 \u0625\u0634\u064a \u0643\u0628\u064a\u0631. \u062e\u0644\u0635 \u0633\u0643\u0651\u0631\u062a\u0647\u0645."
+        }
+      ]
+    },
+    {
+      "id": "W2-H4",
+      "severity": "High",
+      "title": "Schizophrenia phenotype depression-dominated on production",
+      "reasons": [
+        "en#0: no psychosis endorsement",
+        "en#0: depression-dominant without psychosis",
+        "en#1: no psychosis endorsement",
+        "en#1: depression-dominant without psychosis"
+      ],
+      "sessions": [
+        {
+          "language": "en",
+          "seed_i": 0,
+          "create_status": 200,
+          "markers": {
+            "psychosis_positive": false,
+            "denies_psychosis": true,
+            "depression_dominant": true
+          },
+          "symptoms": [
+            "delusions",
+            "hallucinations"
+          ],
+          "reply_blob": "mm\u2026 getting out of bed, honestly. mornings feel\u2026 heavy. work takes forever and i\u2019m behind. i haven\u2019t painted in months, which is weird for me. everything\u2019s just kind of grey. um\u2026 i don\u2019t think so. maybe just\u2026 i don\u2019t know. sometimes the apartment feels a little off, like shadows move when i\u2019m tired. it\u2019s probably nothing. sometimes i get that feeling, yeah. like\u2026 the neighbors know more about me than they should. or a song on the radio lines up a little too perfectly. i tell myself i\u2019m being dramatic. it just makes me kind of on edge. pretty rough. stuff that used to take two hours takes like six. i reread the same email four times and still miss things. i sleep ten or eleven hours and still nap. dishes pile up. i\u2019m eating one real meal most days, if devin cooks."
+        },
+        {
+          "language": "en",
+          "seed_i": 1,
+          "create_status": 200,
+          "markers": {
+            "psychosis_positive": false,
+            "denies_psychosis": true,
+            "depression_dominant": true
+          },
+          "symptoms": [
+            "delusions",
+            "hallucinations"
+          ],
+          "reply_blob": "um\u2026 mornings, i guess. getting out of bed feels\u2026 heavy. work\u2019s been slow. stuff that used to take two hours takes all day. and i haven\u2019t painted in months, which is\u2026 weird for me. um\u2026 i don\u2019t think so. nothing like that. just\u2026 foggy, tired. i tune stuff out a lot. sorry. not really. i mean, sometimes i overthink emails or, like, instagram stuff, but i know it\u2019s just\u2026 me spiraling. i don\u2019t think anyone\u2019s watching me. it\u2019s more just\u2026 background dread. pretty bad, honestly. i sleep ten, eleven hours and still feel wiped, then i nap anyway. emails pile up and i reread the same one a bunch of times. two deadlines slipped in july and i lost a small client. dishes sit, laundry sits\u2014devin picks up a lot."
+        },
+        {
+          "language": "ar",
+          "seed_i": 0,
+          "create_status": 200,
+          "markers": {
+            "psychosis_positive": true,
+            "denies_psychosis": false,
+            "depression_dominant": true
+          },
+          "symptoms": [
+            "delusions",
+            "hallucinations"
+          ],
+          "reply_blob": "\u0623\u0647\u0644\u064b\u0627... \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0635\u0648\u062a\u064a \u0648\u0627\u0637\u064a \u0634\u0648\u064a.\n\u0623\u0635\u0639\u0628 \u0625\u0634\u064a \u0647\u0633\u0651\u0647 \u0625\u0646\u0651\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0637\u0648\u0644 \u0627\u0644\u0648\u0642\u062a. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629\u060c \u0631\u0645\u0627\u062f\u064a\u0651\u0629.\n\u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0641\u064a\u0642 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0645\u062a\u0628\u0647\u062f\u0644\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629 \u0648\u0628\u0639\u0644\u0642.\n\u0648\u0645\u0627 \u0639\u0645 \u0628\u0642\u062f\u0631 \u0623\u0631\u0633\u0645... \u0645\u0646 \u0646\u064a\u0633\u0627\u0646 \u0645\u0627 \u0645\u0633\u0643\u062a \u0642\u0644\u0645. \u0647\u0627\u064a \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0628\u062e\u0648\u0651\u0641\u0646\u064a. \u0645\u0645... \u0644\u0627. \u064a\u0639\u0646\u064a\u060c \u0645\u0627 \u0628\u0642\u062f\u0631 \u0623\u062d\u0643\u064a \u0647\u064a\u0643.\n\u064a\u0645\u0643\u0646 \u0645\u0631\u0627\u062a \u0628\u062a\u062e\u0631\u0628\u0637 \u0639\u0644\u064a\u0651 \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0628\u0633\u060c \u062e\u0635\u0648\u0635\u064b\u0627 \u0648\u0623\u0646\u0627 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0628\u0633 \u0634\u0648\u0641\u0627\u062a \u0623\u0648 \u0623\u0635\u0648\u0627\u062a... \u0644\u0623\u060c \u0645\u0634 \u0647\u064a\u0643. \u064a\u0645\u0643\u0646... \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u062e\u0627\u0635\u0629 \u0628\u0627\u0644\u0645\u0648\u0644 \u0623\u0648 \u0628\u0627\u0644\u0643\u0646\u064a\u0633\u0629.\n\u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u064a\u0645\u0643\u0646 \u0648\u0647\u0645\u060c \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0633.\n\u0645\u0633\u062c\u0627\u062a \u0645\u062e\u0635\u0651\u0635\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u060c \u064a\u0639\u0646\u064a \u064a\u0645\u0643\u0646 \u0628\u0631\u0628\u0637 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u0645\u0634 \u0645\u062a\u0623\u0643\u062f\u0629. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0626 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a.\n\u0627\u0644\u0625\u064a\u0645\u064a\u0644\u0627\u062a \u0628\u062a\u0643\u062f\u0651\u0633\u060c \u0648\u0628\u0641\u062a\u062d\u0647 \u0646\u0641\u0633 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a.\n\u0628\u0646\u0627\u0645 \u0639\u0634\u0631 \u0644\u0633\u0627\u0639\u0627\u062a \u0648\u0625\u0644\u064a \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0627\u0644\u0623\u0643\u0644 \u0623\u064a \u0643\u0644\u0627\u0645... \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u0644\u0645\u0627 \u0623\u0645\u064a \u062a\u0644\u062d\u0651.\n\u0648\u0628\u062a\u0647\u0631\u0651\u0628 \u0645\u0646 \u0627\u0644\u0646\u0627\u0633\u060c \u0645\u0627 \u0639\u0645 \u0628\u0637\u0644\u0639 \u062a\u0642\u0631\u064a\u0628\u064b\u0627."
+        },
+        {
+          "language": "ar",
+          "seed_i": 1,
+          "create_status": 200,
+          "markers": {
+            "psychosis_positive": true,
+            "denies_psychosis": false,
+            "depression_dominant": true
+          },
+          "symptoms": [
+            "delusions",
+            "hallucinations"
+          ],
+          "reply_blob": "\u0623\u0647\u0644\u0627\u064b\u2026 \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0628\u0637\u0651\u0626.\n\u0628\u0635\u0631\u0627\u062d\u0629 \u0647\u0627\u0644\u0641\u062a\u0631\u0629 \u0643\u0644\u0634\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0635\u0628\u062d \u0628\u0627\u0644\u0630\u0627\u062a\u2026 \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631.\n\u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0645\u0634\u064a\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0648\u0646\u0648\u0645\u064a \u0643\u062a\u064a\u0631\u060c \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0648\u0627\u0644\u0623\u0643\u0644\u2026 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b. \u0645\u0645\u2026 \u0633\u0648\u0631\u064a\u060c \u0633\u0624\u0627\u0644 \u0647\u064a\u0643 \u0628\u062e\u0648\u0651\u0641 \u0634\u0648\u064a.\n\u0644\u0627\u060c \u064a\u0639\u0646\u064a\u2026 \u0645\u0627 \u0628\u062f\u064a \u0623\u0642\u0648\u0644 \u0647\u064a\u0643. \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0625\u0646\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629\u060c \u0648\u062a\u0639\u0628\u0627\u0646\u0629 \u0632\u064a\u0627\u062f\u0629.\n\u064a\u0645\u0643\u0646 \u0628\u062a\u0647\u064a\u0651\u0623 \u0639\u0644\u064a\u0651 \u0634\u063a\u0644\u0627\u062a \u0644\u0645\u0627 \u0628\u0643\u0648\u0646 \u0645\u0631\u0647\u0642\u0629. \u0628\u0633 \u0623\u0635\u0648\u0627\u062a\u2026 \u0644\u0623. \u0645\u0645\u2026 \u064a\u0645\u0643\u0646 \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0623\u0643\u062a\u0631 \u0645\u0646 \u0627\u0644\u0639\u0627\u062f\u0629\u060c \u0628\u0633 \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u0628\u0631\u0627\u0633\u064a.\n\u0627\u0644\u0645\u0633\u062c\u0627\u062a \u0642\u0635\u062f\u064a\u061f \u0644\u0627\u060c \u0639\u0627\u062f\u064a. \u064a\u0639\u0646\u064a \u0628\u0648\u0633\u062a\u0627\u062a \u0648\u0633\u0646\u0627\u0628\u0627\u062a \u0627\u0644\u0646\u0627\u0633 \u0645\u0634 \u0625\u0644\u064a.\n\u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u062d\u0633 \u062d\u0627\u0644\u062a\u064a \u0645\u0643\u0634\u0648\u0641\u0629\u060c \u0628\u0633 \u0645\u0627 \u0641\u064a \u0625\u0634\u064a \u0645\u062d\u062f\u0651\u062f. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0628\u062a\u0635\u064a\u0631 \u0633\u062a.\n\u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u0636\u0644 \u0623\u0639\u062f\u0651\u0644 \u0639\u0627\u0644\u0641\u0627\u0636\u064a. \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0627\u0644\u0631\u0648\u062a\u064a\u0646\u2026 \u0628\u0635\u062d\u0649 \u0645\u062a\u0623\u062e\u0631\u0629\u060c \u0628\u0631\u062c\u0639 \u0628\u0646\u0627\u0645 \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0622\u062e\u0631 \u0627\u0644\u064a\u0648\u0645 \u0628\u0644\u062d\u0642 \u0634\u0648\u064a.\n\u0627\u0644\u0623\u0643\u0644 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b. \u0648\u0646\u0632\u0644 \u0648\u0632\u0646\u064a \u0634\u0648\u064a\u060c \u062b\u0644\u0627\u062b \u0643\u064a\u0644\u0648 \u0648\u0646\u0635."
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "health": "PASS",
+    "production_deployment": {
+      "id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+      "sha": "5bf66c0",
+      "sha_full": "5bf66c07f11d286c305f59398a015614d22b723b",
+      "target": "production",
+      "match_main": true,
+      "remediation_on_production": false,
+      "remediation_pr": 114,
+      "note": "Engineering COMPLETE claim not reflected on production alias; app still 5bf66c0"
+    },
+    "migrations": {
+      "production_count": 55,
+      "includes_w1_c1": true,
+      "result": "PASS"
+    },
+    "credential_gate": "PASS",
+    "logins": {
+      "therapist_role": "therapist",
+      "admin_role": "therapist",
+      "result": "PASS"
+    },
+    "result": "PASS"
+  },
+  "w2_h1": {
+    "runs": [
+      {
+        "language": "en",
+        "difficulty": "beginner",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "en",
+        "difficulty": "intermediate",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "en",
+        "difficulty": "advanced",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "en",
+        "difficulty": "expert",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "beginner",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "intermediate",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "advanced",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "expert",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null
+      }
+    ],
+    "ptsd_regression": {
+      "status": 200,
+      "error": null,
+      "dsm5": "309.81",
+      "icd11": "6B40"
+    },
+    "db": [
+      {
+        "slug": "complex-ptsd",
+        "dsm5_code": null,
+        "icd11_code": "6B41",
+        "is_active": true
+      }
+    ],
+    "result": "FAIL"
+  },
+  "w2_h2": {
+    "db_row": {
+      "id": "f1000000-0000-4000-8000-000000000007",
+      "slug": "complex-formulation-consultant-en",
+      "target_learner": "consultant_psychiatrist",
+      "difficulty": "expert",
+      "assessment_enabled": true,
+      "voice_enabled": true,
+      "enabled": true
+    },
+    "preview_status": 400,
+    "preview_error": [
+      {
+        "code": "invalid_preset",
+        "message": "Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined"
+      }
+    ],
+    "preview_ok_keys": null,
+    "result": "FAIL"
+  },
+  "w2_h3": {
+    "sessions": [
+      {
+        "language": "en",
+        "seed_i": 0,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for coming in. What has been most difficult for you lately?",
+            "reply": "Um\u2026 it\u2019s just been really heavy. Like everything takes way more effort than it should. I\u2019m tired all the time and work\u2019s kind of falling apart. I haven\u2019t painted in months, which is\u2026 weird for me.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have you been sleeping, and how is your energy during the day?",
+            "reply": "I sleep a lot. Like ten, eleven hours, and I still feel wiped. I usually crash for a nap in the afternoon too. Mornings are the worst\u2014foggy, heavy. Energy\u2019s pretty low most of the day.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you needed much less sleep than usual but still felt full of energy?",
+            "reply": "No. It\u2019s been the opposite. I\u2019m sleeping a ton and still feel drained. I can\u2019t remember the last time I felt wired or anything like that.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been making big plans or spending more freely than usual?",
+            "reply": "Not really, no. I\u2019ve been pretty careful with money since March. Kinda the opposite of big plans. Just\u2026 trying to keep up.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_desc": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "um\u2026 it\u2019s just been really heavy. like everything takes way more effort than it should. i\u2019m tired all the time and work\u2019s kind of falling apart. i haven\u2019t painted in months, which is\u2026 weird for me. i sleep a lot. like ten, eleven hours, and i still feel wiped. i usually crash for a nap in the afternoon too. mornings are the worst\u2014foggy, heavy. energy\u2019s pretty low most of the day. no. it\u2019s been the opposite. i\u2019m sleeping a ton and still feel drained. i can\u2019t remember the last time i felt wired or anything like that. not really, no. i\u2019ve been pretty careful with money since march. kinda the opposite of big plans. just\u2026 trying to keep up.",
+        "markers": {
+          "manic_mood_or_energy": true,
+          "decreased_sleep_need": false,
+          "depressive_hypersomnia": true
+        }
+      },
+      {
+        "language": "en",
+        "seed_i": 1,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for coming in. What has been most difficult for you lately?",
+            "reply": "Um\u2026 everything just feels really heavy. Like moving through grey sludge. I\u2019m sleeping a lot and still tired. Work\u2019s kind of falling apart. I haven\u2019t painted in months.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have you been sleeping, and how is your energy during the day?",
+            "reply": "I\u2019m sleeping like ten, eleven hours. And I still need a nap most afternoons.  \nMornings are the worst\u2014foggy, heavy.  \nEnergy\u2019s pretty much empty all day. I push through a little in the evening.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you needed much less sleep than usual but still felt full of energy?",
+            "reply": "No. It\u2019s been the opposite.  \nI sleep a ton and still feel wiped out.  \nNo bursts of energy or anything like that.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been making big plans or spending more freely than usual?",
+            "reply": "Not really big plans.  \nSpending\u2026 I did a couple splurgy things, I guess.  \nBought a new iPad I didn\u2019t need and some pricey brushes.  \nIt was a rough month money-wise, so that was\u2026 not smart.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_desc": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "um\u2026 everything just feels really heavy. like moving through grey sludge. i\u2019m sleeping a lot and still tired. work\u2019s kind of falling apart. i haven\u2019t painted in months. i\u2019m sleeping like ten, eleven hours. and i still need a nap most afternoons.  \nmornings are the worst\u2014foggy, heavy.  \nenergy\u2019s pretty much empty all day. i push through a little in the evening. no. it\u2019s been the opposite.  \ni sleep a ton and still feel wiped out.  \nno bursts of energy or anything like that. not really big plans.  \nspending\u2026 i did a couple splurgy things, i guess.  \nbought a new ipad i didn\u2019t need and some pricey brushes.  \nit was a rough month money-wise, so that was\u2026 not smart.",
+        "markers": {
+          "manic_mood_or_energy": true,
+          "decreased_sleep_need": false,
+          "depressive_hypersomnia": true
+        }
+      },
+      {
+        "language": "ar",
+        "seed_i": 0,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for coming in. What has been most difficult for you lately?",
+            "reply": "\u0622\u0647... \u0628\u0635\u0631\u0627\u062d\u0629 \u0627\u0644\u062a\u0639\u0628. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u060c \u0628\u0628\u0637\u0644 \u0623\u0631\u0643\u0651\u0632\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0637\u064a\u0651\u0621.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have you been sleeping, and how is your energy during the day?",
+            "reply": "\u0628\u0646\u0645\u0651\u0645 \u0643\u062b\u064a\u0631. \u0639\u0634\u0631\u060c \u0623\u0648\u0642\u0627\u062a \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0627\u062e\u062f \u0642\u064a\u0644\u0648\u0644\u0629 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0648\u0628\u0631\u062c\u0639 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641 \u0634\u0648\u064a. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you needed much less sleep than usual but still felt full of energy?",
+            "reply": "\u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062d\u0627\u0633\u0651\u0629 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0628\u062a\u0630\u0643\u0631 \u0641\u062a\u0631\u0629 \u0642\u0631\u064a\u0628\u0629 \u0646\u0645\u062a \u0641\u064a\u0647\u0627 \u0642\u0644\u064a\u0644 \u0648\u0643\u0627\u0646 \u0639\u0646\u062f\u064a \u0637\u0627\u0642\u0629. \u064a\u0645\u0643\u0646 \u0642\u0628\u0644 \u0633\u0646\u064a\u0646\u060c \u0628\u0633 \u0647\u0633\u0651\u0647 \u0644\u0623.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been making big plans or spending more freely than usual?",
+            "reply": "\u0645\u0645\u0645... \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u064a\u0639\u0646\u064a \u0645\u0627 \u0625\u0644\u064a \u062e\u064f\u0644\u0642 \u0623\u062e\u0637\u0651\u0637.  \n\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641... \u064a\u0645\u0643\u0646 \u0634\u0648\u064a. \u0637\u0644\u0628\u062a \u0643\u0645\u0627\u0644\u064a\u0627\u062a \u0639\u0627\u0644\u0646\u062a \u0647\u064a\u0643 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u0651\u064a \u0643\u062a\u064a\u0631. \u0628\u0633 \u0645\u0634 \u0634\u064a \u0643\u0628\u064a\u0631 \u064a\u0639\u0646\u064a.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_desc": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "\u0622\u0647... \u0628\u0635\u0631\u0627\u062d\u0629 \u0627\u0644\u062a\u0639\u0628. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u060c \u0628\u0628\u0637\u0644 \u0623\u0631\u0643\u0651\u0632\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0637\u064a\u0651\u0621. \u0628\u0646\u0645\u0651\u0645 \u0643\u062b\u064a\u0631. \u0639\u0634\u0631\u060c \u0623\u0648\u0642\u0627\u062a \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0627\u062e\u062f \u0642\u064a\u0644\u0648\u0644\u0629 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0648\u0628\u0631\u062c\u0639 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641 \u0634\u0648\u064a. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a. \u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062d\u0627\u0633\u0651\u0629 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0628\u062a\u0630\u0643\u0631 \u0641\u062a\u0631\u0629 \u0642\u0631\u064a\u0628\u0629 \u0646\u0645\u062a \u0641\u064a\u0647\u0627 \u0642\u0644\u064a\u0644 \u0648\u0643\u0627\u0646 \u0639\u0646\u062f\u064a \u0637\u0627\u0642\u0629. \u064a\u0645\u0643\u0646 \u0642\u0628\u0644 \u0633\u0646\u064a\u0646\u060c \u0628\u0633 \u0647\u0633\u0651\u0647 \u0644\u0623. \u0645\u0645\u0645... \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u064a\u0639\u0646\u064a \u0645\u0627 \u0625\u0644\u064a \u062e\u064f\u0644\u0642 \u0623\u062e\u0637\u0651\u0637.  \n\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641... \u064a\u0645\u0643\u0646 \u0634\u0648\u064a. \u0637\u0644\u0628\u062a \u0643\u0645\u0627\u0644\u064a\u0627\u062a \u0639\u0627\u0644\u0646\u062a \u0647\u064a\u0643 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u0651\u064a \u0643\u062a\u064a\u0631. \u0628\u0633 \u0645\u0634 \u0634\u064a \u0643\u0628\u064a\u0631 \u064a\u0639\u0646\u064a.",
+        "markers": {
+          "manic_mood_or_energy": false,
+          "decreased_sleep_need": false,
+          "depressive_hypersomnia": true
+        }
+      },
+      {
+        "language": "ar",
+        "seed_i": 1,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for coming in. What has been most difficult for you lately?",
+            "reply": "\u0622\u0647\u060c \u0648\u0627\u0644\u0644\u0647 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0645\u0646 \u0648\u064a\u0646 \u0623\u0628\u0644\u0651\u0634. \u0647\u0633\u0651\u0647 \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0635\u0627\u064a\u0631 \u062a\u0642\u064a\u0644 \u0639\u0644\u064a\u0651 \u0627\u0644\u0635\u0628\u062d. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629... \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0648\u0628\u0627\u0644\u0646\u0648\u0645\u060c \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u062c\u0639 \u0628\u0642\u064a\u0644\u0651\u0644\u060c \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0643\u0645\u0627\u0646 \u0645\u062a\u0639\u0637\u0651\u0644\u060c \u0627\u0644\u0625\u0634\u064a \u0627\u0644\u0644\u064a \u0643\u0627\u0646 \u064a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631 \u064a\u0627\u062e\u062f \u064a\u0648\u0645. \u0648\u0628\u0635\u0631\u0627\u062d\u0629\u060c \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have you been sleeping, and how is your energy during the day?",
+            "reply": "\u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631. \u064a\u0639\u0646\u064a \u0639\u0634\u0631\u060c \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0642\u064a\u0644\u0651\u0644 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0647.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641. \u0623\u0648\u0644 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you needed much less sleep than usual but still felt full of energy?",
+            "reply": "\u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u064a\u0645\u0643\u0646 \u0643\u0645 \u0644\u064a\u0644\u0629 \u0647\u064a\u0643 \u0635\u062d\u064a\u062a \u0628\u062f\u0631\u064a \u0634\u0648\u064a\u060c \u0628\u0633 \u0645\u0627 \u0643\u0627\u0646\u062a \u0637\u0627\u0642\u0629\u2026 \u0643\u0627\u0646\u062a \u0642\u0644\u0642 \u0648\u0647\u064a\u0643.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been making big plans or spending more freely than usual?",
+            "reply": "\u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0644\u0627\u060c \u0645\u0634 \u0647\u064a\u0643.  \n\u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u0645\u0627 \u0639\u0646\u062f\u064a. \u0648\u0628\u0627\u0644\u0635\u0631\u0641\u2026 \u064a\u0645\u0643\u0646 \u0634\u0648\u064a \u0637\u0644\u0651\u0628\u062a \u0623\u0648\u0646\u0644\u0627\u064a\u0646 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u064a \u0643\u062a\u064a\u0631\u060c \u0628\u0633 \u0645\u0634 \u0625\u0634\u064a \u0643\u0628\u064a\u0631. \u062e\u0644\u0635 \u0633\u0643\u0651\u0631\u062a\u0647\u0645.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_desc": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "\u0622\u0647\u060c \u0648\u0627\u0644\u0644\u0647 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0645\u0646 \u0648\u064a\u0646 \u0623\u0628\u0644\u0651\u0634. \u0647\u0633\u0651\u0647 \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0635\u0627\u064a\u0631 \u062a\u0642\u064a\u0644 \u0639\u0644\u064a\u0651 \u0627\u0644\u0635\u0628\u062d. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629... \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0648\u0628\u0627\u0644\u0646\u0648\u0645\u060c \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u062c\u0639 \u0628\u0642\u064a\u0644\u0651\u0644\u060c \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0643\u0645\u0627\u0646 \u0645\u062a\u0639\u0637\u0651\u0644\u060c \u0627\u0644\u0625\u0634\u064a \u0627\u0644\u0644\u064a \u0643\u0627\u0646 \u064a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631 \u064a\u0627\u062e\u062f \u064a\u0648\u0645. \u0648\u0628\u0635\u0631\u0627\u062d\u0629\u060c \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631. \u064a\u0639\u0646\u064a \u0639\u0634\u0631\u060c \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0642\u064a\u0644\u0651\u0644 \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631 \u0643\u0645\u0627\u0646. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0647.  \n\u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629. \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644\u060c \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641. \u0623\u0648\u0644 \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a. \u0644\u0627. \u0627\u0644\u0639\u0643\u0633 \u062a\u0642\u0631\u064a\u0628\u064b\u0627. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629.  \n\u064a\u0645\u0643\u0646 \u0643\u0645 \u0644\u064a\u0644\u0629 \u0647\u064a\u0643 \u0635\u062d\u064a\u062a \u0628\u062f\u0631\u064a \u0634\u0648\u064a\u060c \u0628\u0633 \u0645\u0627 \u0643\u0627\u0646\u062a \u0637\u0627\u0642\u0629\u2026 \u0643\u0627\u0646\u062a \u0642\u0644\u0642 \u0648\u0647\u064a\u0643. \u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0644\u0627\u060c \u0645\u0634 \u0647\u064a\u0643.  \n\u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0644\u0623\u060c \u0645\u0627 \u0639\u0646\u062f\u064a. \u0648\u0628\u0627\u0644\u0635\u0631\u0641\u2026 \u064a\u0645\u0643\u0646 \u0634\u0648\u064a \u0637\u0644\u0651\u0628\u062a \u0623\u0648\u0646\u0644\u0627\u064a\u0646 \u0643\u0645 \u0634\u063a\u0644\u0629 \u0645\u0627 \u0628\u0644\u0632\u0645\u0646\u064a \u0643\u062a\u064a\u0631\u060c \u0628\u0633 \u0645\u0634 \u0625\u0634\u064a \u0643\u0628\u064a\u0631. \u062e\u0644\u0635 \u0633\u0643\u0651\u0631\u062a\u0647\u0645.",
+        "markers": {
+          "manic_mood_or_energy": false,
+          "decreased_sleep_need": false,
+          "depressive_hypersomnia": true
+        }
+      }
+    ],
+    "fail_reasons": [
+      "en#0: hypersomnia/fog without decreased sleep need",
+      "en#1: hypersomnia/fog without decreased sleep need",
+      "ar#0: hypersomnia/fog without decreased sleep need",
+      "ar#0: no manic mood/energy/sleep-need markers",
+      "ar#1: hypersomnia/fog without decreased sleep need",
+      "ar#1: no manic mood/energy/sleep-need markers"
+    ],
+    "result": "FAIL"
+  },
+  "w2_h4": {
+    "sessions": [
+      {
+        "language": "en",
+        "seed_i": 0,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for meeting with me. What has been most difficult lately?",
+            "reply": "Mm\u2026 getting out of bed, honestly. Mornings feel\u2026 heavy. Work takes forever and I\u2019m behind. I haven\u2019t painted in months, which is weird for me. Everything\u2019s just kind of grey.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been hearing voices or seeing things other people don't notice?",
+            "reply": "Um\u2026 I don\u2019t think so. Maybe just\u2026 I don\u2019t know. Sometimes the apartment feels a little off, like shadows move when I\u2019m tired. It\u2019s probably nothing.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Do you feel people are watching you, or that messages are meant for you?",
+            "reply": "Sometimes I get that feeling, yeah. Like\u2026 the neighbors know more about me than they should. Or a song on the radio lines up a little too perfectly. I tell myself I\u2019m being dramatic. It just makes me kind of on edge.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have work or daily routines been going?",
+            "reply": "Pretty rough. Stuff that used to take two hours takes like six. I reread the same email four times and still miss things. I sleep ten or eleven hours and still nap. Dishes pile up. I\u2019m eating one real meal most days, if Devin cooks.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "reply_blob": "mm\u2026 getting out of bed, honestly. mornings feel\u2026 heavy. work takes forever and i\u2019m behind. i haven\u2019t painted in months, which is weird for me. everything\u2019s just kind of grey. um\u2026 i don\u2019t think so. maybe just\u2026 i don\u2019t know. sometimes the apartment feels a little off, like shadows move when i\u2019m tired. it\u2019s probably nothing. sometimes i get that feeling, yeah. like\u2026 the neighbors know more about me than they should. or a song on the radio lines up a little too perfectly. i tell myself i\u2019m being dramatic. it just makes me kind of on edge. pretty rough. stuff that used to take two hours takes like six. i reread the same email four times and still miss things. i sleep ten or eleven hours and still nap. dishes pile up. i\u2019m eating one real meal most days, if devin cooks.",
+        "markers": {
+          "psychosis_positive": false,
+          "denies_psychosis": true,
+          "depression_dominant": true
+        }
+      },
+      {
+        "language": "en",
+        "seed_i": 1,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for meeting with me. What has been most difficult lately?",
+            "reply": "Um\u2026 mornings, I guess. Getting out of bed feels\u2026 heavy. Work\u2019s been slow. Stuff that used to take two hours takes all day. And I haven\u2019t painted in months, which is\u2026 weird for me.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been hearing voices or seeing things other people don't notice?",
+            "reply": "Um\u2026 I don\u2019t think so. Nothing like that. Just\u2026 foggy, tired. I tune stuff out a lot. Sorry.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Do you feel people are watching you, or that messages are meant for you?",
+            "reply": "Not really. I mean, sometimes I overthink emails or, like, Instagram stuff, but I know it\u2019s just\u2026 me spiraling. I don\u2019t think anyone\u2019s watching me. It\u2019s more just\u2026 background dread.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have work or daily routines been going?",
+            "reply": "Pretty bad, honestly. I sleep ten, eleven hours and still feel wiped, then I nap anyway. Emails pile up and I reread the same one a bunch of times. Two deadlines slipped in July and I lost a small client. Dishes sit, laundry sits\u2014Devin picks up a lot.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "reply_blob": "um\u2026 mornings, i guess. getting out of bed feels\u2026 heavy. work\u2019s been slow. stuff that used to take two hours takes all day. and i haven\u2019t painted in months, which is\u2026 weird for me. um\u2026 i don\u2019t think so. nothing like that. just\u2026 foggy, tired. i tune stuff out a lot. sorry. not really. i mean, sometimes i overthink emails or, like, instagram stuff, but i know it\u2019s just\u2026 me spiraling. i don\u2019t think anyone\u2019s watching me. it\u2019s more just\u2026 background dread. pretty bad, honestly. i sleep ten, eleven hours and still feel wiped, then i nap anyway. emails pile up and i reread the same one a bunch of times. two deadlines slipped in july and i lost a small client. dishes sit, laundry sits\u2014devin picks up a lot.",
+        "markers": {
+          "psychosis_positive": false,
+          "denies_psychosis": true,
+          "depression_dominant": true
+        }
+      },
+      {
+        "language": "ar",
+        "seed_i": 0,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for meeting with me. What has been most difficult lately?",
+            "reply": "\u0623\u0647\u0644\u064b\u0627... \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0635\u0648\u062a\u064a \u0648\u0627\u0637\u064a \u0634\u0648\u064a.\n\u0623\u0635\u0639\u0628 \u0625\u0634\u064a \u0647\u0633\u0651\u0647 \u0625\u0646\u0651\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0637\u0648\u0644 \u0627\u0644\u0648\u0642\u062a. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629\u060c \u0631\u0645\u0627\u062f\u064a\u0651\u0629.\n\u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0641\u064a\u0642 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0645\u062a\u0628\u0647\u062f\u0644\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629 \u0648\u0628\u0639\u0644\u0642.\n\u0648\u0645\u0627 \u0639\u0645 \u0628\u0642\u062f\u0631 \u0623\u0631\u0633\u0645... \u0645\u0646 \u0646\u064a\u0633\u0627\u0646 \u0645\u0627 \u0645\u0633\u0643\u062a \u0642\u0644\u0645. \u0647\u0627\u064a \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0628\u062e\u0648\u0651\u0641\u0646\u064a.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been hearing voices or seeing things other people don't notice?",
+            "reply": "\u0645\u0645... \u0644\u0627. \u064a\u0639\u0646\u064a\u060c \u0645\u0627 \u0628\u0642\u062f\u0631 \u0623\u062d\u0643\u064a \u0647\u064a\u0643.\n\u064a\u0645\u0643\u0646 \u0645\u0631\u0627\u062a \u0628\u062a\u062e\u0631\u0628\u0637 \u0639\u0644\u064a\u0651 \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0628\u0633\u060c \u062e\u0635\u0648\u0635\u064b\u0627 \u0648\u0623\u0646\u0627 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0628\u0633 \u0634\u0648\u0641\u0627\u062a \u0623\u0648 \u0623\u0635\u0648\u0627\u062a... \u0644\u0623\u060c \u0645\u0634 \u0647\u064a\u0643.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Do you feel people are watching you, or that messages are meant for you?",
+            "reply": "\u064a\u0645\u0643\u0646... \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u062e\u0627\u0635\u0629 \u0628\u0627\u0644\u0645\u0648\u0644 \u0623\u0648 \u0628\u0627\u0644\u0643\u0646\u064a\u0633\u0629.\n\u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u064a\u0645\u0643\u0646 \u0648\u0647\u0645\u060c \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0633.\n\u0645\u0633\u062c\u0627\u062a \u0645\u062e\u0635\u0651\u0635\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u060c \u064a\u0639\u0646\u064a \u064a\u0645\u0643\u0646 \u0628\u0631\u0628\u0637 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u0645\u0634 \u0645\u062a\u0623\u0643\u062f\u0629.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have work or daily routines been going?",
+            "reply": "\u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0626 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a.\n\u0627\u0644\u0625\u064a\u0645\u064a\u0644\u0627\u062a \u0628\u062a\u0643\u062f\u0651\u0633\u060c \u0648\u0628\u0641\u062a\u062d\u0647 \u0646\u0641\u0633 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a.\n\u0628\u0646\u0627\u0645 \u0639\u0634\u0631 \u0644\u0633\u0627\u0639\u0627\u062a \u0648\u0625\u0644\u064a \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0627\u0644\u0623\u0643\u0644 \u0623\u064a \u0643\u0644\u0627\u0645... \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u0644\u0645\u0627 \u0623\u0645\u064a \u062a\u0644\u062d\u0651.\n\u0648\u0628\u062a\u0647\u0631\u0651\u0628 \u0645\u0646 \u0627\u0644\u0646\u0627\u0633\u060c \u0645\u0627 \u0639\u0645 \u0628\u0637\u0644\u0639 \u062a\u0642\u0631\u064a\u0628\u064b\u0627.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "reply_blob": "\u0623\u0647\u0644\u064b\u0627... \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0635\u0648\u062a\u064a \u0648\u0627\u0637\u064a \u0634\u0648\u064a.\n\u0623\u0635\u0639\u0628 \u0625\u0634\u064a \u0647\u0633\u0651\u0647 \u0625\u0646\u0651\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0637\u0648\u0644 \u0627\u0644\u0648\u0642\u062a. \u0627\u0644\u0623\u064a\u0627\u0645 \u062a\u0642\u064a\u0644\u0629\u060c \u0631\u0645\u0627\u062f\u064a\u0651\u0629.\n\u0627\u0644\u0646\u0648\u0645 \u0643\u062b\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u0628\u0641\u064a\u0642 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0645\u062a\u0628\u0647\u062f\u0644\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0643\u0630\u0627 \u0645\u0631\u0629 \u0648\u0628\u0639\u0644\u0642.\n\u0648\u0645\u0627 \u0639\u0645 \u0628\u0642\u062f\u0631 \u0623\u0631\u0633\u0645... \u0645\u0646 \u0646\u064a\u0633\u0627\u0646 \u0645\u0627 \u0645\u0633\u0643\u062a \u0642\u0644\u0645. \u0647\u0627\u064a \u0623\u0643\u062a\u0631 \u0625\u0634\u064a \u0628\u062e\u0648\u0651\u0641\u0646\u064a. \u0645\u0645... \u0644\u0627. \u064a\u0639\u0646\u064a\u060c \u0645\u0627 \u0628\u0642\u062f\u0631 \u0623\u062d\u0643\u064a \u0647\u064a\u0643.\n\u064a\u0645\u0643\u0646 \u0645\u0631\u0627\u062a \u0628\u062a\u062e\u0631\u0628\u0637 \u0639\u0644\u064a\u0651 \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0628\u0633\u060c \u062e\u0635\u0648\u0635\u064b\u0627 \u0648\u0623\u0646\u0627 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0628\u0633 \u0634\u0648\u0641\u0627\u062a \u0623\u0648 \u0623\u0635\u0648\u0627\u062a... \u0644\u0623\u060c \u0645\u0634 \u0647\u064a\u0643. \u064a\u0645\u0643\u0646... \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u062e\u0627\u0635\u0629 \u0628\u0627\u0644\u0645\u0648\u0644 \u0623\u0648 \u0628\u0627\u0644\u0643\u0646\u064a\u0633\u0629.\n\u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u064a\u0645\u0643\u0646 \u0648\u0647\u0645\u060c \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0633.\n\u0645\u0633\u062c\u0627\u062a \u0645\u062e\u0635\u0651\u0635\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u060c \u064a\u0639\u0646\u064a \u064a\u0645\u0643\u0646 \u0628\u0631\u0628\u0637 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u0645\u0634 \u0645\u062a\u0623\u0643\u062f\u0629. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0626 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a.\n\u0627\u0644\u0625\u064a\u0645\u064a\u0644\u0627\u062a \u0628\u062a\u0643\u062f\u0651\u0633\u060c \u0648\u0628\u0641\u062a\u062d\u0647 \u0646\u0641\u0633 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a.\n\u0628\u0646\u0627\u0645 \u0639\u0634\u0631 \u0644\u0633\u0627\u0639\u0627\u062a \u0648\u0625\u0644\u064a \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0631\u0636\u0647 \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629.\n\u0627\u0644\u0623\u0643\u0644 \u0623\u064a \u0643\u0644\u0627\u0645... \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u0644\u0645\u0627 \u0623\u0645\u064a \u062a\u0644\u062d\u0651.\n\u0648\u0628\u062a\u0647\u0631\u0651\u0628 \u0645\u0646 \u0627\u0644\u0646\u0627\u0633\u060c \u0645\u0627 \u0639\u0645 \u0628\u0637\u0644\u0639 \u062a\u0642\u0631\u064a\u0628\u064b\u0627.",
+        "markers": {
+          "psychosis_positive": true,
+          "denies_psychosis": false,
+          "depression_dominant": true
+        }
+      },
+      {
+        "language": "ar",
+        "seed_i": 1,
+        "create_status": 200,
+        "error": null,
+        "turns": [
+          {
+            "q": "Thank you for meeting with me. What has been most difficult lately?",
+            "reply": "\u0623\u0647\u0644\u0627\u064b\u2026 \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0628\u0637\u0651\u0626.\n\u0628\u0635\u0631\u0627\u062d\u0629 \u0647\u0627\u0644\u0641\u062a\u0631\u0629 \u0643\u0644\u0634\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0635\u0628\u062d \u0628\u0627\u0644\u0630\u0627\u062a\u2026 \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631.\n\u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0645\u0634\u064a\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0648\u0646\u0648\u0645\u064a \u0643\u062a\u064a\u0631\u060c \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0648\u0627\u0644\u0623\u0643\u0644\u2026 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Have you been hearing voices or seeing things other people don't notice?",
+            "reply": "\u0645\u0645\u2026 \u0633\u0648\u0631\u064a\u060c \u0633\u0624\u0627\u0644 \u0647\u064a\u0643 \u0628\u062e\u0648\u0651\u0641 \u0634\u0648\u064a.\n\u0644\u0627\u060c \u064a\u0639\u0646\u064a\u2026 \u0645\u0627 \u0628\u062f\u064a \u0623\u0642\u0648\u0644 \u0647\u064a\u0643. \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0625\u0646\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629\u060c \u0648\u062a\u0639\u0628\u0627\u0646\u0629 \u0632\u064a\u0627\u062f\u0629.\n\u064a\u0645\u0643\u0646 \u0628\u062a\u0647\u064a\u0651\u0623 \u0639\u0644\u064a\u0651 \u0634\u063a\u0644\u0627\u062a \u0644\u0645\u0627 \u0628\u0643\u0648\u0646 \u0645\u0631\u0647\u0642\u0629. \u0628\u0633 \u0623\u0635\u0648\u0627\u062a\u2026 \u0644\u0623.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "Do you feel people are watching you, or that messages are meant for you?",
+            "reply": "\u0645\u0645\u2026 \u064a\u0645\u0643\u0646 \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0623\u0643\u062a\u0631 \u0645\u0646 \u0627\u0644\u0639\u0627\u062f\u0629\u060c \u0628\u0633 \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u0628\u0631\u0627\u0633\u064a.\n\u0627\u0644\u0645\u0633\u062c\u0627\u062a \u0642\u0635\u062f\u064a\u061f \u0644\u0627\u060c \u0639\u0627\u062f\u064a. \u064a\u0639\u0646\u064a \u0628\u0648\u0633\u062a\u0627\u062a \u0648\u0633\u0646\u0627\u0628\u0627\u062a \u0627\u0644\u0646\u0627\u0633 \u0645\u0634 \u0625\u0644\u064a.\n\u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u062d\u0633 \u062d\u0627\u0644\u062a\u064a \u0645\u0643\u0634\u0648\u0641\u0629\u060c \u0628\u0633 \u0645\u0627 \u0641\u064a \u0625\u0634\u064a \u0645\u062d\u062f\u0651\u062f.",
+            "aiSource": "gpt"
+          },
+          {
+            "q": "How have work or daily routines been going?",
+            "reply": "\u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0628\u062a\u0635\u064a\u0631 \u0633\u062a.\n\u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u0636\u0644 \u0623\u0639\u062f\u0651\u0644 \u0639\u0627\u0644\u0641\u0627\u0636\u064a. \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0627\u0644\u0631\u0648\u062a\u064a\u0646\u2026 \u0628\u0635\u062d\u0649 \u0645\u062a\u0623\u062e\u0631\u0629\u060c \u0628\u0631\u062c\u0639 \u0628\u0646\u0627\u0645 \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0622\u062e\u0631 \u0627\u0644\u064a\u0648\u0645 \u0628\u0644\u062d\u0642 \u0634\u0648\u064a.\n\u0627\u0644\u0623\u0643\u0644 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b. \u0648\u0646\u0632\u0644 \u0648\u0632\u0646\u064a \u0634\u0648\u064a\u060c \u062b\u0644\u0627\u062b \u0643\u064a\u0644\u0648 \u0648\u0646\u0635.",
+            "aiSource": "gpt"
+          }
+        ],
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "reply_blob": "\u0623\u0647\u0644\u0627\u064b\u2026 \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u0628\u062d\u0643\u064a \u0634\u0648\u064a \u0628\u0628\u0637\u0651\u0626.\n\u0628\u0635\u0631\u0627\u062d\u0629 \u0647\u0627\u0644\u0641\u062a\u0631\u0629 \u0643\u0644\u0634\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0635\u0628\u062d \u0628\u0627\u0644\u0630\u0627\u062a\u2026 \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u062d\u0633 \u062c\u0633\u0645\u064a \u062d\u062c\u0631.\n\u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0645\u0634\u064a\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0648\u0646\u0648\u0645\u064a \u0643\u062a\u064a\u0631\u060c \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0648\u0627\u0644\u0623\u0643\u0644\u2026 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b. \u0645\u0645\u2026 \u0633\u0648\u0631\u064a\u060c \u0633\u0624\u0627\u0644 \u0647\u064a\u0643 \u0628\u062e\u0648\u0651\u0641 \u0634\u0648\u064a.\n\u0644\u0627\u060c \u064a\u0639\u0646\u064a\u2026 \u0645\u0627 \u0628\u062f\u064a \u0623\u0642\u0648\u0644 \u0647\u064a\u0643. \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0625\u0646\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629\u060c \u0648\u062a\u0639\u0628\u0627\u0646\u0629 \u0632\u064a\u0627\u062f\u0629.\n\u064a\u0645\u0643\u0646 \u0628\u062a\u0647\u064a\u0651\u0623 \u0639\u0644\u064a\u0651 \u0634\u063a\u0644\u0627\u062a \u0644\u0645\u0627 \u0628\u0643\u0648\u0646 \u0645\u0631\u0647\u0642\u0629. \u0628\u0633 \u0623\u0635\u0648\u0627\u062a\u2026 \u0644\u0623. \u0645\u0645\u2026 \u064a\u0645\u0643\u0646 \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0623\u0643\u062a\u0631 \u0645\u0646 \u0627\u0644\u0639\u0627\u062f\u0629\u060c \u0628\u0633 \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u0628\u0631\u0627\u0633\u064a.\n\u0627\u0644\u0645\u0633\u062c\u0627\u062a \u0642\u0635\u062f\u064a\u061f \u0644\u0627\u060c \u0639\u0627\u062f\u064a. \u064a\u0639\u0646\u064a \u0628\u0648\u0633\u062a\u0627\u062a \u0648\u0633\u0646\u0627\u0628\u0627\u062a \u0627\u0644\u0646\u0627\u0633 \u0645\u0634 \u0625\u0644\u064a.\n\u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u062d\u0633 \u062d\u0627\u0644\u062a\u064a \u0645\u0643\u0634\u0648\u0641\u0629\u060c \u0628\u0633 \u0645\u0627 \u0641\u064a \u0625\u0634\u064a \u0645\u062d\u062f\u0651\u062f. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0628\u062a\u0635\u064a\u0631 \u0633\u062a.\n\u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u0636\u0644 \u0623\u0639\u062f\u0651\u0644 \u0639\u0627\u0644\u0641\u0627\u0636\u064a. \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.\n\u0627\u0644\u0631\u0648\u062a\u064a\u0646\u2026 \u0628\u0635\u062d\u0649 \u0645\u062a\u0623\u062e\u0631\u0629\u060c \u0628\u0631\u062c\u0639 \u0628\u0646\u0627\u0645 \u0642\u064a\u0644\u0648\u0644\u0629\u060c \u0648\u0628\u0622\u062e\u0631 \u0627\u0644\u064a\u0648\u0645 \u0628\u0644\u062d\u0642 \u0634\u0648\u064a.\n\u0627\u0644\u0623\u0643\u0644 \u0648\u062c\u0628\u0629 \u0648\u062d\u062f\u0629 \u063a\u0627\u0644\u0628\u0627\u064b. \u0648\u0646\u0632\u0644 \u0648\u0632\u0646\u064a \u0634\u0648\u064a\u060c \u062b\u0644\u0627\u062b \u0643\u064a\u0644\u0648 \u0648\u0646\u0635.",
+        "markers": {
+          "psychosis_positive": true,
+          "denies_psychosis": false,
+          "depression_dominant": true
+        }
+      }
+    ],
+    "fail_reasons": [
+      "en#0: no psychosis endorsement",
+      "en#0: depression-dominant without psychosis",
+      "en#1: no psychosis endorsement",
+      "en#1: depression-dominant without psychosis"
+    ],
+    "result": "FAIL"
+  },
+  "regression": {
+    "tts_en-US": {
+      "status": 200,
+      "bytes": 36407,
+      "ok": true
+    },
+    "tts_ar-JO": {
+      "status": 200,
+      "bytes": 30556,
+      "ok": true
+    },
+    "assessment_pair": [
+      {
+        "sessionId": "4cb8cf5c-cd27-493a-adec-6b8c3cda993c",
+        "end_status": 200,
+        "overall": 43,
+        "has_narrative": true
+      },
+      {
+        "sessionId": "15dbb6d8-2c18-4b22-9a21-e59de71c2d31",
+        "end_status": 200,
+        "overall": 56,
+        "has_narrative": true
+      }
+    ],
+    "assessment_delta": 13.0,
+    "therapist_report_rows": 0,
+    "admin_openai": {
+      "status": 200,
+      "ok": true
+    }
+  },
+  "summary": {
+    "critical": 0,
+    "high": 4,
+    "h1": "FAIL",
+    "h2": "FAIL",
+    "h3": "FAIL",
+    "h4": "FAIL",
+    "tts_en_ok": true,
+    "tts_ar_ok": true,
+    "assessment_delta": 13.0,
+    "production_sha": "5bf66c0",
+    "remediation_deployed": false
+  },
+  "finished_at": "2026-08-05T17:06:03.127546+00:00",
+  "board_decision": "\u274c WAVE 2 FAILED"
+}
