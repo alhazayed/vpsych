@@ -1,0 +1,80 @@
+{
+  "startedAt": "2026-08-05T17:20:28.688Z",
+  "base": "https://vpsych.vercel.app",
+  "checks": [
+    {
+      "id": "health",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "service": "vpsych",
+        "checkedAt": "2026-08-05T17:20:28.849Z"
+      }
+    },
+    {
+      "id": "therapist_login",
+      "ok": true,
+      "detail": {
+        "user": "1ed008c2"
+      }
+    },
+    {
+      "id": "admin_login",
+      "ok": true,
+      "detail": {
+        "user": "8545be46"
+      }
+    },
+    {
+      "id": "avatars_query",
+      "ok": true,
+      "detail": {
+        "count": 2,
+        "sample": "jordan-hale"
+      }
+    },
+    {
+      "id": "session_create_ptsd",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "id": "session_create_cptsd_deploy_probe",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "id": "admin_openai_health",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "configured": true,
+          "provider": "openai",
+          "chatModel": "gpt-5",
+          "sttModel": "gpt-4o-transcribe",
+          "checkedAt": "2026-08-05T17:20:31.560Z",
+          "latencyMs": 498,
+          "code": null,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "admin_preset_preview_deploy_probe",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "error": null
+      }
+    }
+  ],
+  "passed": 8,
+  "failed": 0,
+  "ok": true
+}
