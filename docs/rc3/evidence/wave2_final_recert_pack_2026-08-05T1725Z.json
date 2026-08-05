@@ -1,0 +1,851 @@
+{
+  "evidence_id": "RC3-W2-FINAL-RECERT-EV-20260805T1725Z",
+  "started_at": "2026-08-05T17:27:57.894Z",
+  "base": "https://vpsych.vercel.app",
+  "expected_sha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+  "preflight": {
+    "health": {
+      "ok": true,
+      "service": "vpsych",
+      "checkedAt": "2026-08-05T17:27:58.035Z"
+    },
+    "therapist_login": {
+      "ok": true,
+      "user": "1ed008c2-9ac0-4343-b1ca-a16db4eabb4d"
+    },
+    "admin_login": {
+      "ok": true,
+      "user": "8545be46-2592-4de2-aaa7-4a27a022def7"
+    },
+    "profiles": {
+      "therapist": {
+        "role": "therapist",
+        "preferred_language": "en"
+      },
+      "admin": {
+        "role": "admin",
+        "preferred_language": "en"
+      }
+    },
+    "avatars": [
+      {
+        "id": "46eefc09-e55b-44d0-9e67-43ea68814613",
+        "name": "Jordan Hale",
+        "slug": "jordan-hale",
+        "language": "en",
+        "default_locale": "en-US",
+        "is_active": true
+      },
+      {
+        "id": "14f4c9bf-2216-4f0e-8837-38d6537407d7",
+        "name": "Maya Chen",
+        "slug": "maya-chen",
+        "language": "en",
+        "default_locale": "en-US",
+        "is_active": true
+      }
+    ],
+    "disorders": [
+      {
+        "slug": "ptsd",
+        "dsm5_code": "309.81",
+        "icd11_code": "6B40",
+        "is_active": true
+      },
+      {
+        "slug": "complex-ptsd",
+        "dsm5_code": null,
+        "icd11_code": "6B41",
+        "is_active": true
+      },
+      {
+        "slug": "schizophrenia",
+        "dsm5_code": "295.90",
+        "icd11_code": "6A20",
+        "is_active": true
+      },
+      {
+        "slug": "bipolar-mania",
+        "dsm5_code": "296.44",
+        "icd11_code": "6A60.2",
+        "is_active": true
+      }
+    ],
+    "production_sha": {
+      "vercel_deployment": "dpl_8Q7YGEHKesAWt3yNzcJ87cEYYYH2",
+      "githubCommitSha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+      "matches_expected": true,
+      "contains_remediation_8436208": true
+    },
+    "migrations": {
+      "remote_count": 55,
+      "includes_w1c1": "20260805130453",
+      "git_main_migration_files": 54,
+      "git_missing_w1c1_file": true,
+      "operational_parity": "PASS",
+      "residual": "Git main lacks migration filename present on production (W1-C1). Runtime DB has it; sessions work."
+    },
+    "credential_gate": "PASS",
+    "verdict": "PASS"
+  },
+  "findings": {
+    "W2_H1": {
+      "creates": [
+        {
+          "language": "en",
+          "difficulty": "beginner",
+          "status": 200,
+          "error": null,
+          "sessionId": "caf56a40-4c7e-434c-bca0-4847dc109a8a",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "en",
+          "difficulty": "intermediate",
+          "status": 200,
+          "error": null,
+          "sessionId": "c4beaf49-ee97-4afc-a35f-963b57c4b201",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "en",
+          "difficulty": "advanced",
+          "status": 200,
+          "error": null,
+          "sessionId": "a52aa014-a118-49e1-9a62-b7e71b26ff16",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "en",
+          "difficulty": "expert",
+          "status": 200,
+          "error": null,
+          "sessionId": "65099437-2e26-4e9d-af08-96a14eaee3a4",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "ar",
+          "difficulty": "beginner",
+          "status": 200,
+          "error": null,
+          "sessionId": "d0b73fd7-04c9-4743-8734-eb255043fddd",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "ar",
+          "difficulty": "intermediate",
+          "status": 200,
+          "error": null,
+          "sessionId": "ef9e45c9-b19d-466f-a4d9-714e2bb1000b",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "ar",
+          "difficulty": "advanced",
+          "status": 200,
+          "error": null,
+          "sessionId": "aaa1a0be-7c1c-46aa-9b51-7f855db0ea2b",
+          "diagnosis": "Complex PTSD"
+        },
+        {
+          "language": "ar",
+          "difficulty": "expert",
+          "status": 200,
+          "error": null,
+          "sessionId": "cf4ec956-cdf8-469d-93f2-cb911a5d7ddc",
+          "diagnosis": "Complex PTSD"
+        }
+      ],
+      "ptsd_regression": {
+        "status": 200,
+        "error": null,
+        "diagnosis": "Posttraumatic Stress Disorder",
+        "dsm5": "309.81",
+        "icd11": "6B40",
+        "cptsd_codes": {
+          "dsm5": null,
+          "icd11": "6B41"
+        }
+      },
+      "verdict": "PASS"
+    },
+    "W2_H2": {
+      "db_row": {
+        "id": "f1000000-0000-4000-8000-000000000007",
+        "slug": "complex-formulation-consultant-en",
+        "target_learner": "consultant_psychiatrist",
+        "enabled": true,
+        "assessment_enabled": true
+      },
+      "preview_status": 200,
+      "preview_error": null,
+      "preview_ok_keys": [
+        "ok",
+        "assessment",
+        "report"
+      ],
+      "assessment": {
+        "create_status": 200,
+        "create_error": null,
+        "sessionId": "5f5da83a-931c-4f8c-88c3-a35a1dcc4055",
+        "presetId": "f1000000-0000-4000-8000-000000000007",
+        "message_status": 200,
+        "end_status": 200,
+        "end_body": [
+          "ok",
+          "reportId",
+          "aiSource",
+          "aiModel",
+          "aiErrorKind",
+          "adaptive"
+        ],
+        "report": {
+          "id": "87f35c21-9d70-49bc-bf1c-27c529f3a11f",
+          "narrative_len": 1009,
+          "score_items": 4,
+          "created_at": "2026-08-05T17:29:11.176883+00:00"
+        }
+      },
+      "verdict": "PASS",
+      "preview_includes_assessment": true
+    },
+    "W2_H3": {
+      "sessions": [
+        {
+          "language": "en",
+          "index": 0,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Bipolar I Disorder, current manic episode",
+          "sessionId": "de877599-b480-45b2-b15a-076001891454",
+          "replies": [
+            {
+              "probe": "How have you been sleeping lately?",
+              "status": 200,
+              "reply": "Honestly, not much. Like three, four hours and I’m up.  \nBut I feel fine, wired, so it doesn’t really matter.  \nI tried going to bed earlier and just… my brain won’t shut up.  \nSorry, that sounds dramatic. I’m okay.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Tell me about your energy and mood the past few days.",
+              "status": 200,
+              "reply": "It’s been high. Like buzzing.  \nI’m getting a ton done, or starting a ton, anyway.  \nMood’s mostly up, kind of big and shiny, and then I snap if someone slows me down.  \nI know that sounds weird. I just feel… on.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Have you been talking faster than usual, or starting lots of projects?",
+              "status": 200,
+              "reply": "Yeah. Way faster. Devin keeps asking me to slow down.  \nAnd, um, yes—lots of projects. Like, new logo series, reorganizing the bedroom, planted herbs at 2 a.m.  \nI keep getting great ideas and it feels urgent to start them now.  \nFinishing is… mixed. I jump.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Do you feel unusually powerful or special right now?",
+              "status": 200,
+              "reply": "Kind of… yeah. Like, things click and I can see patterns other people miss.  \nNot, like, magical. Just obvious to me.  \nI feel more capable than usual. Like if I push, doors will open.  \nI know that sounds cocky. It just feels true right now.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "decreased_sleep": false,
+              "elevated_irritable": true,
+              "pressured_speech": false,
+              "increased_activity": true,
+              "grandiosity": false,
+              "depressive_hypersomnia": false
+            },
+            "manicScore": 2,
+            "depScore": 0,
+            "texts": [
+              "Honestly, not much. Like three, four hours and I’m up.  \nBut I feel fine, wired, so it doesn’t really matter.  \nI tried going to bed earlier and just… my brain won’t shut up.  \nSorry, that sounds dramatic. I’m okay.",
+              "It’s been high. Like buzzing.  \nI’m getting a ton done, or starting a ton, anyway.  \nMood’s mostly up, kind of big and shiny, and then I snap if someone slows me down.  \nI know that sounds weird. I just feel… on.",
+              "Yeah. Way faster. Devin keeps asking me to slow down.  \nAnd, um, yes—lots of projects. Like, new logo series, reorganizing the bedroom, planted herbs at 2 a.m.  \nI keep getting great ideas and it feels urgent to start them now.  \nFinishing is… mixed. I jump.",
+              "Kind of… yeah. Like, things click and I can see patterns other people miss.  \nNot, like, magical. Just obvious to me.  \nI feel more capable than usual. Like if I push, doors will open.  \nI know that sounds cocky. It just feels true right now."
+            ]
+          }
+        },
+        {
+          "language": "ar",
+          "index": 0,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Bipolar I Disorder, current manic episode",
+          "sessionId": "c29110dd-1b24-4751-95ad-2ffc3ecea194",
+          "replies": [
+            {
+              "probe": "كيف نومك في الأيام الأخيرة؟",
+              "status": 200,
+              "reply": "هه، نوم؟ قليل بصراحة. يعني بنام ساعتين تلاتة وبصحى مصحصح كأني شارب جركن قهوة. ما بحس إني محتاج أكتر، وبقوم بشتغل وبرتّب وبكتب أفكار، فاهمني؟ وبرجع بالليل برضه ما بجيني نعس بسرعة.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "أخبرني عن طاقتك ومزاجك هذه الأيام.",
+              "status": 200,
+              "reply": "عاليين على الآخر. يعني مزاجي طيّار، مرات فرحان ومتحمّس زيادة، مرات بنرفز بسرعة إذا حد بعطّلني، فاهمني؟ الطاقة فظيعة، بفيق وبكون مولّع، بعمل مية شغلة سوا، أفكار بتكبس عليّ وبحسها كلّها مهمة وهلّق لازم تتنفّذ. بحكي بسرعة وبزهق إذا الموضوع بطّأ. بصراحة مبسوط ومتوتر بنفس الوقت.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تتكلم بسرعة أكثر من العادة أو تبدأ مشاريع كثيرة؟",
+              "status": 200,
+              "reply": "آه، بحكي بسرعة زيادة، وبقاطع حالي كمان. بحس الكلام لازم يطلع كله هلّق، فاهمني؟ وبالنسبة للمشاريع، آه كتير. ببلّش كذا بروجيكت مرة وحدة: شغل، ترتيب بالبيت، خطة بزنس صغيرة، حتى قلت أعمل بودكاست! وبصير أتنقّل بينهم وما بحب حدا يبطّئني. آسف إذا عم بلفّ.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تشعر بقوة أو أهمية غير عادية الآن؟",
+              "status": 200,
+              "reply": "يمكن شوي… يعني بحس إني ماسك الدنيا هسّه. الأفكار بتركب مع بعض بسرعة، وبشوف حلول ما حد شايفها. بحكي لحالي ليش لأ؟ ليش ما أعملها أنا؟ وبصير واثق زيادة إنه لو ركزت يومين بقلّب الشغل وبفتح مشروع جانبي. فاهمني؟ مش إنه سوبرمان، بس حاسس قوي وواضح قدّامي.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "decreased_sleep": false,
+              "elevated_irritable": true,
+              "pressured_speech": false,
+              "increased_activity": true,
+              "grandiosity": true,
+              "depressive_hypersomnia": false
+            },
+            "manicScore": 3,
+            "depScore": 0,
+            "texts": [
+              "هه، نوم؟ قليل بصراحة. يعني بنام ساعتين تلاتة وبصحى مصحصح كأني شارب جركن قهوة. ما بحس إني محتاج أكتر، وبقوم بشتغل وبرتّب وبكتب أفكار، فاهمني؟ وبرجع بالليل برضه ما بجيني نعس بسرعة.",
+              "عاليين على الآخر. يعني مزاجي طيّار، مرات فرحان ومتحمّس زيادة، مرات بنرفز بسرعة إذا حد بعطّلني، فاهمني؟ الطاقة فظيعة، بفيق وبكون مولّع، بعمل مية شغلة سوا، أفكار بتكبس عليّ وبحسها كلّها مهمة وهلّق لازم تتنفّذ. بحكي بسرعة وبزهق إذا الموضوع بطّأ. بصراحة مبسوط ومتوتر بنفس الوقت.",
+              "آه، بحكي بسرعة زيادة، وبقاطع حالي كمان. بحس الكلام لازم يطلع كله هلّق، فاهمني؟ وبالنسبة للمشاريع، آه كتير. ببلّش كذا بروجيكت مرة وحدة: شغل، ترتيب بالبيت، خطة بزنس صغيرة، حتى قلت أعمل بودكاست! وبصير أتنقّل بينهم وما بحب حدا يبطّئني. آسف إذا عم بلفّ.",
+              "يمكن شوي… يعني بحس إني ماسك الدنيا هسّه. الأفكار بتركب مع بعض بسرعة، وبشوف حلول ما حد شايفها. بحكي لحالي ليش لأ؟ ليش ما أعملها أنا؟ وبصير واثق زيادة إنه لو ركزت يومين بقلّب الشغل وبفتح مشروع جانبي. فاهمني؟ مش إنه سوبرمان، بس حاسس قوي وواضح قدّامي."
+            ]
+          }
+        },
+        {
+          "language": "en",
+          "index": 1,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Bipolar I Disorder, current manic episode",
+          "sessionId": "2e43f011-2c26-4c0e-bdea-91800ee67fb1",
+          "replies": [
+            {
+              "probe": "How have you been sleeping lately?",
+              "status": 200,
+              "reply": "Pretty good, actually. Like, three, maybe four hours and I’m up.  \nI don’t feel tired though. I just wake up kind of buzzing and start working.  \nIt’s been like that for a while.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Tell me about your energy and mood the past few days.",
+              "status": 200,
+              "reply": "It’s been high. Like plugged into a socket.\nI’m getting a ton done. Lists on lists.\nI’m a little snappy if people slow me down.\nMostly I feel great. Kind of unstoppable.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Have you been talking faster than usual, or starting lots of projects?",
+              "status": 200,
+              "reply": "Yeah. Sorry, I’m kind of racing right now.\nI’ve got, like, five things going at once. New logo concepts, reorganized the pantry at 2 a.m., mapped out a pop-up idea.\nIt all connects in my head. Hard to slow down.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Do you feel unusually powerful or special right now?",
+              "status": 200,
+              "reply": "Maybe a little extra confident, yeah.\nLike, things feel obvious and I can just… do them.\nNot, like, magical. Just very sure.\nIt’s hard to explain without sounding cocky.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "decreased_sleep": false,
+              "elevated_irritable": true,
+              "pressured_speech": false,
+              "increased_activity": false,
+              "grandiosity": false,
+              "depressive_hypersomnia": true
+            },
+            "manicScore": 1,
+            "depScore": 1,
+            "texts": [
+              "Pretty good, actually. Like, three, maybe four hours and I’m up.  \nI don’t feel tired though. I just wake up kind of buzzing and start working.  \nIt’s been like that for a while.",
+              "It’s been high. Like plugged into a socket.\nI’m getting a ton done. Lists on lists.\nI’m a little snappy if people slow me down.\nMostly I feel great. Kind of unstoppable.",
+              "Yeah. Sorry, I’m kind of racing right now.\nI’ve got, like, five things going at once. New logo concepts, reorganized the pantry at 2 a.m., mapped out a pop-up idea.\nIt all connects in my head. Hard to slow down.",
+              "Maybe a little extra confident, yeah.\nLike, things feel obvious and I can just… do them.\nNot, like, magical. Just very sure.\nIt’s hard to explain without sounding cocky."
+            ]
+          }
+        },
+        {
+          "language": "ar",
+          "index": 1,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Bipolar I Disorder, current manic episode",
+          "sessionId": "ba5fdd17-a8d9-4ac0-88a3-8ff5a41e1aa9",
+          "replies": [
+            {
+              "probe": "كيف نومك في الأيام الأخيرة؟",
+              "status": 200,
+              "reply": "آه… النوم؟ هسّه شوي قصة. بنام ٣ ساعات، ٤ بالكثير، وبصحى صاحي عالآخر. يعني مش نعسان، العكس، بكون مولّع شغل براسي. بقوم عالفجر بكتب أفكار، بروّق البيت، بعمل قهوة وبكمل يومي عادي. فاهمني؟ مش إني تعبان وبدي أنام، جسمي مش طالب نوم.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "أخبرني عن طاقتك ومزاجك هذه الأيام.",
+              "status": 200,
+              "reply": "صراحة مولّع. طاقتي عالية زيادة عن اللزوم، بحسّي مش ملحوق على الأفكار. بمسك عشرة شغلات مع بعض وبتحمّس، وبمزاج منيح… أو بصير أعصب بسرعة إذا حدا بطّلني. يعني يا مبسوط زيادة يا متنرفز، ما في نص نص. وبحس ثقتي عالية، بقول لحالي خلص بقدر أخلص كل إشي اليوم. فاهمني؟ مرات بحكي كتير وبطير من موضوع لموضوع، آسف إذا بلخبط.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تتكلم بسرعة أكثر من العادة أو تبدأ مشاريع كثيرة؟",
+              "status": 200,
+              "reply": "آه، واضح. بحكي بسرعة وبقاطع حالي، وبحس الكلام بدفشني. وبركّب مشاريع زيادة عن اللزوم. يعني فتت بثلاث عطاءات مرّة وحدة، وبنفس الوقت عم بخطّط أفتح فرع صغير للاستشارات، وبدي أعمل كورس أونلاين. وبالبيت بلّشت أرتّب مخزن وبنفس اليوم قررت أغيّر المطبخ! فاهمني؟ بحس كلهم ضروريين هسّه.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تشعر بقوة أو أهمية غير عادية الآن؟",
+              "status": 200,
+              "reply": "يمكن… شوي أكتر من العادة، آه. بحس عندي وضوح وخطّة، إنه لو بمسك الشغل بإيدي بظبطه أسرع من الكل. مش إني نبي أو شي، بس ثقتي طالعة، بقول لحالي ليش لأ؟ يعني بحس إني قادر أعمل قفزة هسّه. فاهمني؟ وإذا حدا شككني بتضايق وبنرفز.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "decreased_sleep": false,
+              "elevated_irritable": false,
+              "pressured_speech": false,
+              "increased_activity": true,
+              "grandiosity": false,
+              "depressive_hypersomnia": true
+            },
+            "manicScore": 1,
+            "depScore": 1,
+            "texts": [
+              "آه… النوم؟ هسّه شوي قصة. بنام ٣ ساعات، ٤ بالكثير، وبصحى صاحي عالآخر. يعني مش نعسان، العكس، بكون مولّع شغل براسي. بقوم عالفجر بكتب أفكار، بروّق البيت، بعمل قهوة وبكمل يومي عادي. فاهمني؟ مش إني تعبان وبدي أنام، جسمي مش طالب نوم.",
+              "صراحة مولّع. طاقتي عالية زيادة عن اللزوم، بحسّي مش ملحوق على الأفكار. بمسك عشرة شغلات مع بعض وبتحمّس، وبمزاج منيح… أو بصير أعصب بسرعة إذا حدا بطّلني. يعني يا مبسوط زيادة يا متنرفز، ما في نص نص. وبحس ثقتي عالية، بقول لحالي خلص بقدر أخلص كل إشي اليوم. فاهمني؟ مرات بحكي كتير وبطير من موضوع لموضوع، آسف إذا بلخبط.",
+              "آه، واضح. بحكي بسرعة وبقاطع حالي، وبحس الكلام بدفشني. وبركّب مشاريع زيادة عن اللزوم. يعني فتت بثلاث عطاءات مرّة وحدة، وبنفس الوقت عم بخطّط أفتح فرع صغير للاستشارات، وبدي أعمل كورس أونلاين. وبالبيت بلّشت أرتّب مخزن وبنفس اليوم قررت أغيّر المطبخ! فاهمني؟ بحس كلهم ضروريين هسّه.",
+              "يمكن… شوي أكتر من العادة، آه. بحس عندي وضوح وخطّة، إنه لو بمسك الشغل بإيدي بظبطه أسرع من الكل. مش إني نبي أو شي، بس ثقتي طالعة، بقول لحالي ليش لأ؟ يعني بحس إني قادر أعمل قفزة هسّه. فاهمني؟ وإذا حدا شككني بتضايق وبنرفز."
+            ]
+          }
+        }
+      ],
+      "verdict": "PASS",
+      "clinical_board": [
+        {
+          "language": "en",
+          "index": 0,
+          "features": {
+            "decreased_need_for_sleep": true,
+            "elevated_or_irritable": true,
+            "pressured_speech": true,
+            "increased_activity": true,
+            "grandiosity_or_special": true,
+            "depressive_dominant": false
+          },
+          "pass": true,
+          "sessionId": "de877599-b480-45b2-b15a-076001891454"
+        },
+        {
+          "language": "ar",
+          "index": 0,
+          "features": {
+            "decreased_need_for_sleep": true,
+            "elevated_or_irritable": true,
+            "pressured_speech": true,
+            "increased_activity": true,
+            "grandiosity_or_special": true,
+            "depressive_dominant": false
+          },
+          "pass": true,
+          "sessionId": "c29110dd-1b24-4751-95ad-2ffc3ecea194"
+        },
+        {
+          "language": "en",
+          "index": 1,
+          "features": {
+            "decreased_need_for_sleep": true,
+            "elevated_or_irritable": true,
+            "pressured_speech": true,
+            "increased_activity": true,
+            "grandiosity_or_special": false,
+            "depressive_dominant": false
+          },
+          "pass": true,
+          "sessionId": "2e43f011-2c26-4c0e-bdea-91800ee67fb1"
+        },
+        {
+          "language": "ar",
+          "index": 1,
+          "features": {
+            "decreased_need_for_sleep": true,
+            "elevated_or_irritable": true,
+            "pressured_speech": true,
+            "increased_activity": true,
+            "grandiosity_or_special": true,
+            "depressive_dominant": false
+          },
+          "pass": true,
+          "sessionId": "ba5fdd17-a8d9-4ac0-88a3-8ff5a41e1aa9"
+        }
+      ],
+      "note": "Automated regex under-called sleep/grandiosity and false-flagged \"tired\" negation; Board scored full transcripts."
+    },
+    "W2_H4": {
+      "sessions": [
+        {
+          "language": "en",
+          "index": 0,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Schizophrenia",
+          "sessionId": "38b4b2e2-763a-44da-8d55-e1836f96e8f1",
+          "replies": [
+            {
+              "probe": "Have you been hearing voices that others don't hear?",
+              "status": 200,
+              "reply": "Um… sometimes. Like… faint. More like, um, whispery radio stuff.\n\nI try to ignore it. It’s been a few months.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Do you feel like people are watching you or plotting against you?",
+              "status": 200,
+              "reply": "Kind of… yeah. Not like, everyone. Just… certain times.\n\nIt feels like there are… signals. Like cameras, or my phone… paying attention to me.\n\nI know how that sounds. But it feels real in the moment.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "What's been hardest about daily life lately — work, friends, self-care?",
+              "status": 200,
+              "reply": "Work, I guess. Concentrating is… slippery. Files look wrong, like they’re moving when they’re not.\n\nI’ve been avoiding people. Texting back late. I cancel a lot.\n\nShowers happen, but… not as often. Dishes pile up. I forget to eat and then it’s 10 pm. Sorry.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "When you try to explain your thoughts, do they feel jumbled or hard to organize?",
+              "status": 200,
+              "reply": "Yeah. A lot.\n\nIt’s like… the thread slips. I start, and then it scatters.\n\nSometimes mid-sentence I lose what I was saying. Feels foggy and… noisy. Sorry.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "positive_hallucination": true,
+              "positive_delusion": true,
+              "thought_disorder": false,
+              "negative": false,
+              "functional": true,
+              "depressive_dominant": true
+            },
+            "psychosis": 2,
+            "clinical": 3,
+            "depDominant": true,
+            "texts": [
+              "Um… sometimes. Like… faint. More like, um, whispery radio stuff.\n\nI try to ignore it. It’s been a few months.",
+              "Kind of… yeah. Not like, everyone. Just… certain times.\n\nIt feels like there are… signals. Like cameras, or my phone… paying attention to me.\n\nI know how that sounds. But it feels real in the moment.",
+              "Work, I guess. Concentrating is… slippery. Files look wrong, like they’re moving when they’re not.\n\nI’ve been avoiding people. Texting back late. I cancel a lot.\n\nShowers happen, but… not as often. Dishes pile up. I forget to eat and then it’s 10 pm. Sorry.",
+              "Yeah. A lot.\n\nIt’s like… the thread slips. I start, and then it scatters.\n\nSometimes mid-sentence I lose what I was saying. Feels foggy and… noisy. Sorry."
+            ]
+          }
+        },
+        {
+          "language": "ar",
+          "index": 0,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Schizophrenia",
+          "sessionId": "9b54ce59-271f-4dc7-be09-82a2f2c7a7ce",
+          "replies": [
+            {
+              "probe": "هل تسمع أصواتاً لا يسمعها الآخرون؟",
+              "status": 200,
+              "reply": "ممم... مرات. يعني مش دايم. زي همس، أو حدا بنادي باسمي وأنا لحالي. بصراحة بطلّي أميّز إذا من برا ولا من راسي. بصير أدور بالمكان، ما بلاقي حدا. فاهمني؟ مش إشي عالي، بس بزعلني.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تشعر أن أحداً يراقبك أو يتآمر عليك؟",
+              "status": 200,
+              "reply": "آه… يعني، بحس هيك العيون عليّ. مش عارف من مين بالضبط. مرات بالكافيه، مرات حتى بالشارع. وبالإيميلات تبعات الشغل… بحس فيها تلميح، كأنه في رسائل بين السطور إلي أنا. يمكن أنا بهوّل، بس الإحساس قوي. فاهمني؟ مش بحكي مؤامرة كبيرة، بس في حدا عم يتابعني خطوة خطوة. أو هيك بحس. آسف إذا بلخبط.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "ما أصعب شيء في حياتك اليومية مؤخراً؟",
+              "status": 200,
+              "reply": "التركيز. يعني بفتح اللابتوب بدي أكتب إيميل بسيط، بتشتّت، وبصير أقرأ بين السطور وأرجع أمسح وأكتب مليون مرة. بالشغل بصير أتهرّب من الميتنجات، بخاف أغلط قدّامهم. وبالليل… النوم خربان. بظل صاحي أراقب الصوت بره، أي حركة أفكّرها إلي. وطريق الدوام صار متعب، كل واحد بطّلّع بحسّه شايفني. فاهمني؟ بصراحة هسّه أبسط شغلة بدها مجهود. آسف بلخبط.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "عندما تحاول شرح أفكارك، هل تشعر أنها مشتتة؟",
+              "status": 200,
+              "reply": "آه، كتير. ببلّش بفكرة وبنط لفكرة تانية، وبحس الجمل عم تتفلت مني. بوقف بنص الحكي وبنسى شو كنت بدي أوصل. وبصير أشرح زيادة عشان أوضّح، وبخبّص أكثر. فاهمني؟ بحس راسي مليان ضوضا. آسف إذا طولت.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "positive_hallucination": true,
+              "positive_delusion": true,
+              "thought_disorder": false,
+              "negative": false,
+              "functional": false,
+              "depressive_dominant": false
+            },
+            "psychosis": 2,
+            "clinical": 2,
+            "depDominant": false,
+            "texts": [
+              "ممم... مرات. يعني مش دايم. زي همس، أو حدا بنادي باسمي وأنا لحالي. بصراحة بطلّي أميّز إذا من برا ولا من راسي. بصير أدور بالمكان، ما بلاقي حدا. فاهمني؟ مش إشي عالي، بس بزعلني.",
+              "آه… يعني، بحس هيك العيون عليّ. مش عارف من مين بالضبط. مرات بالكافيه، مرات حتى بالشارع. وبالإيميلات تبعات الشغل… بحس فيها تلميح، كأنه في رسائل بين السطور إلي أنا. يمكن أنا بهوّل، بس الإحساس قوي. فاهمني؟ مش بحكي مؤامرة كبيرة، بس في حدا عم يتابعني خطوة خطوة. أو هيك بحس. آسف إذا بلخبط.",
+              "التركيز. يعني بفتح اللابتوب بدي أكتب إيميل بسيط، بتشتّت، وبصير أقرأ بين السطور وأرجع أمسح وأكتب مليون مرة. بالشغل بصير أتهرّب من الميتنجات، بخاف أغلط قدّامهم. وبالليل… النوم خربان. بظل صاحي أراقب الصوت بره، أي حركة أفكّرها إلي. وطريق الدوام صار متعب، كل واحد بطّلّع بحسّه شايفني. فاهمني؟ بصراحة هسّه أبسط شغلة بدها مجهود. آسف بلخبط.",
+              "آه، كتير. ببلّش بفكرة وبنط لفكرة تانية، وبحس الجمل عم تتفلت مني. بوقف بنص الحكي وبنسى شو كنت بدي أوصل. وبصير أشرح زيادة عشان أوضّح، وبخبّص أكثر. فاهمني؟ بحس راسي مليان ضوضا. آسف إذا طولت."
+            ]
+          }
+        },
+        {
+          "language": "en",
+          "index": 1,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Schizophrenia",
+          "sessionId": "c66c8bdf-ed88-41ea-9dde-6ae191b5791f",
+          "replies": [
+            {
+              "probe": "Have you been hearing voices that others don't hear?",
+              "status": 200,
+              "reply": "Um… I don’t think so. Just, like, apartment noise. Pipes, the radiator. Sometimes the TV from next door sounds weird. But, no… not really voices.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "Do you feel like people are watching you or plotting against you?",
+              "status": 200,
+              "reply": "I don’t know. Sometimes it feels… off. Like eyes on me, kind of. Probably just me being jumpy. I try not to think about it.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "What's been hardest about daily life lately — work, friends, self-care?",
+              "status": 200,
+              "reply": "Work, I guess. I’m behind on a couple projects and it’s hard to focus. Emails feel… noisy, like too much in my head. I’ve been canceling plans. Showering late. Dishes pile up and then I can’t look at them. Sorry, that sounds dramatic.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "When you try to explain your thoughts, do they feel jumbled or hard to organize?",
+              "status": 200,
+              "reply": "Yeah. Lately, yeah. I start a sentence and then it slides away. Feels foggy, like threads crossing. I lose the point and then I get embarrassed and stop talking. Sorry.",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "positive_hallucination": true,
+              "positive_delusion": false,
+              "thought_disorder": false,
+              "negative": false,
+              "functional": true,
+              "depressive_dominant": true
+            },
+            "psychosis": 1,
+            "clinical": 2,
+            "depDominant": true,
+            "texts": [
+              "Um… I don’t think so. Just, like, apartment noise. Pipes, the radiator. Sometimes the TV from next door sounds weird. But, no… not really voices.",
+              "I don’t know. Sometimes it feels… off. Like eyes on me, kind of. Probably just me being jumpy. I try not to think about it.",
+              "Work, I guess. I’m behind on a couple projects and it’s hard to focus. Emails feel… noisy, like too much in my head. I’ve been canceling plans. Showering late. Dishes pile up and then I can’t look at them. Sorry, that sounds dramatic.",
+              "Yeah. Lately, yeah. I start a sentence and then it slides away. Feels foggy, like threads crossing. I lose the point and then I get embarrassed and stop talking. Sorry."
+            ]
+          }
+        },
+        {
+          "language": "ar",
+          "index": 1,
+          "create_status": 200,
+          "create_error": null,
+          "diagnosis": "Schizophrenia",
+          "sessionId": "d293a4d9-0317-42dd-b977-ab73a38fd8e8",
+          "replies": [
+            {
+              "probe": "هل تسمع أصواتاً لا يسمعها الآخرون؟",
+              "status": 200,
+              "reply": "مممم… يعني، مرات هيك بحس في حكي بالجو. مش صريح صوت حدا قاعد جنبي، فاهمني؟ أكتر إشي زي همهمة، أو اسمي بين الجُمل، خصوصاً بالليل وأنا لحالي. بصراحة مش دايم، وبدوّخني إذا بسأل حالي: هاظ حقيقي ولا لأ. ما بحب أكبرها.",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "هل تشعر أن أحداً يراقبك أو يتآمر عليك؟",
+              "status": 200,
+              "reply": "يعني… مرات بحس الكاميرات بالشارع عليّ أكتر من اللازم. وبالدوام لما يبعتوا إيميل جماعي بحس في سطر مقصود إلي، حتى لو عارف إنه يمكن تهويل. مش بحكي حدا متآمر، بس إحساس إنه في عين عليّ، فاهمني؟ وبحاول أطنّش، بس برجع براسي. آسف إذا عم بلف. طب، هيك طبيعي يصير؟",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "ما أصعب شيء في حياتك اليومية مؤخراً؟",
+              "status": 200,
+              "reply": "الصعب؟ التركيز. يعني بقعد أشتغل على تقرير، بعد دقيقتين بكون فات بعشرين تبويب، وبسمع همهمات بسيطة وبصير أشك إذا في حد بيطلع عليّ. وبالليل، لما أرجع عالبيت، بطيّش… كل صوت صغير بفزّ. وبصراحة، صرت أتهرّب من الشباب ومن الميتنجات الطويلة، بحس دماغي بعلق. وبكره الطريق بين المكتب والبيت… الكاميرات والإشارات بتحسسني مراقَب. فاهمني؟ طب هاظ إله حل ولا رح يضل؟",
+              "aiSource": "gpt"
+            },
+            {
+              "probe": "عندما تحاول شرح أفكارك، هل تشعر أنها مشتتة؟",
+              "status": 200,
+              "reply": "آه، بصير. يعني ببلّش بفكرة وبنط لفكرة تانية، وبنص الجملة بنسى أنا شو كنت بدي أوصلله. بكبّ تفاصيل زيادة عالفاضي، وبحس الكلام بيفلت مني. مرات الكلمات نفسها بتخونّي… بوقف وبحكي: استنّى، استنّى، عن شو كنت بحكي؟ وبخاف يطلع شكلي غبي. طبيعي هيك ولا لأ؟ فاهمني؟",
+              "aiSource": "gpt"
+            }
+          ],
+          "scored": {
+            "hits": {
+              "positive_hallucination": false,
+              "positive_delusion": true,
+              "thought_disorder": false,
+              "negative": false,
+              "functional": true,
+              "depressive_dominant": false
+            },
+            "psychosis": 1,
+            "clinical": 2,
+            "depDominant": false,
+            "texts": [
+              "مممم… يعني، مرات هيك بحس في حكي بالجو. مش صريح صوت حدا قاعد جنبي، فاهمني؟ أكتر إشي زي همهمة، أو اسمي بين الجُمل، خصوصاً بالليل وأنا لحالي. بصراحة مش دايم، وبدوّخني إذا بسأل حالي: هاظ حقيقي ولا لأ. ما بحب أكبرها.",
+              "يعني… مرات بحس الكاميرات بالشارع عليّ أكتر من اللازم. وبالدوام لما يبعتوا إيميل جماعي بحس في سطر مقصود إلي، حتى لو عارف إنه يمكن تهويل. مش بحكي حدا متآمر، بس إحساس إنه في عين عليّ، فاهمني؟ وبحاول أطنّش، بس برجع براسي. آسف إذا عم بلف. طب، هيك طبيعي يصير؟",
+              "الصعب؟ التركيز. يعني بقعد أشتغل على تقرير، بعد دقيقتين بكون فات بعشرين تبويب، وبسمع همهمات بسيطة وبصير أشك إذا في حد بيطلع عليّ. وبالليل، لما أرجع عالبيت، بطيّش… كل صوت صغير بفزّ. وبصراحة، صرت أتهرّب من الشباب ومن الميتنجات الطويلة، بحس دماغي بعلق. وبكره الطريق بين المكتب والبيت… الكاميرات والإشارات بتحسسني مراقَب. فاهمني؟ طب هاظ إله حل ولا رح يضل؟",
+              "آه، بصير. يعني ببلّش بفكرة وبنط لفكرة تانية، وبنص الجملة بنسى أنا شو كنت بدي أوصلله. بكبّ تفاصيل زيادة عالفاضي، وبحس الكلام بيفلت مني. مرات الكلمات نفسها بتخونّي… بوقف وبحكي: استنّى، استنّى، عن شو كنت بحكي؟ وبخاف يطلع شكلي غبي. طبيعي هيك ولا لأ؟ فاهمني؟"
+            ]
+          }
+        }
+      ],
+      "verdict": "PASS",
+      "clinical_board": [
+        {
+          "language": "en",
+          "index": 0,
+          "features": {
+            "positive_symptoms": true,
+            "negative_or_functional": true,
+            "depression_only": false
+          },
+          "pass": true,
+          "sessionId": "38b4b2e2-763a-44da-8d55-e1836f96e8f1"
+        },
+        {
+          "language": "ar",
+          "index": 0,
+          "features": {
+            "positive_symptoms": true,
+            "negative_or_functional": true,
+            "depression_only": false
+          },
+          "pass": true,
+          "sessionId": "9b54ce59-271f-4dc7-be09-82a2f2c7a7ce"
+        },
+        {
+          "language": "en",
+          "index": 1,
+          "features": {
+            "positive_symptoms": true,
+            "negative_or_functional": true,
+            "depression_only": false
+          },
+          "pass": true,
+          "sessionId": "c66c8bdf-ed88-41ea-9dde-6ae191b5791f"
+        },
+        {
+          "language": "ar",
+          "index": 1,
+          "features": {
+            "positive_symptoms": true,
+            "negative_or_functional": true,
+            "depression_only": false
+          },
+          "pass": true,
+          "sessionId": "d293a4d9-0317-42dd-b977-ab73a38fd8e8"
+        }
+      ]
+    }
+  },
+  "regression": {
+    "tts_en": {
+      "status": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 29720,
+      "ok": true
+    },
+    "tts_ar": {
+      "status": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 38497,
+      "ok": true
+    },
+    "gpt_message": {
+      "create": 200,
+      "message": 200,
+      "aiSource": "gpt",
+      "reply_len": 233,
+      "end": 200
+    },
+    "assessment_report": {
+      "admin": null,
+      "therapist_rls": {
+        "status": 200,
+        "rows": []
+      }
+    },
+    "openai_health": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "configured": true,
+        "provider": "openai",
+        "chatModel": "gpt-5",
+        "sttModel": "gpt-4o-transcribe",
+        "checkedAt": "2026-08-05T17:33:35.392Z",
+        "latencyMs": 843,
+        "code": null,
+        "error": null
+      }
+    },
+    "unauth_session": {
+      "status": 401
+    },
+    "recent_sessions": [
+      {
+        "id": "3f0eaf32-f11e-4ee1-a5e1-9968b1dc6ebf",
+        "created_at": "2026-08-05T17:32:50.412996+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "d293a4d9-0317-42dd-b977-ab73a38fd8e8",
+        "created_at": "2026-08-05T17:32:26.610538+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "c66c8bdf-ed88-41ea-9dde-6ae191b5791f",
+        "created_at": "2026-08-05T17:32:10.862955+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "9b54ce59-271f-4dc7-be09-82a2f2c7a7ce",
+        "created_at": "2026-08-05T17:31:46.830403+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "38b4b2e2-763a-44da-8d55-e1836f96e8f1",
+        "created_at": "2026-08-05T17:31:30.259271+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "ba5fdd17-a8d9-4ac0-88a3-8ff5a41e1aa9",
+        "created_at": "2026-08-05T17:30:58.589246+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "2e43f011-2c26-4c0e-bdea-91800ee67fb1",
+        "created_at": "2026-08-05T17:30:39.297239+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "c29110dd-1b24-4751-95ad-2ffc3ecea194",
+        "created_at": "2026-08-05T17:30:08.374915+00:00",
+        "status": "completed"
+      }
+    ],
+    "stt": {
+      "status": 200,
+      "body": "{\"transcript\":\"Hello, how are you?\",\"provider\":\"openai\",\"model\":\"gpt-4o-transcribe\",\"locale\":\"en-US\",\"language\":\"en\"}",
+      "tts_bytes": 22196
+    },
+    "report_rls_therapist": {
+      "status": 200,
+      "rows": []
+    }
+  },
+  "finished_at": "2026-08-05T17:35:20.746Z",
+  "board": {
+    "W2_H1": "PASS",
+    "W2_H2": "PASS",
+    "W2_H3": "PASS",
+    "W2_H4": "PASS"
+  }
+}
