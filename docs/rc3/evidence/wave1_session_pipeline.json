@@ -1,0 +1,27 @@
+{
+  "create": {
+    "status": 200,
+    "sessionId": "015de6b3-f343-44cc-90b1-464521935d42",
+    "diagnosis": "Generalized Anxiety Disorder, with panic attacks"
+  },
+  "message": {
+    "status": 200,
+    "aiSource": "gpt",
+    "keys": [
+      "userMessage",
+      "assistantMessage",
+      "remainingSeconds",
+      "locale",
+      "aiSource",
+      "aiModel",
+      "aiErrorKind"
+    ],
+    "preview": "{\"userMessage\": {\"id\": \"07b2c7af-788f-4e9b-949b-1f1b98e9865c\", \"session_id\": \"015de6b3-f343-44cc-90b1-464521935d42\", \"role\": \"user\", \"content\": \"Hello, thank you for coming in today. How have things been for you this week?\", \"created_at\": \"2026-08-05T13:05:48.156762+00:00\"}, \"assistantMessage\": {\"id\": \"928041f9-f855-47dd-9fbd-c6dd67eaa6c4\", \"session_id\": \"015de6b3-f343-44cc-90b1-464521935d42\", \"role\": \"assistant\", \"content\": \"Hey. Uh, kind of a mixed bag. Work was fine on paper, but my head\u2019s been spinning. I keep replaying this one meeting where I stumbled on an update, and I\u2019ve checked the email I sent after like five times. Sleep\u2019s been rough\u2014wired at night, then dragging by mid\u2011afternoon. I\u2019m doing the leg-bounce thing right now, sorry. Does that make sense?\", \"created_at\": \"2026-08-05"
+  },
+  "end": {
+    "status": 200,
+    "reportId": "89050fcc-b7e9-4926-ac6c-20029e9d7e98",
+    "aiSource": "gpt",
+    "aiModel": "gpt-5-2025-08-07"
+  }
+}

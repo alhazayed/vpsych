@@ -1,0 +1,10 @@
+{
+  "create": {
+    "status": 200,
+    "body": "{\"sessionId\":\"c7b1f6f9-12f9-4223-a969-940ece3a6c7c\",\"language\":\"en-US\",\"assessmentId\":\"VPSY-ASM-2A79CB67CADD4362\",\"caseInstanceId\":\"5f8636b3-00c3-40aa-989d-da87edfb0e3d\",\"diagnosis\":\"Generalized Anxiety Disorder, with panic attacks\",\"difficulty\":\"intermediate\",\"therapyModality\":\"supportive\",\"templateId\":null,\"templateSlug\":null,\"presetId\":null,\"presetSlug\":null,\"primaryObjective\":null,\"maxDurationSec\":2400}"
+  },
+  "deny": {
+    "status": 403,
+    "body": "{\"error\":\"Forbidden\"}"
+  }
+}

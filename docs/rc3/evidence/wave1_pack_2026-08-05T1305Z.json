@@ -1,0 +1,47 @@
+{
+  "evidence_id": "RC3-W1-EV-20260805T1305Z",
+  "wave": 1,
+  "executed_at": "2026-08-05T13:05:00Z",
+  "agent_bc_id": "bc-633ebfe4-f64d-4ded-a27d-101fecb90594",
+  "production": {
+    "url": "https://vpsych.vercel.app",
+    "sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+    "deployment_id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+    "supabase_ref": "rrzudbkxigeavfdnidnm",
+    "migrations_before_fix": 54,
+    "migrations_after_fix": 55,
+    "latest_migration": "20260805130453_restore_session_message_rpc_owner_auth"
+  },
+  "preflight": {
+    "script": "scripts/rc3-credential-gate-preflight.mjs",
+    "verdict": "PASS",
+    "vault_inject": true,
+    "persistent_cursor_secrets_still_swapped_at_boot": true
+  },
+  "findings": [
+    {
+      "id": "W1-C1",
+      "severity": "Critical",
+      "mission": 4,
+      "status": "FIXED",
+      "title": "insert_system/assistant_message bodies service_role-only; session create 500 Not authorized",
+      "fix_migration": "20260805130453_restore_session_message_rpc_owner_auth",
+      "retest": "PASS"
+    },
+    {
+      "id": "RC3-H1",
+      "severity": "High",
+      "mission": 3,
+      "status": "OPEN",
+      "title": "Supabase Auth leaked-password protection disabled (advisor WARN)",
+      "class": "ops"
+    }
+  ],
+  "missions": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS_WITH_RECOMMENDATION",
+    "4": "PASS_AFTER_FIX",
+    "5": "PASS"
+  }
+}

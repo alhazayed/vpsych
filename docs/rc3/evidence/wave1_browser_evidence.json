@@ -1,0 +1,88 @@
+{
+  "steps": [
+    {
+      "name": "m01-login-desktop",
+      "url": "https://vpsych.vercel.app/login",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-login-desktop.png"
+    },
+    {
+      "name": "m01-signup-desktop",
+      "url": "https://vpsych.vercel.app/signup",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-signup-desktop.png"
+    },
+    {
+      "name": "m01-privacy",
+      "url": "https://vpsych.vercel.app/privacy",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-privacy.png"
+    },
+    {
+      "name": "m01-terms",
+      "url": "https://vpsych.vercel.app/terms",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-terms.png"
+    },
+    {
+      "name": "m01-login-mobile-390",
+      "url": "https://vpsych.vercel.app/login",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-login-mobile-390.png"
+    },
+    {
+      "name": "m01-signup-rtl-arabic",
+      "url": "https://vpsych.vercel.app/signup",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m01-signup-rtl-arabic.png"
+    },
+    {
+      "name": "m02-therapist-login",
+      "url": "https://vpsych.vercel.app/avatars",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m02-therapist-login.png"
+    },
+    {
+      "name": "m04-after-avatar-click",
+      "url": "https://vpsych.vercel.app/sessions",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m04-after-avatar-click.png"
+    },
+    {
+      "name": "m04-browser-session-create-state",
+      "url": "https://vpsych.vercel.app/sessions",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m04-browser-session-create-state.png"
+    },
+    {
+      "name": "m02-admin-login",
+      "url": "https://vpsych.vercel.app/avatars",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m02-admin-login.png"
+    },
+    {
+      "name": "m02-admin-page",
+      "url": "https://vpsych.vercel.app/admin",
+      "file": "/opt/cursor/artifacts/rc3/wave1/screenshots/m02-admin-page.png"
+    }
+  ],
+  "login_text_sample": "VPsych Clinical Assessment Platform\nEN\nع\nSupport\nRequest Access\nImprove Your Clinical Skills with AI-Powered Practice\n\nPractice psychotherapy with realistic AI patients and receive structured competency feedback after every session.\n\nJD\nAS\nML\n\nstar\nTRUSTED BY CLINICIANS WORLDWIDE\n\nWelcome Back\n\nSign in to continue your clinical training.\n\nEMAIL\nPASSWORD\nForgot Password?\nvisibility\nRemember me for ",
+  "rtl": {
+    "dir": "rtl",
+    "lang": "ar"
+  },
+  "therapist_login": {
+    "url": "https://vpsych.vercel.app/avatars",
+    "ok": true
+  },
+  "therapist_shell": "VPsych\n\nCLINICAL INTELLIGENCE\n\nlibrary_books\nPatient Library\nclinical_notes\nMy Sessions\nauto_graph\nMy Learning\naccount_tree\nCompetency Graph\n\nAudit Therapist\n\nTHERAPIST\n\nadd\nNew Assessment\nlogout\nSign out\n\nVirtual Patient Library\n\nEN\nع\n\nAudit Therapist\n\nTHERAPIST\n\nA\n\nWELCOME BACK\n\nAudit Therapist\n\nChoose a virtual patient to begin a timed voice practice session.\n\nVirtual Patient Library\n\n2 active personas\n\nJordan Hale\n\nGeneralized Anxiety Disorder, with panic attacks · 34 · non-binary\n\nACTIVE\ntr",
+  "avatar_click": "clinical_notesMy Sessions",
+  "after_avatar_url": "https://vpsych.vercel.app/sessions",
+  "browser_session_create": {
+    "status": 500,
+    "body": "{\"error\":\"Not authorized\"}"
+  },
+  "admin_login": {
+    "url": "https://vpsych.vercel.app/avatars",
+    "ok": true
+  },
+  "admin_shell": "VPsych\n\nCLINICAL INTELLIGENCE\n\nlibrary_books\nPatient Library\nclinical_notes\nMy Sessions\nauto_graph\nMy Learning\naccount_tree\nCompetency Graph\nfolder_shared\nReports Library\npsychology\nAvatar Presets\nrecord_voice_over\nVoice Management\nbiotech\nCase Engine\nschema\nScenario Templates\nschool\nInstructor Presets\ntimeline\nAdaptive Curriculum\naccount_tree\nCompetency Graph\n\nAudit Admin\n\nADMINISTRATOR\n\nadd\nNew Assessment\nlogout\nSign out\n\nVirtual Patient Library\n\nEN\nع\n\nAudit Admin\n\nCLINICAL SUPERVISOR\n\nA\n\nWELC",
+  "admin_page": {
+    "url": "https://vpsych.vercel.app/admin",
+    "status_ok": true
+  },
+  "admin_openai": {
+    "status": 200,
+    "body": "{\"ok\":true,\"configured\":true,\"provider\":\"openai\",\"chatModel\":\"gpt-5\",\"sttModel\":\"gpt-4o-transcribe\",\"checkedAt\":\"2026-08-05T13:03:50.020Z\",\"latencyMs\":470,\"code\":null,\"error\":null}"
+  }
+}

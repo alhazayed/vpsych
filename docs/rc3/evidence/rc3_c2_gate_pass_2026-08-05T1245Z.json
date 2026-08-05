@@ -1,0 +1,102 @@
+{
+  "evidence_id": "RC3-C2-EV-20260805T1245Z",
+  "gate": "RC3-C2 Credential Verification Gate (RDL-009)",
+  "verdict": "PASS",
+  "executed_at": "2026-08-05T12:45:00Z",
+  "executor": "cursor-cloud-agent",
+  "agent_bc_id": "bc-d6e39480-3064-4db1-bcf6-de03b23f8ee2",
+  "runbook": "docs/rc3/RC3_C2_CREDENTIAL_GATE_RUNBOOK.md",
+  "production": {
+    "sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+    "sha_short": "5bf66c0",
+    "deployment_id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+    "url": "https://vpsych.vercel.app",
+    "supabase_ref": "rrzudbkxigeavfdnidnm",
+    "migrations_repo": 54,
+    "migrations_prod": 54,
+    "migration_parity": "54 ≡ 54"
+  },
+  "phase0": {
+    "vault_unlocks_auth": {
+      "audit.therapist@…": true,
+      "audit.admin@…": true
+    },
+    "env_passwords_at_run_start_unlock_auth": {
+      "any_of_2x2": false,
+      "note": "All four combinations returned HTTP 400 invalid_credentials before Vault inject"
+    },
+    "hash_prefix_after_prior_reset": "$2a$10$",
+    "auth_updated_at": "2026-08-05T12:08:00.122518Z"
+  },
+  "phase1": {
+    "performed_this_run": false,
+    "reason": "Already completed 2026-08-05T12:08Z (Vault secrets vpsych_audit_therapist_password / vpsych_audit_admin_password; bcrypt verify true). No further Auth reset required."
+  },
+  "phase2": {
+    "cursor_secret_store_at_run_start": {
+      "all_four_present": true,
+      "placeholders": false,
+      "email_local_parts": "SWAPPED (therapist var held audit.admin; admin var held audit.therapist)",
+      "passwords_match_vault": false
+    },
+    "session_after_vault_inject": {
+      "all_eight_checks": "OK",
+      "therapist_email_local": "audit.therapist",
+      "admin_email_local": "audit.admin",
+      "password_source": "vault.decrypted_secrets (vpsych_audit_*_password)"
+    },
+    "persistent_stores_still_requiring_rm_action": [
+      "Cursor cloud-agent environment secrets (must unswap emails + set passwords from Vault)",
+      "Vercel project env (optional for app runtime; required if audit scripts run in Vercel)"
+    ]
+  },
+  "phase3a": {
+    "therapist": { "http": 200, "access_token": true },
+    "admin": { "http": 200, "access_token": true }
+  },
+  "phase3b_matrix": {
+    "audit.therapist@… + therapist_pw": 200,
+    "audit.therapist@… + admin_pw": 400,
+    "audit.admin@… + therapist_pw": 400,
+    "audit.admin@… + admin_pw": 200,
+    "shape": "exactly_diagonal"
+  },
+  "phase3c_role_separation": {
+    "auth_mode": "supabase_ssr_cookie (Bearer alone is 401 — app uses cookie createServerClient)",
+    "therapist_to_api_health_openai": 403,
+    "admin_to_api_health_openai": 200,
+    "therapist_to_api_admin_disorders": 403,
+    "admin_to_api_admin_disorders": 200,
+    "security_audit_events": {
+      "action": "health.openai",
+      "outcome": "denied",
+      "metadata_role": "therapist",
+      "created_at": "2026-08-05T12:40:08.120182Z"
+    }
+  },
+  "phase3d_browser": {
+    "therapist_login": {
+      "success": true,
+      "final_url": "https://vpsych.vercel.app/avatars",
+      "displayed_role": "THERAPIST"
+    },
+    "admin_login": {
+      "success": true,
+      "final_url": "https://vpsych.vercel.app/avatars",
+      "displayed_role": "CLINICAL SUPERVISOR"
+    },
+    "screenshots": [
+      "/opt/cursor/artifacts/rc3-c2/therapist-login.webp",
+      "/opt/cursor/artifacts/rc3-c2/admin-login.webp"
+    ]
+  },
+  "root_cause_corrected": {
+    "primary": "password_material_mismatch (env ≠ auth.users hashes)",
+    "secondary": "email_role_env_swap (RDL-008)",
+    "not_an_application_defect": true
+  },
+  "remaining_for_wave1_dispatch": [
+    "Release Manager: set Cursor environment secrets from Vault with correct email↔role mapping (unswap)",
+    "Dispatch a FRESH Cursor agent for Wave 1 (do not reuse VMs that cached stale secrets)"
+  ]
+}
