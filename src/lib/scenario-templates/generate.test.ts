@@ -80,8 +80,14 @@ describe("Clinical Scenario Template Engine", () => {
       expect(assessmentIds.has(snapshot.assessment_id)).toBe(false);
       assessmentIds.add(snapshot.assessment_id);
 
-      expect(snapshot.primary_diagnosis.dsm5_code).toBeTruthy();
+      // ICD-11 required; DSM-5 may be null for ICD-11-only constructs
       expect(snapshot.primary_diagnosis.icd11_code).toBeTruthy();
+      expect(
+        Boolean(
+          snapshot.primary_diagnosis.dsm5_code ||
+            snapshot.primary_diagnosis.icd11_code,
+        ),
+      ).toBe(true);
       expect(snapshot.primary_diagnosis.slug).toBe(
         template.primary_diagnosis_slug,
       );
@@ -93,8 +99,7 @@ describe("Clinical Scenario Template Engine", () => {
       expect(meta.grading_rubric.pass_threshold).toBeGreaterThan(0);
       expect(snapshot.rubric?.length).toBeGreaterThan(0);
 
-      // Culture / language never rewrite DSM codes from the disorder package
-      expect(Boolean(snapshot.primary_diagnosis.dsm5_code)).toBe(true);
+      // Culture / language never rewrite coding from the disorder package
       expect(Boolean(snapshot.primary_diagnosis.icd11_code)).toBe(true);
 
       // Excluded diagnoses never appear

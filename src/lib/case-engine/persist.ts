@@ -71,7 +71,7 @@ function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): Perso
 }
 
 function mapDbDisorder(row: Record<string, unknown>): DisorderRow {
-  return {
+  const mapped: DisorderRow = {
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
@@ -89,6 +89,48 @@ function mapDbDisorder(row: Record<string, unknown>): DisorderRow {
     ],
     package: (row.package as DisorderRow["package"]) ?? {},
     is_active: Boolean(row.is_active),
+  };
+  return enrichDisorderFromBuiltin(mapped);
+}
+
+/**
+ * Prefer builtin catalog phenotype fields (symptom_profile, disclosure_rules,
+ * session_goals, ideal_approach, risk_defaults) when present. DB remains source
+ * of truth for identity/coding columns. Enables clinical remediations without
+ * schema changes while keeping PTSD and other unchanged packages stable when
+ * builtins match production richness.
+ */
+export function enrichDisorderFromBuiltin(row: DisorderRow): DisorderRow {
+  const catalog = getBuiltinCatalog();
+  const builtin = findDisorderBySlug(row.slug, catalog);
+  if (!builtin?.package) return row;
+  const bp = builtin.package;
+  const rp = row.package ?? {};
+  return {
+    ...row,
+    package: {
+      ...rp,
+      symptom_profile:
+        bp.symptom_profile && bp.symptom_profile.length > 0
+          ? bp.symptom_profile
+          : rp.symptom_profile,
+      disclosure_rules:
+        bp.disclosure_rules && bp.disclosure_rules.length > 0
+          ? bp.disclosure_rules
+          : rp.disclosure_rules,
+      session_goals:
+        bp.session_goals && bp.session_goals.length > 0
+          ? bp.session_goals
+          : rp.session_goals,
+      ideal_approach: bp.ideal_approach ?? rp.ideal_approach,
+      severity_default: bp.severity_default ?? rp.severity_default,
+      risk_defaults: {
+        ...rp.risk_defaults,
+        ...bp.risk_defaults,
+      },
+      differentials: bp.differentials ?? rp.differentials,
+      teaching_points: bp.teaching_points ?? rp.teaching_points,
+    },
   };
 }
 
