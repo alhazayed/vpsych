@@ -78,9 +78,12 @@ provisioning:
     deployment: dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4
     migrations: 54 ≡ 54
   remaining_steps:
-    - Release Manager: update persistent Cursor environment secrets from Vault (unswap emails + set vault passwords)
-    - Run scripts/rc3-credential-gate-preflight.mjs
-    - Launch a FRESH Cursor agent for Wave 1 only
+    - Release Manager: update persistent Cursor environment secrets from Vault (unswap emails + set vault passwords) — still open after Wave 1 (session inject used)
+    - Enable Supabase Auth leaked-password protection (RC3-H1)
+  wave1:
+    evidence_id: RC3-W1-EV-20260805T1305Z
+    rdl: RDL-012
+    verdict: certified_with_recommendations
 ```
 
 ## Governance
