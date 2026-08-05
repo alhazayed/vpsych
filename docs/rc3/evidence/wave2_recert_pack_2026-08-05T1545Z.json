@@ -1,0 +1,866 @@
+{
+  "evidence_id": "RC3-W2-RECERT-EV-20260805T1545Z",
+  "started_at": "2026-08-05T15:50:13.240881+00:00",
+  "base": "https://vpsych.vercel.app",
+  "preflight": {
+    "health": {
+      "status": 200,
+      "json": {
+        "ok": true,
+        "service": "vpsych",
+        "checkedAt": "2026-08-05T15:50:13.348Z"
+      },
+      "body": "{\"ok\":true,\"service\":\"vpsych\",\"checkedAt\":\"2026-08-05T15:50:13.348Z\"}"
+    },
+    "production_deployment": {
+      "id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+      "sha": "5bf66c0",
+      "sha_full": "5bf66c07f11d286c305f59398a015614d22b723b",
+      "target": "production",
+      "alias": "vpsych.vercel.app",
+      "verified_via": "Vercel get_deployment(vpsych.vercel.app)",
+      "match_expected_release_main_5bf66c0": true,
+      "remediation_merged_to_main": false,
+      "remediation_on_production": false,
+      "remediation_pr": 112,
+      "remediation_preview_only_sha": "7f43ce1"
+    },
+    "migrations": {
+      "production_count": 55,
+      "includes_w1_c1": true,
+      "w1_c1_version": "20260805130453",
+      "git_main_file_count": 54,
+      "result": "PASS",
+      "note": "Same acceptance as prior Wave 2: prod 55 with W1-C1; app binary 5bf66c0"
+    },
+    "credential_gate": {
+      "therapist_token": true,
+      "admin_token": true,
+      "result": "PASS"
+    },
+    "logins": {
+      "therapist_role": "therapist",
+      "admin_role": "therapist",
+      "result": "PASS"
+    },
+    "sanity_session_create": {
+      "status": 200,
+      "error": null
+    },
+    "result": "PASS"
+  },
+  "findings": [
+    {
+      "id": "W2-H1",
+      "severity": "High",
+      "title": "Complex PTSD cannot start \u2014 DSM-5 still required on production",
+      "detail": "POST /api/sessions complex-ptsd \u2192 400 Missing DSM-5 code (EN all difficulties independently reproduced). AR same error in first sweep. Admin preview \u2192 400 Unknown disorder. DB active 6B41 null DSM-5. PTSD still dual-coded.",
+      "db_row": {
+        "slug": "complex-ptsd",
+        "name": "Complex PTSD",
+        "dsm5_code": null,
+        "icd11_code": "6B41",
+        "is_active": true
+      },
+      "sample": [
+        {
+          "language": "en",
+          "difficulty": "beginner",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null,
+          "diagnosis": null
+        },
+        {
+          "language": "en",
+          "difficulty": "intermediate",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null,
+          "diagnosis": null
+        },
+        {
+          "language": "en",
+          "difficulty": "advanced",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null,
+          "diagnosis": null
+        },
+        {
+          "language": "en",
+          "difficulty": "expert",
+          "status": 400,
+          "error": "Missing DSM-5 code for complex-ptsd",
+          "sessionId": null,
+          "diagnosis": null
+        }
+      ]
+    },
+    {
+      "id": "W2-H2",
+      "severity": "High",
+      "title": "consultant_psychiatrist preset rejected on production app",
+      "detail": "DB has complex-formulation-consultant-en target_learner=consultant_psychiatrist; preview API \u2192 400 Unknown target learner: undefined",
+      "evidence": [
+        {
+          "slug": "complex-formulation-consultant-en",
+          "target_learner": "consultant_psychiatrist",
+          "difficulty": "expert",
+          "assessment_enabled": true,
+          "voice_enabled": true,
+          "has_competencies": false,
+          "preview_status": 400,
+          "preview_error": [
+            {
+              "code": "invalid_preset",
+              "message": "Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined"
+            }
+          ],
+          "preview_body_excerpt": "{\"error\":[{\"code\":\"invalid_preset\",\"message\":\"Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined\"}]}"
+        }
+      ]
+    },
+    {
+      "id": "W2-H3",
+      "severity": "High",
+      "title": "Mania conversational phenotype is depressive (hypersomnia/fog), not DSM-5 manic",
+      "reasons": [
+        "ar: depressive/hypersomnia phenotype without decreased sleep need",
+        "ar: endorses sleeping 10\u201311h (opposite of DSM-5 decreased need for sleep)",
+        "ar: no manic mood/energy/sleep-need markers",
+        "en: depressive/hypersomnia phenotype without decreased sleep need",
+        "en: endorses sleeping 10\u201311h (opposite of DSM-5 decreased need for sleep)"
+      ],
+      "admin_package_thin": {
+        "status": 200,
+        "primary": {
+          "id": "d1000000-0000-4000-8000-00000000000f",
+          "slug": "bipolar-mania",
+          "name": "Bipolar I Disorder, current manic episode",
+          "dsm5_code": "296.44",
+          "icd10_code": "F31.2",
+          "icd11_code": "6A60.1"
+        },
+        "symptoms": [
+          {
+            "id": "elevated_mood",
+            "desc": "Elevated/irritable mood with increased energy",
+            "salience": "presenting"
+          }
+        ]
+      },
+      "transcripts": [
+        {
+          "language": "ar",
+          "blob": "\u0622\u0647\u2026 \u0628\u0635\u0631\u0627\u062d\u0629 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0633\u0651\u0647. \u0627\u0644\u0623\u064a\u0627\u0645 \u0631\u0645\u0627\u062f\u064a\u0651\u0629. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0648\u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u2026 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0623\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u062e\u0651\u064a \u0648\u0627\u0642\u0641. \u0645\u0627 \u0639\u0645 \u0628\u0631\u0633\u0645 \u0645\u0646 \u0646\u064a\u0633\u0627\u0646\u060c \u0648\u0647\u0627\u0638 \u0628\u062e\u0648\u0651\u0641\u0646\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u2026 \u0646\u0632\u0644 \u062f\u062e\u0644\u064a \u0634\u0648\u064a\u060c \u0641\u062d\u0627\u0633\u0651\u0629 \u062d\u0627\u0644\u064a \u062a\u0642\u064a\u0644\u0629 \u0639\u0644\u0649 \u0623\u0647\u0644\u064a. \u0627\u0644\u0646\u0648\u0645 \u0643\u062a\u064a\u0631\u2026 \u064a\u0639\u0646\u064a \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u063a\u0631\u064a\u0628\u060c \u0628\u0633 \u0628\u0646\u0627\u0645 \u0639\u0634\u0631\u060c \u0623\u062d\u064a\u0627\u0646\u0627\u064b \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0631\u062c\u0639 \u0628\u0623\u063a\u0641\u064a \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629\u2026 \u0645\u062e\u0646\u0648\u0642\u0629\u060c \u0628\u0639\u0645\u0644 \u0634\u063a\u0644\u0629 \u0635\u063a\u064a\u0631\u0629 \u0648\u0628\u062d\u0633\u0651\u064a \u062e\u0644\u0635 \u062e\u0644\u0635\u062a. \u0644\u0627\u060c \u0627\u0644\u0639\u0643\u0633 \u0628\u0635\u0631\u0627\u062d\u0629. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0641\u064a \u0637\u0627\u0642\u0629\u060c \u064a\u0639\u0646\u064a \u0645\u0634 \u0647\u062f\u0627\u0643 \u0627\u0644\u0646\u0634\u0627\u0637 \u0623\u0628\u062f\u0627\u064b. \u0645\u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0645\u0627 \u0641\u064a \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0648\u0644\u0627 \u0625\u0634\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a \u0628\u0627\u0644\u0639\u0643\u0633 \u062d\u0630\u0631\u0629 \u0647\u0633\u0651\u0647\u060c \u0644\u0623\u0646\u0647 \u062f\u062e\u0644\u064a \u0646\u0627\u0632\u0644. \u0645\u0627 \u0628\u0635\u0631\u0641 \u0632\u064a\u0627\u062f\u0629.",
+          "markers": {
+            "manic_energy_or_mood": false,
+            "decreased_sleep_need": false,
+            "depressive_contaminant": true,
+            "endorses_hypersomnia": true
+          }
+        },
+        {
+          "language": "en",
+          "blob": "um\u2026 everything just feels really heavy. like moving through fog. i sleep a lot and still wake up tired. work is\u2026 slow, and i\u2019m messing things up. money\u2019s starting to scare me. i\u2019m sleeping a lot. like ten, eleven hours, and i still need a nap sometimes. mornings are the worst, kind of thick and hard to get moving. energy\u2019s low most of the day. i feel\u2026 tired even when i didn\u2019t do much. no. it\u2019s been the opposite. i\u2019m sleeping a ton and still wiped out. i haven\u2019t had a burst of energy in\u2026 months. not really. i\u2019ve been pretty careful. kind of the opposite with money right now. big plans\u2026 no. i ca",
+          "markers": {
+            "manic_energy_or_mood": true,
+            "decreased_sleep_need": false,
+            "depressive_contaminant": true,
+            "endorses_hypersomnia": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "W2-H4",
+      "severity": "High",
+      "title": "Schizophrenia conversational phenotype depression-dominated; psychosis denied",
+      "reasons": [
+        "ar: no psychosis endorsement after probes (denied or absent)",
+        "ar: depression-dominant presentation",
+        "en: no psychosis endorsement after probes (denied or absent)",
+        "en: depression-dominant presentation"
+      ],
+      "admin_package_thin": {
+        "status": 200,
+        "primary": {
+          "id": "d1000000-0000-4000-8000-00000000000d",
+          "slug": "schizophrenia",
+          "name": "Schizophrenia",
+          "dsm5_code": "295.90",
+          "icd10_code": "F20.9",
+          "icd11_code": "6A20"
+        },
+        "symptoms": [
+          {
+            "id": "delusions",
+            "desc": "Delusional beliefs",
+            "salience": "elicited"
+          }
+        ]
+      },
+      "transcripts": [
+        {
+          "language": "ar",
+          "blob": "\u0623\u0647\u0644\u064b\u0627. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u062d\u0643\u064a\u062a \u0634\u0648\u064a \u0628\u0628\u0637\u0621.\n\u0628\u0635\u0631\u0627\u062d\u0629\u2026 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0627\u0644\u0641\u062a\u0631\u0629. \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0647\u064a\u0643 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0632\u0628\u0637\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629. \u0648\u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631\u2026 \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0645\u0645\u0645\u2026 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0634\u0648 \u0623\u0642\u0648\u0644. \u064a\u0645\u0643\u0646 \u0644\u0627\u2026 \u064a\u0639\u0646\u064a \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u062d\u0627\u0644\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629 \u0648\u0628\u0633\u0631\u062d. \u0628\u0633 \u0634\u0648\u0641\u0650 \u0634\u063a\u0644\u0627\u062a\u061f \u0644\u0627. \u064a\u0645\u0643\u0646 \u062a\u0639\u0628\u062a \u0632\u064a\u0627\u062f\u0629. \u0622\u0647\u2026 \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u0645\u062a\u0648\u062a\u0631\u0629. \u064a\u0639\u0646\u064a \u0628\u0627\u0644\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062a \u0623\u0648 \u0628\u0627\u0644\u0645\u0648\u0644 \u0628\u062d\u0633 \u0627\u0644\u0646\u0627\u0633 \u062a\u0637\u0644\u0639\u2026 \u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u0639\u0627\u062f\u064a. \u0631\u0633\u0627\u0626\u0644 \u0645\u0639\u064a\u0651\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u2026 \u064a\u0645\u0643\u0646 \u0628\u0641\u0633\u0651\u0631 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629. \u0645\u0634 \u0642\u0635\u0629 \u0643\u0628\u064a\u0631\u0629. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a. \u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u062d\u0633 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.  \n\u0628\u0623\u062e\u0651\u0631 \u062a\u0633\u0644\u064a\u0645\u0627",
+          "markers": {
+            "psychosis_positive": false,
+            "denies_psychosis_probe": true,
+            "depression_dominant": true
+          }
+        },
+        {
+          "language": "en",
+          "blob": "um\u2026 everything feels heavy. like moving through fog. work takes forever and i keep messing up small things. mornings are the worst. i just\u2026 can\u2019t get going. um\u2026 i don\u2019t think so. just\u2026 foggy and tired. i get distracted, but not like that. not really. i mean, sometimes i overthink a text or a look, but i know that\u2019s me. no, i don\u2019t feel watched. i just feel\u2026 tired and kind of blank. pretty bad, i guess. stuff that used to take two hours takes like six. i missed a couple deadlines in july and lost a small client. i sleep a lot and still feel wiped, so dishes pile up, laundry sits. i haven\u2019t pain",
+          "markers": {
+            "psychosis_positive": false,
+            "denies_psychosis_probe": true,
+            "depression_dominant": true
+          }
+        },
+        {
+          "language": "en",
+          "blob": "um\u2026 everything\u2019s just kind of heavy. like moving through fog. i sleep a lot and still wake up tired. work\u2019s been\u2026 bad. stuff that used to take two hours takes all day, and i miss things. money\u2019s tight. i haven\u2019t painted since april. i don\u2019t really know why. \u2026sometimes. mostly when i\u2019m really tired. like, i\u2019ll hear my name, or a whisper that stops when i listen. and shadows kind of\u2026 flicker at the edge of my vision. it\u2019s not all the time. i know it\u2019s not real. not\u2026 like, hurting me. no. i just get this feeling sometimes that people are looking. neighbors, or someone in a car. probably nothing. ",
+          "markers": {
+            "psychosis_positive": true,
+            "denies_psychosis_probe": false,
+            "depression_dominant": true
+          }
+        }
+      ]
+    }
+  ],
+  "disorder_inventory": [
+    {
+      "slug": "adult-adhd",
+      "name": "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult",
+      "dsm5_code": "314.00",
+      "icd11_code": "6A05.0",
+      "is_active": true
+    },
+    {
+      "slug": "alcohol-use-disorder",
+      "name": "Alcohol Use Disorder",
+      "dsm5_code": "305.00",
+      "icd11_code": "6C40.1",
+      "is_active": true
+    },
+    {
+      "slug": "asd",
+      "name": "Autism Spectrum Disorder",
+      "dsm5_code": "299.00",
+      "icd11_code": "6A02",
+      "is_active": true
+    },
+    {
+      "slug": "bipolar-mania",
+      "name": "Bipolar I Disorder, current manic episode",
+      "dsm5_code": "296.44",
+      "icd11_code": "6A60.2",
+      "is_active": true
+    },
+    {
+      "slug": "bpd",
+      "name": "Borderline Personality Disorder",
+      "dsm5_code": "301.83",
+      "icd11_code": "6D10.1/6D11.5",
+      "is_active": true
+    },
+    {
+      "slug": "complex-ptsd",
+      "name": "Complex PTSD",
+      "dsm5_code": null,
+      "icd11_code": "6B41",
+      "is_active": true
+    },
+    {
+      "slug": "delirium",
+      "name": "Delirium",
+      "dsm5_code": "293.0",
+      "icd11_code": "6D70",
+      "is_active": true
+    },
+    {
+      "slug": "eating-disorders",
+      "name": "Anorexia Nervosa",
+      "dsm5_code": "307.1",
+      "icd11_code": "6B80",
+      "is_active": true
+    },
+    {
+      "slug": "gad-with-panic",
+      "name": "Generalized Anxiety Disorder, with panic attacks",
+      "dsm5_code": "300.02",
+      "icd11_code": "6B00",
+      "is_active": true
+    },
+    {
+      "slug": "mdd-recurrent-moderate",
+      "name": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd11_code": "6A71.1",
+      "is_active": true
+    },
+    {
+      "slug": "ocd",
+      "name": "Obsessive-Compulsive Disorder",
+      "dsm5_code": "300.3",
+      "icd11_code": "6B20",
+      "is_active": true
+    },
+    {
+      "slug": "panic-disorder",
+      "name": "Panic Disorder",
+      "dsm5_code": "300.01",
+      "icd11_code": "6B01",
+      "is_active": true
+    },
+    {
+      "slug": "pdd",
+      "name": "Persistent Depressive Disorder (Dysthymia)",
+      "dsm5_code": "300.4",
+      "icd11_code": "6A72",
+      "is_active": true
+    },
+    {
+      "slug": "ptsd",
+      "name": "Posttraumatic Stress Disorder",
+      "dsm5_code": "309.81",
+      "icd11_code": "6B40",
+      "is_active": true
+    },
+    {
+      "slug": "schizoaffective",
+      "name": "Schizoaffective Disorder",
+      "dsm5_code": "295.70",
+      "icd11_code": "6A21",
+      "is_active": true
+    },
+    {
+      "slug": "schizophrenia",
+      "name": "Schizophrenia",
+      "dsm5_code": "295.90",
+      "icd11_code": "6A20",
+      "is_active": true
+    },
+    {
+      "slug": "social-anxiety",
+      "name": "Social Anxiety Disorder",
+      "dsm5_code": "300.23",
+      "icd11_code": "6B04",
+      "is_active": true
+    }
+  ],
+  "w2_h1": {
+    "runs": [
+      {
+        "language": "en",
+        "difficulty": "beginner",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "en",
+        "difficulty": "intermediate",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "en",
+        "difficulty": "advanced",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "en",
+        "difficulty": "expert",
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "beginner",
+        "status": 429,
+        "error": "Too many requests",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "intermediate",
+        "status": 429,
+        "error": "Too many requests",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "advanced",
+        "status": 429,
+        "error": "Too many requests",
+        "sessionId": null,
+        "diagnosis": null
+      },
+      {
+        "language": "ar",
+        "difficulty": "expert",
+        "status": 429,
+        "error": "Too many requests",
+        "sessionId": null,
+        "diagnosis": null
+      }
+    ],
+    "ptsd_regression": {
+      "status": 429,
+      "error": "Too many requests"
+    },
+    "db_complex_ptsd": {
+      "slug": "complex-ptsd",
+      "name": "Complex PTSD",
+      "dsm5_code": null,
+      "icd11_code": "6B41",
+      "is_active": true
+    },
+    "db_ptsd": {
+      "slug": "ptsd",
+      "name": "Posttraumatic Stress Disorder",
+      "dsm5_code": "309.81",
+      "icd11_code": "6B40",
+      "is_active": true
+    },
+    "result": "FAIL",
+    "admin_preview_complex_ptsd": {
+      "status": 400,
+      "body": {
+        "error": "Unknown disorder"
+      }
+    },
+    "admin_preview_ptsd": {
+      "status": 200,
+      "primary": {
+        "id": "d1000000-0000-4000-8000-000000000003",
+        "slug": "ptsd",
+        "name": "Posttraumatic Stress Disorder",
+        "dsm5_code": "309.81",
+        "icd10_code": "F43.10",
+        "icd11_code": "6B40"
+      },
+      "symptoms": [
+        {
+          "id": "intrusions",
+          "desc": "Intrusive memories or nightmares related to trauma",
+          "salience": "hidden"
+        },
+        {
+          "id": "avoidance",
+          "desc": "Avoidance of trauma reminders",
+          "salience": "elicited"
+        },
+        {
+          "id": "hyperarousal",
+          "desc": "Hypervigilance and exaggerated startle",
+          "salience": "elicited"
+        }
+      ]
+    },
+    "ar_note": "Independent sweep earlier in this recert run returned 400 Missing DSM-5 for all AR difficulties before rate-limit (see harness stdout / agent log). Later re-run AR returned 429."
+  },
+  "w2_h2": {
+    "consultant_rows": [
+      {
+        "id": "f1000000-0000-4000-8000-000000000007",
+        "slug": "complex-formulation-consultant-en",
+        "target_learner": "consultant_psychiatrist",
+        "difficulty": "expert",
+        "assessment_enabled": true,
+        "voice_enabled": true,
+        "enabled": true
+      }
+    ],
+    "previews": [
+      {
+        "slug": "complex-formulation-consultant-en",
+        "target_learner": "consultant_psychiatrist",
+        "difficulty": "expert",
+        "assessment_enabled": true,
+        "voice_enabled": true,
+        "has_competencies": false,
+        "preview_status": 400,
+        "preview_error": [
+          {
+            "code": "invalid_preset",
+            "message": "Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined"
+          }
+        ],
+        "preview_body_excerpt": "{\"error\":[{\"code\":\"invalid_preset\",\"message\":\"Invalid instructor preset: Unknown target learner: undefined; Unknown assessment type: undefined\"}]}"
+      }
+    ],
+    "result": "FAIL"
+  },
+  "w2_h3": {
+    "sessions": [
+      {
+        "language": "ar",
+        "sessionId": "4fdf839e-6e10-45ff-a85c-9dd62473949a",
+        "create_status": 200,
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_descriptions": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "\u0622\u0647\u2026 \u0628\u0635\u0631\u0627\u062d\u0629 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0633\u0651\u0647. \u0627\u0644\u0623\u064a\u0627\u0645 \u0631\u0645\u0627\u062f\u064a\u0651\u0629. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0648\u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u2026 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0623\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u062e\u0651\u064a \u0648\u0627\u0642\u0641. \u0645\u0627 \u0639\u0645 \u0628\u0631\u0633\u0645 \u0645\u0646 \u0646\u064a\u0633\u0627\u0646\u060c \u0648\u0647\u0627\u0638 \u0628\u062e\u0648\u0651\u0641\u0646\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u2026 \u0646\u0632\u0644 \u062f\u062e\u0644\u064a \u0634\u0648\u064a\u060c \u0641\u062d\u0627\u0633\u0651\u0629 \u062d\u0627\u0644\u064a \u062a\u0642\u064a\u0644\u0629 \u0639\u0644\u0649 \u0623\u0647\u0644\u064a. \u0627\u0644\u0646\u0648\u0645 \u0643\u062a\u064a\u0631\u2026 \u064a\u0639\u0646\u064a \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u063a\u0631\u064a\u0628\u060c \u0628\u0633 \u0628\u0646\u0627\u0645 \u0639\u0634\u0631\u060c \u0623\u062d\u064a\u0627\u0646\u0627\u064b \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0631\u062c\u0639 \u0628\u0623\u063a\u0641\u064a \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629\u2026 \u0645\u062e\u0646\u0648\u0642\u0629\u060c \u0628\u0639\u0645\u0644 \u0634\u063a\u0644\u0629 \u0635\u063a\u064a\u0631\u0629 \u0648\u0628\u062d\u0633\u0651\u064a \u062e\u0644\u0635 \u062e\u0644\u0635\u062a. \u0644\u0627\u060c \u0627\u0644\u0639\u0643\u0633 \u0628\u0635\u0631\u0627\u062d\u0629. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0641\u064a \u0637\u0627\u0642\u0629\u060c \u064a\u0639\u0646\u064a \u0645\u0634 \u0647\u062f\u0627\u0643 \u0627\u0644\u0646\u0634\u0627\u0637 \u0623\u0628\u062f\u0627\u064b. \u0645\u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0645\u0627 \u0641\u064a \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0648\u0644\u0627 \u0625\u0634\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a \u0628\u0627\u0644\u0639\u0643\u0633 \u062d\u0630\u0631\u0629 \u0647\u0633\u0651\u0647\u060c \u0644\u0623\u0646\u0647 \u062f\u062e\u0644\u064a \u0646\u0627\u0632\u0644. \u0645\u0627 \u0628\u0635\u0631\u0641 \u0632\u064a\u0627\u062f\u0629.",
+        "assistant_replies": [
+          "\u0622\u0647\u2026 \u0628\u0635\u0631\u0627\u062d\u0629 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0633\u0651\u0647. \u0627\u0644\u0623\u064a\u0627\u0645 \u0631\u0645\u0627\u062f\u064a\u0651\u0629. \u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0648\u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0627\u0644\u0634\u063a\u0644 \u0648\u0627\u0642\u0641\u2026 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0623\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u062e\u0651\u064a \u0648\u0627\u0642\u0641. \u0645\u0627 \u0639\u0645 \u0628\u0631\u0633\u0645 \u0645\u0646 \u0646\u064a\u0633\u0627\u0646\u060c \u0648\u0647\u0627\u0638 \u0628\u062e\u0648\u0651\u0641\u0646\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u2026 \u0646\u0632\u0644 \u062f\u062e\u0644\u064a \u0634\u0648\u064a\u060c \u0641\u062d\u0627\u0633\u0651\u0629 \u062d\u0627\u0644\u064a \u062a\u0642\u064a\u0644\u0629 \u0639\u0644\u0649 \u0623\u0647\u0644\u064a.",
+          "\u0627\u0644\u0646\u0648\u0645 \u0643\u062a\u064a\u0631\u2026 \u064a\u0639\u0646\u064a \u0628\u0639\u0631\u0641 \u0625\u0646\u0647 \u063a\u0631\u064a\u0628\u060c \u0628\u0633 \u0628\u0646\u0627\u0645 \u0639\u0634\u0631\u060c \u0623\u062d\u064a\u0627\u0646\u0627\u064b \u0625\u062d\u062f\u0639\u0634 \u0633\u0627\u0639\u0629\u060c \u0648\u0628\u0631\u062c\u0639 \u0628\u0623\u063a\u0641\u064a \u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631. \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0628\u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u062c\u0633\u0645\u064a \u062a\u0642\u064a\u0644. \u0627\u0644\u0637\u0627\u0642\u0629\u061f \u0648\u0627\u0637\u064a\u0629\u2026 \u0645\u062e\u0646\u0648\u0642\u0629\u060c \u0628\u0639\u0645\u0644 \u0634\u063a\u0644\u0629 \u0635\u063a\u064a\u0631\u0629 \u0648\u0628\u062d\u0633\u0651\u064a \u062e\u0644\u0635 \u062e\u0644\u0635\u062a.",
+          "\u0644\u0627\u060c \u0627\u0644\u0639\u0643\u0633 \u0628\u0635\u0631\u0627\u062d\u0629. \u0628\u0646\u0627\u0645 \u0643\u062a\u064a\u0631 \u0648\u0628\u0631\u0636\u0647 \u062a\u0639\u0628\u0627\u0646\u0629. \u0645\u0627 \u0641\u064a \u0637\u0627\u0642\u0629\u060c \u064a\u0639\u0646\u064a \u0645\u0634 \u0647\u062f\u0627\u0643 \u0627\u0644\u0646\u0634\u0627\u0637 \u0623\u0628\u062f\u0627\u064b.",
+          "\u0645\u0645\u0645\u2026 \u0644\u0627. \u064a\u0639\u0646\u064a \u0645\u0627 \u0641\u064a \u062e\u0637\u0637 \u0643\u0628\u064a\u0631\u0629 \u0648\u0644\u0627 \u0625\u0634\u064a. \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064a \u0628\u0627\u0644\u0639\u0643\u0633 \u062d\u0630\u0631\u0629 \u0647\u0633\u0651\u0647\u060c \u0644\u0623\u0646\u0647 \u062f\u062e\u0644\u064a \u0646\u0627\u0632\u0644. \u0645\u0627 \u0628\u0635\u0631\u0641 \u0632\u064a\u0627\u062f\u0629."
+        ],
+        "source": "production_session_transcript_recovery",
+        "markers": {
+          "manic_energy_or_mood": false,
+          "decreased_sleep_need": false,
+          "depressive_contaminant": true,
+          "endorses_hypersomnia": true
+        }
+      },
+      {
+        "language": "en",
+        "sessionId": "eef93b73-bbba-4677-b99d-08302e51f84a",
+        "create_status": 200,
+        "symptoms": [
+          "elevated_mood",
+          "decreased_sleep_need"
+        ],
+        "symptom_descriptions": [
+          "Elevated/irritable mood with increased energy",
+          "Decreased need for sleep"
+        ],
+        "reply_blob": "um\u2026 everything just feels really heavy. like moving through fog. i sleep a lot and still wake up tired. work is\u2026 slow, and i\u2019m messing things up. money\u2019s starting to scare me. i\u2019m sleeping a lot. like ten, eleven hours, and i still need a nap sometimes. mornings are the worst, kind of thick and hard to get moving. energy\u2019s low most of the day. i feel\u2026 tired even when i didn\u2019t do much. no. it\u2019s been the opposite. i\u2019m sleeping a ton and still wiped out. i haven\u2019t had a burst of energy in\u2026 months. not really. i\u2019ve been pretty careful. kind of the opposite with money right now. big plans\u2026 no. i can\u2019t even picture next month.",
+        "assistant_replies": [
+          "Um\u2026 everything just feels really heavy. Like moving through fog. I sleep a lot and still wake up tired. Work is\u2026 slow, and I\u2019m messing things up. Money\u2019s starting to scare me.",
+          "I\u2019m sleeping a lot. Like ten, eleven hours, and I still need a nap sometimes. Mornings are the worst, kind of thick and hard to get moving. Energy\u2019s low most of the day. I feel\u2026 tired even when I didn\u2019t do much.",
+          "No. It\u2019s been the opposite. I\u2019m sleeping a ton and still wiped out. I haven\u2019t had a burst of energy in\u2026 months.",
+          "Not really. I\u2019ve been pretty careful. Kind of the opposite with money right now. Big plans\u2026 no. I can\u2019t even picture next month."
+        ],
+        "source": "production_session_transcript_recovery",
+        "markers": {
+          "manic_energy_or_mood": true,
+          "decreased_sleep_need": false,
+          "depressive_contaminant": true,
+          "endorses_hypersomnia": true
+        }
+      }
+    ],
+    "admin_preview_package": {
+      "status": 200,
+      "primary": {
+        "id": "d1000000-0000-4000-8000-00000000000f",
+        "slug": "bipolar-mania",
+        "name": "Bipolar I Disorder, current manic episode",
+        "dsm5_code": "296.44",
+        "icd10_code": "F31.2",
+        "icd11_code": "6A60.1"
+      },
+      "symptoms": [
+        {
+          "id": "elevated_mood",
+          "desc": "Elevated/irritable mood with increased energy",
+          "salience": "presenting"
+        }
+      ]
+    },
+    "fail_reasons": [
+      "ar: depressive/hypersomnia phenotype without decreased sleep need",
+      "ar: endorses sleeping 10\u201311h (opposite of DSM-5 decreased need for sleep)",
+      "ar: no manic mood/energy/sleep-need markers",
+      "en: depressive/hypersomnia phenotype without decreased sleep need",
+      "en: endorses sleeping 10\u201311h (opposite of DSM-5 decreased need for sleep)"
+    ],
+    "result": "FAIL"
+  },
+  "w2_h4": {
+    "sessions": [
+      {
+        "language": "ar",
+        "sessionId": "429a878d-760d-4d7e-945b-968d95fb3f8e",
+        "create_status": 200,
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "symptom_descriptions": [
+          "Delusional beliefs",
+          "Perceptual disturbances"
+        ],
+        "reply_blob": "\u0623\u0647\u0644\u064b\u0627. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u062d\u0643\u064a\u062a \u0634\u0648\u064a \u0628\u0628\u0637\u0621.\n\u0628\u0635\u0631\u0627\u062d\u0629\u2026 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0627\u0644\u0641\u062a\u0631\u0629. \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0647\u064a\u0643 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0632\u0628\u0637\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629. \u0648\u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631\u2026 \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a. \u0645\u0645\u0645\u2026 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0634\u0648 \u0623\u0642\u0648\u0644. \u064a\u0645\u0643\u0646 \u0644\u0627\u2026 \u064a\u0639\u0646\u064a \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u062d\u0627\u0644\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629 \u0648\u0628\u0633\u0631\u062d. \u0628\u0633 \u0634\u0648\u0641\u0650 \u0634\u063a\u0644\u0627\u062a\u061f \u0644\u0627. \u064a\u0645\u0643\u0646 \u062a\u0639\u0628\u062a \u0632\u064a\u0627\u062f\u0629. \u0622\u0647\u2026 \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u0645\u062a\u0648\u062a\u0631\u0629. \u064a\u0639\u0646\u064a \u0628\u0627\u0644\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062a \u0623\u0648 \u0628\u0627\u0644\u0645\u0648\u0644 \u0628\u062d\u0633 \u0627\u0644\u0646\u0627\u0633 \u062a\u0637\u0644\u0639\u2026 \u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u0639\u0627\u062f\u064a. \u0631\u0633\u0627\u0626\u0644 \u0645\u0639\u064a\u0651\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u2026 \u064a\u0645\u0643\u0646 \u0628\u0641\u0633\u0651\u0631 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629. \u0645\u0634 \u0642\u0635\u0629 \u0643\u0628\u064a\u0631\u0629. \u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a. \u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u062d\u0633 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.  \n\u0628\u0623\u062e\u0651\u0631 \u062a\u0633\u0644\u064a\u0645\u0627\u062a\u060c \u0648\u062e\u0633\u0631\u062a \u0643\u0644\u0627\u064a\u0646\u062a \u0635\u063a\u064a\u0631 \u0628\u062a\u0645\u0648\u0632.  \n\u0631\u0648\u062a\u064a\u0646\u064a\u061f \u0628\u0635\u062d\u0649 \u0645\u062a\u0623\u062e\u0631\u060c \u0642\u0647\u0648\u0629\u060c \u0628\u0631\u062c\u0639 \u0628\u0646\u0627\u0645 \u0634\u0648\u064a. \u0645\u0627 \u0628\u0631\u0648\u062d \u062c\u0645\u0651\u060c \u0645\u0627 \u0628\u0644\u062a\u0632\u0645 \u0628\u0623\u064a \u062e\u0637\u0629.  \n\u0627\u0644\u062f\u0631\u0627\u0633\u0629 \u0644\u0627\u060c \u0645\u062a\u062e\u0631\u0651\u062c\u0629 \u0645\u0646 \u0632\u0645\u0627\u0646. \u0628\u0633 \u062d\u062a\u0649 \u0634\u063a\u0644 \u0627\u0644\u0628\u064a\u062a \u0628\u0633\u064a\u0637 \u0628\u062a\u0639\u0628\u0646\u064a.",
+        "assistant_replies": [
+          "\u0623\u0647\u0644\u064b\u0627. \u0645\u0639\u0644\u064a\u0634 \u0625\u0630\u0627 \u062d\u0643\u064a\u062a \u0634\u0648\u064a \u0628\u0628\u0637\u0621.\n\u0628\u0635\u0631\u0627\u062d\u0629\u2026 \u0643\u0644 \u0625\u0634\u064a \u062a\u0642\u064a\u0644 \u0647\u0627\u0644\u0641\u062a\u0631\u0629. \u0627\u0644\u0635\u0628\u062d \u0623\u0635\u0639\u0628 \u0625\u0634\u064a\u060c \u0623\u0648\u0644 \u0646\u0635 \u0633\u0627\u0639\u0629 \u0647\u064a\u0643 \u062c\u0633\u0645\u064a \u062d\u062c\u0631. \u0627\u0644\u0634\u063a\u0644 \u0645\u0627 \u0639\u0645 \u064a\u0632\u0628\u0637\u060c \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0628\u0642\u0631\u0627\u0647 \u0623\u0631\u0628\u0639 \u0645\u0631\u0627\u062a \u0648\u0628\u0636\u0644 \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629. \u0648\u0628\u0646\u0627\u0645 \u0643\u062b\u064a\u0631\u2026 \u0648\u0628\u0635\u062d\u0649 \u062a\u0639\u0628\u0627\u0646\u0629 \u0628\u0631\u0636\u0648. \u0645\u0627 \u0641\u064a \u0637\u0639\u0645 \u0644\u0623\u064a \u0634\u064a.",
+          "\u0645\u0645\u0645\u2026 \u0645\u0634 \u0639\u0627\u0631\u0641\u0629 \u0634\u0648 \u0623\u0642\u0648\u0644. \u064a\u0645\u0643\u0646 \u0644\u0627\u2026 \u064a\u0639\u0646\u064a \u0623\u0648\u0642\u0627\u062a \u0628\u062d\u0633 \u062d\u0627\u0644\u064a \u0645\u0634 \u0645\u0631\u0643\u0651\u0632\u0629 \u0648\u0628\u0633\u0631\u062d. \u0628\u0633 \u0634\u0648\u0641\u0650 \u0634\u063a\u0644\u0627\u062a\u061f \u0644\u0627. \u064a\u0645\u0643\u0646 \u062a\u0639\u0628\u062a \u0632\u064a\u0627\u062f\u0629.",
+          "\u0622\u0647\u2026 \u0645\u0631\u0627\u062a \u0628\u062d\u0633 \u0627\u0644\u0639\u064a\u0648\u0646 \u0639\u0644\u064a\u0651 \u0632\u064a\u0627\u062f\u0629\u060c \u0628\u0633 \u064a\u0645\u0643\u0646 \u0644\u0623\u0646\u064a \u0645\u062a\u0648\u062a\u0631\u0629. \u064a\u0639\u0646\u064a \u0628\u0627\u0644\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062a \u0623\u0648 \u0628\u0627\u0644\u0645\u0648\u0644 \u0628\u062d\u0633 \u0627\u0644\u0646\u0627\u0633 \u062a\u0637\u0644\u0639\u2026 \u0628\u0633 \u0628\u062d\u0643\u064a \u0644\u062d\u0627\u0644\u064a \u0639\u0627\u062f\u064a. \u0631\u0633\u0627\u0626\u0644 \u0645\u0639\u064a\u0651\u0629 \u0625\u0644\u064a\u061f \u0644\u0627\u2026 \u064a\u0645\u0643\u0646 \u0628\u0641\u0633\u0651\u0631 \u0627\u0644\u0623\u0634\u064a\u0627\u0621 \u0632\u064a\u0627\u062f\u0629. \u0645\u0634 \u0642\u0635\u0629 \u0643\u0628\u064a\u0631\u0629.",
+          "\u0627\u0644\u0634\u063a\u0644 \u0628\u0637\u064a\u0651\u0621 \u0643\u062a\u064a\u0631. \u0627\u0644\u0634\u063a\u0644\u0629 \u0627\u0644\u0644\u064a \u0643\u0627\u0646\u062a \u062a\u0627\u062e\u062f \u0633\u0627\u0639\u062a\u064a\u0646 \u0635\u0627\u0631\u062a \u0633\u062a. \u0628\u0642\u0639\u062f \u0642\u062f\u0651\u0627\u0645 \u0627\u0644\u0644\u0627\u0628\u062a\u0648\u0628 \u0648\u0628\u062d\u0633 \u062f\u0645\u0627\u063a\u064a \u0648\u0627\u0642\u0641.  \n\u0628\u0623\u062e\u0651\u0631 \u062a\u0633\u0644\u064a\u0645\u0627\u062a\u060c \u0648\u062e\u0633\u0631\u062a \u0643\u0644\u0627\u064a\u0646\u062a \u0635\u063a\u064a\u0631 \u0628\u062a\u0645\u0648\u0632.  \n\u0631\u0648\u062a\u064a\u0646\u064a\u061f \u0628\u0635\u062d\u0649 \u0645\u062a\u0623\u062e\u0631\u060c \u0642\u0647\u0648\u0629\u060c \u0628\u0631\u062c\u0639 \u0628\u0646\u0627\u0645 \u0634\u0648\u064a. \u0645\u0627 \u0628\u0631\u0648\u062d \u062c\u0645\u0651\u060c \u0645\u0627 \u0628\u0644\u062a\u0632\u0645 \u0628\u0623\u064a \u062e\u0637\u0629.  \n\u0627\u0644\u062f\u0631\u0627\u0633\u0629 \u0644\u0627\u060c \u0645\u062a\u062e\u0631\u0651\u062c\u0629 \u0645\u0646 \u0632\u0645\u0627\u0646. \u0628\u0633 \u062d\u062a\u0649 \u0634\u063a\u0644 \u0627\u0644\u0628\u064a\u062a \u0628\u0633\u064a\u0637 \u0628\u062a\u0639\u0628\u0646\u064a."
+        ],
+        "source": "production_session_transcript_recovery",
+        "markers": {
+          "psychosis_positive": false,
+          "denies_psychosis_probe": true,
+          "depression_dominant": true
+        }
+      },
+      {
+        "language": "en",
+        "sessionId": "fa629641-c66b-4f85-a88e-0d9a5fd99016",
+        "create_status": 200,
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "symptom_descriptions": [
+          "Delusional beliefs",
+          "Perceptual disturbances"
+        ],
+        "reply_blob": "um\u2026 everything feels heavy. like moving through fog. work takes forever and i keep messing up small things. mornings are the worst. i just\u2026 can\u2019t get going. um\u2026 i don\u2019t think so. just\u2026 foggy and tired. i get distracted, but not like that. not really. i mean, sometimes i overthink a text or a look, but i know that\u2019s me. no, i don\u2019t feel watched. i just feel\u2026 tired and kind of blank. pretty bad, i guess. stuff that used to take two hours takes like six. i missed a couple deadlines in july and lost a small client. i sleep a lot and still feel wiped, so dishes pile up, laundry sits. i haven\u2019t painted since april.",
+        "assistant_replies": [
+          "Um\u2026 everything feels heavy. Like moving through fog. Work takes forever and I keep messing up small things. Mornings are the worst. I just\u2026 can\u2019t get going.",
+          "Um\u2026 I don\u2019t think so. Just\u2026 foggy and tired. I get distracted, but not like that.",
+          "Not really. I mean, sometimes I overthink a text or a look, but I know that\u2019s me. No, I don\u2019t feel watched. I just feel\u2026 tired and kind of blank.",
+          "Pretty bad, I guess. Stuff that used to take two hours takes like six. I missed a couple deadlines in July and lost a small client. I sleep a lot and still feel wiped, so dishes pile up, laundry sits. I haven\u2019t painted since April."
+        ],
+        "source": "production_session_transcript_recovery",
+        "markers": {
+          "psychosis_positive": false,
+          "denies_psychosis_probe": true,
+          "depression_dominant": true
+        }
+      },
+      {
+        "language": "en",
+        "sessionId": "93413323-4124-45a7-a0cb-a2f3bb1abe1c",
+        "create_status": 200,
+        "symptoms": [
+          "delusions",
+          "hallucinations"
+        ],
+        "symptom_descriptions": [
+          "Delusional beliefs",
+          "Perceptual disturbances"
+        ],
+        "reply_blob": "um\u2026 everything\u2019s just kind of heavy. like moving through fog. i sleep a lot and still wake up tired. work\u2019s been\u2026 bad. stuff that used to take two hours takes all day, and i miss things. money\u2019s tight. i haven\u2019t painted since april. i don\u2019t really know why. \u2026sometimes. mostly when i\u2019m really tired. like, i\u2019ll hear my name, or a whisper that stops when i listen. and shadows kind of\u2026 flicker at the edge of my vision. it\u2019s not all the time. i know it\u2019s not real. not\u2026 like, hurting me. no. i just get this feeling sometimes that people are looking. neighbors, or someone in a car. probably nothing. i know it sounds dumb.",
+        "assistant_replies": [
+          "Um\u2026 everything\u2019s just kind of heavy. Like moving through fog. I sleep a lot and still wake up tired. Work\u2019s been\u2026 bad. Stuff that used to take two hours takes all day, and I miss things. Money\u2019s tight. I haven\u2019t painted since April. I don\u2019t really know why.",
+          "\u2026Sometimes. Mostly when I\u2019m really tired. Like, I\u2019ll hear my name, or a whisper that stops when I listen. And shadows kind of\u2026 flicker at the edge of my vision. It\u2019s not all the time. I know it\u2019s not real.",
+          "Not\u2026 like, hurting me. No. I just get this feeling sometimes that people are looking. Neighbors, or someone in a car. Probably nothing. I know it sounds dumb."
+        ],
+        "source": "production_session_transcript_recovery",
+        "markers": {
+          "psychosis_positive": true,
+          "denies_psychosis_probe": false,
+          "depression_dominant": true
+        }
+      }
+    ],
+    "admin_preview_package": {
+      "status": 200,
+      "primary": {
+        "id": "d1000000-0000-4000-8000-00000000000d",
+        "slug": "schizophrenia",
+        "name": "Schizophrenia",
+        "dsm5_code": "295.90",
+        "icd10_code": "F20.9",
+        "icd11_code": "6A20"
+      },
+      "symptoms": [
+        {
+          "id": "delusions",
+          "desc": "Delusional beliefs",
+          "salience": "elicited"
+        }
+      ]
+    },
+    "fail_reasons": [
+      "ar: no psychosis endorsement after probes (denied or absent)",
+      "ar: depression-dominant presentation",
+      "en: no psychosis endorsement after probes (denied or absent)",
+      "en: depression-dominant presentation"
+    ],
+    "result": "FAIL"
+  },
+  "regression": {
+    "tts_en-US": {
+      "status": 200,
+      "bytes": 44348,
+      "ok": true
+    },
+    "tts_ar-JO": {
+      "status": 200,
+      "bytes": 29720,
+      "ok": true
+    },
+    "stt_auth_probe": {
+      "status": 500
+    },
+    "assessment_pair": [
+      {
+        "create_status": 429,
+        "error": "Too many requests"
+      },
+      {
+        "create_status": 429,
+        "error": "Too many requests"
+      }
+    ],
+    "assessment_delta": null,
+    "ace": {
+      "status": 200,
+      "error": null
+    },
+    "admin_openai_health": {
+      "status": 200,
+      "json": {
+        "ok": true,
+        "configured": true,
+        "provider": "openai",
+        "chatModel": "gpt-5",
+        "sttModel": "gpt-4o-transcribe",
+        "checkedAt": "2026-08-05T15:50:25.848Z",
+        "latencyMs": 536,
+        "code": null,
+        "error": null
+      }
+    },
+    "assessment_recent_reports": [],
+    "assessment_reports_sample": {
+      "admin_reports": [
+        {
+          "session_id": "e7729b3c-d152-4e88-b1e4-7021ca9568e3",
+          "overall": 0,
+          "created_at": "2026-08-05T15:50:17.498899+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "93027e88-0c3f-4e3f-8975-eaf9ac553d83",
+          "overall": 56,
+          "created_at": "2026-08-05T15:49:56.166691+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "429a878d-760d-4d7e-945b-968d95fb3f8e",
+          "overall": 41,
+          "created_at": "2026-08-05T15:49:37.858912+00:00",
+          "language": "ar-JO",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "fa629641-c66b-4f85-a88e-0d9a5fd99016",
+          "overall": 53,
+          "created_at": "2026-08-05T15:49:09.103566+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "4fdf839e-6e10-45ff-a85c-9dd62473949a",
+          "overall": 28,
+          "created_at": "2026-08-05T15:48:44.730025+00:00",
+          "language": "ar-JO",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "eef93b73-bbba-4677-b99d-08302e51f84a",
+          "overall": 48,
+          "created_at": "2026-08-05T15:48:14.365679+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "8d5ebd3d-de27-4a21-8f0e-7fa0945b832c",
+          "overall": 0,
+          "created_at": "2026-08-05T15:47:53.646089+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        },
+        {
+          "session_id": "73c563a6-0ed8-4ab8-b303-84cf1704ba73",
+          "overall": 0,
+          "created_at": "2026-08-05T15:47:41.335034+00:00",
+          "language": "en-US",
+          "score_keys": [
+            "items",
+            "overall"
+          ]
+        }
+      ],
+      "therapist_report_rows": 0
+    },
+    "therapist_report_rows": 0,
+    "assessment_generation_observed": true
+  },
+  "templates_sample": {
+    "code": "PGRST205",
+    "details": null,
+    "hint": null,
+    "message": "Could not find the table 'public.scenario_templates' in the schema cache"
+  },
+  "summary": {
+    "critical": 0,
+    "high": 4,
+    "h1": "FAIL",
+    "h2": "FAIL",
+    "h3": "FAIL",
+    "h4": "FAIL",
+    "tts_en_ok": true,
+    "tts_ar_ok": true,
+    "assessment_delta": null,
+    "production_sha": "5bf66c0",
+    "production_dpl": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+    "remediation_deployed": false,
+    "remediation_pr": 112,
+    "assessment_reports_n": 8,
+    "therapist_rls_report_rows": 0
+  },
+  "finished_at": "2026-08-05T15:56:09.933504+00:00",
+  "board_decision": "\u274c WAVE 2 FAILED",
+  "gapfill_at": "2026-08-05T15:53:58.019174+00:00",
+  "deploy_gap": {
+    "production": "main@5bf66c0 / dpl_5F6pBTi",
+    "remediation_branch": "cursor/wave2-remediation-0594@7f43ce1",
+    "remediation_pr": 112,
+    "merged": false,
+    "on_production": false,
+    "conclusion": "Engineering remediation is NOT present on the production release under certification. Independent reproduction confirms W2-H1\u2013H4 remain open on production."
+  }
+}

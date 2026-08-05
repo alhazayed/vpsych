@@ -1,0 +1,85 @@
+{
+  "admin_reports": [
+    {
+      "session_id": "e7729b3c-d152-4e88-b1e4-7021ca9568e3",
+      "overall": 0,
+      "created_at": "2026-08-05T15:50:17.498899+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "93027e88-0c3f-4e3f-8975-eaf9ac553d83",
+      "overall": 56,
+      "created_at": "2026-08-05T15:49:56.166691+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "429a878d-760d-4d7e-945b-968d95fb3f8e",
+      "overall": 41,
+      "created_at": "2026-08-05T15:49:37.858912+00:00",
+      "language": "ar-JO",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "fa629641-c66b-4f85-a88e-0d9a5fd99016",
+      "overall": 53,
+      "created_at": "2026-08-05T15:49:09.103566+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "4fdf839e-6e10-45ff-a85c-9dd62473949a",
+      "overall": 28,
+      "created_at": "2026-08-05T15:48:44.730025+00:00",
+      "language": "ar-JO",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "eef93b73-bbba-4677-b99d-08302e51f84a",
+      "overall": 48,
+      "created_at": "2026-08-05T15:48:14.365679+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "8d5ebd3d-de27-4a21-8f0e-7fa0945b832c",
+      "overall": 0,
+      "created_at": "2026-08-05T15:47:53.646089+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    },
+    {
+      "session_id": "73c563a6-0ed8-4ab8-b303-84cf1704ba73",
+      "overall": 0,
+      "created_at": "2026-08-05T15:47:41.335034+00:00",
+      "language": "en-US",
+      "score_keys": [
+        "items",
+        "overall"
+      ]
+    }
+  ],
+  "therapist_report_rows": 0
+}
