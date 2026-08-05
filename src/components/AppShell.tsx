@@ -100,6 +100,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "health_metrics",
       match: (p) => p.startsWith("/admin/cqi"),
     },
+    {
+      href: "/admin/eoi",
+      label: t("educationalOpportunities"),
+      icon: "school",
+      match: (p) => p.startsWith("/admin/eoi"),
+    },
   ];
 }
 

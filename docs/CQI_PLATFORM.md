@@ -12,6 +12,10 @@ preserve them forever in a Quality Vault, cluster them, and produce
 
 CQI does **not** auto-create pull requests or modify production.
 
+**Educational ideas are not CQI defects.** Capture teaching enhancements via
+Educational Opportunity Intelligence (EOI) — see `docs/EOI_PLATFORM.md` and
+`/admin/eoi`.
+
 ## Architecture
 
 | Layer | Location |

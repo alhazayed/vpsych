@@ -2,45 +2,58 @@
 
 import { useCallback, useState, startTransition } from "react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 type Dash = {
   source: string;
+  is_defect: false;
   dashboard: {
     totals: {
-      flags: number;
+      opportunities: number;
       clusters: number;
-      critical: number;
-      high: number;
+      high_impact: number;
+      accepted: number;
     };
-    score_averages: Record<string, number | null>;
-    by_disorder: Array<{ disorder: string; n: number; avg_clinical?: number }>;
-    by_category: Array<{ category: string; n: number }>;
-    top_clusters: Array<{
+    top_opportunities: Array<{
       title: string;
       report_count: number;
-      severity: string | null;
-      confidence_pct: number;
+      educational_impact_avg: number;
+      educational_priority: string;
+      backlog_score: number;
     }>;
+    by_type: Array<{ type: string; n: number }>;
+    by_competency: Array<{ competency: string; n: number }>;
+    by_learner: Array<{ learner: string; n: number }>;
+    by_disorder: Array<{ disorder: string; n: number }>;
+    backlog: Array<{
+      title: string;
+      backlog_score: number;
+      educational_priority: string;
+      effort_estimate: string;
+      research_value: string;
+    }>;
+    trends: { by_release: Array<{ release: string; n: number }> };
   };
-  recent_flags: Array<{
+  recent: Array<{
     id: string;
     created_at: string;
-    category: string;
-    severity: string;
+    opportunity_type: string;
+    educational_impact: number;
     disorder_slug: string | null;
-    language: string | null;
-    free_text_preview: string;
+    status: string;
+    idea_preview: string;
+    competencies: string[];
   }>;
 };
 
-export function CqiAdminDashboard() {
-  const t = useTranslations("admin.cqi");
+export function EoiAdminDashboard() {
+  const t = useTranslations("admin.eoi");
   const [data, setData] = useState<Dash | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/cqi");
+    const res = await fetch("/api/admin/eoi");
     if (!res.ok) return;
     const json = (await res.json()) as Dash;
     startTransition(() => setData(json));
@@ -56,7 +69,7 @@ export function CqiAdminDashboard() {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/admin/cqi/analyze", { method: "POST" });
+      const res = await fetch("/api/admin/eoi/analyze", { method: "POST" });
       const body = (await res.json()) as {
         ok?: boolean;
         analyst?: { cluster_count: number };
@@ -65,9 +78,7 @@ export function CqiAdminDashboard() {
       if (!res.ok) {
         setMsg(body.error || t("analystFailed"));
       } else {
-        setMsg(
-          t("analystDone", { n: body.analyst?.cluster_count ?? 0 }),
-        );
+        setMsg(t("analystDone", { n: body.analyst?.cluster_count ?? 0 }));
         await load();
       }
     } catch {
@@ -100,16 +111,22 @@ export function CqiAdminDashboard() {
         </button>
         <a
           className="btn-secondary h-10 px-4 text-sm leading-10"
-          href="/api/admin/cqi/export?format=package"
+          href="/api/admin/eoi/export?format=package"
         >
           {t("export")}
         </a>
         <a
           className="btn-secondary h-10 px-4 text-sm leading-10"
-          href="/api/admin/cqi/export?format=csv&redact=1"
+          href="/api/admin/eoi/export?format=csv&redact=1"
         >
           {t("exportCsv")}
         </a>
+        <Link
+          href="/admin/cqi"
+          className="btn-secondary h-10 px-4 text-sm leading-10"
+        >
+          {t("cqiLink")}
+        </Link>
         {data && (
           <span className="text-xs text-[var(--on-surface-variant)]">
             {t("source", { source: data.source })}
@@ -118,10 +135,7 @@ export function CqiAdminDashboard() {
       </div>
 
       <p className="text-xs text-[var(--on-surface-variant)]">
-        {t("approvalNote")}{" "}
-        <a href="/admin/eoi" className="underline">
-          {t("eoiLink")}
-        </a>
+        {t("separationNote")}
       </p>
       {msg && (
         <p className="text-sm text-[var(--primary)]" role="status">
@@ -129,7 +143,7 @@ export function CqiAdminDashboard() {
         </p>
       )}
 
-      {!d || d.totals.flags === 0 ? (
+      {!d || d.totals.opportunities === 0 ? (
         <p className="rounded-xl border border-[var(--outline-variant)] bg-white p-6 text-sm">
           {t("noData")}
         </p>
@@ -141,10 +155,10 @@ export function CqiAdminDashboard() {
             </h2>
             <div className="grid gap-3 sm:grid-cols-4">
               {[
-                [t("flags"), d.totals.flags],
+                [t("opportunities"), d.totals.opportunities],
                 [t("clusters"), d.totals.clusters],
-                [t("critical"), d.totals.critical],
-                [t("high"), d.totals.high],
+                [t("highImpact"), d.totals.high_impact],
+                [t("accepted"), d.totals.accepted],
               ].map(([label, value]) => (
                 <div
                   key={String(label)}
@@ -153,9 +167,7 @@ export function CqiAdminDashboard() {
                   <p className="text-xs text-[var(--on-surface-variant)]">
                     {label}
                   </p>
-                  <p className="text-2xl font-bold text-[var(--primary)]">
-                    {value}
-                  </p>
+                  <p className="text-2xl font-bold text-teal-800">{value}</p>
                 </div>
               ))}
             </div>
@@ -164,18 +176,18 @@ export function CqiAdminDashboard() {
           <section className="grid gap-6 lg:grid-cols-2">
             <div>
               <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
-                {t("topClusters")}
+                {t("topOpportunities")}
               </h2>
               <ul className="space-y-2">
-                {d.top_clusters.map((c) => (
+                {d.top_opportunities.map((c) => (
                   <li
                     key={c.title}
                     className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm"
                   >
                     <p className="font-semibold">{c.title}</p>
                     <p className="text-xs text-[var(--on-surface-variant)]">
-                      n={c.report_count} · {c.severity} ·{" "}
-                      {c.confidence_pct}% confidence
+                      n={c.report_count} · impact {c.educational_impact_avg}/5 ·{" "}
+                      {c.educational_priority} · score {c.backlog_score}
                     </p>
                   </li>
                 ))}
@@ -183,46 +195,60 @@ export function CqiAdminDashboard() {
             </div>
             <div>
               <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
-                {t("scoreAverages")}
+                {t("backlog")}
               </h2>
-              <ul className="space-y-1 text-sm">
-                {Object.entries(d.score_averages).map(([k, v]) => (
-                  <li key={k} className="flex justify-between border-b border-[var(--outline-variant)] py-1">
-                    <span>{k.replace(/_/g, " ")}</span>
-                    <span className="font-semibold">{v ?? "—"}</span>
+              <ul className="space-y-2">
+                {d.backlog.slice(0, 12).map((c) => (
+                  <li
+                    key={c.title}
+                    className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm"
+                  >
+                    <p className="font-semibold">{c.title}</p>
+                    <p className="text-xs text-[var(--on-surface-variant)]">
+                      {c.educational_priority} · effort {c.effort_estimate} ·{" "}
+                      {c.research_value}
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-2">
+          <section className="grid gap-6 lg:grid-cols-3">
             <div>
               <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
-                {t("byDisorder")}
+                {t("byType")}
               </h2>
               <ul className="space-y-1 text-sm">
-                {d.by_disorder.slice(0, 12).map((r) => (
-                  <li key={r.disorder} className="flex justify-between">
-                    <span>{r.disorder}</span>
-                    <span>
-                      {r.n}
-                      {r.avg_clinical != null
-                        ? ` · clinical ${r.avg_clinical}`
-                        : ""}
-                    </span>
+                {d.by_type.map((r) => (
+                  <li key={r.type} className="flex justify-between">
+                    <span>{r.type.replace(/_/g, " ")}</span>
+                    <span>{r.n}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
               <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
-                {t("byCategory")}
+                {t("byCompetency")}
               </h2>
               <ul className="space-y-1 text-sm">
-                {d.by_category.map((r) => (
-                  <li key={r.category} className="flex justify-between">
-                    <span>{r.category.replace(/_/g, " ")}</span>
+                {d.by_competency.slice(0, 12).map((r) => (
+                  <li key={r.competency} className="flex justify-between">
+                    <span>{r.competency.replace(/_/g, " ")}</span>
+                    <span>{r.n}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
+                {t("byLearner")}
+              </h2>
+              <ul className="space-y-1 text-sm">
+                {d.by_learner.map((r) => (
+                  <li key={r.learner} className="flex justify-between">
+                    <span>{r.learner.replace(/_/g, " ")}</span>
                     <span>{r.n}</span>
                   </li>
                 ))}
@@ -232,20 +258,34 @@ export function CqiAdminDashboard() {
 
           <section>
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
-              {t("recentFlags")}
+              {t("byDisorder")}
+            </h2>
+            <ul className="space-y-1 text-sm">
+              {d.by_disorder.slice(0, 12).map((r) => (
+                <li key={r.disorder} className="flex justify-between">
+                  <span>{r.disorder}</span>
+                  <span>{r.n}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--on-surface-variant)]">
+              {t("recent")}
             </h2>
             <ul className="space-y-2">
-              {(data?.recent_flags ?? []).map((f) => (
+              {(data?.recent ?? []).map((f) => (
                 <li
                   key={f.id}
                   className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm"
                 >
                   <p className="text-xs text-[var(--on-surface-variant)]">
-                    {f.created_at.slice(0, 19)} · {f.severity} · {f.category}
+                    {f.created_at.slice(0, 19)} · ★{f.educational_impact} ·{" "}
+                    {f.opportunity_type} · {f.status}
                     {f.disorder_slug ? ` · ${f.disorder_slug}` : ""}
-                    {f.language ? ` · ${f.language}` : ""}
                   </p>
-                  <p>{f.free_text_preview}</p>
+                  <p>{f.idea_preview}</p>
                 </li>
               ))}
             </ul>
