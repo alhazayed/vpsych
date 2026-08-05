@@ -39,6 +39,7 @@
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
+      "clinicalQuality": "Clinical Quality Intelligence",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -55,6 +56,7 @@
     "scenarioTemplates": "Scenario Templates",
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
+    "clinicalQuality": "Clinical Quality",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -433,6 +435,75 @@
     "portrait": {
       "speaking": "Speaking",
       "listening": "Listening"
+    },
+    "cqi": {
+      "flagButton": "Flag this moment",
+      "dialogTitle": "Clinical quality review",
+      "dialogSubtitle": "{patient} · {disorder}",
+      "close": "Close",
+      "autoContext": "Session, transcript window, disorder, language, voice, model, and platform versions are captured automatically. Describe only what you observed.",
+      "category": "Category",
+      "severity": "Severity",
+      "confidence": "Confidence",
+      "freeText": "Describe the issue",
+      "freeTextPlaceholder": "What reduced realism, educational value, or clinical authenticity?",
+      "suggested": "Suggested improvement (optional)",
+      "expected": "Expected behaviour",
+      "reducesEdu": "Would this reduce educational quality?",
+      "residency": "Would you use this patient in residency training?",
+      "recommend": "Would you recommend VPsych?",
+      "yes": "Yes",
+      "no": "No",
+      "scores": "Quality scores (1–10)",
+      "scoreClinical": "Clinical realism",
+      "scoreConversation": "Conversation realism",
+      "scoreEducational": "Educational usefulness",
+      "scoreVoice": "Voice realism",
+      "scoreAssessment": "Assessment quality",
+      "scoreConfidence": "Overall confidence",
+      "annotate": "Annotate transcript",
+      "annotateHint": "Tap a recent turn to highlight it, then add a note.",
+      "quotePlaceholder": "Highlighted quote",
+      "annotationNote": "Annotation note",
+      "addAnnotation": "Add annotation",
+      "evidence": "Evidence",
+      "recordVoice": "Record voice note",
+      "stopVoice": "Stop recording",
+      "voiceReady": "Voice note ready",
+      "anonymous": "Submit anonymously",
+      "submit": "Submit to Quality Vault",
+      "submitting": "Submitting…",
+      "submitOk": "Stored in Quality Vault (ref {id}). Thank you.",
+      "submitFailed": "Could not store feedback. Try again.",
+      "micDenied": "Microphone permission denied for voice note.",
+      "categories": {
+        "clinical_realism": "Clinical realism",
+        "human_conversation": "Human conversation",
+        "language": "Language",
+        "voice": "Voice",
+        "emotion": "Emotion",
+        "patient_behaviour": "Patient behaviour",
+        "educational_value": "Educational value",
+        "assessment": "Assessment",
+        "report": "Report",
+        "user_interface": "User interface",
+        "performance": "Performance",
+        "security": "Security",
+        "research": "Research",
+        "other": "Other"
+      },
+      "severities": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "suggestion": "Suggestion"
+      },
+      "confidences": {
+        "definitely": "Definitely",
+        "probably": "Probably",
+        "possibly": "Possibly"
+      }
     }
   },
   "analysis": {
@@ -472,6 +543,28 @@
     "nav": {
       "enterpriseAdmin": "Enterprise Admin",
       "systemHealthy": "System Status: Healthy"
+    },
+    "cqi": {
+      "title": "Clinical Quality Intelligence",
+      "subtitle": "Expert feedback vault, clusters, and engineering recommendations (human approval required).",
+      "runAnalyst": "Run Quality Analyst",
+      "export": "Export research package",
+      "exportCsv": "Export CSV",
+      "source": "Source: {source}",
+      "totals": "Vault totals",
+      "flags": "Flags",
+      "clusters": "Clusters",
+      "critical": "Critical",
+      "high": "High",
+      "topClusters": "Top clusters",
+      "recentFlags": "Recent flags",
+      "scoreAverages": "Average reviewer scores",
+      "byDisorder": "By disorder",
+      "byCategory": "By category",
+      "noData": "No flags yet — invite reviewers to use Flag this moment during sessions.",
+      "analystDone": "Analyst complete — {n} cluster(s). Recommendations are drafts only.",
+      "analystFailed": "Analyst failed",
+      "approvalNote": "CQI never auto-creates pull requests or modifies production."
     },
     "reports": {
       "statTotal": "Total assessments",

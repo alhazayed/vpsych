@@ -94,6 +94,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/cqi",
+      label: t("clinicalQuality"),
+      icon: "health_metrics",
+      match: (p) => p.startsWith("/admin/cqi"),
+    },
   ];
 }
 

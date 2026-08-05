@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
+import { FlagThisMoment } from "@/components/cqi/FlagThisMoment";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
 import { remainingSeconds } from "@/lib/session-timer";
@@ -630,6 +631,8 @@ export function VoiceSession({
           </form>
         </section>
       </main>
+
+      <FlagThisMoment session={session} avatar={avatar} messages={messages} />
     </div>
   );
 }
