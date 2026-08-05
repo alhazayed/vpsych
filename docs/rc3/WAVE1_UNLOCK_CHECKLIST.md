@@ -3,8 +3,9 @@
 Do **not** advance Waves 2–7 until every box below is checked and Wave 1 Missions 1–5 pass with zero Critical and zero High findings.
 
 **Full Release Manager runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md`  
+**Governance policy:** `docs/RELEASE_GOVERNANCE.md`  
 **Decision log:** `docs/RELEASE_DECISION_LOG.md` (append RDL row on Wave 1 PASS / FAIL)  
-**Credential Verification Gate:** mandatory — see ops checklist § “Credential Verification Gate”
+**Credential Verification Gate:** mandatory for **every** release — see governance §5 + ops checklist
 
 ## Prerequisites (infrastructure — done)
 

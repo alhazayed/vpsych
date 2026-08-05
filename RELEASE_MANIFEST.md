@@ -26,7 +26,7 @@ wave_status:
     rerun_required: true
     last_attempt: "2026-08-05"
     last_decision: RDL-008
-    process_adopted: [RDL-009]  # Credential Verification Gate before certification
+    process_adopted: [RDL-009, RDL-010]  # Credential Gate (every release) + Release Governance
     rerun_after:
       - "Reset Auth passwords; sync vault; wire therapist email local=audit.therapist and admin email local=audit.admin"
       - "Credential Verification Gate PASS (manual therapist + admin login on https://vpsych.vercel.app)"
@@ -52,7 +52,9 @@ production_deploy:
   target: production
   ready_state: READY
 audit_accounts: "docs/AUDIT_ACCOUNTS.md"  # secrets not in git
+release_governance: "docs/RELEASE_GOVERNANCE.md"  # long-term policy (RDL-010)
 release_operations: "docs/RELEASE_OPERATIONS_CHECKLIST.md"
 release_decision_log: "docs/RELEASE_DECISION_LOG.md"
 wave1_unlock: "docs/rc3/WAVE1_UNLOCK_CHECKLIST.md"
+process_adopted: [RDL-009, RDL-010]  # Credential Gate (every release) + Release Governance policy
 ```

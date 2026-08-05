@@ -39,6 +39,7 @@ Therefore RC3 **may reuse** the 100/100 integrity evidence for `main` @ `5bf66c0
 
 ## Related files
 
+- `docs/RELEASE_GOVERNANCE.md` — long-term release policy (RDL-010)
 - `docs/RC3_PRODUCTION_VALIDATION.md` — master verdict + `wave_status`
 - `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md` — unlock steps
 - `docs/AUDIT_ACCOUNTS.md` — permanent certification identities (no secrets)

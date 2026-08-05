@@ -7,7 +7,7 @@
 **Prior RC3 audit SHA:** `52a7610` (pre-#103; 28 migrations)
 **RC3-C1 re-audit:** 2026-08-04 — **CLEARED** (`main` 54 ≡ production 54)
 **Integrity 100/100 rebound:** Allowed for `main`@`5bf66c0` — see `docs/RC3_EVIDENCE_SCOPE.md` (repo 54, prod 54, schema diff 0, prod deploy SHA match).
-**Evidence scope:** `docs/RC3_EVIDENCE_SCOPE.md` · **Audit accounts:** `docs/AUDIT_ACCOUNTS.md` · **Ops runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md` · **Decision log:** `docs/RELEASE_DECISION_LOG.md`  
+**Evidence scope:** `docs/RC3_EVIDENCE_SCOPE.md` · **Audit accounts:** `docs/AUDIT_ACCOUNTS.md` · **Governance:** `docs/RELEASE_GOVERNANCE.md` · **Ops runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md` · **Decision log:** `docs/RELEASE_DECISION_LOG.md`
 **Production deploy:** `dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4` (target=`production`, SHA=`5bf66c0…`)
 **Prior prod deploy (RC1):** `dpl_2mBqyfz…` @ `52a7610`  
 **Supabase:** `rrzudbkxigeavfdnidnm` (ACTIVE_HEALTHY, us-east-1)  
@@ -52,10 +52,11 @@ wave_status:
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     last_attempt: "2026-08-05"
     last_decision: RDL-008
+    process_adopted: [RDL-009]  # Credential Verification Gate
     rerun_after:
-      - "Wire therapist email env local=`audit.therapist` and admin email env local=`audit.admin`"
-      - "Apply vault passwords to those Auth users (or inject the passwords that actually unlock them)"
-      - "Audit login verified on https://vpsych.vercel.app for therapist + admin"
+      - "Reset Auth passwords; sync vault; wire therapist email local=audit.therapist and admin email local=audit.admin"
+      - "Credential Verification Gate PASS (manual therapist + admin login on https://vpsych.vercel.app)"
+      - "Fresh Cursor agent for Wave 1 only"
   wave_2:
     state: locked
     unlock_when: "wave_1.state == passed"
@@ -194,6 +195,7 @@ Blocked until Wave 6 approval.
 | `/opt/cursor/artifacts/rc3/waves_2_7_evidence.json` | SEO/perf/API samples |
 | `/opt/cursor/artifacts/rc3/db_inventory_summary.json` | Live DB counts |
 | `docs/rc3/*` | Per-mission briefs |
+| `docs/RELEASE_GOVERNANCE.md` | Long-term release policy (roles, RC state machine, gates) — RDL-010 |
 | `docs/RELEASE_OPERATIONS_CHECKLIST.md` | Permanent Release Manager runbook (RC3 unlock + every future release) |
 | `docs/RELEASE_DECISION_LOG.md` | Append-only release decision trail (RDL-001…) |
 | `docs/RC4_BUGFIX_FREEZE.md` | Post-RC3 freeze rules (**locked**) |

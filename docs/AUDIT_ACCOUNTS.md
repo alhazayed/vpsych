@@ -74,6 +74,7 @@ provisioning:
 - **RC3-C2 is an operational prerequisite**, not a VPsych application defect: evidence collection is blocked until the audit runner receives correctly mapped, Auth-synchronized vault credentials **and** the Credential Verification Gate passes (manual login on production).
 - Owner: **Release Manager**. Category: **Release Infrastructure**. Severity: Critical (blocks certification evidence, not platform correctness).
 - Formal runbook: `docs/RELEASE_OPERATIONS_CHECKLIST.md` (includes the five-step RM checklist + gate).
+- Long-term policy: `docs/RELEASE_GOVERNANCE.md` (RDL-010) — Credential Verification Gate binds every future release.
 - RC4 / RC5 stay locked until Wave 1 PASS.
 - Never commit real password values to this file.
 - Cursor must **stop certification** and create an RDL entry if `email_matches_expected` or `login_success` is false for either account.

@@ -3,6 +3,7 @@
 Permanent operational runbook for every VPsych release candidate and public release.  
 Complements technical certification (`docs/RC3_PRODUCTION_VALIDATION.md`, mission briefs) with **repeatable release infrastructure** tasks.
 
+**Policy (binding):** `docs/RELEASE_GOVERNANCE.md`  
 **Owner:** Release Manager  
 **Rule:** Never hard-code vault secrets into the repository or commit them to version control.
 
@@ -38,9 +39,9 @@ Credential Verification Gate: § below (mandatory before certification)
 
 ---
 
-## Credential Verification Gate (mandatory)
+## Credential Verification Gate (mandatory — every release)
 
-**Adopted RDL-009.** Before any certification wave that needs authenticated access begins, the Release Manager must prove audit credentials work. Cursor must refuse to start Missions 1–5 (and append an RDL STOP) if this gate fails.
+**Adopted RDL-009; binding for v1.0 and all future releases** (see `docs/RELEASE_GOVERNANCE.md` §5). Before any certification wave that needs authenticated access begins, the Release Manager must prove audit credentials work. Cursor must refuse to start authenticated missions (and append an RDL STOP) if this gate fails — along with production SHA, migration parity, and schema diff = 0.
 
 ```yaml
 audit_credentials:
@@ -235,6 +236,7 @@ Use this for v1.0 cutover and for v1.1 / v1.2 / … so releases do not depend on
 
 | Doc | Role |
 |---|---|
+| `docs/RELEASE_GOVERNANCE.md` | **Long-term release policy** |
 | `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md` | Current RC3 Wave 1 gate boxes |
 | `docs/AUDIT_ACCOUNTS.md` | Permanent audit identities (no secrets) |
 | `docs/RC3_PRODUCTION_VALIDATION.md` | RC3 master verdict |
