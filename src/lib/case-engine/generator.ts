@@ -17,6 +17,10 @@ import {
   computeClinicalFidelityIndex,
   cfiInputFromSnapshot,
 } from "@/lib/cfi";
+import {
+  formatSpeechProfileForPrompt,
+  speechProfileForDisorder,
+} from "@/lib/conversation-fidelity";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
 
 /** Simple seeded PRNG (mulberry32). */
@@ -267,7 +271,12 @@ export function generateCaseInstance(
       req.difficulty === "expert" || req.difficulty === "advanced"
         ? "Judgment may be impaired relative to baseline; assess decision-making and safety."
         : "Judgment largely preserved; explore concrete recent decisions.",
-    speech_behavior_cue: `Speech/behaviour consistent with ${req.primaryDisorder.category ?? "psychiatric"} presentation; do not caricature.`,
+    speech_behavior_cue: formatSpeechProfileForPrompt(
+      speechProfileForDisorder(
+        req.primaryDisorder.slug,
+        req.primaryDisorder.category,
+      ),
+    ),
   };
 
   const snapshot: CaseInstanceSnapshot = {
@@ -286,6 +295,7 @@ export function generateCaseInstance(
       dsm5_code: req.primaryDisorder.dsm5_code,
       icd10_code: req.primaryDisorder.icd10_code,
       icd11_code: req.primaryDisorder.icd11_code,
+      category: req.primaryDisorder.category ?? null,
     },
     comorbidities: (req.comorbidities ?? []).map((c) => ({
       id: c.id,

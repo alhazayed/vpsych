@@ -143,6 +143,7 @@ export async function appendCorrectionLedger(
       avi: previous.avi != null ? { overall: previous.avi } : undefined,
       ale: previous.ale != null ? { overall: previous.ale } : undefined,
       rrs: previous.rrs != null ? { overall: previous.rrs } : undefined,
+      hcfi: previous.hcfi != null ? { overall: previous.hcfi } : undefined,
     },
   });
   return persistQualityLedger(supabase, next);

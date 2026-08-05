@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { estimateTherapeuticAlliance } from "@/lib/conversation-fidelity";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -68,9 +69,25 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  // Prior therapist turns for alliance reactivity (Mission 20).
+  const { data: priorHistory } = await supabase
+    .from("session_messages")
+    .select("role, content")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+
+  const therapistTurns = [
+    ...((priorHistory ?? []) as Pick<SessionMessage, "role" | "content">[])
+      .filter((m) => m.role === "user")
+      .map((m) => ({ content: m.content })),
+    { content: message },
+  ];
+  const alliance = estimateTherapeuticAlliance(therapistTurns);
+
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
+    alliance,
   });
 
   const { data: userMsg, error: userMsgError } = await supabase
@@ -94,17 +111,16 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: history } = await supabase
-    .from("session_messages")
-    .select("role, content")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+  const history = [
+    ...((priorHistory ?? []) as Pick<SessionMessage, "role" | "content">[]),
+    { role: "user" as const, content: message },
+  ];
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
       avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+      history,
       userMessage: message,
     });
   } catch (err) {

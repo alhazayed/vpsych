@@ -7,6 +7,7 @@ import { ERI_VERSION } from "@/lib/eri/weights";
 import { AVI_VERSION } from "@/lib/avi/weights";
 import { ALE_VERSION } from "@/lib/ale/weights";
 import { RRS_VERSION } from "@/lib/rrs/weights";
+import { HCFI_VERSION } from "@/lib/hcfi/weights";
 import type { VqiMetricId } from "@/lib/vqi/weights";
 
 export type MetricDefinition = {
@@ -64,6 +65,15 @@ const REGISTRY: MetricDefinition[] = [
     description: "Whether platform data can support research and publication",
     version: RRS_VERSION,
     domain: "research",
+    enabled: true,
+  },
+  {
+    id: "HCFI",
+    name: "Human Conversation Fidelity Index",
+    description:
+      "How indistinguishable AI patient dialogue is from a skilled standardized patient",
+    version: HCFI_VERSION,
+    domain: "clinical",
     enabled: true,
   },
 ];

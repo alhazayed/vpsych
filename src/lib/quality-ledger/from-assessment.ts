@@ -30,6 +30,13 @@ import {
   RRS_VERSION,
 } from "@/lib/rrs";
 import {
+  computeHumanConversationFidelityIndex,
+  hcfiInputFromSession,
+  recordHcfiHistory,
+  HCFI_VERSION,
+} from "@/lib/hcfi";
+import { estimateTherapeuticAlliance } from "@/lib/conversation-fidelity";
+import {
   computeVPsychQualityIndex,
   createDefaultWeightSet,
   VQI_VERSION,
@@ -225,6 +232,34 @@ export function buildLedgerFromAssessment(
       model_version: opts.assessment.model ?? null,
     }),
   );
+
+  const alliance = estimateTherapeuticAlliance(
+    opts.messages
+      .filter((m) => m.role === "user")
+      .map((m) => ({ content: m.content })),
+  );
+  const hcfi = computeHumanConversationFidelityIndex(
+    hcfiInputFromSession({
+      messages: opts.messages,
+      clinicalSnapshot: snap,
+      locale,
+      language: opts.language,
+      modelVersion: opts.assessment.model ?? null,
+      personaVersion: opts.personaVersion ?? null,
+      personaFallback: heuristic,
+      hasSpeechProfile: true,
+      hasAllianceReactivity: true,
+      hasVoiceSettings: Boolean(opts.voiceProfileId) || true,
+      allianceBand: alliance.band,
+    }),
+  );
+  recordHcfiHistory({
+    overall: hcfi.overall,
+    disorder_slug: diagnosisSlug ?? "unknown",
+    locale,
+    computed_at: hcfi.versions.computed_at,
+    hcfi,
+  });
 
   const weightSet = createDefaultWeightSet();
   const vqi = computeVPsychQualityIndex({
@@ -479,6 +514,20 @@ export function buildLedgerFromAssessment(
         },
         confidence: 75,
         breakdown: rrs.subscores,
+      },
+      hcfi: {
+        overall: hcfi.overall,
+        version: HCFI_VERSION,
+        ci: {
+          lower: hcfi.confidence_interval.lower,
+          upper: hcfi.confidence_interval.upper,
+        },
+        confidence: 72,
+        breakdown: hcfi.subscores,
+        evidence: {
+          recommendations: hcfi.recommendations,
+          alliance_band: hcfi.evidence.alliance_band,
+        },
       },
       vqi: {
         overall: vqi.overall,

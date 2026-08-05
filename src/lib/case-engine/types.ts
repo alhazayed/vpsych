@@ -183,6 +183,8 @@ export type CaseInstanceSnapshot = {
     dsm5_code: string | null;
     icd10_code: string | null;
     icd11_code: string | null;
+    /** Nosological category for speech profiles / HCFI (Mission 20). */
+    category?: string | null;
   };
   comorbidities: Array<{
     id: string;

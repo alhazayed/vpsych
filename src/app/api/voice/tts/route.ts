@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  resolveClinicalVoiceSettings,
+  speechProfileForDisorder,
+} from "@/lib/conversation-fidelity";
+import {
   normalizeSpeechLocale,
   previewSampleText,
   type SessionSpeechLocale,
@@ -24,6 +28,11 @@ type TtsBody = {
   preview?: boolean;
   /** Request streaming synthesis (default true). */
   stream?: boolean;
+  /** Mission 20 — clinical voice fidelity */
+  disorderSlug?: string;
+  disorderCategory?: string;
+  speechPace?: string;
+  allianceBand?: "low" | "moderate" | "high";
 };
 
 /**
@@ -63,6 +72,16 @@ export async function POST(request: Request) {
       voiceIdAr: body.voiceIdAr,
     });
 
+    const speechProfile = speechProfileForDisorder(
+      body.disorderSlug,
+      body.disorderCategory,
+    );
+    const clinicalVoice = resolveClinicalVoiceSettings({
+      speechProfile,
+      pace: body.speechPace ?? speechProfile.pace,
+      allianceBand: body.allianceBand ?? null,
+    });
+
     // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({
       text,
@@ -70,6 +89,12 @@ export async function POST(request: Request) {
       voiceId: resolved.voiceId,
       voiceIdAr: resolved.voiceId,
       stream: body.stream !== false,
+      voiceSettings: {
+        stability: clinicalVoice.stability,
+        similarity_boost: clinicalVoice.similarity_boost,
+        style: clinicalVoice.style,
+        use_speaker_boost: clinicalVoice.use_speaker_boost,
+      },
     });
 
     return new NextResponse(result.body, {
@@ -85,6 +110,8 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        "X-Voice-Clinical-Intent": clinicalVoice.clinical_intent,
+        "X-Voice-Stability": String(clinicalVoice.stability),
         ...(resolved.voiceProfileId
           ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
           : {}),
