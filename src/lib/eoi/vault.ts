@@ -33,13 +33,13 @@ export function validateEoiSubmission(raw: unknown): EoiValidation {
       error: "idea_text must describe the teaching improvement (min 12 chars)",
     };
   }
-  const raw = body as Partial<EoiSubmission> & {
+  const extended = body as Partial<EoiSubmission> & {
     competency_tags?: string[];
   };
-  const competencies = Array.isArray(raw.competencies)
-    ? raw.competencies
-    : Array.isArray(raw.competency_tags)
-      ? raw.competency_tags
+  const competencies = Array.isArray(extended.competencies)
+    ? extended.competencies
+    : Array.isArray(extended.competency_tags)
+      ? extended.competency_tags
       : [];
   return {
     ok: true,
