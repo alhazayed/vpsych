@@ -15,6 +15,9 @@ export type ElevenLabsSynthesizeParams = {
   voiceIdAr?: string | null;
   /** Prefer streaming endpoint (default true). */
   stream?: boolean;
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -267,8 +270,9 @@ export const elevenLabsService = {
           text,
           model_id: model,
           voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
+            stability: params.stability ?? 0.4,
+            similarity_boost: params.similarityBoost ?? 0.75,
+            style: params.style ?? 0,
           },
         }),
       });

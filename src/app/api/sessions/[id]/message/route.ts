@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import {
+  isHceEnabledForSession,
+  parseCaseSnapshot,
+  runHceTurn,
+} from "@/lib/hce";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -10,6 +15,22 @@ import { clientSafeError } from "@/lib/api-errors";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
+
+type ReplyMeta = {
+  text: string;
+  aiSource: "gpt" | "gateway" | "persona_fallback";
+  model?: string;
+  errorKind?: string;
+  hceEnabled?: boolean;
+  reasoningMode?: string;
+  alliance?: number;
+  voiceHints?: {
+    stability: number;
+    similarity_boost: number;
+    style: number;
+    pause_before_ms: number;
+  };
+};
 
 export async function POST(request: Request, { params }: Params) {
   const { id: sessionId } = await params;
@@ -68,9 +89,9 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Case Engine: diagnosis from immutable session snapshot when present.
+  const caseSnapshot = parseCaseSnapshot(typed.clinical_snapshot);
   const resolved = resolveAvatar(typed.avatars, typed.language, {
-    caseSnapshot: typed.clinical_snapshot,
+    caseSnapshot: caseSnapshot ?? typed.clinical_snapshot,
   });
 
   const { data: userMsg, error: userMsgError } = await supabase
@@ -100,17 +121,85 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
-  let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
+  const historyRows = (history ?? []) as Pick<SessionMessage, "role" | "content">[];
+  const writer = messageRpcClient(supabase);
+
+  let replyMeta: ReplyMeta;
+  const useHce =
+    isHceEnabledForSession(Boolean(caseSnapshot)) &&
+    caseSnapshot &&
+    typed.case_instance_id;
+
   try {
-    replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
-      userMessage: message,
-    });
+    if (useHce) {
+      let memoryRow: {
+        case_instance_id: string;
+        memory: Record<string, unknown>;
+      } | null = null;
+
+      const { data: mem } = await writer
+        .from("case_memory")
+        .select("case_instance_id, memory, longitudinal_group_id")
+        .eq("case_instance_id", typed.case_instance_id!)
+        .maybeSingle();
+
+      if (mem) {
+        memoryRow = mem as {
+          case_instance_id: string;
+          memory: Record<string, unknown>;
+        };
+      }
+
+      const elapsedSeconds = typed.max_duration_sec - remaining;
+
+      const hceResult = await runHceTurn({
+        sessionId,
+        avatar: resolved,
+        caseSnapshot,
+        caseInstanceId: typed.case_instance_id!,
+        history: historyRows,
+        userMessage: message,
+        sessionLanguage: typed.language ?? resolved.language,
+        elapsedSeconds,
+        maxDurationSec: typed.max_duration_sec,
+        memoryRow,
+        writer,
+      });
+
+      replyMeta = {
+        text: hceResult.text,
+        aiSource: hceResult.aiSource,
+        model: hceResult.model,
+        errorKind: hceResult.errorKind,
+        hceEnabled: true,
+        reasoningMode: hceResult.reasoningMode,
+        alliance: hceResult.alliance,
+        voiceHints: {
+          stability: hceResult.voiceHints.stability,
+          similarity_boost: hceResult.voiceHints.similarity_boost,
+          style: hceResult.voiceHints.style,
+          pause_before_ms: hceResult.voiceHints.pause_before_ms,
+        },
+      };
+    } else {
+      const legacy = await generatePatientReplyDetailed({
+        avatar: resolved,
+        history: historyRows,
+        userMessage: message,
+      });
+      replyMeta = {
+        text: legacy.text,
+        aiSource: legacy.aiSource,
+        model: legacy.model,
+        errorKind: legacy.errorKind,
+        hceEnabled: false,
+      };
+    }
   } catch (err) {
     console.error("[sessions/message] patient reply generation failed", {
       sessionId,
       language: typed.language,
+      hce: useHce,
       error: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json(
@@ -125,11 +214,10 @@ export async function POST(request: Request, { params }: Params) {
     aiSource: replyMeta.aiSource,
     aiModel: replyMeta.model ?? null,
     errorKind: replyMeta.errorKind ?? null,
+    hce: replyMeta.hceEnabled ?? false,
+    reasoningMode: replyMeta.reasoningMode ?? null,
   });
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
-  const writer = messageRpcClient(supabase);
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
     {
@@ -157,12 +245,14 @@ export async function POST(request: Request, { params }: Params) {
         typed.started_at,
         typed.max_duration_sec,
       ),
-      // Additive: session language used for this turn (AR/EN pipeline).
       locale: typed.language ?? resolved.language,
-      // Additive observability — never hide persona fallback usage.
       aiSource: replyMeta.aiSource,
       aiModel: replyMeta.model ?? null,
       aiErrorKind: replyMeta.errorKind ?? null,
+      hceEnabled: replyMeta.hceEnabled ?? false,
+      reasoningMode: replyMeta.reasoningMode ?? null,
+      alliance: replyMeta.alliance ?? null,
+      voiceHints: replyMeta.voiceHints ?? null,
     },
     {
       headers: {
@@ -170,6 +260,10 @@ export async function POST(request: Request, { params }: Params) {
         ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
         ...(replyMeta.errorKind
           ? { "X-AI-Error-Kind": replyMeta.errorKind }
+          : {}),
+        ...(replyMeta.hceEnabled ? { "X-HCE-Enabled": "1" } : {}),
+        ...(replyMeta.reasoningMode
+          ? { "X-HCE-Reasoning-Mode": replyMeta.reasoningMode }
           : {}),
       },
     },
