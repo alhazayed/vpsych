@@ -138,6 +138,8 @@ describe("assembleSystemPrompt", () => {
       session: { locale: "en-US" },
     });
     expect(prompt).toContain("MODULE 1 — CLINICAL");
+    expect(prompt).toContain("MODULE 1B — HUMAN CONVERSATION");
+    expect(prompt).toContain("MODULE PME");
     expect(prompt).toContain("SYNDROME AUTHORITY");
     expect(prompt).toContain("Major Depressive Disorder");
     expect(prompt).toContain("Low mood");

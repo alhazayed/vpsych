@@ -351,7 +351,8 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
     name: "Borderline Personality Disorder",
     dsm5_code: "301.83",
     icd10_code: "F60.3",
-    icd11_code: "6D10.0",
+    // ICD-11 personality disorder severity + borderline pattern (dual code)
+    icd11_code: "6D10.1/6D11.5",
     category: "personality",
     min_age: 18,
     max_age: 65,
@@ -701,6 +702,18 @@ export const BUILTIN_COMORBIDITY_RULES: ComorbidityRule[] = [
   {
     primary_disorder_id: DISORDER_IDS.mdd,
     comorbid_disorder_id: DISORDER_IDS.aud,
+    compatible: true,
+    tier: "possible",
+  },
+  {
+    primary_disorder_id: DISORDER_IDS.gad,
+    comorbid_disorder_id: DISORDER_IDS.aud,
+    compatible: true,
+    tier: "possible",
+  },
+  {
+    primary_disorder_id: DISORDER_IDS.aud,
+    comorbid_disorder_id: DISORDER_IDS.gad,
     compatible: true,
     tier: "possible",
   },

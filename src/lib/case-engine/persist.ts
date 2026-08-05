@@ -27,6 +27,26 @@ import {
   type InstructorPreset,
 } from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
+import { createInitialMindState, embedMindInMemory } from "@/lib/pme";
+
+function seedCaseMemoryPayload(
+  snapshot: CaseInstanceSnapshot,
+  extra?: Record<string, unknown>,
+) {
+  const mind = createInitialMindState({
+    snapshot,
+    caseInstanceId: snapshot.case_instance_id ?? null,
+  });
+  return embedMindInMemory(
+    {
+      turns: [],
+      notes: [],
+      scope: "case_instance",
+      ...extra,
+    },
+    mind,
+  );
+}
 
 export type StartCaseOptions = {
   avatar: Avatar;
@@ -443,13 +463,10 @@ export async function createCaseForSession(
     snapshot.case_instance_id = inserted.id;
     await supabase.from("case_memory").insert({
       case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
+      memory: seedCaseMemoryPayload(snapshot, {
         template_id: snapshot.template?.id,
         instructor_preset_id: resolvedPreset.id,
-      },
+      }),
     });
     await supabase
       .from("case_instances")
@@ -649,12 +666,9 @@ export async function createCaseForSession(
     snapshot.case_instance_id = inserted.id;
     await supabase.from("case_memory").insert({
       case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
+      memory: seedCaseMemoryPayload(snapshot, {
         template_id: resolvedTemplate.id,
-      },
+      }),
     });
     await supabase
       .from("case_instances")
@@ -830,7 +844,7 @@ export async function createCaseForSession(
 
   const { error: memErr } = await supabase.from("case_memory").insert({
     case_instance_id: inserted.id,
-    memory: { turns: [], notes: [], scope: "case_instance" },
+    memory: seedCaseMemoryPayload(snapshot),
   });
   if (memErr) {
     console.warn("[case-engine] case_memory insert failed:", memErr.message);

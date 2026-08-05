@@ -25,6 +25,12 @@ export async function runAceAfterAssessment(
     items: ScoreEntry[];
     language?: string | null;
     diagnosisSlug?: string | null;
+    /**
+     * Explicit diagnostic correctness when known (e.g. structured OSCE key).
+     * Must not be invented from overall score — that conflates skill with
+     * diagnosis match and pollutes ACE adaptive signals (Mission 19 / W3).
+     */
+    correctDiagnosis?: boolean;
     narrative?: string;
     durationSec?: number;
     timeLimitSec?: number;
@@ -48,7 +54,7 @@ export async function runAceAfterAssessment(
       items: opts.items,
       sessionId: opts.sessionId,
       diagnosisSlug: opts.diagnosisSlug,
-      correctDiagnosis: opts.overall >= 55,
+      correctDiagnosis: opts.correctDiagnosis,
       narrative: opts.narrative,
       durationSec: opts.durationSec,
       timeLimitSec: opts.timeLimitSec,

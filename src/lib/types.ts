@@ -292,6 +292,8 @@ export type TherapySession = {
   clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
   difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
+  /** ACE learner profile link when adaptive mode is active. */
+  learner_profile_id?: string | null;
   avatars?: Avatar;
   profiles?: Profile;
 };
