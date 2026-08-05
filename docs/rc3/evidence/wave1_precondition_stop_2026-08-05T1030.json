@@ -1,0 +1,66 @@
+{
+  "event": "RC3_WAVE1_PRECONDITION_STOP",
+  "decision_id": "RDL-008",
+  "refines": [
+    "RDL-006",
+    "RDL-007"
+  ],
+  "checked_at": "2026-08-05T10:35:43.326441+00:00",
+  "auditor": "cursor-wave1-reattempt-5f72",
+  "agent_bcId": "bc-fe2c2042-8c41-4da3-90f1-49420fae5f72",
+  "branch": "cursor/wave1-reattempt-5f72",
+  "production_url": "https://vpsych.vercel.app",
+  "main_sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+  "production_deployment_id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+  "production_deploy_target": "production",
+  "production_deploy_state": "READY",
+  "preconditions": {
+    "production_sha_matches_main": {
+      "result": "PASS",
+      "detail": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4 READY @ 5bf66c0"
+    },
+    "migration_parity": {
+      "result": "PASS",
+      "detail": "repo 54 \u2261 production 54 (latest 20260804085304)"
+    },
+    "public_health_auth_gates": {
+      "result": "PASS",
+      "detail": "health 200; protected 307; anon API 401 JSON"
+    },
+    "audit_auth_users_roles": {
+      "result": "PASS",
+      "detail": "[REDACTED_THERAPIST_EMAIL]\u2192therapist; [REDACTED_ADMIN_EMAIL]\u2192admin; confirmed; not banned"
+    },
+    "audit_credential_env_keys_present": {
+      "result": "PASS",
+      "detail": "all four VPSYCH_AUDIT_* keys present"
+    },
+    "audit_credential_env_values_not_placeholders": {
+      "result": "PASS",
+      "detail": "value\u2260key name; emails look like emails; passwords non-empty"
+    },
+    "audit_email_role_mapping": {
+      "result": "FAIL",
+      "detail": "VPSYCH_AUDIT_THERAPIST_EMAIL local=audit.admin; VPSYCH_AUDIT_ADMIN_EMAIL local=audit.therapist (emails swapped across role env vars)"
+    },
+    "audit_passwords_authenticate": {
+      "result": "FAIL",
+      "detail": "4\u00d72 matrix: both env passwords \u00d7 both canonical audit emails \u2192 all invalid_credentials"
+    },
+    "login_verification": {
+      "result": "FAIL",
+      "detail": "invalid_credentials for therapist and admin env pairs"
+    }
+  },
+  "board_result": "RC3-C2 \u2014 Evidence collection blocked (email/role env swap + passwords do not authenticate).",
+  "missions_executed": [],
+  "wave_1": "stopped_at_preconditions",
+  "wave_2": "not_started",
+  "engineering_status": "frozen \u2014 no application defect identified; Release Manager must fix vault wiring",
+  "next": [
+    "Assign therapist email env local=audit.therapist and admin email env local=audit.admin",
+    "Set both password env values to the vault passwords that actually unlock those Auth users (reset in Supabase Auth if vault passwords were never applied)",
+    "Verify login on https://vpsych.vercel.app/login for both accounts",
+    "Re-invoke Wave 1 on a NEW agent run"
+  ]
+}

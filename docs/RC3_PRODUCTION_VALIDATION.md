@@ -1,6 +1,6 @@
 # RC3 — Production Validation
 
-**Board date:** 2026-08-05 (Wave 1 re-attempt) · prior board 2026-08-04  
+**Board date:** 2026-08-05 (Wave 1 re-attempt #3) · prior boards 2026-08-05 / 2026-08-04  
 **Phase:** Prove, do not build  
 **Production:** `https://vpsych.vercel.app`  
 **GitHub `main`:** `5bf66c07f11d286c305f59398a015614d22b723b` (`chore(db): reconcile migrations… (#103)` — post-merge)
@@ -12,17 +12,19 @@
 **Prior prod deploy (RC1):** `dpl_2mBqyfz…` @ `52a7610`  
 **Supabase:** `rrzudbkxigeavfdnidnm` (ACTIVE_HEALTHY, us-east-1)  
 **Vercel project:** `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm`  
-**Branch (this report):** `cursor/wave1-execution-d463` (continues RC3 docs from `cursor/rc3-production-validation-b5ac`)
+**Branch (this report):** `cursor/wave1-reattempt-5f72` (continues RC3 docs from `cursor/wave1-execution-d463`)
 
 **Rule:** Evidence collected only against production / `main` / production Supabase / production Vercel. No localhost, preview deployments, or feature-branch app binaries.
 
-**Engineering status:** Nothing further to build for RC3 unlock. Platform, infrastructure, production, and repository are ready. RC3 is **waiting on operational execution** (Release Manager must replace placeholder `VPSYCH_AUDIT_*` values with vault credentials).
+**Engineering status:** Nothing further to build for RC3 unlock. Platform, infrastructure, production, and repository are ready. RC3 is **waiting on operational execution** (Release Manager must fix vault email↔role mapping and apply Auth passwords that match injected `VPSYCH_AUDIT_*_PASSWORD` values).
 
 **Role split:** Release Manager owns secrets/login/trigger · Cursor owns Missions 1–5 evidence + PASS/FAIL (no speculative fixes) · Executive Board owns Wave 1 review and Wave 2 unlock. See `docs/RELEASE_DECISION_LOG.md`.
 
 **Wave 1 attempt (2026-08-04):** STOPPED at preconditions — all four `VPSYCH_AUDIT_*` unset in audit environment. See RDL-006.
 
-**Wave 1 re-attempt (2026-08-05):** STOPPED at preconditions — all four `VPSYCH_AUDIT_*` **keys present** but each **value equals its own key name** (placeholder misconfiguration). Login verify FAIL (`invalid_credentials`). **RC3-C2 — Evidence collection blocked (secrets unusable).** Missions 1–5 not executed. See RDL-007. Evidence: `docs/rc3/evidence/wave1_precondition_stop_2026-08-05.json`.
+**Wave 1 re-attempt (2026-08-05 / RDL-007):** STOPPED — keys present but values equal key names (placeholders). See RDL-007.
+
+**Wave 1 re-attempt (2026-08-05 / RDL-008):** STOPPED — values no longer placeholders, but (1) therapist/admin emails **swapped** across role env vars, and (2) both env passwords fail Auth password-grant for **both** canonical audit emails (`invalid_credentials` 2×2). **RC3-C2 — Evidence collection blocked (vault wiring).** Missions 1–5 not executed. See RDL-008. Evidence: `docs/rc3/evidence/wave1_precondition_stop_2026-08-05T1030.json`.
 
 ---
 
@@ -49,9 +51,10 @@ wave_status:
     rerun_required: true
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     last_attempt: "2026-08-05"
-    last_decision: RDL-007
+    last_decision: RDL-008
     rerun_after:
-      - "Replace placeholder VPSYCH_AUDIT_* values with vault credentials (value must not equal key name)"
+      - "Wire therapist email env local=`audit.therapist` and admin email env local=`audit.admin`"
+      - "Apply vault passwords to those Auth users (or inject the passwords that actually unlock them)"
       - "Audit login verified on https://vpsych.vercel.app for therapist + admin"
   wave_2:
     state: locked
@@ -83,7 +86,7 @@ wave_status:
 
 | Gate | Result |
 |---|---|
-| Wave 1 — Zero Critical or High **application** defects | **WAITING** (`wave_status.wave_1.state: waiting`) — cannot certify auth-gated missions until RC3-C2 secrets are usable (not placeholders) |
+| Wave 1 — Zero Critical or High **application** defects | **WAITING** (`wave_status.wave_1.state: waiting`) — cannot certify auth-gated missions until RC3-C2 vault wiring authenticates (correct email↔role mapping + working passwords) |
 | Wave 2–5 | **LOCKED** pending Wave 1 PASS |
 | Wave 6 — Executive approval | **LOCKED / NOT APPROVED** |
 | Wave 7 — Public launch readiness | **LOCKED** |
@@ -93,7 +96,7 @@ wave_status:
 | RC3 Item | Status |
 |---|---|
 | RC3-C1 – Migration parity | ✅ CLOSED |
-| RC3-C2 – Audit secrets | 🔴 OPEN (keys present / values placeholder — RDL-007) |
+| RC3-C2 – Audit secrets | 🔴 OPEN (email swap + passwords invalid — RDL-008) |
 | Wave 1 | 🟡 Waiting |
 | Waves 2–7 | 🔒 Locked |
 | RC4 / RC5 | 🔒 Locked |
@@ -103,7 +106,7 @@ wave_status:
 | ID | Class | Severity | Finding | Remediation |
 |---|---|---|---|---|
 | RC3-C1 | Application / schema governance | ~~Critical~~ **CLEARED** | Was: `main`@`52a7610` had 28 vs prod 54. | [#103](https://github.com/alhazayed/vpsych/pull/103) merged `5bf66c0`. Re-audit: **54 ≡ 54**, schema diff 0. Integrity 100/100 rebound allowed. |
-| RC3-C2 | **Operational prerequisite** — Release Infrastructure · Owner: **Release Manager** · **Not an application defect** | Critical (blocks evidence) | **Evidence collection blocked.** Audit Auth users exist with correct roles. On 2026-08-05 the four `VPSYCH_AUDIT_*` **keys are present** in the audit environment but each **value equals its own key name** (placeholder). Login verify FAIL. | Release Manager replaces placeholders with vault emails/passwords (value ≠ key name); verify login on `https://vpsych.vercel.app`; then execute Missions **1–5** only. See `docs/AUDIT_ACCOUNTS.md` + `docs/rc3/WAVE1_UNLOCK_CHECKLIST.md` + RDL-007. |
+| RC3-C2 | **Operational prerequisite** — Release Infrastructure · Owner: **Release Manager** · **Not an application defect** | Critical (blocks evidence) | **Evidence collection blocked.** Auth users + roles OK. Env values no longer placeholders, but therapist/admin emails are **swapped** across role env vars and **neither** env password authenticates either canonical audit email. | Release Manager: (1) set therapist email env local=`audit.therapist`, admin email env local=`audit.admin`; (2) apply vault passwords to those Auth users; (3) verify login on `https://vpsych.vercel.app`; (4) re-run Missions **1–5** only. See `docs/AUDIT_ACCOUNTS.md` + `docs/rc3/WAVE1_RDL008_STOP.md` + RDL-008. |
 
 ---
 

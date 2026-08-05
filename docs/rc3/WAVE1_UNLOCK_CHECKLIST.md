@@ -10,18 +10,20 @@ Do **not** advance Waves 2–7 until every box below is checked and Wave 1 Missi
 - [x] Production SHA verified (`5bf66c0` / `dpl_5F6pBTi…` on `vpsych.vercel.app`)
 - [x] Migration parity verified (repo **54** ≡ production **54**)
 - [x] Schema diff = 0
-- [x] Audit therapist account exists (`audit.therapist@vpsych.dev` → `therapist`)
-- [x] Audit admin account exists (`audit.admin@vpsych.dev` → `admin`)
+- [x] Audit therapist account exists (`[REDACTED_THERAPIST_EMAIL]` → `therapist`)
+- [x] Audit admin account exists (`[REDACTED_ADMIN_EMAIL]` → `admin`)
 
 ## RC3-C2 — Operational prerequisite (Release Manager)
 
 Not an application defect. Category: **Release Infrastructure**.  
-See `docs/AUDIT_ACCOUNTS.md` (no passwords in git).
+See `docs/AUDIT_ACCOUNTS.md` (no passwords in git).  
+Latest stop: **RDL-008** (`docs/rc3/WAVE1_RDL008_STOP.md`) — email↔role swap + passwords do not authenticate.
 
-- [ ] `VPSYCH_AUDIT_THERAPIST_EMAIL` injected
-- [ ] `VPSYCH_AUDIT_THERAPIST_PASSWORD` injected
-- [ ] `VPSYCH_AUDIT_ADMIN_EMAIL` injected
-- [ ] `VPSYCH_AUDIT_ADMIN_PASSWORD` injected
+- [ ] `VPSYCH_AUDIT_THERAPIST_EMAIL` local part = `audit.therapist` (not swapped with admin)
+- [ ] `VPSYCH_AUDIT_ADMIN_EMAIL` local part = `audit.admin` (not swapped with therapist)
+- [ ] `VPSYCH_AUDIT_THERAPIST_PASSWORD` = vault password that unlocks therapist Auth user
+- [ ] `VPSYCH_AUDIT_ADMIN_PASSWORD` = vault password that unlocks admin Auth user
+- [ ] Passwords applied in Supabase Auth if vault values were never set on the users
 - [ ] Login verification completed (therapist + admin on `https://vpsych.vercel.app/login`)
 
 ↓

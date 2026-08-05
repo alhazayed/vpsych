@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-08-05T10:34:21.064230+00:00",
+  "auditor": "cursor-wave1-reattempt-5f72",
+  "agent_bcId": "bc-fe2c2042-8c41-4da3-90f1-49420fae5f72",
+  "auth_endpoint": "https://rrzudbkxigeavfdnidnm.supabase.co/auth/v1/token?grant_type=password",
+  "method": "supabase_password_grant",
+  "results": [
+    {
+      "label": "therapist",
+      "http_status": 400,
+      "ok": false,
+      "email_local": "audit.admin",
+      "email_domain": "vpsych.dev",
+      "error_code": "invalid_credentials",
+      "has_access_token": false
+    },
+    {
+      "label": "admin",
+      "http_status": 400,
+      "ok": false,
+      "email_local": "audit.therapist",
+      "email_domain": "vpsych.dev",
+      "error_code": "invalid_credentials",
+      "has_access_token": false
+    },
+    {
+      "label": "therapist_email_admin_password",
+      "http_status": 400,
+      "ok": false,
+      "email_local": "audit.admin",
+      "email_domain": "vpsych.dev",
+      "error_code": "invalid_credentials",
+      "has_access_token": false
+    },
+    {
+      "label": "admin_email_therapist_password",
+      "http_status": 400,
+      "ok": false,
+      "email_local": "audit.therapist",
+      "email_domain": "vpsych.dev",
+      "error_code": "invalid_credentials",
+      "has_access_token": false
+    }
+  ],
+  "canonical_identity_matrix": [
+    {
+      "email_identity": "canonical_therapist",
+      "password_source": "therapist_env_password",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials"
+    },
+    {
+      "email_identity": "canonical_therapist",
+      "password_source": "admin_env_password",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials"
+    },
+    {
+      "email_identity": "canonical_admin",
+      "password_source": "therapist_env_password",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials"
+    },
+    {
+      "email_identity": "canonical_admin",
+      "password_source": "admin_env_password",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials"
+    }
+  ],
+  "primary_login_pass": false,
+  "any_password_authenticates": false
+}

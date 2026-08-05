@@ -13,7 +13,7 @@ approval:
   sign_off_status: not_approved
   board_date: "2026-08-05"
   rc3_report: "docs/RC3_PRODUCTION_VALIDATION.md"
-  reason: "RC3 Wave 1 STOP (RDL-007) — VPSYCH_AUDIT_* keys present but values are placeholders (value==key name); login verify FAIL; C1 CLEARED; C2 Release Infrastructure"
+  reason: "RC3 Wave 1 STOP (RDL-008) — VPSYCH_AUDIT_* no longer placeholders, but emails swapped across role env vars and both passwords fail Auth password-grant; C1 CLEARED; C2 Release Infrastructure"
 rc_phase: "RC3"
 package_version: "0.1.0"
 tag: null
@@ -25,9 +25,10 @@ wave_status:
     cleared: [RC3-C1]
     rerun_required: true
     last_attempt: "2026-08-05"
-    last_decision: RDL-007
+    last_decision: RDL-008
     rerun_after:
-      - "Replace placeholder VPSYCH_AUDIT_* values with vault credentials (value must not equal key name)"
+      - "Wire therapist email env local=`audit.therapist` and admin email env local=`audit.admin`"
+      - "Apply vault passwords to those Auth users (or inject the passwords that actually unlock them)"
       - "Login verification PASS on https://vpsych.vercel.app for therapist + admin"
   wave_2: { state: locked }
   wave_3: { state: locked }

@@ -1,0 +1,160 @@
+{
+  "checked_at": "2026-08-05T10:35:00.234422+00:00",
+  "auditor": "cursor-wave1-reattempt-5f72",
+  "agent_bcId": "bc-fe2c2042-8c41-4da3-90f1-49420fae5f72",
+  "production_url": "https://vpsych.vercel.app",
+  "expected_main_sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+  "production_deployment_id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+  "local_migration_files": 54,
+  "production_migrations": 54,
+  "migration_parity": "PASS",
+  "secret_diag": {
+    "therapist_email": {
+      "env_key_present": true,
+      "len": 22,
+      "value_equals_key_name": false,
+      "looks_like_email": true,
+      "email_local": "audit.admin",
+      "email_domain": "vpsych.dev"
+    },
+    "therapist_password": {
+      "env_key_present": true,
+      "len": 21,
+      "value_equals_key_name": false,
+      "looks_like_email": false,
+      "email_local": null,
+      "email_domain": null
+    },
+    "admin_email": {
+      "env_key_present": true,
+      "len": 26,
+      "value_equals_key_name": false,
+      "looks_like_email": true,
+      "email_local": "audit.therapist",
+      "email_domain": "vpsych.dev"
+    },
+    "admin_password": {
+      "env_key_present": true,
+      "len": 17,
+      "value_equals_key_name": false,
+      "looks_like_email": false,
+      "email_local": null,
+      "email_domain": null
+    }
+  },
+  "email_role_mapping": {
+    "therapist_env_points_to_expected_therapist": false,
+    "admin_env_points_to_expected_admin": false,
+    "emails_appear_swapped": true,
+    "observed_therapist_env_local": "audit.admin",
+    "observed_admin_env_local": "audit.therapist"
+  },
+  "secrets_usable": false,
+  "probes": {
+    "GET /api/health": {
+      "status": 200,
+      "location": null,
+      "content_type": "application/json",
+      "cache_control": "no-store",
+      "body_prefix": "{\"ok\":true,\"service\":\"vpsych\",\"checkedAt\":\"2026-08-05T10:34:58.894Z\"}"
+    },
+    "GET /robots.txt": {
+      "status": 200,
+      "location": null,
+      "content_type": "text/plain; charset=utf-8",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "User-Agent: *\nAllow: /\nAllow: /login\nAllow: /signup\nAllow: /privacy\nAllow: /term"
+    },
+    "GET /sitemap.xml": {
+      "status": 200,
+      "location": null,
+      "content_type": "application/xml",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/sc"
+    },
+    "GET /privacy": {
+      "status": 200,
+      "location": null,
+      "content_type": "text/html; charset=utf-8",
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body_prefix": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9Ui"
+    },
+    "GET /terms": {
+      "status": 200,
+      "location": null,
+      "content_type": "text/html; charset=utf-8",
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body_prefix": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9Ui"
+    },
+    "GET /login": {
+      "status": 200,
+      "location": null,
+      "content_type": "text/html; charset=utf-8",
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body_prefix": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9Ui"
+    },
+    "GET /signup": {
+      "status": 200,
+      "location": null,
+      "content_type": "text/html; charset=utf-8",
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body_prefix": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9Ui"
+    },
+    "GET /avatars (no follow)": {
+      "status": 307,
+      "location": "/login?next=%2Favatars",
+      "content_type": "text/plain",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "Redirecting...\n"
+    },
+    "GET /admin (no follow)": {
+      "status": 307,
+      "location": "/login?next=%2Fadmin",
+      "content_type": "text/plain",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "Redirecting...\n"
+    },
+    "GET /sessions (no follow)": {
+      "status": 307,
+      "location": "/login?next=%2Fsessions",
+      "content_type": "text/plain",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "Redirecting...\n"
+    },
+    "GET /learning (no follow)": {
+      "status": 307,
+      "location": "/login?next=%2Flearning",
+      "content_type": "text/plain",
+      "cache_control": "public, max-age=0, must-revalidate",
+      "body_prefix": "Redirecting...\n"
+    },
+    "GET /api/sessions": {
+      "status": 401,
+      "location": null,
+      "content_type": "application/json",
+      "cache_control": "no-store, no-cache, must-revalidate, private",
+      "body_prefix": "{\"error\":\"Unauthorized\"}"
+    },
+    "POST /api/sessions": {
+      "status": 401,
+      "location": null,
+      "content_type": "application/json",
+      "cache_control": "no-store, no-cache, must-revalidate, private",
+      "body_prefix": "{\"error\":\"Unauthorized\"}"
+    },
+    "GET /api/health/openai": {
+      "status": 401,
+      "location": null,
+      "content_type": "application/json",
+      "cache_control": "no-store, no-cache, must-revalidate, private",
+      "body_prefix": "{\"error\":\"Unauthorized\"}"
+    },
+    "POST /api/voice/tts": {
+      "status": 401,
+      "location": null,
+      "content_type": "application/json",
+      "cache_control": "no-store, no-cache, must-revalidate, private",
+      "body_prefix": "{\"error\":\"Unauthorized\"}"
+    }
+  }
+}
