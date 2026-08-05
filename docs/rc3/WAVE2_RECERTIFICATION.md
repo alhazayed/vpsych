@@ -19,8 +19,8 @@ This board did **not** implement the remediation and does **not** certify from s
 | Production SHA matches expected release (`main`) | **PASS** | SHA `5bf66c0` (`5bf66c07f11d286c305f59398a015614d22b723b`); target=`production` |
 | Migration parity | **PASS** | Prod **55** migrations including W1-C1 `20260805130453` (same acceptance as prior Wave 2) |
 | Credential Verification Gate | **PASS** | `scripts`/vault preflight; diagonal password-grant matrix |
-| Therapist login | **PASS** | Password-grant + `profiles` role fetch (API). Browser shot: correct `audit.therapist@` accounts (demo `*.vpsych.test` are banned — do not use) |
-| Admin login | **PASS** | Password-grant + admin role fetch |
+| Therapist login | **PASS** | API password-grant + profile; browser login screenshot `docs/rc3/evidence/w2r-therapist-login.png` (`audit.therapist@` — not banned `*.vpsych.test`) |
+| Admin login | **PASS** | API password-grant + admin profile; browser login screenshot `docs/rc3/evidence/w2r-admin-login.png` (`audit.admin@`) |
 
 **Pre-flight overall: PASS** — clinical re-cert proceeded.
 
