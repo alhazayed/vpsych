@@ -16,7 +16,7 @@
 
 **Rule:** Evidence collected only against production / `main` / production Supabase / production Vercel. No localhost, preview deployments, or feature-branch app binaries.
 
-**Engineering status:** Nothing further to build for RC3 unlock. Platform, infrastructure, production, and repository are ready. RC3 is **waiting on operational execution** (Release Manager must fix vault email↔role mapping and apply Auth passwords that match injected `VPSYCH_AUDIT_*_PASSWORD` values).
+**Engineering status:** Nothing further to build for RC3 unlock. Platform, infrastructure, production, and repository are ready. RC3 is **waiting on operational execution** (Release Manager: reset Auth passwords, sync vault, fix email↔role mapping, **manually** prove login, then launch a fresh Cursor Wave 1 agent). **Credential Verification Gate** adopted (RDL-009) — see `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
 
 **Role split:** Release Manager owns secrets/login/trigger · Cursor owns Missions 1–5 evidence + PASS/FAIL (no speculative fixes) · Executive Board owns Wave 1 review and Wave 2 unlock. See `docs/RELEASE_DECISION_LOG.md`.
 

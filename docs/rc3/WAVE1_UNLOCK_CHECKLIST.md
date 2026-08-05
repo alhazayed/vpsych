@@ -3,38 +3,60 @@
 Do **not** advance Waves 2–7 until every box below is checked and Wave 1 Missions 1–5 pass with zero Critical and zero High findings.
 
 **Full Release Manager runbook:** `docs/RELEASE_OPERATIONS_CHECKLIST.md`  
-**Decision log:** `docs/RELEASE_DECISION_LOG.md` (append RDL row on Wave 1 PASS / FAIL)
+**Decision log:** `docs/RELEASE_DECISION_LOG.md` (append RDL row on Wave 1 PASS / FAIL)  
+**Credential Verification Gate:** mandatory — see ops checklist § “Credential Verification Gate”
 
 ## Prerequisites (infrastructure — done)
 
 - [x] Production SHA verified (`5bf66c0` / `dpl_5F6pBTi…` on `vpsych.vercel.app`)
 - [x] Migration parity verified (repo **54** ≡ production **54**)
 - [x] Schema diff = 0
-- [x] Audit therapist account exists (`[REDACTED_THERAPIST_EMAIL]` → `therapist`)
-- [x] Audit admin account exists (`[REDACTED_ADMIN_EMAIL]` → `admin`)
+- [x] Audit therapist Auth user exists (`audit.therapist@…` → `therapist`)
+- [x] Audit admin Auth user exists (`audit.admin@…` → `admin`)
 
-## RC3-C2 — Operational prerequisite (Release Manager)
+## RC3-C2 — Credential Verification Gate (Release Manager)
 
 Not an application defect. Category: **Release Infrastructure**.  
 See `docs/AUDIT_ACCOUNTS.md` (no passwords in git).  
-Latest stop: **RDL-008** (`docs/rc3/WAVE1_RDL008_STOP.md`) — email↔role swap + passwords do not authenticate.
+Latest stop: **RDL-008** — email↔role swap + passwords do not authenticate.  
+Process strengthening: **RDL-009** (gate adopted).
 
-- [ ] `VPSYCH_AUDIT_THERAPIST_EMAIL` local part = `audit.therapist` (not swapped with admin)
-- [ ] `VPSYCH_AUDIT_ADMIN_EMAIL` local part = `audit.admin` (not swapped with therapist)
-- [ ] `VPSYCH_AUDIT_THERAPIST_PASSWORD` = vault password that unlocks therapist Auth user
-- [ ] `VPSYCH_AUDIT_ADMIN_PASSWORD` = vault password that unlocks admin Auth user
-- [ ] Passwords applied in Supabase Auth if vault values were never set on the users
-- [ ] Login verification completed (therapist + admin on `https://vpsych.vercel.app/login`)
+Do **not** assume vault passwords are correct. Reset in Supabase Auth, sync vault, then prove login **manually** before Cursor.
+
+```yaml
+audit_credentials:
+  therapist:
+    email_matches_expected: false   # local must be audit.therapist
+    login_success: false            # manual on https://vpsych.vercel.app
+  admin:
+    email_matches_expected: false   # local must be audit.admin
+    login_success: false
+precondition:
+  if_false:
+    stop_certification: true
+    create_rdl_entry: true
+```
+
+- [ ] Supabase Auth users verified (therapist + admin, correct roles, not banned)
+- [ ] Passwords reset in Auth and written to vault
+- [ ] `VPSYCH_AUDIT_THERAPIST_EMAIL` local = `audit.therapist` (not swapped)
+- [ ] `VPSYCH_AUDIT_ADMIN_EMAIL` local = `audit.admin` (not swapped)
+- [ ] `VPSYCH_AUDIT_THERAPIST_PASSWORD` unlocks therapist Auth user
+- [ ] `VPSYCH_AUDIT_ADMIN_PASSWORD` unlocks admin Auth user
+- [ ] **Manual** therapist login PASS on `https://vpsych.vercel.app/login`
+- [ ] **Manual** admin login PASS on `https://vpsych.vercel.app/login`
+- [ ] Roles/permissions look correct for each account
+- [ ] Timestamp / SHA / auditor recorded in ops archive
 
 ↓
 
-**Unlock Wave 1 execution** (Missions 1–5 only)
+**Unlock Wave 1 execution** (Missions 1–5 only) — **new** Cursor agent only
 
-## After secrets are injected
+## After the gate passes
 
-1. Verify therapist login → PASS  
-2. Verify admin login → PASS (record timestamp, environment, production SHA, auditor)  
-3. Execute Missions **1–5** only  
+1. Launch a **fresh** Cursor agent (picks up updated secrets).  
+2. Prompt: `Run Wave 1`.  
+3. Cursor re-checks the gate; on FAIL → STOP + RDL; on PASS → Missions **1–5** only.  
 4. If **0 Critical and 0 High** →
 
 ```yaml

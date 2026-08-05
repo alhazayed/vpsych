@@ -8,7 +8,7 @@ audit_accounts:
   therapist:
     enabled: true
     purpose: certification
-    email: [REDACTED_THERAPIST_EMAIL]   # production Auth identity (public email, not a secret)
+    email: audit.therapist@…   # local audit.therapist / domain vpsych.dev (public Auth identity)
     env_email: VPSYCH_AUDIT_THERAPIST_EMAIL
     env_password: VPSYCH_AUDIT_THERAPIST_PASSWORD
     profile_role: therapist
@@ -21,7 +21,7 @@ audit_accounts:
   admin:
     enabled: true
     purpose: certification
-    email: [REDACTED_ADMIN_EMAIL]       # production Auth identity (public email, not a secret)
+    email: audit.admin@…       # local audit.admin / domain vpsych.dev (public Auth identity)
     env_email: VPSYCH_AUDIT_ADMIN_EMAIL
     env_password: VPSYCH_AUDIT_ADMIN_PASSWORD
     profile_role: admin
@@ -39,28 +39,44 @@ rotation:
     logins — so every RC cycle and automated audit hits the same identities.
 
 provisioning:
-  status: accounts_ready_secrets_pending  # RC3-C2: vault injection + login verify
+  status: accounts_ready_secrets_pending  # RC3-C2: Auth/vault sync + Credential Verification Gate
+  credential_verification_gate:           # RDL-009 — mandatory before certification
+    therapist:
+      email_local_expected: audit.therapist
+      email_domain_expected: vpsych.dev
+      email_matches_expected: pending
+      login_success: pending              # manual on production
+    admin:
+      email_local_expected: audit.admin
+      email_domain_expected: vpsych.dev
+      email_matches_expected: pending
+      login_success: pending
+    if_false:
+      stop_certification: true
+      create_rdl_entry: true
   verified_2026_08_04:
     auth_users: present
     profiles_role:
-      [REDACTED_THERAPIST_EMAIL]: therapist
-      [REDACTED_ADMIN_EMAIL]: admin
+      audit.therapist@…: therapist
+      audit.admin@…: admin
   remaining_steps:
-    - Inject the four env vars into the RC agent / CI secrets
-      (emails above; passwords from Release Manager vault — never commit)
-    - Verify login on https://vpsych.vercel.app/login for both accounts
-    - Check docs/rc3/WAVE1_UNLOCK_CHECKLIST.md injection + login boxes
+    - Reset both Auth passwords; sync vault immediately (do not assume vault is current)
+    - Inject four env vars with correct email↔role mapping (no swap)
+    - Manual login PASS on https://vpsych.vercel.app for both accounts
+    - Check docs/rc3/WAVE1_UNLOCK_CHECKLIST.md Credential Verification Gate boxes
+    - Only then launch a fresh Cursor agent for Wave 1
     - Set provisioning.status: ready and clear RC3-C2
 ```
 
 ## Governance
 
 - Auth users and `profiles.role` are **already provisioned** in production (`rrzudbkxigeavfdnidnm`).
-- **RC3-C2 is an operational prerequisite**, not a VPsych application defect: evidence collection is blocked until the audit runner receives vault-managed `VPSYCH_AUDIT_*` credentials.
+- **RC3-C2 is an operational prerequisite**, not a VPsych application defect: evidence collection is blocked until the audit runner receives correctly mapped, Auth-synchronized vault credentials **and** the Credential Verification Gate passes (manual login on production).
 - Owner: **Release Manager**. Category: **Release Infrastructure**. Severity: Critical (blocks certification evidence, not platform correctness).
-- Formal runbook: `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
+- Formal runbook: `docs/RELEASE_OPERATIONS_CHECKLIST.md` (includes the five-step RM checklist + gate).
 - RC4 / RC5 stay locked until Wave 1 PASS.
 - Never commit real password values to this file.
+- Cursor must **stop certification** and create an RDL entry if `email_matches_expected` or `login_success` is false for either account.
 
 ## 2026-08-05 provisioning re-check (RDL-007)
 
