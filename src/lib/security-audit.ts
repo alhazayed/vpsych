@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { recordOperationalEvent } from "@/lib/ledgers";
 
 export type SecurityAuditOutcome = "success" | "failure" | "denied";
 
@@ -24,6 +25,7 @@ function clientIpFromHeaders(h: Headers): string | null {
 /**
  * Best-effort security audit write. Never throws to callers — audit must not
  * break the primary request path.
+ * Also mirrors into the Operational Ledger (Layer 1).
  */
 export async function logSecurityEvent(
   event: SecurityAuditEvent,
@@ -54,6 +56,19 @@ export async function logSecurityEvent(
       p_ip: ip,
       p_user_agent: userAgent,
       p_metadata: event.metadata ?? {},
+    });
+
+    // Dual-write Operational Ledger (memory/DB) — never blocks
+    void recordOperationalEvent(supabase, {
+      event_type: event.action,
+      category: "security",
+      severity: event.outcome === "denied" ? "warning" : "info",
+      outcome: event.outcome,
+      ip,
+      user_agent: userAgent,
+      resource_type: event.resourceType ?? null,
+      resource_id: event.resourceId ?? null,
+      payload: event.metadata ?? {},
     });
 
     if (error) {

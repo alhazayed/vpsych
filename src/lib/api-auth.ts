@@ -2,6 +2,9 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logSecurityEvent } from "@/lib/security-audit";
+import {
+  recordOperationalEvent,
+} from "@/lib/ledgers";
 import type { Profile } from "@/lib/types";
 
 export type ApiAuthContext = {
@@ -71,6 +74,18 @@ export async function requireApiAdmin(
       resourceId: opts?.resourceId ?? null,
       metadata: { role: auth.profile.role },
       request,
+    });
+    // Operational Ledger — authorization denial (best-effort)
+    void recordOperationalEvent(null, {
+      event_type: opts?.action ?? "admin.access",
+      category: "authorization",
+      severity: "warning",
+      outcome: "denied",
+      actor_id: auth.user.id,
+      actor_role: auth.profile.role,
+      resource_type: opts?.resourceType ?? "api",
+      resource_id: opts?.resourceId ?? null,
+      payload: { role: auth.profile.role },
     });
     return {
       ok: false,
