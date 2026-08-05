@@ -9,6 +9,11 @@ import { ALE_VERSION } from "@/lib/ale/weights";
 import { RRS_VERSION } from "@/lib/rrs/weights";
 import { HCFI_VERSION } from "@/lib/hcfi/weights";
 import { PMFI_VERSION } from "@/lib/pmfi/weights";
+import {
+  LAS_VERSION,
+  PAS_VERSION,
+  PAB_VERSION,
+} from "@/lib/validation/types";
 import type { VqiMetricId } from "@/lib/vqi/weights";
 
 export type MetricDefinition = {
@@ -84,6 +89,30 @@ const REGISTRY: MetricDefinition[] = [
       "Whether patient psychology is owned by the Patient Mind Engine with consistent dynamics",
     version: PMFI_VERSION,
     domain: "clinical",
+    enabled: true,
+  },
+  {
+    id: "PAS",
+    name: "Psychiatrist Authenticity Score",
+    description: "Blinded clinician authenticity ratings (Mission 22)",
+    version: PAS_VERSION,
+    domain: "clinical",
+    enabled: true,
+  },
+  {
+    id: "LAS",
+    name: "Learner Authenticity Score",
+    description: "Learner immersion and educational authenticity (Mission 22)",
+    version: LAS_VERSION,
+    domain: "educational",
+    enabled: true,
+  },
+  {
+    id: "PAB",
+    name: "Patient Authenticity Benchmark",
+    description: "PME vs SP / human / legacy comparator benchmark",
+    version: PAB_VERSION,
+    domain: "research",
     enabled: true,
   },
 ];
