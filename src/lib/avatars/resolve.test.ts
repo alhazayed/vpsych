@@ -255,6 +255,105 @@ describe("resolveAvatar", () => {
     expect(resolved.clinical_core?.age).toBe(28);
     expect(resolved.clinical_core?.gender).toBe("female");
   });
+
+  it("strips MDD idioms and adds current-state override on mania diagnosis override (W2-H3)", () => {
+    const withIdioms: Avatar = {
+      ...v2Avatar,
+      personalities: {
+        "en-US": {
+          ...personality("en-US", "Maya Chen"),
+          idioms_of_distress: ["brain fog", "feeling heavy", "underwater"],
+          clinical_localization: [
+            { symptom_id: "low_mood", expression: "grey and foggy" },
+            { symptom_id: "elevated_mood", expression: "wired" },
+          ],
+          speech: { register: "neutral", pace: "slow", sample_utterances: [] },
+        },
+        "ar-JO": personality("ar-JO", "ليان خوري"),
+      },
+    };
+    const resolved = resolveAvatar(withIdioms, "en-US", {
+      caseSnapshot: {
+        version: 2,
+        assessment_id: "00000000-0000-4000-8000-000000000099",
+        persona: {
+          id: "p1",
+          slug: "maya-chen",
+          display_name: "Maya Chen",
+          avatar_id: withIdioms.id,
+        },
+        primary_diagnosis: {
+          id: "d-mania",
+          slug: "bipolar-mania",
+          name: "Bipolar I Disorder, current manic episode",
+          dsm5_code: "296.44",
+          icd10_code: "F31.2",
+          icd11_code: "6A60.2",
+        },
+        comorbidities: [],
+        difficulty: "intermediate",
+        difficulty_modifiers: {
+          insight: "partial",
+          resistance: "mild",
+          disclosure: "guarded",
+          diagnostic_ambiguity: "low",
+          alliance: "forming",
+          masking: "low",
+          comorbidity_weight: 0,
+        },
+        therapy_modality: "supportive",
+        therapy_reaction_rules: {},
+        locale: "en-US",
+        severity: "severe",
+        clinical_core: {
+          disorder: "Bipolar I Disorder, current manic episode",
+          age: 28,
+          gender: "female",
+          severity: "severe",
+          symptom_profile: [
+            {
+              id: "elevated_mood",
+              description: "Elevated or irritable mood — wired, not foggy",
+              domain: "mood",
+              salience: "presenting",
+            },
+            {
+              id: "decreased_sleep_need",
+              description: "Sleeping only a few hours and not tired",
+              domain: "somatic",
+              salience: "presenting",
+            },
+          ],
+          disclosure_rules: [],
+          session_goals: ["Assess mania"],
+          ideal_approach: "Containment",
+          risk_profile: { suicidal_ideation: "none" },
+        },
+        randomized_context: {
+          recent_stressor: "deadline",
+          financial_situation: "tight",
+          relationship_detail: "partner concerned",
+          minor_life_event: "bought gadgets",
+          timeline_offset_weeks: 0,
+        },
+        rubric: withIdioms.rubric,
+        memory_scope: "case_instance",
+        generated_at: new Date().toISOString(),
+      },
+    });
+    expect(resolved.system_prompt).toContain("SYNDROME AUTHORITY");
+    expect(resolved.system_prompt).toContain("CURRENT STATE FOR THIS SESSION");
+    expect(resolved.system_prompt).toContain("wired, not foggy");
+    expect(resolved.system_prompt).toContain("Sleeping only a few hours");
+    // MDD idioms cleared; depressive localization dropped
+    expect(resolved.personality?.idioms_of_distress ?? []).toEqual([]);
+    expect(resolved.system_prompt).not.toContain("feeling heavy");
+    expect(resolved.system_prompt).not.toContain("grey and foggy");
+    expect(resolved.personality?.speech?.pace).toBe("fast");
+    expect(resolved.personality?.speech?.sample_utterances ?? []).toEqual([]);
+    // Matched localization kept
+    expect(resolved.system_prompt).toContain("wired");
+  });
 });
 
 describe("listAvailableLocales", () => {

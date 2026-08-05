@@ -6,6 +6,7 @@ import {
   generateFromPreset,
   generateInstructorReport,
   listBuiltinPresets,
+  mapDbRowToPreset,
 } from "@/lib/instructor-presets";
 import type { PersonaRow } from "@/lib/case-engine/types";
 import { rateLimit } from "@/lib/rate-limit";
@@ -42,22 +43,12 @@ export async function POST(request: Request) {
       .eq("id", body.presetId)
       .maybeSingle();
     if (data) {
-      preset = listBuiltinPresets().find((p) => p.slug === data.slug) ?? {
-        ...findPresetBySlug(data.slug)!,
-        id: data.id,
-        slug: data.slug,
-        name: data.name,
-        primary_objective: data.primary_objective,
-        difficulty: data.difficulty,
-        time_limit_minutes: data.time_limit_minutes,
-        language: data.language,
-        therapy_modality: data.therapy_modality,
-        grading_mode: data.grading_mode,
-        feedback_mode: data.feedback_mode,
-        allow_hints: data.allow_hints,
-        enabled: data.enabled,
-        version: data.version,
-      };
+      // Prefer full builtin (includes competencies/grading). Fall back to DB
+      // row mapped with required fields — never spread an undefined builtin.
+      preset =
+        listBuiltinPresets().find((p) => p.slug === data.slug) ??
+        findPresetBySlug(data.slug) ??
+        mapDbRowToPreset(data);
     }
   }
 
