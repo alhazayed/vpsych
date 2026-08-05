@@ -11,9 +11,9 @@ supabase_project: "rrzudbkxigeavfdnidnm"
 vercel_project: "prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm"
 approval:
   sign_off_status: not_approved
-  board_date: "2026-08-04"
+  board_date: "2026-08-05"
   rc3_report: "docs/RC3_PRODUCTION_VALIDATION.md"
-  reason: "RC3 Wave 1 waiting — evidence collection blocked on RC3-C2 operational prerequisite (vault VPSYCH_AUDIT_*); C1 CLEARED (54≡54, schema diff 0, integrity 100/100 rebound to main@5bf66c0); C2 is Release Infrastructure not an application defect"
+  reason: "RC3 Wave 1 STOP (RDL-007) — VPSYCH_AUDIT_* keys present but values are placeholders (value==key name); login verify FAIL; C1 CLEARED; C2 Release Infrastructure"
 rc_phase: "RC3"
 package_version: "0.1.0"
 tag: null
@@ -24,9 +24,11 @@ wave_status:
     blockers: [RC3-C2]  # operational prerequisite / Release Infrastructure / owner Release Manager
     cleared: [RC3-C1]
     rerun_required: true
+    last_attempt: "2026-08-05"
+    last_decision: RDL-007
     rerun_after:
-      - "VPSYCH_AUDIT_* injected (see docs/AUDIT_ACCOUNTS.md)"
-      - "Login verification on https://vpsych.vercel.app"
+      - "Replace placeholder VPSYCH_AUDIT_* values with vault credentials (value must not equal key name)"
+      - "Login verification PASS on https://vpsych.vercel.app for therapist + admin"
   wave_2: { state: locked }
   wave_3: { state: locked }
   wave_4: { state: locked }

@@ -61,3 +61,12 @@ provisioning:
 - Formal runbook: `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
 - RC4 / RC5 stay locked until Wave 1 PASS.
 - Never commit real password values to this file.
+
+## 2026-08-05 provisioning re-check (RDL-007)
+
+- Auth users + roles: reconfirmed present (`audit.therapist@vpsych.dev` → therapist, `audit.admin@vpsych.dev` → admin).
+- Audit credential env keys: present in audit environment.
+- Values: **unusable** — each value equals its own key name (placeholder misconfiguration).
+- Login verify: **FAIL** (`invalid_credentials`).
+- Status remains blocked under RC3-C2. Details: `docs/rc3/WAVE1_RDL007_STOP.md`.
+

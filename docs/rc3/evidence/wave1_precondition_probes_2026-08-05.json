@@ -1,0 +1,136 @@
+{
+  "checked_at": "2026-08-05T10:19:33.453088+00:00",
+  "auditor": "cursor-wave1-execution-d463",
+  "production_url": "https://vpsych.vercel.app",
+  "expected_main_sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+  "probes": {
+    "/api/health": {
+      "status": 200,
+      "content_type": "application/json",
+      "cache": "no-store",
+      "body": "{\"ok\":true,\"service\":\"vpsych\",\"checkedAt\":\"2026-08-05T10:19:31.929Z\"}",
+      "set_cookie": null
+    },
+    "/robots.txt": {
+      "status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "body": "User-Agent: *\nAllow: /\nAllow: /login\nAllow: /signup\nAllow: /privacy\nAllow: /terms\nDisallow: /api/\nDisallow: /admin/\nDisallow: /avatars\nDisallow: /sessions\nDisallow: /learning\nDisallow: /auth/\n\nHost: vpsych.vercel.app\nSitemap: https://vpsych.vercel.app/sitemap.xml\n",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/sitemap.xml": {
+      "status": 200,
+      "content_type": "application/xml",
+      "cache": "public, max-age=0, must-revalidate",
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url>\n<loc>https://vpsych.vercel.app</loc>\n<lastmod>2026-08-04T10:50:49.696Z</lastmod>\n<changefreq>weekly</changefreq>\n<priority>1</priority>\n</url>\n<url>\n<loc>https://vpsych.vercel.app/login</loc>\n<lastmod>2026-08-04T10:50:49.696Z</lastmod>\n<changefreq>monthly</changefreq>\n<priority>0.6</priority>\n</url>\n<url>\n<loc>https://vpsych.vercel.app/signup</loc>\n<lastmod>2026-08-04T10:50:49.696Z</lastmod>",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/privacy": {
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl44jf61j14b.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_n",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/terms": {
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl44jf61j14b.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_n",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/login": {
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Fvpsych-logo.png&amp;w=48&amp;q=75 1x, /_next/image?url=%2Fvpsych-logo.png&amp;w=96&amp;q=7",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/signup": {
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "body": "<!DOCTYPE html><html lang=\"en\" dir=\"ltr\" class=\"montserrat_5e5bfac6-module__c9UihG__variable inter_5c91aed-module__qlQ2ZW__variable noto_sans_arabic_5ba8056f-module__ioLoDG__variable geist_mono_30718973-module__C72cgW__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3xl44jf61j14b.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_n",
+      "set_cookie": "locale=en; Path=/; Expires=Thu, 05 Aug 2027 10:19:32 GMT; Max-Age=31536000; Secure; SameSite=lax"
+    },
+    "/avatars": {
+      "status": 307,
+      "location": "/login?next=%2Favatars",
+      "content_type": "text/plain"
+    },
+    "/admin": {
+      "status": 307,
+      "location": "/login?next=%2Fadmin",
+      "content_type": "text/plain"
+    },
+    "/sessions": {
+      "status": 307,
+      "location": "/login?next=%2Fsessions",
+      "content_type": "text/plain"
+    },
+    "/learning": {
+      "status": 307,
+      "location": "/login?next=%2Flearning",
+      "content_type": "text/plain"
+    },
+    "GET /api/sessions": {
+      "status": 401,
+      "content_type": "application/json",
+      "cache": "no-store, no-cache, must-revalidate, private",
+      "body": "{\"error\":\"Unauthorized\"}",
+      "location": null
+    },
+    "POST /api/sessions": {
+      "status": 401,
+      "content_type": "application/json",
+      "cache": "no-store, no-cache, must-revalidate, private",
+      "body": "{\"error\":\"Unauthorized\"}",
+      "location": null
+    },
+    "GET /api/health/openai": {
+      "status": 401,
+      "content_type": "application/json",
+      "cache": "no-store, no-cache, must-revalidate, private",
+      "body": "{\"error\":\"Unauthorized\"}",
+      "location": null
+    },
+    "POST /api/voice/tts": {
+      "status": 401,
+      "content_type": "application/json",
+      "cache": "no-store, no-cache, must-revalidate, private",
+      "body": "{\"error\":\"Unauthorized\"}",
+      "location": null
+    }
+  },
+  "secrets": {
+    "therapist_email": {
+      "present": true,
+      "nonempty": true,
+      "len": 28,
+      "value_equals_key_name": true,
+      "looks_like_email": false
+    },
+    "therapist_password": {
+      "present": true,
+      "nonempty": true,
+      "len": 31,
+      "value_equals_key_name": true,
+      "looks_like_email": false
+    },
+    "admin_email": {
+      "present": true,
+      "nonempty": true,
+      "len": 24,
+      "value_equals_key_name": true,
+      "looks_like_email": false
+    },
+    "admin_password": {
+      "present": true,
+      "nonempty": true,
+      "len": 27,
+      "value_equals_key_name": true,
+      "looks_like_email": false
+    }
+  },
+  "secrets_usable": false
+}

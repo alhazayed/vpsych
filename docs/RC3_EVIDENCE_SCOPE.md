@@ -9,7 +9,7 @@
 | Migration Integrity 100/100 (greenfield ≡ prod schema; schema diff 0) | `5c879f4` (work) → **bound to** `5bf66c0` after merge | PR #103 → **`main`** | Post-merge release candidate on `main` @ `5bf66c0` + prod deploy `dpl_5F6pBTi…` | **BOUND** 2026-08-04 (see below) |
 | Version parity 54 ≡ 54 | `5bf66c0` | `main` | Current release candidate | **PASS** |
 | RC3 Production Validation (initial) | `52a7610` | `main` (pre-#103) | Historical — Wave 1 FAIL snapshot | Archived |
-| RC3 Production Validation (current) | `5bf66c0` | `main` | Current release candidate | In progress — Wave 1 **waiting** on RC3-C2 ops prerequisite (secrets), not an app defect |
+| RC3 Production Validation (current) | `5bf66c0` | `main` | Current release candidate | In progress — Wave 1 **waiting** on RC3-C2 ops prerequisite (placeholder secrets; RDL-007), not an app defect |
 | Infrastructure Freeze (RC2) | `52a7610` → superseded by `5bf66c0` for migration item | `main` | RC2 migration gate closed by #103 | Partial → migration item closed |
 | Production app deploy | `5bf66c0` | `main` → `dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4` | Current production | **READY** on `vpsych.vercel.app` |
 | Executive Decision | Current `main` SHA | `main` | Current release candidate only | NOT APPROVED until Wave 1 PASS + later waves |

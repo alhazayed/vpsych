@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-08-05T10:19:00Z",
+  "results": [
+    {
+      "label": "therapist",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials",
+      "msg_class": "invalid_credentials",
+      "email_used_equals_env_keyname": true,
+      "password_used_equals_env_keyname": true,
+      "email_looks_like_email": false
+    },
+    {
+      "label": "admin",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials",
+      "msg_class": "invalid_credentials",
+      "email_used_equals_env_keyname": true,
+      "password_used_equals_env_keyname": true,
+      "email_looks_like_email": false
+    },
+    {
+      "label": "therapist_known_email_placeholder_pw",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials",
+      "msg_class": "invalid_credentials"
+    },
+    {
+      "label": "admin_known_email_placeholder_pw",
+      "http_status": 400,
+      "ok": false,
+      "error_code": "invalid_credentials",
+      "msg_class": "invalid_credentials"
+    }
+  ]
+}

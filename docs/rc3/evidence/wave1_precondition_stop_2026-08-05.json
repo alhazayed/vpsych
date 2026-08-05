@@ -1,0 +1,61 @@
+{
+  "event": "RC3_WAVE1_PRECONDITION_STOP",
+  "decision_id": "RDL-007",
+  "checked_at": "2026-08-05T10:20:11.067257+00:00",
+  "auditor": "cursor-wave1-execution-d463",
+  "agent_bcId": "bc-0963154e-06ae-4f84-a94c-bf7c52fdd463",
+  "production_url": "https://vpsych.vercel.app",
+  "main_sha": "5bf66c07f11d286c305f59398a015614d22b723b",
+  "production_deployment_id": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+  "production_deploy_target": "production",
+  "production_deploy_state": "READY",
+  "preconditions": {
+    "production_sha_matches_main": {
+      "result": "PASS",
+      "detail": "dpl_5F6pBTi\u2026 SHA 5bf66c0 \u2261 origin/main"
+    },
+    "migration_parity": {
+      "result": "PASS",
+      "repo_files": 54,
+      "production_versions": 54
+    },
+    "schema_diff": {
+      "result": "PASS",
+      "note": "prior rebound evidence retained; spot reconfirm via list_migrations count 54"
+    },
+    "public_health_probes": {
+      "result": "PASS",
+      "artifact": "/opt/cursor/artifacts/rc3/wave1_precondition_probes.json"
+    },
+    "audit_accounts_exist": {
+      "result": "PASS",
+      "emails": [
+        "audit.therapist@vpsych.dev",
+        "audit.admin@vpsych.dev"
+      ]
+    },
+    "audit_secret": {
+      "result": "FAIL",
+      "finding": "RC3-C2 \u2014 secrets present but unusable",
+      "detail": "All four VPSYCH_AUDIT_* env vars are set, but each value equals its own key name (placeholder misconfiguration). Not real emails/passwords. Supabase password-grant login returns invalid_credentials for therapist and admin.",
+      "keys_present_count": 4,
+      "keys_present_roles": [
+        "therapist_email",
+        "therapist_password",
+        "admin_email",
+        "admin_password"
+      ],
+      "value_equals_key_name": true,
+      "login_verify": {
+        "result": "FAIL",
+        "artifact": "/opt/cursor/artifacts/rc3/wave1_login_verify.json"
+      }
+    }
+  },
+  "board_result": "RC3-C2 \u2014 Evidence collection blocked (placeholder secrets).",
+  "missions_executed": [],
+  "wave_1": "stopped_at_preconditions",
+  "wave_2": "not_started",
+  "engineering_status": "frozen \u2014 no application changes; ops prerequisite only",
+  "next": "Release Manager replace placeholder VPSYCH_AUDIT_* values with vault credentials (actual emails + passwords), verify login on https://vpsych.vercel.app, re-invoke Wave 1 on a NEW agent run."
+}
