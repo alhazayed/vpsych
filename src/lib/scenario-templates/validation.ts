@@ -82,11 +82,12 @@ export function validateTemplate(
       issue("primary_diagnosis_invalid", "Primary diagnosis missing or inactive", "primary_diagnosis"),
     );
   } else {
-    if (!primary.dsm5_code) {
-      issues.push(issue("dsm5_missing", "Primary diagnosis missing DSM-5", "primary_diagnosis"));
-    }
+    // ICD-11 required; DSM-5 optional when ICD-11 is present (Complex PTSD etc.).
     if (!primary.icd11_code) {
       issues.push(issue("icd11_missing", "Primary diagnosis missing ICD-11", "primary_diagnosis"));
+    }
+    if (!primary.dsm5_code && !primary.icd11_code) {
+      issues.push(issue("dsm5_missing", "Primary diagnosis missing DSM-5", "primary_diagnosis"));
     }
   }
 

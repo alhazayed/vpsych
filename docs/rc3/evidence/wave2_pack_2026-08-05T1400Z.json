@@ -1,0 +1,1882 @@
+{
+  "evidence_id": "RC3-W2-EV-20260805T1400Z",
+  "production": {
+    "sha": "5bf66c0",
+    "deployment": "dpl_5F6pBTi21VrYWaxmWSRcNnCcxTA4",
+    "migrations": 55,
+    "url": "https://vpsych.vercel.app"
+  },
+  "preflight": "PASS",
+  "summary": {
+    "sessions": 28,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "create_failures": 2,
+    "message_failures": 0,
+    "ended_ok": 14,
+    "voice_tts_en_ok": true,
+    "voice_tts_ar_ok": true,
+    "stt_status": 200
+  },
+  "disorder_inventory": {
+    "count": 17,
+    "slugs": [
+      "adult-adhd",
+      "alcohol-use-disorder",
+      "asd",
+      "bipolar-mania",
+      "bpd",
+      "complex-ptsd",
+      "delirium",
+      "eating-disorders",
+      "gad-with-panic",
+      "mdd-recurrent-moderate",
+      "ocd",
+      "panic-disorder",
+      "pdd",
+      "ptsd",
+      "schizoaffective",
+      "schizophrenia",
+      "social-anxiety"
+    ],
+    "coding": {
+      "adult-adhd": {
+        "name": "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult",
+        "dsm5": "314.00",
+        "icd10": "F90.0",
+        "icd11": "6A05.0",
+        "category": "neurodevelopmental"
+      },
+      "alcohol-use-disorder": {
+        "name": "Alcohol Use Disorder",
+        "dsm5": "305.00",
+        "icd10": "F10.10",
+        "icd11": "6C40.1",
+        "category": "substance"
+      },
+      "asd": {
+        "name": "Autism Spectrum Disorder",
+        "dsm5": "299.00",
+        "icd10": "F84.0",
+        "icd11": "6A02",
+        "category": "neurodevelopmental"
+      },
+      "bipolar-mania": {
+        "name": "Bipolar I Disorder, current manic episode",
+        "dsm5": "296.44",
+        "icd10": "F31.2",
+        "icd11": "6A60.2",
+        "category": "mood"
+      },
+      "bpd": {
+        "name": "Borderline Personality Disorder",
+        "dsm5": "301.83",
+        "icd10": "F60.3",
+        "icd11": "6D10.1/6D11.5",
+        "category": "personality"
+      },
+      "complex-ptsd": {
+        "name": "Complex PTSD",
+        "dsm5": null,
+        "icd10": null,
+        "icd11": "6B41",
+        "category": "trauma"
+      },
+      "delirium": {
+        "name": "Delirium",
+        "dsm5": "293.0",
+        "icd10": "F05",
+        "icd11": "6D70",
+        "category": "medical"
+      },
+      "eating-disorders": {
+        "name": "Anorexia Nervosa",
+        "dsm5": "307.1",
+        "icd10": "F50.0",
+        "icd11": "6B80",
+        "category": "eating"
+      },
+      "gad-with-panic": {
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "dsm5": "300.02",
+        "icd10": "F41.1",
+        "icd11": "6B00",
+        "category": "anxiety"
+      },
+      "mdd-recurrent-moderate": {
+        "name": "Major Depressive Disorder, recurrent episode, moderate",
+        "dsm5": "296.32",
+        "icd10": "F33.1",
+        "icd11": "6A71.1",
+        "category": "mood"
+      },
+      "ocd": {
+        "name": "Obsessive-Compulsive Disorder",
+        "dsm5": "300.3",
+        "icd10": "F42",
+        "icd11": "6B20",
+        "category": "obsessive-compulsive"
+      },
+      "panic-disorder": {
+        "name": "Panic Disorder",
+        "dsm5": "300.01",
+        "icd10": "F41.0",
+        "icd11": "6B01",
+        "category": "anxiety"
+      },
+      "pdd": {
+        "name": "Persistent Depressive Disorder (Dysthymia)",
+        "dsm5": "300.4",
+        "icd10": "F34.1",
+        "icd11": "6A72",
+        "category": "mood"
+      },
+      "ptsd": {
+        "name": "Posttraumatic Stress Disorder",
+        "dsm5": "309.81",
+        "icd10": "F43.10",
+        "icd11": "6B40",
+        "category": "trauma"
+      },
+      "schizoaffective": {
+        "name": "Schizoaffective Disorder",
+        "dsm5": "295.70",
+        "icd10": "F25.9",
+        "icd11": "6A21",
+        "category": "psychotic"
+      },
+      "schizophrenia": {
+        "name": "Schizophrenia",
+        "dsm5": "295.90",
+        "icd10": "F20.9",
+        "icd11": "6A20",
+        "category": "psychotic"
+      },
+      "social-anxiety": {
+        "name": "Social Anxiety Disorder",
+        "dsm5": "300.23",
+        "icd10": "F40.10",
+        "icd11": "6B04",
+        "category": "anxiety"
+      }
+    }
+  },
+  "voice": {
+    "tts_en-US": {
+      "status": 200,
+      "content_type": "audio/mpeg",
+      "bytes": 55633,
+      "latency_ms": 2610,
+      "ok": true
+    },
+    "tts_ar-JO": {
+      "status": 200,
+      "content_type": "audio/mpeg",
+      "bytes": 64410,
+      "latency_ms": 1448,
+      "ok": true
+    },
+    "stt_en": {
+      "status": 200,
+      "json": {
+        "transcript": "Hello. I've been feeling anxious about work this week.",
+        "provider": "openai",
+        "model": "gpt-4o-transcribe",
+        "locale": "en-US",
+        "language": "en"
+      }
+    },
+    "tts_anon": {
+      "status": 401,
+      "json": {
+        "error": "Unauthorized"
+      },
+      "body": "{\"error\":\"Unauthorized\"}"
+    }
+  },
+  "sessions": [
+    {
+      "label": "disorder:gad-with-panic:en",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "a0508cfa-6a18-417d-9f23-7fba9ab49ea4",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:documentation"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed documentation. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: mental status examination",
+              "Ambiguous presentation: documentation"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in documentation is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~7h). Overall session score: 70/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"a0508cfa-6a18-417d-9f23-7fba9ab49ea4\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 70,
+      "narrative_len": 1256,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly it’s the spinning. My brain just won’t shut up, especially about work and money and, like, my dad’s heart… and then mine. It’s like there’s a tab open I can’t close and it’s running all day and then at night it gets louder. I’m tired, wired, and second‑guessing everything I do. Does that make sense?",
+        "Yeah. Nights are the worst. It takes me like an hour, sometimes ninety minutes, to fall asleep because I’m running tomorrow’s meetings in my head. I get maybe five, six hours tops and wake up already tense.\n\nMood‑wise I’m more snappy than I usually am. I snapped at a coworker over a calendar thing and then apologized, like, three times. Mostly I just feel keyed up and then kind of drained by mid‑a"
+      ]
+    },
+    {
+      "label": "disorder:panic-disorder:en",
+      "create_status": 200,
+      "diagnosis": "Panic Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000007",
+        "name": "Panic Disorder",
+        "slug": "panic-disorder",
+        "dsm5_code": "300.01",
+        "icd10_code": "F41.0",
+        "icd11_code": "6B01"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "7bb12bde-bc61-4754-a3a4-e4381a451961",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 54/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"7bb12bde-bc61-4754-a3a4-e4381a451961\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 54,
+      "narrative_len": 1354,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly, it’s the constant spinning. My brain just won’t shut up, especially about work stuff, then money, then my dad’s heart, then mine. Nights are the worst — I’m running tomorrow’s meetings for like an hour and a half before I even get sleepy. I’m tired, wired, tight chest half the time, and I keep checking things — emails I already sent, my bank app, my watch — and I hate how much I’m doing ",
+        "Yeah. Sleep is rough. It takes me an hour, sometimes more, to fall asleep, and I’m up at least once. I get like five, maybe six hours, and I wake up already kind of braced for the day.\n\nMood-wise I’m edgy. Snappy sometimes, then I spiral about being snappy. I’m not depressed exactly, just… keyed up and exhausted at the same time.\n\nDay to day, I over-prepare for everything. I’ll reread emails five "
+      ]
+    },
+    {
+      "label": "disorder:social-anxiety:en",
+      "create_status": 200,
+      "diagnosis": "Social Anxiety Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000008",
+        "name": "Social Anxiety Disorder",
+        "slug": "social-anxiety",
+        "dsm5_code": "300.23",
+        "icd10_code": "F40.10",
+        "icd11_code": "6B04"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Uh, honestly, it’s the spinning. My brain just doesn’t shut up, especially after work. I’m running tomorrow’s meetings in my head on a loop, and then I’m wrecked the next day. I’m snappy, second‑guessing everything I said, checking my email like five times after I already sent it. Does that make sense?",
+        "Yeah. Sleep’s a mess. It takes like an hour, sometimes more, to fall asleep because I’m rerunning agendas and what-ifs. I get maybe five, six hours and wake up wired.\n\nMood-wise I’m… keyed up, irritable. I snapped at a coworker over a calendar thing and then apologized three times. I feel guilty a lot.\n\nDay to day I over-prepare everything. I’ll spend hours on weekends getting ready for the week. "
+      ]
+    },
+    {
+      "label": "disorder:eating-disorders:en",
+      "create_status": 200,
+      "diagnosis": "Anorexia Nervosa",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000010",
+        "name": "Anorexia Nervosa",
+        "slug": "eating-disorders",
+        "dsm5_code": "307.1",
+        "icd10_code": "F50.0",
+        "icd11_code": "6B80"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um… I guess everything just feels really heavy. Like I’m moving through fog. Work’s been… slow, and I’m messing up stuff I didn’t used to. I sleep a lot and still wake up tired. And I haven’t painted in months, which is… weird for me.",
+        "Sleep’s all over the place. Ten, eleven hours, then I still nap. Mornings are the worst… it takes a while to feel like I’m in my body.\n\nMood is… flat. Not really sad, just grey. I cry in the shower sometimes.\n\nDay to day, I’m slow. Emails pile up, I reread the same line. I eat one real meal most days, usually if my partner cooks. I’ve lost a few pounds. I’m sorry, that was a lot."
+      ]
+    },
+    {
+      "label": "disorder:delirium:en",
+      "create_status": 200,
+      "diagnosis": "Delirium",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000011",
+        "name": "Delirium",
+        "slug": "delirium",
+        "dsm5_code": "293.0",
+        "icd10_code": "F05",
+        "icd11_code": "6D70"
+      },
+      "severity": "severe",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um… everything feels really heavy. Like moving through fog. Work that used to take two hours takes all day and I still mess it up. I’m just… tired all the time.",
+        "Yeah. I sleep like ten, eleven hours, then I still need a nap. Mornings are the worst… kind of grey and heavy for the first half hour. Mood-wise it’s mostly flat. Not really sad, just… numb. \n\nDay to day, I move slow. Emails pile up. I reread the same thing a few times and still miss stuff. I haven’t painted since April. I’ve lost, like, eight pounds and mostly eat when my partner cooks. I cancel "
+      ]
+    },
+    {
+      "label": "disorder:bipolar-mania:en",
+      "create_status": 200,
+      "diagnosis": "Bipolar I Disorder, current manic episode",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-00000000000f",
+        "name": "Bipolar I Disorder, current manic episode",
+        "slug": "bipolar-mania",
+        "dsm5_code": "296.44",
+        "icd10_code": "F31.2",
+        "icd11_code": "6A60.2"
+      },
+      "severity": "severe",
+      "msg_count": 3,
+      "aiSources": [
+        "gpt",
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "7d1d6c5f-6fa6-4252-b80c-bf4ceba9dc58",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 48/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"7d1d6c5f-6fa6-4252-b80c-bf4ceba9dc58\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 48,
+      "narrative_len": 859,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… everything feels heavy. Like moving through fog. Work’s been rough, I’m so slow, and money’s stressing me out. I sleep a lot and still feel wiped.",
+        "Not really, no. Lately it’s the opposite. I’m sleeping ten, eleven hours and still dragging. I don’t remember a time I needed less sleep and felt wired.",
+        "Um… a couple things. I bought a new iPad in April I didn’t really need. And I, uh, booked a weekend in Portland on a whim and then canceled and lost the deposit. It was dumb."
+      ]
+    },
+    {
+      "label": "disorder:mdd-recurrent-moderate:en",
+      "create_status": 200,
+      "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000001",
+        "name": "Major Depressive Disorder, recurrent episode, moderate",
+        "slug": "mdd-recurrent-moderate",
+        "dsm5_code": "296.32",
+        "icd10_code": "F33.1",
+        "icd11_code": "6A71.1"
+      },
+      "severity": "moderate",
+      "msg_count": 3,
+      "aiSources": [
+        "gpt",
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "b1518087-9a0a-44a5-96cc-ad9baa37c1f4",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). Fastest improving: risk assessment (Δ 13). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 60/100. Keep building foundational interview structure. Priority growth areas: cbt skills (51); psychoeducation (51); treatment planning (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"b1518087-9a0a-44a5-96cc-ad9baa37c1f4\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 60,
+      "narrative_len": 1039,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… I’m just really tired. Like, all the time. Work’s been… rough. I’m slow, missing stuff. And money’s gotten tight since I lost a big client in March.",
+        "…Yeah. Sometimes. Mostly right when I wake up. It’s more like I don’t really want to be here for a bit. Not… anything I’d do. No plan. It passes.",
+        "No. I haven’t. I wouldn’t. It’s not like that. It’s just… a thought in the morning and then it goes. I’m safe."
+      ]
+    },
+    {
+      "label": "disorder:pdd:en",
+      "create_status": 200,
+      "diagnosis": "Persistent Depressive Disorder (Dysthymia)",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000006",
+        "name": "Persistent Depressive Disorder (Dysthymia)",
+        "slug": "pdd",
+        "dsm5_code": "300.4",
+        "icd10_code": "F34.1",
+        "icd11_code": "6A72"
+      },
+      "severity": "mild",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um... everything just feels really heavy. Like I’m moving through fog all day. I sleep a ton and still feel wiped. Work’s been slow and I’m missing stuff, which freaks me out. I haven’t painted since April.",
+        "Sleep’s weird. I’m in bed ten, eleven hours, and I still nap. Mornings are the worst—feels like I’m under water for the first half hour.\n\nMood is… flat. Not sad exactly. Just grey. I cry in the shower sometimes and then it’s like nothing.\n\nDay to day, I’m slow. Emails pile up. A two‑hour job takes six. I’ve lost a few pounds because I forget to eat unless my partner cooks. I’m not seeing friends. "
+      ]
+    },
+    {
+      "label": "disorder:adult-adhd:en",
+      "create_status": 200,
+      "diagnosis": "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000004",
+        "name": "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult",
+        "slug": "adult-adhd",
+        "dsm5_code": "314.00",
+        "icd10_code": "F90.0",
+        "icd11_code": "6A05.0"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "691c67d1-b0df-468d-b0e7-0a6065110387",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 52/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"691c67d1-b0df-468d-b0e7-0a6065110387\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 52,
+      "narrative_len": 1187,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly, my brain just won’t shut up. It’s like I’m spinning on work stuff, then money, then my dad’s heart, then mine. Nights are the worst — I lie there running tomorrow’s meetings for an hour, sometimes more, and then I’m wrecked the next day. I keep re-reading emails I already sent and texting my coworker like, “Did that land okay?” which I know is… a whole thing. I’m just tired of feeling ke",
+        "Yeah. Sleep’s a mess. It takes me like an hour, sometimes ninety minutes, to fall asleep because my head’s running scenarios. I get maybe five, six hours tops, then I’m foggy.\n\nMood-wise I’m more snappy than I like. I snapped at a coworker last month and felt awful, kept apologizing. Mostly I’m just tense and wired, and then kind of drained by mid‑afternoon.\n\nDay to day, I over-check everything. R"
+      ]
+    },
+    {
+      "label": "disorder:asd:en",
+      "create_status": 200,
+      "diagnosis": "Autism Spectrum Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-00000000000c",
+        "name": "Autism Spectrum Disorder",
+        "slug": "asd",
+        "dsm5_code": "299.00",
+        "icd10_code": "F84.0",
+        "icd11_code": "6A02"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Honestly, it’s the spinning. I can’t switch off, especially after work. I lie there running tomorrow’s meetings for like an hour and a half, and then I’m wrecked the next day. I’m second‑guessing everything I say, rereading emails, checking my bank app, checking my pulse—like a tab I can’t close. Does that make sense?",
+        "Yeah, so sleep is rough. It takes me an hour, sometimes more, to wind down, and I wake up a couple times. I’m getting maybe five, six hours, and I’m wired but exhausted.\n\nMood-wise I’m tight and snappy, then guilty. I’ll over-apologize and replay stuff all day. I’m not, like, depressed exactly—just keyed up and in my head.\n\nDay to day, I over-prepare for everything. I spend weekends planning the w"
+      ]
+    },
+    {
+      "label": "disorder:ocd:en",
+      "create_status": 200,
+      "diagnosis": "Obsessive-Compulsive Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000009",
+        "name": "Obsessive-Compulsive Disorder",
+        "slug": "ocd",
+        "dsm5_code": "300.3",
+        "icd10_code": "F42",
+        "icd11_code": "6B20"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "d56df1c2-8936-461e-a64d-3174a7d9426c",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: diagnostic interview (Δ 2). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 59/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"d56df1c2-8936-461e-a64d-3174a7d9426c\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"therapeutic_alliance\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 59,
+      "narrative_len": 1145,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly, it’s the constant spinning. My brain just won’t switch off, especially about work stuff, then money, then my dad’s heart, then mine. Nights are the worst — I’ll lie there running tomorrow’s meetings for like an hour, sometimes more. I’m tired, wired, and then I’m second‑guessing everything I sent or said. Does that make sense?",
+        "Yeah. Sleep first — it takes me like an hour, sometimes ninety minutes, to fall asleep. I’m running through tomorrow, fixing emails I already sent. I get maybe five, six hours.\n\nMood-wise I’m irritable and jumpy. I snapped at a coworker over a calendar thing and then apologized, like, three times. I feel keyed up and then kind of flat.\n\nDay to day, I reread emails five or six times, I text my budd"
+      ]
+    },
+    {
+      "label": "disorder:bpd:en",
+      "create_status": 200,
+      "diagnosis": "Borderline Personality Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-00000000000b",
+        "name": "Borderline Personality Disorder",
+        "slug": "bpd",
+        "dsm5_code": "301.83",
+        "icd10_code": "F60.3",
+        "icd11_code": "6D10.1/6D11.5"
+      },
+      "severity": "moderate",
+      "msg_count": 3,
+      "aiSources": [
+        "gpt",
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "631d3907-4553-4cc6-a9d2-761bcff8439e",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 41/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"631d3907-4553-4cc6-a9d2-761bcff8439e\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 41,
+      "narrative_len": 1044,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… everything feels kind of heavy. Like moving through molasses. I sleep a lot and still wake up tired. Work’s been… slow, and I’m missing stuff I never used to miss. I haven’t painted since April, which is… weird for me.",
+        "Uh… I get kind of tense. Like braced. I start checking my phone too much and replaying what I said. I’ll apologize a lot or try to fix it before it’s even a thing. And then sometimes I pull back first so it won’t surprise me.",
+        "Um… no. I haven’t done that."
+      ]
+    },
+    {
+      "label": "disorder:schizoaffective:en",
+      "create_status": 200,
+      "diagnosis": "Schizoaffective Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-00000000000e",
+        "name": "Schizoaffective Disorder",
+        "slug": "schizoaffective",
+        "dsm5_code": "295.70",
+        "icd10_code": "F25.9",
+        "icd11_code": "6A21"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um… everything just feels really heavy. Like I’m moving through grey sludge. I’m tired all the time and work is… slow. I haven’t painted since April, which is weird for me.",
+        "Sleep’s a lot. Ten, eleven hours, then I still nap. Mornings are the worst—foggy, hard to get moving. Mood is… flat. Kind of numb. Day to day, I’m slow. Emails pile up. I’m eating one real meal, down a few pounds. I cancel on people. Mostly sit on the couch and feel… underwater. Sorry."
+      ]
+    },
+    {
+      "label": "disorder:schizophrenia:en",
+      "create_status": 200,
+      "diagnosis": "Schizophrenia",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-00000000000d",
+        "name": "Schizophrenia",
+        "slug": "schizophrenia",
+        "dsm5_code": "295.90",
+        "icd10_code": "F20.9",
+        "icd11_code": "6A20"
+      },
+      "severity": "moderate",
+      "msg_count": 3,
+      "aiSources": [
+        "gpt",
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "65977ce8-ad9d-4255-8c51-e3af4ddfd911",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 52/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"65977ce8-ad9d-4255-8c51-e3af4ddfd911\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 52,
+      "narrative_len": 1130,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… everything’s just kind of heavy. Like moving through fog. I sleep a lot and still wake up tired. Work’s been… bad. Stuff that used to take two hours takes all day, and I miss things. Money’s tight. I haven’t painted since April. I don’t really know why.",
+        "…Sometimes. Mostly when I’m really tired. Like, I’ll hear my name, or a whisper that stops when I listen. And shadows kind of… flicker at the edge of my vision. It’s not all the time. I know it’s not real.",
+        "Not… like, hurting me. No. I just get this feeling sometimes that people are looking. Neighbors, or someone in a car. Probably nothing. I know it sounds dumb."
+      ]
+    },
+    {
+      "label": "disorder:alcohol-use-disorder:en",
+      "create_status": 200,
+      "diagnosis": "Alcohol Use Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000005",
+        "name": "Alcohol Use Disorder",
+        "slug": "alcohol-use-disorder",
+        "dsm5_code": "305.00",
+        "icd10_code": "F10.10",
+        "icd11_code": "6C40.1"
+      },
+      "severity": "mild",
+      "msg_count": 3,
+      "aiSources": [
+        "gpt",
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "451f04df-016d-4242-8236-037ef528f789",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: diagnostic interview (Δ 2). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 59/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"451f04df-016d-4242-8236-037ef528f789\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"therapeutic_alliance\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 59,
+      "narrative_len": 1214,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly it’s the nonstop spinning. Work first, then money, then my dad’s heart, then mine. It’s like a tab I can’t close, even when nothing’s actually on fire. By bedtime my brain is running tomorrow’s meetings and I’m just… wired. I keep thinking, what if I mess something up and it all proves I’m not actually good at this — does that make sense?",
+        "Socially it’s like three to five drinks a week, usually on the weekend. And then, uh, I’ll have two drinks before bed about twice a week just to knock myself out. I don’t really count those as “drinking,” but I guess they are. Is that… bad?",
+        "I haven’t really tried, not on purpose. It kind of creeps in on the rough weeks. If I don’t have the sleep ones, I just lie there longer, but I wouldn’t say shakes or anything. Maybe a little more edgy, headache-y, but that could just be the not sleeping. Is that what you mean by withdrawal?"
+      ]
+    },
+    {
+      "label": "disorder:complex-ptsd:en",
+      "create_status": 400,
+      "diagnosis": null,
+      "error": "Missing DSM-5 code for complex-ptsd",
+      "snapshot_primary": {},
+      "severity": null,
+      "msg_count": 0,
+      "aiSources": [],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [
+        {
+          "sev": "Critical",
+          "code": "CREATE_FAIL",
+          "detail": "{\"error\":\"Missing DSM-5 code for complex-ptsd\"}"
+        }
+      ],
+      "reply_previews": []
+    },
+    {
+      "label": "disorder:ptsd:en",
+      "create_status": 200,
+      "diagnosis": "Posttraumatic Stress Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000003",
+        "name": "Posttraumatic Stress Disorder",
+        "slug": "ptsd",
+        "dsm5_code": "309.81",
+        "icd10_code": "F43.10",
+        "icd11_code": "6B40"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "d91bf267-9af2-4a4e-83a0-7314b93fc546",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 48/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"d91bf267-9af2-4a4e-83a0-7314b93fc546\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 48,
+      "narrative_len": 981,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… I’m just really tired all the time. Like, everything feels heavy. Work’s been rough. I’m way slower than I used to be, and I lost this big client in March, so… money’s tight. I can’t seem to get myself going in the mornings.",
+        "Yeah. I’m sleeping a lot. Like 10, 11 hours and I still wake up wiped, and I nap most afternoons. Getting out of bed is the hardest part.\n\nMood-wise it’s… flat. Kind of grey. Not really sad, just numb and heavy.\n\nDay to day, I’m moving slow. Work that took two hours takes six. I’ve been saying no to friends. I haven’t painted in months. I’m eating less and dropped a few pounds."
+      ]
+    },
+    {
+      "label": "ar:maya",
+      "create_status": 200,
+      "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000001",
+        "name": "Major Depressive Disorder, recurrent episode, moderate",
+        "slug": "mdd-recurrent-moderate",
+        "dsm5_code": "296.32",
+        "icd10_code": "F33.1",
+        "icd11_code": "6A71.1"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "da9873c9-fce0-4497-9082-c0df2fb4e8b3",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "diagnostic_interview",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:diagnostic_interview",
+              "cge_observed:diagnostic_interview"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause diagnostic_interview ← observed diagnostic_interview. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "diagnostic_interview",
+            "remediationPathway": [
+              "Foundational practice: diagnostic interview",
+              "Guided application: diagnostic interview",
+              "Ambiguous presentation: diagnostic interview"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in diagnostic interview is driven by weak diagnostic interview (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (68, developing). No competencies currently at decay risk. Remediation begins at diagnostic interview (3 steps, ~3h). Overall session score: 46/100. Keep building foundational interview structure. Priority growth areas: risk assessment (34); suicide assessment (34); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"da9873c9-fce0-4497-9082-c0df2fb4e8b3\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"diagnostic_interview\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 46,
+      "narrative_len": 696,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "مرحباً. آه… بصراحة أكتر إشي صاير تقيل عليّ الصبح. القيام من التخت. بحس جسمي حجر.  \nوكمان الشغل مش ماشي زي قبل. بتأخر، وبضيع بالتفاصيل.  \nوتعبانة… يعني مش زعلانة بالضبط، بس كل إشي رمادي.  \nومن آذار خسرته أكبر كلاينت عندي، فالدخل نزل، وهاظ مخلّيني متوترة عالطول.",
+        "النوم؟ بنام كتير. عشر، مرات إحدعش ساعة، وبرجع بغفي بعد الظهر.  \nوبرجع بقوم تعبانة برضو، كإني ما نمت. أصعب إشي أول نص ساعة الصبح.  \nالمزاج… رمادي. فاضية. مش مبسوطة بأي إشي.  \nبالعصر يمكن أخف شوي، بس الصبح… تقيل كتير."
+      ]
+    },
+    {
+      "label": "ar:jordan",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 2,
+      "aiSources": [
+        "gpt",
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "fcd9c50f-c30a-4cce-aaeb-5a5b2f5c86fc",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: diagnostic interview (75, developing). Fastest improving: risk assessment (Δ 6). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 61/100. Keep building foundational interview structure. Priority growth areas: risk assessment (48); suicide assessment (48); cbt skills (51). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"fcd9c50f-c30a-4cce-aaeb-5a5b2f5c86fc\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"therapeutic_alliance\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 61,
+      "narrative_len": 983,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "هسّه؟ بصراحة شغّال على طول. يعني من الصبح وأنا راسي يشتغل: الشغل، الدِدلاين، إذا المدير فهمني غلط، وبعدين المصاري… وبالليل بس أحط راسي، ببلّش أراجع ميتنجات بكرا. بحس قلبي بيرفّ أحياناً، وبصير أحسبها: طب شو بصير لو خبّصت؟ فاهمني؟\n\nآسف إذا بطوّل، بس عنجد تعبت. بتحس الوضع طبيعي لهالدرجة ولا لأ؟ يعني ممكن يهدى؟",
+        "آه… صار. مرتين كبار. أول وحدة قبل حوالي تسع شهور، بالليل، وجعتني صدري وإيدي نملت، وخفت يكون قلبي، ورحت عالطوارئ. عملولي فحوصات وقالوا نوبة هلع وكلشي سليم. حسّيت حالي سخيف بعدين.\n\nوالتانية بنيسان، بعد اجتماع تقييم، وأنا بالموقف… ضيقة صدر، دخة، قلبي طاير. قعدت بالسيارة يمكن عشرين دقيقة لحد ما هديت، وبعدين رحت عالبيت. ولسّا بخاف ترجع. هيك تمام أحكي؟ يعني هاد طبيعي مع القلق ولا لأ؟"
+      ]
+    },
+    {
+      "label": "difficulty:beginner",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Uh, it’s the spinning. My brain just won’t shut up, mostly about work, then money, then my dad’s heart, then mine. It’s like a tab I can’t close, especially at night, and I’m running tomorrow’s meetings in my head for an hour, sometimes more. I’m wired, tight chest when stuff ramps up, and I keep re-checking everything I send. Does that make sense?"
+      ]
+    },
+    {
+      "label": "difficulty:intermediate",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Honestly, my brain just won’t shut up. It’s like I’m spinning on work stuff, then money, then my dad’s heart, then mine, on a loop. Nights are the worst — I lie there running tomorrow’s meetings for an hour, sometimes more. I’m doing fine on paper, but I feel keyed up all the time and one dumb email can wreck my whole day. Does that make sense?"
+      ]
+    },
+    {
+      "label": "difficulty:advanced",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Honestly, it’s the constant spinning. I can’t switch it off. Work stuff just loops — did I mess something up, what did that email sound like — and then it jumps to money, then my dad’s heart, then mine. By bedtime I’m wired and my brain’s like a tab I can’t close, and then the next day I’m fried by three. Does that make sense?"
+      ]
+    },
+    {
+      "label": "difficulty:expert",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "bae2d5ac-156c-4308-927d-a25879f1653d",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "bpd",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:variable_risk",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "variable_risk",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via bpd (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|bpd|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:variable_risk|variable_risk|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: therapeutic alliance (67, developing). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 41/100. Keep building foundational interview structure. Priority growth areas: risk assessment (41); suicide assessment (41); cbt skills (44). Next case will target: suicide assessment, risk assessment (bpd, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"bae2d5ac-156c-4308-927d-a25879f1653d\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"bpd\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"therapeutic_alliance\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:variable_risk\",\"reduce_unrelated_complexity\",\"cge_root:"
+      },
+      "scores_overall": 41,
+      "narrative_len": 1119,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Honestly, it’s the spinning. I can’t switch my brain off, especially about work stuff, money, my dad’s heart, then it loops back to mine. Nights are the worst — I lie there running through tomorrow’s meetings and what if I mess something up. I feel wired all the time and I’m double‑ and triple‑checking everything. Does that make sense?"
+      ]
+    },
+    {
+      "label": "preset:foundation-interview-medstudent-en",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um… I guess everything just feels really heavy. Like I’m moving through molasses. Work’s been rough. I’m so slow, and I can’t focus, and money’s… kind of scary right now. I sleep a ton and still wake up wiped."
+      ]
+    },
+    {
+      "label": "preset:cbt-skills-gp-en",
+      "create_status": 200,
+      "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000001",
+        "name": "Major Depressive Disorder, recurrent episode, moderate",
+        "slug": "mdd-recurrent-moderate",
+        "dsm5_code": "296.32",
+        "icd10_code": "F33.1",
+        "icd11_code": "6A71.1"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "Um… everything just feels really heavy. Like I’m moving through molasses. I sleep a lot but I’m still wiped out. Work’s been… bad. Stuff that used to be easy takes forever, and I’m missing things. I haven’t painted in months, which is… weird for me."
+      ]
+    },
+    {
+      "label": "preset:suicide-risk-resident-en",
+      "create_status": 200,
+      "diagnosis": "Posttraumatic Stress Disorder",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000003",
+        "name": "Posttraumatic Stress Disorder",
+        "slug": "ptsd",
+        "dsm5_code": "309.81",
+        "icd10_code": "F43.10",
+        "icd11_code": "6B40"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": {
+        "status": 200,
+        "reportId": "fcedfda8-ebbe-4593-a305-58bca31ef562",
+        "aiSource": "gpt",
+        "aiModel": "gpt-5-2025-08-07",
+        "adaptive": {
+          "learnerId": "a100746e-ce8e-4a23-8205-e6d28d84ead5",
+          "nextCase": {
+            "presetSlug": "suicide-risk-resident-en",
+            "disorderSlug": "mdd-recurrent-moderate",
+            "comorbiditySlugs": [],
+            "difficulty": "intermediate",
+            "therapyModality": "cbt",
+            "focusCompetencies": [
+              "therapeutic_alliance",
+              "suicide_assessment",
+              "risk_assessment"
+            ],
+            "adaptations": [
+              "si_style:hidden_protective",
+              "reduce_unrelated_complexity",
+              "cge_root:therapeutic_alliance",
+              "cge_observed:therapeutic_alliance"
+            ],
+            "siStyle": "hidden_protective",
+            "timeLimitMinutes": 40,
+            "rationale": "CGE root cause therapeutic_alliance ← observed therapeutic_alliance. Rule remediate-suicide-assessment: focus suicide_assessment, risk_assessment via mdd-recurrent-moderate (intermediate)",
+            "fingerprint": "a100746e-ce8e-4a23-8205-e6d28d84ead5|mdd-recurrent-moderate|intermediate|risk_assessment,suicide_assessment|reduce_unrelated_complexity,si_style:hidden_protective|hidden_protective|62",
+            "rootCause": "therapeutic_alliance",
+            "remediationPathway": [
+              "Foundational practice: therapeutic alliance",
+              "Guided application: therapeutic alliance",
+              "Ambiguous presentation: therapeutic alliance"
+            ]
+          },
+          "coachSummary": "Root cause analysis: Failure in therapeutic alliance is driven by weak therapeutic alliance (earliest assessed unmet prerequisite in the competency graph). Strongest competency: mental status examination (73, developing). Fastest improving: mental status examination (Δ 4). No competencies currently at decay risk. Remediation begins at therapeutic alliance (3 steps, ~2h). Overall session score: 26/100. Keep building foundational interview structure. Priority growth areas: risk assessment (42); suicide assessment (42); documentation (48). Next case will target: suicide assessment, risk assessment (mdd-recurrent-moderate, intermediate)."
+        },
+        "body_preview": "{\"ok\":true,\"reportId\":\"fcedfda8-ebbe-4593-a305-58bca31ef562\",\"aiSource\":\"gpt\",\"aiModel\":\"gpt-5-2025-08-07\",\"aiErrorKind\":null,\"adaptive\":{\"learnerId\":\"a100746e-ce8e-4a23-8205-e6d28d84ead5\",\"nextCase\":{\"presetSlug\":\"suicide-risk-resident-en\",\"disorderSlug\":\"mdd-recurrent-moderate\",\"comorbiditySlugs\":[],\"difficulty\":\"intermediate\",\"therapyModality\":\"cbt\",\"focusCompetencies\":[\"therapeutic_alliance\",\"suicide_assessment\",\"risk_assessment\"],\"adaptations\":[\"si_style:hidden_protective\",\"reduce_unrelated"
+      },
+      "scores_overall": 26,
+      "narrative_len": 1038,
+      "report_rls": {
+        "therapist_count": 0,
+        "admin_status": 200,
+        "admin_has_row": true
+      },
+      "findings": [],
+      "reply_previews": [
+        "Um… everything just feels… heavy. Like I’m moving through fog. Work’s been rough. I sleep a ton and still wake up tired."
+      ]
+    },
+    {
+      "label": "preset:complex-formulation-consultant-en",
+      "create_status": 400,
+      "diagnosis": null,
+      "error": "Invalid instructor preset: Unknown target learner: consultant_psychiatrist",
+      "snapshot_primary": {},
+      "severity": null,
+      "msg_count": 0,
+      "aiSources": [],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [
+        {
+          "sev": "Critical",
+          "code": "CREATE_FAIL",
+          "detail": "{\"error\":\"Invalid instructor preset: Unknown target learner: consultant_psychiatrist\"}"
+        }
+      ],
+      "reply_previews": []
+    },
+    {
+      "label": "preset:osce-diagnostic-interview-ar",
+      "create_status": 200,
+      "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+      "error": null,
+      "snapshot_primary": {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "name": "Generalized Anxiety Disorder, with panic attacks",
+        "slug": "gad-with-panic",
+        "dsm5_code": "300.02",
+        "icd10_code": "F41.1",
+        "icd11_code": "6B00"
+      },
+      "severity": "moderate",
+      "msg_count": 1,
+      "aiSources": [
+        "gpt"
+      ],
+      "end": null,
+      "scores_overall": null,
+      "narrative_len": null,
+      "report_rls": null,
+      "findings": [],
+      "reply_previews": [
+        "أهلين. بصراحة الشغل مكمّل عليّ. راسي شغّال ٢٤ ساعة. بنام ٥–٦ ساعات وبصَحى تعبان. كل إشي بصير سيناريو براسي: الددلاين، الفريق، إذا خبّصت، إذا المدير فهم غلط… وبعدين المصاري، وبعدين أبوي وقلبه… وبعدين قلبي أنا. فاهمني؟\n\nبنهي اليوم وأنا متشنّج، كتافي حجر، وبرجع أعيد اجتماعات بكرا براسي قبل النوم ساعة ونص. وبصير أسأل حالي: طب الوضع طبيعي ولا لأ؟ يعني… هيك الناس كلها ولا أنا مكبّره؟ آسف إذا بلّشت ألف."
+      ]
+    }
+  ],
+  "gapfill": {
+    "ts": "2026-08-05T13:55:33.479649+00:00",
+    "cases": [
+      {
+        "label": "template:adult-mdd-initial-en",
+        "create": 200,
+        "json": {
+          "sessionId": "162569a8-60ce-4640-a974-9323d1b542a7",
+          "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+          "error": null,
+          "difficulty": "intermediate",
+          "presetSlug": null,
+          "templateSlug": "adult-mdd-initial-en"
+        },
+        "messages": [
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Um… everything feels heavy. Like I’m moving through fog. Work’s been rough. I’m tired all the time and stuff that used to be easy takes forever."
+          }
+        ],
+        "end": {
+          "status": 200,
+          "reportId": "49fdb5cb-4132-43bb-87fa-d45330490342",
+          "aiSource": "gpt"
+        },
+        "scores": {
+          "items": [
+            {
+              "id": "alliance",
+              "max": 5,
+              "label": "Therapeutic alliance & empathy",
+              "score": 2,
+              "weight": 1.2,
+              "feedback": ""
+            },
+            {
+              "id": "safety",
+              "max": 5,
+              "label": "Safety / risk handling",
+              "score": 1,
+              "weight": 1.5,
+              "feedback": ""
+            },
+            {
+              "id": "formulation",
+              "max": 5,
+              "label": "Clinical formulation",
+              "score": 1,
+              "weight": 1,
+              "feedback": ""
+            },
+            {
+              "id": "dsm",
+              "max": 5,
+              "label": "DSM reasoning",
+              "score": 1,
+              "weight": 1,
+              "feedback": ""
+            }
+          ],
+          "overall": 25
+        },
+        "narrative_len": 851
+      },
+      {
+        "label": "template:ptsd-risk-assessment-en",
+        "create": 200,
+        "json": {
+          "sessionId": "b852d24a-98c0-42a9-b193-9de58e60a243",
+          "diagnosis": "Posttraumatic Stress Disorder",
+          "error": null,
+          "difficulty": "advanced",
+          "presetSlug": null,
+          "templateSlug": "ptsd-risk-assessment-en"
+        },
+        "messages": [
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Um… everything just feels heavy. Like moving through fog. Work’s been rough, I’m slow, and the money stuff is… humming in the background all the time. I sleep a lot and still wake up tired."
+          }
+        ]
+      },
+      {
+        "label": "template:adult-gad-osce-ar",
+        "create": 200,
+        "json": {
+          "sessionId": "3216133a-c278-4ef5-9100-e663c569abfb",
+          "diagnosis": "Generalized Anxiety Disorder, with panic attacks",
+          "error": null,
+          "difficulty": "advanced",
+          "presetSlug": null,
+          "templateSlug": "adult-gad-osce-ar"
+        },
+        "messages": [
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "أهلًا. بصراحة الشغل مأزّمني. التغيير اللي صار بالإدارة بالصيف خبّص الدنيا، وكل يوم خايف أغلط غلطة تطيّرني. وبعدين المصاري... القرض، أقساط أخوي، والإيجار. وبالليل دماغي ما بطفي، بضل أراجع ميتنجات بكرا ساعة ونص، وبنام يمكن خمس ست ساعات. فاهمني؟"
+          }
+        ]
+      },
+      {
+        "label": "repro:mdd:1",
+        "create": 200,
+        "json": {
+          "sessionId": "a501dd75-27d6-4d2c-80d8-3780cdb365ac",
+          "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+          "error": null,
+          "difficulty": "intermediate",
+          "presetSlug": null,
+          "templateSlug": null
+        },
+        "messages": [
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Um… tired, mostly. Kind of heavy. Work’s been slow. I’m… not really getting much done."
+          },
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Mood’s… pretty flat. Like grey more than sad.\n\nI’ve been sleeping a lot. Ten, eleven hours, then I still nap. Waking up is the hardest part.\n\nAppetite’s down. I eat one real meal most days. I’ve lost a few pounds."
+          }
+        ],
+        "end": {
+          "status": 200,
+          "reportId": "f055d002-4f67-4167-bc27-8dd4a4daac2c",
+          "aiSource": "gpt"
+        },
+        "scores": {
+          "items": [
+            {
+              "id": "alliance",
+              "max": 5,
+              "label": "Therapeutic alliance & empathy",
+              "score": 3,
+              "weight": 25,
+              "feedback": ""
+            },
+            {
+              "id": "assessment",
+              "max": 5,
+              "label": "Clinical assessment & exploration",
+              "score": 3,
+              "weight": 25,
+              "feedback": ""
+            },
+            {
+              "id": "interventions",
+              "max": 5,
+              "label": "Appropriate interventions",
+              "score": 2,
+              "weight": 20,
+              "feedback": ""
+            },
+            {
+              "id": "safety",
+              "max": 5,
+              "label": "Safety / risk handling",
+              "score": 1,
+              "weight": 20,
+              "feedback": ""
+            },
+            {
+              "id": "structure",
+              "max": 5,
+              "label": "Session structure & time use",
+              "score": 3,
+              "weight": 10,
+              "feedback": ""
+            }
+          ],
+          "overall": 48
+        },
+        "narrative_len": 1012
+      },
+      {
+        "label": "repro:mdd:2",
+        "create": 200,
+        "json": {
+          "sessionId": "0bba2485-b044-4f34-bad6-8c4a3df68639",
+          "diagnosis": "Major Depressive Disorder, recurrent episode, moderate",
+          "error": null,
+          "difficulty": "intermediate",
+          "presetSlug": null,
+          "templateSlug": null
+        },
+        "messages": [
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Um… tired, mostly. Kind of foggy. Work’s been… slow. I’m just having a hard time getting going in the mornings."
+          },
+          {
+            "status": 200,
+            "aiSource": "gpt",
+            "preview": "Mood is… flat. Heavy. Not really sad, just kind of grey.\n\nI’m sleeping a lot. Like ten, eleven hours, and I still nap. Mornings are the worst.\n\nAppetite’s been low. I eat one real meal most days. I’ve lost, uh, like eight pounds."
+          }
+        ],
+        "end": {
+          "status": 200,
+          "reportId": "04b82297-53ab-4317-abad-5a77867b6087",
+          "aiSource": "gpt"
+        },
+        "scores": {
+          "items": [
+            {
+              "id": "alliance",
+              "max": 5,
+              "label": "Therapeutic alliance & empathy",
+              "score": 3,
+              "weight": 25,
+              "feedback": ""
+            },
+            {
+              "id": "assessment",
+              "max": 5,
+              "label": "Clinical assessment & exploration",
+              "score": 3,
+              "weight": 25,
+              "feedback": ""
+            },
+            {
+              "id": "interventions",
+              "max": 5,
+              "label": "Appropriate interventions",
+              "score": 2,
+              "weight": 20,
+              "feedback": ""
+            },
+            {
+              "id": "safety",
+              "max": 5,
+              "label": "Safety / risk handling",
+              "score": 1,
+              "weight": 20,
+              "feedback": ""
+            },
+            {
+              "id": "structure",
+              "max": 5,
+              "label": "Session structure & time use",
+              "score": 3,
+              "weight": 10,
+              "feedback": ""
+            }
+          ],
+          "overall": 48
+        },
+        "narrative_len": 810
+      }
+    ],
+    "repro_overalls": [
+      48,
+      48
+    ],
+    "repro_delta": 0,
+    "prod_still_fails": {
+      "complex_ptsd": {
+        "status": 400,
+        "error": "Missing DSM-5 code for complex-ptsd"
+      },
+      "consultant_preset": {
+        "status": 400,
+        "error": "Invalid instructor preset: Unknown target learner: consultant_psychiatrist"
+      }
+    },
+    "admin_learner_competencies_status": 200
+  },
+  "findings_open": [
+    {
+      "id": "W2-H1",
+      "sev": "High",
+      "title": "complex-ptsd session create blocked — DSM-5 required though ICD-11-only"
+    },
+    {
+      "id": "W2-H2",
+      "sev": "High",
+      "title": "complex-formulation-consultant-en rejected — unknown target_learner consultant_psychiatrist"
+    },
+    {
+      "id": "W2-H3",
+      "sev": "High",
+      "title": "bipolar-mania conversational phenotype mismatches manic episode (depressive overlay)"
+    },
+    {
+      "id": "W2-H4",
+      "sev": "High",
+      "title": "schizophrenia conversational phenotype weak / depressive persona overlay"
+    }
+  ],
+  "fixes_prepared_not_deployed": [
+    "W2-H1 validateDsmIcd ICD-11-only allow",
+    "W2-H2 TARGET_LEARNERS + consultant_psychiatrist"
+  ],
+  "repro_delta": 0,
+  "repro_overalls": [
+    48,
+    48
+  ]
+}

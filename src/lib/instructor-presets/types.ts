@@ -16,6 +16,7 @@ import type {
 export type TargetLearner =
   | "medical_student"
   | "psychiatry_resident"
+  | "consultant_psychiatrist"
   | "psychologist"
   | "clinical_psychologist"
   | "counselor"
@@ -119,6 +120,7 @@ export const LEARNING_OBJECTIVES: LearningObjectiveKey[] = [
 export const TARGET_LEARNERS: TargetLearner[] = [
   "medical_student",
   "psychiatry_resident",
+  "consultant_psychiatrist",
   "psychologist",
   "clinical_psychologist",
   "counselor",

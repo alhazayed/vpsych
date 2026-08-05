@@ -134,11 +134,13 @@ export function validateComorbidities(
 
 export function validateDsmIcd(disorder: DisorderRow): CaseValidationIssue[] {
   const out: CaseValidationIssue[] = [];
-  if (!disorder.dsm5_code) {
-    out.push(issue("dsm5_missing", `Missing DSM-5 code for ${disorder.slug}`, "dsm5_code"));
-  }
+  // ICD-11 is required. DSM-5 may be omitted for ICD-11-only constructs
+  // (e.g. Complex PTSD / 6B41) that are active in the disorder catalog.
   if (!disorder.icd11_code) {
     out.push(issue("icd11_missing", `Missing ICD-11 code for ${disorder.slug}`, "icd11_code"));
+  }
+  if (!disorder.dsm5_code && !disorder.icd11_code) {
+    out.push(issue("dsm5_missing", `Missing DSM-5 code for ${disorder.slug}`, "dsm5_code"));
   }
   return out;
 }
