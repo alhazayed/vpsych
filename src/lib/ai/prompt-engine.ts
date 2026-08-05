@@ -8,7 +8,7 @@ export type PromptSessionContext = {
   locale: string;
 };
 
-/** Optional Mission 20 runtime fidelity context (alliance, speech profile). */
+/** Optional Mission 20/21 runtime fidelity context. */
 export type PromptFidelityContext = {
   /** Preformatted clinical speech profile block for Module 1. */
   speech_profile_block?: string;
@@ -18,6 +18,11 @@ export type PromptFidelityContext = {
   speech_behavior_cue?: string;
   /** Educational openings the patient should leave for the learner. */
   educational_openings?: string;
+  /**
+   * Mission 21 — Patient Mind Engine expression directive.
+   * LLM must express this psychology; must not invent contradictory state.
+   */
+  pme_expression_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -112,8 +117,9 @@ export function renderPromptTemplate(
 }
 
 const SYSTEM_PROMPT_TEMPLATE = `════════════════════════════════════════════════════════════════
-VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v3 (HCTF / multilingual)
+VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v4 (PME + HCTF / multilingual)
 Assembled per session. Modules are concatenated in this order.
+Patient Mind Engine owns psychology; LLM is expression only.
 ════════════════════════════════════════════════════════════════
 
 ──────────────────────────────────────────────
@@ -175,6 +181,8 @@ Therapeutic reactivity (alliance):
 
 Educational openings (leave room for the learner — do not teach them):
 {{fidelity.educational_openings}}
+
+{{fidelity.pme_expression_block}}
 
 SYNDROME AUTHORITY (Module 1 overrides Module 2 current-state conflicts):
 - Module 1 is the sole authority for THIS session's mood polarity, sleep need,
@@ -333,6 +341,9 @@ function fidelityScope(input: PromptAssemblyInput): PromptFidelityContext {
       "Speech/behaviour consistent with presentation; do not caricature.",
     educational_openings:
       input.fidelity?.educational_openings?.trim() || DEFAULT_EDU_OPENINGS,
+    pme_expression_block:
+      input.fidelity?.pme_expression_block?.trim() ||
+      "MODULE PME — Patient Mind Engine not yet loaded for this turn; stay guarded, express Module 1 only, do not invent sudden trust or disclosure.",
   };
 }
 

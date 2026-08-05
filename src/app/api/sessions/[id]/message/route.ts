@@ -4,6 +4,13 @@ import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { estimateTherapeuticAlliance } from "@/lib/conversation-fidelity";
+import { isCaseSnapshot } from "@/lib/case-engine/persist";
+import {
+  createInitialMindState,
+  loadPatientMind,
+  processTherapistTurn,
+  savePatientMind,
+} from "@/lib/pme";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -84,10 +91,33 @@ export async function POST(request: Request, { params }: Params) {
   ];
   const alliance = estimateTherapeuticAlliance(therapistTurns);
 
+  // Mission 21 — Patient Mind Engine owns psychology; LLM expresses it.
+  const caseInstanceId = typed.case_instance_id ?? null;
+  const snap = isCaseSnapshot(typed.clinical_snapshot)
+    ? typed.clinical_snapshot
+    : null;
+  const loaded = await loadPatientMind(supabase, caseInstanceId);
+  let mind =
+    loaded.mind ??
+    createInitialMindState({
+      snapshot: snap,
+      caseInstanceId,
+      therapistId: user.id,
+      learnerId: typed.learner_profile_id ?? user.id,
+    });
+  const turnIndex =
+    ((priorHistory ?? []) as Pick<SessionMessage, "role" | "content">[]).filter(
+      (m) => m.role === "user",
+    ).length + 1;
+  const pmeTurn = processTherapistTurn(mind, message, { turnIndex });
+  mind = pmeTurn.mind;
+  void savePatientMind(supabase, caseInstanceId, mind, loaded.raw);
+
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
     alliance,
+    pmeExpressionBlock: pmeTurn.expressionBlock,
   });
 
   const { data: userMsg, error: userMsgError } = await supabase

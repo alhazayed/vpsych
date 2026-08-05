@@ -35,6 +35,12 @@ import {
   recordHcfiHistory,
   HCFI_VERSION,
 } from "@/lib/hcfi";
+import {
+  computePatientMindFidelityIndex,
+  recordPmfiHistory,
+  PMFI_VERSION,
+} from "@/lib/pmfi";
+import { createInitialMindState, processTherapistTurn } from "@/lib/pme";
 import { estimateTherapeuticAlliance } from "@/lib/conversation-fidelity";
 import {
   computeVPsychQualityIndex,
@@ -259,6 +265,34 @@ export function buildLedgerFromAssessment(
     locale,
     computed_at: hcfi.versions.computed_at,
     hcfi,
+  });
+
+  // Replay therapist turns through PME for sealed PMFI (expression-layer fidelity)
+  let mindForPmfi = createInitialMindState({
+    snapshot: snap,
+    caseInstanceId: snap?.case_instance_id ?? opts.sessionId,
+    therapistId: opts.learnerId,
+    learnerId: opts.learnerId,
+    disorderSlug: diagnosisSlug,
+  });
+  let ti = 0;
+  for (const msg of opts.messages) {
+    if (msg.role !== "user") continue;
+    ti += 1;
+    mindForPmfi = processTherapistTurn(mindForPmfi, msg.content, {
+      turnIndex: ti,
+    }).mind;
+  }
+  const pmfi = computePatientMindFidelityIndex({
+    mind: mindForPmfi,
+    expressionLayerWired: true,
+    persisted: true,
+  });
+  recordPmfiHistory({
+    overall: pmfi.overall,
+    disorder_slug: diagnosisSlug ?? "unknown",
+    computed_at: pmfi.versions.computed_at,
+    pmfi,
   });
 
   const weightSet = createDefaultWeightSet();
@@ -527,6 +561,20 @@ export function buildLedgerFromAssessment(
         evidence: {
           recommendations: hcfi.recommendations,
           alliance_band: hcfi.evidence.alliance_band,
+        },
+      },
+      pmfi: {
+        overall: pmfi.overall,
+        version: PMFI_VERSION,
+        ci: {
+          lower: pmfi.confidence_interval.lower,
+          upper: pmfi.confidence_interval.upper,
+        },
+        confidence: 74,
+        breakdown: pmfi.subscores,
+        evidence: {
+          recommendations: pmfi.recommendations,
+          phase: pmfi.evidence.phase,
         },
       },
       vqi: {

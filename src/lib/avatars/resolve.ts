@@ -27,6 +27,8 @@ export type ResolveAvatarOptions = {
   caseSnapshot?: CaseInstanceSnapshot | null;
   /** Live alliance estimate for therapeutic reactivity (Mission 20). */
   alliance?: AllianceEstimate | null;
+  /** Mission 21 — PME expression block (psychology owned outside the LLM). */
+  pmeExpressionBlock?: string | null;
 };
 
 /** Avatar slug → default disorder slug when no case override is applied. */
@@ -316,6 +318,7 @@ export function resolveAvatar(
       educational_openings: snapshot?.clinical_teaching
         ? `Session goals to leave room for (do not teach): ${(snapshot.clinical_core?.session_goals ?? []).slice(0, 4).join("; ")}`
         : undefined,
+      pme_expression_block: options?.pmeExpressionBlock?.trim() || undefined,
     };
 
     const assembly = {

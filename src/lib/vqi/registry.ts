@@ -8,6 +8,7 @@ import { AVI_VERSION } from "@/lib/avi/weights";
 import { ALE_VERSION } from "@/lib/ale/weights";
 import { RRS_VERSION } from "@/lib/rrs/weights";
 import { HCFI_VERSION } from "@/lib/hcfi/weights";
+import { PMFI_VERSION } from "@/lib/pmfi/weights";
 import type { VqiMetricId } from "@/lib/vqi/weights";
 
 export type MetricDefinition = {
@@ -73,6 +74,15 @@ const REGISTRY: MetricDefinition[] = [
     description:
       "How indistinguishable AI patient dialogue is from a skilled standardized patient",
     version: HCFI_VERSION,
+    domain: "clinical",
+    enabled: true,
+  },
+  {
+    id: "PMFI",
+    name: "Patient Mind Fidelity Index",
+    description:
+      "Whether patient psychology is owned by the Patient Mind Engine with consistent dynamics",
+    version: PMFI_VERSION,
     domain: "clinical",
     enabled: true,
   },

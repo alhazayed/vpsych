@@ -120,6 +120,7 @@ export type QualityLedgerEntry = {
   ale: number | null;
   rrs: number | null;
   hcfi: number | null;
+  pmfi: number | null;
   scientific_confidence: number | null;
   educational_confidence: number | null;
   clinical_confidence: number | null;
@@ -199,6 +200,7 @@ export type QualityLedgerBuildInput = {
     ale?: { overall: number; version?: string; ci?: { lower: number; upper: number }; confidence?: number; breakdown?: unknown[]; evidence?: Record<string, unknown> };
     rrs?: { overall: number; version?: string; ci?: { lower: number; upper: number }; confidence?: number; breakdown?: unknown[]; evidence?: Record<string, unknown> };
     hcfi?: { overall: number; version?: string; ci?: { lower: number; upper: number }; confidence?: number; breakdown?: unknown[]; evidence?: Record<string, unknown> };
+    pmfi?: { overall: number; version?: string; ci?: { lower: number; upper: number }; confidence?: number; breakdown?: unknown[]; evidence?: Record<string, unknown> };
     vqi?: {
       overall: number;
       version?: string;

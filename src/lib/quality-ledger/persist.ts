@@ -144,6 +144,7 @@ export async function appendCorrectionLedger(
       ale: previous.ale != null ? { overall: previous.ale } : undefined,
       rrs: previous.rrs != null ? { overall: previous.rrs } : undefined,
       hcfi: previous.hcfi != null ? { overall: previous.hcfi } : undefined,
+      pmfi: previous.pmfi != null ? { overall: previous.pmfi } : undefined,
     },
   });
   return persistQualityLedger(supabase, next);

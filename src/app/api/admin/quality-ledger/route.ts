@@ -77,6 +77,7 @@ function mapDbRow(row: Record<string, unknown>): QualityLedgerEntry {
     ale: row.ale != null ? Number(row.ale) : null,
     rrs: row.rrs != null ? Number(row.rrs) : null,
     hcfi: row.hcfi != null ? Number(row.hcfi) : null,
+    pmfi: row.pmfi != null ? Number(row.pmfi) : null,
     scientific_confidence:
       row.scientific_confidence != null
         ? Number(row.scientific_confidence)

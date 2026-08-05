@@ -303,6 +303,7 @@ export function exportAnonymousResearchDataset(
     ale: e.ale,
     rrs: e.rrs,
     hcfi: e.hcfi,
+    pmfi: e.pmfi,
     scientific_confidence: e.scientific_confidence,
     educational_confidence: e.educational_confidence,
     clinical_confidence: e.clinical_confidence,

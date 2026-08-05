@@ -72,6 +72,7 @@ export function buildQualityLedgerEntry(
   const ale = metricRow("ALE", input.metrics.ale, weightById.ALE ?? null);
   const rrs = metricRow("RRS", input.metrics.rrs, weightById.RRS ?? null);
   const hcfi = metricRow("HCFI", input.metrics.hcfi, null);
+  const pmfi = metricRow("PMFI", input.metrics.pmfi, null);
   const vqiRow = input.metrics.vqi
     ? metricRow(
         "VQI",
@@ -86,7 +87,7 @@ export function buildQualityLedgerEntry(
         1,
       )
     : null;
-  for (const row of [cfi, eri, avi, ale, rrs, hcfi, vqiRow]) {
+  for (const row of [cfi, eri, avi, ale, rrs, hcfi, pmfi, vqiRow]) {
     if (row) scores.push(row);
   }
 
@@ -195,6 +196,7 @@ export function buildQualityLedgerEntry(
     ale: input.metrics.ale?.overall ?? null,
     rrs: input.metrics.rrs?.overall ?? null,
     hcfi: input.metrics.hcfi?.overall ?? null,
+    pmfi: input.metrics.pmfi?.overall ?? null,
     scientific_confidence: conf?.scientific ?? null,
     educational_confidence: conf?.educational ?? null,
     clinical_confidence: conf?.clinical ?? null,
@@ -309,6 +311,7 @@ export function ledgerEntryToRpcPayload(
     ale: entry.ale,
     rrs: entry.rrs,
     hcfi: entry.hcfi,
+    pmfi: entry.pmfi,
     scientific_confidence: entry.scientific_confidence,
     educational_confidence: entry.educational_confidence,
     clinical_confidence: entry.clinical_confidence,
