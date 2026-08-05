@@ -181,6 +181,10 @@ export function VoiceSession({
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
+        disorderSlug: session.clinical_snapshot?.primary_diagnosis?.slug,
+        disorderCategory:
+          session.clinical_snapshot?.primary_diagnosis?.category,
+        speechPace: avatar.personality?.speech?.pace,
         audioRef,
         handlers: {
           onstart: () => setSpeaking(true),
@@ -191,10 +195,13 @@ export function VoiceSession({
     },
     [
       avatar.id,
+      avatar.personality?.speech?.pace,
       avatar.voice_id,
       avatar.voice_id_ar,
       avatar.voice_profile_id,
       locale,
+      session.clinical_snapshot?.primary_diagnosis?.category,
+      session.clinical_snapshot?.primary_diagnosis?.slug,
       stopPlayback,
       voiceEnabled,
     ],
@@ -264,6 +271,10 @@ export function VoiceSession({
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
+        disorderSlug: session.clinical_snapshot?.primary_diagnosis?.slug,
+        disorderCategory:
+          session.clinical_snapshot?.primary_diagnosis?.category,
+        speechPace: avatar.personality?.speech?.pace,
         audioRef,
         onTranscript: (transcript) => setDraft(transcript),
         onMessages: (userMessage, assistantMessage) => {

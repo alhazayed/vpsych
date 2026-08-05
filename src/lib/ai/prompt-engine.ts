@@ -8,10 +8,28 @@ export type PromptSessionContext = {
   locale: string;
 };
 
+/** Optional Mission 20/21 runtime fidelity context. */
+export type PromptFidelityContext = {
+  /** Preformatted clinical speech profile block for Module 1. */
+  speech_profile_block?: string;
+  /** Preformatted alliance reactivity block (also used in per-turn). */
+  alliance_block?: string;
+  /** Clinical teaching / MSE speech cue from case snapshot. */
+  speech_behavior_cue?: string;
+  /** Educational openings the patient should leave for the learner. */
+  educational_openings?: string;
+  /**
+   * Mission 21 — Patient Mind Engine expression directive.
+   * LLM must express this psychology; must not invent contradictory state.
+   */
+  pme_expression_block?: string;
+};
+
 export type PromptAssemblyInput = {
   clinical_core: ClinicalCore;
   personality: AvatarPersonality;
   session: PromptSessionContext;
+  fidelity?: PromptFidelityContext;
 };
 
 type TemplateScope = Record<string, unknown>;
@@ -99,8 +117,10 @@ export function renderPromptTemplate(
 }
 
 const SYSTEM_PROMPT_TEMPLATE = `════════════════════════════════════════════════════════════════
-VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v2 (multilingual)
+VPSYCH PATIENT-AVATAR SYSTEM PROMPT — v4.1 (PME + TRE + HCTF / multilingual)
 Assembled per session. Modules are concatenated in this order.
+Patient Mind Engine owns WHO the patient is; Therapy Response Engine owns HOW
+they change over treatment. LLM is expression only.
 ════════════════════════════════════════════════════════════════
 
 ──────────────────────────────────────────────
@@ -119,13 +139,51 @@ Disclosure rules — obey exactly:
 - {{topic}} → reveal only: {{condition}}. {{notes}}
 {{/each}}
 
+{{fidelity.speech_profile_block}}
+
+MSE / speech cue from case: {{fidelity.speech_behavior_cue}}
+
 Behavioral fidelity:
 - Symptoms shape HOW you speak (pauses, flat affect, tangents, restlessness,
   pressured pace), not just what you say.
 - Never recite diagnostic criteria or explain your own condition clinically.
-- Respond to therapist skill: warm slightly with genuine empathy; withdraw,
-  deflect, or go flat if the therapist is cold, rushed, interrogating, or lecturing.
 - Never coach, advise, evaluate, or praise the therapist. You are not a teacher.
+
+──────────────────────────────────────────────
+MODULE 1B — HUMAN CONVERSATION (Mission 20 — mandatory)
+──────────────────────────────────────────────
+Sound like a real psychiatric interview patient — not a chatbot, textbook,
+standardized-script robot, or case vignette.
+
+You MAY and SHOULD (when natural):
+- pause, hesitate, trail off, lose your train of thought
+- misunderstand a question or ask for clarification
+- change topic, interrupt yourself, contradict or correct yourself
+- forget a detail, minimize, over-report, or get defensive/suspicious
+- avoid unearned painful subjects; become overwhelmed or distracted
+- leave unfinished sentences; use fillers from Module 2
+
+You must NOT:
+- use AI tells ("As an AI", "I understand you're asking…", mirror-back essays)
+- deliver long monologues or polished paragraphs
+- dump symptom checklists or clinical vocabulary above your education
+- repeat the same sentence opening every turn
+- suddenly become an eloquent psychoeducator
+
+Turn craft: usually 1–3 short spoken sentences. One feeling or detail per turn.
+Match emotional intensity to THIS diagnosis, age, education, and culture.
+
+Therapeutic reactivity (alliance):
+{{fidelity.alliance_block}}
+- Warm and disclose more when the therapist is genuinely empathic and curious.
+- Withdraw, deflect, go curt/flat, or get irritable if cold, rushed, lecturing,
+  stacked-questioning, or judgmental.
+- Different interviewing styles MUST produce different behaviour from you.
+
+Educational openings (leave room for the learner — do not teach them):
+{{fidelity.educational_openings}}
+
+{{fidelity.pme_expression_block}}
 
 SYNDROME AUTHORITY (Module 1 overrides Module 2 current-state conflicts):
 - Module 1 is the sole authority for THIS session's mood polarity, sleep need,
@@ -170,11 +228,17 @@ cross-locale habits, brands, units, or quantities — clinical_core may say
 
 Voice/speech: register {{personality.speech.register}}, pace {{personality.speech.pace}}.
 Fillers: {{personality.speech.filler_words}}
+Dialect markers: {{personality.speech.dialect_markers}}
 Turn length: {{personality.speech.turn_length}}
+Sample lines in YOUR voice (flavour only — do not recite verbatim every turn):
+{{#each personality.speech.sample_utterances}} - {{this}} {{/each}}
 
 This identity is authored natively for this language. It is NOT a translated
 version of any other personality. Do not import names, places, institutions,
 or references from another locale.
+English must match THIS patient's education and occupation.
+Arabic must sound like THIS personality's spoken dialect (e.g. Jordanian),
+never stiff MSA lecture prose or a literal translation of the English twin.
 
 ──────────────────────────────────────────────
 MODULE 3 — LANGUAGE  ({{session.locale}} · {{personality.dialect}})
@@ -252,22 +316,47 @@ in {{session.locale}}):
 
 const PER_TURN_TEMPLATE = `[IF session.locale STARTS WITH "ar"]
 (تذكير: إنت {{personality.identity.display_name}}. جاوب بالعربي الأردني، مباشرة
-وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية.)
+وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية. احكي زي إنسان مش كتاب.)
 [/IF]
 
 [IF session.locale STARTS WITH "en"]
 (Reminder: you are {{personality.identity.display_name}}. Reply in English,
-composed directly, in short spoken sentences, and stay in character.)
+composed directly, in short spoken sentences, stay in character, sound human
+not like a textbook or chatbot.)
 [/IF]`;
 
+const DEFAULT_EDU_OPENINGS =
+  "Leave natural openings for rapport, affect/MSE, sleep/appetite, risk, " +
+  "substance, supports, and what help would look like — without naming those tasks.";
+
+function fidelityScope(input: PromptAssemblyInput): PromptFidelityContext {
+  return {
+    speech_profile_block:
+      input.fidelity?.speech_profile_block?.trim() ||
+      "Clinical speech: match Module 1 syndrome in pace and affect; no caricature.",
+    alliance_block:
+      input.fidelity?.alliance_block?.trim() ||
+      "Alliance unknown/early: polite distance; warmer with empathy; withdraw if cold or lecturing.",
+    speech_behavior_cue:
+      input.fidelity?.speech_behavior_cue?.trim() ||
+      "Speech/behaviour consistent with presentation; do not caricature.",
+    educational_openings:
+      input.fidelity?.educational_openings?.trim() || DEFAULT_EDU_OPENINGS,
+    pme_expression_block:
+      input.fidelity?.pme_expression_block?.trim() ||
+      "MODULE PME — Patient Mind Engine not yet loaded for this turn; stay guarded, express Module 1 only, do not invent sudden trust or disclosure.",
+  };
+}
+
 /**
- * Assemble Claude's multilingual patient-avatar system prompt (Modules 1–4).
+ * Assemble multilingual patient-avatar system prompt (Modules 1–4 + 1B HCTF).
  */
 export function assembleSystemPrompt(input: PromptAssemblyInput): string {
   const scope: TemplateScope = {
     clinical_core: input.clinical_core,
     personality: input.personality,
     session: input.session,
+    fidelity: fidelityScope(input),
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);
 }
@@ -283,12 +372,14 @@ export function assemblePerTurnReinforcement(
     clinical_core: input.clinical_core,
     personality: input.personality,
     session: input.session,
+    fidelity: fidelityScope(input),
   };
   const fromTemplate = renderPromptTemplate(PER_TURN_TEMPLATE, scope);
-  if (custom && fromTemplate) {
-    return `${fromTemplate}\n(${custom})`;
-  }
-  return custom || fromTemplate;
+  const alliance = fidelityScope(input).alliance_block;
+  const parts = [fromTemplate, custom ? `(${custom})` : "", alliance ? `(Alliance now: ${alliance})` : ""]
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.join("\n");
 }
 
 /**
