@@ -52,7 +52,7 @@ wave_status:
     rerun_scope: [mission_1, mission_2, mission_3, mission_4, mission_5]
     last_attempt: "2026-08-05"
     last_decision: RDL-008
-    process_adopted: [RDL-009]  # Credential Verification Gate
+    process_adopted: [RDL-009, RDL-010]  # Credential Gate (every release) + Release Governance
     rerun_after:
       - "Reset Auth passwords; sync vault; wire therapist email local=audit.therapist and admin email local=audit.admin"
       - "Credential Verification Gate PASS (manual therapist + admin login on https://vpsych.vercel.app)"
