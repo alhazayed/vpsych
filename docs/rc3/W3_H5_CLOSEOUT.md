@@ -6,62 +6,63 @@
 
 ---
 
-## 1. Configuration verification (no assumptions)
+## Production under test (post key replace)
 
-| Check | Result | Evidence |
-|---|---|---|
-| `ELEVENLABS_API_KEY` exists on Vercel | **YES** | Composio `VERCEL_FILTER_PROJECT_ENVS` — env id `FzFPxs4DW1KTxuU3`, targets `production` + `preview`, type **`sensitive`** |
-| Value begins with `sk_` | **NO (inferred)** | Cannot decrypt `sensitive` values via API (`decrypted: false`, empty value). Runtime: authenticated `POST /api/voice/tts` → **503 `TTS_CONFIG`**, which is thrown only when `isValidElevenLabsApiKey` fails (`/^sk_[A-Za-z0-9]+/`). |
-| Value not quoted | **Unknown (sensitive)** | App strips wrapping quotes before validation; still fails → raw value is not a valid `sk_…` key even after strip. |
-| Value not truncated | **Unknown (sensitive)** | Same — fails prefix check regardless of length. |
-| Belongs to intended ElevenLabs account | **Cannot verify** | Sensitive; no decrypted value. Prior prod logs on `dpl_8Q7YGEH…`: ElevenLabs `invalid_api_key` / `API key must start with 'sk_'`. |
-
-### Authenticated production probe (this closeout)
-
-```text
-POST https://vpsych.vercel.app/api/voice/tts
-  Cookie: sb-*-auth-token (audit admin + audit therapist)
-  Body: {"text":"Hello Wave3 H5.","locale":"en-US"}
-→ HTTP 503 {"error":"Text-to-speech failed","code":"TTS_CONFIG"}
-```
-
-Conclusion: Production secret is **present but invalid** for current ElevenLabs API key format.
+| Item | Value |
+|---|---|
+| Deploy | `dpl_DpdpoyEksVeSZvu1wx1mYngeX2jh` **READY** (Vercel `action=redeploy`) |
+| SHA | `d4c4fae` (Wave 3 remediation ancestor `1e44dce` / #131) |
+| Alias | `vpsych.vercel.app` |
 
 ---
 
-## 2. Release Manager instructions (required)
+## 1. Configuration verification
 
-Do **not** change application code. Do **not** merge unrelated PRs.
-
-1. Open [Vercel → vpsych → Environment Variables](https://vercel.com/alhazayed-1540s-projects/vpsych/settings/environment-variables).
-2. Locate **`ELEVENLABS_API_KEY`** (Production + Preview), env id `FzFPxs4DW1KTxuU3`.
-3. Replace the value with a **current** ElevenLabs API key from the intended workspace:
-   - Must start with **`sk_`**
-   - No surrounding `'` or `"`
-   - Full key, not truncated
-4. Save for **Production** (and Preview if desired).
-5. **Redeploy Production** from `main` (Deployments → Redeploy, or Promote) so serverless picks up the new secret. Env edits alone do not update the live deployment.
-6. Reply in the agent thread when done.
-
-After that, the closeout agent will:
-
-- Re-probe authenticated `POST /api/voice/tts` → expect **200** + `audio/mpeg`
-- Run EN/AR voice smoke + session E2E
-- Run independent H5-only certification
-- Recommend **✅ WAVE 3 PASSED** / unlock Wave 4 if evidence is clean
+| Check | Result |
+|---|---|
+| `ELEVENLABS_API_KEY` exists | Yes (Vercel env id `FzFPxs4DW1KTxuU3`, Production+Preview, type `sensitive`) |
+| Runtime validity after RM replace | **PASS** — authenticated TTS no longer returns `TTS_CONFIG` |
+| Prior failure | Auth TTS → **503 `TTS_CONFIG`** (key missing/`sk_` invalid) |
 
 ---
 
-## 3. Status
+## 2. Authenticated TTS smoke (required)
+
+All probes used Supabase password-grant session cookies (`sb-*-auth-token`).
+
+| Case | Status | Content-Type | Bytes |
+|---|---|---|---|
+| therapist EN `en-US` | **200** | `audio/mpeg` | 33899 |
+| therapist AR `ar-JO` | **200** | `audio/mpeg` | 33481 |
+| admin EN `en-US` | **200** | `audio/mpeg` | 33899 |
+| admin AR `ar-JO` | **200** | `audio/mpeg` | 33481 |
+
+✓ Authenticated · ✓ HTTP 200 · ✓ `audio/mpeg` · ✓ speech generated
+
+---
+
+## 3. End-to-end voice validation
+
+Therapist session lifecycle on production: create → message → TTS patient reply → end.
+
+| Scenario | Avatar | Locale | Disorder | Session | Message | TTS | End |
+|---|---|---|---|---|---|---|---|
+| jordan-gad-en | jordan-hale | en-US | GAD (default) | 200 | 200 + reply | 200 / 452276 B | 200 |
+| maya-mdd-en | maya-chen | en-US | MDD (default) | 200 | 200 + reply | 200 / 247894 B | 200 |
+| jordan-ptsd-en | jordan-hale | en-US | ptsd override | 200 | 200 + reply | 200 / 408391 B | 200 |
+| maya-ar | maya-chen | ar-JO | MDD (default) | 200 | 200 + Arabic reply | 200 / 103280 B | 200 |
+
+✓ Avatar speech · ✓ English · ✓ Arabic · ✓ Multiple disorders · ✓ Therapist session · ✓ Session completion
+
+---
+
+## 4. Status
 
 | Gate | Status |
 |---|---|
 | Config verified | Done |
-| Secret corrected | **BLOCKED — waiting on Release Manager** |
-| Redeploy | Pending |
-| TTS smoke 200 audio/mpeg | Pending |
-| Voice E2E | Pending |
-| H5-only cert | Pending |
-| Wave 3 PASS | **Not yet** |
-
-**Wave 4 remains locked until W3-H5 closes with production evidence.**
+| Secret corrected + redeploy | Done (`dpl_Dpdpoy…`) |
+| TTS smoke 200 audio/mpeg | **PASS** |
+| Voice E2E | **PASS** |
+| W3-H5 | **CLOSED** |
+| Wave 3 | See `docs/rc3/W3_H5_CERT.md` |
