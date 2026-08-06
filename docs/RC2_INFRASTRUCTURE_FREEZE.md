@@ -1,6 +1,8 @@
 # RC2 — Infrastructure Freeze (checklist + evidence)
 
-**Status:** IN PROGRESS (blocked on merge of #100 for production code parity)  
+**Status:** PARTIAL — #100 deployed to production (`52a7610` / `dpl_2mBqyfz…`); migration parity still open via PR #103
+
+**RC3:** Started 2026-08-04 — see `docs/RC3_PRODUCTION_VALIDATION.md` (Wave 1 **FAIL** on migration drift + auth E2E block).  
 **Rule:** No feature work. Ops and synchronization only.  
 **Owner:** alhazayed (Aladdin Zayed)
 
