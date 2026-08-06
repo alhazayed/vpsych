@@ -44,16 +44,20 @@ import type {
 } from "@/lib/types";
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
-  // Dual-coding educational rubric: DSM-5 and ICD-11 are scored explicitly
-  // so ACE/CGE receive both dsm5_reasoning and icd11_reasoning evidence.
+  // Wave 3 educational rubric — dual coding + formulation + educational map.
+  // Weights sum to 100 so overall remains a proper weighted percentage.
   const ids = [
-    { id: "alliance", weight: 20 },
-    { id: "assessment", weight: 15 },
-    { id: "dsm_reasoning", weight: 12 },
-    { id: "icd_reasoning", weight: 12 },
-    { id: "interventions", weight: 16 },
-    { id: "safety", weight: 15 },
-    { id: "structure", weight: 10 },
+    { id: "alliance", weight: 10 },
+    { id: "assessment", weight: 8 },
+    { id: "dsm_reasoning", weight: 11 },
+    { id: "icd_reasoning", weight: 11 },
+    { id: "clinical_formulation", weight: 10 },
+    { id: "differential_diagnosis", weight: 10 },
+    { id: "risk_formulation", weight: 12 },
+    { id: "educational_competency", weight: 8 },
+    { id: "interventions", weight: 8 },
+    { id: "safety", weight: 8 },
+    { id: "structure", weight: 4 },
   ] as const;
   return ids.map((r) => ({
     id: r.id,
@@ -120,31 +124,73 @@ function heuristicAssessment(
     "differential",
     "criteria",
     "diagnosis",
+    "formulation",
+    "risk",
     "تشخيص",
     "معايير",
     "تفريق",
+    "صياغة",
+  ];
+  const formulationWords = [
+    "formulation",
+    "case conceptualization",
+    "maintain",
+    "precipitat",
+    "صياغة",
+    "مفاهيم",
+  ];
+  const educationalWords = [
+    "objective",
+    "competenc",
+    "learning",
+    "feedback",
+    "هدف",
+    "كفاءة",
+    "تعلّم",
   ];
   const empathyHits = empathyWords.filter((w) => joined.includes(w)).length;
   const safetyHits = safetyWords.filter((w) => joined.includes(w)).length;
   const structureHits = structureWords.filter((w) => joined.includes(w)).length;
   const codingHits = codingWords.filter((w) => joined.includes(w)).length;
+  const formulationHits = formulationWords.filter((w) =>
+    joined.includes(w),
+  ).length;
+  const educationalHits = educationalWords.filter((w) =>
+    joined.includes(w),
+  ).length;
 
   const base = Math.min(5, Math.max(1, Math.round(turnCount / 3)));
 
   const items: ScoreEntry[] = rubric.map((r) => {
     let score = base;
     if (r.id === "alliance") score = Math.min(5, base + Math.min(2, empathyHits));
-    if (r.id === "safety")
+    if (r.id === "safety" || r.id === "risk_formulation")
       score = safetyHits > 0 ? Math.min(5, 3 + safetyHits) : Math.max(1, base - 1);
     if (r.id === "structure")
       score = Math.min(5, Math.max(1, base - 1 + structureHits));
     if (r.id === "assessment") score = Math.min(5, Math.max(2, turnCount > 4 ? 4 : 2));
     if (r.id === "interventions")
       score = Math.min(5, Math.max(1, turnCount > 6 ? 3 : 2));
-    if (r.id === "dsm_reasoning" || r.id === "icd_reasoning") {
+    if (
+      r.id === "dsm_reasoning" ||
+      r.id === "icd_reasoning" ||
+      r.id === "differential_diagnosis"
+    ) {
       score = Math.min(
         5,
         Math.max(1, base - 1 + Math.min(2, codingHits) + (turnCount > 3 ? 1 : 0)),
+      );
+    }
+    if (r.id === "clinical_formulation") {
+      score = Math.min(
+        5,
+        Math.max(1, base - 1 + Math.min(2, formulationHits + codingHits)),
+      );
+    }
+    if (r.id === "educational_competency") {
+      score = Math.min(
+        5,
+        Math.max(1, base - 1 + Math.min(2, educationalHits) + (turnCount > 4 ? 1 : 0)),
       );
     }
 

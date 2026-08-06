@@ -119,10 +119,17 @@ describe("assessSession parse failover", () => {
       language: "en",
     });
     expect(result.aiSource).toBe("gpt");
-    // Default dual-coding rubric: alliance, assessment, dsm, icd, interventions, safety, structure
-    expect(result.scores.items).toHaveLength(7);
+    // Default Wave-3 educational rubric (11 dimensions, weights sum 100)
+    expect(result.scores.items).toHaveLength(11);
     expect(result.scores.items.map((i) => i.id)).toEqual(
-      expect.arrayContaining(["dsm_reasoning", "icd_reasoning"]),
+      expect.arrayContaining([
+        "dsm_reasoning",
+        "icd_reasoning",
+        "clinical_formulation",
+        "differential_diagnosis",
+        "risk_formulation",
+        "educational_competency",
+      ]),
     );
   });
 });

@@ -27,15 +27,22 @@ describe("elevenLabsService", () => {
     });
   });
 
+  it("throws TTS_CONFIG when API key lacks sk_ prefix (W3-H5)", async () => {
+    process.env.ELEVENLABS_API_KEY = "xi-old-or-placeholder";
+    await expect(
+      elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
+    ).rejects.toMatchObject({ code: "TTS_CONFIG", status: 503 });
+  });
+
   it("rejects empty text", async () => {
-    process.env.ELEVENLABS_API_KEY = "test-key";
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     await expect(
       elevenLabsService.synthesize({ text: "   ", locale: "en" }),
     ).rejects.toBeInstanceOf(ElevenLabsError);
   });
 
   it("streams audio and caches repeated requests", async () => {
-    process.env.ELEVENLABS_API_KEY = "test-key";
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     let fetchCount = 0;
 
     vi.stubGlobal(
@@ -81,7 +88,7 @@ describe("elevenLabsService", () => {
   });
 
   it("maps ElevenLabs HTTP failures to TTS_FAILED", async () => {
-    process.env.ELEVENLABS_API_KEY = "test-key";
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response("boom", { status: 500 })),
@@ -93,7 +100,7 @@ describe("elevenLabsService", () => {
   });
 
   it("retries with the default premade voice after paid_plan_required", async () => {
-    process.env.ELEVENLABS_API_KEY = "test-key";
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     const calls: string[] = [];
     vi.stubGlobal(
       "fetch",

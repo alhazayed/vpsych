@@ -57,19 +57,37 @@ describe("W3 educational presets — builtin catalog", () => {
     }
   });
 
-  it("generateFromPreset succeeds for medical student preset", () => {
-    const preset = findPresetBySlug("foundation-interview-medstudent-en")!;
-    const result = generateFromPreset({
-      preset,
-      persona: testPersona,
-      avatarId: "a1",
-      seed: "w3-medstudent-preset",
-    });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.assessment.snapshot.instructor_preset?.slug).toBe(
-        "foundation-interview-medstudent-en",
-      );
+  it("generateFromPreset succeeds for psychologist and counselor presets", () => {
+    for (const slug of ["cbt-psychologist-en", "mi-counselor-en"] as const) {
+      const preset = findPresetBySlug(slug)!;
+      const result = generateFromPreset({
+        preset,
+        persona: testPersona,
+        avatarId: "a1",
+        seed: `w3-${slug}`,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.assessment.snapshot.instructor_preset?.slug).toBe(slug);
+      }
+    }
+  });
+
+  it("GP generation never selects alcohol-use-disorder as comorbidity", () => {
+    const preset = findPresetBySlug("cbt-skills-gp-en")!;
+    for (let i = 0; i < 8; i++) {
+      const result = generateFromPreset({
+        preset,
+        persona: testPersona,
+        avatarId: "a1",
+        seed: `w3-gp-comorbid-${i}`,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const comorbidSlugs =
+          result.assessment.snapshot.comorbidities?.map((c) => c.slug) ?? [];
+        expect(comorbidSlugs).not.toContain("alcohol-use-disorder");
+      }
     }
   });
 });

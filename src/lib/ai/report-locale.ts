@@ -17,6 +17,10 @@ export const DEFAULT_RUBRIC_LABELS_EN: Record<string, string> = {
   assessment: "Clinical assessment & exploration",
   dsm_reasoning: "DSM-5 diagnostic reasoning",
   icd_reasoning: "ICD-11 diagnostic reasoning",
+  clinical_formulation: "Clinical formulation",
+  differential_diagnosis: "Differential diagnosis",
+  risk_formulation: "Risk formulation",
+  educational_competency: "Educational competency mapping",
   interventions: "Appropriate interventions",
   safety: "Safety / risk handling",
   structure: "Session structure & time use",
@@ -28,6 +32,10 @@ export const DEFAULT_RUBRIC_LABELS_AR: Record<string, string> = {
   assessment: "التقييم السريري والاستكشاف",
   dsm_reasoning: "التفكير التشخيصي وفق DSM-5",
   icd_reasoning: "التفكير التشخيصي وفق ICD-11",
+  clinical_formulation: "الصياغة السريرية",
+  differential_diagnosis: "التشخيص التفريقي",
+  risk_formulation: "صياغة المخاطر",
+  educational_competency: "ربط الكفاءات التعليمية",
   interventions: "التدخلات المناسبة",
   safety: "التعامل مع السلامة والمخاطر",
   structure: "بنية الجلسة واستخدام الوقت",
@@ -112,7 +120,13 @@ Return one score entry per rubric id.
 Dual-coding education — when rubric includes dsm_reasoning and/or icd_reasoning:
 - Score DSM-5 diagnostic reasoning separately from ICD-11 diagnostic reasoning.
 - Reward explicit differential work that engages both systems when the transcript supports it.
-- Do not conflate the two codes into a single generic "assessment" judgment.`;
+- Do not conflate the two codes into a single generic "assessment" judgment.
+
+Additional Wave-3 educational dimensions — when present:
+- clinical_formulation: coherent case conceptualization from transcript evidence.
+- differential_diagnosis: explicit differentials and rule-outs.
+- risk_formulation: structured risk appraisal (not only a yes/no safety word).
+- educational_competency: links interview work to stated learning objectives / competencies.`;
 }
 
 export function heuristicCopy(

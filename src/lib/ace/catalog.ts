@@ -206,10 +206,23 @@ export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
   interventions: ["cbt_skills", "treatment_planning", "psychoeducation"],
   safety: ["risk_assessment", "suicide_assessment"],
   structure: ["time_management", "documentation", "professional_communication"],
-  // Dual-coding educational competencies (W3-H3)
+  // Dual-coding + formulation educational competencies (W3-H3)
   diagnostic_accuracy: ["dsm5_reasoning", "icd11_reasoning", "differential_diagnosis"],
   dsm_reasoning: ["dsm5_reasoning", "differential_diagnosis"],
   icd_reasoning: ["icd11_reasoning", "differential_diagnosis"],
+  clinical_formulation: [
+    "psychodynamic_interviewing",
+    "treatment_planning",
+    "diagnostic_interview",
+  ],
+  differential_diagnosis: ["differential_diagnosis", "dsm5_reasoning", "icd11_reasoning"],
+  risk_formulation: ["risk_assessment", "suicide_assessment", "violence_assessment"],
+  educational_competency: [
+    "documentation",
+    "professional_communication",
+    "psychoeducation",
+    "time_management",
+  ],
   communication: ["professional_communication"],
   empathy: ["empathy"],
   therapeutic_alliance: ["therapeutic_alliance"],
