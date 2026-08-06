@@ -79,4 +79,32 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/body\.presetSlug/);
     expect(route).toMatch(/\.eq\("slug", body\.presetSlug\)/);
   });
+
+  it("keeps Therapy Room Mode optional behind a feature flag", () => {
+    const flag = readFileSync(
+      join(root, "lib/therapy-room/feature-flag.ts"),
+      "utf8",
+    );
+    const page = readFileSync(
+      join(root, "app/(app)/sessions/[id]/page.tsx"),
+      "utf8",
+    );
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    expect(flag).toMatch(/NEXT_PUBLIC_THERAPY_ROOM_MODE/);
+    expect(page).toMatch(/VoiceSession/);
+    expect(page).toMatch(/TherapyRoomSession/);
+    expect(page).toMatch(/isTherapyRoomModeEnabled/);
+    expect(start).toMatch(/shouldUseTherapyRoom/);
+    expect(start).toMatch(/interaction_mode/);
+  });
+
+  it("therapy-room private notes never enter the patient message API", () => {
+    const room = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    expect(room).toMatch(/\/api\/sessions\/\$\{session\.id\}\/therapy-room/);
+    expect(room).not.toMatch(/privateNotes.*submitConversationTurn/);
+    expect(room).not.toMatch(/message: notes/);
+  });
 });

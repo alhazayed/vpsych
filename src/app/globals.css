@@ -266,3 +266,620 @@ a {
     height: 20px;
   }
 }
+
+/* ─── Therapy Room Mode (TRM) ─────────────────────────────────────────── */
+
+.trm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--trm-ambient, #1a2430);
+  color: #f5f7fa;
+  overflow: hidden;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.trm-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.trm-scene__sky {
+  position: absolute;
+  inset: 0 0 42% 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--trm-window) 55%, #1a2430) 0%,
+    var(--trm-wall) 100%
+  );
+}
+
+.trm-scene__window {
+  position: absolute;
+  top: 6%;
+  right: 8%;
+  width: min(28vw, 220px);
+  height: min(22vh, 160px);
+  border-radius: 4px;
+  background: linear-gradient(
+    160deg,
+    var(--trm-window) 0%,
+    color-mix(in srgb, var(--trm-window) 40%, #8899aa) 100%
+  );
+  box-shadow:
+    inset 0 0 40px rgba(255, 255, 255, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+  opacity: 0.85;
+  animation: trmWindowShift 18s ease-in-out infinite alternate;
+}
+
+.trm-scene__wall {
+  position: absolute;
+  inset: 28% 0 18% 0;
+  background: linear-gradient(
+    180deg,
+    var(--trm-wall) 0%,
+    var(--trm-wall-accent) 100%
+  );
+}
+
+.trm-scene__floor {
+  position: absolute;
+  inset: 72% 0 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--trm-floor) 0%,
+    var(--trm-floor-shadow) 100%
+  );
+  transform: perspective(600px) rotateX(12deg);
+  transform-origin: top center;
+}
+
+.trm-scene__light {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  width: 80%;
+  height: 55%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--trm-light) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: trmLightPulse 8s ease-in-out infinite;
+}
+
+.trm-scene__desk {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 110%;
+  height: 14%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--trm-wood) 80%, transparent) 0%,
+    var(--trm-wood) 40%,
+    color-mix(in srgb, var(--trm-wood) 70%, #000) 100%
+  );
+  border-radius: 40% 40% 0 0 / 30% 30% 0 0;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.trm-scene__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.trm-stage {
+  position: relative;
+  width: min(92vw, 420px);
+  margin-bottom: 8vh;
+  animation: trmPatientEnter 1.2s ease-out both;
+}
+
+/* Patient presence */
+.trm-patient {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trm-patient__chair {
+  width: 72%;
+  height: 28%;
+  position: absolute;
+  bottom: -4%;
+  border-radius: 12px 12px 4px 4px;
+  background: linear-gradient(
+    180deg,
+    var(--trm-fabric-light) 0%,
+    var(--trm-fabric) 100%
+  );
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  z-index: 0;
+}
+
+.trm-patient__body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 58vh;
+}
+
+.trm-patient__portrait {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 48% 48% 42% 42% / 36% 36% 48% 48%;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.35),
+    inset 0 -20px 40px rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--trm-fabric) 30%, #222);
+  transition:
+    transform 0.8s ease,
+    filter 0.6s ease;
+}
+
+.trm-patient__initial {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: 600;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.trm-patient__breath {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
+  animation: trmBreathe 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.trm-patient__tear {
+  position: absolute;
+  top: 42%;
+  left: 38%;
+  width: 3px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(180, 210, 230, 0.65);
+  animation: trmTear 3s ease-in infinite;
+}
+
+.trm-patient--look-away .trm-patient__portrait {
+  transform: rotate(-3deg) translateX(-4%);
+}
+.trm-patient--eye-contact .trm-patient__portrait {
+  transform: scale(1.01);
+}
+.trm-patient--head-down .trm-patient__portrait {
+  transform: rotate(4deg) translateY(3%);
+  filter: brightness(0.92);
+}
+.trm-patient--fidget .trm-patient__portrait {
+  animation: trmFidget 2.4s ease-in-out infinite;
+}
+.trm-patient--slow .trm-patient__breath {
+  animation-duration: 6.5s;
+}
+.trm-patient--agitated .trm-patient__portrait {
+  animation: trmFidget 0.9s ease-in-out infinite;
+}
+.trm-patient--thinking .trm-patient__portrait {
+  filter: brightness(0.95);
+  transform: rotate(-2deg);
+}
+.trm-patient--speaking .trm-patient__portrait {
+  filter: brightness(1.05);
+}
+.trm-patient--sigh .trm-patient__breath {
+  animation-duration: 2.2s;
+}
+.trm-patient--tears .trm-patient__portrait {
+  filter: brightness(0.97) saturate(0.9);
+}
+.trm-patient--muted {
+  opacity: 0.85;
+}
+.trm-patient--affect-depressed .trm-patient__portrait {
+  filter: brightness(0.9) saturate(0.85);
+}
+.trm-patient--affect-anxious .trm-patient__portrait {
+  filter: contrast(1.05);
+}
+.trm-patient--affect-euphoric .trm-patient__portrait {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+/* Timer */
+.trm-timer {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(15, 20, 28, 0.35);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.trm-timer--urgent {
+  color: #f0c4b0;
+}
+.trm-timer--paused {
+  opacity: 0.55;
+}
+.trm-timer--hidden {
+  padding: 0.4rem;
+  cursor: pointer;
+}
+.trm-timer__value,
+.trm-timer__hide {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Floating controls */
+.trm-controls {
+  position: absolute;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  border-radius: 999px;
+  background: rgba(12, 16, 22, 0.45);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: trmControlsIn 1s ease 0.4s both;
+}
+.trm-controls__btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+.trm-controls__btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.trm-controls__btn.is-active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.trm-controls__btn.is-danger {
+  color: #f0a8a0;
+}
+.trm-controls__btn.is-danger:hover {
+  background: rgba(180, 60, 50, 0.35);
+}
+
+.trm-hint {
+  position: absolute;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(12, 16, 22, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  animation: trmFadeHint 0.4s ease;
+}
+
+/* Panels */
+.trm-notes,
+.trm-transcript,
+.trm-settings {
+  position: absolute;
+  z-index: 20;
+  top: 4rem;
+  bottom: 5.5rem;
+  width: min(360px, 92vw);
+  background: rgba(18, 24, 32, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  animation: trmPanelIn 0.25s ease;
+}
+.trm-notes {
+  left: 1rem;
+}
+.trm-transcript,
+.trm-settings {
+  right: 1rem;
+}
+.trm-notes__header,
+.trm-transcript__header,
+.trm-settings__header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.trm-notes__header h2,
+.trm-transcript__header h2,
+.trm-settings__header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.trm-notes__header p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.trm-notes__header button,
+.trm-transcript__header button,
+.trm-settings__header button {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+.trm-notes__input {
+  flex: 1;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  color: #f5f7fa;
+  padding: 0.75rem;
+  font: inherit;
+  line-height: 1.45;
+}
+.trm-transcript__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.trm-transcript__empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.85rem;
+}
+.trm-transcript__role {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.15rem;
+}
+.trm-transcript__text {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.88);
+}
+.trm-settings__field,
+.trm-settings__toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+.trm-settings__toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+}
+.trm-settings__field select {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  padding: 0.45rem 0.6rem;
+}
+
+.trm-a11y-input {
+  position: absolute;
+  left: 50%;
+  bottom: 5.2rem;
+  transform: translateX(-50%);
+  z-index: 9;
+  width: min(420px, 88vw);
+  opacity: 0.01;
+}
+.trm-a11y-input:focus-within {
+  opacity: 1;
+}
+.trm-a11y-input input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(12, 16, 22, 0.75);
+  color: #fff;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+@keyframes trmBreathe {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.06);
+    transform: scale(1.015);
+  }
+}
+@keyframes trmFidget {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-1.5%) rotate(-0.5deg);
+  }
+  70% {
+    transform: translateX(1.5%) rotate(0.5deg);
+  }
+}
+@keyframes trmTear {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes trmLightPulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes trmWindowShift {
+  from {
+    filter: brightness(0.95);
+  }
+  to {
+    filter: brightness(1.05);
+  }
+}
+@keyframes trmPatientEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes trmControlsIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes trmPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes trmFadeHint {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .trm-controls__btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .trm-notes,
+  .trm-transcript,
+  .trm-settings {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trm-patient__breath,
+  .trm-patient--fidget .trm-patient__portrait,
+  .trm-patient--agitated .trm-patient__portrait,
+  .trm-scene__light,
+  .trm-scene__window,
+  .trm-stage,
+  .trm-controls {
+    animation: none !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

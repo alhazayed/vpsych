@@ -454,6 +454,87 @@
       "listening": "Listening"
     }
   },
+  "therapyRoom": {
+    "start": {
+      "modeLabel": "Session experience",
+      "classic": "Classic",
+      "therapyRoom": "Therapy Room",
+      "cta": "Enter Therapy Room",
+      "hint": "Fullscreen consultation room — hands-free, patient-focused. Transcript hidden by default."
+    },
+    "status": {
+      "entering": "Entering the consultation room…",
+      "ready": "The patient is ready. Speak naturally.",
+      "ending": "Ending the session…",
+      "endFailed": "Could not end the session. Try again.",
+      "paused": "Session paused",
+      "interrupted": "Patient paused",
+      "tryAgain": "Please try speaking again.",
+      "micDenied": "Microphone access is needed for hands-free conversation."
+    },
+    "controls": {
+      "aria": "Session controls",
+      "pause": "Pause",
+      "resume": "Resume",
+      "notes": "Private notes",
+      "mute": "Mute patient",
+      "unmute": "Unmute patient",
+      "repeat": "Repeat last response",
+      "transcript": "Live transcript",
+      "settings": "Settings",
+      "end": "End session",
+      "ending": "Ending…"
+    },
+    "notes": {
+      "title": "Private notes",
+      "privacy": "Visible only to you. Never shown to the patient. Never influences the patient.",
+      "placeholder": "Clinical observations, hypotheses, process notes…",
+      "close": "Close notes"
+    },
+    "transcript": {
+      "title": "Live transcript",
+      "close": "Close transcript",
+      "empty": "Conversation will appear here.",
+      "you": "You",
+      "patient": "Patient"
+    },
+    "timer": {
+      "remainingAria": "Time remaining {time}",
+      "elapsedAria": "Time elapsed {time}",
+      "toggleMode": "Switch elapsed / remaining",
+      "hide": "Hide timer",
+      "show": "Show timer"
+    },
+    "settings": {
+      "title": "Room settings",
+      "close": "Close settings",
+      "theme": "Room theme",
+      "liveTranscript": "Show live transcript",
+      "showTimer": "Show session timer",
+      "timerMode": "Timer display",
+      "remaining": "Remaining",
+      "elapsed": "Elapsed",
+      "ambience": "Subtle room ambience"
+    },
+    "themes": {
+      "modernClinic": "Modern Clinic",
+      "academicHospital": "Academic Hospital",
+      "communityMentalHealth": "Community Mental Health Center",
+      "privatePractice": "Private Practice",
+      "childPsychiatry": "Child Psychiatry Room",
+      "emergencyPsychiatry": "Emergency Psychiatry Interview Room"
+    },
+    "a11y": {
+      "typeTurn": "Type a turn if voice is unavailable"
+    },
+    "complete": {
+      "immersionTitle": "Therapy Room Immersion",
+      "immersionScore": "Immersion index: {score}",
+      "transcriptTitle": "Session transcript",
+      "notesTitle": "Your private notes",
+      "debriefNote": "Competency scores, supervisor feedback, and ACE analysis remain in the admin report."
+    }
+  },
   "analysis": {
     "brandAi": "VPsych AI",
     "title": "Analyzing Your Clinical Performance",
