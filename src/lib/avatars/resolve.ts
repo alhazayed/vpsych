@@ -15,6 +15,7 @@ import {
   formatTherapyProcessForPrompt,
   formatTherapyReactionForPrompt,
 } from "@/lib/case-engine/therapy-process";
+import { formatAuthoredTherapyCuesForPrompt } from "@/lib/case-engine/authored-therapy-cues";
 import type {
   Avatar,
   AvatarPersonality,
@@ -101,7 +102,13 @@ export function stripPersonaSyndromeSpeechBlocks(prompt: string): string {
 
 function fidelityHintsFromSnapshot(
   snapshot: CaseInstanceSnapshot | null,
-  disorderHint?: string | null,
+  opts?: {
+    disorderHint?: string | null;
+    avatarSlug?: string | null;
+    locale?: string | null;
+    /** When true, skip authored default-syndrome SP cues (Module 1 owns phenotype). */
+    diagnosisOverride?: boolean;
+  },
 ): PromptFidelityHints {
   const slug = snapshot?.primary_diagnosis?.slug ?? null;
   const profile = speechBehaviorForDisorder(slug, null);
@@ -112,15 +119,23 @@ function fidelityHintsFromSnapshot(
       : formatSpeechBehaviorForPrompt(profile);
   const mods = snapshot?.difficulty_modifiers;
   const processCue = formatTherapyProcessForPrompt(
-    slug ?? disorderHint ?? null,
+    slug ?? opts?.disorderHint ?? null,
     null,
   );
   const reactionCue = formatTherapyReactionForPrompt(
     snapshot?.therapy_reaction_rules ?? null,
   );
-  const therapy_process_cue = reactionCue
-    ? `${processCue}\n${reactionCue}`
-    : processCue;
+  // CB-HCF-006: authored Maya/Jordan therapy_behaviour — only on default syndrome.
+  const authored =
+    !opts?.diagnosisOverride
+      ? formatAuthoredTherapyCuesForPrompt(
+          opts?.avatarSlug,
+          opts?.locale ?? snapshot?.locale,
+        )
+      : "";
+  const therapy_process_cue = [processCue, reactionCue, authored]
+    .filter((s) => Boolean(s?.trim()))
+    .join("\n\n");
   return {
     speech_behavior_cue: speech,
     difficulty_behavior: mods
@@ -385,10 +400,16 @@ export function resolveAvatar(
       clinical_core: mergedCore,
       personality,
       session: { locale },
-      fidelity: fidelityHintsFromSnapshot(
-        snapshot,
-        slugHintFromDisorderName(mergedCore.disorder ?? avatar.disorder),
-      ),
+      fidelity: fidelityHintsFromSnapshot(snapshot, {
+        disorderHint: slugHintFromDisorderName(
+          mergedCore.disorder ?? avatar.disorder,
+        ),
+        avatarSlug: avatar.slug,
+        locale,
+        diagnosisOverride: snapshot
+          ? isCaseDiagnosisOverride(avatar, snapshot)
+          : false,
+      }),
     };
 
     // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.
@@ -463,10 +484,14 @@ export function resolveAvatar(
   if (snapshot?.clinical_core) {
     assembly.clinical_core = snapshot.clinical_core;
   }
-  assembly.fidelity = fidelityHintsFromSnapshot(
-    snapshot,
-    slugHintFromDisorderName(flatDisorder),
-  );
+  assembly.fidelity = fidelityHintsFromSnapshot(snapshot, {
+    disorderHint: slugHintFromDisorderName(flatDisorder),
+    avatarSlug: avatar.slug,
+    locale,
+    diagnosisOverride: snapshot
+      ? isCaseDiagnosisOverride(avatar, snapshot)
+      : false,
+  });
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 

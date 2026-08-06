@@ -15,7 +15,7 @@
 | Emotional Realism | 6/10 | 7/10 | Still prompt-guided; no emotion director |
 | Psychotherapy Fidelity | 4/10 | 7/10 | Defences, alliance, modality reaction enacted |
 | DSM / ICD Fidelity | 7/10 | 7/10 | Unchanged packages; process supports phenotype |
-| Voice Authenticity | 4/10 | 4/10 | Static ElevenLabs settings — open |
+| Voice Authenticity | 4/10 | 6/10 | Pace/energy → TTS settings; full emotion director still open |
 | Arabic / English Naturalness | 6/10 | 7/10 | Stronger anti-MSA / anti-essay cues |
 | Educational Value | 6/10 | 8/10 | Trainees must earn disclosure layers |
 | Therapeutic Alliance | 4/10 | 7/10 | Fragile/testing alliance scripts |
@@ -66,14 +66,30 @@
 **Implementation:** `formatTherapyReactionForPrompt` appended into `therapy_process_cue` in `fidelityHintsFromSnapshot`.  
 **Regression test:** snapshot resolve contains modality reaction lines.
 
+### CB-HCF-006 — Authored persona therapy_behaviour never reached runtime  
+**Severity:** High  
+**Clinical explanation:** Maya/Jordan case files contain full SP training (resistance moves, defence catalogs, disclosure layers, rupture repair, cultural notes) but `src/` had zero references — only prose `persona_prompt` fragments reached the model.  
+**Educational impact:** Default-syndrome sessions lost the teaching traps that make these cases educationally load-bearing (false compliance, reassurance loops, inverted GAD disclosure).  
+**Implementation:** Condensed cues in `authored-therapy-cues.ts`, injected on Maya/Jordan default syndrome only; skipped on Case Engine diagnosis override so mania/psychosis Module 1 is not fought by MDD/GAD SP scripts. Locale notes for en-US and ar-JO.  
+**Regression test:** `authored-therapy-cues.test.ts`.  
+**Expected realism improvement:** Default Maya/Jordan interviews enact the authored SP process consultants already certified in the case library.
+
+### CB-HCF-007 — Static TTS prosody for every diagnosis  
+**Severity:** High (voice authenticity)  
+**Clinical explanation:** Every patient used identical ElevenLabs `stability: 0.4` / `similarity_boost: 0.75`. Depressed, manic, and anxious speech sounded the same — a consultant giveaway in voice sessions.  
+**Educational impact:** Trainees cannot practise listening for pressured speech, psychomotor slowing, or anxious edge in the audio channel.  
+**Implementation:** `voice/prosody.ts` maps speech pace/energy (and optional disorder slug) → bounded `voice_settings`; wired through TTS route, synthesize client, conversation pipeline, VoiceSession (`personality.speech.pace` after case adapt). Browser TTS rate also adjusted. Cache key includes settings.  
+**Regression test:** `prosody.test.ts`.  
+**Expected realism improvement:** Voice channel starts matching Module 1 phenotype (still not full HCE emotion director).
+
 ---
 
 ## Still open (next loops)
 
 | ID | Severity | Issue |
 |---|---|---|
-| CB-HCF-006 | High | Authored persona `therapy_behaviour` / `consistency_rules` / `defence_mechanisms` JSON still not loaded from `personas/*.case.json` into DB runtime — only condensed process profiles above |
-| CB-HCF-007 | High | TTS prosody static (`stability`/`similarity_boost`); no affect-congruent voice |
+| CB-HCF-006b | Medium | Full `consistency_rules` / multi-session evolution still condensed, not full JSON→DB sync |
+| CB-HCF-007 | ~~High~~ **Fixed (partial)** | TTS prosody now maps speech pace/energy → ElevenLabs voice_settings + browser rate; not a full emotion director |
 | CB-HCF-008 | Medium | Multi-session memory / symptom evolution engines (PME/HCTF) deferred v1.1 |
 | CB-HCF-009 | Medium | No live transcript realism scorer in CI (prompt assembly only) |
 | CB-HCF-010 | Medium | Reserved disorders without packages (OCD, social anxiety, eating, …) |
