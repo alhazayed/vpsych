@@ -266,3 +266,32 @@ a {
     height: 20px;
   }
 }
+
+/* Virtual Mental Health Center — room atmosphere */
+.clinic-atmosphere {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 10% 0%,
+      color-mix(in srgb, var(--primary) 8%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-container-low) 70%, transparent),
+      var(--background)
+    );
+}
+
+@keyframes therapy-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.therapy-room {
+  --therapy-room-depth: color-mix(in srgb, var(--primary) 6%, transparent);
+}

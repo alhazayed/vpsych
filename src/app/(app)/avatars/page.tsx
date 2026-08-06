@@ -1,6 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { isTherapyRoomEnabled } from "@/lib/features";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
@@ -9,6 +11,8 @@ export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
   const t = await getTranslations("avatars");
   const tCommon = await getTranslations("common");
+  const tClinic = await getTranslations("clinic");
+  const therapyRoom = isTherapyRoomEnabled();
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
@@ -37,6 +41,14 @@ export default async function AvatarsPage() {
         <p className="mt-2 max-w-2xl text-base leading-6 text-[var(--on-surface-variant)]">
           {t("intro")}
         </p>
+        {therapyRoom && (
+          <Link href="/clinic" className="btn-primary mt-5 inline-flex h-11 px-5">
+            <span className="material-symbols-outlined text-[20px]">
+              local_hospital
+            </span>
+            {tClinic("enterClinic")}
+          </Link>
+        )}
       </section>
 
       <div className="mb-6 flex items-end justify-between gap-4">

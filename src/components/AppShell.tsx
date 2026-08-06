@@ -15,7 +15,10 @@ type NavItem = {
   match?: (pathname: string) => boolean;
 };
 
-function therapistNav(t: (key: string) => string): NavItem[] {
+function therapistNav(
+  t: (key: string) => string,
+  therapyRoomEnabled: boolean,
+): NavItem[] {
   return [
     {
       href: "/avatars",
@@ -23,6 +26,16 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       icon: "library_books",
       match: (p) => p.startsWith("/avatars"),
     },
+    ...(therapyRoomEnabled
+      ? [
+          {
+            href: "/clinic",
+            label: t("clinic"),
+            icon: "local_hospital",
+            match: (p: string) => p.startsWith("/clinic"),
+          } satisfies NavItem,
+        ]
+      : []),
     {
       href: "/sessions",
       label: t("mySessions"),
@@ -131,9 +144,11 @@ function NavLink({
 
 export function AppShell({
   profile,
+  therapyRoomEnabled = false,
   children,
 }: {
   profile: Profile;
+  therapyRoomEnabled?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -141,10 +156,11 @@ export function AppShell({
   const tNav = useTranslations("nav");
   const tShell = useTranslations("shell");
   const isImmersiveSession =
-    /^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete");
+    (/^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete")) ||
+    /^\/clinic\/room\/[^/]+$/.test(pathname);
 
   const nav = [
-    ...therapistNav(tNav),
+    ...therapistNav(tNav, therapyRoomEnabled),
     ...(profile.role === "admin" ? adminNav(tNav) : []),
   ];
 
@@ -176,6 +192,7 @@ export function AppShell({
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning"))
       return tShell("pageTitle.adaptiveLearning");
+    if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
   }

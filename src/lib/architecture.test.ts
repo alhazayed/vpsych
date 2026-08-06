@@ -79,4 +79,43 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/body\.presetSlug/);
     expect(route).toMatch(/\.eq\("slug", body\.presetSlug\)/);
   });
+
+  it("keeps legacy VoiceSession on /sessions/[id] when therapy room exists", () => {
+    const sessionPage = readFileSync(
+      join(root, "app/(app)/sessions/[id]/page.tsx"),
+      "utf8",
+    );
+    expect(sessionPage).toMatch(/VoiceSession/);
+    expect(sessionPage).not.toMatch(/TherapyRoom/);
+  });
+
+  it("gates VMHC clinic routes and APIs behind FEATURE_THERAPY_ROOM", () => {
+    const features = readFileSync(join(root, "lib/features.ts"), "utf8");
+    expect(features).toMatch(/FEATURE_THERAPY_ROOM/);
+    const clinicPage = readFileSync(
+      join(root, "app/(app)/clinic/page.tsx"),
+      "utf8",
+    );
+    expect(clinicPage).toMatch(/isTherapyRoomEnabled/);
+    const notes = readFileSync(
+      join(root, "app/api/sessions/[id]/notes/route.ts"),
+      "utf8",
+    );
+    expect(notes).toMatch(/isTherapyRoomEnabled/);
+    const supervisor = readFileSync(
+      join(root, "app/api/sessions/[id]/supervisor/route.ts"),
+      "utf8",
+    );
+    expect(supervisor).toMatch(/isTherapyRoomEnabled/);
+    expect(supervisor).toMatch(/report:\s*null/);
+  });
+
+  it("does not feed private notes into the patient message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).not.toMatch(/session_private_notes/);
+    expect(message).not.toMatch(/private.?notes/i);
+  });
 });

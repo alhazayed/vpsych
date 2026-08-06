@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { isTherapyRoomEnabled } from "@/lib/features";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import type { TherapySession } from "@/lib/types";
 import { format } from "date-fns";
@@ -14,22 +15,40 @@ export default async function SessionsListPage() {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, status, started_at, ended_at, avatars(name, disorder)")
+    .select("id, status, started_at, ended_at, ui_mode, avatars(name, disorder)")
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
 
   const list =
     (sessions as
-      | (Pick<TherapySession, "id" | "status" | "started_at" | "ended_at"> & {
+      | (Pick<
+          TherapySession,
+          "id" | "status" | "started_at" | "ended_at" | "ui_mode"
+        > & {
           avatars: { name: string; disorder: string };
         })[]
       | null) ?? [];
+
+  const therapyRoom = isTherapyRoomEnabled();
 
   function statusLabel(status: string) {
     if (status === "active") return t("status.active");
     if (status === "completed") return t("status.completed");
     if (status === "expired") return t("status.expired");
     return status;
+  }
+
+  function sessionHref(s: (typeof list)[number]) {
+    if (s.status === "active") {
+      if (therapyRoom && s.ui_mode === "therapy_room") {
+        return `/clinic/room/${s.id}`;
+      }
+      return `/sessions/${s.id}`;
+    }
+    if (therapyRoom && s.ui_mode === "therapy_room") {
+      return `/clinic/room/${s.id}/debrief`;
+    }
+    return `/sessions/${s.id}/complete`;
   }
 
   return (
@@ -74,11 +93,7 @@ export default async function SessionsListPage() {
                   {statusLabel(s.status)}
                 </span>
                 <Link
-                  href={
-                    s.status === "active"
-                      ? `/sessions/${s.id}`
-                      : `/sessions/${s.id}/complete`
-                  }
+                  href={sessionHref(s)}
                   className="text-sm font-medium text-[var(--primary)] hover:underline"
                 >
                   {s.status === "active" ? t("resume") : t("details")}

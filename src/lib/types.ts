@@ -292,6 +292,8 @@ export type TherapySession = {
   clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
   difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
+  /** Optional UI surface when FEATURE_THERAPY_ROOM is on. */
+  ui_mode?: "chat" | "therapy_room" | null;
   avatars?: Avatar;
   profiles?: Profile;
 };
