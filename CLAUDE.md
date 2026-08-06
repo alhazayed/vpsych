@@ -93,8 +93,9 @@ Read the matching file in `docs/` before changing any of them.
 | Adaptive Curriculum Engine (ACE) | `lib/ace/` | `docs/ADAPTIVE_CURRICULUM_ENGINE.md` |
 | Competency Graph Engine (CGE) | `lib/cge/` | `docs/COMPETENCY_GRAPH_ENGINE.md` |
 
-Therapy Room Mode (optional immersive session UI) lives in `lib/therapy-room/` +
-`components/therapy-room/` — see `docs/THERAPY_ROOM_MODE.md`. Enabled only when
+Therapy Room (optional immersive session UI + clinic day) lives in
+`lib/therapy-room/` + `components/therapy-room/` — see
+`docs/THERAPY_ROOM_ARCHITECTURE.md`. Enabled only when
 `NEXT_PUBLIC_THERAPY_ROOM_MODE=true`; classic `VoiceSession` remains default.
 
 Core invariants:

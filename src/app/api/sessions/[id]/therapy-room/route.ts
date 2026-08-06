@@ -7,8 +7,8 @@ import type { TherapySession } from "@/lib/types";
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * Persist Therapy Room private notes + immersion metrics.
- * Notes never flow into the patient agent — this route only writes session columns.
+ * Persist Therapy Room immersion metrics only.
+ * Private notes use POST/PATCH /api/sessions/[id]/notes (session_private_notes).
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { id: sessionId } = await params;
@@ -44,32 +44,20 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    privateNotes?: unknown;
     immersionMetrics?: unknown;
   };
 
-  const patch: Record<string, unknown> = {};
-
-  if (typeof body.privateNotes === "string") {
-    patch.private_notes = body.privateNotes.slice(0, 20000);
-  }
-
-  if (body.immersionMetrics != null && typeof body.immersionMetrics === "object") {
-    patch.immersion_metrics = body.immersionMetrics;
-  }
-
-  if (Object.keys(patch).length === 0) {
+  if (body.immersionMetrics == null || typeof body.immersionMetrics !== "object") {
     return NextResponse.json({ ok: true });
   }
 
   const { error } = await supabase
     .from("sessions")
-    .update(patch)
+    .update({ immersion_metrics: body.immersionMetrics })
     .eq("id", sessionId);
 
   if (error) {
-    // Column may be missing if migration not applied — soft-fail for classic deploys.
-    if (/private_notes|immersion_metrics|interaction_mode/i.test(error.message)) {
+    if (/immersion_metrics|interaction_mode/i.test(error.message)) {
       return NextResponse.json({ ok: true, skipped: true });
     }
     console.error("[therapy-room] patch failed", { error: error.message });

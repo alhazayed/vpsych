@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { rateLimit } from "@/lib/rate-limit";
 import { closeClinicDay } from "@/lib/therapy-room/close-day";
 
@@ -8,7 +8,7 @@ type Props = { params: Promise<{ id: string }> };
 
 /** Close clinic day and return end-of-day summary. */
 export async function POST(_request: Request, { params }: Props) {
-  if (!isTherapyRoomEnabled()) {
+  if (!isTherapyRoomModeEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

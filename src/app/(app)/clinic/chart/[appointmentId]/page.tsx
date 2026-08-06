@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import {
   buildAppointmentCard,
   buildPreSessionChart,
@@ -13,7 +13,7 @@ import { PreSessionChartView } from "@/components/therapy-room/PreSessionChartVi
 type Props = { params: Promise<{ appointmentId: string }> };
 
 export default async function ClinicChartPage({ params }: Props) {
-  if (!isTherapyRoomEnabled()) redirect("/avatars");
+  if (!isTherapyRoomModeEnabled()) redirect("/avatars");
 
   const { appointmentId } = await params;
   const { supabase, user } = await requireProfile();

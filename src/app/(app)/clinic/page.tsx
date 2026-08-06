@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import {
   buildAppointmentCard,
   chartSectionsForDifficulty,
@@ -152,7 +152,7 @@ async function ensureClinicDay(
 }
 
 export default async function ClinicPage() {
-  if (!isTherapyRoomEnabled()) {
+  if (!isTherapyRoomModeEnabled()) {
     redirect("/avatars");
   }
   const { supabase, user } = await requireProfile();

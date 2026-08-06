@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import type { NoteFormat } from "@/lib/therapy-room";
@@ -20,8 +20,29 @@ async function assertSessionOwner(
   return data?.therapist_id === userId ? data : null;
 }
 
+function mapNote(n: {
+  id: string;
+  session_id: string;
+  format: string;
+  body: string;
+  voice_url: string | null;
+  created_at: string;
+  updated_at: string;
+}) {
+  return {
+    id: n.id,
+    sessionId: n.session_id,
+    format: n.format,
+    body: n.body,
+    voiceUrl: n.voice_url,
+    createdAt: n.created_at,
+    updatedAt: n.updated_at,
+  };
+}
+
+/** Canonical private notes API — session_private_notes table only. */
 export async function GET(_request: Request, { params }: Props) {
-  if (!isTherapyRoomEnabled()) {
+  if (!isTherapyRoomModeEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -60,21 +81,11 @@ export async function GET(_request: Request, { params }: Props) {
     );
   }
 
-  return NextResponse.json({
-    notes: (data ?? []).map((n) => ({
-      id: n.id,
-      sessionId: n.session_id,
-      format: n.format,
-      body: n.body,
-      voiceUrl: n.voice_url,
-      createdAt: n.created_at,
-      updatedAt: n.updated_at,
-    })),
-  });
+  return NextResponse.json({ notes: (data ?? []).map(mapNote) });
 }
 
 export async function POST(request: Request, { params }: Props) {
-  if (!isTherapyRoomEnabled()) {
+  if (!isTherapyRoomModeEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -127,15 +138,69 @@ export async function POST(request: Request, { params }: Props) {
     );
   }
 
-  return NextResponse.json({
-    note: {
-      id: data.id,
-      sessionId: data.session_id,
-      format: data.format,
-      body: data.body,
-      voiceUrl: data.voice_url,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    },
-  });
+  return NextResponse.json({ note: mapNote(data) });
+}
+
+export async function PATCH(request: Request, { params }: Props) {
+  if (!isTherapyRoomModeEnabled()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = await rateLimit(`notes-write:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  if (!(await assertSessionOwner(supabase, id, user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const body = (await request.json()) as {
+    noteId?: string;
+    format?: NoteFormat;
+    body?: string;
+  };
+
+  if (!body.noteId || typeof body.noteId !== "string") {
+    return NextResponse.json({ error: "noteId required" }, { status: 400 });
+  }
+
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (typeof body.body === "string") patch.body = body.body.slice(0, 20000);
+  if (body.format) patch.format = body.format;
+
+  const { data, error } = await supabase
+    .from("session_private_notes")
+    .update(patch)
+    .eq("id", body.noteId)
+    .eq("session_id", id)
+    .eq("therapist_id", user.id)
+    .select("id, session_id, format, body, voice_url, created_at, updated_at")
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json(
+      { error: clientSafeError("Could not update note", error) },
+      { status: 500 },
+    );
+  }
+  if (!data) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ note: mapNote(data) });
 }
