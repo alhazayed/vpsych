@@ -57,6 +57,20 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/service:\s*"vpsych"/);
   });
 
+  it("keeps /validation and invite redeem public for invited experts", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/path === "\/validation"/);
+    expect(mw).toMatch(/path === "\/api\/validation\/invite"/);
+    const page = readFileSync(join(root, "app/validation/page.tsx"), "utf8");
+    expect(page).toMatch(/ValidationPortal/);
+    const invite = readFileSync(
+      join(root, "app/api/validation/invite/route.ts"),
+      "utf8",
+    );
+    expect(invite).toMatch(/rateLimit/);
+    expect(invite).toMatch(/isValidInviteCode/);
+  });
+
   it("exposes Wave 3 Quality Ledger and research export admin routes", () => {
     const ledger = readFileSync(
       join(root, "app/api/admin/quality-ledger/route.ts"),

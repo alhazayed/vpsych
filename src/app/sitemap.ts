@@ -5,7 +5,14 @@ const ORIGIN =
   "https://vpsych.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = ["/", "/login", "/signup", "/privacy", "/terms"] as const;
+  const paths = [
+    "/",
+    "/login",
+    "/signup",
+    "/privacy",
+    "/terms",
+    "/validation",
+  ] as const;
   const lastModified = new Date();
   return paths.map((path) => ({
     url: path === "/" ? ORIGIN : `${ORIGIN}${path}`,

@@ -774,6 +774,79 @@
       }
     }
   },
+  "validation": {
+    "nav": {
+      "signIn": "Sign in",
+      "app": "Open app"
+    },
+    "hero": {
+      "eyebrow": "Professional Preview · Expert evaluation",
+      "title": "Clinical validation study",
+      "body": "You are invited to evaluate whether VPsych’s simulated patients and training workflow are suitable for professional education — not whether the product is ready for unsupervised public launch."
+    },
+    "purpose": {
+      "title": "Study purpose",
+      "body": "Independent psychiatrists and psychologists assess clinical believability, educational usefulness, safety-relevant behaviors, and bilingual authenticity. Your judgment informs whether Professional Preview advances toward broader educational use.",
+      "focus": {
+        "1": "Believability of the patient as a clinical encounter",
+        "2": "Educational usefulness for trainees",
+        "3": "Safety-relevant behaviors (risk language, boundaries)",
+        "4": "Bilingual / cultural authenticity where applicable"
+      }
+    },
+    "expectations": {
+      "title": "What to expect",
+      "body": "Plan about 60–90 minutes. Sessions hard-expire at 40 minutes server-side — end deliberately when you have enough material.",
+      "steps": {
+        "1": "Start an English patient session (e.g. anxiety or depression presentation).",
+        "2": "Conduct 8–12 therapist turns covering alliance, history, risk screen, and formulation language.",
+        "3": "End the session; note formative scores if you have admin access (therapists do not see full reports by design).",
+        "4": "Repeat with another presentation or run an Arabic exchange if comfortable.",
+        "5": "Optional: try voice mode for 3–5 turns to judge speech quality and latency."
+      },
+      "limitations": "Competency scores are formative training signals — not validated certification metrics. AI patients are fictional; do not enter real PHI. Experimental excellence modules (CQI, EOI, and related stacks) are outside this preview."
+    },
+    "consent": {
+      "title": "Consent & professional stance",
+      "body": "Before you begin, please confirm you understand the conditions of this invited evaluation.",
+      "items": {
+        "1": "I am evaluating a training simulation with fictional standardized patients, not real clients.",
+        "2": "I will not enter protected health information or identifiable details about living patients.",
+        "3": "I understand scores and reports are formative educational signals, not validated high-stakes credentials.",
+        "4": "I will treat unsafe presentations as simulation observations and report inadequate safety handling in feedback — not escalate with real crisis protocols for the avatar.",
+        "5": "I will submit structured feedback to the Release Manager channel named in my invitation and will not post PHI."
+      },
+      "checkbox": "I have read the purpose, expectations, and consent statements above, and I agree to participate under these conditions."
+    },
+    "access": {
+      "title": "Access",
+      "body": "Enter the invitation code from your invite email, or sign in / create an account with the credentials provided by the Release Manager.",
+      "signedInBody": "You are signed in. After consent, launch the evaluation to open the patient avatar catalog and start a blinded training session.",
+      "codeLabel": "Invitation code",
+      "codePlaceholder": "e.g. RC1-XXXX",
+      "verifyCode": "Verify code",
+      "verifying": "Verifying…",
+      "unlocked": "Invitation verified. You can create an account or launch the evaluation below.",
+      "invalidCode": "That invitation code is not recognized.",
+      "networkError": "Could not verify the code. Check your connection and try again.",
+      "orAccount": "Already invited with an account?",
+      "createAccount": "Create account"
+    },
+    "launch": {
+      "title": "Begin blinded evaluation",
+      "body": "One click opens the avatar catalog so you can start a standardized patient session. Prefer a private browser profile when possible.",
+      "cta": "Begin evaluation",
+      "starting": "Opening…",
+      "existingAccount": "Sign in instead",
+      "needConsent": "Confirm the consent checkbox to continue.",
+      "needAccess": "Enter a valid invitation code, or sign in with your invited account."
+    },
+    "footer": {
+      "disclaimer": "Educational simulation only. Not a medical device. Not for diagnosis or treatment of real patients.",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
   "legal": {
     "privacy": {
       "title": "Privacy Policy",
