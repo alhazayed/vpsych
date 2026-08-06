@@ -1,9 +1,13 @@
 /**
- * Therapy Room Mode (TRM) — immersive psychiatric consultation room.
+ * Therapy room barrel — Therapy Room Mode (TRM) + Virtual Mental Health Center (VMHC).
  *
- * Optional behind NEXT_PUBLIC_THERAPY_ROOM_MODE. Classic VoiceSession remains default.
- * See docs/THERAPY_ROOM_MODE.md.
+ * TRM: optional immersive consultation room on /sessions/[id]
+ *      (NEXT_PUBLIC_THERAPY_ROOM_MODE).
+ * VMHC: clinic-day workflow on /clinic (FEATURE_THERAPY_ROOM).
+ * Classic VoiceSession remains the default when flags are off.
  */
+
+export { isTherapyRoomEnabled } from "@/lib/features";
 
 export type {
   InteractionMode,
@@ -19,6 +23,25 @@ export type {
   TherapyRoomImmersionIndex,
   TherapyRoomSettings,
   RoomAmbienceKind,
+  NoteFormat,
+  ClinicUrgency,
+  AppointmentStatus,
+  RoomPhase,
+  TherapyRoomToolbarAction,
+  ChartSectionId,
+  PatientNonverbalProfile,
+  ClinicAppointmentCard,
+  PreSessionChart,
+  PrivateNoteEntry,
+  ArrivalBeat,
+  DepartureBeat,
+  SupervisorBriefing,
+  DailyClinicSummary,
+  ClinicImmersionChannel,
+  ClinicImmersionEvent,
+  ClinicImmersionAdapter,
+  ImmersionChannel,
+  ImmersionAdapter,
 } from "./types";
 
 export {
@@ -65,3 +88,14 @@ export {
 } from "./vad";
 
 export { startRoomAmbience, type AmbienceController } from "./ambience";
+
+export * from "./chart-visibility";
+export * from "./patient-behavior";
+export * from "./arrival";
+export * from "./immersion";
+export * from "./clinic-schedule";
+export * from "./chart";
+export * from "./supervisor";
+export * from "./daily-summary";
+export * from "./notes";
+export * from "./close-day";

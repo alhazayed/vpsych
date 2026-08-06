@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { requireProfile } from "@/lib/auth";
+import { isTherapyRoomEnabled } from "@/lib/features";
 
 export default async function AppShellLayout({
   children,
@@ -7,5 +8,9 @@ export default async function AppShellLayout({
   children: React.ReactNode;
 }) {
   const { profile } = await requireProfile();
-  return <AppShell profile={profile}>{children}</AppShell>;
+  return (
+    <AppShell profile={profile} therapyRoomEnabled={isTherapyRoomEnabled()}>
+      {children}
+    </AppShell>
+  );
 }

@@ -121,4 +121,34 @@ describe("architecture invariants", () => {
     expect(room).not.toMatch(/privateNotes.*submitConversationTurn/);
     expect(room).not.toMatch(/message: notes/);
   });
+
+  it("gates VMHC clinic routes and APIs behind FEATURE_THERAPY_ROOM", () => {
+    const features = readFileSync(join(root, "lib/features.ts"), "utf8");
+    expect(features).toMatch(/FEATURE_THERAPY_ROOM/);
+    const clinicPage = readFileSync(
+      join(root, "app/(app)/clinic/page.tsx"),
+      "utf8",
+    );
+    expect(clinicPage).toMatch(/isTherapyRoomEnabled/);
+    const notes = readFileSync(
+      join(root, "app/api/sessions/[id]/notes/route.ts"),
+      "utf8",
+    );
+    expect(notes).toMatch(/isTherapyRoomEnabled/);
+    const supervisor = readFileSync(
+      join(root, "app/api/sessions/[id]/supervisor/route.ts"),
+      "utf8",
+    );
+    expect(supervisor).toMatch(/isTherapyRoomEnabled/);
+    expect(supervisor).toMatch(/report:\s*null/);
+  });
+
+  it("does not feed VMHC private notes into the patient message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).not.toMatch(/session_private_notes/);
+    expect(message).not.toMatch(/private.?notes/i);
+  });
 });

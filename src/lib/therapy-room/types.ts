@@ -1,7 +1,17 @@
 /**
- * Therapy Room Mode (TRM) — shared domain types.
- * Future 3D / VR renderers consume the same scene + behavior contracts.
+ * Therapy room domain types.
+ *
+ * Combines:
+ * - Therapy Room Mode (TRM / Mission 34) — consultation room scene + TRII
+ * - Virtual Mental Health Center (VMHC / Mission 35) — clinic day workflow
+ *
+ * Both surfaces are optional behind their respective feature flags and do not
+ * replace classic VoiceSession.
  */
+
+import type { CaseDifficulty } from "@/lib/case-engine/types";
+
+/* ─── Therapy Room Mode (TRM) ─────────────────────────────────────────── */
 
 export type InteractionMode = "classic" | "therapy_room";
 
@@ -109,6 +119,7 @@ export type ImmersionEventKind =
   | "session_start"
   | "session_end";
 
+/** TRM immersion telemetry event (TRII). */
 export type ImmersionEvent = {
   kind: ImmersionEventKind;
   at: number;
@@ -138,3 +149,203 @@ export type TherapyRoomSettings = {
   ambienceEnabled: boolean;
   ambienceVolume: number;
 };
+
+/* ─── Virtual Mental Health Center (VMHC) ─────────────────────────────── */
+
+export type NoteFormat = "soap" | "dap" | "birp" | "free" | "voice";
+
+export type ClinicUrgency = "routine" | "soon" | "urgent" | "emergent";
+
+export type AppointmentStatus =
+  | "scheduled"
+  | "checked_in"
+  | "in_session"
+  | "completed"
+  | "no_show"
+  | "cancelled";
+
+export type RoomPhase =
+  | "lobby"
+  | "chart_review"
+  | "awaiting_invite"
+  | "arrival"
+  | "in_session"
+  | "paused"
+  | "departure"
+  | "debrief"
+  | "supervisor";
+
+/** Floating toolbar — only these controls exist in the VMHC consultation room. */
+export type TherapyRoomToolbarAction =
+  | "pause"
+  | "resume"
+  | "private_notes"
+  | "risk_flag"
+  | "emergency"
+  | "repeat_response"
+  | "mute"
+  | "settings"
+  | "end_session";
+
+export type ChartSectionId =
+  | "referral_letter"
+  | "chief_complaint"
+  | "previous_summary"
+  | "current_medication"
+  | "risk_alerts"
+  | "previous_notes"
+  | "homework_status"
+  | "laboratory"
+  | "psychological_testing"
+  | "diagnosis"
+  | "session_number";
+
+export type PatientNonverbalProfile = {
+  disorderSlug: string;
+  posture: string;
+  eyeContact: string;
+  speechTempo: string;
+  movement: string;
+  fidgeting: string;
+  breathing: string;
+  emotionalRegulation: string;
+  defenceMechanisms: string[];
+  allianceDevelopment: string;
+  disclosureTiming: string;
+  cssModifiers: {
+    scale: number;
+    brightness: number;
+    saturate: number;
+    translateY: number;
+    swayMs: number;
+    breatheMs: number;
+  };
+};
+
+export type ClinicAppointmentCard = {
+  id: string;
+  clinicDayId: string;
+  avatarId: string;
+  sessionId: string | null;
+  slotIndex: number;
+  scheduledAt: string;
+  patientDisplay: string;
+  patientInitials: string;
+  sessionNumber: number;
+  referralSource: string;
+  diagnosis: string | null;
+  urgency: ClinicUrgency;
+  previousAttendance: string;
+  currentMedications: string | null;
+  outstandingTasks: string[];
+  status: AppointmentStatus;
+  difficulty: CaseDifficulty;
+  portraitUrl: string | null;
+};
+
+export type PreSessionChart = {
+  appointmentId: string;
+  patientDisplay: string;
+  difficulty: CaseDifficulty;
+  visibleSections: ChartSectionId[];
+  referralLetter: string | null;
+  chiefComplaint: string | null;
+  previousSummary: string | null;
+  currentMedication: string | null;
+  riskAlerts: string[];
+  previousTherapistNotes: string | null;
+  homeworkStatus: string | null;
+  laboratory: string | null;
+  psychologicalTesting: string | null;
+  diagnosis: string | null;
+  sessionNumber: number;
+};
+
+export type PrivateNoteEntry = {
+  id: string;
+  sessionId: string;
+  format: NoteFormat;
+  body: string;
+  voiceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ArrivalBeat = {
+  id: string;
+  label: string;
+  delayMs: number;
+};
+
+export type DepartureBeat = {
+  id: string;
+  label: string;
+  delayMs: number;
+};
+
+export type SupervisorBriefing = {
+  sessionId: string;
+  whatHappened: string;
+  whyPatientBehaved: string;
+  missedOpportunities: string[];
+  strengths: string[];
+  alternativeInterventions: string[];
+  clinicalPearls: string[];
+  evidenceBasedRecommendations: string[];
+  relevantLiterature: string[];
+  competencyProgression: string[];
+  reflectiveQuestions: string[];
+  improvementPlan: string;
+};
+
+export type DailyClinicSummary = {
+  clinicDayId: string;
+  date: string;
+  patientsSeen: number;
+  averageAlliance: number | null;
+  averageCompetency: number | null;
+  riskEvents: string[];
+  learningObjectivesAchieved: string[];
+  reflectionJournal: string;
+  recommendedStudyTopics: string[];
+  supervisorComments: string[];
+  appointmentSummaries: Array<{
+    patientDisplay: string;
+    status: AppointmentStatus;
+    diagnosis: string | null;
+  }>;
+};
+
+/**
+ * VMHC immersion bus channels — future VR / AR / eye-tracking / haptics.
+ * Named distinctly from TRM's ImmersionEvent (TRII telemetry).
+ */
+export type ClinicImmersionChannel =
+  | "room.state"
+  | "patient.pose"
+  | "patient.gaze"
+  | "patient.expression"
+  | "patient.body"
+  | "audio.therapist"
+  | "audio.patient"
+  | "haptic"
+  | "eye_tracking"
+  | "session.phase";
+
+export type ClinicImmersionEvent = {
+  channel: ClinicImmersionChannel;
+  at: number;
+  payload: Record<string, unknown>;
+};
+
+export type ClinicImmersionAdapter = {
+  id: string;
+  channels: ClinicImmersionChannel[];
+  onEvent: (event: ClinicImmersionEvent) => void | Promise<void>;
+  dispose?: () => void;
+};
+
+/** @deprecated Use ClinicImmersionChannel — kept as alias during VMHC merge. */
+export type ImmersionChannel = ClinicImmersionChannel;
+/** @deprecated Use ClinicImmersionAdapter */
+export type ImmersionAdapter = ClinicImmersionAdapter;
