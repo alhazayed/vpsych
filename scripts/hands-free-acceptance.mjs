@@ -22,6 +22,8 @@ const OUT = process.env.OUT_DIR ?? "/opt/cursor/artifacts/hands-free-fix";
 const FAKE_AUDIO =
   process.env.FAKE_AUDIO ?? "/tmp/fake_speech_loop.wav";
 const BROWSER = (process.env.BROWSER ?? "chromium").toLowerCase();
+/** Prefer full Chrome for fake-mic capture (headless shell ignores it). */
+const CHANNEL = (process.env.CHANNEL ?? "chrome").toLowerCase();
 
 mkdirSync(OUT, { recursive: true });
 
@@ -38,6 +40,9 @@ async function main() {
       ? { headless: true }
       : {
           headless: true,
+          ...(CHANNEL === "chrome" || CHANNEL === "chrome-beta"
+            ? { channel: CHANNEL }
+            : {}),
           args: [
             "--use-fake-ui-for-media-stream",
             "--use-fake-device-for-media-stream",
@@ -45,7 +50,7 @@ async function main() {
             "--autoplay-policy=no-user-gesture-required",
           ],
         };
-  log("BROWSER", BROWSER);
+  log("BROWSER", BROWSER, "CHANNEL", CHANNEL);
   const browser = await launcher.launch(launchOpts);
 
   const context = await browser.newContext({
