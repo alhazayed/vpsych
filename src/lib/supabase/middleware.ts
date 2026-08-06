@@ -26,6 +26,8 @@ function isPublicPath(path: string): boolean {
   if (path === "/" || path.startsWith("/login") || path.startsWith("/signup")) {
     return true;
   }
+  // /auth/callback, /auth/confirm, /auth/reset-password — recovery must work
+  // while a recovery session exists without bouncing to /avatars.
   if (path.startsWith("/auth/")) return true;
   if (path.startsWith("/legal/")) return true;
   if (path === "/privacy" || path === "/terms") return true;
@@ -77,6 +79,8 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
+  // Authenticated users on /auth/reset-password must stay there to set a
+  // password; do not treat it as an auth page bounce target.
   const isApi = path.startsWith("/api/");
   const isPublic = isPublicPath(path);
 

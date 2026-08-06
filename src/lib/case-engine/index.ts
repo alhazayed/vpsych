@@ -7,3 +7,18 @@ export {
   isCaseSnapshot,
   type StartCaseOptions,
 } from "@/lib/case-engine/persist";
+export {
+  formatDifficultyBehaviorForPrompt,
+  formatTherapyProcessForPrompt,
+  formatTherapyReactionForPrompt,
+  therapyProcessForDisorder,
+  HUMAN_PATIENT_BEHAVIOUR_LINES,
+} from "@/lib/case-engine/therapy-process";
+export {
+  authoredTherapyCuesFor,
+  formatAuthoredTherapyCuesForPrompt,
+} from "@/lib/case-engine/authored-therapy-cues";
+export {
+  formatSpeechBehaviorForPrompt,
+  speechBehaviorForDisorder,
+} from "@/lib/case-engine/speech-behavior";

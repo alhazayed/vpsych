@@ -3,6 +3,11 @@ import {
   normalizeSpeechLocale,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import {
+  browserSpeechRateForPace,
+  normalizeSpeechPace,
+  type SpeechPace,
+} from "@/lib/voice/prosody";
 
 /**
  * Request TTS from /api/voice/tts with graceful browser fallback.
@@ -15,6 +20,9 @@ export async function synthesizeSpeech(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  speechPace?: string | null;
+  speechEnergy?: string | null;
+  disorderSlug?: string | null;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -27,6 +35,9 @@ export async function synthesizeSpeech(params: {
         voiceIdAr: params.voiceIdAr ?? undefined,
         voiceProfileId: params.voiceProfileId ?? undefined,
         avatarId: params.avatarId ?? undefined,
+        speechPace: params.speechPace ?? undefined,
+        speechEnergy: params.speechEnergy ?? undefined,
+        disorderSlug: params.disorderSlug ?? undefined,
         stream: true,
       }),
     });
@@ -56,6 +67,7 @@ export function speakWithBrowser(
     onend?: () => void;
     onerror?: () => void;
   },
+  speechPace?: SpeechPace | string | null,
 ) {
   if (typeof window === "undefined" || !window.speechSynthesis) {
     handlers.onerror?.();
@@ -64,7 +76,7 @@ export function speakWithBrowser(
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = browserSpeechLocale(locale);
-  utter.rate = 0.95;
+  utter.rate = browserSpeechRateForPace(normalizeSpeechPace(speechPace));
   utter.onstart = () => handlers.onstart?.();
   utter.onend = () => handlers.onend?.();
   utter.onerror = () => handlers.onerror?.();

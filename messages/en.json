@@ -248,6 +248,9 @@
       "resetSent": "If an account exists for that email, a password reset link has been sent.",
       "resetNeedEmail": "Enter your email address first, then try Forgot Password again.",
       "resetFailed": "Could not start password reset. Try again in a moment.",
+      "resetComplete": "Password updated. Sign in with your new password.",
+      "authLinkInvalid": "That sign-in link is invalid or has expired. Try again.",
+      "recoveryLinkInvalid": "That password reset link is invalid or has expired. Request a new one.",
       "hidePassword": "Hide password",
       "showPassword": "Show password",
       "rememberMe": "Remember me for 30 days",
@@ -258,6 +261,22 @@
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
       "copyright": "© {year} VPsych"
+    },
+    "resetPassword": {
+      "platformName": "VPsych Clinical Assessment Platform",
+      "title": "Choose a new password",
+      "subtitle": "Enter a strong password to finish resetting your account.",
+      "checking": "Verifying your reset link…",
+      "sessionMissing": "This reset link is missing a valid session. Open the latest email link, or request a new reset from the sign-in page.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "submit": "Update password",
+      "saving": "Updating…",
+      "success": "Password updated.",
+      "updateFailed": "Could not update password. Try again.",
+      "backToLogin": "Back to sign in"
     },
     "signup": {
       "nav": {

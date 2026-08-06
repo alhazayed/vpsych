@@ -181,6 +181,7 @@ export function VoiceSession({
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
+        speechPace: avatar.personality?.speech?.pace ?? null,
         audioRef,
         handlers: {
           onstart: () => setSpeaking(true),
@@ -191,6 +192,7 @@ export function VoiceSession({
     },
     [
       avatar.id,
+      avatar.personality?.speech?.pace,
       avatar.voice_id,
       avatar.voice_id_ar,
       avatar.voice_profile_id,
@@ -264,6 +266,7 @@ export function VoiceSession({
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
+        speechPace: avatar.personality?.speech?.pace ?? null,
         audioRef,
         onTranscript: (transcript) => setDraft(transcript),
         onMessages: (userMessage, assistantMessage) => {
