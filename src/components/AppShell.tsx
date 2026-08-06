@@ -94,6 +94,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/cvl",
+      label: t("clinicalValidation"),
+      icon: "science",
+      match: (p) => p.startsWith("/admin/cvl"),
+    },
   ];
 }
 

@@ -15,7 +15,8 @@ export type QualityLedgerEventType =
   | "instructor_preset_updated"
   | "ai_model_changed"
   | "platform_upgraded"
-  | "correction";
+  | "correction"
+  | "cvl_cfl_assigned";
 
 export type QualitySnapshotType =
   | "clinical_template"
