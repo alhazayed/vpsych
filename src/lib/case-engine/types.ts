@@ -60,6 +60,8 @@ export type PersonaRow = {
 /** Module 2 — diagnosis-specific package. */
 export type DisorderPackage = {
   severity_default?: CaseSeverity;
+  /** When true, missing DSM-5 code is intentional (e.g. ICD-11-only CPTSD). */
+  dsm5_optional?: boolean;
   symptom_domains?: string[];
   risk_defaults?: {
     suicidal_ideation?: ClinicalCore["risk_profile"]["suicidal_ideation"];
@@ -78,6 +80,8 @@ export type DisorderPackage = {
   disclosure_rules?: ClinicalCore["disclosure_rules"];
   /** Optional full clinical_core override template fields. */
   clinical_core_template?: Partial<ClinicalCore>;
+  /** Scientific evidence lock version. */
+  evidence_version?: string;
 };
 
 export type DisorderRow = {
@@ -198,6 +202,20 @@ export type CaseInstanceSnapshot = {
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
+  /** Scientific reproducibility locks. */
+  scientific_meta?: Record<string, unknown>;
+  /** Educational clinical teaching cues (optional; improves CFI MSE dimensions). */
+  clinical_teaching?: {
+    differentials: string[];
+    rule_outs: string[];
+    teaching_points: string[];
+    common_mistakes: string[];
+    insight_expectation: string;
+    judgment_expectation: string;
+    speech_behavior_cue: string;
+  };
+  /** Clinical Fidelity Index result when computed at generation. */
+  clinical_fidelity?: Record<string, unknown>;
   /** Present when generated from a Clinical Scenario Template. */
   template?: {
     id: string;

@@ -39,6 +39,7 @@
       "adaptiveCurriculum": "المنهج التكيفي",
       "adaptiveLearning": "تعلّمي",
       "competencyGraph": "رسم الكفاءات",
+      "clinicalValidation": "مختبر التحقق السريري",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -55,6 +56,7 @@
     "scenarioTemplates": "قوالب السيناريو",
     "instructorPresets": "إعدادات المدرب",
     "adaptiveCurriculum": "المنهج التكيفي",
+    "clinicalValidation": "التحقق السريري",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح"
   },
@@ -472,6 +474,26 @@
     "nav": {
       "enterpriseAdmin": "إدارة المؤسسة",
       "systemHealthy": "حالة النظام: سليمة"
+    },
+    "cvl": {
+      "title": "مختبر التحقق السريري",
+      "subtitle": "تحقق علمي معمى للواقعية السريرية وصدق المحادثة والفعالية التعليمية. بلا أدلة ملفّقة.",
+      "registerStudy": "تسجيل دراسة BPC",
+      "exportPackage": "حزمة بحث",
+      "exportCsv": "تصدير CSV",
+      "exportPublication": "هيكل النشر",
+      "integrityNote": "تبقى المقاييس فارغة حتى تُرسل تقييمات بشرية معمّاة حقيقية. هويات المراجعين سرية.",
+      "loading": "جارٍ تحميل المختبر…",
+      "metrics": "مقاييس الجودة",
+      "insufficient": "بيانات غير كافية",
+      "studies": "الدراسات",
+      "noStudies": "لا دراسات بعد — سجّل بروتوكولًا لبدء التوظيف.",
+      "cfl": "مستويات الصدق السريري",
+      "agreement": "اتفاق المراجعين",
+      "byDisorder": "حسب التشخيص",
+      "roadmap": "ذكاء خارطة الطريق",
+      "studyCreated": "تم تسجيل الدراسة مع تخصيصات معمّاة (الأذرع مخفية).",
+      "actionFailed": "فشل إجراء المختبر"
     },
     "reports": {
       "statTotal": "إجمالي التقييمات",

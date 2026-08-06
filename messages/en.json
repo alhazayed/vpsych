@@ -39,6 +39,7 @@
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
+      "clinicalValidation": "Clinical Validation Laboratory",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -55,6 +56,7 @@
     "scenarioTemplates": "Scenario Templates",
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
+    "clinicalValidation": "Clinical Validation",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -472,6 +474,26 @@
     "nav": {
       "enterpriseAdmin": "Enterprise Admin",
       "systemHealthy": "System Status: Healthy"
+    },
+    "cvl": {
+      "title": "Clinical Validation Laboratory",
+      "subtitle": "Blinded scientific validation of clinical realism, conversation fidelity, and educational effectiveness. No fabricated evidence.",
+      "registerStudy": "Register BPC study",
+      "exportPackage": "Research package",
+      "exportCsv": "Export CSV",
+      "exportPublication": "Publication skeleton",
+      "integrityNote": "Metrics stay blank until real blinded human ratings are submitted. Reviewer identities remain confidential.",
+      "loading": "Loading CVL…",
+      "metrics": "Quality metrics",
+      "insufficient": "insufficient data",
+      "studies": "Studies",
+      "noStudies": "No studies yet — register a protocol to begin recruitment.",
+      "cfl": "Clinical Fidelity Levels",
+      "agreement": "Reviewer agreement",
+      "byDisorder": "By disorder",
+      "roadmap": "Roadmap intelligence",
+      "studyCreated": "Study registered with blinded assignments (arms hidden).",
+      "actionFailed": "CVL action failed"
     },
     "reports": {
       "statTotal": "Total assessments",

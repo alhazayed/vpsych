@@ -156,6 +156,7 @@ export type PresetConstraint = {
     | "max_age"
     | "required_locale"
     | "forbidden_comorbidity"
+    | "max_comorbidities"
     | "require_medical_sim";
   value: string;
 };

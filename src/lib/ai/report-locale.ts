@@ -15,6 +15,8 @@ export function normalizeReportLanguage(
 export const DEFAULT_RUBRIC_LABELS_EN: Record<string, string> = {
   alliance: "Therapeutic alliance & empathy",
   assessment: "Clinical assessment & exploration",
+  dsm_reasoning: "DSM-5 diagnostic reasoning",
+  icd_reasoning: "ICD-11 diagnostic reasoning",
   interventions: "Appropriate interventions",
   safety: "Safety / risk handling",
   structure: "Session structure & time use",
@@ -24,6 +26,8 @@ export const DEFAULT_RUBRIC_LABELS_EN: Record<string, string> = {
 export const DEFAULT_RUBRIC_LABELS_AR: Record<string, string> = {
   alliance: "التحالف العلاجي والتعاطف",
   assessment: "التقييم السريري والاستكشاف",
+  dsm_reasoning: "التفكير التشخيصي وفق DSM-5",
+  icd_reasoning: "التفكير التشخيصي وفق ICD-11",
   interventions: "التدخلات المناسبة",
   safety: "التعامل مع السلامة والمخاطر",
   structure: "بنية الجلسة واستخدام الوقت",
@@ -78,7 +82,12 @@ export function buildExaminerSystemPrompt(params: {
 أهداف الجلسة: ${goals}
 مدة الجلسة بالثواني: ${durationSec}.
 بنود التقييم (درجة من 0 إلى 5 لكل id): ${rubricLines}.
-أرجع عنصراً واحداً لكل معرف rubric.`;
+أرجع عنصراً واحداً لكل معرف rubric.
+
+الترميز المزدوج — عند وجود dsm_reasoning و/أو icd_reasoning:
+- قيّم التفكير التشخيصي وفق DSM-5 بشكل منفصل عن ICD-11.
+- كافئ العمل التفريقي الذي يتعامل مع النظامين عندما يدعم النص ذلك.
+- لا تدمجهما في حكم عام واحد تحت assessment.`;
   }
 
   return `You are a clinical skills examiner assessing a trainee therapist in a simulated session.
@@ -98,7 +107,12 @@ Ideal approach: ${approach}
 Session goals: ${goals}
 Duration seconds: ${durationSec}.
 Rubric item ids to score (0–5 each): ${rubricLines}.
-Return one score entry per rubric id.`;
+Return one score entry per rubric id.
+
+Dual-coding education — when rubric includes dsm_reasoning and/or icd_reasoning:
+- Score DSM-5 diagnostic reasoning separately from ICD-11 diagnostic reasoning.
+- Reward explicit differential work that engages both systems when the transcript supports it.
+- Do not conflate the two codes into a single generic "assessment" judgment.`;
 }
 
 export function heuristicCopy(
