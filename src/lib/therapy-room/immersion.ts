@@ -2,13 +2,20 @@
  * Immersion event bus — future VR / AR / eye-tracking / haptics / body anim.
  *
  * Room UI publishes; adapters subscribe. No redesign required to add a device.
+ * Distinct from TRM's ImmersionEvent / TRII tracker in immersion-index.ts.
  */
 
-import type { ImmersionAdapter, ImmersionChannel, ImmersionEvent } from "./types";
+import type {
+  ClinicImmersionAdapter,
+  ClinicImmersionChannel,
+  ClinicImmersionEvent,
+} from "./types";
 
-const adapters = new Map<string, ImmersionAdapter>();
+const adapters = new Map<string, ClinicImmersionAdapter>();
 
-export function registerImmersionAdapter(adapter: ImmersionAdapter): () => void {
+export function registerImmersionAdapter(
+  adapter: ClinicImmersionAdapter,
+): () => void {
   adapters.set(adapter.id, adapter);
   return () => {
     adapter.dispose?.();
@@ -16,15 +23,15 @@ export function registerImmersionAdapter(adapter: ImmersionAdapter): () => void 
   };
 }
 
-export function listImmersionAdapters(): ImmersionAdapter[] {
+export function listImmersionAdapters(): ClinicImmersionAdapter[] {
   return [...adapters.values()];
 }
 
 export function publishImmersionEvent(
-  channel: ImmersionChannel,
+  channel: ClinicImmersionChannel,
   payload: Record<string, unknown> = {},
-): ImmersionEvent {
-  const event: ImmersionEvent = {
+): ClinicImmersionEvent {
+  const event: ClinicImmersionEvent = {
     channel,
     at: Date.now(),
     payload,
@@ -42,7 +49,7 @@ export function publishImmersionEvent(
 export function publishRoomPhase(
   phase: string,
   extra: Record<string, unknown> = {},
-): ImmersionEvent {
+): ClinicImmersionEvent {
   return publishImmersionEvent("session.phase", { phase, ...extra });
 }
 

@@ -1,7 +1,7 @@
 # Reviewer Guide — Psychiatrists & Psychologists
 
 **Product:** VPsych Professional Preview 1.0 (RC1)  
-**URL:** `https://vpsych.vercel.app`  
+**URL:** `https://vpsych.vercel.app/validation`  
 **Role:** Independent clinical expert evaluation (invited)
 
 ---
@@ -23,10 +23,11 @@ See also: `docs/FEEDBACK_GUIDE.md`, `docs/KNOWN_LIMITATIONS.md`.
 
 ## 2. Access
 
-1. Use the credentials provided by the Release Manager (or your institutional invite).  
-2. Prefer a private browser profile.  
-3. Confirm you land in the authenticated app shell (avatars / sessions), not the marketing landing alone.  
-4. If voice fails, try text-only once, then report TTS failure as operational (Wave 3 H5 was previously a key config issue).
+1. Open **`https://vpsych.vercel.app/validation`** — purpose, consent, and one-click launch.  
+2. Enter your invitation code (or sign in with credentials from the Release Manager).  
+3. Prefer a private browser profile.  
+4. Confirm you land in the authenticated app shell (avatars / sessions) after launch.  
+5. If voice fails, try text-only once, then report TTS failure as operational (Wave 3 H5 was previously a key config issue).
 
 ---
 

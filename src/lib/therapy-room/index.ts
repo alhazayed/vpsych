@@ -1,5 +1,94 @@
+/**
+ * Therapy room barrel — Therapy Room Mode (TRM) + Virtual Mental Health Center (VMHC).
+ *
+ * TRM: optional immersive consultation room on /sessions/[id]
+ *      (NEXT_PUBLIC_THERAPY_ROOM_MODE).
+ * VMHC: clinic-day workflow on /clinic (FEATURE_THERAPY_ROOM).
+ * Classic VoiceSession remains the default when flags are off.
+ */
+
 export { isTherapyRoomEnabled } from "@/lib/features";
-export * from "./types";
+
+export type {
+  InteractionMode,
+  TherapyRoomThemeId,
+  TherapyRoomTheme,
+  PatientAffect,
+  NonverbalCue,
+  PatientPresencePhase,
+  PatientBehaviorState,
+  VoiceModulation,
+  ImmersionEvent,
+  ImmersionEventKind,
+  TherapyRoomImmersionIndex,
+  TherapyRoomSettings,
+  RoomAmbienceKind,
+  NoteFormat,
+  ClinicUrgency,
+  AppointmentStatus,
+  RoomPhase,
+  TherapyRoomToolbarAction,
+  ChartSectionId,
+  PatientNonverbalProfile,
+  ClinicAppointmentCard,
+  PreSessionChart,
+  PrivateNoteEntry,
+  ArrivalBeat,
+  DepartureBeat,
+  SupervisorBriefing,
+  DailyClinicSummary,
+  ClinicImmersionChannel,
+  ClinicImmersionEvent,
+  ClinicImmersionAdapter,
+  ImmersionChannel,
+  ImmersionAdapter,
+} from "./types";
+
+export {
+  isTherapyRoomModeEnabled,
+  parseInteractionMode,
+  shouldUseTherapyRoom,
+} from "./feature-flag";
+
+export {
+  THERAPY_ROOM_THEMES,
+  DEFAULT_THERAPY_ROOM_THEME,
+  resolveTherapyRoomTheme,
+  allTherapyRoomThemeIds,
+} from "./themes";
+
+export {
+  derivePatientBehavior,
+  thinkingLatencyMs,
+  deterministicJitter,
+} from "./pme-bridge";
+
+export {
+  shouldPatientInterruptTherapist,
+  INTERRUPTIVE_DISORDER_HINTS,
+} from "./interruption";
+
+export {
+  voiceModulationForDisorder,
+  applyBrowserVoiceModulation,
+  applyHtmlAudioModulation,
+} from "./voice-modulation";
+
+export {
+  computeImmersionIndex,
+  createImmersionTracker,
+  type ImmersionTracker,
+} from "./immersion-index";
+
+export {
+  startHandsFreeVad,
+  startBargeInMonitor,
+  type VadController,
+  type HandsFreeVadOptions,
+} from "./vad";
+
+export { startRoomAmbience, type AmbienceController } from "./ambience";
+
 export * from "./chart-visibility";
 export * from "./patient-behavior";
 export * from "./arrival";

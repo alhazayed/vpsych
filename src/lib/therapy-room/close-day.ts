@@ -4,12 +4,10 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  buildAppointmentCard,
-  buildDailyClinicSummary,
-  chartSectionsForDifficulty,
-  type DailyClinicSummary,
-} from "@/lib/therapy-room";
+import { buildAppointmentCard } from "./clinic-schedule";
+import { buildDailyClinicSummary } from "./daily-summary";
+import { chartSectionsForDifficulty } from "./chart-visibility";
+import type { DailyClinicSummary } from "./types";
 import type { CaseDifficulty } from "@/lib/case-engine/types";
 
 export async function closeClinicDay(

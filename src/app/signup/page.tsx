@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +12,7 @@ import {
   passwordChecks,
   passwordStrengthLevel,
 } from "@/lib/password-policy";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 const COUNTRIES = [
   { value: "US", key: "us" },
@@ -42,8 +43,10 @@ function strengthMeta(level: ReturnType<typeof passwordStrengthLevel>) {
   return { width: "100%", color: "var(--primary)" };
 }
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeRedirectPath(searchParams.get("next"));
   const t = useTranslations("auth.signup");
   const tLogin = useTranslations("auth.login");
   const [firstName, setFirstName] = useState("");
@@ -112,7 +115,7 @@ export default function SignupPage() {
           organization: organization || null,
           newsletter,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     setLoading(false);
@@ -121,7 +124,7 @@ export default function SignupPage() {
       return;
     }
     if (data.session) {
-      router.push("/avatars");
+      router.push(next);
       router.refresh();
       return;
     }
@@ -175,7 +178,7 @@ export default function SignupPage() {
                 {t("nav.clinicalTools")}
               </Link>
               <Link
-                href="/login"
+                href={`/login?next=${encodeURIComponent(next)}`}
                 className="rounded-[14px] border border-[var(--primary)] px-4 py-1.5 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--primary-fixed)]"
               >
                 {t("nav.signIn")}
@@ -450,7 +453,7 @@ export default function SignupPage() {
             <p className="text-sm text-[var(--on-surface-variant)]">
               {t("hasAccount")}{" "}
               <Link
-                href="/login"
+                href={`/login?next=${encodeURIComponent(next)}`}
                 className="ms-1 font-bold text-[var(--primary)] hover:underline"
               >
                 {t("signIn")}
@@ -517,5 +520,18 @@ export default function SignupPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  const t = useTranslations("auth");
+  return (
+    <Suspense
+      fallback={
+        <main className="p-8 text-[var(--on-surface-variant)]">{t("loading")}</main>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

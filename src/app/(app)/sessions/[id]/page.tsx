@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { VoiceSession } from "@/components/VoiceSession";
+import { TherapyRoomSession } from "@/components/therapy-room/TherapyRoomSession";
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -41,6 +43,20 @@ export default async function SessionPage({ params }: Props) {
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
   });
+
+  const useTherapyRoom =
+    isTherapyRoomModeEnabled() && typed.interaction_mode === "therapy_room";
+
+  if (useTherapyRoom) {
+    return (
+      <TherapyRoomSession
+        session={typed}
+        avatar={resolved}
+        initialMessages={(messages ?? []) as SessionMessage[]}
+        initialNotes={typed.private_notes ?? ""}
+      />
+    );
+  }
 
   return (
     <VoiceSession
