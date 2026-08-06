@@ -76,6 +76,11 @@ Speech / STT / GPT / TTS / auto-reopen were never reached.
    (`acquireHandsFreeMicrophone`).
 4. Boot cleanup uses local `cancelled` + `mountedRef`; **never** sets `endingRef`.
 5. Unlock `AudioContext` under the Start gesture.
+6. Keep a `sessionMicRef` for the whole session (reuse across listen turns).
+7. On boot cleanup, **re-stash** the live mic via `stashPrimedMicrophone` instead
+   of stopping tracks — StrictMode remounts reclaim it; stopping caused a second
+   gesture-less `getUserMedia` → `NotAllowedError`.
+8. Retry re-primes under its click before re-entering `LISTENING`.
 
 Classic `VoiceSession` untouched.
 
@@ -83,4 +88,4 @@ Classic `VoiceSession` untouched.
 
 ## 5. Unified diff
 
-See PR #151 / commit `63c0340`.
+See PR #151.
