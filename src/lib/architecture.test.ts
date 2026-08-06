@@ -143,6 +143,8 @@ describe("architecture invariants", () => {
     expect(room).toMatch(/createConversationFsm/);
     expect(room).toMatch(/data-trm-hands-free/);
     expect(room).toMatch(/takePrimedMicrophone/);
+    expect(room).toMatch(/stashPrimedMicrophone/);
+    expect(room).toMatch(/sessionMicRef/);
     // Boot cleanup must not poison endingRef (StrictMode re-run / Retry).
     expect(room).toMatch(/never set endingRef/i);
     expect(room).not.toMatch(/startRecording|toggleMic|click.*microphone/i);

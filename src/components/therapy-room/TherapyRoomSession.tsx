@@ -26,6 +26,9 @@ import {
   startHandsFreeVad,
   startRoomAmbience,
   statusKeyForState,
+  mediaStreamIsLive,
+  primeTherapyRoomMicrophone,
+  stashPrimedMicrophone,
   takePrimedMicrophone,
   voiceModulationForDisorder,
   type AmbienceController,
@@ -133,8 +136,11 @@ export function TherapyRoomSession({
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
-  /** Stream primed on Enter Therapy Room click (user-gesture getUserMedia). */
-  const primedStreamRef = useRef<MediaStream | null>(null);
+  /**
+   * Session-owned mic stream. Primed on Enter Therapy Room click, then reused
+   * for every listen turn so we never re-call getUserMedia without a gesture.
+   */
+  const sessionMicRef = useRef<MediaStream | null>(null);
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -236,6 +242,8 @@ export function TherapyRoomSession({
     setStatusKey("ending");
     vadRef.current?.cancel();
     vadRef.current = null;
+    sessionMicRef.current?.getTracks().forEach((t) => t.stop());
+    sessionMicRef.current = null;
     cancelTurnWork();
     stopPlayback();
     ambienceRef.current?.stop();
@@ -570,9 +578,12 @@ export function TherapyRoomSession({
       playbackEndedAtRef.current = null;
     }
 
-    // Prefer the stream primed under the Start Session user gesture.
-    const primed = primedStreamRef.current;
-    primedStreamRef.current = null;
+    // Prefer the session mic (primed under Enter Therapy Room user gesture).
+    let mic = sessionMicRef.current;
+    if (!mic || !mediaStreamIsLive(mic)) {
+      mic = takePrimedMicrophone();
+      sessionMicRef.current = mic;
+    }
 
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
@@ -582,7 +593,7 @@ export function TherapyRoomSession({
       const vad = await startHandsFreeVad({
         silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
         maxMs: 28000,
-        stream: primed ?? undefined,
+        stream: mic ?? undefined,
         onSpeechStart: () => {
           speechStartedAt.current = telemetryRef.current.mark();
           setTherapistSpeaking(true);
@@ -645,8 +656,9 @@ export function TherapyRoomSession({
         interruptedByPatient ? "patient_interrupt" : "hands_free",
       );
     } catch (err) {
-      // Release a failed primed stream so Retry can re-acquire under its click.
-      primed?.getTracks().forEach((t) => t.stop());
+      // Drop a dead session mic so Retry (user gesture) can re-acquire.
+      sessionMicRef.current?.getTracks().forEach((t) => t.stop());
+      sessionMicRef.current = null;
       console.error("[therapy-room] hands-free mic/VAD failed", err);
       telemetryRef.current.record("error", { code: "mic_denied" });
       if (!mountedRef.current || endingRef.current) return;
@@ -688,6 +700,10 @@ export function TherapyRoomSession({
   // ending" and is checked by startListeningLoop / handleRetry. React StrictMode
   // re-runs this effect on the same instance; poisoning endingRef left the room
   // stuck (or Retry dead) after the first mount cleanup.
+  //
+  // Also: do NOT stop the primed/session mic in cleanup. StrictMode remounts
+  // reclaim it via stash → take; stopping tracks here caused NotAllowedError
+  // on the second mount when getUserMedia ran without a user gesture.
   useEffect(() => {
     let cancelled = false;
     mountedRef.current = true;
@@ -700,7 +716,7 @@ export function TherapyRoomSession({
     // Claim mic acquired under the Enter Therapy Room click (user gesture).
     const primed = takePrimedMicrophone();
     if (primed) {
-      primedStreamRef.current = primed;
+      sessionMicRef.current = primed;
     }
 
     if (settings.ambienceEnabled) {
@@ -723,8 +739,12 @@ export function TherapyRoomSession({
       fsm.reset("IDLE");
       vadRef.current?.cancel();
       vadRef.current = null;
-      primedStreamRef.current?.getTracks().forEach((t) => t.stop());
-      primedStreamRef.current = null;
+      // Hand the live mic back for StrictMode remount / soft remounts.
+      const mic = sessionMicRef.current;
+      if (mic && mediaStreamIsLive(mic)) {
+        stashPrimedMicrophone(mic);
+      }
+      sessionMicRef.current = null;
       cancelTurnWork();
       stopPlayback();
       ambienceRef.current?.stop();
@@ -760,14 +780,25 @@ export function TherapyRoomSession({
 
   const handleRetry = useCallback(() => {
     if (endingRef.current) return;
-    // Retry is itself a user gesture — safe to re-acquire the mic here.
+    // Retry is itself a user gesture — re-prime mic under this click.
     mountedRef.current = true;
     telemetryRef.current.record("retry");
-    const result = dispatch("RETRY");
-    if (result.ok) {
-      setStatusKey("listening");
-      listenLoopRef.current();
-    }
+    void (async () => {
+      try {
+        await primeTherapyRoomMicrophone();
+        sessionMicRef.current = takePrimedMicrophone();
+      } catch (err) {
+        console.error("[therapy-room] retry mic prime failed", err);
+        dispatch("ERROR");
+        setStatusKey("error");
+        return;
+      }
+      const result = dispatch("RETRY");
+      if (result.ok) {
+        setStatusKey("listening");
+        listenLoopRef.current();
+      }
+    })();
   }, [dispatch]);
 
   const handleControl = useCallback(
