@@ -7,6 +7,10 @@ import {
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import {
+  resolveVoiceSettings,
+  type ElevenLabsVoiceSettings,
+} from "@/lib/voice/prosody";
 
 export type ElevenLabsSynthesizeParams = {
   text: string;
@@ -15,6 +19,10 @@ export type ElevenLabsSynthesizeParams = {
   voiceIdAr?: string | null;
   /** Prefer streaming endpoint (default true). */
   stream?: boolean;
+  /** CB-HCF-007 — optional clinical speech phenotype hints. */
+  speechPace?: string | null;
+  speechEnergy?: string | null;
+  disorderSlug?: string | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -97,6 +105,7 @@ function cacheKey(params: {
   voiceId: string;
   modelId: string;
   locale: SessionSpeechLocale;
+  voiceSettings: ElevenLabsVoiceSettings;
 }) {
   return createHash("sha256")
     .update(params.text)
@@ -106,6 +115,8 @@ function cacheKey(params: {
     .update(params.modelId)
     .update("\0")
     .update(params.locale)
+    .update("\0")
+    .update(JSON.stringify(params.voiceSettings))
     .digest("hex");
 }
 
@@ -235,6 +246,11 @@ export const elevenLabsService = {
     }
 
     const model = modelId();
+    const voiceSettings = resolveVoiceSettings({
+      speechPace: params.speechPace,
+      speechEnergy: params.speechEnergy,
+      disorderSlug: params.disorderSlug,
+    });
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
 
@@ -254,6 +270,7 @@ export const elevenLabsService = {
         voiceId,
         modelId: model,
         locale: params.locale,
+        voiceSettings,
       });
 
       const cached = readCache(key);
@@ -284,10 +301,7 @@ export const elevenLabsService = {
         body: JSON.stringify({
           text,
           model_id: model,
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
-          },
+          voice_settings: voiceSettings,
         }),
       });
 
