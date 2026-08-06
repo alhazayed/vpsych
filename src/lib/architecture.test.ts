@@ -79,4 +79,31 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/body\.presetSlug/);
     expect(route).toMatch(/\.eq\("slug", body\.presetSlug\)/);
   });
+
+  it("HFTE conversation layer does not import clinical engines", () => {
+    const files = [
+      "lib/conversation/index.ts",
+      "lib/conversation/state-machine.ts",
+      "lib/conversation/vad.ts",
+      "lib/conversation/thinking-delay.ts",
+      "lib/conversation/vocalization.ts",
+      "lib/conversation/continuous-mic.ts",
+    ];
+    for (const rel of files) {
+      const src = readFileSync(join(root, rel), "utf8");
+      expect(src).not.toMatch(/from ["']@\/lib\/ai\/assessment/);
+      expect(src).not.toMatch(/from ["']@\/lib\/ai\/patient-agent/);
+      expect(src).not.toMatch(/from ["']@\/lib\/ace\/session-hook/);
+      expect(src).not.toMatch(/from ["']@\/lib\/cge/);
+    }
+  });
+
+  it("HFTE metrics API rejects audio payloads", () => {
+    const route = readFileSync(
+      join(root, "app/api/sessions/[id]/hfte-metrics/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/Audio payloads are not accepted/);
+    expect(route).toMatch(/isHandsFreeTherapyEnabled/);
+  });
 });

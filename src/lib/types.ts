@@ -13,6 +13,8 @@ export type Profile = {
   display_name: string;
   role: UserRole;
   preferred_language?: PreferredLanguage | null;
+  /** HFTE UX preferences — never audio. */
+  voice_conversation_preferences?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };

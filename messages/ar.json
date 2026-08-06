@@ -40,7 +40,8 @@
       "adaptiveLearning": "تعلّمي",
       "competencyGraph": "رسم الكفاءات",
       "apiIntegrations": "تكاملات واجهة البرمجة",
-      "securityKeys": "الأمان والمفاتيح"
+      "securityKeys": "الأمان والمفاتيح",
+      "hfteMetrics": "مقاييس المحادثة الحرة"
     }
   },
   "nav": {
@@ -56,7 +57,8 @@
     "instructorPresets": "إعدادات المدرب",
     "adaptiveCurriculum": "المنهج التكيفي",
     "apiIntegrations": "تكاملات واجهة البرمجة",
-    "securityKeys": "الأمان والمفاتيح"
+    "securityKeys": "الأمان والمفاتيح",
+    "hfteMetrics": "مقاييس المحادثة الحرة"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -425,7 +427,8 @@
       "failed": "تعذر بدء الجلسة",
       "networkError": "خطأ في الشبكة",
       "starting": "جارٍ البدء…",
-      "cta": "بدء جلسة صوتية لمدة 40 دقيقة"
+      "cta": "بدء جلسة صوتية لمدة 40 دقيقة",
+      "ctaHandsFree": "بدء جلسة بدون أزرار"
     },
     "timer": {
       "ariaLabel": "الوقت المتبقي {time}"
@@ -433,6 +436,40 @@
     "portrait": {
       "speaking": "يتحدث",
       "listening": "يستمع"
+    },
+    "hfte": {
+      "settings": "المحادثة",
+      "settingsTitle": "إعدادات المحادثة",
+      "mode": "وضع الميكروفون",
+      "handsFree": "بدون أزرار",
+      "pushToTalk": "اضغط للتحدث",
+      "autoInterrupt": "السماح بمقاطعة المريض",
+      "thinkingDelay": "تأخير التفكير",
+      "waveform": "إظهار موجة الميكروفون",
+      "sensitivity": "حساسية الصوت",
+      "close": "إغلاق",
+      "pause": "إيقاف مؤقت",
+      "resume": "متابعة",
+      "muteAvatar": "كتم صوت المريض",
+      "unmuteAvatar": "إلغاء كتم المريض",
+      "repeat": "إعادة الإجابة",
+      "privateNotes": "ملاحظات خاصة",
+      "privateNotesHint": "تراها أنت فقط. لا تُرسل إلى المريض أبداً.",
+      "privateNotesPlaceholder": "ملاحظات لنفسك…",
+      "pipelineHandsFree": "صوت بدون أزرار",
+      "endConfirm": "إنهاء الجلسة وإنشاء تقرير المشرف؟",
+      "cancel": "إلغاء",
+      "status": {
+        "listening": "يستمع",
+        "thinking": "يفكر",
+        "patientSpeaking": "المريض يتحدث",
+        "paused": "متوقف مؤقتاً",
+        "networkRetry": "إعادة محاولة الشبكة",
+        "microphoneMuted": "الميكروفون مكتوم",
+        "connectionLost": "انقطع الاتصال",
+        "ready": "جاهز",
+        "finished": "انتهى"
+      }
     }
   },
   "analysis": {

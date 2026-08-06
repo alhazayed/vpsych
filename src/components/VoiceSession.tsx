@@ -9,7 +9,16 @@ import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
+import { ConversationToolbar } from "@/components/conversation/ConversationToolbar";
+import {
+  HandsFreeSettingsPanel,
+  useVoicePreferences,
+} from "@/components/conversation/HandsFreeSettingsPanel";
+import { MicWaveform } from "@/components/conversation/MicWaveform";
+import { SessionStatusBar } from "@/components/conversation/SessionStatusBar";
+import { useHandsFreeController } from "@/components/conversation/useHandsFreeController";
 import { remainingSeconds } from "@/lib/session-timer";
+import { mergeVoicePreferences, saveLocalVoicePreferences } from "@/lib/conversation";
 import {
   playPatientSpeech,
   resolvePipelineLocale,
@@ -75,10 +84,13 @@ export function VoiceSession({
   session,
   avatar,
   initialMessages,
+  handsFreeEnabled = false,
 }: {
   session: TherapySession;
   avatar: ResolvedAvatar;
   initialMessages: SessionMessage[];
+  /** Server-resolved ENABLE_HANDS_FREE_THERAPY flag. */
+  handsFreeEnabled?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("session");
@@ -95,6 +107,11 @@ export function VoiceSession({
   const [status, setStatus] = useState(() => t("status.ready"));
   const [ending, setEnding] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showHfteSettings, setShowHfteSettings] = useState(false);
+  const [endConfirm, setEndConfirm] = useState(false);
+  const [prefs, setPrefs] = useVoicePreferences(handsFreeEnabled);
+  const handsFreeActive =
+    handsFreeEnabled && prefs.mode === "hands_free" && voiceEnabled;
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const micRecorderRef = useRef<MicRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -141,12 +158,48 @@ export function VoiceSession({
     }
   }, [router, session.id, t, stopPlayback]);
 
+  const hfte = useHandsFreeController({
+    enabled: handsFreeActive,
+    session,
+    avatar,
+    preferences: prefs,
+    onPreferencesPatch: (patch) => {
+      setPrefs((p) => {
+        const next = mergeVoicePreferences(p, patch);
+        saveLocalVoicePreferences(next);
+        return next;
+      });
+    },
+    onMessages: (userMessage, assistantMessage) => {
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    },
+    onStatusText: setStatus,
+    onEndSession: () => {
+      void endSession();
+    },
+    onConfirmEnd: () => setEndConfirm(true),
+    ending,
+  });
+
+  const portraitSpeaking =
+    handsFreeActive
+      ? hfte.conversationState === "AvatarSpeaking"
+      : speaking;
+
   useEffect(() => {
     const tick = () => {
+      if (
+        handsFreeActive &&
+        prefs.freezeTimerWhenPaused &&
+        hfte.paused
+      ) {
+        return;
+      }
       const left = remainingSeconds(
         session.started_at,
         session.max_duration_sec,
       );
+      // Optional: subtract accumulated pause — controller tracks pausedAccumMs
       setRemaining(left);
       if (left <= 0 && !endingRef.current) {
         void endSession();
@@ -155,7 +208,14 @@ export function VoiceSession({
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [endSession, session.max_duration_sec, session.started_at]);
+  }, [
+    endSession,
+    handsFreeActive,
+    hfte.paused,
+    prefs.freezeTimerWhenPaused,
+    session.max_duration_sec,
+    session.started_at,
+  ]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -412,6 +472,12 @@ export function VoiceSession({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       {ending && <AiAnalysisOverlay />}
+      {handsFreeActive && (
+        <SessionStatusBar
+          status={hfte.statusKind}
+          label={t(`hfte.status.${hfte.statusKind}`)}
+        />
+      )}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href="/avatars" className="flex items-center gap-3">
           <Image
@@ -428,6 +494,17 @@ export function VoiceSession({
         <div className="flex items-center gap-2 md:gap-3">
           <SessionTimer remaining={remaining} />
           <LanguageSwitcher compact />
+          {handsFreeEnabled && (
+            <button
+              type="button"
+              onClick={() => setShowHfteSettings((v) => !v)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--surface-container)] px-3 text-xs font-semibold text-[var(--on-surface-variant)]"
+              title={t("hfte.settingsTitle")}
+            >
+              <span className="material-symbols-outlined text-[18px]">tune</span>
+              {t("hfte.settings")}
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleVoiceMode}
@@ -455,6 +532,55 @@ export function VoiceSession({
           </button>
         </div>
       </header>
+
+      {handsFreeEnabled && (
+        <HandsFreeSettingsPanel
+          open={showHfteSettings}
+          onClose={() => setShowHfteSettings(false)}
+          value={prefs}
+          onChange={setPrefs}
+          labels={{
+            title: t("hfte.settingsTitle"),
+            mode: t("hfte.mode"),
+            handsFree: t("hfte.handsFree"),
+            pushToTalk: t("hfte.pushToTalk"),
+            autoInterrupt: t("hfte.autoInterrupt"),
+            thinkingDelay: t("hfte.thinkingDelay"),
+            waveform: t("hfte.waveform"),
+            sensitivity: t("hfte.sensitivity"),
+            close: t("hfte.close"),
+          }}
+        />
+      )}
+
+      {endConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-5 shadow-lg">
+            <p className="text-sm font-semibold text-[var(--on-surface)]">
+              {t("hfte.endConfirm")}
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setEndConfirm(false)}
+              >
+                {t("hfte.cancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  setEndConfirm(false);
+                  void endSession();
+                }}
+              >
+                {t("endSession")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="relative flex flex-1 flex-col pt-16 lg:flex-row">
         <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6 lg:pb-12">
@@ -506,28 +632,52 @@ export function VoiceSession({
             </div>
           )}
 
+          {hfte.showPrivateNotes && (
+            <div className="absolute start-4 top-24 z-20 w-72 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4 shadow-[var(--clinical-shadow-hover)] md:start-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+                {t("hfte.privateNotes")}
+              </p>
+              <p className="mb-2 text-[10px] text-[var(--on-surface-variant)]">
+                {t("hfte.privateNotesHint")}
+              </p>
+              <textarea
+                value={hfte.privateNotes}
+                onChange={(e) => hfte.setPrivateNotes(e.target.value)}
+                className="field-input min-h-28 w-full text-sm"
+                placeholder={t("hfte.privateNotesPlaceholder")}
+              />
+            </div>
+          )}
+
           <div className="mt-28 w-full max-w-md lg:mt-16">
             <AvatarPortrait
               name={avatar.name}
               src={avatar.portrait_url}
-              speaking={speaking}
+              speaking={portraitSpeaking}
             />
           </div>
 
-          <div className="mt-8 flex h-8 items-center justify-center gap-0.5">
-            {[0.1, 0.3, 0.5, 0.2, 0.4, 0.15, 0.35].map((delay, i) => (
-              <div
-                key={i}
-                className="audio-bar"
-                style={{
-                  animationDelay: `${delay}s`,
-                  height: listening || speaking ? undefined : "4px",
-                  animationPlayState:
-                    listening || speaking ? "running" : "paused",
-                }}
-              />
-            ))}
-          </div>
+          {handsFreeActive ? (
+            <MicWaveform
+              samples={hfte.waveSamples}
+              visible={prefs.showWaveform}
+            />
+          ) : (
+            <div className="mt-8 flex h-8 items-center justify-center gap-0.5">
+              {[0.1, 0.3, 0.5, 0.2, 0.4, 0.15, 0.35].map((delay, i) => (
+                <div
+                  key={i}
+                  className="audio-bar"
+                  style={{
+                    animationDelay: `${delay}s`,
+                    height: listening || speaking ? undefined : "4px",
+                    animationPlayState:
+                      listening || speaking ? "running" : "paused",
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           <p className="mt-4 max-w-md text-center text-sm text-[var(--on-surface-variant)]">
             {status}
@@ -535,11 +685,15 @@ export function VoiceSession({
           <p className="mt-1 text-[11px] uppercase tracking-wider text-[var(--outline)]">
             {locale === "ar" ? "العربية" : "English"}
             {" · "}
-            {voiceEnabled ? t("pipelineVoice") : t("pipelineText")}
+            {handsFreeActive
+              ? t("hfte.pipelineHandsFree")
+              : voiceEnabled
+                ? t("pipelineVoice")
+                : t("pipelineText")}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            {voiceEnabled && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 pb-16">
+            {voiceEnabled && !handsFreeActive && (
               <button
                 type="button"
                 onClick={() => void toggleListen()}
@@ -556,14 +710,16 @@ export function VoiceSession({
                 </span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => void endSession()}
-              disabled={ending}
-              className="btn-secondary"
-            >
-              {ending ? t("ending") : t("endSession")}
-            </button>
+            {!handsFreeActive && (
+              <button
+                type="button"
+                onClick={() => void endSession()}
+                disabled={ending}
+                className="btn-secondary"
+              >
+                {ending ? t("ending") : t("endSession")}
+              </button>
+            )}
           </div>
         </section>
 
@@ -618,11 +774,11 @@ export function VoiceSession({
                 voiceEnabled ? t("inputPlaceholder") : t("inputPlaceholderText")
               }
               className="field-input flex-1"
-              disabled={pending || ending}
+              disabled={pending || ending || hfte.paused}
             />
             <button
               type="submit"
-              disabled={pending || ending || !draft.trim()}
+              disabled={pending || ending || !draft.trim() || hfte.paused}
               className="btn-primary px-4"
             >
               {t("send")}
@@ -630,7 +786,29 @@ export function VoiceSession({
           </form>
         </section>
       </main>
+
+      {handsFreeActive && (
+        <ConversationToolbar
+          paused={hfte.paused}
+          avatarMuted={hfte.avatarMuted}
+          onPause={hfte.pause}
+          onResume={hfte.resume}
+          onMuteAvatar={hfte.toggleAvatarMute}
+          onRepeat={hfte.repeatLastAnswer}
+          onToggleNotes={() => hfte.setShowPrivateNotes((v) => !v)}
+          onEnd={() => setEndConfirm(true)}
+          disabled={ending}
+          labels={{
+            pause: t("hfte.pause"),
+            resume: t("hfte.resume"),
+            mute: t("hfte.muteAvatar"),
+            unmute: t("hfte.unmuteAvatar"),
+            repeat: t("hfte.repeat"),
+            notes: t("hfte.privateNotes"),
+            end: t("endSession"),
+          }}
+        />
+      )}
     </div>
   );
 }
-
