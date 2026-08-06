@@ -510,7 +510,10 @@
     },
     "complete": {
       "immersionTitle": "انغماس غرفة العلاج",
-      "immersionScore": "مؤشر الانغماس: {score}"
+      "immersionScore": "مؤشر الانغماس: {score}",
+      "transcriptTitle": "نص الجلسة",
+      "notesTitle": "ملاحظاتك الخاصة",
+      "debriefNote": "تبقى درجات الكفاءة وملاحظات المشرف وتحليل ACE في تقرير المسؤول."
     }
   },
   "analysis": {

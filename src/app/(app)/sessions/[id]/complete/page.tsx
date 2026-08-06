@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import type { TherapySession } from "@/lib/types";
+import type { SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -11,6 +11,7 @@ export default async function SessionCompletePage({ params }: Props) {
   const { supabase, user, profile } = await requireProfile();
   const t = await getTranslations("sessions.complete");
   const tRoom = await getTranslations("therapyRoom.complete");
+  const tTranscript = await getTranslations("therapyRoom.transcript");
 
   const { data: session } = await supabase
     .from("sessions")
@@ -32,6 +33,19 @@ export default async function SessionCompletePage({ params }: Props) {
     typeof typed.immersion_metrics.overall === "number"
       ? typed.immersion_metrics.overall
       : null;
+
+  const showRoomDebrief = typed.interaction_mode === "therapy_room";
+
+  let transcript: SessionMessage[] = [];
+  if (showRoomDebrief) {
+    const { data: messages } = await supabase
+      .from("session_messages")
+      .select("*")
+      .eq("session_id", id)
+      .in("role", ["user", "assistant"])
+      .order("created_at", { ascending: true });
+    transcript = (messages ?? []) as SessionMessage[];
+  }
 
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
@@ -57,6 +71,45 @@ export default async function SessionCompletePage({ params }: Props) {
           </h2>
           <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
             {tRoom("immersionScore", { score: immersionOverall })}
+          </p>
+        </section>
+      )}
+
+      {showRoomDebrief && (
+        <section className="clinical-card mb-4 p-5 fade-in-up">
+          <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold">
+            {tRoom("transcriptTitle")}
+          </h2>
+          {transcript.length === 0 ? (
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {tTranscript("empty")}
+            </p>
+          ) : (
+            <ul className="max-h-80 space-y-3 overflow-auto text-sm">
+              {transcript.map((m) => (
+                <li key={m.id}>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                    {m.role === "user"
+                      ? tTranscript("you")
+                      : tTranscript("patient")}
+                  </span>
+                  <span className="text-[var(--on-surface)]">{m.content}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {typed.private_notes?.trim() ? (
+            <div className="mt-4 border-t border-[var(--outline-variant)] pt-4">
+              <h3 className="mb-2 text-sm font-semibold">
+                {tRoom("notesTitle")}
+              </h3>
+              <p className="whitespace-pre-wrap text-sm text-[var(--on-surface-variant)]">
+                {typed.private_notes}
+              </p>
+            </div>
+          ) : null}
+          <p className="mt-4 text-xs text-[var(--on-surface-variant)]">
+            {tRoom("debriefNote")}
           </p>
         </section>
       )}

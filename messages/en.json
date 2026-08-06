@@ -510,7 +510,10 @@
     },
     "complete": {
       "immersionTitle": "Therapy Room Immersion",
-      "immersionScore": "Immersion index: {score}"
+      "immersionScore": "Immersion index: {score}",
+      "transcriptTitle": "Session transcript",
+      "notesTitle": "Your private notes",
+      "debriefNote": "Competency scores, supervisor feedback, and ACE analysis remain in the admin report."
     }
   },
   "analysis": {
