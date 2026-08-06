@@ -24,6 +24,7 @@ const FAKE_AUDIO =
 const BROWSER = (process.env.BROWSER ?? "chromium").toLowerCase();
 /** Prefer full Chrome for fake-mic capture (headless shell ignores it). */
 const CHANNEL = (process.env.CHANNEL ?? "chrome").toLowerCase();
+const REQUIRE_ELEVENLABS = process.env.REQUIRE_ELEVENLABS !== "0";
 
 mkdirSync(OUT, { recursive: true });
 
@@ -171,11 +172,12 @@ async function main() {
         });
         throw new Error(`ERROR during turn ${i + 1}`);
       }
-      if (
-        network.stt > beforeStt &&
-        network.message > beforeMsg &&
-        st === "LISTENING"
-      ) {
+      const sttMsgDone =
+        network.stt > beforeStt && network.message > beforeMsg;
+      const ttsDone = !REQUIRE_ELEVENLABS || network.tts > beforeTts;
+      // When ElevenLabs is required, do not count the turn until TTS 200 lands
+      // (avoids racing browser-fallback LISTENING ahead of a slow /api/voice/tts).
+      if (sttMsgDone && ttsDone && st === "LISTENING") {
         completed += 1;
         if (network.tts > beforeTts) elevenLabsTurns += 1;
         log(
@@ -286,7 +288,6 @@ async function main() {
     'button:has-text("Hold"), button:has-text("Push to Talk"), [data-ptt="true"]',
   ).count();
 
-  const requireElevenLabs = process.env.REQUIRE_ELEVENLABS !== "0";
   const consoleErrorsBlocking = consoleErrors.filter(
     (e) => !/status of 502|TTS|Failed to load resource/i.test(e),
   );
@@ -301,7 +302,7 @@ async function main() {
     bargeInOk,
     pushToTalkButtonsSeen: micButtons,
     consoleErrors,
-    requireElevenLabs,
+    requireElevenLabs: REQUIRE_ELEVENLABS,
     pass:
       completed >= TURNS &&
       pauseOk &&
@@ -309,7 +310,8 @@ async function main() {
       endOk &&
       micButtons === 0 &&
       consoleErrorsBlocking.length === 0 &&
-      (!requireElevenLabs || elevenLabsTurns >= TURNS),
+      (!REQUIRE_ELEVENLABS ||
+        (elevenLabsTurns >= TURNS && network.tts >= TURNS)),
   };
   writeFileSync(join(OUT, "report.json"), JSON.stringify(report, null, 2));
   log("REPORT", JSON.stringify(report));
