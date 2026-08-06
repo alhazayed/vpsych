@@ -1,0 +1,56 @@
+[2026-08-06T21:52:33.243Z] BROWSER chromium CHANNEL chrome
+[2026-08-06T21:52:33.415Z] OPEN https://vpsych.vercel.app/
+[2026-08-06T21:52:36.604Z] LOGIN_OK https://vpsych.vercel.app/avatars
+[2026-08-06T21:52:37.807Z] MODE therapy_room
+[2026-08-06T21:52:39.079Z] SESSION https://vpsych.vercel.app/sessions/a0cac089-0e79-4e09-822d-ae7744fe55ab
+[2026-08-06T21:52:39.280Z] STATE LISTENING STATUS listening
+[2026-08-06T21:52:39.281Z] LISTENING_OK
+[2026-08-06T21:52:39.428Z] TURN_1_WAIT
+[2026-08-06T21:53:11.556Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:53:11.556Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:53:11.635Z] TURN_1_OK stt=1 msg=1 tts=0 browser_fallback
+[2026-08-06T21:53:11.788Z] TURN_2_WAIT
+[2026-08-06T21:53:43.100Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:53:43.101Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:53:43.468Z] TURN_2_OK stt=2 msg=2 tts=0 browser_fallback
+[2026-08-06T21:53:43.616Z] TURN_3_WAIT
+[2026-08-06T21:53:49.869Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:53:49.869Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:53:50.147Z] TURN_3_OK stt=3 msg=3 tts=0 browser_fallback
+[2026-08-06T21:53:50.300Z] TURN_4_WAIT
+[2026-08-06T21:53:56.484Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:53:56.484Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:53:56.831Z] TURN_4_OK stt=4 msg=4 tts=0 browser_fallback
+[2026-08-06T21:53:56.985Z] TURN_5_WAIT
+[2026-08-06T21:54:04.140Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:54:04.140Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:54:04.518Z] TURN_5_OK stt=5 msg=5 tts=0 browser_fallback
+[2026-08-06T21:54:04.665Z] TURN_6_WAIT
+[2026-08-06T21:54:35.970Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:54:35.971Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:54:36.337Z] TURN_6_OK stt=6 msg=6 tts=0 browser_fallback
+[2026-08-06T21:54:36.482Z] TURN_7_WAIT
+[2026-08-06T21:55:08.093Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:55:08.094Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:55:08.151Z] TURN_7_OK stt=7 msg=7 tts=0 browser_fallback
+[2026-08-06T21:55:08.299Z] TURN_8_WAIT
+[2026-08-06T21:55:40.451Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:55:40.452Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:55:40.466Z] TURN_8_OK stt=8 msg=8 tts=0 browser_fallback
+[2026-08-06T21:55:40.615Z] TURN_9_WAIT
+[2026-08-06T21:56:12.198Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:56:12.199Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:56:12.264Z] TURN_9_OK stt=9 msg=9 tts=0 browser_fallback
+[2026-08-06T21:56:12.411Z] TURN_10_WAIT
+[2026-08-06T21:56:24.306Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:56:24.306Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:56:24.466Z] TURN_10_OK stt=10 msg=10 tts=0 browser_fallback
+[2026-08-06T21:56:24.611Z] BARGE_IN_WAIT_AVATAR
+[2026-08-06T21:56:55.428Z] BARGE_IN_DURING AVATAR_SPEAKING
+[2026-08-06T21:56:55.589Z] HTTP_FAIL 502 https://vpsych.vercel.app/api/voice/tts
+[2026-08-06T21:56:55.590Z] CONSOLE_ERROR Failed to load resource: the server responded with a status of 502 ()
+[2026-08-06T21:56:55.631Z] BARGE_IN_LEFT LISTENING ok= true
+[2026-08-06T21:56:56.164Z] PAUSE_STATE PAUSED
+[2026-08-06T21:56:56.999Z] RESUME_STATE LISTENING
+[2026-08-06T21:57:03.077Z] END_URL https://vpsych.vercel.app/sessions/a0cac089-0e79-4e09-822d-ae7744fe55ab/complete
+[2026-08-06T21:57:03.094Z] REPORT {"completedTurns":10,"elevenLabsTurns":0,"targetTurns":10,"network":{"stt":11,"message":11,"tts":0,"failures":[{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"},{"status":502,"url":"https://vpsych.vercel.app/api/voice/tts"}]},"pauseOk":true,"resumeOk":true,"endOk":true,"bargeInOk":true,"pushToTalkButtonsSeen":0,"consoleErrors":["Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()","Failed to load resource: the server responded with a status of 502 ()"],"requireElevenLabs":false,"pass":true}

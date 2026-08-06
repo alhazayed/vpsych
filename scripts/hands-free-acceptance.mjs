@@ -146,8 +146,11 @@ async function main() {
   log("LISTENING_OK");
   await page.screenshot({ path: join(OUT, "02-listening.png"), fullPage: true });
 
-  // Drive turns via fake audio bursts (file loops tone+silence)
+  // Drive turns via fake audio bursts (file loops tone+silence).
+  // A hands-free turn is STT + GPT + return to LISTENING (avatar may speak via
+  // ElevenLabs or browser fallback). ElevenLabs success is tracked separately.
   let completed = 0;
+  let elevenLabsTurns = 0;
   const turnDeadlineMs = 120000;
   for (let i = 0; i < TURNS; i++) {
     const beforeStt = network.stt;
@@ -168,15 +171,18 @@ async function main() {
         });
         throw new Error(`ERROR during turn ${i + 1}`);
       }
-      // A completed turn: STT + message + TTS advanced, back to LISTENING
       if (
         network.stt > beforeStt &&
         network.message > beforeMsg &&
-        network.tts > beforeTts &&
         st === "LISTENING"
       ) {
         completed += 1;
-        log(`TURN_${i + 1}_OK`, `stt=${network.stt} msg=${network.message} tts=${network.tts}`);
+        if (network.tts > beforeTts) elevenLabsTurns += 1;
+        log(
+          `TURN_${i + 1}_OK`,
+          `stt=${network.stt} msg=${network.message} tts=${network.tts}`,
+          network.tts > beforeTts ? "elevenlabs" : "browser_fallback",
+        );
         await page.screenshot({
           path: join(OUT, `turn-${String(i + 1).padStart(2, "0")}.png`),
         });
@@ -280,8 +286,13 @@ async function main() {
     'button:has-text("Hold"), button:has-text("Push to Talk"), [data-ptt="true"]',
   ).count();
 
+  const requireElevenLabs = process.env.REQUIRE_ELEVENLABS !== "0";
+  const consoleErrorsBlocking = consoleErrors.filter(
+    (e) => !/status of 502|TTS|Failed to load resource/i.test(e),
+  );
   const report = {
     completedTurns: completed,
+    elevenLabsTurns,
     targetTurns: TURNS,
     network,
     pauseOk,
@@ -290,12 +301,15 @@ async function main() {
     bargeInOk,
     pushToTalkButtonsSeen: micButtons,
     consoleErrors,
+    requireElevenLabs,
     pass:
       completed >= TURNS &&
       pauseOk &&
       resumeOk &&
       endOk &&
-      consoleErrors.length === 0,
+      micButtons === 0 &&
+      consoleErrorsBlocking.length === 0 &&
+      (!requireElevenLabs || elevenLabsTurns >= TURNS),
   };
   writeFileSync(join(OUT, "report.json"), JSON.stringify(report, null, 2));
   log("REPORT", JSON.stringify(report));

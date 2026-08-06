@@ -113,6 +113,29 @@ describe("elevenLabsService", () => {
     ).rejects.toMatchObject({ code: "TTS_FAILED", status: 502 });
   });
 
+  it("maps quota_exceeded to TTS_QUOTA (402)", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            detail: {
+              type: "invalid_request",
+              code: "quota_exceeded",
+              message: "You have 0 credits remaining",
+            },
+          }),
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(
+      elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
+    ).rejects.toMatchObject({ code: "TTS_QUOTA", status: 402 });
+  });
+
   it("retries with the default premade voice after paid_plan_required", async () => {
     process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     const calls: string[] = [];

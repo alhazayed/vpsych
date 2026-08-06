@@ -376,11 +376,16 @@ export const elevenLabsService = {
       );
     }
 
+    const quota = /quota_exceeded|credits? remaining|payment_required|paid_plan_required/i.test(
+      lastDetail,
+    );
     throw new ElevenLabsError("ElevenLabs TTS failed", {
       code: /paid_plan_required|payment_required/i.test(lastDetail)
         ? "TTS_PLAN_REQUIRED"
-        : "TTS_FAILED",
-      status: 502,
+        : /quota_exceeded|credits? remaining/i.test(lastDetail)
+          ? "TTS_QUOTA"
+          : "TTS_FAILED",
+      status: quota ? 402 : 502,
       detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
     });
   },
