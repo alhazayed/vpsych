@@ -17,7 +17,7 @@ Focus on:
 - Safety-relevant behaviors (risk language, boundaries)  
 - Bilingual / cultural authenticity where applicable  
 
-See also: `docs/FEEDBACK_GUIDE.md`, `docs/KNOWN_LIMITATIONS.md`.
+See also: `docs/FEEDBACK_GUIDE.md`, `docs/KNOWN_LIMITATIONS.md`, and the PPP pack under `docs/ppp/`.
 
 ---
 

@@ -17,18 +17,18 @@ const FEATURE_KEYS = [
 const STEP_KEYS = ["1", "2", "3"] as const;
 
 const TESTIMONIAL_KEYS = [
-  { key: "1", initials: "SK" },
-  { key: "2", initials: "JW" },
-  { key: "3", initials: "LA" },
+  { key: "1", initials: "AP" },
+  { key: "2", initials: "CB" },
+  { key: "3", initials: "PP" },
 ] as const;
 
 const FAQ_KEYS = ["1", "2", "3", "4"] as const;
 
 const STAT_KEYS = [
-  { value: "10,000+", key: "sessions" },
-  { value: "500+", key: "cases" },
-  { value: "25+", key: "competencies" },
-  { value: "95%", key: "satisfaction" },
+  { value: "40 min", key: "sessions" },
+  { value: "Live catalog", key: "cases" },
+  { value: "EN · AR", key: "competencies" },
+  { value: "Not validated", key: "satisfaction" },
 ] as const;
 
 export default async function HomePage() {
@@ -268,7 +268,10 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
-            <div className="flex flex-col items-center rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface)] p-8">
+            <div className="z-10 flex scale-105 flex-col items-center rounded-[14px] border-2 border-[var(--primary)] bg-[var(--surface-container-highest)] p-8 shadow-xl">
+              <div className="mb-2 rounded-full bg-[var(--secondary-container)] px-3 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
+                {t("pricing.mostPopular")}
+              </div>
               <div className="mb-2 text-sm font-medium text-[var(--on-surface-variant)]">
                 {t("pricing.free.name")}
               </div>
@@ -285,35 +288,31 @@ export default async function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="btn-secondary w-full py-3">
+              <Link href="/signup" className="btn-primary w-full py-3 shadow-lg">
                 {t("pricing.free.cta")}
               </Link>
             </div>
 
-            <div className="z-10 flex scale-105 flex-col items-center rounded-[14px] border-2 border-[var(--primary)] bg-[var(--surface-container-highest)] p-8 shadow-xl">
-              <div className="mb-2 rounded-full bg-[var(--secondary-container)] px-3 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
-                {t("pricing.mostPopular")}
-              </div>
+            <div className="flex flex-col items-center rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface)] p-8 opacity-80">
               <div className="mb-2 text-sm font-medium text-[var(--on-surface-variant)]">
                 {t("pricing.pro.name")}
               </div>
-              <div className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-bold text-[var(--primary)]">
+              <div className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-bold text-[var(--on-surface-variant)]">
                 {t("pricing.pro.price")}
-                <span className="text-lg font-normal">{t("pricing.perMonth")}</span>
               </div>
               <ul className="mb-8 w-full space-y-2 text-[var(--on-surface-variant)]">
                 {(["1", "2", "3"] as const).map((n) => (
                   <li key={n} className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-[var(--primary)]">
-                      check_circle
+                    <span className="material-symbols-outlined text-sm text-[var(--outline)]">
+                      block
                     </span>
                     {t(`pricing.pro.features.${n}`)}
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="btn-primary w-full py-3 shadow-lg">
+              <span className="btn-secondary w-full cursor-not-allowed py-3 opacity-60">
                 {t("pricing.pro.cta")}
-              </Link>
+              </span>
             </div>
 
             <div className="flex flex-col items-center rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface)] p-8">

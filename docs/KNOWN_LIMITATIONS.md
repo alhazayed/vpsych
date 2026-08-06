@@ -18,7 +18,7 @@
 
 4. **AI patients are synthetic / fictional.** Never real persons. Pathways are training constructs.  
 5. **Conversational phenotype** varies by disorder package richness; some presentations are stronger than others.  
-6. **Excellence / mind-engine / longitudinal therapy-response stacks** (PME, TRE, HCTF, CQI, EOI, CVL) are **not** in this preview — they remain open experimental/roadmap PRs.
+6. **Excellence / mind-engine / longitudinal therapy-response stacks** (PME, TRE, HCTF, CVL) remain open experimental/roadmap PRs. **Professional Preview Program (PPP)** evaluation tooling (CQI / EOI capture, Reviewer Analytics, admin preview dashboard, onboarding) ships separately for expert feedback — it does **not** change simulation behaviour.
 
 ---
 
