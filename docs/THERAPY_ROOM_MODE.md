@@ -57,15 +57,23 @@ room UI already consumes `PatientBehaviorState`.
 
 ### Hands-free pipeline
 
+True hands-free full-duplex conversation (no per-turn mic clicks):
+
 ```
-Start → continuous VAD listen
-  → silence / max / patient-interrupt ends turn
-  → OpenAI STT → /api/sessions/:id/message (unchanged)
+Start → FSM LISTENING → continuous VAD
+  → silence (700–1000 ms) / max / patient-interrupt ends turn
+  → PROCESSING_STT → OpenAI STT
+  → WAITING_GPT → /api/sessions/:id/message (unchanged)
   → diagnosis-linked thinking latency + look-away
-  → ElevenLabs / browser TTS with prosody
-  → barge-in monitor (therapist may interrupt patient)
-  → resume listen
+  → AVATAR_SPEAKING → ElevenLabs / browser TTS (AbortSignal + onended)
+  → barge-in monitor (therapist may interrupt → LISTENING immediately)
+  → PLAYBACK_END → LISTENING (mic reopens automatically)
 ```
+
+Therapist controls: **Pause**, **Resume**, **End Session** only (plus notes/settings).
+
+See `docs/HANDS_FREE_THERAPY_ROOM.md` for FSM diagrams, telemetry, browser notes,
+and `docs/HANDS_FREE_THERAPY_ROOM_CERTIFICATION.md` for production sign-off.
 
 No audio recordings are stored. WAV blobs exist only in memory for STT upload.
 Transcript persistence remains server-side (existing message RPCs).

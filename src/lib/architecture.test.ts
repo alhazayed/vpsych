@@ -122,6 +122,38 @@ describe("architecture invariants", () => {
     expect(room).not.toMatch(/message: notes/);
   });
 
+  it("Therapy Room hands-free conversation uses an explicit FSM", () => {
+    const fsm = readFileSync(
+      join(root, "lib/therapy-room/conversation-fsm.ts"),
+      "utf8",
+    );
+    const room = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    const constraints = readFileSync(
+      join(root, "lib/therapy-room/audio-constraints.ts"),
+      "utf8",
+    );
+    expect(fsm).toMatch(/LISTENING/);
+    expect(fsm).toMatch(/PROCESSING_STT/);
+    expect(fsm).toMatch(/WAITING_GPT/);
+    expect(fsm).toMatch(/AVATAR_SPEAKING/);
+    expect(fsm).toMatch(/BARGE_IN/);
+    expect(room).toMatch(/createConversationFsm/);
+    expect(room).toMatch(/data-trm-hands-free/);
+    expect(room).toMatch(/takePrimedMicrophone/);
+    expect(room).toMatch(/stashPrimedMicrophone/);
+    expect(room).toMatch(/sessionMicRef/);
+    // Boot cleanup must not poison endingRef (StrictMode re-run / Retry).
+    expect(room).toMatch(/never set endingRef/i);
+    expect(room).not.toMatch(/startRecording|toggleMic|click.*microphone/i);
+    // ideal (not exact) — bare `true` is treated as exact on Safari/WebKit
+    expect(constraints).toMatch(/autoGainControl:\s*\{\s*ideal:\s*true\s*\}/);
+    expect(constraints).toMatch(/echoCancellation:\s*\{\s*ideal:\s*true\s*\}/);
+    expect(constraints).toMatch(/noiseSuppression:\s*\{\s*ideal:\s*true\s*\}/);
+  });
+
   it("gates VMHC clinic routes and APIs behind FEATURE_THERAPY_ROOM", () => {
     const features = readFileSync(join(root, "lib/features.ts"), "utf8");
     expect(features).toMatch(/FEATURE_THERAPY_ROOM/);

@@ -1,0 +1,16 @@
+{
+  "completedTurns": 20,
+  "targetTurns": 20,
+  "network": {
+    "stt": 21,
+    "message": 21,
+    "tts": 21
+  },
+  "pauseOk": true,
+  "resumeOk": true,
+  "endOk": true,
+  "bargeInOk": true,
+  "pushToTalkButtonsSeen": 0,
+  "consoleErrors": [],
+  "pass": true
+}

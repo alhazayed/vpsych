@@ -84,6 +84,7 @@ export async function transcribeTherapistSpeech(params: {
 export async function submitConversationTurn(params: {
   sessionId: string;
   message: string;
+  signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
   | { ok: false; error: string; expired?: boolean; status: number }
@@ -92,6 +93,7 @@ export async function submitConversationTurn(params: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: params.message }),
+    signal: params.signal,
   });
   const data = (await res.json().catch(() => ({}))) as {
     error?: string;
@@ -146,8 +148,15 @@ export async function playPatientSpeech(params: {
   disorderSlug?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
-}): Promise<"elevenlabs" | "browser"> {
+  /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
+  signal?: AbortSignal;
+}): Promise<"elevenlabs" | "browser" | "interrupted"> {
   const handlers = params.handlers ?? {};
+  if (params.signal?.aborted) {
+    handlers.onerror?.();
+    return "interrupted";
+  }
+
   handlers.onstart?.();
 
   const result = await synthesizeSpeech({
@@ -162,7 +171,19 @@ export async function playPatientSpeech(params: {
     disorderSlug: params.disorderSlug,
   });
 
+  if (params.signal?.aborted) {
+    if (result.mode === "elevenlabs" && result.objectUrl) {
+      URL.revokeObjectURL(result.objectUrl);
+    }
+    handlers.onerror?.();
+    return "interrupted";
+  }
+
   const browserFallback = (onDone: () => void) => {
+    if (params.signal?.aborted) {
+      onDone();
+      return;
+    }
     speakWithBrowser(
       params.text,
       params.locale,
@@ -185,39 +206,91 @@ export async function playPatientSpeech(params: {
     const audio = new Audio(result.objectUrl);
     if (params.audioRef) params.audioRef.current = audio;
 
-    return await new Promise<"elevenlabs" | "browser">((resolve) => {
-      let settled = false;
-      const finish = (mode: "elevenlabs" | "browser") => {
-        if (settled) return;
-        settled = true;
-        URL.revokeObjectURL(result.objectUrl!);
-        if (params.audioRef) params.audioRef.current = null;
-        if (mode === "elevenlabs") handlers.onend?.();
-        resolve(mode);
-      };
+    return await new Promise<"elevenlabs" | "browser" | "interrupted">(
+      (resolve) => {
+        let settled = false;
+        const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
+          if (settled) return;
+          settled = true;
+          params.signal?.removeEventListener("abort", onAbort);
+          URL.revokeObjectURL(result.objectUrl!);
+          if (params.audioRef) params.audioRef.current = null;
+          if (mode === "elevenlabs") handlers.onend?.();
+          else if (mode === "interrupted") handlers.onerror?.();
+          resolve(mode);
+        };
 
-      audio.onended = () => finish("elevenlabs");
-      audio.onerror = () => {
-        browserFallback(() => finish("browser"));
-      };
+        const onAbort = () => {
+          try {
+            audio.pause();
+            audio.removeAttribute("src");
+            audio.load();
+          } catch {
+            /* ignore */
+          }
+          window.speechSynthesis?.cancel();
+          finish("interrupted");
+        };
 
-      void audio.play().catch(() => {
-        browserFallback(() => finish("browser"));
-      });
-    });
+        audio.onended = () => finish("elevenlabs");
+        audio.onerror = () => {
+          if (params.signal?.aborted) {
+            finish("interrupted");
+            return;
+          }
+          browserFallback(() => finish("browser"));
+        };
+
+        params.signal?.addEventListener("abort", onAbort, { once: true });
+
+        void audio.play().catch(() => {
+          if (params.signal?.aborted) {
+            finish("interrupted");
+            return;
+          }
+          browserFallback(() => finish("browser"));
+        });
+      },
+    );
   }
 
-  speakWithBrowser(
-    params.text,
-    params.locale,
-    {
-      onstart: handlers.onstart,
-      onend: handlers.onend,
-      onerror: handlers.onerror,
-    },
-    params.speechPace,
-  );
-  return "browser";
+  if (params.signal?.aborted) {
+    handlers.onerror?.();
+    return "interrupted";
+  }
+
+  return await new Promise<"browser" | "interrupted">((resolve) => {
+    let settled = false;
+    const finish = (mode: "browser" | "interrupted") => {
+      if (settled) return;
+      settled = true;
+      params.signal?.removeEventListener("abort", onAbort);
+      if (mode === "interrupted") handlers.onerror?.();
+      else handlers.onend?.();
+      resolve(mode);
+    };
+    const onAbort = () => {
+      window.speechSynthesis?.cancel();
+      finish("interrupted");
+    };
+    params.signal?.addEventListener("abort", onAbort, { once: true });
+    speakWithBrowser(
+      params.text,
+      params.locale,
+      {
+        onstart: handlers.onstart,
+        onend: () => finish("browser"),
+        onerror: () => {
+          if (params.signal?.aborted) finish("interrupted");
+          else {
+            handlers.onerror?.();
+            finish("browser");
+          }
+        },
+      },
+      params.speechPace,
+    );
+  });
 }
 
 /**
