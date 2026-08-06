@@ -39,6 +39,7 @@
       "adaptiveCurriculum": "المنهج التكيفي",
       "adaptiveLearning": "تعلّمي",
       "competencyGraph": "رسم الكفاءات",
+      "clinicalQuality": "ذكاء الجودة السريرية",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -55,6 +56,7 @@
     "scenarioTemplates": "قوالب السيناريو",
     "instructorPresets": "إعدادات المدرب",
     "adaptiveCurriculum": "المنهج التكيفي",
+    "clinicalQuality": "الجودة السريرية",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح"
   },
@@ -433,6 +435,75 @@
     "portrait": {
       "speaking": "يتحدث",
       "listening": "يستمع"
+    },
+    "cqi": {
+      "flagButton": "الإبلاغ عن هذه اللحظة",
+      "dialogTitle": "مراجعة الجودة السريرية",
+      "dialogSubtitle": "{patient} · {disorder}",
+      "close": "إغلاق",
+      "autoContext": "يتم التقاط الجلسة ونافذة المحادثة والتشخيص واللغة والصوت والنموذج وإصدارات المنصة تلقائيًا. صف فقط ما لاحظته.",
+      "category": "الفئة",
+      "severity": "الخطورة",
+      "confidence": "الثقة",
+      "freeText": "صف المشكلة",
+      "freeTextPlaceholder": "ما الذي قلل الواقعية أو القيمة التعليمية أو الأصالة السريرية؟",
+      "suggested": "تحسين مقترح (اختياري)",
+      "expected": "السلوك المتوقع",
+      "reducesEdu": "هل يقلل هذا من الجودة التعليمية؟",
+      "residency": "هل تستخدم هذا المريض في تدريب الإقامة؟",
+      "recommend": "هل توصي بـ VPsych؟",
+      "yes": "نعم",
+      "no": "لا",
+      "scores": "درجات الجودة (1–10)",
+      "scoreClinical": "الواقعية السريرية",
+      "scoreConversation": "واقعية المحادثة",
+      "scoreEducational": "الفائدة التعليمية",
+      "scoreVoice": "واقعية الصوت",
+      "scoreAssessment": "جودة التقييم",
+      "scoreConfidence": "الثقة الإجمالية",
+      "annotate": "تعليق على النص",
+      "annotateHint": "انقر دورًا حديثًا لتحديده ثم أضف ملاحظة.",
+      "quotePlaceholder": "الاقتباس المحدد",
+      "annotationNote": "ملاحظة التعليق",
+      "addAnnotation": "إضافة تعليق",
+      "evidence": "أدلة",
+      "recordVoice": "تسجيل ملاحظة صوتية",
+      "stopVoice": "إيقاف التسجيل",
+      "voiceReady": "الملاحظة الصوتية جاهزة",
+      "anonymous": "إرسال مجهول",
+      "submit": "إرسال إلى خزنة الجودة",
+      "submitting": "جارٍ الإرسال…",
+      "submitOk": "تم التخزين في خزنة الجودة (مرجع {id}). شكرًا.",
+      "submitFailed": "تعذر حفظ الملاحظات. حاول مرة أخرى.",
+      "micDenied": "تم رفض إذن الميكروفون للملاحظة الصوتية.",
+      "categories": {
+        "clinical_realism": "الواقعية السريرية",
+        "human_conversation": "المحادثة البشرية",
+        "language": "اللغة",
+        "voice": "الصوت",
+        "emotion": "العاطفة",
+        "patient_behaviour": "سلوك المريض",
+        "educational_value": "القيمة التعليمية",
+        "assessment": "التقييم",
+        "report": "التقرير",
+        "user_interface": "واجهة المستخدم",
+        "performance": "الأداء",
+        "security": "الأمان",
+        "research": "البحث",
+        "other": "أخرى"
+      },
+      "severities": {
+        "critical": "حرج",
+        "high": "مرتفع",
+        "medium": "متوسط",
+        "low": "منخفض",
+        "suggestion": "اقتراح"
+      },
+      "confidences": {
+        "definitely": "بالتأكيد",
+        "probably": "على الأرجح",
+        "possibly": "محتمل"
+      }
     }
   },
   "analysis": {
@@ -472,6 +543,28 @@
     "nav": {
       "enterpriseAdmin": "إدارة المؤسسة",
       "systemHealthy": "حالة النظام: سليمة"
+    },
+    "cqi": {
+      "title": "ذكاء الجودة السريرية",
+      "subtitle": "خزنة ملاحظات الخبراء والتجمعات وتوصيات الهندسة (تتطلب موافقة بشرية).",
+      "runAnalyst": "تشغيل محلل الجودة",
+      "export": "تصدير حزمة بحث",
+      "exportCsv": "تصدير CSV",
+      "source": "المصدر: {source}",
+      "totals": "إجماليات الخزنة",
+      "flags": "بلاغات",
+      "clusters": "تجمعات",
+      "critical": "حرج",
+      "high": "مرتفع",
+      "topClusters": "أبرز التجمعات",
+      "recentFlags": "أحدث البلاغات",
+      "scoreAverages": "متوسط درجات المراجعين",
+      "byDisorder": "حسب التشخيص",
+      "byCategory": "حسب الفئة",
+      "noData": "لا توجد بلاغات بعد — ادعُ المراجعين لاستخدام «الإبلاغ عن هذه اللحظة» أثناء الجلسات.",
+      "analystDone": "اكتمل المحلل — {n} تجمع(ات). التوصيات مسودات فقط.",
+      "analystFailed": "فشل المحلل",
+      "approvalNote": "لا ينشئ CQI طلبات سحب تلقائيًا ولا يعدّل الإنتاج."
     },
     "reports": {
       "statTotal": "إجمالي التقييمات",
