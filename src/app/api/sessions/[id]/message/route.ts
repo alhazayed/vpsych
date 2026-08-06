@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { createServiceClient, messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
@@ -100,6 +100,39 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  // CQG-008: if patient reply or assistant insert fails, remove the orphaned
+  // user turn so retries do not stack unpaired therapist messages.
+  // DELETE is not granted to therapists on session_messages — use service role.
+  async function compensateOrphanedUserTurn() {
+    const cleaner = createServiceClient();
+    if (!cleaner) {
+      console.warn(
+        "[sessions/message] orphan user turn left in place (no service role)",
+        { sessionId, messageId: userMsg.id },
+      );
+      return;
+    }
+    try {
+      const { error } = await cleaner
+        .from("session_messages")
+        .delete()
+        .eq("id", userMsg.id)
+        .eq("session_id", sessionId)
+        .eq("role", "user");
+      if (error) {
+        console.warn(
+          "[sessions/message] orphan user turn cleanup failed:",
+          error.message,
+        );
+      }
+    } catch (e) {
+      console.warn(
+        "[sessions/message] orphan user turn cleanup failed:",
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
@@ -113,6 +146,7 @@ export async function POST(request: Request, { params }: Params) {
       language: typed.language,
       error: err instanceof Error ? err.message : String(err),
     });
+    await compensateOrphanedUserTurn();
     return NextResponse.json(
       { error: "Failed to generate patient reply" },
       { status: 502 },
@@ -143,6 +177,7 @@ export async function POST(request: Request, { params }: Params) {
       sessionId,
       error: assistantError?.message,
     });
+    await compensateOrphanedUserTurn();
     return NextResponse.json(
       { error: clientSafeError("Failed to save reply", assistantError) },
       { status: 500 },

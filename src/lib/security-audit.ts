@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 
 export type SecurityAuditOutcome = "success" | "failure" | "denied";
 
@@ -24,6 +25,9 @@ function clientIpFromHeaders(h: Headers): string | null {
 /**
  * Best-effort security audit write. Never throws to callers — audit must not
  * break the primary request path.
+ *
+ * Prefers the service-role client so denied-path logging still works for
+ * non-admin therapists after CQG-002 (RPC requires admin or service_role).
  */
 export async function logSecurityEvent(
   event: SecurityAuditEvent,
@@ -45,7 +49,9 @@ export async function logSecurityEvent(
       }
     }
 
-    const supabase = await createClient();
+    // Prefer service role so non-admin denied events still persist (CQG-002).
+    // Fall back to the user client for admins when service role is unset.
+    const supabase = createServiceClient() ?? (await createClient());
     const { data, error } = await supabase.rpc("log_security_event", {
       p_action: event.action,
       p_outcome: event.outcome,

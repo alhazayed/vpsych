@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { EnsureSessionReport } from "@/components/EnsureSessionReport";
 import { requireProfile } from "@/lib/auth";
+import { shouldHideGroundTruth } from "@/lib/exam-disclosure";
 import type { TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -25,8 +27,15 @@ export default async function SessionCompletePage({ params }: Props) {
     redirect("/avatars");
   }
 
+  const hideTruth =
+    profile.role !== "admin" && shouldHideGroundTruth(typed.clinical_snapshot);
+  const disorderLabel = hideTruth
+    ? t("undisclosedPresentation")
+    : (typed.avatars?.disorder ?? "");
+
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
+      <EnsureSessionReport sessionId={id} />
       <div className="mb-8 text-center fade-in-up">
         <span className="status-chip status-chip-done mb-4">
           {t("badge")}
@@ -37,7 +46,7 @@ export default async function SessionCompletePage({ params }: Props) {
         <p className="mt-3 text-[var(--on-surface-variant)]">
           {t("body", {
             name: typed.avatars?.name ?? "",
-            disorder: typed.avatars?.disorder ?? "",
+            disorder: disorderLabel,
           })}
         </p>
       </div>

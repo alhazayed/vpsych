@@ -25,6 +25,7 @@ import type {
   SessionMessage,
   TherapySession,
 } from "@/lib/types";
+import { shouldHideGroundTruth } from "@/lib/exam-disclosure";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -407,7 +408,13 @@ export function VoiceSession({
     setStatus(next ? t("status.ready") : t("status.textOnly"));
   }
 
-  const goals = avatar.ideal_guidelines?.session_goals ?? [];
+  const hideGroundTruth = shouldHideGroundTruth(session.clinical_snapshot);
+  const goals = hideGroundTruth
+    ? []
+    : (avatar.ideal_guidelines?.session_goals ?? []);
+  const presentationLabel = hideGroundTruth
+    ? t("undisclosedPresentation")
+    : avatar.disorder;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
@@ -473,7 +480,7 @@ export function VoiceSession({
                   {t("presentation")}
                 </p>
                 <p className="text-sm font-bold text-[var(--secondary)]">
-                  {avatar.disorder}
+                  {presentationLabel}
                 </p>
               </div>
             </div>

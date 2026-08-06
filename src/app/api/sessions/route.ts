@@ -14,6 +14,7 @@ import {
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { shouldHideGroundTruth } from "@/lib/exam-disclosure";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -210,7 +211,10 @@ export async function POST(request: Request) {
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
-    diagnosis: caseResult.snapshot.primary_diagnosis.name,
+    // CQG-007: omit ground-truth diagnosis for OSCE / exam / feedback_mode none.
+    ...(shouldHideGroundTruth(caseResult.snapshot)
+      ? {}
+      : { diagnosis: caseResult.snapshot.primary_diagnosis.name }),
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,

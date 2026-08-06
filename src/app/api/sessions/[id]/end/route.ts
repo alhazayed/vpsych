@@ -25,6 +25,8 @@ async function sealLedgerBestEffort(opts: {
     const result = await sealAssessmentQualityLedger(opts.supabase, {
       sessionId: opts.sessionId,
       reportId: opts.reportId ?? null,
+      // Learner attribution for admin analytics. Therapist Data-API SELECT on
+      // quality_ledgers is admin-only after CQG-006 (learner RLS policy dropped).
       learnerId: opts.userId,
       instructorId: opts.userId,
       assessment: opts.assessment,
@@ -186,20 +188,11 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // Adaptive Curriculum Engine — update learner competencies + next case
-  const ace = await runAceAfterAssessment(supabase, {
-    userId: user.id,
-    sessionId,
-    overall: assessment.scores.overall,
-    items: assessment.scores.items,
-    language: assessment.language ?? resolved.locale,
-    diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
-    narrative,
-    durationSec,
-    timeLimitSec: typed.max_duration_sec,
-  });
-
+  // CQG-004: Persist report BEFORE ACE so a slow/hung ACE never blocks the
+  // admin report (CLAUDE.md: ACE is best-effort and non-blocking).
+  let reportId: string | null = null;
   const admin = createServiceClient();
+
   if (admin) {
     const { data: inserted, error: insertError } = await admin
       .from("session_reports")
@@ -214,8 +207,8 @@ export async function POST(_request: Request, { params }: Params) {
       .maybeSingle();
 
     if (insertError) {
-      // Unique violation → already created (race); treat as success.
       if (insertError.code === "23505") {
+        // Race: peer already wrote the report — skip ACE re-work.
         return NextResponse.json({
           ok: true,
           alreadyExists: true,
@@ -225,13 +218,17 @@ export async function POST(_request: Request, { params }: Params) {
         });
       }
       console.warn("[session-end] report insert:", insertError.message);
-      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
+      return NextResponse.json(
+        { error: sanitizeDbError(insertError.message) },
+        { status: 500 },
+      );
     }
+    reportId = inserted?.id ?? null;
 
     const ledgerId = await sealLedgerBestEffort({
       supabase: admin,
       sessionId,
-      reportId: inserted?.id,
+      reportId,
       userId: user.id,
       assessment,
       session: typed,
@@ -240,22 +237,33 @@ export async function POST(_request: Request, { params }: Params) {
       locale: resolved.locale,
     });
 
+    // CQG-003: ACE writes require service_role (learner Data-API scoring locked).
+    void runAceAfterAssessment(admin, {
+      userId: user.id,
+      sessionId,
+      overall: assessment.scores.overall,
+      items: assessment.scores.items,
+      language: assessment.language ?? resolved.locale,
+      diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+      narrative,
+      durationSec,
+      timeLimitSec: typed.max_duration_sec,
+    }).catch((e) => {
+      console.warn(
+        "[sessions/end] ACE after report:",
+        e instanceof Error ? e.message : e,
+      );
+    });
+
+    // CQG-005: never return coach/score summaries to the therapist.
     return NextResponse.json(
       {
         ok: true,
-        reportId: inserted?.id,
+        reportId,
         ledgerId,
-        // Additive — same AI pipeline provenance as conversation turns.
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
         aiErrorKind: assessment.errorKind ?? null,
-        adaptive: ace.ok
-          ? {
-              learnerId: ace.learnerId,
-              nextCase: ace.nextCase,
-              coachSummary: ace.coach?.supervisor_feedback ?? null,
-            }
-          : null,
       },
       {
         headers: {
@@ -293,7 +301,7 @@ export async function POST(_request: Request, { params }: Params) {
     );
   }
 
-  const { data: reportId, error: rpcError } = await supabase.rpc(
+  const { data: rpcReportId, error: rpcError } = await supabase.rpc(
     "create_session_report",
     {
       p_session_id: sessionId,
@@ -306,8 +314,13 @@ export async function POST(_request: Request, { params }: Params) {
 
   if (rpcError) {
     console.warn("[session-end] report rpc:", rpcError.message);
-    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
+    return NextResponse.json(
+      { error: sanitizeDbError(rpcError.message) },
+      { status: 500 },
+    );
   }
+
+  reportId = typeof rpcReportId === "string" ? rpcReportId : null;
 
   const privileged = createServiceClient();
   if (reportId && privileged) {
@@ -318,9 +331,9 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   const ledgerId = await sealLedgerBestEffort({
-    supabase: privileged ?? supabase,
+    supabase: privileged,
     sessionId,
-    reportId: typeof reportId === "string" ? reportId : null,
+    reportId,
     userId: user.id,
     assessment,
     session: typed,
@@ -329,22 +342,36 @@ export async function POST(_request: Request, { params }: Params) {
     locale: resolved.locale,
   });
 
+  // Without service role ACE cannot persist scoring fields — still best-effort
+  // in-memory path for nextCase generation is skipped to avoid learner leaks.
+  if (privileged) {
+    void runAceAfterAssessment(privileged, {
+      userId: user.id,
+      sessionId,
+      overall: assessment.scores.overall,
+      items: assessment.scores.items,
+      language: assessment.language ?? resolved.locale,
+      diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+      narrative,
+      durationSec,
+      timeLimitSec: typed.max_duration_sec,
+    }).catch((e) => {
+      console.warn(
+        "[sessions/end] ACE after report:",
+        e instanceof Error ? e.message : e,
+      );
+    });
+  }
+
   return NextResponse.json(
     {
       ok: true,
       reportId,
       ledgerId,
-      // Do not return report content to therapist — admin only
+      // Do not return report content or coach scores to therapist — admin only
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
       aiErrorKind: assessment.errorKind ?? null,
-      adaptive: ace.ok
-        ? {
-            learnerId: ace.learnerId,
-            nextCase: ace.nextCase,
-            coachSummary: ace.coach?.supervisor_feedback ?? null,
-          }
-        : null,
     },
     {
       headers: {

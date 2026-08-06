@@ -27,6 +27,34 @@ describe("architecture invariants", () => {
     expect(route).not.toMatch(/aiFailureDetail:/);
   });
 
+  it("persists the session report before ACE and omits coach scores (CQG-004/005)", () => {
+    const route = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    // Compare call sites, not the import line.
+    const reportInsert = route.indexOf('.from("session_reports")');
+    const aceCall = route.indexOf("void runAceAfterAssessment");
+    expect(reportInsert).toBeGreaterThan(-1);
+    expect(aceCall).toBeGreaterThan(-1);
+    expect(reportInsert).toBeLessThan(aceCall);
+    expect(route).not.toMatch(/coachSummary/);
+    expect(route).not.toMatch(/supervisor_feedback/);
+  });
+
+  it("hides OSCE ground-truth diagnosis on session create (CQG-007)", () => {
+    const route = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    expect(route).toMatch(/shouldHideGroundTruth/);
+  });
+
+  it("compensates orphaned user turns on message failure (CQG-008)", () => {
+    const route = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/compensateOrphanedUserTurn/);
+  });
+
   it("session start/message RPCs fall back when service role is unset", () => {
     const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
     const message = readFileSync(
