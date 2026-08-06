@@ -11,6 +11,10 @@ import {
   formatSpeechBehaviorForPrompt,
   speechBehaviorForDisorder,
 } from "@/lib/case-engine/speech-behavior";
+import {
+  formatTherapyProcessForPrompt,
+  formatTherapyReactionForPrompt,
+} from "@/lib/case-engine/therapy-process";
 import type {
   Avatar,
   AvatarPersonality,
@@ -97,22 +101,51 @@ export function stripPersonaSyndromeSpeechBlocks(prompt: string): string {
 
 function fidelityHintsFromSnapshot(
   snapshot: CaseInstanceSnapshot | null,
-): PromptFidelityHints | undefined {
-  if (!snapshot) return undefined;
-  const slug = snapshot.primary_diagnosis?.slug ?? null;
+  disorderHint?: string | null,
+): PromptFidelityHints {
+  const slug = snapshot?.primary_diagnosis?.slug ?? null;
   const profile = speechBehaviorForDisorder(slug, null);
-  const teachingCue = snapshot.clinical_teaching?.speech_behavior_cue?.trim();
+  const teachingCue = snapshot?.clinical_teaching?.speech_behavior_cue?.trim();
   const speech =
     teachingCue && teachingCue.length > 40
       ? teachingCue
       : formatSpeechBehaviorForPrompt(profile);
-  const mods = snapshot.difficulty_modifiers;
+  const mods = snapshot?.difficulty_modifiers;
+  const processCue = formatTherapyProcessForPrompt(
+    slug ?? disorderHint ?? null,
+    null,
+  );
+  const reactionCue = formatTherapyReactionForPrompt(
+    snapshot?.therapy_reaction_rules ?? null,
+  );
+  const therapy_process_cue = reactionCue
+    ? `${processCue}\n${reactionCue}`
+    : processCue;
   return {
     speech_behavior_cue: speech,
     difficulty_behavior: mods
       ? formatDifficultyBehaviorForPrompt(mods)
       : undefined,
+    therapy_process_cue,
   };
+}
+
+/** Map avatar disorder string → speech/therapy slug when no case snapshot. */
+function slugHintFromDisorderName(disorder?: string | null): string | null {
+  if (!disorder) return null;
+  const d = disorder.toLowerCase();
+  if (/major depressive|mdd|depress/.test(d)) return "mdd-recurrent-moderate";
+  if (/generalized anxiety|gad/.test(d)) return "gad-with-panic";
+  if (/mania|bipolar/.test(d)) return "bipolar-mania";
+  if (/schizo/.test(d)) return "schizophrenia";
+  if (/complex.?ptsd|cptsd/.test(d)) return "complex-ptsd";
+  if (/ptsd|trauma/.test(d)) return "ptsd";
+  if (/borderline|bpd/.test(d)) return "bpd";
+  if (/alcohol|substance/.test(d)) return "alcohol-use-disorder";
+  if (/adhd|attention/.test(d)) return "adult-adhd";
+  if (/panic/.test(d)) return "panic-disorder";
+  if (/delirium/.test(d)) return "delirium";
+  return null;
 }
 
 const MANIA_OR_PSYCHOSIS = new Set([
@@ -352,7 +385,10 @@ export function resolveAvatar(
       clinical_core: mergedCore,
       personality,
       session: { locale },
-      fidelity: fidelityHintsFromSnapshot(snapshot),
+      fidelity: fidelityHintsFromSnapshot(
+        snapshot,
+        slugHintFromDisorderName(mergedCore.disorder ?? avatar.disorder),
+      ),
     };
 
     // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.
@@ -427,7 +463,10 @@ export function resolveAvatar(
   if (snapshot?.clinical_core) {
     assembly.clinical_core = snapshot.clinical_core;
   }
-  assembly.fidelity = fidelityHintsFromSnapshot(snapshot);
+  assembly.fidelity = fidelityHintsFromSnapshot(
+    snapshot,
+    slugHintFromDisorderName(flatDisorder),
+  );
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 

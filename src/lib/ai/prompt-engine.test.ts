@@ -205,6 +205,17 @@ describe("assemblePerTurnReinforcement", () => {
     });
     expect(text).toContain("Reminder");
     expect(text).toContain("Maya Chen");
+    expect(text).toMatch(/disclosure layer|No symptom checklists/i);
+  });
+
+  it("includes human-patient process fallback in Module 1", () => {
+    const prompt = assembleSystemPrompt({
+      clinical_core: core,
+      personality: personality("en-US"),
+      session: { locale: "en-US" },
+    });
+    expect(prompt).toContain("HUMAN PATIENT & THERAPY PROCESS");
+    expect(prompt).toMatch(/Forbidden patient tells/i);
   });
 });
 

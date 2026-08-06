@@ -175,13 +175,17 @@ describe("W3-HCF Module 1 injection", () => {
       fidelity: {
         speech_behavior_cue: cue,
         difficulty_behavior:
-          "Session difficulty behaviour (obey in HOW you engage):\n- Resistance: high",
+          "Session difficulty behaviour (enact — do not announce these labels):\n- Resistance high: passive…",
+        therapy_process_cue:
+          "HUMAN PATIENT & THERAPY PROCESS (mandatory — consultants are watching):\n- Hesitate.",
       },
     });
     expect(prompt).toContain("HOW YOU SPEAK THIS SESSION");
     expect(prompt).toMatch(/Pressured speech|pressured/i);
     expect(prompt).toContain("Session difficulty behaviour");
+    expect(prompt).toContain("HUMAN PATIENT & THERAPY PROCESS");
     expect(prompt).toMatch(/Avoid AI tells/i);
+    expect(prompt).toMatch(/Forbidden patient tells/i);
   });
 });
 

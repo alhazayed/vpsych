@@ -189,19 +189,5 @@ export function formatSpeechBehaviorForPrompt(
   ].join("\n");
 }
 
-export function formatDifficultyBehaviorForPrompt(mods: {
-  insight: string;
-  resistance: string;
-  disclosure: string;
-  masking: string;
-  alliance: string;
-}): string {
-  return [
-    "Session difficulty behaviour (obey in HOW you engage):",
-    `- Insight: ${mods.insight}`,
-    `- Resistance: ${mods.resistance}`,
-    `- Disclosure: ${mods.disclosure}`,
-    `- Masking: ${mods.masking}`,
-    `- Alliance: ${mods.alliance}`,
-  ].join("\n");
-}
+/** @deprecated Prefer importing from therapy-process — kept as re-export. */
+export { formatDifficultyBehaviorForPrompt } from "@/lib/case-engine/therapy-process";
