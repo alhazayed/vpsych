@@ -13,6 +13,8 @@ export type Profile = {
   display_name: string;
   role: UserRole;
   preferred_language?: PreferredLanguage | null;
+  /** When set, first-run Professional Preview onboarding is hidden. */
+  onboarding_dismissed_at?: string | null;
   created_at: string;
   updated_at: string;
 };

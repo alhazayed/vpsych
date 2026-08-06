@@ -56,7 +56,9 @@
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
-    "securityKeys": "Security & Keys"
+    "securityKeys": "Security & Keys",
+    "professionalPreview": "Professional Preview",
+    "clinicalValidation": "Clinical Validation"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -76,40 +78,40 @@
       "getStarted": "Get Started"
     },
     "hero": {
-      "badge": "Next-Gen Clinical Training",
-      "title": "Practice Psychotherapy with AI Patients",
-      "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
-      "startFree": "Start Free",
-      "watchDemo": "Watch Demo",
+      "badge": "Professional Preview · Expert Evaluation",
+      "title": "Practice Psychotherapy with AI Standardized Patients",
+      "body": "Invited clinicians evaluate bilingual AI patient simulations for training. Competency scores are formative — not yet validated for high-stakes credentialing.",
+      "startFree": "Request Preview Access",
+      "watchDemo": "How it works",
       "imageAlt": "Therapist conducting a session with an AI patient avatar"
     },
     "features": {
-      "title": "Advanced Clinical Training Tools",
-      "subtitle": "Master complex therapeutic skills through our specialized simulation suite.",
+      "title": "What you can evaluate today",
+      "subtitle": "Demonstrable capabilities in the current Professional Preview build — no unverified claims.",
       "items": {
         "simulations": {
           "title": "Clinical Simulations",
-          "body": "Immersive scenarios covering anxiety, depression, PTSD, and complex personality disorders."
+          "body": "Timed voice or text sessions with fictional patients spanning common psychiatric presentations (catalog varies by deployment)."
         },
         "avatars": {
           "title": "AI Patient Avatars",
-          "body": "Responsive avatars with dynamic facial expressions and realistic emotional vocal modulation."
+          "body": "Static portraits with voice synthesis (ElevenLabs). Emotional tone is conveyed in speech and dialogue — not animated facial expressions."
         },
         "feedback": {
           "title": "Competency-Based Feedback",
-          "body": "Instant scoring on empathy, verbal reflections, and adherence to therapeutic modalities."
+          "body": "After each session, an admin-only performance report is generated. Trainees submit expert ratings and CQI feedback; full rubric scores are not shown to therapists by design."
         },
         "analytics": {
           "title": "Performance Analytics",
-          "body": "Visualize your growth over time with detailed charts mapping your diagnostic accuracy."
+          "body": "Admins monitor Professional Preview metrics and formative Reviewer Analytics indices. Diagnostic-accuracy charts for trainees are not part of this preview."
         },
         "progress": {
           "title": "Progress Tracking",
-          "body": "Curated learning paths that adapt based on your strengths and identified areas for improvement."
+          "body": "Adaptive curriculum and competency graph surfaces exist for learners; pathways are best-effort and not claimed as outcome-validated."
         },
         "bilingual": {
           "title": "Arabic & English Support",
-          "body": "Full bilingual capability to support diverse practitioners across global medical contexts."
+          "body": "English and Arabic UI, with natively authored patient personalities (not machine-translated). Locale quality is under expert review."
         }
       }
     },
@@ -126,71 +128,71 @@
           "body": "Engage in natural conversation with the AI patient via voice or text input."
         },
         "3": {
-          "title": "Receive AI Report",
-          "body": "Get a comprehensive clinical analysis with specific feedback on your techniques."
+          "title": "Session ends · Admin report",
+          "body": "The platform generates an admin-only competency report. Reviewers submit session ratings, CQI issues, and educational opportunity feedback."
         }
       }
     },
     "stats": {
-      "sessions": "Practice Sessions",
-      "cases": "AI Patient Cases",
-      "competencies": "Clinical Competencies",
-      "satisfaction": "User Satisfaction"
+      "sessions": "Session hard cap",
+      "cases": "Active patient catalog",
+      "competencies": "Locales supported",
+      "satisfaction": "Score validation status"
     },
     "testimonials": {
-      "title": "Trusted by Professionals",
+      "title": "Evidence stance",
       "items": {
         "1": {
-          "quote": "The diagnostic reasoning feedback is revolutionary. It catches nuances in interviewing technique that are often missed in traditional residency training.",
-          "name": "Dr. Sarah Khalil",
-          "role": "Senior Psychiatrist"
+          "quote": "Competency scores are formative training feedback. Published reliability and validity coefficients are not claimed until clinician-rated calibration is complete.",
+          "name": "Assessment policy",
+          "role": "See docs/KNOWN_LIMITATIONS.md"
         },
         "2": {
-          "quote": "As a clinical psychologist, I find the AI's emotional responses incredibly authentic. It's an invaluable tool for mastering therapeutic alliance building.",
-          "name": "Dr. James Wilson",
-          "role": "Clinical Psychologist"
+          "quote": "AI patients are synthetic. This is an educational simulator, not a medical device and not clinical decision support for real patients.",
+          "name": "Clinical boundary",
+          "role": "Professional Preview"
         },
         "3": {
-          "quote": "VPsych helped me build confidence before my first real-world clinical rotation. The progress tracking keeps me motivated to keep refining my skills.",
-          "name": "Layla Ahmed",
-          "role": "Medical Resident"
+          "quote": "Expert feedback from psychiatrists, psychologists, residents, supervisors, and educators drives the v1.1 roadmap.",
+          "name": "Preview program",
+          "role": "Evidence-first development"
         }
       }
     },
     "pricing": {
-      "title": "Scale Your Expertise",
-      "subtitle": "Plans designed for individual learners and major medical institutions.",
-      "mostPopular": "Most Popular",
+      "title": "Professional Preview access",
+      "subtitle": "Invited evaluation cohort. Paid plans are not offered in this preview.",
+      "mostPopular": "Current preview",
       "perMonth": "/mo",
       "free": {
         "name": "Free",
         "price": "$0",
         "features": {
-          "1": "Practice sessions with preset avatars",
-          "2": "Voice-first training",
-          "3": "Admin-only assessments"
+          "1": "Voice or text sessions with active avatars",
+          "2": "Post-session expert ratings & CQI / EOI feedback",
+          "3": "Admin-only assessment reports"
         },
-        "cta": "Select Plan"
+        "cta": "Create account"
       },
       "pro": {
-        "name": "Professional",
-        "price": "$29",
+        "name": "Not offered yet",
+        "price": "—",
         "features": {
-          "1": "Unlimited sessions",
-          "2": "Full performance reports",
-          "3": "Expanded patient library"
+          "1": "No public Pro billing in this build",
+          "2": "Trainee-visible reports are roadmap",
+          "3": "Expanded library under evaluation"
         },
-        "cta": "Get Started"
+        "cta": "Join waitlist later"
       },
       "institution": {
         "name": "Institution",
         "price": "Custom",
         "features": {
-          "1": "Supervisor dashboards",
-          "2": "Custom case creation",
-          "3": "Enterprise support"
+          "1": "Institutional tenancy is partial / deferred",
+          "2": "Supervisor dashboards: admin preview metrics",
+          "3": "Contact the Release Manager for cohort invites"
         },
-        "cta": "Contact Sales"
+        "cta": "Contact Release Manager"
       }
     },
     "faq": {
@@ -198,11 +200,11 @@
       "items": {
         "1": {
           "q": "How realistic are AI patients?",
-          "a": "Our models are tuned for clinical training scenarios so behavior patterns, vocabulary, and symptom presentation feel authentic for practice."
+          "a": "Realism is under expert evaluation. Patients are fictional standardized simulations; quality varies by disorder package and locale. We do not claim clinical equivalence to human standardized patients."
         },
         "2": {
           "q": "Can supervisors review sessions?",
-          "a": "Yes. Admin accounts can review performance reports generated after each session while therapist access remains appropriately scoped."
+          "a": "Yes. Admin accounts can review performance reports. Therapists keep transcripts and learning surfaces; full reports remain admin-only."
         },
         "3": {
           "q": "Is patient data recorded?",
@@ -215,7 +217,7 @@
       }
     },
     "footer": {
-      "tagline": "Clinical excellence in every interaction. Empowering the next generation of mental health professionals through AI simulation.",
+      "tagline": "Educational AI simulation for mental health training. Professional Preview — evidence before marketing.",
       "product": "Product",
       "resources": "Resources",
       "company": "Company",
@@ -236,8 +238,8 @@
       "requestAccess": "Request Access",
       "heroAlt": "Therapist practicing with an AI patient simulation",
       "heroTitle": "Improve Your Clinical Skills with AI-Powered Practice",
-      "heroBody": "Practice psychotherapy with realistic AI patients and receive structured competency feedback after every session.",
-      "trusted": "Trusted by clinicians worldwide",
+      "heroBody": "Practice with AI standardized patients. Submit expert ratings after each session. Full competency reports remain admin-only until validation studies complete.",
+      "trusted": "Invited clinical evaluators · Professional Preview",
       "welcome": "Welcome Back",
       "subtitle": "Sign in to continue your clinical training.",
       "email": "Email",
@@ -346,7 +348,7 @@
   },
   "avatars": {
     "welcomeBack": "Welcome back",
-    "intro": "Choose a virtual patient to begin a timed voice practice session.",
+    "intro": "Choose a virtual patient and start a timed session (voice or text). After you end, an admin-only report is prepared and you can submit Professional Preview feedback.",
     "title": "Virtual Patient Library",
     "count": "{count} active {persona}",
     "persona": "persona",
@@ -374,7 +376,8 @@
       "next2": "Practice again with another persona to keep building clinical skills.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
-      "viewReport": "View report"
+      "viewReport": "View report",
+      "nextFeedback": "Please rate the encounter and submit CQI or educational opportunity feedback below — your judgment shapes v1.1."
     }
   },
   "session": {
@@ -438,10 +441,10 @@
   "analysis": {
     "brandAi": "VPsych AI",
     "title": "Analyzing Your Clinical Performance",
-    "subtitle": "Our AI is reviewing your therapeutic communication, empathy, diagnostic reasoning, rapport building, interviewing techniques, intervention quality, and overall clinical competency.",
+    "subtitle": "The system is generating an admin-only competency report from your transcript. Scores are formative and not yet validated.",
     "estimatedTime": "Estimated time: Approximately 20–60 seconds",
     "clinicalTip": "Clinical Tip",
-    "doNotClose": "Do not close this page. Your personalized clinical report will open automatically when analysis is complete.",
+    "doNotClose": "Do not close this page. When analysis finishes you will continue to the session-complete screen to submit expert feedback. Full reports remain admin-only.",
     "steps": {
       "transcript": "Processing session transcript",
       "communication": "Evaluating therapeutic communication",
@@ -672,6 +675,46 @@
         "cancel": "Cancel",
         "proceed": "Proceed with Change"
       }
+    },
+    "preview": {
+      "eyebrow": "Professional Preview Program",
+      "title": "Preview Dashboard",
+      "subtitle": "Monitor reviewer activity, formative indices, reported issues, and educational opportunities. Not a validated quality claim.",
+      "loading": "Loading dashboard…",
+      "loadError": "Could not load preview dashboard.",
+      "migrationNeeded": "PPP database tables are not applied yet. Apply migration 20260806083000_professional_preview_program.",
+      "monitorTitle": "Program monitor",
+      "analyticsTitle": "Reviewer Analytics",
+      "analyticsSubtitle": "Indices from {n} expert session rating(s), scaled 0–100.",
+      "sampleN": "n = {n}",
+      "issuesBySeverity": "Reported issues by severity",
+      "openIssues": "Open / triaged",
+      "commonRequests": "Common feature request themes",
+      "noRequests": "No feature requests yet.",
+      "generatedAt": "Generated {at}",
+      "metrics": {
+        "reviewers": "Active reviewers",
+        "completedSessions": "Completed sessions",
+        "avgRealism": "Avg realism",
+        "avgEducational": "Avg educational value",
+        "issues": "Reported issues (CQI)",
+        "opportunities": "Educational opportunities",
+        "blindScores": "Blind psychiatrist scores",
+        "avgConversation": "Avg conversation length",
+        "turns": "turns",
+        "completionRate": "Session completion rate"
+      },
+      "indices": {
+        "clinicalAuthenticity": "Clinical Authenticity Index",
+        "educationalValue": "Educational Value Index",
+        "conversationNaturalness": "Conversation Naturalness Index",
+        "therapeuticAlliance": "Therapeutic Alliance Score",
+        "patientBelievability": "Patient Believability Score",
+        "learningImpact": "Learning Impact Score",
+        "voiceRealism": "Voice Realism Score",
+        "arabicQuality": "Arabic Quality Score",
+        "englishQuality": "English Quality Score"
+      }
     }
   },
   "legal": {
@@ -704,6 +747,180 @@
     "ai": {
       "title": "AI disclosure",
       "body": "Patient replies and some assessments are generated by artificial intelligence models. Outputs may be imperfect; instructors should review critical evaluations."
+    }
+  },
+  "ppp": {
+    "onboarding": {
+      "eyebrow": "Professional Preview",
+      "title": "Welcome, {name}",
+      "body": "You are evaluating an AI standardized-patient simulator for psychiatric training. Simulation behaviour is frozen for this preview — your job is honest clinical judgment.",
+      "hint": "Takes about a minute to read. You can dismiss when ready.",
+      "dismiss": "I understand — show patients",
+      "dismissing": "Saving…",
+      "dismissError": "Could not dismiss onboarding. Try again.",
+      "steps": {
+        "1": {
+          "title": "Create or sign in",
+          "body": "Use your invite credentials. New accounts start as therapists."
+        },
+        "2": {
+          "title": "Pick a patient",
+          "body": "Start from the library. Sessions hard-expire at 40 minutes."
+        },
+        "3": {
+          "title": "Voice or text",
+          "body": "Voice uses mic + TTS. If voice fails, switch to text and note it in CQI."
+        },
+        "4": {
+          "title": "End the session",
+          "body": "Ending triggers an admin-only performance report. You will not see full scores."
+        },
+        "5": {
+          "title": "Rate & report issues",
+          "body": "On the complete screen, submit Likert ratings, CQI defects, and educational opportunities."
+        },
+        "6": {
+          "title": "Stay within limits",
+          "body": "No real PHI. Treat avatars as fictional. Scores are formative, not certification."
+        }
+      }
+    },
+    "feedback": {
+      "title": "Expert feedback",
+      "subtitle": "Required for Professional Preview. Ratings feed Reviewer Analytics; CQI and educational notes drive the backlog.",
+      "tabs": {
+        "ratings": "Session ratings",
+        "cqi": "Report an issue (CQI)",
+        "eoi": "Educational opportunity"
+      },
+      "scale": "1 = poor · 5 = excellent for preview",
+      "optional": "optional",
+      "usedVoice": "I used voice mode in this session",
+      "freeTextPlaceholder": "Optional notes (quotes, timestamps, session quirks)…",
+      "ratingsRequired": "Please score all six core items (1–5).",
+      "submitRatings": "Submit ratings",
+      "submitCqi": "Submit CQI report",
+      "submitEoi": "Submit educational opportunity",
+      "saving": "Saving…",
+      "submitError": "Could not save. Check fields and try again.",
+      "ratingsSaved": "Ratings saved. Thank you.",
+      "cqiSaved": "Issue report saved.",
+      "eoiSaved": "Educational opportunity saved.",
+      "cqiHelp": "Report defects that affect evaluation. Use wishlist only for non-blocking ideas.",
+      "eoiHelp": "Capture teaching moments, curriculum gaps, or supervision use cases you observed.",
+      "issueTitle": "Short title",
+      "issueDescription": "What happened, expected behaviour, and clinical impact…",
+      "eoiTitle": "Short title",
+      "eoiDescription": "Describe the educational opportunity…",
+      "competencyArea": "Competency area (optional)",
+      "fields": {
+        "clinicalRealism": "Clinical realism",
+        "educationalValue": "Educational value",
+        "conversationNaturalness": "Conversation naturalness",
+        "therapeuticAlliance": "Therapeutic alliance opportunity",
+        "patientBelievability": "Patient believability",
+        "learningImpact": "Learning impact",
+        "voiceRealism": "Voice realism",
+        "englishQuality": "English quality",
+        "arabicQuality": "Arabic quality"
+      },
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "wishlist": "Wishlist"
+      },
+      "category": {
+        "clinical_realism": "Clinical realism",
+        "conversation": "Conversation",
+        "voice_tts": "Voice / TTS",
+        "assessment": "Assessment",
+        "safety": "Safety",
+        "ui_ux": "UI / UX",
+        "bilingual": "Bilingual",
+        "other": "Other"
+      },
+      "eoiType": {
+        "missed_teaching_moment": "Missed teaching moment",
+        "strong_teaching_moment": "Strong teaching moment",
+        "curriculum_gap": "Curriculum gap",
+        "competency_focus": "Competency focus",
+        "supervision_use_case": "Supervision use case",
+        "other": "Other"
+      }
+    }
+  },
+  "cvp": {
+    "reviewer": {
+      "eyebrow": "Clinical Validation",
+      "title": "Reviewer dashboard",
+      "subtitle": "Your study enrollments, randomized assignments, and longitudinal progress. Simulation behaviour is unchanged — this tracks evidence.",
+      "loading": "Loading…",
+      "loadError": "Could not load validation dashboard.",
+      "enrollments": "Study enrollments",
+      "noEnrollments": "You are not enrolled in a validation study yet.",
+      "acceptInvite": "Accept an invitation",
+      "baselineDone": "baseline complete",
+      "baselinePending": "baseline pending",
+      "active": "Active",
+      "inactive": "Inactive",
+      "assignments": "Assigned sessions",
+      "noAssignments": "No assignments yet. A study coordinator will allocate patients.",
+      "patient": "Patient",
+      "startAssigned": "Go to patient library",
+      "viewComplete": "Session complete / feedback",
+      "longitudinal": "Your progress snapshots",
+      "noSnapshots": "Snapshots appear after you complete assigned sessions.",
+      "sessionsCompleted": "{n} sessions completed"
+    },
+    "accept": {
+      "title": "Accept validation invitation",
+      "subtitle": "Enroll in the Clinical Validation Program. You must accept consent and the reviewer agreement.",
+      "loading": "Loading…",
+      "token": "Invitation token",
+      "credentials": "Credentials (optional)",
+      "credentialsPh": "e.g. MD, Board-certified psychiatry",
+      "specialty": "Specialty (optional)",
+      "specialtyPh": "e.g. Mood disorders / Education",
+      "consent": "I consent to de-identified use of my ratings for research under the study protocol.",
+      "agreement": "I accept the Clinical Validation reviewer agreement (docs/cvp).",
+      "submit": "Enroll",
+      "submitting": "Enrolling…",
+      "error": "Could not accept invitation."
+    },
+    "admin": {
+      "eyebrow": "Clinical Validation Program",
+      "title": "Clinical Validation Dashboard",
+      "subtitle": "Monitor enrollments, assignments, blind challenge, inter-rater reliability, CONSORT flow, institutions, and publication exports. Formative evidence only.",
+      "loading": "Loading…",
+      "loadError": "Could not load clinical validation dashboard.",
+      "selectStudy": "Study",
+      "noStudies": "No studies — create via API",
+      "exportPackage": "Export publication package",
+      "exporting": "Exporting…",
+      "exportOk": "Export completed ({id})",
+      "exportError": "Export failed",
+      "metrics": {
+        "enrollments": "Active enrollments",
+        "completedAssignments": "Completed assignments",
+        "blindScores": "Blind scores",
+        "kappa": "Cohen's κ"
+      },
+      "reliabilityTitle": "Reliability & IRA",
+      "cronbach": "Cronbach's α",
+      "cohensKappa": "Cohen's κ",
+      "fleissKappa": "Fleiss' κ",
+      "icc": "ICC(2,1)",
+      "pearson": "Pearson r",
+      "consortTitle": "CONSORT-style flow",
+      "institutionsTitle": "Institution comparison",
+      "noInstitutions": "No sites attached yet.",
+      "site": "Site",
+      "enrolled": "Enrolled",
+      "completed": "Completed",
+      "calibration": "Calibration items scored",
+      "longitudinal": "Reviewers with ≥2 snapshots",
+      "outcomes": "Outcome instruments"
     }
   }
 }
