@@ -141,6 +141,9 @@ export async function playPatientSpeech(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  speechPace?: string | null;
+  speechEnergy?: string | null;
+  disorderSlug?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
 }): Promise<"elevenlabs" | "browser"> {
@@ -154,7 +157,29 @@ export async function playPatientSpeech(params: {
     voiceIdAr: params.voiceIdAr,
     voiceProfileId: params.voiceProfileId,
     avatarId: params.avatarId,
+    speechPace: params.speechPace,
+    speechEnergy: params.speechEnergy,
+    disorderSlug: params.disorderSlug,
   });
+
+  const browserFallback = (onDone: () => void) => {
+    speakWithBrowser(
+      params.text,
+      params.locale,
+      {
+        onstart: handlers.onstart,
+        onend: () => {
+          handlers.onend?.();
+          onDone();
+        },
+        onerror: () => {
+          handlers.onerror?.();
+          onDone();
+        },
+      },
+      params.speechPace,
+    );
+  };
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
     const audio = new Audio(result.objectUrl);
@@ -173,40 +198,25 @@ export async function playPatientSpeech(params: {
 
       audio.onended = () => finish("elevenlabs");
       audio.onerror = () => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
+        browserFallback(() => finish("browser"));
       };
 
       void audio.play().catch(() => {
-        speakWithBrowser(params.text, params.locale, {
-          onstart: handlers.onstart,
-          onend: () => {
-            handlers.onend?.();
-            finish("browser");
-          },
-          onerror: () => {
-            handlers.onerror?.();
-            finish("browser");
-          },
-        });
+        browserFallback(() => finish("browser"));
       });
     });
   }
 
-  speakWithBrowser(params.text, params.locale, {
-    onstart: handlers.onstart,
-    onend: handlers.onend,
-    onerror: handlers.onerror,
-  });
+  speakWithBrowser(
+    params.text,
+    params.locale,
+    {
+      onstart: handlers.onstart,
+      onend: handlers.onend,
+      onerror: handlers.onerror,
+    },
+    params.speechPace,
+  );
   return "browser";
 }
 
@@ -224,6 +234,9 @@ export async function runVoiceConversationTurn(params: {
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  speechPace?: string | null;
+  speechEnergy?: string | null;
+  disorderSlug?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
@@ -287,6 +300,9 @@ export async function runVoiceConversationTurn(params: {
       voiceIdAr: params.voiceIdAr,
       voiceProfileId: params.voiceProfileId,
       avatarId: params.avatarId,
+      speechPace: params.speechPace,
+      speechEnergy: params.speechEnergy,
+      disorderSlug: params.disorderSlug,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
     });

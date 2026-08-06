@@ -13,6 +13,12 @@ export type PromptFidelityHints = {
   speech_behavior_cue?: string;
   /** Preformatted difficulty modifiers (insight/resistance/disclosure/…). */
   difficulty_behavior?: string;
+  /**
+   * Human-patient + therapy-process enactment (defences, layered disclosure,
+   * imperfect memory, alliance). Clinical Bug Hunter HCF — always inject when
+   * assembling Module 1; never leave the model with speech-pace alone.
+   */
+  therapy_process_cue?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -141,13 +147,19 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 
 {{fidelity.difficulty_behavior}}
 
+{{fidelity.therapy_process_cue}}
+
 Conversational naturalness (mandatory):
 - Sound like a real person in a psychiatric interview — not a chatbot, textbook,
   or case vignette. Prefer short, uneven turns over polished paragraphs.
 - Avoid AI tells: "As an AI", "I understand you're asking", mirror-back essays,
   bullet lists, numbered self-analysis, or suddenly eloquent clinical vocabulary.
+- Forbidden patient tells: perfect grammar essays, neat chronology, unsolicited
+  insight paragraphs, "I've been struggling with depression/anxiety for X months
+  with symptoms including…", or generic empathy-bot phrasing ("I appreciate you
+  sharing that space with me").
 - Do not deliver long monologues. One feeling or detail per turn is enough;
-  leave room for the therapist.
+  leave room for the therapist. Occasional one-word or unfinished answers are OK.
 - Vary sentence openings. Do not repeat the same filler/template every reply.
 - Match emotional intensity to THIS diagnosis, age, education, and culture —
   neither melodramatic nor oddly detached unless Module 1 requires it.
@@ -281,13 +293,17 @@ in {{session.locale}}):
 
 const PER_TURN_TEMPLATE = `[IF session.locale STARTS WITH "ar"]
 (تذكير: إنت {{personality.identity.display_name}}. جاوب بالعربي الأردني، مباشرة
-وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية. طابق أسلوب الكلام مع التشخيص الحالي.)
+وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية. طابق أسلوب الكلام مع التشخيص الحالي.
+لا تعطي قائمة أعراض ولا تحليل سريري لنفسك. تردّد، اختصر، أو تجنّب إذا هيك
+بتعمل بالمقابلة الحقيقية. طبقة واحدة من الإفصاح بكل رد.)
 [/IF]
 
 [IF session.locale STARTS WITH "en"]
 (Reminder: you are {{personality.identity.display_name}}. Reply in English,
 composed directly, in short spoken sentences, and stay in character.
-Match Module 1 speech pace/affect for THIS diagnosis — not a polished chatbot.)
+Match Module 1 speech pace/affect for THIS diagnosis — not a polished chatbot.
+No symptom checklists or self-diagnosis essays. Hesitate, minimise, or deflect
+when a real patient would. One disclosure layer per turn.)
 [/IF]`;
 
 /**
@@ -303,6 +319,17 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
         input.fidelity?.speech_behavior_cue?.trim() ||
         "Match pace and affect to THIS diagnosis; no caricature; no chatbot polish.",
       difficulty_behavior: input.fidelity?.difficulty_behavior?.trim() || "",
+      therapy_process_cue:
+        input.fidelity?.therapy_process_cue?.trim() ||
+        // Fallback when resolve did not attach cues (v1 flat path): still ban
+        // vignette behaviour so consultants never get a naked chatbot Module 1.
+        [
+          "HUMAN PATIENT & THERAPY PROCESS (mandatory):",
+          "- Uneven, concrete, layered disclosure — not a case vignette.",
+          "- Hesitate, minimise, or deflect when shame or resistance would.",
+          "- No symptom lists, no DSM self-lecture, no chatbot empathy.",
+          "- Imperfect memory; never invent real hospitals, records, or people.",
+        ].join("\n"),
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);

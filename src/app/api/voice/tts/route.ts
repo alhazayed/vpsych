@@ -24,6 +24,10 @@ type TtsBody = {
   preview?: boolean;
   /** Request streaming synthesis (default true). */
   stream?: boolean;
+  /** CB-HCF-007 — optional clinical speech phenotype for prosody. */
+  speechPace?: string;
+  speechEnergy?: string;
+  disorderSlug?: string;
 };
 
 /**
@@ -70,6 +74,9 @@ export async function POST(request: Request) {
       voiceId: resolved.voiceId,
       voiceIdAr: resolved.voiceId,
       stream: body.stream !== false,
+      speechPace: body.speechPace,
+      speechEnergy: body.speechEnergy,
+      disorderSlug: body.disorderSlug,
     });
 
     return new NextResponse(result.body, {
@@ -85,6 +92,9 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        ...(body.speechPace
+          ? { "X-Voice-Speech-Pace": String(body.speechPace) }
+          : {}),
         ...(resolved.voiceProfileId
           ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
           : {}),
