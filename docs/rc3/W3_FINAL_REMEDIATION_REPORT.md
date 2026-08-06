@@ -51,13 +51,17 @@ Apply after merge, before re-cert:
 | test:migrations | local structure OK (incl. `20260805214500`) |
 | build | pass (quality-ledger + research/export routes present) |
 
-## Deploy sequence
+## Deploy sequence — executed
 
-1. Merge this PR to `main` (includes #128 + H3/H5 hardening).  
-2. Apply migration.  
-3. Fix `ELEVENLABS_API_KEY` (W3-H5).  
-4. Promote production; record new SHA + deploy id.  
-5. Launch **independent** Wave 3 certification (read-only).  
+| Step | Result |
+|---|---|
+| Merge | **#131** merged → `main` @ `1e44dce5664a7aa06e6680896c3ed88a15ecf045` |
+| Production deploy | `dpl_CqJsC3pftCqyWR6q1YiMTHiRgPLm` **READY** → `https://vpsych.vercel.app` |
+| Migration | `20260805214500` / `quality_ledger_and_scientific_indices` applied on project `rrzudbkxigeavfdnidnm` |
+| Migration ledger | Restored missing git file `20260805130453` (already on prod from Wave 1; was absent from `main`) so remote↔git versions match |
+| CI on main | success (`31075726076`) |
+| Route smoke (unauth) | `/api/admin/quality-ledger` → **401** (was 404); `/api/admin/research/export` → **401** (was 404) |
+| W3-H5 ops | **Still blocked** — Release Manager must set valid `ELEVENLABS_API_KEY=sk_…` in Vercel Production and confirm TTS returns `audio/mpeg` |
 
 ## Out of scope
 
