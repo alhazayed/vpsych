@@ -36,16 +36,15 @@ export default async function SessionCompletePage({ params }: Props) {
 
   const showRoomDebrief = typed.interaction_mode === "therapy_room";
 
-  let transcript: SessionMessage[] = [];
-  if (showRoomDebrief) {
-    const { data: messages } = await supabase
-      .from("session_messages")
-      .select("*")
-      .eq("session_id", id)
-      .in("role", ["user", "assistant"])
-      .order("created_at", { ascending: true });
-    transcript = (messages ?? []) as SessionMessage[];
-  }
+  // Always load the transcript for the complete page — classic sessions also
+  // promise review under My Sessions / this page (not therapy-room-only).
+  const { data: messages } = await supabase
+    .from("session_messages")
+    .select("*")
+    .eq("session_id", id)
+    .in("role", ["user", "assistant"])
+    .order("created_at", { ascending: true });
+  const transcript = (messages ?? []) as SessionMessage[];
 
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
@@ -75,44 +74,42 @@ export default async function SessionCompletePage({ params }: Props) {
         </section>
       )}
 
-      {showRoomDebrief && (
-        <section className="clinical-card mb-4 p-5 fade-in-up">
-          <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold">
-            {tRoom("transcriptTitle")}
-          </h2>
-          {transcript.length === 0 ? (
-            <p className="text-sm text-[var(--on-surface-variant)]">
-              {tTranscript("empty")}
-            </p>
-          ) : (
-            <ul className="max-h-80 space-y-3 overflow-auto text-sm">
-              {transcript.map((m) => (
-                <li key={m.id}>
-                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                    {m.role === "user"
-                      ? tTranscript("you")
-                      : tTranscript("patient")}
-                  </span>
-                  <span className="text-[var(--on-surface)]">{m.content}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {typed.private_notes?.trim() ? (
-            <div className="mt-4 border-t border-[var(--outline-variant)] pt-4">
-              <h3 className="mb-2 text-sm font-semibold">
-                {tRoom("notesTitle")}
-              </h3>
-              <p className="whitespace-pre-wrap text-sm text-[var(--on-surface-variant)]">
-                {typed.private_notes}
-              </p>
-            </div>
-          ) : null}
-          <p className="mt-4 text-xs text-[var(--on-surface-variant)]">
-            {tRoom("debriefNote")}
+      <section className="clinical-card mb-4 p-5 fade-in-up">
+        <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold">
+          {tRoom("transcriptTitle")}
+        </h2>
+        {transcript.length === 0 ? (
+          <p className="text-sm text-[var(--on-surface-variant)]">
+            {tTranscript("empty")}
           </p>
-        </section>
-      )}
+        ) : (
+          <ul className="max-h-80 space-y-3 overflow-auto text-sm">
+            {transcript.map((m) => (
+              <li key={m.id}>
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                  {m.role === "user"
+                    ? tTranscript("you")
+                    : tTranscript("patient")}
+                </span>
+                <span className="text-[var(--on-surface)]">{m.content}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {showRoomDebrief && typed.private_notes?.trim() ? (
+          <div className="mt-4 border-t border-[var(--outline-variant)] pt-4">
+            <h3 className="mb-2 text-sm font-semibold">
+              {tRoom("notesTitle")}
+            </h3>
+            <p className="whitespace-pre-wrap text-sm text-[var(--on-surface-variant)]">
+              {typed.private_notes}
+            </p>
+          </div>
+        ) : null}
+        <p className="mt-4 text-xs text-[var(--on-surface-variant)]">
+          {tRoom("debriefNote")}
+        </p>
+      </section>
 
       <section className="clinical-card mb-4 p-5 fade-in-up">
         <div className="mb-3 flex items-center gap-2">

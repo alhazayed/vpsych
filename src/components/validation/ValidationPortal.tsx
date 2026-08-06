@@ -20,6 +20,9 @@ export function ValidationPortal({
   const [consent, setConsent] = useState(false);
   const [code, setCode] = useState("");
   const [unlocked, setUnlocked] = useState(initiallyUnlocked);
+  const [invitesConfigured, setInvitesConfigured] = useState<boolean | null>(
+    null,
+  );
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [invitePending, startInvite] = useTransition();
   const [launchPending, startLaunch] = useTransition();
@@ -33,8 +36,14 @@ export function ValidationPortal({
           credentials: "same-origin",
         });
         if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { unlocked?: boolean };
+        const data = (await res.json()) as {
+          unlocked?: boolean;
+          invitesConfigured?: boolean;
+        };
         if (data.unlocked) setUnlocked(true);
+        if (typeof data.invitesConfigured === "boolean") {
+          setInvitesConfigured(data.invitesConfigured);
+        }
       } catch {
         // Cookie check is best-effort; form still works.
       }
@@ -58,10 +67,16 @@ export function ValidationPortal({
         });
         const data = (await res.json()) as { error?: string; unlocked?: boolean };
         if (!res.ok) {
+          if (res.status === 503) {
+            setInvitesConfigured(false);
+            setInviteError(t("access.invitesUnavailable"));
+            return;
+          }
           setInviteError(data.error ?? t("access.invalidCode"));
           return;
         }
         setUnlocked(true);
+        setInvitesConfigured(true);
         setInviteError(null);
       } catch {
         setInviteError(t("access.networkError"));
@@ -208,7 +223,14 @@ export function ValidationPortal({
 
             {!isAuthenticated && (
               <div className="mt-6 space-y-4">
-                {unlocked ? (
+                {invitesConfigured === false ? (
+                  <p
+                    className="rounded-xl bg-[color-mix(in_srgb,var(--error)_12%,transparent)] px-4 py-3 text-sm text-[var(--on-surface)]"
+                    role="status"
+                  >
+                    {t("access.invitesUnavailable")}
+                  </p>
+                ) : unlocked ? (
                   <p
                     className="rounded-xl bg-[color-mix(in_srgb,var(--primary-fixed)_40%,transparent)] px-4 py-3 text-sm text-[var(--primary)]"
                     role="status"

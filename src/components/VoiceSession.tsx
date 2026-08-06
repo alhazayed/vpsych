@@ -126,7 +126,7 @@ export function VoiceSession({
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setStatus(
-          data.error ?? "Failed to generate the session report. Try again.",
+          data.error ?? t("status.endFailed"),
         );
         endingRef.current = false;
         setEnding(false);
@@ -174,7 +174,7 @@ export function VoiceSession({
       if (!voiceEnabled) return;
       stopPlayback();
       setSpeaking(true);
-      await playPatientSpeech({
+      const mode = await playPatientSpeech({
         text,
         locale,
         voiceId: avatar.voice_id,
@@ -189,6 +189,9 @@ export function VoiceSession({
           onerror: () => setSpeaking(false),
         },
       });
+      if (mode === "browser") {
+        setStatus(t("status.ttsBrowserFallback"));
+      }
     },
     [
       avatar.id,
@@ -198,6 +201,7 @@ export function VoiceSession({
       avatar.voice_profile_id,
       locale,
       stopPlayback,
+      t,
       voiceEnabled,
     ],
   );

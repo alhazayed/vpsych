@@ -391,8 +391,8 @@
       "title": "Session complete",
       "body": "Your session with {name} ({disorder}) has ended. An admin-only performance report is being prepared from your transcript.",
       "nextTitle": "What happens next",
-      "next1": "Your transcript remains available under My Sessions for review.",
-      "next2": "Practice again with another persona to keep building clinical skills.",
+      "next1": "Your session transcript is shown above and remains listed under My Sessions.",
+      "next2": "Practice again with another persona to keep building clinical skills. Submit expert feedback through the channel named in your invitation.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
       "viewReport": "View report"
@@ -418,6 +418,7 @@
       "noSpeech": "No speech detected — try again or type.",
       "transcribeFailed": "Transcription failed. Type your turn.",
       "micTranscribeError": "Mic/transcription error — type your turn below.",
+      "ttsBrowserFallback": "Avatar voice unavailable — using your browser’s speech instead.",
       "textOnly": "Text-only mode — type your turns below.",
       "textReady": "Ready for your next typed turn."
     },
@@ -543,7 +544,7 @@
     "subtitle": "Our AI is reviewing your therapeutic communication, empathy, diagnostic reasoning, rapport building, interviewing techniques, intervention quality, and overall clinical competency.",
     "estimatedTime": "Estimated time: Approximately 20–60 seconds",
     "clinicalTip": "Clinical Tip",
-    "doNotClose": "Do not close this page. Your personalized clinical report will open automatically when analysis is complete.",
+    "doNotClose": "Do not close this page. When analysis finishes you will see your session summary. Full competency reports are available to administrators.",
     "steps": {
       "transcript": "Processing session transcript",
       "communication": "Evaluating therapeutic communication",
@@ -829,6 +830,7 @@
       "verifyCode": "Verify code",
       "verifying": "Verifying…",
       "unlocked": "Invitation verified. You can create an account or launch the evaluation below.",
+      "invitesUnavailable": "Invitation codes are not active yet. Use the sign-in or create-account link below with credentials from the Release Manager.",
       "invalidCode": "That invitation code is not recognized.",
       "networkError": "Could not verify the code. Check your connection and try again.",
       "orAccount": "Already invited with an account?",

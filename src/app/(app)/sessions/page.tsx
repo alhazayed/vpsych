@@ -13,9 +13,13 @@ export default async function SessionsListPage() {
   // Abandoned rooms past max_duration_sec should not linger as "active".
   await expireStaleSessionsForTherapist(supabase, user.id);
 
+  // Prefer interaction_mode (Therapy Room Mode). ui_mode is optional VMHC
+  // column — selecting it alone 400s the whole list when the migration is absent.
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, status, started_at, ended_at, ui_mode, avatars(name, disorder)")
+    .select(
+      "id, status, started_at, ended_at, interaction_mode, avatars(name, disorder)",
+    )
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
 
@@ -23,7 +27,7 @@ export default async function SessionsListPage() {
     (sessions as
       | (Pick<
           TherapySession,
-          "id" | "status" | "started_at" | "ended_at" | "ui_mode"
+          "id" | "status" | "started_at" | "ended_at" | "interaction_mode"
         > & {
           avatars: { name: string; disorder: string };
         })[]
@@ -39,13 +43,14 @@ export default async function SessionsListPage() {
   }
 
   function sessionHref(s: (typeof list)[number]) {
+    const isRoom = s.interaction_mode === "therapy_room";
     if (s.status === "active") {
-      if (therapyRoom && s.ui_mode === "therapy_room") {
+      if (therapyRoom && isRoom) {
         return `/clinic/room/${s.id}`;
       }
       return `/sessions/${s.id}`;
     }
-    if (therapyRoom && s.ui_mode === "therapy_room") {
+    if (therapyRoom && isRoom) {
       return `/clinic/room/${s.id}/debrief`;
     }
     return `/sessions/${s.id}/complete`;
