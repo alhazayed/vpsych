@@ -47,6 +47,20 @@ export default async function SessionCompletePage({ params }: Props) {
     transcript = (messages ?? []) as SessionMessage[];
   }
 
+  let privateNotesText: string | null = null;
+  if (showRoomDebrief) {
+    const { data: noteRows } = await supabase
+      .from("session_private_notes")
+      .select("format, body, created_at")
+      .eq("session_id", id)
+      .order("created_at", { ascending: true });
+    if (noteRows?.length) {
+      privateNotesText = noteRows
+        .map((n) => `[${n.format}]\n${n.body}`)
+        .join("\n\n");
+    }
+  }
+
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
       <div className="mb-8 text-center fade-in-up">
@@ -98,13 +112,13 @@ export default async function SessionCompletePage({ params }: Props) {
               ))}
             </ul>
           )}
-          {typed.private_notes?.trim() ? (
+          {privateNotesText?.trim() ? (
             <div className="mt-4 border-t border-[var(--outline-variant)] pt-4">
               <h3 className="mb-2 text-sm font-semibold">
                 {tRoom("notesTitle")}
               </h3>
               <p className="whitespace-pre-wrap text-sm text-[var(--on-surface-variant)]">
-                {typed.private_notes}
+                {privateNotesText}
               </p>
             </div>
           ) : null}

@@ -1,12 +1,9 @@
 /**
- * Therapy room domain types.
+ * Canonical Therapy Room domain types.
  *
- * Combines:
- * - Therapy Room Mode (TRM / Mission 34) — consultation room scene + TRII
- * - Virtual Mental Health Center (VMHC / Mission 35) — clinic day workflow
- *
- * Both surfaces are optional behind their respective feature flags and do not
- * replace classic VoiceSession.
+ * One flag (NEXT_PUBLIC_THERAPY_ROOM_MODE), one interaction_mode, one immersion
+ * event model (TRII ImmersionEvent), one notes model (session_private_notes).
+ * Classic VoiceSession remains default when the flag is off.
  */
 
 import type { CaseDifficulty } from "@/lib/case-engine/types";
@@ -315,37 +312,3 @@ export type DailyClinicSummary = {
     diagnosis: string | null;
   }>;
 };
-
-/**
- * VMHC immersion bus channels — future VR / AR / eye-tracking / haptics.
- * Named distinctly from TRM's ImmersionEvent (TRII telemetry).
- */
-export type ClinicImmersionChannel =
-  | "room.state"
-  | "patient.pose"
-  | "patient.gaze"
-  | "patient.expression"
-  | "patient.body"
-  | "audio.therapist"
-  | "audio.patient"
-  | "haptic"
-  | "eye_tracking"
-  | "session.phase";
-
-export type ClinicImmersionEvent = {
-  channel: ClinicImmersionChannel;
-  at: number;
-  payload: Record<string, unknown>;
-};
-
-export type ClinicImmersionAdapter = {
-  id: string;
-  channels: ClinicImmersionChannel[];
-  onEvent: (event: ClinicImmersionEvent) => void | Promise<void>;
-  dispose?: () => void;
-};
-
-/** @deprecated Use ClinicImmersionChannel — kept as alias during VMHC merge. */
-export type ImmersionChannel = ClinicImmersionChannel;
-/** @deprecated Use ClinicImmersionAdapter */
-export type ImmersionAdapter = ClinicImmersionAdapter;

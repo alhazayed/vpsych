@@ -1,6 +1,8 @@
 /**
- * Therapy Room Mode feature flag.
- * Optional until expert validation — classic VoiceSession remains default.
+ * Canonical Therapy Room feature flag.
+ *
+ * Single source of truth for Therapy Room Mode + Virtual Mental Health Center.
+ * Classic VoiceSession remains default when unset/false.
  */
 
 export function isTherapyRoomModeEnabled(): boolean {

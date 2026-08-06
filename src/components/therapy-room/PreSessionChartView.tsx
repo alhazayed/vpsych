@@ -44,6 +44,7 @@ export function PreSessionChartView({
           avatarId,
           locale: sessionLocale,
           difficulty,
+          interactionMode: "therapy_room",
         }),
       });
       const data = await res.json();
@@ -62,7 +63,7 @@ export function PreSessionChartView({
         }),
       });
 
-      router.push(`/clinic/room/${data.sessionId}?arrive=1`);
+      router.push(`/sessions/${data.sessionId}`);
     } catch {
       setError(t("networkError"));
       setStarting(false);

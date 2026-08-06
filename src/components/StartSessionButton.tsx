@@ -15,7 +15,10 @@ function cookieLocale(): string | undefined {
 }
 
 function therapyRoomFlagEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_THERAPY_ROOM_MODE === "true";
+  const raw = process.env.NEXT_PUBLIC_THERAPY_ROOM_MODE;
+  if (!raw) return false;
+  const v = raw.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
 }
 
 export function StartSessionButton({ avatarId }: { avatarId: string }) {

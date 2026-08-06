@@ -21,9 +21,11 @@ import {
   startBargeInMonitor,
   startHandsFreeVad,
   startRoomAmbience,
+  templateForFormat,
   voiceModulationForDisorder,
   type AmbienceController,
   type ImmersionTracker,
+  type NoteFormat,
   type PatientBehaviorState,
   type TherapyRoomSettings,
   type VadController,
@@ -66,11 +68,21 @@ export function TherapyRoomSession({
   avatar,
   initialMessages,
   initialNotes = "",
+  initialNoteId = null,
+  initialNoteFormat = "free",
+  completeHref,
+  clinicAppointmentId = null,
 }: {
   session: TherapySession;
   avatar: ResolvedAvatar;
   initialMessages: SessionMessage[];
+  /** Draft body from canonical session_private_notes. */
   initialNotes?: string;
+  initialNoteId?: string | null;
+  initialNoteFormat?: NoteFormat;
+  /** Post-end destination (default classic complete page). */
+  completeHref?: string;
+  clinicAppointmentId?: string | null;
 }) {
   const router = useRouter();
   const t = useTranslations("therapyRoom");
@@ -87,6 +99,7 @@ export function TherapyRoomSession({
   const [paused, setPaused] = useState(false);
   const [ending, setEnding] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
+  const [noteFormat, setNoteFormat] = useState<NoteFormat>(initialNoteFormat);
   const [notesOpen, setNotesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -122,6 +135,8 @@ export function TherapyRoomSession({
   const loopActiveRef = useRef(false);
   const mutedRef = useRef(false);
   const notesRef = useRef(notes);
+  const noteFormatRef = useRef(noteFormat);
+  const noteIdRef = useRef<string | null>(initialNoteId);
   const listenLoopRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
@@ -136,6 +151,9 @@ export function TherapyRoomSession({
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
+  useEffect(() => {
+    noteFormatRef.current = noteFormat;
+  }, [noteFormat]);
 
   const setPresence = useCallback(
     (presencePhase: PatientBehaviorState["phase"], seedExtra = "") => {
@@ -161,22 +179,50 @@ export function TherapyRoomSession({
     }
   }, []);
 
+  const persistNotesDraft = useCallback(async () => {
+    const body = notesRef.current;
+    const format = noteFormatRef.current;
+    if (!body.trim()) return;
+    try {
+      if (noteIdRef.current) {
+        await fetch(`/api/sessions/${session.id}/notes`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            noteId: noteIdRef.current,
+            body,
+            format,
+          }),
+        });
+      } else {
+        const res = await fetch(`/api/sessions/${session.id}/notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, format }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.note?.id) noteIdRef.current = data.note.id as string;
+      }
+    } catch {
+      /* best-effort */
+    }
+  }, [session.id]);
+
   const persistSessionMeta = useCallback(
     async (immersion: ReturnType<ImmersionTracker["finalize"]> | null) => {
+      await persistNotesDraft();
+      if (!immersion) return;
       try {
         await fetch(`/api/sessions/${session.id}/therapy-room`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            privateNotes: notesRef.current,
-            immersionMetrics: immersion,
-          }),
+          body: JSON.stringify({ immersionMetrics: immersion }),
         });
       } catch {
         /* best-effort — never block end */
       }
     },
-    [session.id],
+    [persistNotesDraft, session.id],
   );
 
   const endSession = useCallback(async () => {
@@ -208,7 +254,15 @@ export function TherapyRoomSession({
         setPhase("paused");
         return;
       }
-      router.push(`/sessions/${session.id}/complete`);
+      // Best-effort: mark linked clinic appointment completed
+      if (clinicAppointmentId) {
+        await fetch(`/api/clinic/appointments/${clinicAppointmentId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "completed" }),
+        }).catch(() => undefined);
+      }
+      router.push(completeHref ?? `/sessions/${session.id}/complete`);
       router.refresh();
     } catch {
       setStatusHint(t("status.endFailed"));
@@ -216,7 +270,15 @@ export function TherapyRoomSession({
       setEnding(false);
       setPhase("paused");
     }
-  }, [persistSessionMeta, router, session.id, stopPlayback, t]);
+  }, [
+    clinicAppointmentId,
+    completeHref,
+    persistSessionMeta,
+    router,
+    session.id,
+    stopPlayback,
+    t,
+  ]);
 
   const speakPatient = useCallback(
     async (text: string) => {
@@ -523,10 +585,10 @@ export function TherapyRoomSession({
   // Autosave notes periodically
   useEffect(() => {
     const id = window.setInterval(() => {
-      void persistSessionMeta(null);
+      void persistNotesDraft();
     }, 45000);
     return () => window.clearInterval(id);
-  }, [persistSessionMeta]);
+  }, [persistNotesDraft]);
 
   const handleControl = useCallback(
     (id: string) => {
@@ -728,7 +790,14 @@ export function TherapyRoomSession({
         <PrivateNotesPanel
           open={notesOpen}
           value={notes}
+          format={noteFormat}
           onChange={setNotes}
+          onFormatChange={(f) => {
+            setNoteFormat(f);
+            if (!notes.trim() || notes === templateForFormat(noteFormat)) {
+              setNotes(templateForFormat(f));
+            }
+          }}
           onClose={() => setNotesOpen(false)}
         />
         <LiveTranscript

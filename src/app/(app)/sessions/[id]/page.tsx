@@ -4,7 +4,7 @@ import { TherapyRoomSession } from "@/components/therapy-room/TherapyRoomSession
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
-import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
+import { isTherapyRoomModeEnabled, type NoteFormat } from "@/lib/therapy-room";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -48,12 +48,43 @@ export default async function SessionPage({ params }: Props) {
     isTherapyRoomModeEnabled() && typed.interaction_mode === "therapy_room";
 
   if (useTherapyRoom) {
+    let initialNotes = "";
+    let initialNoteId: string | null = null;
+    let initialNoteFormat: NoteFormat = "free";
+
+    const { data: noteRows } = await supabase
+      .from("session_private_notes")
+      .select("id, format, body, created_at")
+      .eq("session_id", id)
+      .eq("therapist_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const latest = noteRows?.[0];
+    if (latest) {
+      initialNotes = latest.body ?? "";
+      initialNoteId = latest.id;
+      initialNoteFormat = (latest.format as NoteFormat) ?? "free";
+    }
+
+    const { data: appt } = await supabase
+      .from("clinic_appointments")
+      .select("id")
+      .eq("session_id", id)
+      .maybeSingle();
+
     return (
       <TherapyRoomSession
         session={typed}
         avatar={resolved}
         initialMessages={(messages ?? []) as SessionMessage[]}
-        initialNotes={typed.private_notes ?? ""}
+        initialNotes={initialNotes}
+        initialNoteId={initialNoteId}
+        initialNoteFormat={initialNoteFormat}
+        completeHref={
+          appt ? `/clinic/room/${id}/debrief` : `/sessions/${id}/complete`
+        }
+        clinicAppointmentId={appt?.id ?? null}
       />
     );
   }

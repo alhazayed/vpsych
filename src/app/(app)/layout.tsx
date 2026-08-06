@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 
 export default async function AppShellLayout({
   children,
@@ -9,7 +9,7 @@ export default async function AppShellLayout({
 }) {
   const { profile } = await requireProfile();
   return (
-    <AppShell profile={profile} therapyRoomEnabled={isTherapyRoomEnabled()}>
+    <AppShell profile={profile} therapyRoomEnabled={isTherapyRoomModeEnabled()}>
       {children}
     </AppShell>
   );

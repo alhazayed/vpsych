@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import type { TherapySession } from "@/lib/types";
 import { format } from "date-fns";
@@ -15,7 +15,7 @@ export default async function SessionsListPage() {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, status, started_at, ended_at, ui_mode, avatars(name, disorder)")
+    .select("id, status, started_at, ended_at, interaction_mode, avatars(name, disorder)")
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
 
@@ -23,13 +23,13 @@ export default async function SessionsListPage() {
     (sessions as
       | (Pick<
           TherapySession,
-          "id" | "status" | "started_at" | "ended_at" | "ui_mode"
+          "id" | "status" | "started_at" | "ended_at" | "interaction_mode"
         > & {
           avatars: { name: string; disorder: string };
         })[]
       | null) ?? [];
 
-  const therapyRoom = isTherapyRoomEnabled();
+  const therapyRoom = isTherapyRoomModeEnabled();
 
   function statusLabel(status: string) {
     if (status === "active") return t("status.active");
@@ -40,13 +40,11 @@ export default async function SessionsListPage() {
 
   function sessionHref(s: (typeof list)[number]) {
     if (s.status === "active") {
-      if (therapyRoom && s.ui_mode === "therapy_room") {
-        return `/clinic/room/${s.id}`;
-      }
       return `/sessions/${s.id}`;
     }
-    if (therapyRoom && s.ui_mode === "therapy_room") {
-      return `/clinic/room/${s.id}/debrief`;
+    if (therapyRoom && s.interaction_mode === "therapy_room") {
+      // Prefer clinic debrief when an appointment is linked — complete page still works
+      return `/sessions/${s.id}/complete`;
     }
     return `/sessions/${s.id}/complete`;
   }

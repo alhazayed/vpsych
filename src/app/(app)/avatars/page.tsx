@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
@@ -12,7 +12,7 @@ export default async function AvatarsPage() {
   const t = await getTranslations("avatars");
   const tCommon = await getTranslations("common");
   const tClinic = await getTranslations("clinic");
-  const therapyRoom = isTherapyRoomEnabled();
+  const therapyRoom = isTherapyRoomModeEnabled();
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
