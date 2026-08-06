@@ -1,0 +1,152 @@
+{
+  "evidence_id": "RC3-W3-FINAL-EV-20260806T0546Z",
+  "board": "Independent VPsych Wave 3 Final Certification Board",
+  "agent": "bc-633ebfe4-f64d-4ded-a27d-101fecb90594",
+  "branch": "cursor/wave3-final-cert-0594",
+  "started_at": "2026-08-06T05:36:00Z",
+  "completed_at": "2026-08-06T05:46:00Z",
+  "production": {
+    "url": "https://vpsych.vercel.app",
+    "sha": "5aae13806c984cb19a9c2e920d14014b548d4400",
+    "deploy_id": "dpl_8Q7YGEHKesAWt3yNzcJ87cEYYYH2",
+    "target": "production",
+    "alias": ["vpsych.vercel.app"],
+    "main_tip": "5aae138",
+    "w3_remediation_on_main": false,
+    "w3_remediation_prs": [120, 128],
+    "migrations_in_git_at_prod_sha": 54
+  },
+  "preflight": {
+    "health": { "status": 200, "ok": true, "service": "vpsych" },
+    "openai_health": {
+      "status": 200,
+      "ok": true,
+      "configured": true,
+      "provider": "openai",
+      "chatModel": "gpt-5",
+      "sttModel": "gpt-4o-transcribe"
+    },
+    "admin_login": "PASS",
+    "therapist_login": "PASS",
+    "role_isolation_therapist_admin_api": { "status": 403, "result": "PASS" }
+  },
+  "reverified_w3_findings": {
+    "W3-C1": {
+      "severity": "Critical",
+      "title": "Quality Ledger absent on production",
+      "probes": [
+        { "path": "/api/admin/quality-ledger", "status": 404 },
+        { "path": "/api/admin/vqi", "status": 404 },
+        { "path": "/api/admin/cfi", "status": 404 }
+      ],
+      "git_at_prod_sha": {
+        "src/lib/quality-ledger/engine.ts": "ABSENT",
+        "supabase/migrations/20260805214500_quality_ledger_and_scientific_indices.sql": "ABSENT"
+      },
+      "status": "OPEN"
+    },
+    "W3-H1": {
+      "severity": "High",
+      "title": "DB-only learner presets 404 by slug",
+      "probes": [
+        {
+          "presetSlug": "foundation-interview-medstudent-en",
+          "learner": "medical_student",
+          "bySlug": 404,
+          "byId": 200
+        },
+        {
+          "presetSlug": "cbt-psychologist-en",
+          "learner": "psychologist",
+          "bySlug": 404,
+          "byId": 200
+        },
+        {
+          "presetSlug": "mi-counselor-en",
+          "learner": "counselor",
+          "bySlug": 404,
+          "byId": 200
+        }
+      ],
+      "root_cause_code": "src/app/api/admin/presets/preview/route.ts — presetSlug path does not load DB rows; only builtins",
+      "status": "OPEN"
+    },
+    "W3-H2": {
+      "severity": "High",
+      "title": "GP preset comorbidity pathway (prior W3 fail)",
+      "probes_this_run": [
+        {
+          "presetSlug": "cbt-skills-gp-en",
+          "bySlug_first": 200,
+          "byId_first": 200,
+          "note": "Subsequent probes rate-limited (429). Deep comorbidity re-test deferred; prior W3 evidence still binding until remediated build redeployed."
+        }
+      ],
+      "status": "OPEN_PENDING_DEEP_RETEST"
+    },
+    "W3-H3": {
+      "severity": "High",
+      "title": "ICD-11 / DSM dual-coding not in default assessment rubric",
+      "evidence": {
+        "defaultRubric_ids": [
+          "alliance",
+          "assessment",
+          "interventions",
+          "safety",
+          "structure"
+        ],
+        "file": "src/lib/ai/assessment.ts",
+        "dsm_icd_in_defaultRubric": false,
+        "prior_mission09_coverage_count": 0
+      },
+      "status": "OPEN"
+    },
+    "W3-H4": {
+      "severity": "High",
+      "title": "Research export & scientific APIs absent",
+      "probes": [{ "path": "/api/admin/research/export", "status": 404 }],
+      "git_at_prod_sha": {
+        "src/app/api/admin/research/export/route.ts": "ABSENT"
+      },
+      "status": "OPEN"
+    }
+  },
+  "new_findings_this_run": {
+    "W3-FINAL-H5": {
+      "severity": "High",
+      "title": "Production TTS returns TTS_FAILED (502)",
+      "probes": [
+        { "body": { "text": "Hello.", "locale": "en-US", "avatarId": "jordan-hale-id" }, "status": 502, "code": "TTS_FAILED" },
+        { "body": { "preview": true, "locale": "en-US" }, "status": 502, "code": "TTS_FAILED" }
+      ],
+      "note": "Wave 2 post-deploy re-cert recorded TTS PASS on same deploy family. Treat as production regression / ops credential issue until root-caused. Not remediated in this cert run.",
+      "status": "OPEN"
+    }
+  },
+  "runtime_smoke": {
+    "session_create": { "status": 200, "diagnosis_example": "Generalized Anxiety Disorder, with panic attacks" },
+    "session_message": { "status": 200, "aiSource_observed": "present_in_response" },
+    "ace_learners": { "status": 200 },
+    "cge": { "status": 200, "learners": 4 },
+    "rate_limit_preset_preview": { "status": 429, "result": "enforced" }
+  },
+  "undeployed_remediation": {
+    "pr_120": "fix(rc3): Wave 3 educational excellence remediation (RDL-021)",
+    "pr_128": "fix(rc3): Wave 3 completion — HCF + educational remediations @ 56adaff",
+    "migration_required": "20260805214500_quality_ledger_and_scientific_indices.sql",
+    "on_main": false,
+    "on_production": false
+  },
+  "out_of_scope_not_evaluated_as_prod_features": [
+    "CQI (#126)",
+    "EOI (#127)",
+    "CVL (#129)",
+    "PME (#122)",
+    "HCTF (#121)",
+    "TRE (#124)",
+    "Mission 22 CVHAP (#123)"
+  ],
+  "decision": "NOT_READY",
+  "unlock_wave_4": false,
+  "is_fabricated": false
+}
