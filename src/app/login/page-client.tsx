@@ -14,12 +14,22 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const t = useTranslations("auth.login");
   const next = safeRedirectPath(searchParams.get("next"));
+  const authError = searchParams.get("error");
+  const resetOk = searchParams.get("reset") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    authError === "recovery"
+      ? t("recoveryLinkInvalid")
+      : authError === "auth"
+        ? t("authLinkInvalid")
+        : null,
+  );
+  const [info, setInfo] = useState<string | null>(
+    resetOk ? t("resetComplete") : null,
+  );
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -56,7 +66,9 @@ export default function LoginPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       trimmed,
       {
-        redirectTo: `${window.location.origin}/auth/callback?next=/login`,
+        // PKCE / default-mailer path. The Send Email hook links to
+        // /auth/confirm instead so recovery does not depend on Site URL.
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       },
     );
     setResetting(false);

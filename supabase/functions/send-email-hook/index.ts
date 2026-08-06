@@ -9,6 +9,12 @@
 //   SEND_EMAIL_HOOK_SECRET  — the signing secret generated when you create the
 //                             hook (looks like `v1,whsec_...`)
 //   AUTH_EMAIL_FROM         — verified sender, e.g. `vpsych <no-reply@yourdomain>`
+// Optional:
+//   APP_URL                 — canonical app origin for confirm links
+//                             (default https://vpsych.vercel.app). Prefer this
+//                             over GoTrue /auth/v1/verify redirects so a
+//                             misconfigured Auth Site URL cannot send users to
+//                             http://localhost:3000 (blank page).
 // SUPABASE_URL is injected automatically by the platform.
 //
 // Deployed with verify_jwt = false: the request is authenticated by the
@@ -36,7 +42,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET") ?? "";
 const EMAIL_FROM =
   Deno.env.get("AUTH_EMAIL_FROM") ?? "vpsych <no-reply@example.com>";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const DEFAULT_APP_URL = "https://vpsych.vercel.app";
 
 // Copy per auth action. `signup` covers new-account confirmation.
 const COPY: Record<
@@ -77,13 +83,60 @@ const COPY: Record<
   },
 };
 
-function verifyUrl(data: EmailData): string {
+function isLoopbackHost(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname === "0.0.0.0"
+  );
+}
+
+/**
+ * Resolve the public app origin for confirm links.
+ * Never return a loopback origin — that is what produced blank pages when
+ * Auth Site URL was left at http://localhost:3000.
+ */
+function appOrigin(data: EmailData): string {
+  const configured = (Deno.env.get("APP_URL") ?? "").trim().replace(/\/$/, "");
+  if (configured) {
+    try {
+      const u = new URL(configured);
+      if (!isLoopbackHost(u.hostname)) return u.origin;
+    } catch {
+      // fall through
+    }
+  }
+
+  for (const candidate of [data.redirect_to, data.site_url]) {
+    try {
+      const u = new URL(candidate);
+      if (!isLoopbackHost(u.hostname)) return u.origin;
+    } catch {
+      // try next
+    }
+  }
+
+  return DEFAULT_APP_URL;
+}
+
+function nextPathForAction(action: string): string {
+  if (action === "recovery") return "/auth/reset-password";
+  if (action === "magiclink") return "/avatars";
+  return "/avatars";
+}
+
+/**
+ * App-hosted confirm URL. The browser hits vpsych directly with token_hash;
+ * /auth/confirm calls verifyOtp — no GoTrue redirect allow-list involved.
+ */
+function confirmUrl(data: EmailData): string {
   const params = new URLSearchParams({
-    token: data.token_hash,
+    token_hash: data.token_hash,
     type: data.email_action_type,
-    redirect_to: data.redirect_to,
+    next: nextPathForAction(data.email_action_type),
   });
-  return `${SUPABASE_URL}/auth/v1/verify?${params.toString()}`;
+  return `${appOrigin(data)}/auth/confirm?${params.toString()}`;
 }
 
 function renderHtml(
@@ -147,7 +200,7 @@ Deno.serve(async (req) => {
 
   const { user, email_data } = payload;
   const copy = COPY[email_data.email_action_type] ?? COPY.signup;
-  const url = verifyUrl(email_data);
+  const url = confirmUrl(email_data);
   const html = renderHtml(copy, url, email_data.token);
 
   const res = await fetch("https://api.resend.com/emails", {
