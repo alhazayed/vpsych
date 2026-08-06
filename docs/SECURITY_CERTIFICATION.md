@@ -1,157 +1,67 @@
-# VPsych Production Security Certification Report
-## Mission 02 — Production Security Certification
+# Security Certification — Mission Omega Refresh
 
-**Date:** 2026-08-02  
-**Scope:** Application, API, Supabase, AuthZ/AuthN, AI, Voice, secrets, headers, dependencies, CI/CD readiness  
-**Branch:** `cursor/security-certification-8acf`  
-**Includes:** Mission 01 architecture hardening (cherry-picked) + Mission 02 security fixes
+**Date:** 2026-08-06  
+**Supersedes claims in:** older Mission 02 narrative where facts changed; historical fixes remain valid.  
+**Score (this refresh):** **84 / 100** (conditional production / limited preview)
 
 ---
 
-## Executive summary
+## Executive verdict
 
-VPsych handles simulated mental-health training data (session transcripts, assessments, competency scores). Controls were verified against OWASP Top 10 / ASVS-oriented checks, Supabase advisors, dependency audit, and controlled API abuse review.
-
-**Verified Critical/High defects were fixed, regression-tested, and retested.**
-
-Remaining items are **Medium** or **operational** (dashboard configuration) and do not block a conditional production certification.
-
-**Overall Security Score: 86 / 100**
+Security controls for a **training simulation** handling fictional patient transcripts and trainee performance data remain **adequate for limited professional preview**. No Critical regression was proven in this run’s public/authz probes. Residuals are Medium/ops.
 
 ---
 
-## Threat model (attack surfaces)
+## Verified this run
 
-| Surface | Trust boundary | Primary risks |
-|---------|----------------|---------------|
-| Browser / App Router | Internet → Vercel Edge | XSS, session theft, open redirect |
-| API Route Handlers | Authenticated users / admins | IDOR, abuse, error leakage |
-| Supabase Auth + RLS | Anon/authenticated JWTs | Privilege escalation, RPC abuse |
-| Service role | Server-only | Full DB compromise if leaked |
-| OpenAI / AI Gateway | Server egress | Prompt injection, cost abuse |
-| ElevenLabs TTS | Server egress | Unauthorized synthesis / cost abuse |
-| Admin dashboard | Admin role | Vertical escalation |
-| Reports | Admin-only read | PHI/training-data exposure |
-| Voice STT upload | Authenticated multipart | Oversized/malicious uploads |
-| Preview deployments | Vercel | Weaker secrets if misconfigured |
-
-Trust model: **browser is untrusted**; **therapist JWT is semi-trusted** (own sessions only); **admin JWT is privileged**; **service role is break-glass**.
-
----
-
-## Attack surface / API auth matrix (verified)
-
-| Route class | Auth | Notes |
-|-------------|------|-------|
-| `/api/sessions*` | Owner user | Rate limited |
-| `/api/voice/*` | User | Rate limited; STT size/MIME capped |
-| `/api/ace/*`, `/api/cge/*` | User | Rate limited; admin `userId` gated |
-| `/api/admin/*` | Admin (middleware + `requireApiAdmin`) | Preview routes rate limited |
-| `/api/health/openai` | **Admin only** | Sanitized probe response |
-| `/auth/callback` | Anon (code exchange) | Safe redirect |
+| Control | Result | Evidence |
+|---------|--------|----------|
+| Unauthenticated session/TTS/admin → 401 JSON | PASS | Production curl |
+| `/api/health/openai` unauthenticated → 401 | PASS | Production curl |
+| Public legal/robots allowlisted | PASS | 200 |
+| RLS enabled on inventoried public tables | PASS | Supabase `list_tables` |
+| npm audit | PASS | 0 vulnerabilities |
+| Demo accounts banned | PASS | Migrations + docs |
+| Client error sanitization modules present | PASS | `clientSafeError` / `sanitizeDbError` |
+| Rate limiting module on routes | PASS | Code architecture |
+| Security headers module | PASS | `security-headers.ts` |
+| Leaked password protection | FAIL | Supabase advisor WARN |
+| SECURITY DEFINER EXECUTE for authenticated | WARN (expected) | Advisor; RPCs enforce ownership/HMAC |
+| `quality_ledger_reject_mutation` anon EXECUTE | WARN | Trigger helper; mutation reject pattern — review grants in CQG follow-up |
+| Auth-gated abuse / IDOR matrix this run | NOT RUN | Credentials invalid |
 
 ---
 
-## Verified findings & fixes
-
-| ID | Severity | Finding | Fix |
-|----|----------|---------|-----|
-| S-C1 | Critical | `/api/health/openai` callable by any logged-in user; leaked provider errors | Admin gate + sanitized response |
-| S-H1 | High | Admin APIs / UI lacked edge enforcement | Middleware `/admin` + `/api/admin` role gate; shared `requireApiAdmin` |
-| S-H2 | High | Signup enforced only `length >= 6` despite UI policy | Shared `password-policy` (8+ upper+number+special) enforced on submit |
-| S-H3 | High | STT upload unbounded size/type | 10 MiB cap + audio MIME allowlist |
-| S-H4 | High | Provider/DB/`aiFailureDetail` leaked to clients | Sanitized errors; removed `aiFailureDetail` from session-end JSON |
-| S-H5 | High | ACE/CGE/admin preview routes unthrottled | Per-user hourly rate limits |
-| S-H6 | High | Assessment examiner prompt lacked injection guardrails | Untrusted-transcript integrity rules (EN/AR) |
-| S-M1 | Medium | CSP allows `unsafe-inline`/`unsafe-eval` | Documented Next.js constraint; tracked |
-| S-M2 | Medium | Supabase Auth leaked-password protection disabled | Ops recommendation (dashboard) |
-| S-M3 | Medium | SECURITY DEFINER RPCs executable by `authenticated` | Intentional with ownership/HMAC checks |
-| S-M4 | Medium | Service-role report path | Prefer `REPORT_WRITE_KEY`; documented |
-
----
-
-## OWASP Top 10 mapping
+## OWASP Top 10 (refresh)
 
 | Category | Status |
 |----------|--------|
-| A01 Broken Access Control | Mitigated — ownership checks, RLS, admin edge gate |
-| A02 Cryptographic Failures | TLS via Vercel/Supabase; HMAC report signing |
-| A03 Injection | Parameterized Supabase client; prompt isolation improved |
-| A04 Insecure Design | Report insert-once + role in `profiles` not metadata |
-| A05 Security Misconfiguration | Headers present; health locked; Cache-Control on `/api` |
-| A06 Vulnerable Components | `npm audit` → **0** vulnerabilities |
-| A07 Auth Failures | Password policy hardened; leaked-password ops gap |
-| A08 Software Integrity | CI verify; migrations parity tests |
-| A09 Logging Failures | Security audit RPC; sensitive provider errors logged server-side |
-| A10 SSRF | No user-controlled fetch URLs found |
-
-Also verified: open-redirect helper, no `dangerouslySetInnerHTML`, clickjacking denied (`frame-ancestors`/`X-Frame-Options`).
+| A01 Broken Access Control | Mitigated — edge admin gate + RLS + ownership RPCs |
+| A02 Cryptographic Failures | TLS; HMAC report signing (when keys configured) |
+| A03 Injection | Parameterized client; assessment prompt isolation |
+| A04 Insecure Design | Roles in `profiles`; report insert-once |
+| A05 Security Misconfiguration | HIBP off; CSP unsafe-inline residual |
+| A06 Vulnerable Components | PASS — audit clean |
+| A07 Identification/Auth Failures | Password policy; HIBP residual |
+| A08 Software/Data Integrity | Migration parity restored this mission |
+| A09 Logging/Monitoring Failures | Audit events exist; no full APM |
+| A10 SSRF | No user-controlled server fetch surfaces identified |
 
 ---
 
-## HIPAA / GDPR readiness notes (not legal certification)
+## PII / PHI posture
 
-| Control theme | Readiness |
-|---------------|-----------|
-| Access control | Strong for single-tenant training app |
-| Audit controls | `security_audit_events` + admin deny logging |
-| Transmission security | HTTPS + HSTS |
-| Encryption at rest | Supabase-managed (verify in project settings) |
-| Minimum necessary | Therapists cannot SELECT reports (RLS) |
-| Retention / deletion | Needs formal policy + job (gap) |
-| DPIA / BAA | Organizational — not in repo |
-| Data subject export/erase | Not fully productized |
+- Patients are **fictional**; no real-patient EMR ingest.
+- Session transcripts are training data (trainee-entered content may contain accidental real PHI — legal copy warns).
+- Research `package` export anonymizes; `csv`/`json` include learner identifiers — admin-only.
 
 ---
 
-## Regression results
+## Required ops follow-ups (non-blocking for limited preview)
 
-| Check | Result |
-|-------|--------|
-| `npm run lint` | 0 errors |
-| `npm run typecheck` | Pass |
-| `npm test` | All passing (includes password/STT/safe-error/architecture tests) |
-| `npm run build` | Pass |
-| `npm audit` | 0 vulnerabilities |
+1. Enable Supabase Auth leaked-password protection.  
+2. Refresh `VPSYCH_AUDIT_*` vault and prove login before next certification wave.  
+3. Confirm Production `REPORT_WRITE_KEY` / ElevenLabs / OpenAI still set after recent deploys.  
+4. Triage advisor WARN on `quality_ledger_reject_mutation` anon execute (CQG PR #141).
 
----
-
-## Security scoring (evidence-based)
-
-| Dimension | Score | Evidence |
-|-----------|------:|----------|
-| Authentication | 84 | Policy enforced; HIBP still ops |
-| Authorization | 90 | Owner + admin + middleware |
-| API Security | 88 | Rate limits, sanitized errors, Cache-Control |
-| Database Security | 88 | RLS everywhere; signed report RPC |
-| Cloud Security | 82 | Vercel/Supabase defaults; preview hygiene |
-| Infrastructure | 80 | CI present; branch protection not verified here |
-| AI Security | 84 | Patient + examiner injection controls |
-| Voice Security | 86 | Auth + rate limit + upload caps |
-| Secrets Management | 85 | No service key in git; anon public by design |
-| Compliance Readiness | 72 | Technical controls yes; policies/BAA ops |
-| Monitoring | 78 | Audit events; limited SIEM integration |
-| **Overall** | **86** | |
-
----
-
-## Remaining risks
-
-1. Enable **leaked password protection** in Supabase Auth dashboard.  
-2. Provision **Upstash Redis** in production for distributed rate limits.  
-3. Prefer **`REPORT_WRITE_KEY`** over service-role report writes.  
-4. Plan CSP nonce migration to remove `unsafe-eval`.  
-5. Formalize retention/deletion + BAAs for healthcare deployments.  
-6. Confirm GitHub branch protection / required reviews on `main`.
-
----
-
-## Production recommendation
-
-Deployable for production training environments after completing operational items (1)–(3) above.
-
----
-
-## Conclusion
-
-⚠ SECURITY CERTIFIED WITH RECOMMENDATIONS
+**Certification:** CONDITIONAL PASS for Limited Professional Preview — not a public-internet hardening guarantee.
