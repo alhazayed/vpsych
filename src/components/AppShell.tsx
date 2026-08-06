@@ -65,6 +65,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       match: (p) => p.startsWith("/admin/voices"),
     },
     {
+      href: "/admin/hfte",
+      label: t("hfteMetrics"),
+      icon: "hearing",
+      match: (p) => p.startsWith("/admin/hfte"),
+    },
+    {
       href: "/admin/cases",
       label: t("caseEngine"),
       icon: "biotech",
@@ -162,6 +168,8 @@ export function AppShell({
       return tShell("pageTitle.avatarPresets");
     if (pathname.startsWith("/admin/voices"))
       return tShell("pageTitle.voiceManagement");
+    if (pathname.startsWith("/admin/hfte"))
+      return tShell("pageTitle.hfteMetrics");
     if (pathname.startsWith("/admin/cases"))
       return tShell("pageTitle.caseEngine");
     if (pathname.startsWith("/admin/templates"))

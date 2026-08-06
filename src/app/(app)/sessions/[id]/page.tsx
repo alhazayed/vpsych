@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { VoiceSession } from "@/components/VoiceSession";
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { isHandsFreeTherapyEnabled } from "@/lib/conversation";
 import { expireStaleSession } from "@/lib/session-expiry";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
@@ -47,6 +48,7 @@ export default async function SessionPage({ params }: Props) {
       session={typed}
       avatar={resolved}
       initialMessages={(messages ?? []) as SessionMessage[]}
+      handsFreeEnabled={isHandsFreeTherapyEnabled()}
     />
   );
 }
