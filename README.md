@@ -78,17 +78,24 @@ directly (RLS permits only `role = 'user'` on `session_messages`).
 
 Auth emails (signup confirmation, recovery, magic link, email change) are sent
 through **Resend** via a Supabase Auth _Send Email_ hook — the edge function in
-`supabase/functions/send-email-hook`, which verifies the Standard Webhooks
-signature and sends via the Resend API.
+`supabase/functions/send-email-hook`. The hook links to the app-hosted
+`/auth/confirm?token_hash=…&type=…` route (which calls `verifyOtp`) so recovery
+does **not** depend on the Supabase Auth Site URL / redirect allow-list. Password
+reset then continues on `/auth/reset-password`.
 
 Deploy: `supabase functions deploy send-email-hook --no-verify-jwt --project-ref rrzudbkxigeavfdnidnm`
 
 Activation (dashboard): verify a sending domain and set `AUTH_EMAIL_FROM`; enable
 Authentication → Hooks → _Send Email_ pointing at
 `https://rrzudbkxigeavfdnidnm.supabase.co/functions/v1/send-email-hook`; then set
-edge-function secrets `RESEND_API_KEY`, `SEND_EMAIL_HOOK_SECRET`, `AUTH_EMAIL_FROM`.
-Until enabled, Supabase's default mailer is used, so the live signup flow is
-unaffected.
+edge-function secrets `RESEND_API_KEY`, `SEND_EMAIL_HOOK_SECRET`, `AUTH_EMAIL_FROM`,
+and optionally `APP_URL=https://vpsych.vercel.app`. Until enabled, Supabase's
+default mailer is used, so the live signup flow is unaffected.
+
+Also set Authentication → URL Configuration **Site URL** to
+`https://vpsych.vercel.app` (not `http://localhost:3000`) and allow
+`https://vpsych.vercel.app/**` in Redirect URLs — required for any flow that still
+uses GoTrue `/auth/v1/verify` redirects (default mailer / PKCE callback).
 
 ## Security notes
 
