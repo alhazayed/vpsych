@@ -213,28 +213,55 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "intrusions",
-          description: "Intrusive memories or nightmares related to trauma",
+          description:
+            "Unwanted memories, flashes, or nightmares that pull you back — not ordinary worry loops",
           domain: "trauma",
           salience: "hidden",
         },
         {
           id: "avoidance",
-          description: "Avoidance of trauma reminders",
+          description:
+            "Steers clear of places, people, or talk that might open the memory",
           domain: "behavioral",
           salience: "elicited",
         },
         {
           id: "hyperarousal",
-          description: "Hypervigilance and exaggerated startle",
+          description:
+            "Jumpy, on edge, startles easily; sleep light; scans for threat",
           domain: "anxiety",
           salience: "elicited",
+        },
+        {
+          id: "negative_mood_cognition",
+          description:
+            "Guilt, shame, or 'I should have stopped it' — mood darker near reminders",
+          domain: "mood",
+          salience: "elicited",
+        },
+        {
+          id: "numbing",
+          description:
+            "Feels cut off or flat with people sometimes — not only tearful sadness",
+          domain: "mood",
+          salience: "hidden",
         },
       ],
       disclosure_rules: [
         {
           topic: "trauma narrative details",
           condition: "on_empathic_rapport",
-          notes: "Never flood; titrate.",
+          notes:
+            "Never flood; titrate. First answers stay vague ('something bad happened'); specifics only after alliance feels safe.",
+        },
+        {
+          topic: "nightmares/intrusions",
+          condition: "on_direct_question",
+          notes: "May minimize at first ('just bad dreams') then add sensory fragments.",
+        },
+        {
+          topic: "passive SI",
+          condition: "on_safety_assessment",
         },
       ],
     },
@@ -265,19 +292,55 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "inattention",
-          description: "Sustained attention and organisation impairment",
+          description:
+            "Mind drifts mid-task and mid-conversation; hard to hold a thread without effort",
           domain: "cognition",
           salience: "presenting",
         },
         {
           id: "forgetfulness",
-          description: "Forgetfulness in daily activities",
+          description:
+            "Loses keys, deadlines, half-finished chores — not 'don't care', just slips",
           domain: "cognition",
           salience: "elicited",
         },
+        {
+          id: "disorganization",
+          description:
+            "Plans collapse into piles; starts strong then scatters",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "restlessness_inner",
+          description:
+            "Inner restlessness or fidget even when sitting still; boredom hits fast",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "working_memory",
+          description:
+            "Asks people to repeat; loses the question halfway through answering",
+          domain: "cognition",
+          salience: "presenting",
+        },
       ],
       disclosure_rules: [
-        { topic: "childhood school difficulties", condition: "on_direct_question" },
+        {
+          topic: "childhood school difficulties",
+          condition: "on_direct_question",
+          notes: "May joke first ('I was the class clown / daydreamer') then give concrete failures.",
+        },
+        {
+          topic: "work/academic impairment",
+          condition: "volunteered",
+          notes: "Often leads with recent mess-ups before developmental history.",
+        },
+        {
+          topic: "stimulant/medication history",
+          condition: "on_direct_question",
+        },
       ],
     },
   },
@@ -301,8 +364,30 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "alcohol_use",
-          description: "Problematic alcohol use with impaired control",
+          description:
+            "Drinks more or longer than intended; control feels slippery some nights",
           domain: "behavioral",
+          salience: "hidden",
+        },
+        {
+          id: "craving_or_preoccupation",
+          description:
+            "Thinks about the next drink or plans evenings around alcohol",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "role_interference",
+          description:
+            "Work, family, or mornings suffer after drinking — may minimize at first",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "tolerance_withdrawal_hints",
+          description:
+            "Needs more to get the same effect; shaky/irritable if cut back abruptly",
+          domain: "somatic",
           salience: "hidden",
         },
       ],
@@ -310,7 +395,17 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
         {
           topic: "quantity/frequency of alcohol",
           condition: "on_direct_question",
-          notes: "Non-judgemental stance required.",
+          notes:
+            "Non-judgemental stance required. First answer often undercounts; may correct awkwardly later.",
+        },
+        {
+          topic: "consequences of drinking",
+          condition: "on_empathic_rapport",
+          notes: "Ambivalence: defend use then admit a cost in the same breath.",
+        },
+        {
+          topic: "attempts to cut down",
+          condition: "on_direct_question",
         },
       ],
     },
@@ -335,13 +430,48 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "panic_attacks",
-          description: "Recurrent unexpected panic attacks",
+          description:
+            "Sudden surges of terror with pounding heart, breathlessness, dizziness — peaks fast",
           domain: "anxiety",
           salience: "presenting",
         },
+        {
+          id: "fear_of_recurrence",
+          description:
+            "Afraid of the next attack; monitors body for early warning signs",
+          domain: "anxiety",
+          salience: "presenting",
+        },
+        {
+          id: "avoidance",
+          description:
+            "Avoids places/situations where escape or help felt hard (transit, crowds, alone)",
+          domain: "behavioral",
+          salience: "elicited",
+        },
+        {
+          id: "catastrophic_misinterpretation",
+          description:
+            "In the moment fears dying, losing control, or 'going crazy' — not calm insight",
+          domain: "cognition",
+          salience: "elicited",
+        },
       ],
       disclosure_rules: [
-        { topic: "panic attack details", condition: "on_direct_question" },
+        {
+          topic: "panic attack details",
+          condition: "on_direct_question",
+          notes: "Stay sensory and scared; do not recite a symptom checklist.",
+        },
+        {
+          topic: "avoidance pattern",
+          condition: "on_empathic_rapport",
+          notes: "May first offer practical excuses before naming fear.",
+        },
+        {
+          topic: "reassurance seeking",
+          condition: "volunteered",
+        },
       ],
     },
   },
@@ -366,13 +496,55 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "affective_instability",
-          description: "Marked affective instability",
+          description:
+            "Mood swings hard and fast — warm then raw within minutes, not a steady low mood",
           domain: "mood",
           salience: "presenting",
         },
+        {
+          id: "abandonment_sensitivity",
+          description:
+            "Terrified of being left or ignored; reads distance into small delays",
+          domain: "social",
+          salience: "elicited",
+        },
+        {
+          id: "identity_disturbance",
+          description:
+            "Unsure who they are across roles; values/self-image shift with relationships",
+          domain: "cognition",
+          salience: "elicited",
+        },
+        {
+          id: "unstable_relationships",
+          description:
+            "Idealizes then devalues people close to them; 'all good / all bad' language",
+          domain: "social",
+          salience: "elicited",
+        },
+        {
+          id: "impulsivity_self_harm_risk",
+          description:
+            "Impulsive acts when flooded; self-harm thoughts or history may exist",
+          domain: "behavioral",
+          salience: "hidden",
+        },
       ],
       disclosure_rules: [
-        { topic: "self-harm", condition: "on_safety_assessment" },
+        {
+          topic: "self-harm",
+          condition: "on_safety_assessment",
+          notes: "Do not dump graphic detail unprompted; respond honestly to careful safety asks.",
+        },
+        {
+          topic: "relationship ruptures",
+          condition: "on_empathic_rapport",
+          notes: "May swing between blaming other and blaming self in one story.",
+        },
+        {
+          topic: "identity confusion",
+          condition: "on_direct_question",
+        },
       ],
     },
   },
@@ -646,12 +818,50 @@ export const BUILTIN_DISORDERS: DisorderRow[] = [
       symptom_profile: [
         {
           id: "fluctuating_attention",
-          description: "Acute fluctuating disturbance of attention",
+          description:
+            "Attention comes and goes within minutes — lucid then lost mid-sentence",
           domain: "cognition",
           salience: "presenting",
         },
+        {
+          id: "disorientation",
+          description:
+            "Confused about time, place, or who is in the room; may reverse answers later",
+          domain: "cognition",
+          salience: "presenting",
+        },
+        {
+          id: "perceptual_disturbance",
+          description:
+            "Misperceives shadows, voices, or people — acute confusion, not chronic psychosis story",
+          domain: "psychotic",
+          salience: "elicited",
+        },
+        {
+          id: "sleep_wake_disruption",
+          description:
+            "Day-night flipped or drifting; drowsy then suddenly agitated",
+          domain: "somatic",
+          salience: "elicited",
+        },
       ],
-      disclosure_rules: [{ topic: "orientation", condition: "volunteered" }],
+      disclosure_rules: [
+        {
+          topic: "orientation",
+          condition: "volunteered",
+          notes: "May volunteer wrong place/date confidently; correct inconsistently.",
+        },
+        {
+          topic: "onset acuity",
+          condition: "on_direct_question",
+          notes: "Hours-to-days change — not months of depression.",
+        },
+        {
+          topic: "hallucinatory misperceptions",
+          condition: "on_empathic_rapport",
+          notes: "Fragmented, fluctuating — not a fixed delusional system.",
+        },
+      ],
     },
   },
 ];

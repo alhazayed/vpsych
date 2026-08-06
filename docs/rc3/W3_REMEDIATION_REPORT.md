@@ -35,8 +35,20 @@ npm run build       # pass
 
 Apply migration `20260805214500_quality_ledger_and_scientific_indices.sql` to the target Supabase project before production Wave 3 re-certification so ledger persistence and DB-backed exports are live. Code paths degrade to in-memory / offline corpus when tables are absent.
 
+## Human Conversation Fidelity (follow-on)
+
+See `docs/rc3/W3_HCF_REVIEW.md`. Additional Wave 3 completion work on
+`cursor/w3-completion-0594`:
+
+- Disorder speech profiles injected into Module 1
+- Thin packages thickened (PTSD, ADHD, AUD, panic, BPD, delirium)
+- Diagnosis-override strips default-syndrome HOW YOU TALK / DO-DONT
+- Difficulty behaviour surfaces in the patient prompt
+- Regression: `src/lib/case-engine/w3-hcf-fidelity.test.ts`
+
 ## Out of scope
 
 - Independent Wave 3 re-certification (board)
 - Wave 4 unlock
 - Production deploy (release promotion)
+- Porting full PME / HCTF / TRE engines (mission branches) — HCF cues only

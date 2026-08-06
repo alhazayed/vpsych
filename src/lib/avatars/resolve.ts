@@ -2,9 +2,15 @@ import {
   assemblePerTurnReinforcement,
   assembleSystemPrompt,
   synthesizePromptInputFromFlat,
+  type PromptFidelityHints,
 } from "@/lib/ai/prompt-engine";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { isCaseSnapshot } from "@/lib/case-engine/persist";
+import {
+  formatDifficultyBehaviorForPrompt,
+  formatSpeechBehaviorForPrompt,
+  speechBehaviorForDisorder,
+} from "@/lib/case-engine/speech-behavior";
 import type {
   Avatar,
   AvatarPersonality,
@@ -48,8 +54,8 @@ export function isCaseDiagnosisOverride(
 
 /**
  * Remove authored "how you are right now" blocks that lock the persona to its
- * default syndrome (e.g. Maya MDD hypersomnia). Identity / talk / response
- * sections stay. EN + AR section headers from natively authored personas.
+ * default syndrome (e.g. Maya MDD hypersomnia). Identity stays.
+ * EN + AR section headers from natively authored personas.
  */
 export function stripPersonaCurrentStateBlock(prompt: string): string {
   let out = prompt;
@@ -62,6 +68,51 @@ export function stripPersonaCurrentStateBlock(prompt: string): string {
     "\n",
   );
   return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * On diagnosis override, also strip default-syndrome HOW YOU TALK / DO-DONT
+ * blocks so Module 1 speech profile is not fought by Maya MDD / Jordan GAD prose.
+ */
+export function stripPersonaSyndromeSpeechBlocks(prompt: string): string {
+  let out = stripPersonaCurrentStateBlock(prompt);
+  out = out.replace(
+    /\nHOW YOU TALK\n[\s\S]*?(?=\n(?:WHAT YOU DO AND DO NOT SAY|HOW YOU RESPOND TO THE THERAPIST)\n|$)/,
+    "\n",
+  );
+  out = out.replace(
+    /\nWHAT YOU DO AND DO NOT SAY\n[\s\S]*?(?=\n(?:HOW YOU RESPOND TO THE THERAPIST)\n|$)/,
+    "\n",
+  );
+  out = out.replace(
+    /\nكيف بتحكي\n[\s\S]*?(?=\n(?:شو بتحكي وشو ما بتحكي|كيف بتردّي على المعالج)\n|$)/,
+    "\n",
+  );
+  out = out.replace(
+    /\nشو بتحكي وشو ما بتحكي\n[\s\S]*?(?=\n(?:كيف بتردّي على المعالج)\n|$)/,
+    "\n",
+  );
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function fidelityHintsFromSnapshot(
+  snapshot: CaseInstanceSnapshot | null,
+): PromptFidelityHints | undefined {
+  if (!snapshot) return undefined;
+  const slug = snapshot.primary_diagnosis?.slug ?? null;
+  const profile = speechBehaviorForDisorder(slug, null);
+  const teachingCue = snapshot.clinical_teaching?.speech_behavior_cue?.trim();
+  const speech =
+    teachingCue && teachingCue.length > 40
+      ? teachingCue
+      : formatSpeechBehaviorForPrompt(profile);
+  const mods = snapshot.difficulty_modifiers;
+  return {
+    speech_behavior_cue: speech,
+    difficulty_behavior: mods
+      ? formatDifficultyBehaviorForPrompt(mods)
+      : undefined,
+  };
 }
 
 const MANIA_OR_PSYCHOSIS = new Set([
@@ -89,22 +140,28 @@ export function adaptPersonalityForCaseSnapshot(
     .filter((s) => s.salience === "presenting")
     .map((s) => s.description);
   const slug = snapshot.primary_diagnosis?.slug ?? "";
+  const speechProfile = speechBehaviorForDisorder(slug, null);
   const pace =
-    slug === "bipolar-mania"
+    speechProfile.pace === "pressured"
       ? "fast"
-      : slug === "schizophrenia" || slug === "schizoaffective"
-        ? "variable"
+      : speechProfile.pace === "slow" ||
+          speechProfile.pace === "measured" ||
+          speechProfile.pace === "fast" ||
+          speechProfile.pace === "variable"
+        ? speechProfile.pace
         : personality.speech?.pace;
 
-  const strippedPrompt = stripPersonaCurrentStateBlock(personality.persona_prompt);
+  const strippedPrompt = stripPersonaSyndromeSpeechBlocks(
+    personality.persona_prompt,
+  );
   const overrideBlock = [
     "",
-    "CURRENT STATE FOR THIS SESSION (sole authority for mood, sleep, energy, psychosis):",
+    "CURRENT STATE FOR THIS SESSION (sole authority for mood, sleep, energy, psychosis, speech):",
     ...presenting.map((d) => `- ${d}`),
     "Keep your identity, biography, culture, and dialect.",
     MANIA_OR_PSYCHOSIS.has(slug)
       ? "Do NOT lead with depressive hypersomnia, grey flat anhedonia, MDD fogginess, or 'haven't painted since April' — those are not this session's syndrome unless Module 1 lists them."
-      : "If Module 2 current-state conflicted with Module 1, follow Module 1.",
+      : "Default-syndrome HOW YOU TALK / DO-DONT from the avatar persona do not apply — follow Module 1 speech profile.",
     "Your CURRENT SYNDROME is Module 1 only.",
   ].join("\n");
 
@@ -119,11 +176,9 @@ export function adaptPersonalityForCaseSnapshot(
     speech: {
       ...personality.speech,
       pace: pace ?? personality.speech?.pace,
-      // Authored sample lines are default-syndrome (often MDD); clear on override
-      // so Module 1 presentation is not primed by depressive utterances.
-      sample_utterances: MANIA_OR_PSYCHOSIS.has(slug)
-        ? []
-        : personality.speech?.sample_utterances,
+      // Authored sample lines are default-syndrome; clear on any override so
+      // Module 1 presentation is not primed by the wrong illness.
+      sample_utterances: [],
     },
   };
 }
@@ -297,6 +352,7 @@ export function resolveAvatar(
       clinical_core: mergedCore,
       personality,
       session: { locale },
+      fidelity: fidelityHintsFromSnapshot(snapshot),
     };
 
     // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.
@@ -371,6 +427,7 @@ export function resolveAvatar(
   if (snapshot?.clinical_core) {
     assembly.clinical_core = snapshot.clinical_core;
   }
+  assembly.fidelity = fidelityHintsFromSnapshot(snapshot);
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 

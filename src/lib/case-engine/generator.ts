@@ -17,7 +17,31 @@ import {
   computeClinicalFidelityIndex,
   cfiInputFromSnapshot,
 } from "@/lib/cfi";
+import {
+  formatSpeechBehaviorForPrompt,
+  speechBehaviorForDisorder,
+} from "@/lib/case-engine/speech-behavior";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
+
+/** Prefer richer notes when both package and persona share a disclosure topic. */
+export function mergeDisclosureRules(
+  primary?: DisclosureRule[] | null,
+  secondary?: DisclosureRule[] | null,
+): DisclosureRule[] {
+  const map = new Map<string, DisclosureRule>();
+  for (const rule of [...(secondary ?? []), ...(primary ?? [])]) {
+    const key = rule.topic.trim().toLowerCase();
+    const prev = map.get(key);
+    if (!prev) {
+      map.set(key, rule);
+      continue;
+    }
+    const prevNotes = prev.notes?.length ?? 0;
+    const nextNotes = rule.notes?.length ?? 0;
+    map.set(key, nextNotes >= prevNotes ? rule : prev);
+  }
+  return [...map.values()];
+}
 
 /** Simple seeded PRNG (mulberry32). */
 export function createRng(seed: string | number): () => number {
@@ -147,8 +171,12 @@ function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
     if (!symptomMap.has(s.id)) symptomMap.set(s.id, s);
   }
 
-  const disclosure =
-    pkg.disclosure_rules ?? legacy?.disclosure_rules ?? [];
+  // Union by topic: prefer longer notes; never discard rich persona rules
+  // when the builtin package also has a shorter rule for the same topic.
+  const disclosure = mergeDisclosureRules(
+    pkg.disclosure_rules,
+    legacy?.disclosure_rules,
+  );
 
   const comorbidGoals = comorbidities.flatMap(
     (c) => c.package.session_goals ?? [],
@@ -267,7 +295,12 @@ export function generateCaseInstance(
       req.difficulty === "expert" || req.difficulty === "advanced"
         ? "Judgment may be impaired relative to baseline; assess decision-making and safety."
         : "Judgment largely preserved; explore concrete recent decisions.",
-    speech_behavior_cue: `Speech/behaviour consistent with ${req.primaryDisorder.category ?? "psychiatric"} presentation; do not caricature.`,
+    speech_behavior_cue: formatSpeechBehaviorForPrompt(
+      speechBehaviorForDisorder(
+        req.primaryDisorder.slug,
+        req.primaryDisorder.category,
+      ),
+    ),
   };
 
   const snapshot: CaseInstanceSnapshot = {
