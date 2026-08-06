@@ -65,6 +65,20 @@ describe("elevenLabsService", () => {
     expect(first.cached).toBe(false);
     expect(first.streamed).toBe(true);
     expect(first.voiceId).toBe("voice-en");
+
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      "output_format=mp3_44100_128",
+    );
+    const body = JSON.parse(
+      String(fetchMock.mock.calls[0]?.[1]?.body ?? "{}"),
+    ) as {
+      voice_settings?: { use_speaker_boost?: boolean };
+      apply_text_normalization?: string;
+    };
+    expect(body.voice_settings?.use_speaker_boost).toBe(true);
+    expect(body.apply_text_normalization).toBe("auto");
+
     // Drain stream so the tee cache fill can complete.
     await new Response(first.body).arrayBuffer();
     await vi.waitFor(() => expect(elevenLabsCacheSize()).toBe(1));
@@ -97,6 +111,29 @@ describe("elevenLabsService", () => {
     await expect(
       elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
     ).rejects.toMatchObject({ code: "TTS_FAILED", status: 502 });
+  });
+
+  it("maps quota_exceeded to TTS_QUOTA (402)", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            detail: {
+              type: "invalid_request",
+              code: "quota_exceeded",
+              message: "You have 0 credits remaining",
+            },
+          }),
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(
+      elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
+    ).rejects.toMatchObject({ code: "TTS_QUOTA", status: 402 });
   });
 
   it("retries with the default premade voice after paid_plan_required", async () => {

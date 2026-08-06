@@ -83,9 +83,52 @@ export {
 export {
   startHandsFreeVad,
   startBargeInMonitor,
+  evaluateVadFrame,
+  resolveSilenceMs,
+  rms,
   type VadController,
   type HandsFreeVadOptions,
 } from "./vad";
+
+export {
+  HANDS_FREE_AUDIO_CONSTRAINTS,
+  BARGE_IN_AUDIO_CONSTRAINTS,
+} from "./audio-constraints";
+
+export {
+  acquireHandsFreeMicrophone,
+  mediaStreamIsLive,
+  primeTherapyRoomMicrophone,
+  stashPrimedMicrophone,
+  takePrimedMicrophone,
+  unlockAudioContext,
+} from "./prime-mic";
+
+export {
+  canTransition,
+  nextConversationState,
+  transition,
+  createConversationFsm,
+  micAllowed,
+  playbackAllowed,
+  listenLoopBlocked,
+  statusKeyForState,
+  listLegalTransitions,
+  type ConversationState,
+  type ConversationEvent,
+  type ConversationStatusKey,
+  type ConversationFsm,
+  type TransitionResult,
+} from "./conversation-fsm";
+
+export {
+  createConversationTelemetry,
+  HANDS_FREE_PERF_BUDGETS,
+  type ConversationTelemetry,
+  type ConversationTelemetryKind,
+  type ConversationTelemetryEvent,
+  type ConversationTelemetrySummary,
+} from "./conversation-telemetry";
 
 export { startRoomAmbience, type AmbienceController } from "./ambience";
 

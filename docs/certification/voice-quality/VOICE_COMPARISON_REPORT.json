@@ -1,0 +1,134 @@
+{
+  "generatedAt": "2026-08-06T23:03:38.740Z",
+  "base": "https://vpsych.vercel.app",
+  "winner": {
+    "id": "XB0fDUnXU5powFXDhCwa",
+    "label": "Charlotte",
+    "composite": 8.01
+  },
+  "recommended": {
+    "en": {
+      "id": "EXAVITQu4vr4xnSDxMaL",
+      "label": "Sarah",
+      "composite": 7.98
+    },
+    "ar": {
+      "id": "XB0fDUnXU5powFXDhCwa",
+      "label": "Charlotte",
+      "composite": 8.01
+    }
+  },
+  "results": [
+    {
+      "id": "XB0fDUnXU5powFXDhCwa",
+      "label": "Charlotte",
+      "locale": "both",
+      "ok": true,
+      "voiceHeader": "XB0fDUnXU5powFXDhCwa",
+      "model": "eleven_multilingual_v2",
+      "latencyMs": 155,
+      "bytes": 213204,
+      "arBytes": 196067,
+      "dimensions": {
+        "naturalness": 7.9,
+        "clinicalRealism": 7.3,
+        "warmth": 7.9,
+        "emotionalExpression": 7.5,
+        "arabicPronunciation": 8.8,
+        "englishPronunciation": 8,
+        "conversationFlow": 8.75,
+        "latency": 10
+      },
+      "composite": 8.01
+    },
+    {
+      "id": "EXAVITQu4vr4xnSDxMaL",
+      "label": "Sarah",
+      "locale": "en",
+      "ok": true,
+      "voiceHeader": "EXAVITQu4vr4xnSDxMaL",
+      "model": "eleven_multilingual_v2",
+      "latencyMs": 205,
+      "bytes": 234102,
+      "arBytes": 0,
+      "dimensions": {
+        "naturalness": 8.3,
+        "clinicalRealism": 8,
+        "warmth": 8.3,
+        "emotionalExpression": 8.1,
+        "arabicPronunciation": 4,
+        "englishPronunciation": 8.5,
+        "conversationFlow": 9.25,
+        "latency": 10
+      },
+      "composite": 7.98
+    },
+    {
+      "id": "pNInz6obpgDQGcFmaJgB",
+      "label": "Adam",
+      "locale": "both",
+      "ok": true,
+      "voiceHeader": "pNInz6obpgDQGcFmaJgB",
+      "model": "eleven_multilingual_v2",
+      "latencyMs": 142,
+      "bytes": 224907,
+      "arBytes": 208606,
+      "dimensions": {
+        "naturalness": 7.5,
+        "clinicalRealism": 7.3,
+        "warmth": 7.4,
+        "emotionalExpression": 7.5,
+        "arabicPronunciation": 8,
+        "englishPronunciation": 8,
+        "conversationFlow": 8.75,
+        "latency": 10
+      },
+      "composite": 7.8
+    },
+    {
+      "id": "FGY2WhTYpPnrIDTdsKH5",
+      "label": "Laura",
+      "locale": "en",
+      "ok": false,
+      "status": 200,
+      "error": "allowlist_fallback→EXAVITQu4vr4xnSDxMaL",
+      "composite": 0
+    },
+    {
+      "id": "XrExE9yKIg1WjnnlVkGX",
+      "label": "Matilda",
+      "locale": "en",
+      "ok": false,
+      "status": 200,
+      "error": "allowlist_fallback→EXAVITQu4vr4xnSDxMaL",
+      "composite": 0
+    },
+    {
+      "id": "pFZP5JQG7iQjIQuC4Bku",
+      "label": "Lily",
+      "locale": "en",
+      "ok": false,
+      "status": 200,
+      "error": "allowlist_fallback→EXAVITQu4vr4xnSDxMaL",
+      "composite": 0
+    },
+    {
+      "id": "N2lVS1w4EtoT3dr4eOWO",
+      "label": "Callum",
+      "locale": "en",
+      "ok": false,
+      "status": 200,
+      "error": "allowlist_fallback→EXAVITQu4vr4xnSDxMaL",
+      "composite": 0
+    },
+    {
+      "id": "iP95p4xoKVk53GoZ742B",
+      "label": "Chris",
+      "locale": "en",
+      "ok": false,
+      "status": 200,
+      "error": "allowlist_fallback→EXAVITQu4vr4xnSDxMaL",
+      "composite": 0
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+[2026-08-06T20:12:09.526Z] OPEN https://vpsych-qsgwej8mw-alhazayed-1540s-projects.vercel.app/?_vercel_share=RKafczI69SJaaeSgA4RiYm915wmkvETy
+[2026-08-06T20:12:09.803Z] CONSOLE_IGNORED Refused to load the script 'https://vercel.live/_next-live/feedback/feedback.js' because it violates the following Conte
+[2026-08-06T20:12:09.861Z] CONSOLE_IGNORED Refused to load the script 'https://vercel.live/_next-live/feedback/feedback.js' because it violates the following Conte
+[2026-08-06T20:12:11.375Z] LOGIN_OK https://vpsych-qsgwej8mw-alhazayed-1540s-projects.vercel.app/avatars
+[2026-08-06T20:12:11.716Z] CONSOLE_IGNORED Refused to load the script 'https://vercel.live/_next-live/feedback/feedback.js' because it violates the following Conte
+[2026-08-06T20:12:12.616Z] MODE therapy_room
+[2026-08-06T20:12:13.449Z] SESSION https://vpsych-qsgwej8mw-alhazayed-1540s-projects.vercel.app/sessions/f7c50e10-f9c7-40d7-9c8c-334ebdca267e
+[2026-08-06T20:12:13.640Z] STATE LISTENING STATUS listening
+[2026-08-06T20:12:13.640Z] LISTENING_OK
+[2026-08-06T20:12:13.803Z] TURN_1_WAIT
+[2026-08-06T20:12:21.341Z] TURN_1_OK stt=1 msg=1 tts=1
+[2026-08-06T20:12:21.497Z] TURN_2_WAIT
+[2026-08-06T20:12:28.539Z] TURN_2_OK stt=2 msg=2 tts=2
+[2026-08-06T20:12:28.696Z] TURN_3_WAIT
+[2026-08-06T20:12:35.227Z] TURN_3_OK stt=3 msg=3 tts=3
+[2026-08-06T20:12:35.397Z] TURN_4_WAIT
+[2026-08-06T20:12:41.430Z] TURN_4_OK stt=4 msg=4 tts=4
+[2026-08-06T20:12:41.600Z] TURN_5_WAIT
+[2026-08-06T20:12:49.648Z] TURN_5_OK stt=5 msg=5 tts=5
+[2026-08-06T20:12:49.813Z] TURN_6_WAIT
+[2026-08-06T20:12:55.845Z] TURN_6_OK stt=6 msg=6 tts=6
+[2026-08-06T20:12:56.012Z] TURN_7_WAIT
+[2026-08-06T20:13:00.533Z] TURN_7_OK stt=7 msg=7 tts=7
+[2026-08-06T20:13:00.696Z] TURN_8_WAIT
+[2026-08-06T20:13:09.238Z] TURN_8_OK stt=8 msg=8 tts=8
+[2026-08-06T20:13:09.396Z] TURN_9_WAIT
+[2026-08-06T20:13:13.921Z] TURN_9_OK stt=9 msg=9 tts=9
+[2026-08-06T20:13:14.077Z] TURN_10_WAIT
+[2026-08-06T20:13:21.612Z] TURN_10_OK stt=10 msg=10 tts=10
+[2026-08-06T20:13:21.777Z] TURN_11_WAIT
+[2026-08-06T20:13:27.302Z] TURN_11_OK stt=11 msg=11 tts=11
+[2026-08-06T20:13:27.463Z] TURN_12_WAIT
+[2026-08-06T20:13:34.997Z] TURN_12_OK stt=12 msg=12 tts=12
+[2026-08-06T20:13:35.144Z] TURN_13_WAIT
+[2026-08-06T20:13:40.674Z] TURN_13_OK stt=13 msg=13 tts=13
+[2026-08-06T20:13:40.868Z] TURN_14_WAIT
+[2026-08-06T20:13:47.904Z] TURN_14_OK stt=14 msg=14 tts=14
+[2026-08-06T20:13:48.047Z] TURN_15_WAIT
+[2026-08-06T20:13:53.576Z] TURN_15_OK stt=15 msg=15 tts=15
+[2026-08-06T20:13:53.747Z] TURN_16_WAIT
+[2026-08-06T20:14:00.785Z] TURN_16_OK stt=16 msg=16 tts=16
+[2026-08-06T20:14:00.959Z] TURN_17_WAIT
+[2026-08-06T20:14:07.488Z] TURN_17_OK stt=17 msg=17 tts=17
+[2026-08-06T20:14:07.673Z] TURN_18_WAIT
+[2026-08-06T20:14:13.704Z] TURN_18_OK stt=18 msg=18 tts=18
+[2026-08-06T20:14:13.892Z] TURN_19_WAIT
+[2026-08-06T20:14:19.918Z] TURN_19_OK stt=19 msg=19 tts=19
+[2026-08-06T20:14:20.092Z] TURN_20_WAIT
+[2026-08-06T20:14:26.623Z] TURN_20_OK stt=20 msg=20 tts=20
+[2026-08-06T20:14:26.808Z] BARGE_IN_WAIT_AVATAR
+[2026-08-06T20:14:30.733Z] BARGE_IN_DURING AVATAR_SPEAKING
+[2026-08-06T20:14:31.140Z] BARGE_IN_LEFT LISTENING ok= true
+[2026-08-06T20:14:31.681Z] PAUSE_STATE PAUSED
+[2026-08-06T20:14:32.512Z] RESUME_STATE LISTENING
+[2026-08-06T20:14:40.608Z] END_URL https://vpsych-qsgwej8mw-alhazayed-1540s-projects.vercel.app/sessions/f7c50e10-f9c7-40d7-9c8c-334ebdca267e/complete
+[2026-08-06T20:14:40.619Z] REPORT {"completedTurns":20,"targetTurns":20,"network":{"stt":21,"message":21,"tts":21},"pauseOk":true,"resumeOk":true,"endOk":true,"bargeInOk":true,"pushToTalkButtonsSeen":0,"consoleErrors":[],"pass":true}

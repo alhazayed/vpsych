@@ -1,8 +1,7 @@
 /**
  * CB-HCF-007 — map clinical speech phenotype → ElevenLabs voice_settings.
- * Not a full emotion director (HCE deferred). Bounded presets only so
- * consultants hear slowed depression / pressured mania / anxious edge
- * instead of one flat voice for every diagnosis.
+ * Tuned for standardized-patient realism: natural variation, speaker boost,
+ * and bounded style — not flat assistant narration.
  */
 
 import type { SpeechBehaviorProfile } from "@/lib/case-engine/speech-behavior";
@@ -12,6 +11,7 @@ export type ElevenLabsVoiceSettings = {
   stability: number;
   similarity_boost: number;
   style?: number;
+  use_speaker_boost?: boolean;
 };
 
 export type SpeechPace =
@@ -23,9 +23,18 @@ export type SpeechPace =
 
 export type SpeechEnergy = "low" | "moderate" | "high" | "labile";
 
+/**
+ * Production defaults for psychiatric SP interviews.
+ * - stability mid-low → natural micro-variation (avoids robotic flatness)
+ * - similarity_boost high → keep casting identity
+ * - style modest → character without cartoon exaggeration
+ * - speaker boost on → clearer human timbre
+ */
 const DEFAULT_SETTINGS: ElevenLabsVoiceSettings = {
-  stability: 0.4,
-  similarity_boost: 0.75,
+  stability: 0.38,
+  similarity_boost: 0.82,
+  style: 0.28,
+  use_speaker_boost: true,
 };
 
 /**
@@ -55,6 +64,12 @@ export function normalizeSpeechEnergy(raw?: string | null): SpeechEnergy | null 
   return null;
 }
 
+function withBoost(
+  settings: Omit<ElevenLabsVoiceSettings, "use_speaker_boost">,
+): ElevenLabsVoiceSettings {
+  return { ...settings, use_speaker_boost: true };
+}
+
 export function voiceSettingsForPaceEnergy(
   pace: SpeechPace | null | undefined,
   energy: SpeechEnergy | null | undefined,
@@ -62,21 +77,37 @@ export function voiceSettingsForPaceEnergy(
   const p = pace ?? "measured";
   const e = energy ?? "moderate";
 
-  // Stability: lower = more expressive/variable delivery; higher = flatter/steadier.
-  // similarity_boost stays mostly stable so casting identity holds.
+  // Stability: lower = more expressive/variable delivery; higher = steadier.
+  // Keep stability below ~0.55 even for depression — too high sounds robotic.
   if (p === "slow" || e === "low") {
-    return { stability: 0.62, similarity_boost: 0.72, style: 0.15 };
+    return withBoost({
+      stability: 0.48,
+      similarity_boost: 0.8,
+      style: 0.22,
+    });
   }
   if (p === "pressured" || (p === "fast" && e === "high")) {
-    return { stability: 0.28, similarity_boost: 0.7, style: 0.45 };
+    return withBoost({
+      stability: 0.26,
+      similarity_boost: 0.78,
+      style: 0.42,
+    });
   }
   if (p === "fast" || e === "high") {
-    return { stability: 0.32, similarity_boost: 0.72, style: 0.35 };
+    return withBoost({
+      stability: 0.3,
+      similarity_boost: 0.8,
+      style: 0.36,
+    });
   }
   if (p === "variable" || e === "labile") {
-    return { stability: 0.3, similarity_boost: 0.7, style: 0.4 };
+    return withBoost({
+      stability: 0.28,
+      similarity_boost: 0.78,
+      style: 0.38,
+    });
   }
-  return { ...DEFAULT_SETTINGS, style: 0.25 };
+  return { ...DEFAULT_SETTINGS };
 }
 
 export function voiceSettingsForSpeechProfile(

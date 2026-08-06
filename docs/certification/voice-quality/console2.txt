@@ -1,0 +1,10 @@
+✓ Sarah      score=7.98 latency=397ms bytes=234102 voice=EXAVITQu4vr4xnSDxMaL
+✗ Laura allowlist fallback to EXAVITQu4vr4xnSDxMaL
+✗ Matilda allowlist fallback to EXAVITQu4vr4xnSDxMaL
+✗ Lily allowlist fallback to EXAVITQu4vr4xnSDxMaL
+✓ Charlotte  score=8.01 latency=129ms bytes=213204 voice=XB0fDUnXU5powFXDhCwa
+✓ Adam       score=7.80 latency=171ms bytes=224907 voice=pNInz6obpgDQGcFmaJgB
+✗ Callum allowlist fallback to EXAVITQu4vr4xnSDxMaL
+✗ Chris allowlist fallback to EXAVITQu4vr4xnSDxMaL
+
+Report → /opt/cursor/artifacts/voice-compare/VOICE_COMPARISON_REPORT.md

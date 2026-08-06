@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AppLocale } from "@/i18n/config";
 import { LOCALE_COOKIE } from "@/i18n/config";
+import { primeTherapyRoomMicrophone } from "@/lib/therapy-room";
 
 function cookieLocale(): string | undefined {
   if (typeof document === "undefined") return undefined;
@@ -32,6 +33,20 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
     setLoading(true);
     setError(null);
     try {
+      // Hands-free requires getUserMedia under this click (user gesture).
+      // Without priming, the session page's deferred getUserMedia fails on
+      // Safari / some Chromium builds with NotAllowedError → ERROR + Retry.
+      if (roomEnabled && mode === "therapy_room") {
+        try {
+          await primeTherapyRoomMicrophone();
+        } catch (err) {
+          console.error("[therapy-room] mic prime failed", err);
+          setError(tRoom("micRequired"));
+          setLoading(false);
+          return;
+        }
+      }
+
       const sessionLocale = locale || cookieLocale();
       const res = await fetch("/api/sessions", {
         method: "POST",

@@ -1,5 +1,7 @@
 import { createHash } from "crypto";
 import {
+  DEFAULT_ELEVENLABS_MODEL_ID,
+  DEFAULT_ELEVENLABS_OUTPUT_FORMAT,
   DEFAULT_ELEVENLABS_VOICE_AR,
   DEFAULT_ELEVENLABS_VOICE_EN,
   hasElevenLabs,
@@ -8,9 +10,12 @@ import {
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
 import {
+  normalizeSpeechEnergy,
+  normalizeSpeechPace,
   resolveVoiceSettings,
   type ElevenLabsVoiceSettings,
 } from "@/lib/voice/prosody";
+import { preparePatientSpeechForTts } from "@/lib/voice/tts-text";
 
 export type ElevenLabsSynthesizeParams = {
   text: string;
@@ -75,7 +80,16 @@ function cacheMaxEntries() {
 }
 
 function modelId() {
-  return process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
+  // Prefer env override; default is the emotionally rich multilingual model
+  // (better SP realism than flash/turbo low-latency models).
+  return process.env.ELEVENLABS_MODEL_ID || DEFAULT_ELEVENLABS_MODEL_ID;
+}
+
+function outputFormat() {
+  return (
+    process.env.ELEVENLABS_OUTPUT_FORMAT?.trim() ||
+    DEFAULT_ELEVENLABS_OUTPUT_FORMAT
+  );
 }
 
 function apiKey() {
@@ -214,7 +228,12 @@ export const elevenLabsService = {
       );
     }
 
-    const text = params.text.trim();
+    const prepared = preparePatientSpeechForTts(params.text, {
+      locale: params.locale,
+      pace: normalizeSpeechPace(params.speechPace),
+      energy: normalizeSpeechEnergy(params.speechEnergy),
+    });
+    const text = prepared.trim();
     if (!text) {
       throw new ElevenLabsError("text required", {
         code: "BAD_REQUEST",
@@ -239,13 +258,14 @@ export const elevenLabsService = {
         : process.env.ELEVENLABS_VOICE_ID_EN || DEFAULT_ELEVENLABS_VOICE_EN;
 
     // Prefer the resolved avatar voice; on Voice Library / plan errors, retry
-    // once with the account default premade voice (Rachel / Charlotte).
+    // once with the account default premade voice (Sarah / Charlotte).
     const voiceCandidates = [primaryVoiceId];
     if (fallbackVoiceId && fallbackVoiceId !== primaryVoiceId) {
       voiceCandidates.push(fallbackVoiceId);
     }
 
     const model = modelId();
+    const format = outputFormat();
     const voiceSettings = resolveVoiceSettings({
       speechPace: params.speechPace,
       speechEnergy: params.speechEnergy,
@@ -287,9 +307,10 @@ export const elevenLabsService = {
       }
 
       const wantStream = params.stream !== false;
-      const path = wantStream
+      const basePath = wantStream
         ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
         : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+      const path = `${basePath}?output_format=${encodeURIComponent(format)}`;
 
       const res = await fetch(path, {
         method: "POST",
@@ -302,6 +323,8 @@ export const elevenLabsService = {
           text,
           model_id: model,
           voice_settings: voiceSettings,
+          // Improve punctuation / number reading for interview dialogue.
+          apply_text_normalization: "auto",
         }),
       });
 
@@ -353,11 +376,16 @@ export const elevenLabsService = {
       );
     }
 
+    const quota = /quota_exceeded|credits? remaining|payment_required|paid_plan_required/i.test(
+      lastDetail,
+    );
     throw new ElevenLabsError("ElevenLabs TTS failed", {
       code: /paid_plan_required|payment_required/i.test(lastDetail)
         ? "TTS_PLAN_REQUIRED"
-        : "TTS_FAILED",
-      status: 502,
+        : /quota_exceeded|credits? remaining/i.test(lastDetail)
+          ? "TTS_QUOTA"
+          : "TTS_FAILED",
+      status: quota ? 402 : 502,
       detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
     });
   },

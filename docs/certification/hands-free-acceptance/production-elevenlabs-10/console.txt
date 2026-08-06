@@ -1,0 +1,34 @@
+[2026-08-06T22:58:05.838Z] BROWSER chromium CHANNEL chrome
+[2026-08-06T22:58:06.085Z] OPEN https://vpsych.vercel.app/
+[2026-08-06T22:58:08.554Z] LOGIN_OK https://vpsych.vercel.app/avatars
+[2026-08-06T22:58:09.698Z] MODE therapy_room
+[2026-08-06T22:58:10.497Z] SESSION https://vpsych.vercel.app/sessions/a563f2d2-1321-4051-a3bd-9fc4f798d471
+[2026-08-06T22:58:10.680Z] STATE LISTENING STATUS listening
+[2026-08-06T22:58:10.680Z] LISTENING_OK
+[2026-08-06T22:58:10.824Z] TURN_1_WAIT
+[2026-08-06T22:58:44.043Z] TURN_1_OK stt=1 msg=1 tts=1 elevenlabs
+[2026-08-06T22:58:44.180Z] TURN_2_WAIT
+[2026-08-06T22:59:14.837Z] TURN_2_OK stt=2 msg=2 tts=2 elevenlabs
+[2026-08-06T22:59:14.976Z] TURN_3_WAIT
+[2026-08-06T22:59:46.128Z] TURN_3_OK stt=3 msg=3 tts=3 elevenlabs
+[2026-08-06T22:59:46.262Z] TURN_4_WAIT
+[2026-08-06T23:00:18.413Z] TURN_4_OK stt=4 msg=4 tts=4 elevenlabs
+[2026-08-06T23:00:18.540Z] TURN_5_WAIT
+[2026-08-06T23:00:27.580Z] TURN_5_OK stt=5 msg=5 tts=5 elevenlabs
+[2026-08-06T23:00:27.708Z] TURN_6_WAIT
+[2026-08-06T23:00:58.851Z] TURN_6_OK stt=6 msg=6 tts=6 elevenlabs
+[2026-08-06T23:00:58.989Z] TURN_7_WAIT
+[2026-08-06T23:01:30.636Z] TURN_7_OK stt=7 msg=7 tts=7 elevenlabs
+[2026-08-06T23:01:30.771Z] TURN_8_WAIT
+[2026-08-06T23:01:37.300Z] TURN_8_OK stt=8 msg=8 tts=8 elevenlabs
+[2026-08-06T23:01:37.437Z] TURN_9_WAIT
+[2026-08-06T23:01:43.964Z] TURN_9_OK stt=9 msg=9 tts=9 elevenlabs
+[2026-08-06T23:01:44.107Z] TURN_10_WAIT
+[2026-08-06T23:02:15.749Z] TURN_10_OK stt=10 msg=10 tts=10 elevenlabs
+[2026-08-06T23:02:15.887Z] BARGE_IN_WAIT_AVATAR
+[2026-08-06T23:02:45.185Z] BARGE_IN_DURING AVATAR_SPEAKING
+[2026-08-06T23:02:46.196Z] BARGE_IN_LEFT LISTENING ok= true
+[2026-08-06T23:02:46.740Z] PAUSE_STATE PAUSED
+[2026-08-06T23:02:47.570Z] RESUME_STATE LISTENING
+[2026-08-06T23:02:55.095Z] END_URL https://vpsych.vercel.app/sessions/a563f2d2-1321-4051-a3bd-9fc4f798d471/complete
+[2026-08-06T23:02:55.108Z] REPORT {"completedTurns":10,"elevenLabsTurns":10,"targetTurns":10,"network":{"stt":11,"message":11,"tts":11,"failures":[]},"pauseOk":true,"resumeOk":true,"endOk":true,"bargeInOk":true,"pushToTalkButtonsSeen":0,"consoleErrors":[],"requireElevenLabs":true,"pass":true}

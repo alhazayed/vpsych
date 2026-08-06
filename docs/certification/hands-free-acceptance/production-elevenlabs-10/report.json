@@ -1,0 +1,19 @@
+{
+  "completedTurns": 10,
+  "elevenLabsTurns": 10,
+  "targetTurns": 10,
+  "network": {
+    "stt": 11,
+    "message": 11,
+    "tts": 11,
+    "failures": []
+  },
+  "pauseOk": true,
+  "resumeOk": true,
+  "endOk": true,
+  "bargeInOk": true,
+  "pushToTalkButtonsSeen": 0,
+  "consoleErrors": [],
+  "requireElevenLabs": true,
+  "pass": true
+}
