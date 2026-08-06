@@ -26,6 +26,7 @@ import {
   startHandsFreeVad,
   startRoomAmbience,
   statusKeyForState,
+  takePrimedMicrophone,
   voiceModulationForDisorder,
   type AmbienceController,
   type ConversationFsm,
@@ -120,7 +121,10 @@ export function TherapyRoomSession({
   const immersionRef = useRef<ImmersionTracker>(createImmersionTracker());
   const telemetryRef = useRef<ConversationTelemetry>(createConversationTelemetry());
   const fsmRef = useRef<ConversationFsm>(createConversationFsm("IDLE"));
+  /** Only set by endSession — never by effect cleanup (StrictMode-safe). */
   const endingRef = useRef(false);
+  /** False after unmount / effect cleanup; gates async listen work. */
+  const mountedRef = useRef(true);
   const turnIndexRef = useRef(0);
   const mutedRef = useRef(false);
   const notesRef = useRef(notes);
@@ -129,6 +133,8 @@ export function TherapyRoomSession({
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
+  /** Stream primed on Enter Therapy Room click (user-gesture getUserMedia). */
+  const primedStreamRef = useRef<MediaStream | null>(null);
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -547,7 +553,7 @@ export function TherapyRoomSession({
   );
 
   const startListeningLoop = useCallback(async () => {
-    if (endingRef.current) return;
+    if (endingRef.current || !mountedRef.current) return;
     const state = fsmRef.current.getState();
     if (state !== "LISTENING") return;
     if (vadRef.current) return;
@@ -564,6 +570,10 @@ export function TherapyRoomSession({
       playbackEndedAtRef.current = null;
     }
 
+    // Prefer the stream primed under the Start Session user gesture.
+    const primed = primedStreamRef.current;
+    primedStreamRef.current = null;
+
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
@@ -572,6 +582,7 @@ export function TherapyRoomSession({
       const vad = await startHandsFreeVad({
         silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
         maxMs: 28000,
+        stream: primed ?? undefined,
         onSpeechStart: () => {
           speechStartedAt.current = telemetryRef.current.mark();
           setTherapistSpeaking(true);
@@ -596,7 +607,11 @@ export function TherapyRoomSession({
         },
       });
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+      if (
+        !mountedRef.current ||
+        !fsmRef.current.isCurrent(generation) ||
+        endingRef.current
+      ) {
         vad.cancel();
         return;
       }
@@ -609,7 +624,11 @@ export function TherapyRoomSession({
       const wav = await vad.done;
       vadRef.current = null;
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+      if (
+        !mountedRef.current ||
+        !fsmRef.current.isCurrent(generation) ||
+        endingRef.current
+      ) {
         return;
       }
       if (fsmRef.current.getState() !== "LISTENING") {
@@ -625,8 +644,12 @@ export function TherapyRoomSession({
         wav,
         interruptedByPatient ? "patient_interrupt" : "hands_free",
       );
-    } catch {
+    } catch (err) {
+      // Release a failed primed stream so Retry can re-acquire under its click.
+      primed?.getTracks().forEach((t) => t.stop());
+      console.error("[therapy-room] hands-free mic/VAD failed", err);
       telemetryRef.current.record("error", { code: "mic_denied" });
+      if (!mountedRef.current || endingRef.current) return;
       dispatch("ERROR");
       setStatusKey("error");
       setPresence("idle", "mic-error");
@@ -660,10 +683,25 @@ export function TherapyRoomSession({
   }, [endSession, session.max_duration_sec, session.started_at]);
 
   // Boot: ambience + immersion + automatic listening (no mic click).
+  //
+  // CRITICAL: never set endingRef in this cleanup. endingRef means "session is
+  // ending" and is checked by startListeningLoop / handleRetry. React StrictMode
+  // re-runs this effect on the same instance; poisoning endingRef left the room
+  // stuck (or Retry dead) after the first mount cleanup.
   useEffect(() => {
+    let cancelled = false;
+    mountedRef.current = true;
+    endingRef.current = false;
+
     immersionRef.current.track("session_start");
     telemetryRef.current.record("session_start");
     dispatch("START");
+
+    // Claim mic acquired under the Enter Therapy Room click (user gesture).
+    const primed = takePrimedMicrophone();
+    if (primed) {
+      primedStreamRef.current = primed;
+    }
 
     if (settings.ambienceEnabled) {
       ambienceRef.current = startRoomAmbience({
@@ -672,17 +710,21 @@ export function TherapyRoomSession({
       });
     }
 
+    // Start listen ASAP — permission already primed when Start was clicked.
     const boot = window.setTimeout(() => {
-      listenLoopRef.current();
-    }, 400);
+      if (!cancelled) listenLoopRef.current();
+    }, 0);
 
     return () => {
+      cancelled = true;
+      mountedRef.current = false;
       window.clearTimeout(boot);
-      endingRef.current = true;
       const fsm = fsmRef.current;
       fsm.reset("IDLE");
       vadRef.current?.cancel();
       vadRef.current = null;
+      primedStreamRef.current?.getTracks().forEach((t) => t.stop());
+      primedStreamRef.current = null;
       cancelTurnWork();
       stopPlayback();
       ambienceRef.current?.stop();
@@ -718,6 +760,8 @@ export function TherapyRoomSession({
 
   const handleRetry = useCallback(() => {
     if (endingRef.current) return;
+    // Retry is itself a user gesture — safe to re-acquire the mic here.
+    mountedRef.current = true;
     telemetryRef.current.record("retry");
     const result = dispatch("RETRY");
     if (result.ok) {

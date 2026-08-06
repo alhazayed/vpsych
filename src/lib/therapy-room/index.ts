@@ -96,6 +96,15 @@ export {
 } from "./audio-constraints";
 
 export {
+  acquireHandsFreeMicrophone,
+  mediaStreamIsLive,
+  primeTherapyRoomMicrophone,
+  stashPrimedMicrophone,
+  takePrimedMicrophone,
+  unlockAudioContext,
+} from "./prime-mic";
+
+export {
   canTransition,
   nextConversationState,
   transition,

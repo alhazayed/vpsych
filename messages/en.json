@@ -463,7 +463,8 @@
       "classic": "Classic",
       "therapyRoom": "Therapy Room",
       "cta": "Enter Therapy Room",
-      "hint": "Fullscreen consultation room — true hands-free voice, patient-focused. Transcript hidden by default."
+      "hint": "Fullscreen consultation room — true hands-free voice, patient-focused. Transcript hidden by default.",
+      "micRequired": "Microphone access is required to enter the Therapy Room. Allow the microphone, then try again."
     },
     "status": {
       "entering": "Entering the consultation room…",

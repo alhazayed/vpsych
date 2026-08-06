@@ -9,11 +9,9 @@
  * - No audio is stored — samples discarded after RMS / WAV encode for STT upload
  */
 
-import {
-  BARGE_IN_AUDIO_CONSTRAINTS,
-  HANDS_FREE_AUDIO_CONSTRAINTS,
-} from "./audio-constraints";
+import { BARGE_IN_AUDIO_CONSTRAINTS } from "./audio-constraints";
 import { HANDS_FREE_PERF_BUDGETS } from "./conversation-telemetry";
+import { acquireHandsFreeMicrophone } from "./prime-mic";
 
 export type VadController = {
   /**
@@ -198,14 +196,20 @@ export async function startHandsFreeVad(
   const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
   const minSpeechMs = options.minSpeechMs ?? 400;
 
-  const ownsStream = !options.stream;
-  const stream =
-    options.stream ??
-    (await navigator.mediaDevices.getUserMedia({
-      audio: HANDS_FREE_AUDIO_CONSTRAINTS,
-    }));
+  const { stream, ownsStream } = await acquireHandsFreeMicrophone(
+    options.stream ?? null,
+  );
 
-  const audioContext = new AudioContext();
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!AudioCtx) {
+    if (ownsStream) stream.getTracks().forEach((t) => t.stop());
+    throw new DOMException("AudioContext unavailable", "NotSupportedError");
+  }
+
+  const audioContext = new AudioCtx();
   if (audioContext.state === "suspended") {
     try {
       await audioContext.resume();
@@ -352,14 +356,28 @@ export async function startBargeInMonitor(opts: {
   const minSpeechMs = opts.minSpeechMs ?? 280;
   let stream: MediaStream;
   try {
+    // Prefer barge-in constraints; fall back via shared acquirer.
     stream = await navigator.mediaDevices.getUserMedia({
       audio: BARGE_IN_AUDIO_CONSTRAINTS,
     });
   } catch {
-    return () => undefined;
+    try {
+      const acquired = await acquireHandsFreeMicrophone();
+      stream = acquired.stream;
+    } catch {
+      return () => undefined;
+    }
   }
 
-  const audioContext = new AudioContext();
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!AudioCtx) {
+    stream.getTracks().forEach((t) => t.stop());
+    return () => undefined;
+  }
+  const audioContext = new AudioCtx();
   if (audioContext.state === "suspended") {
     try {
       await audioContext.resume();

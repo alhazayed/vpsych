@@ -218,11 +218,19 @@ describe("hands-free VAD silence detection", () => {
     expect(maxed.keepAudio).toBe(true);
   });
 
-  it("enables echo cancellation, noise suppression, and AGC", () => {
-    expect(HANDS_FREE_AUDIO_CONSTRAINTS.echoCancellation).toBe(true);
-    expect(HANDS_FREE_AUDIO_CONSTRAINTS.noiseSuppression).toBe(true);
-    expect(HANDS_FREE_AUDIO_CONSTRAINTS.autoGainControl).toBe(true);
-    expect(BARGE_IN_AUDIO_CONSTRAINTS.autoGainControl).toBe(true);
+  it("enables echo cancellation, noise suppression, and AGC as ideal", () => {
+    expect(HANDS_FREE_AUDIO_CONSTRAINTS.echoCancellation).toEqual({
+      ideal: true,
+    });
+    expect(HANDS_FREE_AUDIO_CONSTRAINTS.noiseSuppression).toEqual({
+      ideal: true,
+    });
+    expect(HANDS_FREE_AUDIO_CONSTRAINTS.autoGainControl).toEqual({
+      ideal: true,
+    });
+    expect(BARGE_IN_AUDIO_CONSTRAINTS.autoGainControl).toEqual({
+      ideal: true,
+    });
   });
 });
 

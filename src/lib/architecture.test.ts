@@ -142,10 +142,14 @@ describe("architecture invariants", () => {
     expect(fsm).toMatch(/BARGE_IN/);
     expect(room).toMatch(/createConversationFsm/);
     expect(room).toMatch(/data-trm-hands-free/);
+    expect(room).toMatch(/takePrimedMicrophone/);
+    // Boot cleanup must not poison endingRef (StrictMode re-run / Retry).
+    expect(room).toMatch(/never set endingRef/i);
     expect(room).not.toMatch(/startRecording|toggleMic|click.*microphone/i);
-    expect(constraints).toMatch(/autoGainControl:\s*true/);
-    expect(constraints).toMatch(/echoCancellation:\s*true/);
-    expect(constraints).toMatch(/noiseSuppression:\s*true/);
+    // ideal (not exact) — bare `true` is treated as exact on Safari/WebKit
+    expect(constraints).toMatch(/autoGainControl:\s*\{\s*ideal:\s*true\s*\}/);
+    expect(constraints).toMatch(/echoCancellation:\s*\{\s*ideal:\s*true\s*\}/);
+    expect(constraints).toMatch(/noiseSuppression:\s*\{\s*ideal:\s*true\s*\}/);
   });
 
   it("gates VMHC clinic routes and APIs behind FEATURE_THERAPY_ROOM", () => {
