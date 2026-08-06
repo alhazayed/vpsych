@@ -3,7 +3,14 @@
 **Date:** 2026-08-06  
 **Feature:** True Hands-Free Therapy Room (full-duplex conversational FSM)  
 **Flag:** `NEXT_PUBLIC_THERAPY_ROOM_MODE`  
-**Verdict:** **CERTIFIED for production** behind the existing optional flag.
+**Verdict:** **SUPERSEDED — runtime FAIL** (see
+`docs/certification/hands-free-acceptance/HANDS_FREE_ACCEPTANCE_CERTIFICATION.md`).
+
+> This file previously claimed “CERTIFIED for production” from architecture /
+> unit-test evidence only. Final Hands-Free Acceptance Certification requires
+> observed browser behavior (Start once → auto mic → VAD → STT → GPT → TTS →
+> auto reopen ×10, plus Pause/Resume/End/Barge-in on desktop and mobile). That
+> runtime certification **failed** on 2026-08-06.
 
 ## Scope certified
 
