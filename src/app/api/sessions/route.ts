@@ -14,6 +14,7 @@ import {
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { shouldUseTherapyRoom } from "@/lib/therapy-room";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
     presetSlug?: string;
     /** Advanced Mode diagnosis pin (requires preset.advanced_mode) */
     disorderSlugOverride?: string;
+    /** Therapy Room Mode — ignored unless NEXT_PUBLIC_THERAPY_ROOM_MODE is on. */
+    interactionMode?: "classic" | "therapy_room";
   };
   if (!body.avatarId) {
     return NextResponse.json({ error: "avatarId required" }, { status: 400 });
@@ -120,6 +123,10 @@ export async function POST(request: Request) {
   const maxDurationSec =
     caseResult.maxDurationSec ?? MAX_SESSION_SECONDS;
 
+  const interactionMode = shouldUseTherapyRoom(body.interactionMode)
+    ? "therapy_room"
+    : "classic";
+
   const insertPayload: Record<string, unknown> = {
     therapist_id: user.id,
     avatar_id: body.avatarId,
@@ -133,6 +140,7 @@ export async function POST(request: Request) {
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
     instructor_preset_id: caseResult.preset?.id ?? null,
+    interaction_mode: interactionMode,
   };
 
   let { data: session, error } = await supabase
@@ -144,12 +152,13 @@ export async function POST(request: Request) {
   // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
   if (
     error &&
-    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset/i.test(
+    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset|interaction_mode/i.test(
       error.message,
     )
   ) {
     const withoutPreset = { ...insertPayload };
     delete withoutPreset.instructor_preset_id;
+    delete withoutPreset.interaction_mode;
     const retry = await supabase
       .from("sessions")
       .insert(withoutPreset)
@@ -157,7 +166,7 @@ export async function POST(request: Request) {
       .single();
     if (
       retry.error &&
-      /clinical_snapshot|case_instance_id|difficulty|therapy_modality/i.test(
+      /clinical_snapshot|case_instance_id|difficulty|therapy_modality|interaction_mode/i.test(
         retry.error.message,
       )
     ) {
@@ -219,5 +228,6 @@ export async function POST(request: Request) {
     presetSlug: caseResult.preset?.slug ?? null,
     primaryObjective: caseResult.preset?.primary_objective ?? null,
     maxDurationSec,
+    interactionMode,
   });
 }

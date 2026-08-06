@@ -10,6 +10,7 @@ export default async function SessionCompletePage({ params }: Props) {
   const { id } = await params;
   const { supabase, user, profile } = await requireProfile();
   const t = await getTranslations("sessions.complete");
+  const tRoom = await getTranslations("therapyRoom.complete");
 
   const { data: session } = await supabase
     .from("sessions")
@@ -24,6 +25,13 @@ export default async function SessionCompletePage({ params }: Props) {
   if (typed.therapist_id !== user.id && profile.role !== "admin") {
     redirect("/avatars");
   }
+
+  const immersionOverall =
+    typed.interaction_mode === "therapy_room" &&
+    typed.immersion_metrics &&
+    typeof typed.immersion_metrics.overall === "number"
+      ? typed.immersion_metrics.overall
+      : null;
 
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
@@ -41,6 +49,17 @@ export default async function SessionCompletePage({ params }: Props) {
           })}
         </p>
       </div>
+
+      {immersionOverall != null && (
+        <section className="clinical-card mb-4 p-5 fade-in-up">
+          <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
+            {tRoom("immersionTitle")}
+          </h2>
+          <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+            {tRoom("immersionScore", { score: immersionOverall })}
+          </p>
+        </section>
+      )}
 
       <section className="clinical-card mb-4 p-5 fade-in-up">
         <div className="mb-3 flex items-center gap-2">

@@ -276,6 +276,8 @@ export type ResolvedAvatar = {
   clinical_core?: ClinicalCore | null;
 };
 
+export type SessionInteractionMode = "classic" | "therapy_room";
+
 export type TherapySession = {
   id: string;
   therapist_id: string;
@@ -292,6 +294,12 @@ export type TherapySession = {
   clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
   difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
+  /** classic = VoiceSession; therapy_room = immersive Therapy Room Mode. */
+  interaction_mode?: SessionInteractionMode | null;
+  /** Therapist-only notes — never sent to the patient agent. */
+  private_notes?: string | null;
+  /** Therapy Room Immersion Index (TRII) snapshot. */
+  immersion_metrics?: Record<string, unknown> | null;
   avatars?: Avatar;
   profiles?: Profile;
 };
