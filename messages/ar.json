@@ -57,7 +57,8 @@
     "adaptiveCurriculum": "المنهج التكيفي",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح",
-    "professionalPreview": "المعاينة المهنية"
+    "professionalPreview": "المعاينة المهنية",
+    "clinicalValidation": "التحقق السريري"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -847,6 +848,79 @@
         "supervision_use_case": "حالة استخدام إشراف",
         "other": "أخرى"
       }
+    }
+  },
+  "cvp": {
+    "reviewer": {
+      "eyebrow": "التحقق السريري",
+      "title": "لوحة المراجعين",
+      "subtitle": "تسجيلك في الدراسات والتعيينات العشوائية وتقدمك الطولي. سلوك المحاكاة دون تغيير — هذا لتتبع الأدلة.",
+      "loading": "جارٍ التحميل…",
+      "loadError": "تعذّر تحميل لوحة التحقق.",
+      "enrollments": "التسجيلات في الدراسات",
+      "noEnrollments": "لست مسجلاً في دراسة تحقق بعد.",
+      "acceptInvite": "اقبل دعوة",
+      "baselineDone": "اكتمل خط الأساس",
+      "baselinePending": "خط الأساس معلّق",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "assignments": "الجلسات المعيّنة",
+      "noAssignments": "لا تعيينات بعد. سيقوم منسق الدراسة بتخصيص المرضى.",
+      "patient": "مريض",
+      "startAssigned": "إلى مكتبة المرضى",
+      "viewComplete": "اكتمال الجلسة / الملاحظات",
+      "longitudinal": "لقطات تقدمك",
+      "noSnapshots": "تظهر اللقطات بعد إكمال الجلسات المعيّنة.",
+      "sessionsCompleted": "{n} جلسات مكتملة"
+    },
+    "accept": {
+      "title": "قبول دعوة التحقق",
+      "subtitle": "انضم إلى برنامج التحقق السريري. يجب قبول الموافقة واتفاقية المراجع.",
+      "loading": "جارٍ التحميل…",
+      "token": "رمز الدعوة",
+      "credentials": "المؤهلات (اختياري)",
+      "credentialsPh": "مثال: طبيب، معتمد في الطب النفسي",
+      "specialty": "التخصص (اختياري)",
+      "specialtyPh": "مثال: اضطرابات المزاج / التعليم",
+      "consent": "أوافق على الاستخدام غير المعرّف لتقييماتي للبحث وفق بروتوكول الدراسة.",
+      "agreement": "أوافق على اتفاقية مراجع التحقق السريري (docs/cvp).",
+      "submit": "التسجيل",
+      "submitting": "جارٍ التسجيل…",
+      "error": "تعذّر قبول الدعوة."
+    },
+    "admin": {
+      "eyebrow": "برنامج التحقق السريري",
+      "title": "لوحة التحقق السريري",
+      "subtitle": "راقب التسجيلات والتعيينات والتحدي الأعمى وموثوقية المقيّمين وتدفق CONSORT والمؤسسات وتصدير النشر. أدلة تكوينية فقط.",
+      "loading": "جارٍ التحميل…",
+      "loadError": "تعذّر تحميل لوحة التحقق السريري.",
+      "selectStudy": "الدراسة",
+      "noStudies": "لا دراسات — أنشئ عبر واجهة البرمجة",
+      "exportPackage": "تصدير حزمة النشر",
+      "exporting": "جارٍ التصدير…",
+      "exportOk": "اكتمل التصدير ({id})",
+      "exportError": "فشل التصدير",
+      "metrics": {
+        "enrollments": "تسجيلات نشطة",
+        "completedAssignments": "تعيينات مكتملة",
+        "blindScores": "درجات عمياء",
+        "kappa": "كوهين κ"
+      },
+      "reliabilityTitle": "الموثوقية واتفاق المقيّمين",
+      "cronbach": "كرونباخ α",
+      "cohensKappa": "كوهين κ",
+      "fleissKappa": "فليس κ",
+      "icc": "ICC(2,1)",
+      "pearson": "بيرسون r",
+      "consortTitle": "تدفق بأسلوب CONSORT",
+      "institutionsTitle": "مقارنة المؤسسات",
+      "noInstitutions": "لا مواقع مرفقة بعد.",
+      "site": "الموقع",
+      "enrolled": "مسجّلون",
+      "completed": "مكتمل",
+      "calibration": "عناصر معايرة مُقيّمة",
+      "longitudinal": "مراجعون بلقطتين أو أكثر",
+      "outcomes": "أدوات النتائج"
     }
   }
 }

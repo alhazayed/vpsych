@@ -30,6 +30,12 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       match: (p) => p.startsWith("/sessions"),
     },
     {
+      href: "/validation",
+      label: t("clinicalValidation"),
+      icon: "science",
+      match: (p) => p.startsWith("/validation"),
+    },
+    {
       href: "/learning",
       label: t("adaptiveLearning"),
       icon: "auto_graph",
@@ -46,6 +52,12 @@ function therapistNav(t: (key: string) => string): NavItem[] {
 
 function adminNav(t: (key: string) => string): NavItem[] {
   return [
+    {
+      href: "/admin/validation",
+      label: t("clinicalValidation"),
+      icon: "biotech",
+      match: (p) => p.startsWith("/admin/validation"),
+    },
     {
       href: "/admin/preview",
       label: t("professionalPreview"),

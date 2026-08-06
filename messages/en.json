@@ -57,7 +57,8 @@
     "adaptiveCurriculum": "Adaptive Curriculum",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys",
-    "professionalPreview": "Professional Preview"
+    "professionalPreview": "Professional Preview",
+    "clinicalValidation": "Clinical Validation"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -847,6 +848,79 @@
         "supervision_use_case": "Supervision use case",
         "other": "Other"
       }
+    }
+  },
+  "cvp": {
+    "reviewer": {
+      "eyebrow": "Clinical Validation",
+      "title": "Reviewer dashboard",
+      "subtitle": "Your study enrollments, randomized assignments, and longitudinal progress. Simulation behaviour is unchanged — this tracks evidence.",
+      "loading": "Loading…",
+      "loadError": "Could not load validation dashboard.",
+      "enrollments": "Study enrollments",
+      "noEnrollments": "You are not enrolled in a validation study yet.",
+      "acceptInvite": "Accept an invitation",
+      "baselineDone": "baseline complete",
+      "baselinePending": "baseline pending",
+      "active": "Active",
+      "inactive": "Inactive",
+      "assignments": "Assigned sessions",
+      "noAssignments": "No assignments yet. A study coordinator will allocate patients.",
+      "patient": "Patient",
+      "startAssigned": "Go to patient library",
+      "viewComplete": "Session complete / feedback",
+      "longitudinal": "Your progress snapshots",
+      "noSnapshots": "Snapshots appear after you complete assigned sessions.",
+      "sessionsCompleted": "{n} sessions completed"
+    },
+    "accept": {
+      "title": "Accept validation invitation",
+      "subtitle": "Enroll in the Clinical Validation Program. You must accept consent and the reviewer agreement.",
+      "loading": "Loading…",
+      "token": "Invitation token",
+      "credentials": "Credentials (optional)",
+      "credentialsPh": "e.g. MD, Board-certified psychiatry",
+      "specialty": "Specialty (optional)",
+      "specialtyPh": "e.g. Mood disorders / Education",
+      "consent": "I consent to de-identified use of my ratings for research under the study protocol.",
+      "agreement": "I accept the Clinical Validation reviewer agreement (docs/cvp).",
+      "submit": "Enroll",
+      "submitting": "Enrolling…",
+      "error": "Could not accept invitation."
+    },
+    "admin": {
+      "eyebrow": "Clinical Validation Program",
+      "title": "Clinical Validation Dashboard",
+      "subtitle": "Monitor enrollments, assignments, blind challenge, inter-rater reliability, CONSORT flow, institutions, and publication exports. Formative evidence only.",
+      "loading": "Loading…",
+      "loadError": "Could not load clinical validation dashboard.",
+      "selectStudy": "Study",
+      "noStudies": "No studies — create via API",
+      "exportPackage": "Export publication package",
+      "exporting": "Exporting…",
+      "exportOk": "Export completed ({id})",
+      "exportError": "Export failed",
+      "metrics": {
+        "enrollments": "Active enrollments",
+        "completedAssignments": "Completed assignments",
+        "blindScores": "Blind scores",
+        "kappa": "Cohen's κ"
+      },
+      "reliabilityTitle": "Reliability & IRA",
+      "cronbach": "Cronbach's α",
+      "cohensKappa": "Cohen's κ",
+      "fleissKappa": "Fleiss' κ",
+      "icc": "ICC(2,1)",
+      "pearson": "Pearson r",
+      "consortTitle": "CONSORT-style flow",
+      "institutionsTitle": "Institution comparison",
+      "noInstitutions": "No sites attached yet.",
+      "site": "Site",
+      "enrolled": "Enrolled",
+      "completed": "Completed",
+      "calibration": "Calibration items scored",
+      "longitudinal": "Reviewers with ≥2 snapshots",
+      "outcomes": "Outcome instruments"
     }
   }
 }
