@@ -9,9 +9,12 @@ import {
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
 
 describe("CB-HCF-007 voice prosody", () => {
-  it("maps slow/low depression to steadier flatter settings", () => {
+  it("maps slow/low depression to steadier but still expressive settings", () => {
     const s = voiceSettingsForPaceEnergy("slow", "low");
-    expect(s.stability).toBeGreaterThan(0.5);
+    // Stay below robotic flatness (~0.6+) while steadier than mania.
+    expect(s.stability).toBeGreaterThan(0.4);
+    expect(s.stability).toBeLessThan(0.55);
+    expect(s.use_speaker_boost).toBe(true);
     expect(s.stability).toBeGreaterThan(
       voiceSettingsForPaceEnergy("pressured", "high").stability,
     );
@@ -37,7 +40,8 @@ describe("CB-HCF-007 voice prosody", () => {
     const s = resolveVoiceSettings({
       disorderSlug: "DROP TABLE;;",
     });
-    expect(s.stability).toBe(0.4);
+    expect(s.stability).toBe(0.38);
+    expect(s.use_speaker_boost).toBe(true);
   });
 
   it("normalizes pace and browser rate", () => {

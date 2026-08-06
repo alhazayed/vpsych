@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:migrations": "node scripts/verify-migration-parity.mjs"
+    "test:migrations": "node scripts/verify-migration-parity.mjs",
+    "test:voice-compare": "node scripts/compare-elevenlabs-voices.mjs",
+    "test:hands-free": "node scripts/hands-free-acceptance.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.24",

@@ -2,10 +2,20 @@
 
 export type SessionSpeechLocale = "en" | "ar";
 
-// Premade voices verified to work on the current ElevenLabs API key.
-// Many classic defaults (Rachel, Charlotte, Sam) now return paid_plan_required.
-export const DEFAULT_ELEVENLABS_VOICE_EN = "EXAVITQu4vr4xnSDxMaL"; // Bella
-export const DEFAULT_ELEVENLABS_VOICE_AR = "pNInz6obpgDQGcFmaJgB"; // Adam (multilingual)
+// Premade voices verified to work on typical ElevenLabs API plans.
+// Chosen for standardized-patient naturalness (see voice-comparison.ts).
+// Many classic library defaults still return paid_plan_required on free keys.
+export const DEFAULT_ELEVENLABS_VOICE_EN = "EXAVITQu4vr4xnSDxMaL"; // Sarah — warm adult female SP
+export const DEFAULT_ELEVENLABS_VOICE_AR = "XB0fDUnXU5powFXDhCwa"; // Charlotte — multilingual AR+EN
+
+/** Best quality multilingual model for psychiatric SP (emotion + EN/AR). */
+export const DEFAULT_ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
+
+/**
+ * High-quality MP3 for browser playback. Avoid ultra-low-latency / telephony
+ * formats that sound thin or robotic in a consultation room.
+ */
+export const DEFAULT_ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_128";
 
 export function normalizeSpeechLocale(
   input?: string | null,
