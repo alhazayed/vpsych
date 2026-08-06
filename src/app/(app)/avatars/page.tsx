@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/auth";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
+import { ReviewerOnboarding } from "@/components/ppp/ReviewerOnboarding";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -27,6 +28,11 @@ export default async function AvatarsPage() {
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
+      <ReviewerOnboarding
+        displayName={profile.display_name}
+        dismissedAt={profile.onboarding_dismissed_at ?? null}
+      />
+
       <section className="mb-8 fade-in-up">
         <p className="mb-1 text-sm font-medium uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
           {t("welcomeBack")}

@@ -47,6 +47,12 @@ function therapistNav(t: (key: string) => string): NavItem[] {
 function adminNav(t: (key: string) => string): NavItem[] {
   return [
     {
+      href: "/admin/preview",
+      label: t("professionalPreview"),
+      icon: "insights",
+      match: (p) => p.startsWith("/admin/preview"),
+    },
+    {
       href: "/admin/reports",
       label: t("reportsLibrary"),
       icon: "folder_shared",

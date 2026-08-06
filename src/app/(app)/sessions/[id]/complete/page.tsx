@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import type { TherapySession } from "@/lib/types";
+import { PppFeedbackPanel } from "@/components/ppp/PppFeedbackPanel";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -60,12 +61,20 @@ export default async function SessionCompletePage({ params }: Props) {
           </li>
           <li className="flex gap-3">
             <span className="material-symbols-outlined text-[20px] text-[var(--secondary)]">
+              rate_review
+            </span>
+            <span>{t("nextFeedback")}</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="material-symbols-outlined text-[20px] text-[var(--secondary)]">
               trending_up
             </span>
             <span>{t("next2")}</span>
           </li>
         </ul>
       </section>
+
+      <PppFeedbackPanel sessionId={id} />
 
       <div className="flex flex-col gap-3 fade-in-up">
         <Link href="/avatars" className="btn-primary h-12 w-full">
