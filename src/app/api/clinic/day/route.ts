@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import {
@@ -18,7 +18,7 @@ import type { CaseDifficulty } from "@/lib/case-engine/types";
 import type { ClinicAppointmentCard } from "@/lib/therapy-room";
 
 export async function GET() {
-  if (!isTherapyRoomEnabled()) {
+  if (!isTherapyRoomModeEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

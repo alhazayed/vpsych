@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import {
   buildSupervisorBriefing,
   resolvePatientNonverbal,
@@ -12,7 +12,7 @@ import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
 type Props = { params: Promise<{ sessionId: string }> };
 
 export default async function ClinicDebriefPage({ params }: Props) {
-  if (!isTherapyRoomEnabled()) redirect("/avatars");
+  if (!isTherapyRoomModeEnabled()) redirect("/avatars");
   const { sessionId } = await params;
   const { supabase, user } = await requireProfile();
 

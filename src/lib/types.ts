@@ -294,17 +294,10 @@ export type TherapySession = {
   clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
   difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
-  /** classic = VoiceSession; therapy_room = immersive Therapy Room Mode (TRM). */
+  /** classic = VoiceSession; therapy_room = immersive Therapy Room. */
   interaction_mode?: SessionInteractionMode | null;
-  /** Therapist-only notes (TRM) — never sent to the patient agent. */
-  private_notes?: string | null;
   /** Therapy Room Immersion Index (TRII) snapshot. */
   immersion_metrics?: Record<string, unknown> | null;
-  /**
-   * Optional VMHC UI surface when FEATURE_THERAPY_ROOM is on.
-   * Prefer interaction_mode for TRM; ui_mode routes clinic-day resumes.
-   */
-  ui_mode?: "chat" | "therapy_room" | null;
   avatars?: Avatar;
   profiles?: Profile;
 };

@@ -1,13 +1,18 @@
 /**
- * Therapy room barrel — Therapy Room Mode (TRM) + Virtual Mental Health Center (VMHC).
+ * Canonical Therapy Room barrel (Mission 34 + 35 consolidated).
  *
- * TRM: optional immersive consultation room on /sessions/[id]
- *      (NEXT_PUBLIC_THERAPY_ROOM_MODE).
- * VMHC: clinic-day workflow on /clinic (FEATURE_THERAPY_ROOM).
- * Classic VoiceSession remains the default when flags are off.
+ * Single flag: NEXT_PUBLIC_THERAPY_ROOM_MODE
+ * Single mode: sessions.interaction_mode
+ * Single room UI: TherapyRoomSession on /sessions/[id]
+ * Clinic day workflow: /clinic (schedule → chart → invite → same room)
+ * Classic VoiceSession remains the default when the flag is off.
  */
 
-export { isTherapyRoomEnabled } from "@/lib/features";
+export {
+  isTherapyRoomModeEnabled,
+  parseInteractionMode,
+  shouldUseTherapyRoom,
+} from "./feature-flag";
 
 export type {
   InteractionMode,
@@ -37,18 +42,7 @@ export type {
   DepartureBeat,
   SupervisorBriefing,
   DailyClinicSummary,
-  ClinicImmersionChannel,
-  ClinicImmersionEvent,
-  ClinicImmersionAdapter,
-  ImmersionChannel,
-  ImmersionAdapter,
 } from "./types";
-
-export {
-  isTherapyRoomModeEnabled,
-  parseInteractionMode,
-  shouldUseTherapyRoom,
-} from "./feature-flag";
 
 export {
   THERAPY_ROOM_THEMES,
@@ -92,7 +86,6 @@ export { startRoomAmbience, type AmbienceController } from "./ambience";
 export * from "./chart-visibility";
 export * from "./patient-behavior";
 export * from "./arrival";
-export * from "./immersion";
 export * from "./clinic-schedule";
 export * from "./chart";
 export * from "./supervisor";

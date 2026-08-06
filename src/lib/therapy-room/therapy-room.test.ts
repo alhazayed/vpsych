@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
 import {
   ARRIVAL_BEATS,
   DEPARTURE_BEATS,
@@ -8,12 +8,6 @@ import {
 } from "./arrival";
 import { chartSectionsForDifficulty, isChartSectionVisible } from "./chart-visibility";
 import { buildAppointmentCard, patientFirstName, patientInitials, urgencyFromRisk } from "./clinic-schedule";
-import {
-  clearImmersionAdapters,
-  listImmersionAdapters,
-  publishImmersionEvent,
-  registerImmersionAdapter,
-} from "./immersion";
 import { assertNotesExcludedFromPatientContext, templateForFormat } from "./notes";
 import { resolvePatientNonverbal } from "./patient-behavior";
 import { buildSupervisorBriefing } from "./supervisor";
@@ -113,24 +107,6 @@ describe("therapy-room patient nonverbal", () => {
   });
 });
 
-describe("therapy-room immersion bus", () => {
-  beforeEach(() => clearImmersionAdapters());
-
-  it("delivers events to matching adapters", () => {
-    const seen: string[] = [];
-    registerImmersionAdapter({
-      id: "test-vr",
-      channels: ["patient.pose", "session.phase"],
-      onEvent: (e) => {
-        seen.push(e.channel);
-      },
-    });
-    publishImmersionEvent("patient.pose", { posture: "forward" });
-    publishImmersionEvent("haptic", { pulse: 1 });
-    expect(seen).toEqual(["patient.pose"]);
-    expect(listImmersionAdapters()).toHaveLength(1);
-  });
-});
 
 describe("therapy-room notes isolation", () => {
   it("templates SOAP and asserts notes never leak into patient prompt", () => {

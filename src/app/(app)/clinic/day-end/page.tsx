@@ -2,13 +2,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
 import { closeClinicDay } from "@/lib/therapy-room/close-day";
 
 type Props = { searchParams: Promise<{ day?: string }> };
 
 export default async function ClinicDayEndPage({ searchParams }: Props) {
-  if (!isTherapyRoomEnabled()) redirect("/avatars");
+  if (!isTherapyRoomModeEnabled()) redirect("/avatars");
   const { day: dayId } = await searchParams;
   const { supabase, user } = await requireProfile();
   const t = await getTranslations("clinic.endOfDay");
