@@ -61,10 +61,28 @@ describe("architecture invariants", () => {
       join(root, "app/api/sessions/[id]/message/route.ts"),
       "utf8",
     );
-    expect(start).toMatch(/messageRpcClient/);
-    expect(message).toMatch(/messageRpcClient/);
+    // CQG-011: signed authenticated fallback via messageRpcArgs + REPORT_WRITE_KEY
+    expect(start).toMatch(/messageRpcArgs/);
+    expect(message).toMatch(/messageRpcArgs/);
+    expect(start).toMatch(/createServiceClient/);
+    expect(message).toMatch(/createServiceClient/);
     expect(start).not.toMatch(/error: "Server misconfigured"/);
     expect(message).not.toMatch(/error: "Server misconfigured"/);
+  });
+
+  it("HMAC-signs assistant/system RPC writes for non-service callers (CQG-011)", () => {
+    const sign = readFileSync(join(root, "lib/message-sign.ts"), "utf8");
+    expect(sign).toMatch(/signSessionMessage/);
+    expect(sign).toMatch(/REPORT_WRITE_KEY/);
+  });
+
+  it("redacts OSCE ground truth from session page client props (CQG-012)", () => {
+    const page = readFileSync(
+      join(root, "app/(app)/sessions/[id]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toMatch(/redactForExam/);
+    expect(page).toMatch(/shouldHideGroundTruth/);
   });
 
   it("provides App Router error boundaries", () => {

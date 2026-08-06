@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient, messageRpcClient } from "@/lib/supabase/admin";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { messageRpcArgs } from "@/lib/message-sign";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -161,15 +162,17 @@ export async function POST(request: Request, { params }: Params) {
     errorKind: replyMeta.errorKind ?? null,
   });
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
-  const writer = messageRpcClient(supabase);
+  // Prefer service role; fall back to authenticated client with HMAC (CQG-011).
+  const service = createServiceClient();
+  const writer = service ?? supabase;
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
-    {
-      p_session_id: sessionId,
-      p_content: replyMeta.text,
-    },
+    messageRpcArgs({
+      sessionId,
+      content: replyMeta.text,
+      role: "assistant",
+      serviceRole: Boolean(service),
+    }),
   );
 
   if (assistantError || !assistantMsg) {
