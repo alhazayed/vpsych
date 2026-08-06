@@ -1,0 +1,61 @@
+{
+  "evidenceId": "RC3-W3-H5-CERT-EV-20260806T0642Z",
+  "agent": "independent-w3-h5-closeout",
+  "productionUrl": "https://vpsych.vercel.app",
+  "deployId": "dpl_DpdpoyEksVeSZvu1wx1mYngeX2jh",
+  "sha": "d4c4fae4b8a0cae135a9ed848ea0a26eca466f45",
+  "originalDeploymentId": "dpl_7b4x92WcoQd1jWmqjNWTBuBNsCYw",
+  "action": "redeploy",
+  "target": "production",
+  "readyState": "READY",
+  "ttsProbes": [
+    {
+      "role": "admin",
+      "locale": "en-US",
+      "http": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 33899,
+      "magic": "ID3"
+    },
+    {
+      "role": "admin",
+      "locale": "ar-JO",
+      "http": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 45184,
+      "magic": "ID3"
+    },
+    {
+      "role": "therapist",
+      "locale": "en-US",
+      "http": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 33899,
+      "magic": "ID3"
+    },
+    {
+      "role": "therapist",
+      "locale": "ar-JO",
+      "http": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 45184,
+      "magic": "ID3"
+    }
+  ],
+  "sessionSpotCheck": {
+    "avatarSlug": "jordan-hale",
+    "avatarId": "46eefc09-e55b-44d0-9e67-43ea68814613",
+    "sessionId": "8bc79f66-2214-480f-8ef2-da2684786c63",
+    "startHttp": 200,
+    "messageHttp": 200,
+    "replyLen": 154,
+    "ttsHttp": 200,
+    "ttsContentType": "audio/mpeg",
+    "ttsBytes": 176841,
+    "ttsMagic": "ID3",
+    "endHttp": 200
+  },
+  "w3H5": "CLOSED",
+  "decision": "WAVE_3_PASSED",
+  "recommendUnlockWave4": true
+}

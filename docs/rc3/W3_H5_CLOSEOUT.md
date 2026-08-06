@@ -1,8 +1,10 @@
 # W3-H5 Final Closeout — Production TTS
 
 **Date (UTC):** 2026-08-06  
+**Evidence ID:** `RC3-W3-H5-CERT-EV-20260806T0642Z`  
 **Scope:** W3-H5 only. No application code changes.  
-**Production:** `https://vpsych.vercel.app`
+**Production:** `https://vpsych.vercel.app`  
+**Independent agent:** Wave 3 H5-only certification (post RM key replace)
 
 ---
 
@@ -10,9 +12,14 @@
 
 | Item | Value |
 |---|---|
-| Deploy | `dpl_DpdpoyEksVeSZvu1wx1mYngeX2jh` **READY** (Vercel `action=redeploy`) |
-| SHA | `d4c4fae` (Wave 3 remediation ancestor `1e44dce` / #131) |
-| Alias | `vpsych.vercel.app` |
+| Deploy | `dpl_DpdpoyEksVeSZvu1wx1mYngeX2jh` **READY** |
+| Source | Vercel `action=redeploy` of `dpl_7b4x92WcoQd1jWmqjNWTBuBNsCYw` |
+| SHA | `d4c4fae4b8a0cae135a9ed848ea0a26eca466f45` (`d4c4fae`) |
+| Remediation ancestor | `1e44dce` (#131) |
+| Alias | `vpsych.vercel.app` (confirmed on deployment) |
+| Target | `production` |
+
+Confirmed via Vercel MCP `list_deployments` + `get_deployment`.
 
 ---
 
@@ -21,38 +28,39 @@
 | Check | Result |
 |---|---|
 | `ELEVENLABS_API_KEY` exists | Yes (Vercel env id `FzFPxs4DW1KTxuU3`, Production+Preview, type `sensitive`) |
-| Runtime validity after RM replace | **PASS** — authenticated TTS no longer returns `TTS_CONFIG` |
-| Prior failure | Auth TTS → **503 `TTS_CONFIG`** (key missing/`sk_` invalid) |
+| Runtime validity after RM replace | **PASS** — authenticated TTS returns **200** `audio/mpeg` (no `TTS_CONFIG`) |
+| Prior failure (RDL-023) | Auth TTS → **503 `TTS_CONFIG`** on `dpl_7b4x92…` |
 
 ---
 
-## 2. Authenticated TTS smoke (required)
+## 2. Authenticated TTS smoke (required) — independent probes
 
-All probes used Supabase password-grant session cookies (`sb-*-auth-token`).
+All probes used Supabase password-grant session cookies (`sb-rrzudbkxigeavfdnidnm-auth-token`, base64 session JSON).
 
-| Case | Status | Content-Type | Bytes |
-|---|---|---|---|
-| therapist EN `en-US` | **200** | `audio/mpeg` | 33899 |
-| therapist AR `ar-JO` | **200** | `audio/mpeg` | 33481 |
-| admin EN `en-US` | **200** | `audio/mpeg` | 33899 |
-| admin AR `ar-JO` | **200** | `audio/mpeg` | 33481 |
+| Case | Status | Content-Type | Bytes | Container |
+|---|---|---|---|---|
+| admin EN `en-US` | **200** | `audio/mpeg` | 33899 | ID3 |
+| admin AR `ar-JO` | **200** | `audio/mpeg` | 45184 | ID3 |
+| therapist EN `en-US` | **200** | `audio/mpeg` | 33899 | ID3 |
+| therapist AR `ar-JO` | **200** | `audio/mpeg` | 45184 | ID3 |
 
-✓ Authenticated · ✓ HTTP 200 · ✓ `audio/mpeg` · ✓ speech generated
+✓ Authenticated · ✓ HTTP 200 · ✓ `audio/mpeg` · ✓ MPEG/ID3 speech payload
 
 ---
 
-## 3. End-to-end voice validation
+## 3. Session spot-check (optional, completed)
 
-Therapist session lifecycle on production: create → message → TTS patient reply → end.
+Therapist lifecycle on production: create → message → TTS patient reply → end.
 
-| Scenario | Avatar | Locale | Disorder | Session | Message | TTS | End |
-|---|---|---|---|---|---|---|---|
-| jordan-gad-en | jordan-hale | en-US | GAD (default) | 200 | 200 + reply | 200 / 452276 B | 200 |
-| maya-mdd-en | maya-chen | en-US | MDD (default) | 200 | 200 + reply | 200 / 247894 B | 200 |
-| jordan-ptsd-en | jordan-hale | en-US | ptsd override | 200 | 200 + reply | 200 / 408391 B | 200 |
-| maya-ar | maya-chen | ar-JO | MDD (default) | 200 | 200 + Arabic reply | 200 / 103280 B | 200 |
+| Step | Result |
+|---|---|
+| Avatar | `jordan-hale` (`46eefc09-…`) |
+| Session | `8bc79f66-2214-480f-8ef2-da2684786c63` — **200** |
+| Message | **200** — patient reply 154 chars (`aiSource=gpt`) |
+| TTS (avatar-bound) | **200** `audio/mpeg` · 176841 B · ID3 |
+| End | **200** — `reportId` + `ledgerId` present |
 
-✓ Avatar speech · ✓ English · ✓ Arabic · ✓ Multiple disorders · ✓ Therapist session · ✓ Session completion
+Machine evidence: `docs/rc3/evidence/w3_h5_closeout_2026-08-06T0642Z.json`.
 
 ---
 
@@ -62,7 +70,9 @@ Therapist session lifecycle on production: create → message → TTS patient re
 |---|---|
 | Config verified | Done |
 | Secret corrected + redeploy | Done (`dpl_Dpdpoy…`) |
-| TTS smoke 200 audio/mpeg | **PASS** |
-| Voice E2E | **PASS** |
+| TTS smoke 200 audio/mpeg (EN+AR, therapist+admin) | **PASS** |
+| Session message + TTS spot-check | **PASS** |
 | W3-H5 | **CLOSED** |
-| Wave 3 | See `docs/rc3/W3_H5_CERT.md` |
+| Wave 3 | **PASSED** — see `docs/rc3/W3_H5_CERT.md` / RDL-024 |
+
+**Recommend Executive Board unlock Wave 4.**
