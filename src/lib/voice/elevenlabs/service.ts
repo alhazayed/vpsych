@@ -71,7 +71,14 @@ function modelId() {
 }
 
 function apiKey() {
-  return process.env.ELEVENLABS_API_KEY?.trim() || "";
+  // Strip accidental wrapping quotes from dashboard paste errors.
+  const raw = process.env.ELEVENLABS_API_KEY?.trim() || "";
+  return raw.replace(/^['"]+|['"]+$/g, "").trim();
+}
+
+/** ElevenLabs current keys are `sk_…`. Reject obvious misconfigurations early. */
+export function isValidElevenLabsApiKey(key: string = apiKey()): boolean {
+  return /^sk_[A-Za-z0-9]+/.test(key);
 }
 
 /** In-memory LRU-ish TTS cache for repeated phrases (preview + short turns). */
@@ -182,6 +189,17 @@ export const elevenLabsService = {
       throw new ElevenLabsError(
         "ElevenLabs not configured. Set ELEVENLABS_API_KEY.",
         { code: "TTS_UNAVAILABLE", status: 501 },
+      );
+    }
+
+    const key = apiKey();
+    if (!isValidElevenLabsApiKey(key)) {
+      console.warn(
+        "[elevenlabs] ELEVENLABS_API_KEY is set but does not look like a valid sk_ key",
+      );
+      throw new ElevenLabsError(
+        "ElevenLabs API key misconfigured (expected sk_… prefix).",
+        { code: "TTS_CONFIG", status: 503 },
       );
     }
 

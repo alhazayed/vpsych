@@ -114,10 +114,14 @@ export function enrichDisorderFromBuiltin(row: DisorderRow): DisorderRow {
         bp.symptom_profile && bp.symptom_profile.length > 0
           ? bp.symptom_profile
           : rp.symptom_profile,
+      // Prefer builtin phenotype when richer; keep DB rules if builtin empty.
       disclosure_rules:
-        bp.disclosure_rules && bp.disclosure_rules.length > 0
+        (bp.disclosure_rules?.length ?? 0) >= (rp.disclosure_rules?.length ?? 0) &&
+        (bp.disclosure_rules?.length ?? 0) > 0
           ? bp.disclosure_rules
-          : rp.disclosure_rules,
+          : rp.disclosure_rules?.length
+            ? rp.disclosure_rules
+            : bp.disclosure_rules,
       session_goals:
         bp.session_goals && bp.session_goals.length > 0
           ? bp.session_goals

@@ -39,6 +39,16 @@ const goodJson = JSON.stringify({
   items: [
     { id: "alliance", score: 4, feedback: "Warm opening matched patient affect." },
     { id: "assessment", score: 3, feedback: "Asked about mood; limited depth." },
+    {
+      id: "dsm_reasoning",
+      score: 3,
+      feedback: "Named mood episode features without over-claiming MDD.",
+    },
+    {
+      id: "icd_reasoning",
+      score: 3,
+      feedback: "Linked presentation to ICD-11 mood episode language.",
+    },
     { id: "interventions", score: 2, feedback: "Mostly supportive listening." },
     { id: "safety", score: 2, feedback: "No safety screen yet." },
     { id: "structure", score: 3, feedback: "Clear opening question." },
@@ -109,6 +119,17 @@ describe("assessSession parse failover", () => {
       language: "en",
     });
     expect(result.aiSource).toBe("gpt");
-    expect(result.scores.items).toHaveLength(5);
+    // Default Wave-3 educational rubric (11 dimensions, weights sum 100)
+    expect(result.scores.items).toHaveLength(11);
+    expect(result.scores.items.map((i) => i.id)).toEqual(
+      expect.arrayContaining([
+        "dsm_reasoning",
+        "icd_reasoning",
+        "clinical_formulation",
+        "differential_diagnosis",
+        "risk_formulation",
+        "educational_competency",
+      ]),
+    );
   });
 });

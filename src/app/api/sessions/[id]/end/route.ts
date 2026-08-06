@@ -4,10 +4,55 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
+import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+
+async function sealLedgerBestEffort(opts: {
+  supabase: Parameters<typeof sealAssessmentQualityLedger>[0];
+  sessionId: string;
+  reportId: string | null | undefined;
+  userId: string;
+  assessment: Awaited<ReturnType<typeof assessSession>>;
+  session: TherapySession;
+  messages: Pick<SessionMessage, "role" | "content">[];
+  durationSec: number;
+  locale: string;
+}): Promise<string | null> {
+  try {
+    const result = await sealAssessmentQualityLedger(opts.supabase, {
+      sessionId: opts.sessionId,
+      reportId: opts.reportId ?? null,
+      learnerId: opts.userId,
+      instructorId: opts.userId,
+      assessment: opts.assessment,
+      clinicalSnapshot: opts.session.clinical_snapshot ?? null,
+      durationSec: opts.durationSec,
+      messages: opts.messages,
+      language: opts.assessment.language ?? opts.locale,
+      locale: opts.locale,
+      templateId: opts.session.clinical_snapshot?.template?.id ?? null,
+      templateVersion: opts.session.clinical_snapshot?.template?.version ?? null,
+      personaId: opts.session.avatar_id,
+      presetId: opts.session.clinical_snapshot?.instructor_preset?.id ?? null,
+      presetVersion:
+        opts.session.clinical_snapshot?.instructor_preset?.version ?? null,
+      createdBy: opts.userId,
+    });
+    if (result?.ok) return result.ledger.id;
+    if (result) {
+      console.warn("[sessions/end] quality ledger:", result.error);
+    }
+  } catch (e) {
+    console.warn(
+      "[sessions/end] quality ledger error:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return null;
+}
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -183,10 +228,23 @@ export async function POST(_request: Request, { params }: Params) {
       return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
     }
 
+    const ledgerId = await sealLedgerBestEffort({
+      supabase: admin,
+      sessionId,
+      reportId: inserted?.id,
+      userId: user.id,
+      assessment,
+      session: typed,
+      messages: (messages ?? []) as Pick<SessionMessage, "role" | "content">[],
+      durationSec,
+      locale: resolved.locale,
+    });
+
     return NextResponse.json(
       {
         ok: true,
         reportId: inserted?.id,
+        ledgerId,
         // Additive — same AI pipeline provenance as conversation turns.
         aiSource: assessment.aiSource,
         aiModel: assessment.model ?? null,
@@ -206,6 +264,7 @@ export async function POST(_request: Request, { params }: Params) {
           ...(assessment.errorKind
             ? { "X-AI-Error-Kind": assessment.errorKind }
             : {}),
+          ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
         },
       },
     );
@@ -258,10 +317,23 @@ export async function POST(_request: Request, { params }: Params) {
       .eq("id", reportId);
   }
 
+  const ledgerId = await sealLedgerBestEffort({
+    supabase: privileged ?? supabase,
+    sessionId,
+    reportId: typeof reportId === "string" ? reportId : null,
+    userId: user.id,
+    assessment,
+    session: typed,
+    messages: (messages ?? []) as Pick<SessionMessage, "role" | "content">[],
+    durationSec,
+    locale: resolved.locale,
+  });
+
   return NextResponse.json(
     {
       ok: true,
       reportId,
+      ledgerId,
       // Do not return report content to therapist — admin only
       aiSource: assessment.aiSource,
       aiModel: assessment.model ?? null,
@@ -281,6 +353,7 @@ export async function POST(_request: Request, { params }: Params) {
         ...(assessment.errorKind
           ? { "X-AI-Error-Kind": assessment.errorKind }
           : {}),
+        ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
       },
     },
   );

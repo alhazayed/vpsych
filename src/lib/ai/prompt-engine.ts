@@ -8,10 +8,19 @@ export type PromptSessionContext = {
   locale: string;
 };
 
+export type PromptFidelityHints = {
+  /** Preformatted Module 1 speech/affect cues for THIS diagnosis. */
+  speech_behavior_cue?: string;
+  /** Preformatted difficulty modifiers (insight/resistance/disclosure/…). */
+  difficulty_behavior?: string;
+};
+
 export type PromptAssemblyInput = {
   clinical_core: ClinicalCore;
   personality: AvatarPersonality;
   session: PromptSessionContext;
+  /** Optional Wave 3 HCF cues from case snapshot (never invent if absent). */
+  fidelity?: PromptFidelityHints;
 };
 
 type TemplateScope = Record<string, unknown>;
@@ -126,6 +135,26 @@ Behavioral fidelity:
 - Respond to therapist skill: warm slightly with genuine empathy; withdraw,
   deflect, or go flat if the therapist is cold, rushed, interrogating, or lecturing.
 - Never coach, advise, evaluate, or praise the therapist. You are not a teacher.
+
+HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
+{{fidelity.speech_behavior_cue}}
+
+{{fidelity.difficulty_behavior}}
+
+Conversational naturalness (mandatory):
+- Sound like a real person in a psychiatric interview — not a chatbot, textbook,
+  or case vignette. Prefer short, uneven turns over polished paragraphs.
+- Avoid AI tells: "As an AI", "I understand you're asking", mirror-back essays,
+  bullet lists, numbered self-analysis, or suddenly eloquent clinical vocabulary.
+- Do not deliver long monologues. One feeling or detail per turn is enough;
+  leave room for the therapist.
+- Vary sentence openings. Do not repeat the same filler/template every reply.
+- Match emotional intensity to THIS diagnosis, age, education, and culture —
+  neither melodramatic nor oddly detached unless Module 1 requires it.
+- English: everyday spoken English for this patient's background (hesitations,
+  incomplete thoughts, soft language when natural).
+- Arabic: naturally spoken dialect/register for this personality — not stiff
+  MSA lecture prose unless that is how THIS person actually talks.
 
 SYNDROME AUTHORITY (Module 1 overrides Module 2 current-state conflicts):
 - Module 1 is the sole authority for THIS session's mood polarity, sleep need,
@@ -252,12 +281,13 @@ in {{session.locale}}):
 
 const PER_TURN_TEMPLATE = `[IF session.locale STARTS WITH "ar"]
 (تذكير: إنت {{personality.identity.display_name}}. جاوب بالعربي الأردني، مباشرة
-وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية.)
+وبدون ترجمة، بجمل قصيرة، وضلّك بالشخصية. طابق أسلوب الكلام مع التشخيص الحالي.)
 [/IF]
 
 [IF session.locale STARTS WITH "en"]
 (Reminder: you are {{personality.identity.display_name}}. Reply in English,
-composed directly, in short spoken sentences, and stay in character.)
+composed directly, in short spoken sentences, and stay in character.
+Match Module 1 speech pace/affect for THIS diagnosis — not a polished chatbot.)
 [/IF]`;
 
 /**
@@ -268,6 +298,12 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
     clinical_core: input.clinical_core,
     personality: input.personality,
     session: input.session,
+    fidelity: {
+      speech_behavior_cue:
+        input.fidelity?.speech_behavior_cue?.trim() ||
+        "Match pace and affect to THIS diagnosis; no caricature; no chatbot polish.",
+      difficulty_behavior: input.fidelity?.difficulty_behavior?.trim() || "",
+    },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);
 }

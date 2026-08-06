@@ -197,14 +197,32 @@ export const COMPETENCY_IDS: CompetencyId[] = COMPETENCY_DOMAINS.map(
 /** Map legacy session rubric item ids → ACE competencies. */
 export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
   alliance: ["therapeutic_alliance", "empathy"],
-  assessment: ["diagnostic_interview", "mental_status_examination", "dsm5_reasoning"],
+  // Interview/MSE only — coding systems scored via dedicated rubric items.
+  assessment: [
+    "diagnostic_interview",
+    "mental_status_examination",
+    "differential_diagnosis",
+  ],
   interventions: ["cbt_skills", "treatment_planning", "psychoeducation"],
   safety: ["risk_assessment", "suicide_assessment"],
   structure: ["time_management", "documentation", "professional_communication"],
-  // Instructor report dimensions
-  diagnostic_accuracy: ["dsm5_reasoning", "differential_diagnosis"],
-  dsm_reasoning: ["dsm5_reasoning"],
-  icd_reasoning: ["icd11_reasoning"],
+  // Dual-coding + formulation educational competencies (W3-H3)
+  diagnostic_accuracy: ["dsm5_reasoning", "icd11_reasoning", "differential_diagnosis"],
+  dsm_reasoning: ["dsm5_reasoning", "differential_diagnosis"],
+  icd_reasoning: ["icd11_reasoning", "differential_diagnosis"],
+  clinical_formulation: [
+    "psychodynamic_interviewing",
+    "treatment_planning",
+    "diagnostic_interview",
+  ],
+  differential_diagnosis: ["differential_diagnosis", "dsm5_reasoning", "icd11_reasoning"],
+  risk_formulation: ["risk_assessment", "suicide_assessment", "violence_assessment"],
+  educational_competency: [
+    "documentation",
+    "professional_communication",
+    "psychoeducation",
+    "time_management",
+  ],
   communication: ["professional_communication"],
   empathy: ["empathy"],
   therapeutic_alliance: ["therapeutic_alliance"],

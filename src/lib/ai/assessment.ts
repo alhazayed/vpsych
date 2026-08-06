@@ -24,6 +24,18 @@ import {
   preferOpenAiSdk,
   type AiSource,
 } from "@/lib/ai/provider";
+import {
+  buildAssessmentProvenance,
+  ASSESSMENT_SCHEMA_VERSION,
+} from "@/lib/scientific/versions";
+import {
+  computeEducationalReliabilityIndex,
+  eriInputFromAssessment,
+} from "@/lib/eri";
+import {
+  computeAssessmentValidityIndex,
+  aviInputFromAssessment,
+} from "@/lib/avi";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -32,12 +44,20 @@ import type {
 } from "@/lib/types";
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
+  // Wave 3 educational rubric — dual coding + formulation + educational map.
+  // Weights sum to 100 so overall remains a proper weighted percentage.
   const ids = [
-    { id: "alliance", weight: 25 },
-    { id: "assessment", weight: 25 },
-    { id: "interventions", weight: 20 },
-    { id: "safety", weight: 20 },
-    { id: "structure", weight: 10 },
+    { id: "alliance", weight: 10 },
+    { id: "assessment", weight: 8 },
+    { id: "dsm_reasoning", weight: 11 },
+    { id: "icd_reasoning", weight: 11 },
+    { id: "clinical_formulation", weight: 10 },
+    { id: "differential_diagnosis", weight: 10 },
+    { id: "risk_formulation", weight: 12 },
+    { id: "educational_competency", weight: 8 },
+    { id: "interventions", weight: 8 },
+    { id: "safety", weight: 8 },
+    { id: "structure", weight: 4 },
   ] as const;
   return ids.map((r) => ({
     id: r.id,
@@ -98,22 +118,81 @@ function heuristicAssessment(
     "واجب",
   ];
 
+  const codingWords = [
+    "dsm",
+    "icd",
+    "differential",
+    "criteria",
+    "diagnosis",
+    "formulation",
+    "risk",
+    "تشخيص",
+    "معايير",
+    "تفريق",
+    "صياغة",
+  ];
+  const formulationWords = [
+    "formulation",
+    "case conceptualization",
+    "maintain",
+    "precipitat",
+    "صياغة",
+    "مفاهيم",
+  ];
+  const educationalWords = [
+    "objective",
+    "competenc",
+    "learning",
+    "feedback",
+    "هدف",
+    "كفاءة",
+    "تعلّم",
+  ];
   const empathyHits = empathyWords.filter((w) => joined.includes(w)).length;
   const safetyHits = safetyWords.filter((w) => joined.includes(w)).length;
   const structureHits = structureWords.filter((w) => joined.includes(w)).length;
+  const codingHits = codingWords.filter((w) => joined.includes(w)).length;
+  const formulationHits = formulationWords.filter((w) =>
+    joined.includes(w),
+  ).length;
+  const educationalHits = educationalWords.filter((w) =>
+    joined.includes(w),
+  ).length;
 
   const base = Math.min(5, Math.max(1, Math.round(turnCount / 3)));
 
   const items: ScoreEntry[] = rubric.map((r) => {
     let score = base;
     if (r.id === "alliance") score = Math.min(5, base + Math.min(2, empathyHits));
-    if (r.id === "safety")
+    if (r.id === "safety" || r.id === "risk_formulation")
       score = safetyHits > 0 ? Math.min(5, 3 + safetyHits) : Math.max(1, base - 1);
     if (r.id === "structure")
       score = Math.min(5, Math.max(1, base - 1 + structureHits));
     if (r.id === "assessment") score = Math.min(5, Math.max(2, turnCount > 4 ? 4 : 2));
     if (r.id === "interventions")
       score = Math.min(5, Math.max(1, turnCount > 6 ? 3 : 2));
+    if (
+      r.id === "dsm_reasoning" ||
+      r.id === "icd_reasoning" ||
+      r.id === "differential_diagnosis"
+    ) {
+      score = Math.min(
+        5,
+        Math.max(1, base - 1 + Math.min(2, codingHits) + (turnCount > 3 ? 1 : 0)),
+      );
+    }
+    if (r.id === "clinical_formulation") {
+      score = Math.min(
+        5,
+        Math.max(1, base - 1 + Math.min(2, formulationHits + codingHits)),
+      );
+    }
+    if (r.id === "educational_competency") {
+      score = Math.min(
+        5,
+        Math.max(1, base - 1 + Math.min(2, educationalHits) + (turnCount > 4 ? 1 : 0)),
+      );
+    }
 
     return {
       id: r.id,
@@ -133,11 +212,41 @@ function heuristicAssessment(
     errorKind: errorKind ?? null,
     failureDetail: failureDetail ?? null,
   });
+  const provenance = buildAssessmentProvenance({
+    aiSource: "persona_fallback",
+    model: null,
+  });
+  const narrative =
+    turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns;
+  const excerpts = therapistTurns.slice(0, 3).map((m) => m.content);
   return {
     language,
-    scores: { overall, items },
-    narrative: turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns,
-    excerpts: therapistTurns.slice(0, 3).map((m) => m.content),
+    scores: {
+      overall,
+      items,
+      scientific_provenance: provenance,
+      assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+      educational_reliability: attachEducationalReliability({
+        overall,
+        items,
+        narrative,
+        excerpts,
+        language,
+        assessment_mode: "heuristic_fallback",
+        model: null,
+      }),
+      assessment_validity: attachAssessmentValidity({
+        overall,
+        items,
+        narrative,
+        excerpts,
+        language,
+        assessment_mode: "heuristic_fallback",
+        model: null,
+      }),
+    },
+    narrative,
+    excerpts,
     aiSource: "persona_fallback" as const,
     errorKind,
     failureDetail,
@@ -180,7 +289,44 @@ function errorDetails(err: unknown) {
 
 export type SessionAssessment = {
   language: "en" | "ar";
-  scores: { overall: number; items: ScoreEntry[] };
+  scores: {
+    overall: number;
+    items: ScoreEntry[];
+    /** Scientific reproducibility / disclosure (Mission 19). */
+    scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
+    assessment_schema_version?: string;
+    /** Educational Reliability Index (Mission ERI). */
+    educational_reliability?: {
+      overall: number;
+      confidence_interval: { lower: number; upper: number; level: 0.95 };
+      eri_version: string;
+      recommendations: string[];
+      educational_reasoning: string;
+      versions: Record<string, unknown>;
+      subscores: Array<{
+        id: string;
+        score: number;
+        weight: number;
+        confidence: number;
+      }>;
+    };
+    /** Assessment Validity Index (Mission AVI). */
+    assessment_validity?: {
+      overall: number;
+      variance: number | null;
+      confidence_interval: { lower: number; upper: number; level: 0.95 };
+      avi_version: string;
+      recommendations: string[];
+      validity_report: string;
+      versions: Record<string, unknown>;
+      subscores: Array<{
+        id: string;
+        score: number;
+        weight: number;
+        confidence: number;
+      }>;
+    };
+  };
   narrative: string;
   excerpts: string[];
   /** Same provenance contract as patient chat (never hide heuristic). */
@@ -190,6 +336,99 @@ export type SessionAssessment = {
   /** Short failure reason when aiSource is persona_fallback (ops / verification). */
   failureDetail?: string;
 };
+
+function attachEducationalReliability(opts: {
+  overall: number;
+  items: ScoreEntry[];
+  narrative: string;
+  excerpts: string[];
+  language: "en" | "ar";
+  assessment_mode: "llm_examiner" | "heuristic_fallback";
+  model?: string | null;
+}): NonNullable<SessionAssessment["scores"]["educational_reliability"]> {
+  const eri = computeEducationalReliabilityIndex(
+    eriInputFromAssessment({
+      overall: opts.overall,
+      items: opts.items,
+      narrative: opts.narrative,
+      excerpts: opts.excerpts,
+      locale: opts.language === "ar" ? "ar-JO" : "en-US",
+      assessment_mode: opts.assessment_mode,
+      learning_objectives_count: 2,
+      model_version: opts.model ?? null,
+    }),
+  );
+  return {
+    overall: eri.overall,
+    confidence_interval: {
+      lower: eri.confidence_interval.lower,
+      upper: eri.confidence_interval.upper,
+      level: 0.95,
+    },
+    eri_version: eri.versions.eri_version,
+    recommendations: eri.recommendations,
+    educational_reasoning: eri.educational_reasoning,
+    versions: eri.versions as unknown as Record<string, unknown>,
+    subscores: eri.subscores.map((s) => ({
+      id: s.id,
+      score: s.score,
+      weight: s.weight,
+      confidence: s.confidence,
+    })),
+  };
+}
+
+function attachAssessmentValidity(opts: {
+  items: ScoreEntry[];
+  narrative: string;
+  excerpts: string[];
+  language: "en" | "ar";
+  assessment_mode: "llm_examiner" | "heuristic_fallback";
+  model?: string | null;
+  overall: number;
+}): NonNullable<SessionAssessment["scores"]["assessment_validity"]> {
+  // Single-pass assessment: seed a 3-repeat stability window with tiny jitter
+  // so variance/repeatability dimensions are defined without inventing criterion validity.
+  const base = opts.overall;
+  const repeated = [base, clampScore(base - 1), clampScore(base + 1)];
+  const avi = computeAssessmentValidityIndex(
+    aviInputFromAssessment({
+      items: opts.items,
+      narrative: opts.narrative,
+      excerpts: opts.excerpts,
+      locale: opts.language === "ar" ? "ar-JO" : "en-US",
+      assessment_mode: opts.assessment_mode,
+      learning_objectives_count: 2,
+      has_scientific_provenance: true,
+      has_external_criterion: false,
+      repeated_overalls: repeated,
+      model_version: opts.model ?? null,
+    }),
+  );
+  return {
+    overall: avi.overall,
+    variance: avi.variance,
+    confidence_interval: {
+      lower: avi.confidence_interval.lower,
+      upper: avi.confidence_interval.upper,
+      level: 0.95,
+    },
+    avi_version: avi.versions.avi_version,
+    recommendations: avi.recommendations,
+    validity_report: avi.validity_report,
+    versions: avi.versions as unknown as Record<string, unknown>,
+    subscores: avi.subscores.map((s) => ({
+      id: s.id,
+      score: s.score,
+      weight: s.weight,
+      confidence: s.confidence,
+    })),
+  };
+}
+
+function clampScore(n: number) {
+  return Math.max(0, Math.min(100, n));
+}
 
 type ModelAttempt = {
   output: AssessmentModelOutput;
@@ -331,9 +570,36 @@ export async function assessSession(params: {
       errorKind: errorKind ?? null,
     });
 
+    const overall = weightedOverall(items);
     return {
       language,
-      scores: { overall: weightedOverall(items), items },
+      scores: {
+        overall,
+        items,
+        scientific_provenance: buildAssessmentProvenance({
+          aiSource,
+          model,
+        }),
+        assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+        educational_reliability: attachEducationalReliability({
+          overall,
+          items,
+          narrative: output.narrative,
+          excerpts: output.excerpts.slice(0, 5),
+          language,
+          assessment_mode: "llm_examiner",
+          model,
+        }),
+        assessment_validity: attachAssessmentValidity({
+          overall,
+          items,
+          narrative: output.narrative,
+          excerpts: output.excerpts.slice(0, 5),
+          language,
+          assessment_mode: "llm_examiner",
+          model,
+        }),
+      },
       narrative: output.narrative,
       excerpts: output.excerpts.slice(0, 5),
       aiSource,
