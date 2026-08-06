@@ -1,10 +1,10 @@
 # Wave 3 Post-Deploy Independent Recertification
 
-**Evidence ID:** `RC3-W3-POSTDEPLOY-EV-20260806T0621Z`  
+**Evidence ID:** `RC3-W3-POSTDEPLOY-EV-20260806T0624Z`  
 **Authority:** Independent VPsych Wave 3 Certification Board (Cursor)  
 **Date (UTC):** 2026-08-06  
 **Scope:** Critical / High findings from RDL-022 only (W3-C1, W3-H1–H5)  
-**Mode:** Production-only probes + deployed-SHA source / architecture tests. **No application code changes.**  
+**Mode:** Production-only probes (unauth + audit-credential auth) + deployed-SHA source. **No application code changes.**  
 **Governance:** RDL-023  
 
 ---
@@ -22,7 +22,7 @@
 | Git migrations | **56** files; versions **exact match** to remote (empty diff) |
 | Quality Ledger schema | `quality_ledgers` (+ related `quality_*` tables) present after `20260805214500` |
 
-Sources: Vercel MCP `list_deployments` / `get_deployment`; Supabase MCP `list_migrations` / `execute_sql`; `curl` probes; `git` on `origin/main`.
+Sources: Vercel MCP `list_deployments` / `get_deployment` / `get_runtime_logs`; Supabase MCP `list_migrations` / `execute_sql`; authenticated + unauthenticated `curl`/Python probes; `git` on `origin/main`.
 
 ---
 
@@ -37,7 +37,7 @@ Sources: Vercel MCP `list_deployments` / `get_deployment`; Supabase MCP `list_mi
 | Unlock Wave 4 | **LOCKED** |
 
 Closed since RDL-022: **W3-C1, W3-H1, W3-H2, W3-H3, W3-H4**.  
-Still open: **W3-H5** (no authenticated TTS success on post-remediation production; prior `invalid_api_key` / `sk_` failure still unrefuted by success evidence).
+Still open: **W3-H5**.
 
 ---
 
@@ -45,26 +45,39 @@ Still open: **W3-H5** (no authenticated TTS success on post-remediation producti
 
 | ID | Severity | Status | Evidence |
 |---|---|---|---|
-| **W3-C1** | Critical | **CLOSED** | Unauth `GET https://vpsych.vercel.app/api/admin/quality-ledger` → **HTTP 401** `{"error":"Unauthorized"}` (not 404). Route present at SHA `d4c4fae` (`src/app/api/admin/quality-ledger/route.ts`, `requireApiAdmin`). Migration `20260805214500_quality_ledger_and_scientific_indices` applied; `quality_ledgers` table exists. Runtime log on `dpl_7b4x92…`: `GET /api/admin/quality-ledger` **401**. |
-| **W3-H1** | High | **CLOSED** | Unauth `POST /api/admin/presets/preview` with slugs → **401** (route exists; auth before resolution). Deployed source (`d4c4fae` / `1e44dce`): preview resolves `presetSlug` via builtin + DB (`.eq("slug", body.presetSlug)`). Builtin slugs present: `foundation-interview-medstudent-en`, `mi-counselor-en`, `cbt-psychologist-en`. Tests: `src/lib/instructor-presets/w3-presets.test.ts`, `architecture.test.ts` (“preset preview resolves DB rows by presetSlug (W3-H1)”). |
-| **W3-H2** | High | **CLOSED** | Deployed source: `cbt-skills-gp-en` has `forbidden_comorbidity` = `alcohol-use-disorder` (`catalog.ts`). Generation regression in `w3-presets.test.ts` asserts AUD never selected across seeds. No production contradiction observed. |
-| **W3-H3** | High | **CLOSED** | Deployed `defaultRubric` (`assessment.ts` @ `1e44dce`/`d4c4fae`) includes: `dsm_reasoning`, `icd_reasoning`, `clinical_formulation`, `differential_diagnosis`, `risk_formulation`, `educational_competency` (11 items, weights sum 100). Labels in `report-locale.ts`. |
-| **W3-H4** | High | **CLOSED** | Unauth `GET /api/admin/research/export` → **HTTP 401** (not 404). Route at SHA with `requireApiAdmin` + `admin.research.export`. Runtime log: `GET /api/admin/research/export` **401** on `dpl_7b4x92…`. |
-| **W3-H5** | High | **OPEN** | **Cannot close.** Unauth `POST /api/voice/tts` → **401** only (auth gate; no provider call). Vercel runtime logs: last `invalid_api_key` / “API key must start with 'sk_'” TTS **502**s were on **pre-remediation** `dpl_8Q7YGEH…` (~05:44–05:46Z). **No** authenticated TTS success (`audio/mpeg`) and **no** post-`1e44dce`/`d4c4fae` TTS provider outcome in logs. Code guard (`isValidElevenLabsApiKey` / `TTS_CONFIG`) is present but does **not** prove a valid Production `ELEVENLABS_API_KEY`. Prior remediation report stated ops still blocked. **Do not speculate.** |
+| **W3-C1** | Critical | **CLOSED** | Unauth `GET /api/admin/quality-ledger` → **401**. Admin-auth → **200** JSON dashboard (`ledger_version`, `n`, `mean_vqi`, …). Migration `20260805214500` applied; `quality_ledgers` present. Served by `dpl_7b4x92…`. |
+| **W3-H1** | High | **CLOSED** | Admin-auth `POST /api/admin/presets/preview` with `presetSlug`: `foundation-interview-medstudent-en`, `mi-counselor-en`, `cbt-psychologist-en` → **200** `{"ok":true,…}` (not 404). Deployed source also resolves slug via builtin + DB. |
+| **W3-H2** | High | **CLOSED** | Admin-auth GP `cbt-skills-gp-en` preview across 5 seeds → comorbidities never include `alcohol-use-disorder`. Builtin constraint `forbidden_comorbidity=alcohol-use-disorder` present at SHA `d4c4fae`. |
+| **W3-H3** | High | **CLOSED** | Deployed `defaultRubric` (`assessment.ts` @ `1e44dce`/`d4c4fae`) includes `dsm_reasoning`, `icd_reasoning`, `clinical_formulation`, `differential_diagnosis`, `risk_formulation`, `educational_competency` (11 items, weights sum 100). |
+| **W3-H4** | High | **CLOSED** | Unauth `GET /api/admin/research/export` → **401**. Admin-auth → **200** research package (`format`, `fields` incl. scenario/AI/template/rubric versions + quality metrics). |
+| **W3-H5** | High | **OPEN** | Authenticated `POST /api/voice/tts` (therapist + admin session cookies) on `dpl_7b4x92…` / `d4c4fae` → **HTTP 503** `{"error":"Text-to-speech failed","code":"TTS_CONFIG"}`. Matches deployed `isValidElevenLabsApiKey` / `TTS_CONFIG` path (key missing or not `sk_…`). Prior prod logs on `dpl_8Q7YGEH…`: `invalid_api_key` / “must start with 'sk_'”. **No `audio/mpeg` success on post-remediation production.** |
 
 ---
 
 ## Probe log (raw)
 
+### Unauthenticated
+
 ```text
 GET  /api/admin/quality-ledger     → 401 {"error":"Unauthorized"}
 GET  /api/admin/research/export    → 401 {"error":"Unauthorized"}
 POST /api/voice/tts                → 401 {"error":"Unauthorized"}
-POST /api/admin/presets/preview    → 401 {"error":"Unauthorized"}  (×3 slugs)
+POST /api/admin/presets/preview    → 401 {"error":"Unauthorized"}
 GET  /api/health                   → 200 {"ok":true,"service":"vpsych",…}
 ```
 
-Probes hit aliases served by `dpl_7b4x92WcoQd1jWmqjNWTBuBNsCYw` (confirmed via Vercel runtime logs).
+### Authenticated (audit therapist / admin via Supabase password grant → `sb-*-auth-token` cookie)
+
+```text
+GET  /api/admin/quality-ledger                          → 200 dashboard JSON
+GET  /api/admin/research/export                         → 200 research package
+POST /api/admin/presets/preview {foundation-interview-medstudent-en} → 200 ok
+POST /api/admin/presets/preview {mi-counselor-en}       → 200 ok
+POST /api/admin/presets/preview {cbt-psychologist-en}   → 200 ok
+POST /api/admin/presets/preview {cbt-skills-gp-en} ×5   → 200 ok; no AUD comorbid
+POST /api/voice/tts (therapist)                         → 503 TTS_CONFIG
+POST /api/voice/tts (admin)                             → 503 TTS_CONFIG
+```
 
 ---
 
@@ -72,7 +85,7 @@ Probes hit aliases served by `dpl_7b4x92WcoQd1jWmqjNWTBuBNsCYw` (confirmed via V
 
 1. **Release Manager:** set Production `ELEVENLABS_API_KEY` to a valid `sk_…` key; redeploy or confirm env pickup.  
 2. Authenticated smoke: `POST /api/voice/tts` → `Content-Type: audio/mpeg` (EN and preferably AR).  
-3. Fresh independent post-ops recert of **W3-H5 only** (or full Critical/High re-check).  
+3. Fresh independent post-ops recert of **W3-H5** (or full Critical/High re-check).  
 4. On H5 CLOSED → Board may record Wave 3 PASSED and unlock Wave 4.
 
 ---
