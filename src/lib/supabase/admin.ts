@@ -12,6 +12,9 @@ import {
  * - `session_reports` privileged insert/update in `POST /api/sessions/[id]/end`
  * - Optional writer for `insert_system_message` / `insert_assistant_message`
  *   (ownership checks still run in the SECURITY DEFINER RPCs)
+ * - Quality Ledger `append_quality_ledger` / access audit (service_role only)
+ * - ACE post-assessment persistence (`learner_profiles` scoring fields)
+ * - Security audit writes when the actor is not an admin (denied paths)
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

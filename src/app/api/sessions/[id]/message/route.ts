@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { messageRpcArgs } from "@/lib/message-sign";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -100,6 +101,39 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  // CQG-008: if patient reply or assistant insert fails, remove the orphaned
+  // user turn so retries do not stack unpaired therapist messages.
+  // DELETE is not granted to therapists on session_messages — use service role.
+  async function compensateOrphanedUserTurn() {
+    const cleaner = createServiceClient();
+    if (!cleaner) {
+      console.warn(
+        "[sessions/message] orphan user turn left in place (no service role)",
+        { sessionId, messageId: userMsg.id },
+      );
+      return;
+    }
+    try {
+      const { error } = await cleaner
+        .from("session_messages")
+        .delete()
+        .eq("id", userMsg.id)
+        .eq("session_id", sessionId)
+        .eq("role", "user");
+      if (error) {
+        console.warn(
+          "[sessions/message] orphan user turn cleanup failed:",
+          error.message,
+        );
+      }
+    } catch (e) {
+      console.warn(
+        "[sessions/message] orphan user turn cleanup failed:",
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
@@ -113,6 +147,7 @@ export async function POST(request: Request, { params }: Params) {
       language: typed.language,
       error: err instanceof Error ? err.message : String(err),
     });
+    await compensateOrphanedUserTurn();
     return NextResponse.json(
       { error: "Failed to generate patient reply" },
       { status: 502 },
@@ -127,15 +162,17 @@ export async function POST(request: Request, { params }: Params) {
     errorKind: replyMeta.errorKind ?? null,
   });
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
-  const writer = messageRpcClient(supabase);
+  // Prefer service role; fall back to authenticated client with HMAC (CQG-011).
+  const service = createServiceClient();
+  const writer = service ?? supabase;
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
-    {
-      p_session_id: sessionId,
-      p_content: replyMeta.text,
-    },
+    messageRpcArgs({
+      sessionId,
+      content: replyMeta.text,
+      role: "assistant",
+      serviceRole: Boolean(service),
+    }),
   );
 
   if (assistantError || !assistantMsg) {
@@ -143,6 +180,7 @@ export async function POST(request: Request, { params }: Params) {
       sessionId,
       error: assistantError?.message,
     });
+    await compensateOrphanedUserTurn();
     return NextResponse.json(
       { error: clientSafeError("Failed to save reply", assistantError) },
       { status: 500 },

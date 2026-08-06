@@ -393,7 +393,10 @@
       "next2": "تمرّن مجددًا مع شخصية أخرى لمواصلة بناء مهاراتك السريرية.",
       "practiceAgain": "تمرّن مجددًا",
       "mySessions": "جلساتي",
-      "viewReport": "عرض التقرير"
+      "viewReport": "عرض التقرير",
+      "ensuringReport": "جارٍ إعداد تقرير أداء المسؤول…",
+      "ensureReportFailed": "تعذّر تأكيد إنشاء التقرير. يمكن للمسؤول إعادة المحاولة من سجل الجلسة.",
+      "undisclosedPresentation": "عرض سريري غير مُعلن"
     }
   },
   "session": {
@@ -424,6 +427,7 @@
     "endSession": "إنهاء الجلسة",
     "patient": "المريض",
     "presentation": "العرض السريري",
+    "undisclosedPresentation": "عرض سريري غير مُعلن",
     "referralNotes": "ملاحظات الإحالة",
     "idealGoals": "أهداف الجلسة المثالية",
     "noReferralNotes": "لا توجد ملاحظات إحالة لهذه الشخصية.",

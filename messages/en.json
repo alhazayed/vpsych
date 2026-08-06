@@ -393,7 +393,10 @@
       "next2": "Practice again with another persona to keep building clinical skills.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
-      "viewReport": "View report"
+      "viewReport": "View report",
+      "ensuringReport": "Preparing the admin performance report…",
+      "ensureReportFailed": "Report generation could not be confirmed. An admin can retry from the session record.",
+      "undisclosedPresentation": "Undisclosed presentation"
     }
   },
   "session": {
@@ -424,6 +427,7 @@
     "endSession": "End session",
     "patient": "Patient",
     "presentation": "Presentation",
+    "undisclosedPresentation": "Undisclosed presentation",
     "referralNotes": "Referral Notes",
     "idealGoals": "Ideal session goals",
     "noReferralNotes": "No referral notes for this persona.",

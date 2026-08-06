@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -14,6 +14,8 @@ import {
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { shouldHideGroundTruth } from "@/lib/exam-disclosure";
+import { messageRpcArgs } from "@/lib/message-sign";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -188,11 +190,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const writer = messageRpcClient(supabase);
-  const { error: sysErr } = await writer.rpc("insert_system_message", {
-    p_session_id: session.id,
-    p_content: "Session started. Speak with the patient avatar.",
-  });
+  const service = createServiceClient();
+  const writer = service ?? supabase;
+  const systemContent = "Session started. Speak with the patient avatar.";
+  const { error: sysErr } = await writer.rpc(
+    "insert_system_message",
+    messageRpcArgs({
+      sessionId: session.id,
+      content: systemContent,
+      role: "system",
+      serviceRole: Boolean(service),
+    }),
+  );
 
   if (sysErr) {
     console.error("[sessions] system message failed", {
@@ -210,7 +219,10 @@ export async function POST(request: Request) {
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
-    diagnosis: caseResult.snapshot.primary_diagnosis.name,
+    // CQG-007: omit ground-truth diagnosis for OSCE / exam / feedback_mode none.
+    ...(shouldHideGroundTruth(caseResult.snapshot)
+      ? {}
+      : { diagnosis: caseResult.snapshot.primary_diagnosis.name }),
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,
