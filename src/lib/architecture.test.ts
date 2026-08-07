@@ -464,4 +464,50 @@ describe("architecture invariants", () => {
       readFileSync(join(eduDocs, "IMPLEMENTATION.md"), "utf8"),
     ).not.toThrow();
   });
+
+  it("Stage 8 Validation layer observes only and never owns patient mind", () => {
+    const barrel = readFileSync(join(root, "lib/validation/index.ts"), "utf8");
+    const bridge = readFileSync(
+      join(root, "lib/validation/session-bridge.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const adminRoute = readFileSync(
+      join(root, "app/api/admin/validation/route.ts"),
+      "utf8",
+    );
+    const versions = readFileSync(
+      join(root, "lib/validation/versions.ts"),
+      "utf8",
+    );
+
+    expect(barrel).toMatch(/runValidationAfterAssessment/);
+    expect(barrel).toMatch(/runValidationPipeline/);
+    expect(bridge).toMatch(/Never writes clinical_snapshot/);
+    expect(bridge).toMatch(/observational only|Observational/i);
+    expect(end).toMatch(/runValidationAfterAssessment/);
+    expect(end).toMatch(/validation soft-fail|Stage 8 Scientific Validation/);
+    expect(adminRoute).toMatch(/requireApiAdmin/);
+    expect(adminRoute).toMatch(/rateLimit/);
+    expect(versions).toMatch(/VALIDATION_OWNERSHIP_RULE/);
+    expect(versions).toMatch(/clinical_snapshot/);
+    // Must not re-export patient cognition engines as owners
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/conversation-behaviour["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/clinical-intelligence["']/);
+
+    const valDocs = join(process.cwd(), "docs");
+    expect(() =>
+      readFileSync(join(valDocs, "RESEARCH_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(valDocs, "VALIDATION_PIPELINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(valDocs, "PUBLICATION_GUIDE.md"), "utf8"),
+    ).not.toThrow();
+  });
 });

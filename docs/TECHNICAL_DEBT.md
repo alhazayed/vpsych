@@ -122,6 +122,15 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | EDU-05 | High (claims) | Validated competency instruments | Unchanged product debt — do not claim validation |
 | EDU-06 | Medium | Assessor missed-disclosure telemetry | R-I8 / assessment side |
 
+## Scientific validation debt (Stage 8)
+
+| ID | Severity | Item | Notes |
+|----|----------|------|-------|
+| VAL-01 | Medium | DB persist best-effort vs memory SSOT | Migration shipped; apply remotely |
+| VAL-02 | Medium | Keyword transcript realism heuristics | See `docs/stage8/TECHNICAL_DEBT.md` |
+| VAL-03 | High | Criterion validity / OSCE co-validation absent | Intentional null until study |
+| CI-S05 | High | Assessment reliability harness still `[v1.1]` | Stage 8 inter-rater store is complementary, not a full calibration harness |
+
 ## Duplicate logic
 
 | Item | Notes |

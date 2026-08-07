@@ -73,6 +73,7 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Clinical data / ontology | `clinical/CLINICAL_DATA_MODEL.md`, `clinical/PATIENT_ONTOLOGY.md` |
 | Clinical intelligence (SP mind) | `clinical-intelligence/README.md` (Stage 5) + `IMPLEMENTATION.md` (Stage 6) |
 | Education / trainee training | `education/README.md` (Stage 7) |
+| Scientific validation / research | `RESEARCH_ARCHITECTURE.md` · `VALIDATION_PIPELINE.md` (Stage 8) |
 | Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
 | Security | `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` |
@@ -83,10 +84,11 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 
 | Stage | Status | Home |
 |-------|--------|------|
-| 1 | Governance | Complete | Release / security certification package |
-| 2 | Software Architecture | Complete | `SOFTWARE_ARCHITECTURE.md` |
-| 3 | Clinical Data Model | Complete | `clinical/` |
-| 4 | Runtime Architecture | Complete | `runtime/` |
-| 5 | Clinical Intelligence Framework | Complete (docs) · Needs Human Review | `clinical-intelligence/` |
-| 6 | Clinical Intelligence Implementation | Implemented · Needs Human Review | `src/lib/clinical-intelligence/` + `clinical-intelligence/IMPLEMENTATION.md` |
-| 7 | Curriculum & Expert Training Engine | Implemented · Needs Human Review | `src/lib/education/` + `docs/education/` |
+| 1 Governance | Complete | Release / security certification package |
+| 2 Software Architecture | Complete | `SOFTWARE_ARCHITECTURE.md` |
+| 3 Clinical Data Model | Complete | `clinical/` |
+| 4 Runtime Architecture | Complete | `runtime/` |
+| 5 Clinical Intelligence Framework | Complete (docs) · Needs Human Review | `clinical-intelligence/` |
+| 6 Clinical Intelligence Implementation | Implemented · Needs Human Review | `src/lib/clinical-intelligence/` + `clinical-intelligence/IMPLEMENTATION.md` |
+| 7 Curriculum & Expert Training Engine | Implemented · Needs Human Review | `src/lib/education/` + `docs/education/` |
+| 8 Scientific Validation Platform | Implemented · Needs Human Review | `src/lib/validation/` + `docs/RESEARCH_ARCHITECTURE.md` |

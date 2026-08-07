@@ -9,6 +9,7 @@ import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { runValidationAfterAssessment } from "@/lib/validation";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 async function sealLedgerBestEffort(opts: {
@@ -202,6 +203,24 @@ export async function POST(_request: Request, { params }: Params) {
     clinicalSnapshot: typed.clinical_snapshot ?? null,
   });
 
+  // Stage 8 Scientific Validation — observational only; soft-fail; never touches patient mind.
+  const validation = await runValidationAfterAssessment({
+    sessionId,
+    overall: assessment.scores.overall,
+    items: assessment.scores.items,
+    messages: (messages ?? []) as Array<{ role: string; content: string }>,
+    narrative,
+    excerpts: assessment.excerpts,
+    language: assessment.language ?? resolved.locale,
+    aiSource: assessment.aiSource,
+    model: assessment.model ?? null,
+    durationSec,
+    clinicalSnapshot: typed.clinical_snapshot ?? null,
+  });
+  if (!validation.ok) {
+    console.warn("[sessions/end] validation soft-fail:", validation.error);
+  }
+
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
   const memoryWriter = createServiceClient() ?? supabase;
   const patientMemory = await runPatientMemoryAfterSession(memoryWriter, {
@@ -277,7 +296,11 @@ export async function POST(_request: Request, { params }: Params) {
         education,
       }),
       {
-        headers: educationEndHeaders(assessment, ledgerId),
+        headers: educationEndHeaders(
+          assessment,
+          ledgerId,
+          validation.run?.id ?? null,
+        ),
       },
     );
   }
@@ -349,7 +372,11 @@ export async function POST(_request: Request, { params }: Params) {
       education,
     }),
     {
-      headers: educationEndHeaders(assessment, ledgerId),
+      headers: educationEndHeaders(
+        assessment,
+        ledgerId,
+        validation.run?.id ?? null,
+      ),
     },
   );
 }
@@ -398,6 +425,7 @@ function educationEndPayload(opts: {
 function educationEndHeaders(
   assessment: Awaited<ReturnType<typeof assessSession>>,
   ledgerId: string | null,
+  validationRunId: string | null = null,
 ): Record<string, string> {
   return {
     "X-AI-Source": assessment.aiSource,
@@ -406,5 +434,7 @@ function educationEndHeaders(
       ? { "X-AI-Error-Kind": assessment.errorKind }
       : {}),
     ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
+    // Validation reports remain admin-only; id is an observability breadcrumb.
+    ...(validationRunId ? { "X-Validation-Run-Id": validationRunId } : {}),
   };
 }
