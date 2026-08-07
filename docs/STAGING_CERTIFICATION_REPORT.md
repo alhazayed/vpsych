@@ -11,9 +11,11 @@
 
 # 🟡 READY FOR STAGING ONLY
 
-**Not** 🟢 Production Ready — required live gates remain incomplete (remote migration apply, live EN/AR therapy/voice E2E, live latency/token cost, residual Supabase advisor WARNs including leaked-password protection).
+**Progress since initial cert:** pending engine migrations have been **applied** to the vpsych Supabase project (`rrzudbkxigeavfdnidnm`) and migration history reconciled to git versions. LTM RLS `is_admin()` initplan hardening applied (`20260807112000`).
 
-**Not** ❌ NOT READY — offline architecture, regression, clinical simulation, humanization debt remediation, and local migration structure all **PASS**.
+**Still not** 🟢 Production Ready — live EN/AR therapy/voice E2E, live latency/token cost, and residual Supabase advisor WARNs (including leaked-password protection) remain incomplete.
+
+**Not** ❌ NOT READY — offline architecture, regression, clinical simulation, humanization debt remediation, local+remote schema for the engine stack all **PASS**.
 
 ---
 
@@ -84,20 +86,23 @@ Architecture tests enforce `presentation only` cue language and forbid memory ex
 
 ## Database Validation / Migration Report
 
-Local: **PASS** (`npm run test:migrations`) — 66 files, unique versions, naming OK.
+Local: **PASS** (`npm run test:migrations`) — unique versions, naming OK.
 
-Remote (MCP `list_migrations` on `rrzudbkxigeavfdnidnm`): **62 applied**. Pending vs git:
+Remote (vpsych `rrzudbkxigeavfdnidnm`) — **updated 2026-08-07 follow-up:**
 
-1. `20260806140000_therapy_room_vmhc`
-2. `20260807093000_human_personality_engine`
-3. `20260807094500_long_term_patient_memory`
-4. `20260807120000_clinical_voice_profiles`
+| Migration | Status |
+|-----------|--------|
+| `20260806140000_therapy_room_vmhc` | ✅ Applied |
+| `20260807093000_human_personality_engine` | ✅ Applied (Maya + Jordan seeded) |
+| `20260807094500_long_term_patient_memory` | ✅ Applied |
+| `20260807120000_clinical_voice_profiles` | ✅ Applied |
+| `20260807112000_patient_ltm_rls_initplan` | ✅ Applied (follow-up harden) |
 
-**Schema parity:** NOT achieved until these four are applied on staging/production.
+Verified: `avatars.human_personality`, `patient_long_term_memory`, `voice_profiles.emotion_modulation`, `clinic_days` present; 2/2 seeded personality profiles.
 
-Detail: `/opt/cursor/artifacts/staging-cert/phase3-migration-report.md`
+History reconciliation: MCP `apply_migration` initially wrote alternate timestamps; rows were rewritten to match canonical git versions for parity.
 
-Flag: LTM admin RLS uses bare `is_admin()` (prefer `(select is_admin())`).
+Detail: `/opt/cursor/artifacts/staging-cert/phase3-migration-report.md` (pre-apply snapshot; superseded by this follow-up).
 
 ---
 
