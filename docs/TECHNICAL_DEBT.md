@@ -1,7 +1,11 @@
 # Technical Debt — Mission Omega
 
-**Date:** 2026-08-06  
+**Date:** 2026-08-07  
 **Rule:** Debt is inventoried here for v1.1 — not fixed unless it blocks production integrity.
+
+> **Stage 5 clinical-intelligence gaps** are catalogued under  
+> [`clinical-intelligence/`](./clinical-intelligence/) (IDs `CI-*`) and sequenced in  
+> [`clinical/CLINICAL_ROADMAP.md`](./clinical/CLINICAL_ROADMAP.md). They are **documentation of debt**, not fixes.
 
 ## Documentation drift
 
@@ -82,6 +86,24 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | Institutional memberships unused | Medium |
 | Certifications table empty / no learner badges | Low |
 | Excellence engines only on draft PRs | Intentional |
+
+## Clinical intelligence debt (Stage 5 audit — not implemented here)
+
+| Item | Severity | Pointer |
+|------|----------|---------|
+| No structured beliefs / schemas / automatic thoughts | High | CI-C01 · `PATIENT_COGNITIVE_MODEL.md` |
+| Therapy modality reaction rules are thin strings | High | CI-T01 · `THERAPY_RESPONSE_MODEL.md` |
+| Adaptation cross-session carry not production-wired | Critical | CI-L01 · `LONGITUDINAL_CHANGE_MODEL.md` |
+| Protective factors missing on ClinicalCore | Critical | G-01 / CI-D02 / CI-R01 |
+| Runtime MSE subset missing | Critical | G-02 |
+| Dual persona case_file vs snapshot model | Critical | G-18 / CI-D06 |
+| Emotion ↔ Adaptation trust/rapport duplication | Medium | G-17 / OWN-02 / CI-E06 |
+| Reserved disorders without packages (6) | High | G-16 / CI-D01 |
+| Treatment adherence / homework state missing | Medium | G-10 / CI-B01 |
+| Dissociation not in Decision stack | Medium | CI-P02 |
+| Assessment reliability harness absent on main | High | CI-S05 · `[v1.1]` |
+| No 10/25/50/100 evolution scheduler | High | CI-V01 · `PATIENT_EVOLUTION_MODEL.md` |
+| Soft-fail ★ engines can omit affect blocks | Medium | CI-R02 |
 
 ## Duplicate logic
 

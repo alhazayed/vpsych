@@ -1,8 +1,9 @@
 # Clinical Roadmap
 
-**Stage 3 output — recommendations only. No implementation in this stage.**
+**Stage 3 output — recommendations only. No implementation in documentation stages.**  
+**Updated:** 2026-08-07 — Stage 5 Clinical Intelligence Framework registered (docs under [`../clinical-intelligence/`](../clinical-intelligence/)).
 
-Links: [`CLINICAL_GAP_ANALYSIS.md`](./CLINICAL_GAP_ANALYSIS.md) · [`PATIENT_ONTOLOGY.md`](./PATIENT_ONTOLOGY.md) · [`../SOFTWARE_ARCHITECTURE.md`](../SOFTWARE_ARCHITECTURE.md)
+Links: [`CLINICAL_GAP_ANALYSIS.md`](./CLINICAL_GAP_ANALYSIS.md) · [`PATIENT_ONTOLOGY.md`](./PATIENT_ONTOLOGY.md) · [`../SOFTWARE_ARCHITECTURE.md`](../SOFTWARE_ARCHITECTURE.md) · [`../clinical-intelligence/README.md`](../clinical-intelligence/README.md)
 
 ---
 
@@ -13,7 +14,8 @@ Links: [`CLINICAL_GAP_ANALYSIS.md`](./CLINICAL_GAP_ANALYSIS.md) · [`PATIENT_ONT
 3. Personality Engine owns traits only.  
 4. Prefer promoting authored persona fields over inventing parallel schemas.  
 5. No medical-device claims; instruments remain educational.  
-6. Small schema migrations; never edit applied migrations.
+6. Small schema migrations; never edit applied migrations.  
+7. **Stage 5 intelligence** designs how the SP mind behaves; it must not fork Stage 3 types or Stage 4 ownership. Implement only after ontology + ownership updates.
 
 Architectural impact scale: **S** = types/docs · **M** = Case Engine + migration + prompt · **L** = new engine or multi-system rewrite risk.
 
@@ -85,7 +87,7 @@ Architectural impact scale: **S** = types/docs · **M** = Case Engine + migratio
 
 ---
 
-## Dependency sketch
+## Dependency sketch (Stage 3 clinical data)
 
 ```mermaid
 flowchart TD
@@ -110,12 +112,69 @@ flowchart TD
 
 ---
 
+## Stage 5 — Clinical Intelligence (implementation backlog)
+
+Canonical designs live in [`../clinical-intelligence/`](../clinical-intelligence/). **Do not implement in doc stages.** Sequence after Critical Stage 3 promotions where noted.
+
+### Critical (intelligence)
+
+| ID | Concept | Owner | Impact | Design doc / gap |
+|----|---------|-------|--------|------------------|
+| R-I1 | Wire Adaptation `beginNextSession` for longitudinal curricula | Adaptation + session create | M | CI-L01 |
+| R-I2 | Patient formulation object (beliefs / schemas / goals) on Case teaching package | Case Engine | M–L | CI-C01 · CI-C02 · G-06 |
+| R-I3 | Typed `TherapyResponseProfile` replacing thin reaction strings | Case Engine therapy-process | M | CI-T01 · CI-T02 |
+
+### High (intelligence)
+
+| ID | Concept | Owner | Impact | Design doc / gap |
+|----|---------|-------|--------|------------------|
+| R-I4 | DecisionPlan façade over CBE + Adaptation + Emotion | Runtime orchestration | M | CI-P01 · RT-04 |
+| R-I5 | Behaviour / cognitive pattern tags on disorder packages | Case Engine catalog | S–M | CI-D03 · DSM_MAPPING |
+| R-I6 | Curriculum horizons `10\|25\|50\|100` + `pin_disorder` | Instructor presets + ACE | M | CI-V01 · PATIENT_EVOLUTION |
+| R-I7 | Dissociation / numbing decision bias for trauma packages | Decision + CBE | S–M | CI-P02 |
+| R-I8 | Assessor optional telemetry features (missed disclosure, hostility turns) | Assessment | M | CI-S02 |
+
+### Medium (intelligence)
+
+| ID | Concept | Owner | Impact | Design doc / gap |
+|----|---------|-------|--------|------------------|
+| R-I9 | Homework / adherence state | Adaptation / therapy-process | S–M | CI-B01 · G-10 |
+| R-I10 | Emotion crisis_band mode (after RiskProfile extensions) | Emotion | M | CI-E04 |
+| R-I11 | Turn-level realism auditor (expression vs reply) | Platform / CFI bridge | M | CI-R03 |
+| R-I12 | Unified nonverbal cue ID registry | Emotion + NBE + TRM | S | CI-B04 |
+| R-I13 | Recovery stage enum enforcing authored session_arc | Case + ACE | M | CI-L02 · G-09 |
+
+### Dependency sketch (intelligence on clinical)
+
+```mermaid
+flowchart TD
+  C3[R-C3 promotion contract]
+  C1[R-C1 protectives]
+  C2[R-C2 MSE]
+  I2[R-I2 formulation / beliefs]
+  I1[R-I1 Adaptation carry]
+  I3[R-I3 therapy response profiles]
+  I4[R-I4 DecisionPlan]
+  I6[R-I6 horizons]
+
+  C3 --> C1
+  C3 --> C2
+  C3 --> I2
+  I1 --> I6
+  I2 --> I4
+  I3 --> I4
+  C1 --> I10[R-I10 crisis_band]
+```
+
+---
+
 ## Out of scope for clinical model work
 
 - Implementing engines in documentation stages.  
 - Declaring competency scores validated.  
 - Rewriting prompt Modules 2–4 for convenience.  
-- Storing permanent diagnosis on avatars.
+- Storing permanent diagnosis on avatars.  
+- Redesigning Stages 1–4 architecture or ontology roots.
 
 ---
 
@@ -124,4 +183,7 @@ flowchart TD
 - [ ] Every Critical gap closed or explicitly deferred with owner.  
 - [ ] `PATIENT_ONTOLOGY.md` lists no Critical Missing items.  
 - [ ] Architecture tests assert ClinicalCore field presence for protectives + MSE subset once shipped.  
-- [ ] Persona library fields either promoted or clearly marked authoring-only in schema comments.
+- [ ] Persona library fields either promoted or clearly marked authoring-only in schema comments.  
+- [ ] Stage 5 Critical intelligence items (R-I1–R-I3) closed or deferred with owner.  
+- [ ] Longitudinal curricula can pin disorder and carry Adaptation alliance across sessions.  
+- [ ] Clinical intelligence package remains the SP-mind SoT; no parallel “patient brain” docs outside `clinical-intelligence/`.
