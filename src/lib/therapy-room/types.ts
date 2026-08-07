@@ -35,7 +35,7 @@ export type PatientAffect =
   | "flat"
   | "labile";
 
-/** Discrete nonverbal cues — every cue must originate from PME bridge, never RNG. */
+/** Discrete nonverbal cues — every cue must originate from PME/NBE, never RNG. */
 export type NonverbalCue =
   | "idle_breathing"
   | "blink"
@@ -53,7 +53,11 @@ export type NonverbalCue =
   | "hand_tremor"
   | "slow_movements"
   | "psychomotor_agitation"
-  | "psychomotor_retardation";
+  | "psychomotor_retardation"
+  /** Mission 5 — Nonverbal Behaviour Engine channels */
+  | "smile"
+  | "hand_gesture"
+  | "head_movement";
 
 export type PatientPresencePhase =
   | "idle"
@@ -93,6 +97,11 @@ export type PatientBehaviorState = {
   interruptProbability: number;
   /** Future animation hooks — stable string ids for 3D/rig systems. */
   animationHooks: string[];
+  /**
+   * Live CSS modifiers from the Nonverbal Behaviour Engine scheduler.
+   * Emotion-driven; anti-repetition enforced upstream. Optional for classic PME.
+   */
+  animationClasses?: string[];
 };
 
 export type VoiceModulation = {
