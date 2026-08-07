@@ -33,6 +33,7 @@ function isPublicPath(path: string): boolean {
   if (path === "/privacy" || path === "/terms") return true;
   if (path === "/validation" || path.startsWith("/validation/")) return true;
   if (path === "/api/validation/invite") return true;
+  if (path === "/api/enterprise/certificates/verify") return true;
   if (path === "/robots.txt" || path === "/sitemap.xml") return true;
   if (path === "/manifest.webmanifest" || path === "/manifest.json") return true;
   if (path === "/rss.xml" || path === "/feed.xml") return true;

@@ -577,4 +577,75 @@ describe("architecture invariants", () => {
       readFileSync(join(docs, "PORTFOLIO_MODEL.md"), "utf8"),
     ).not.toThrow();
   });
+
+  it("Stage 10 Enterprise Platform owns tenancy only and never owns patient mind", () => {
+    const barrel = readFileSync(join(root, "lib/enterprise/index.ts"), "utf8");
+    const bridge = readFileSync(
+      join(root, "lib/enterprise/session-bridge.ts"),
+      "utf8",
+    );
+    const versions = readFileSync(
+      join(root, "lib/enterprise/versions.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const summary = readFileSync(
+      join(root, "app/api/enterprise/summary/route.ts"),
+      "utf8",
+    );
+    const admin = readFileSync(
+      join(root, "app/api/admin/enterprise/route.ts"),
+      "utf8",
+    );
+    const verify = readFileSync(
+      join(root, "app/api/enterprise/certificates/verify/route.ts"),
+      "utf8",
+    );
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+
+    expect(barrel).toMatch(/runEnterpriseAfterAssessment/);
+    expect(barrel).toMatch(/runEnterpriseEngine/);
+    expect(barrel).toMatch(/assertTenantAccess/);
+    expect(bridge).toMatch(/Never writes clinical_snapshot/);
+    expect(bridge).toMatch(/Never owns Emotion|tenancy analytics only/i);
+    expect(versions).toMatch(/ENTERPRISE_OWNERSHIP_RULE/);
+    expect(versions).toMatch(/clinical_snapshot/);
+    expect(end).toMatch(/runEnterpriseAfterAssessment/);
+    expect(end).toMatch(/enterprise soft-fail|Stage 10 Enterprise/);
+    expect(summary).toMatch(/rateLimit/);
+    expect(admin).toMatch(/requireApiAdmin/);
+    expect(admin).toMatch(/rateLimit/);
+    expect(verify).toMatch(/verifyCertificate/);
+    expect(verify).toMatch(/rateLimit/);
+    expect(mw).toMatch(/\/api\/enterprise\/certificates\/verify/);
+
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/adaptation["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/clinical-intelligence["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/case-engine["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/supervisor["']/);
+
+    const docs = join(process.cwd(), "docs");
+    expect(() =>
+      readFileSync(join(docs, "ENTERPRISE_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() => readFileSync(join(docs, "TENANT_MODEL.md"), "utf8")).not.toThrow();
+    expect(() => readFileSync(join(docs, "RBAC_MODEL.md"), "utf8")).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "ORGANIZATION_MODEL.md"), "utf8"),
+    ).not.toThrow();
+    expect(() => readFileSync(join(docs, "COURSE_ENGINE.md"), "utf8")).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "CERTIFICATION_ENGINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "ANALYTICS_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() => readFileSync(join(docs, "SECURITY_MODEL.md"), "utf8")).not.toThrow();
+    expect(() => readFileSync(join(docs, "OBSERVABILITY.md"), "utf8")).not.toThrow();
+    expect(() => readFileSync(join(docs, "API_GUIDE.md"), "utf8")).not.toThrow();
+  });
 });

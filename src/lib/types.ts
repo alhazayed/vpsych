@@ -335,6 +335,8 @@ export type TherapySession = {
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
   /** classic = VoiceSession; therapy_room = immersive Therapy Room Mode (TRM). */
   interaction_mode?: SessionInteractionMode | null;
+  /** Mission 23 / Stage 10 — tenant scope (institutions.id). */
+  institution_id?: string | null;
   /** Therapist-only notes (TRM) — never sent to the patient agent. */
   private_notes?: string | null;
   /** Therapy Room Immersion Index (TRII) snapshot. */

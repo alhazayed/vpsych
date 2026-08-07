@@ -131,6 +131,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "supervisor_account",
       match: (p) => p.startsWith("/admin/supervisor"),
     },
+    {
+      href: "/admin/enterprise",
+      label: t("enterprisePlatform"),
+      icon: "domain",
+      match: (p) => p.startsWith("/admin/enterprise"),
+    },
   ];
 }
 
@@ -222,6 +228,8 @@ export function AppShell({
       return tShell("pageTitle.adaptiveLearning");
     if (pathname.startsWith("/admin/supervisor"))
       return tShell("pageTitle.supervisorAi");
+    if (pathname.startsWith("/admin/enterprise"))
+      return tShell("pageTitle.enterprisePlatform");
     if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");

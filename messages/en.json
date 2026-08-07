@@ -42,6 +42,7 @@
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
       "supervisorAi": "Supervisor AI",
+      "enterprisePlatform": "Enterprise Platform",
       "researchValidation": "Research Validation",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
@@ -54,6 +55,7 @@
     "adaptiveLearning": "My Learning",
     "competencyGraph": "Competency Graph",
     "supervisorAi": "Supervisor AI",
+    "enterprisePlatform": "Enterprise Platform",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "humanPersonality": "Human Personality",
