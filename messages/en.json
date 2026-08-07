@@ -41,6 +41,7 @@
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
+      "researchValidation": "Research Validation",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -59,6 +60,7 @@
     "scenarioTemplates": "Scenario Templates",
     "instructorPresets": "Instructor Presets",
     "adaptiveCurriculum": "Adaptive Curriculum",
+    "researchValidation": "Research Validation",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys"
   },
@@ -644,6 +646,10 @@
     "graph": {
       "title": "Competency Graph Engine",
       "subtitle": "Inspect learner and cohort DAGs, lock or unlock competencies, approve mastery, and assign reassessment."
+    },
+    "researchValidation": {
+      "title": "Scientific Validation",
+      "subtitle": "Observational research dashboard — realism, reliability, psychometrics, benchmarks. Never modifies patient behaviour. Scores are not clinically validated instruments."
     },
     "voices": {
       "title": "Voice Profile Manager",

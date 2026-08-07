@@ -113,6 +113,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/research",
+      label: t("researchValidation"),
+      icon: "science",
+      match: (p) => p.startsWith("/admin/research"),
+    },
   ];
 }
 
