@@ -85,7 +85,7 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 |------|----------|
 | Competency scores unvalidated | High (claims) |
 | Scientific score tables mostly empty | Medium |
-| Institutional memberships unused | Medium |
+| Institutional memberships unused | Medium | Stage 10 product layer now consumes memberships; seed memberships still sparse in live DB |
 | Certifications table empty / no learner badges | Low |
 | Excellence engines only on draft PRs | Intentional |
 
@@ -141,6 +141,18 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | SUP-04 | High (claims) | Validated competency instruments | Do not claim validation |
 | SUP-05 | Low | Admin cross-trainee supervision picker | Catalogue-only admin UI today |
 
+## Enterprise debt (Stage 10)
+
+| ID | Severity | Item | Notes |
+|----|----------|------|-------|
+| ENT-01 | Medium | Persist enterprise bundles to Postgres | Memory façade + durable tables; see `docs/stage10/TECHNICAL_DEBT.md` |
+| ENT-02 | Medium | Live SAML/OIDC IdP binding | Policy abstractions ready |
+| ENT-03 | Medium | Vault-backed webhook HMAC | Stub signer in tests |
+| ENT-04 | Low | Course builder UI beyond admin overview | Product |
+| ENT-05 | Medium | LMS/SCORM/LTI vendor adapters | Descriptors only |
+| ENT-07 | Medium | Stamp `sessions.institution_id` on create | Bridge reads; create path optional |
+| ENT-08 | Medium | Multi-instance enterprise store | Same pattern as Stage 8/9 |
+
 ## Duplicate logic
 
 | Item | Notes |
@@ -148,8 +160,9 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | Instructor preset heuristic grader vs assessment `weightedOverall` | Different purposes — keep separate; do not merge |
 | Education domain scores vs ACE CompetencyId EMAs | Education aggregates ACE — ACE remains SSOT for persistence |
 | Supervisor therapist skills vs Education domains | Supervisor evaluates process skills; Education owns curriculum domains — do not merge |
+| Enterprise org certificates vs Education/Supervisor milestones | Enterprise issues org credentials; Stages 7/9 own formative milestones — do not merge |
 | Historical cert docs vs Omega package | Prefer Omega + RC1 for current truth |
 
 ## v1.1 roadmap pointer
 
-Excellence/HCE/enterprise/SEO deferred work remains in open `[v1.1]` / experimental PRs. Do not activate in production during Professional Preview.
+Excellence/HCE/SEO deferred work remains in open `[v1.1]` / experimental PRs. Stage 10 enterprise foundation ships on this branch — remaining ENT-* items stay non-blocking. Do not claim validated competency instruments during Professional Preview.

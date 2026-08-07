@@ -44,7 +44,8 @@
       "researchValidation": "التحقق البحثي",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح",
-      "supervisorAi": "مشرف الذكاء الاصطناعي"
+      "supervisorAi": "مشرف الذكاء الاصطناعي",
+      "enterprisePlatform": "المنصة المؤسسية"
     }
   },
   "nav": {
@@ -64,7 +65,8 @@
     "researchValidation": "التحقق البحثي",
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح",
-    "supervisorAi": "مشرف الذكاء الاصطناعي"
+    "supervisorAi": "مشرف الذكاء الاصطناعي",
+    "enterprisePlatform": "المنصة المؤسسية"
   },
   "learning": {
     "title": "التعلّم التكيفي",
