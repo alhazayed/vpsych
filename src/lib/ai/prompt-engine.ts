@@ -29,6 +29,11 @@ export type PromptFidelityHints = {
    * withdrawal / anger / disclosure readiness for THIS therapist turn).
    */
   adaptation_block?: string;
+  /**
+   * Mission 10 Humanization Layer — per-turn micro-behaviours (hesitation,
+   * false starts, silence, etc.). Optional; injected when the engine runs.
+   */
+  humanization_cue?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -165,6 +170,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.therapy_process_cue}}
 
 {{fidelity.adaptation_block}}
+
+{{fidelity.humanization_cue}}
 
 Conversational naturalness (mandatory):
 - Sound like a real person in a psychiatric interview — not a chatbot, textbook,
@@ -357,6 +364,7 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
       adaptation_block: input.fidelity?.adaptation_block?.trim() || "",
+      humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);

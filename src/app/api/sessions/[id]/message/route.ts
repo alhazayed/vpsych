@@ -15,6 +15,10 @@ import {
   planConversationBehaviour,
   type ConversationBehaviourPlan,
 } from "@/lib/conversation-behaviour";
+import {
+  buildHumanizationTurn,
+  toClientHints,
+} from "@/lib/humanization";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -25,6 +29,7 @@ import {
 } from "@/lib/emotion";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import { MAX_SESSION_SECONDS } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -220,7 +225,7 @@ export async function POST(request: Request, { params }: Params) {
     });
   }
 
-  const avatarForReply = emotionSystemExtra
+  let avatarForReply = emotionSystemExtra
     ? {
         ...avatarWithMemory,
         system_prompt: `${avatarWithMemory.system_prompt}${emotionSystemExtra}`,
@@ -248,6 +253,59 @@ export async function POST(request: Request, { params }: Params) {
       });
       behaviourPlan = null;
     }
+  }
+
+  // Mission 10 — Humanization Layer (subtle realism only; never blocks reply).
+  let humanization: ReturnType<typeof buildHumanizationTurn> = null;
+  try {
+    let caseMemory: Record<string, unknown> | null = null;
+    if (typed.case_instance_id) {
+      const { data: memRow } = await supabase
+        .from("case_memory")
+        .select("memory")
+        .eq("case_instance_id", typed.case_instance_id)
+        .maybeSingle();
+      if (memRow?.memory && typeof memRow.memory === "object") {
+        caseMemory = memRow.memory as Record<string, unknown>;
+      }
+    }
+
+    const maxDur = typed.max_duration_sec ?? MAX_SESSION_SECONDS;
+    const elapsedSeconds = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(typed.started_at).getTime()) / 1000),
+    );
+
+    humanization = buildHumanizationTurn({
+      sessionId,
+      caseSnapshot: typed.clinical_snapshot ?? null,
+      clinicalCore: typed.clinical_snapshot?.clinical_core ?? null,
+      history: historyRows,
+      userMessage: message,
+      sessionLanguage: typed.language ?? "en",
+      elapsedSeconds,
+      maxDurationSec: maxDur,
+      caseMemory,
+    });
+
+    if (humanization) {
+      avatarForReply = {
+        ...avatarForReply,
+        system_prompt: `${avatarForReply.system_prompt}\n\n${humanization.prompt_cue}`,
+        per_turn_reinforcement: [
+          avatarForReply.per_turn_reinforcement?.trim(),
+          humanization.per_turn_cue,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    }
+  } catch (err) {
+    console.warn("[sessions/message] humanization soft-fail", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    humanization = null;
   }
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
@@ -293,6 +351,7 @@ export async function POST(request: Request, { params }: Params) {
     cbePrimary: behaviourPlan?.primary ?? null,
     cbeGate: behaviourPlan?.disclosureGate ?? null,
     cbeRapport: behaviourPlan?.rapport ?? null,
+    humanizationBehaviors: humanization?.behaviors ?? null,
   });
 
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
@@ -313,6 +372,8 @@ export async function POST(request: Request, { params }: Params) {
       { status: 500 },
     );
   }
+
+  const humanizationHints = humanization ? toClientHints(humanization) : null;
 
   return NextResponse.json(
     {
@@ -335,6 +396,10 @@ export async function POST(request: Request, { params }: Params) {
       cbePrimary: behaviourPlan?.primary ?? null,
       cbeDisclosureGate: behaviourPlan?.disclosureGate ?? null,
       cbeRapport: behaviourPlan?.rapport ?? null,
+      // Mission 10 — Humanization Engine (additive; clients may ignore).
+      humanizationEnabled: Boolean(humanization),
+      humanization: humanizationHints,
+      voiceHints: humanizationHints?.voiceHints ?? null,
     },
     {
       headers: {
@@ -345,6 +410,9 @@ export async function POST(request: Request, { params }: Params) {
           : {}),
         ...(behaviourPlan?.primary
           ? { "X-CBE-Primary": behaviourPlan.primary }
+          : {}),
+        ...(humanization
+          ? { "X-Humanization": humanization.behaviors.join(",") }
           : {}),
       },
     },

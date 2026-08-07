@@ -25,6 +25,9 @@ export async function synthesizeSpeech(params: {
   disorderSlug?: string | null;
   /** Mission 3 — clinical emotion live switch. */
   emotion?: string | null;
+  /** Mission 10 — optional Humanization / HCE prosody overrides. */
+  stability?: number | null;
+  style?: number | null;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -41,6 +44,8 @@ export async function synthesizeSpeech(params: {
         speechEnergy: params.speechEnergy ?? undefined,
         disorderSlug: params.disorderSlug ?? undefined,
         emotion: params.emotion ?? undefined,
+        stability: params.stability ?? undefined,
+        style: params.style ?? undefined,
         stream: true,
       }),
     });

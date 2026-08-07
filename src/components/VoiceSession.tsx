@@ -172,7 +172,17 @@ export function VoiceSession({
   }, [stopPlayback]);
 
   const speak = useCallback(
-    async (text: string) => {
+    async (
+      text: string,
+      voiceHints?: {
+        pause_before_ms?: number;
+        speech_rate?: number;
+        stability?: number;
+        style?: number;
+        speech_pace?: string;
+        speech_energy?: string;
+      } | null,
+    ) => {
       if (!voiceEnabled) return;
       stopPlayback();
       setSpeaking(true);
@@ -183,8 +193,13 @@ export function VoiceSession({
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
-        speechPace: avatar.personality?.speech?.pace ?? null,
+        speechPace:
+          voiceHints?.speech_pace ?? avatar.personality?.speech?.pace ?? null,
+        speechEnergy: voiceHints?.speech_energy ?? null,
         disorderSlug,
+        stability: voiceHints?.stability ?? null,
+        style: voiceHints?.style ?? null,
+        pauseBeforeMs: voiceHints?.pause_before_ms ?? null,
         audioRef,
         handlers: {
           onstart: () => setSpeaking(true),
@@ -237,7 +252,7 @@ export function VoiceSession({
           turn.data.assistantMessage,
         ]);
         if (voiceEnabled) {
-          void speak(turn.data.assistantMessage.content);
+          void speak(turn.data.assistantMessage.content, turn.data.voiceHints);
         }
         setStatus(
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),

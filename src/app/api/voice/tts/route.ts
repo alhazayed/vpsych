@@ -36,6 +36,9 @@ type TtsBody = {
   disorderSlug?: string;
   /** Mission 3 — live emotion switch (depressed|anxious|manic|psychotic|neutral). */
   emotion?: string;
+  /** Mission 10 — Humanization Engine prosody overrides. */
+  stability?: number;
+  style?: number;
 };
 
 /**
@@ -108,6 +111,8 @@ export async function POST(request: Request) {
       disorderSlug: body.disorderSlug,
       emotion: body.emotion ?? liveEmotion,
       clinicalVoiceSettings,
+      stability: body.stability,
+      style: body.style,
     });
 
     return new NextResponse(result.body, {

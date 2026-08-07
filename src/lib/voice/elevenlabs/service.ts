@@ -31,6 +31,9 @@ export type ElevenLabsSynthesizeParams = {
   emotion?: string | null;
   /** Pre-resolved ElevenLabs settings (e.g. from liveSwitchVoice). */
   clinicalVoiceSettings?: ElevenLabsVoiceSettings | null;
+  /** Mission 10 — optional Humanization Engine prosody overrides. */
+  stability?: number | null;
+  style?: number | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -254,13 +257,25 @@ export const elevenLabsService = {
     }
 
     const model = modelId();
-    const voiceSettings: ElevenLabsVoiceSettings =
-      params.clinicalVoiceSettings ??
-      resolveVoiceSettings({
-        speechPace: params.speechPace,
-        speechEnergy: params.speechEnergy,
-        disorderSlug: params.disorderSlug,
-      });
+    // CVP clinical settings (or pace/energy defaults), then Humanization
+    // stability/style overlays for hesitation / fatigue / emotional cues.
+    const voiceSettings: ElevenLabsVoiceSettings = {
+      ...(params.clinicalVoiceSettings ??
+        resolveVoiceSettings({
+          speechPace: params.speechPace,
+          speechEnergy: params.speechEnergy,
+          disorderSlug: params.disorderSlug,
+        })),
+    };
+    if (
+      typeof params.stability === "number" &&
+      Number.isFinite(params.stability)
+    ) {
+      voiceSettings.stability = Math.max(0, Math.min(1, params.stability));
+    }
+    if (typeof params.style === "number" && Number.isFinite(params.style)) {
+      voiceSettings.style = Math.max(0, Math.min(1, params.style));
+    }
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
 
