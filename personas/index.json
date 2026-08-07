@@ -43,6 +43,38 @@
         "Adolescent Psychiatry"
       ],
       "note": "Wave-1 expands the SP library across priority psychiatric education families. Existing Maya/Jordan cases unchanged."
+    },
+    "wave2": {
+      "added": 38,
+      "categories_covered": [
+        "Panic Disorder",
+        "Trauma Disorders",
+        "Mood Disorders",
+        "Autism",
+        "Geriatric Psychiatry",
+        "Consultation-Liaison",
+        "Emergency Psychiatry",
+        "Psychotic Disorders",
+        "Eating Disorders",
+        "Anxiety Disorders",
+        "Child Psychiatry",
+        "Somatic",
+        "Sleep / Anxiety",
+        "Substance Use",
+        "Perinatal Psychiatry",
+        "Neurocognitive",
+        "Personality Disorders"
+      ],
+      "difficulties": [
+        "beginner",
+        "osce",
+        "advanced",
+        "intermediate",
+        "emergency",
+        "longitudinal",
+        "expert"
+      ],
+      "note": "wave2 expands diagnostic coverage, diversity, difficulty lanes, and faculty educational packs."
     }
   },
   "cases": [
@@ -629,6 +661,1985 @@
         "Set graded exposure collaboratively"
       ],
       "examination_status": "APPROVED — Wave-1 library (adversarial checklist)",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-013",
+      "file": "personas/aisha-rahman.case.json",
+      "slug": "aisha-rahman",
+      "legacy_name": "Aisha Rahman",
+      "disorder": "Panic Disorder",
+      "dsm5_code": "300.01",
+      "icd10_code": "F41.0",
+      "icd11_code": "6B01",
+      "severity": "mild",
+      "age": 26,
+      "gender": "female",
+      "category": "Panic Disorder",
+      "difficulty": "beginner",
+      "track": "beginner",
+      "risk_level": "Low — no SI; fear of dying during attacks only.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Aisha Rahman",
+          "city": "Brooklyn, New York, United States",
+          "dialect": "American English (NYC metro)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "ليان الخطيب",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Cardiac presentation masks panic",
+        "Reassurance-seeking loop",
+        "Avoidance as being careful",
+        "Family collusion for more tests",
+        "Meds before formulation"
+      ],
+      "educational_objectives": [
+        "Elicit unexpected panic",
+        "Differentiate from cardiac history",
+        "Map safety behaviours",
+        "CBT framing without lecturing",
+        "Assess agoraphobic drift"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-014",
+      "file": "personas/wesley-croft.case.json",
+      "slug": "wesley-croft",
+      "legacy_name": "Wesley Croft",
+      "disorder": "Panic Disorder",
+      "dsm5_code": "300.01",
+      "icd10_code": "F41.0",
+      "icd11_code": "6B01",
+      "severity": "moderate",
+      "age": 41,
+      "gender": "male",
+      "category": "Panic Disorder",
+      "difficulty": "osce",
+      "track": "osce",
+      "risk_level": "Low SI; driving avoidance; borrowed benzo; evening alcohol.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Wesley Croft",
+          "city": "Wilmington, Delaware, United States",
+          "dialect": "American English (Mid-Atlantic)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "مازن عبيدات",
+          "city": "إربد، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — إربد"
+        }
+      ],
+      "teaching_traps": [
+        "Lectures DSM instead of eliciting",
+        "Misses nocturnal panic/driving avoid",
+        "Colludes with benzo refill",
+        "Fails timed OSCE structure",
+        "Over-pathologizes resolved grief"
+      ],
+      "educational_objectives": [
+        "Structured panic assessment in time",
+        "Unexpected vs situational",
+        "Screen SI/substances/medical",
+        "Negotiate meds-only agenda",
+        "Clear formulation summary"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-015",
+      "file": "personas/marisol-guevara.case.json",
+      "slug": "marisol-guevara",
+      "legacy_name": "Marisol Guevara",
+      "disorder": "Complex PTSD",
+      "dsm5_code": "309.81",
+      "icd10_code": "F43.1",
+      "icd11_code": "6B41",
+      "severity": "severe",
+      "age": 34,
+      "gender": "female",
+      "category": "Trauma Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI when flooded; remote adolescent SH; no plan.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Marisol Guevara",
+          "city": "Albuquerque, New Mexico, United States",
+          "dialect": "American English (Southwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "هدى المجالي",
+          "city": "الكرك، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الكرك"
+        }
+      ],
+      "teaching_traps": [
+        "Chronic trauma missed behind anger/chaos",
+        "Flooding causes dissociation",
+        "Shame about still not over it",
+        "Substance minimization",
+        "Mislabel as BPD only"
+      ],
+      "educational_objectives": [
+        "Assess CPTSD without flooding",
+        "Differentiate CPTSD vs BPD/PTSD",
+        "Map dissociation",
+        "Safety around SI/substances",
+        "Phase-based framing"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-016",
+      "file": "personas/alan-whitfield.case.json",
+      "slug": "alan-whitfield",
+      "legacy_name": "Alan Whitfield",
+      "disorder": "Persistent Depressive Disorder (Dysthymia)",
+      "dsm5_code": "300.4",
+      "icd10_code": "F34.1",
+      "icd11_code": "6A71.0",
+      "severity": "mild",
+      "age": 48,
+      "gender": "male",
+      "category": "Mood Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low SI; chronic emptiness; no plan.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Alan Whitfield",
+          "city": "Columbus, Ohio, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "فؤاد الرواشدة",
+          "city": "السلط، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — السلط"
+        }
+      ],
+      "teaching_traps": [
+        "Collude with just my personality",
+        "Miss superimposed MDE",
+        "Rush activation without alliance",
+        "Ignore medical contributors",
+        "Moralize about low ambition"
+      ],
+      "educational_objectives": [
+        "Establish 2+ year chronic course",
+        "Differentiate PDD vs MDD",
+        "Assess superimposed MDE",
+        "Motivate without invalidating",
+        "Collaborative activation"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-017",
+      "file": "personas/kai-mori.case.json",
+      "slug": "kai-mori",
+      "legacy_name": "Kai Mori",
+      "disorder": "Autism Spectrum Disorder",
+      "dsm5_code": "299.00",
+      "icd10_code": "F84.0",
+      "icd11_code": "6A02",
+      "severity": "moderate",
+      "age": 28,
+      "gender": "non-binary",
+      "category": "Autism",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low acute SI; burnout/shutdown under sensory overload.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Kai Mori",
+          "city": "Portland, Oregon, United States",
+          "dialect": "American English (Pacific NW)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "ساري النعيمات",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Force eye contact drills",
+        "Treat as pure social anxiety",
+        "Miss sensory drivers",
+        "Pathologize special interests",
+        "Ignore identity needs"
+      ],
+      "educational_objectives": [
+        "Developmental/sensory history",
+        "Differentiate ASD vs social anxiety",
+        "Map shutdowns vs panic",
+        "Workplace accommodations",
+        "Affirm neurodiversity without romanticizing distress"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-018",
+      "file": "personas/dorothy-kim.case.json",
+      "slug": "dorothy-kim",
+      "legacy_name": "Dorothy Kim",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 78,
+      "gender": "female",
+      "category": "Geriatric Psychiatry",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI ('lived enough'); no plan; falls/meds check.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Dorothy Kim",
+          "city": "Seattle, Washington, United States",
+          "dialect": "American English (Pacific); Korean heritage"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "سعاد الحمود",
+          "city": "مأدبا، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — مأدبا"
+        }
+      ],
+      "teaching_traps": [
+        "Dismiss as normal grief only",
+        "Miss passive SI",
+        "Ageist nihilism",
+        "Ignore cultural idioms",
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-019",
+      "file": "personas/harold-pence.case.json",
+      "slug": "harold-pence",
+      "legacy_name": "Harold Pence",
+      "disorder": "Delirium",
+      "dsm5_code": "293.0",
+      "icd10_code": "F05",
+      "icd11_code": "6D70",
+      "severity": "severe",
+      "age": 72,
+      "gender": "male",
+      "category": "Consultation-Liaison",
+      "difficulty": "emergency",
+      "track": "emergency",
+      "risk_level": "Medical emergency first — fluctuating attention; pull-lines risk.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Harold Pence",
+          "city": "Detroit, Michigan, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "خالد الشطناوي",
+          "city": "الزرقاء، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الزرقاء"
+        }
+      ],
+      "teaching_traps": [
+        "Call it primary schizophrenia",
+        "Miss anticholinergic/opioid contributors",
+        "Hard confrontation of hallucinations",
+        "Ignore fluctuating course",
+        "Skip collateral"
+      ],
+      "educational_objectives": [
+        "Identify delirium vs primary psychosis",
+        "Collateral and med review",
+        "Soft reorientation",
+        "Flag medical priorities",
+        "Safety lines/falls"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-020",
+      "file": "personas/jamal-reed.case.json",
+      "slug": "jamal-reed",
+      "legacy_name": "Jamal Reed",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "severe",
+      "age": 29,
+      "gender": "male",
+      "category": "Emergency Psychiatry",
+      "difficulty": "emergency",
+      "track": "emergency",
+      "risk_level": "Active SI with fluctuating plan ideation; ED-level safety; means access at home.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Jamal Reed",
+          "city": "Atlanta, Georgia, United States",
+          "dialect": "American English (Southern)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "أمير بني حسن",
+          "city": "إربد، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — إربد"
+        }
+      ],
+      "teaching_traps": [
+        "Contract for safety as only intervention",
+        "Minimize because he came for help",
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-021",
+      "file": "personas/fatima-nassar.case.json",
+      "slug": "fatima-nassar",
+      "legacy_name": "Fatima Nassar",
+      "disorder": "Schizoaffective Disorder",
+      "dsm5_code": "295.70",
+      "icd10_code": "F25.9",
+      "icd11_code": "6A21",
+      "severity": "moderate",
+      "age": 35,
+      "gender": "female",
+      "category": "Psychotic Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI in depressive poles; command voices rare — assess; no H/O violence.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Fatima Nassar",
+          "city": "Dearborn, Michigan, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "رندة العزام",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Ignore mood-psychosis timeline",
+        "Confront delusions harshly",
+        "Miss adherence barriers",
+        "Treat only mood or only psychosis",
+        "Stigma-heavy language"
+      ],
+      "educational_objectives": [
+        "Timeline mood vs psychosis",
+        "Adherence barriers",
+        "Risk across poles",
+        "Supportive reality testing",
+        "Functional goals"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-022",
+      "file": "personas/owen-bradley.case.json",
+      "slug": "owen-bradley",
+      "legacy_name": "Owen Bradley",
+      "disorder": "Bipolar I Disorder, most recent episode depressed, with mixed features",
+      "dsm5_code": "296.53",
+      "icd10_code": "F31.31",
+      "icd11_code": "6A60.4",
+      "severity": "moderate",
+      "age": 38,
+      "gender": "male",
+      "category": "Mood Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Mixed features: irritable passive SI; impulsivity; no full mania currently.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Owen Bradley",
+          "city": "Minneapolis, Minnesota, United States",
+          "dialect": "American English (Upper Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "طلال الزعبي",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Treat mixed as unipolar MDD",
+        "Miss sleep/energy discordance",
+        "Encourage overactivation",
+        "Ignore med changes",
+        "Collude with stopping stabilizers"
+      ],
+      "educational_objectives": [
+        "Identify mood state/mixed features",
+        "Sleep stabilization",
+        "Safety/impulsivity",
+        "Med collaboration framing",
+        "Psychoeducation without lecturing"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-023",
+      "file": "personas/priya-desai.case.json",
+      "slug": "priya-desai",
+      "legacy_name": "Priya Desai",
+      "disorder": "Bulimia Nervosa, moderate",
+      "dsm5_code": "307.51",
+      "icd10_code": "F50.2",
+      "icd11_code": "6B81",
+      "severity": "moderate",
+      "age": 23,
+      "gender": "female",
+      "category": "Eating Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Medical risk from purging; electrolyte teaching trap; low SI.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Priya Desai",
+          "city": "Chicago, Illinois, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "تالا أبو عواد",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Collude with minimization",
+        "Miss medical risk",
+        "Focus only on weight number",
+        "Moralize control",
+        "Ignore compensatory methods"
+      ],
+      "educational_objectives": [
+        "Map eating behaviours nonjudgmentally",
+        "Medical safety screen",
+        "Shape/weight overvaluation",
+        "Affect regulation alternatives",
+        "Collaborative structure"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-024",
+      "file": "personas/cameron-blake.case.json",
+      "slug": "cameron-blake",
+      "legacy_name": "Cameron Blake",
+      "disorder": "Social Anxiety Disorder",
+      "dsm5_code": "300.23",
+      "icd10_code": "F40.10",
+      "icd11_code": "6B04",
+      "severity": "moderate",
+      "age": 34,
+      "gender": "male",
+      "category": "Anxiety Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low SI; career-limiting avoidance; alcohol sometimes for networking.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Cameron Blake",
+          "city": "Boston, Massachusetts, United States",
+          "dialect": "American English (New England)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "كريم الحجايا",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Push exposure too fast",
+        "Miss safety behaviours",
+        "Treat as shyness only",
+        "Ignore occupational impairment",
+        "Shame about anxiety"
+      ],
+      "educational_objectives": [
+        "Map feared situations",
+        "Identify safety behaviours",
+        "Differentiate from panic/ASD",
+        "Collaborative graded exposure framing",
+        "Performance vs interactional fears"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-025",
+      "file": "personas/mila-santos.case.json",
+      "slug": "mila-santos",
+      "legacy_name": "Mila Santos",
+      "disorder": "Generalized Anxiety Disorder, with panic attacks",
+      "dsm5_code": "300.02",
+      "icd10_code": "F41.1",
+      "icd11_code": "6B00",
+      "severity": "moderate",
+      "age": 11,
+      "gender": "female",
+      "category": "Child Psychiatry",
+      "difficulty": "beginner",
+      "track": "beginner",
+      "risk_level": "Low SI; school avoidance emerging; educational SP.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Mila Santos",
+          "city": "Austin, Texas, United States",
+          "dialect": "American English (child; Texas)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "لانا العلي",
+          "city": "الزرقاء، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الزرقاء"
+        }
+      ],
+      "teaching_traps": [
+        "Endless reassurance",
+        "Miss somatic channel",
+        "Ignore sleep focus if primary",
+        "Skip panic attack screen",
+        "Intellectualize without skills"
+      ],
+      "educational_objectives": [
+        "Map worry domains",
+        "Differentiate GAD vs panic/OCD",
+        "Identify intolerance of uncertainty",
+        "Introduce CBT skills collaboratively",
+        "Address sleep/somatic as indicated"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-026",
+      "file": "personas/brenda-yates.case.json",
+      "slug": "brenda-yates",
+      "legacy_name": "Brenda Yates",
+      "disorder": "Generalized Anxiety Disorder, with panic attacks",
+      "dsm5_code": "300.02",
+      "icd10_code": "F41.1",
+      "icd11_code": "6B00",
+      "severity": "moderate",
+      "age": 45,
+      "gender": "female",
+      "category": "Somatic",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low SI; high medical utilization; health anxiety channel.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Brenda Yates",
+          "city": "Kansas City, Missouri, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "سمر القضاة",
+          "city": "إربد، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — إربد"
+        }
+      ],
+      "teaching_traps": [
+        "Collude with endless workups",
+        "Dismiss as faking",
+        "Endless reassurance",
+        "Miss somatic channel",
+        "Ignore sleep focus if primary",
+        "Skip panic attack screen"
+      ],
+      "educational_objectives": [
+        "Map worry domains",
+        "Differentiate GAD vs panic/OCD",
+        "Identify intolerance of uncertainty",
+        "Introduce CBT skills collaboratively",
+        "Address sleep/somatic as indicated"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-027",
+      "file": "personas/noah-kimura.case.json",
+      "slug": "noah-kimura",
+      "legacy_name": "Noah Kimura",
+      "disorder": "Generalized Anxiety Disorder, with panic attacks",
+      "dsm5_code": "300.02",
+      "icd10_code": "F41.1",
+      "icd11_code": "6B00",
+      "severity": "moderate",
+      "age": 31,
+      "gender": "male",
+      "category": "Sleep / Anxiety",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low SI; caffeine/OTC sleep-aid misuse risk; occupational impairment from insomnia.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Noah Kimura",
+          "city": "San Francisco, California, United States",
+          "dialect": "American English (West Coast)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "يزن الخلايلة",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Endless reassurance",
+        "Miss somatic channel",
+        "Ignore sleep focus if primary",
+        "Skip panic attack screen",
+        "Intellectualize without skills"
+      ],
+      "educational_objectives": [
+        "Map worry domains",
+        "Differentiate GAD vs panic/OCD",
+        "Identify intolerance of uncertainty",
+        "Introduce CBT skills collaboratively",
+        "Address sleep/somatic as indicated"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-028",
+      "file": "personas/diego-alvarez.case.json",
+      "slug": "diego-alvarez",
+      "legacy_name": "Diego Alvarez",
+      "disorder": "Cannabis Use Disorder (AUD package; cannabis-focus teaching)",
+      "dsm5_code": "305.00",
+      "icd10_code": "F10.10",
+      "icd11_code": "6C40.1",
+      "severity": "moderate",
+      "age": 27,
+      "gender": "male",
+      "category": "Substance Use",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Cannabis-heavy daily use; weekend alcohol; low SI; motivation ambivalence.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Diego Alvarez",
+          "city": "Denver, Colorado, United States",
+          "dialect": "American English (West)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "علاء الشيشاني",
+          "city": "الزرقاء، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الزرقاء"
+        }
+      ],
+      "teaching_traps": [
+        "Moralize use",
+        "Miss withdrawal risk",
+        "Argue labels early",
+        "Ignore dual diagnosis mood",
+        "Collude with minimization"
+      ],
+      "educational_objectives": [
+        "Nonjudgmental use map",
+        "MI spirit (evocation)",
+        "Withdrawal/safety screen",
+        "Goals discrepancy",
+        "Harm reduction vs abstinence collaboratively"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-029",
+      "file": "personas/andrea-volkov.case.json",
+      "slug": "andrea-volkov",
+      "legacy_name": "Andrea Volkov",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 40,
+      "gender": "female",
+      "category": "Mood Disorders",
+      "difficulty": "longitudinal",
+      "track": "longitudinal",
+      "risk_level": "Passive SI intermittent; longitudinal MDD different from Maya; relapse literacy.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Andrea Volkov",
+          "city": "Philadelphia, Pennsylvania, United States",
+          "dialect": "American English (Mid-Atlantic)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "ليلى الطراونة",
+          "city": "الكرك، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الكرك"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-030",
+      "file": "personas/yasmin-hakimi.case.json",
+      "slug": "yasmin-hakimi",
+      "legacy_name": "Yasmin Hakimi",
+      "disorder": "Posttraumatic Stress Disorder",
+      "dsm5_code": "309.81",
+      "icd10_code": "F43.10",
+      "icd11_code": "6B40",
+      "severity": "moderate",
+      "age": 36,
+      "gender": "female",
+      "category": "Trauma Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI rare; hyperarousal; cultural humility teaching.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Yasmin Hakimi",
+          "city": "Minneapolis, Minnesota, United States",
+          "dialect": "American English (additional language; careful)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "يمنى الرفاعي",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Flood trauma narrative",
+        "Miss avoidance/hyperarousal map",
+        "Moralize coping substances",
+        "Skip safety",
+        "Voyeuristic detail seeking"
+      ],
+      "educational_objectives": [
+        "Trauma-informed intake without flooding",
+        "Map clusters",
+        "Safety assessment",
+        "Titrate disclosure",
+        "Grounding early targets"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-031",
+      "file": "personas/richard-okada.case.json",
+      "slug": "richard-okada",
+      "legacy_name": "Richard Okada",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 52,
+      "gender": "male",
+      "category": "Consultation-Liaison",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI intellectualized; physician patient; stigma about seeking help.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Richard Okada",
+          "city": "Cleveland, Ohio, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "سامر خوري",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-032",
+      "file": "personas/sam-quinn.case.json",
+      "slug": "sam-quinn",
+      "legacy_name": "Sam Quinn",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 25,
+      "gender": "non-binary",
+      "category": "Mood Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI linked to minority stress spikes; no plan; substance rare.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Sam Quinn",
+          "city": "Seattle, Washington, United States",
+          "dialect": "American English (Pacific NW)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "موريس العبادي",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-033",
+      "file": "personas/marcus-pellegrini.case.json",
+      "slug": "marcus-pellegrini",
+      "legacy_name": "Marcus Pellegrini",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 33,
+      "gender": "male",
+      "category": "Perinatal Psychiatry",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI; paternal perinatal depression; shame about not bonding.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Marcus Pellegrini",
+          "city": "Pittsburgh, Pennsylvania, United States",
+          "dialect": "American English (Mid-Atlantic)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "باسم المجالي",
+          "city": "السلط، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — السلط"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-034",
+      "file": "personas/helen-croft.case.json",
+      "slug": "helen-croft",
+      "legacy_name": "Helen Croft",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "severe",
+      "age": 58,
+      "gender": "female",
+      "category": "Mood Disorders",
+      "difficulty": "expert",
+      "track": "expert",
+      "risk_level": "Passive SI with melancholic features; anhedonia profound; expert teaching.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Helen Croft",
+          "city": "Ann Arbor, Michigan, United States",
+          "dialect": "American English (Midwest academic)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "هند أبو الراغب",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-035",
+      "file": "personas/isaac-moore.case.json",
+      "slug": "isaac-moore",
+      "legacy_name": "Isaac Moore",
+      "disorder": "Schizophrenia",
+      "dsm5_code": "295.90",
+      "icd10_code": "F20.9",
+      "icd11_code": "6A20",
+      "severity": "severe",
+      "age": 19,
+      "gender": "male",
+      "category": "Emergency Psychiatry",
+      "difficulty": "emergency",
+      "track": "emergency",
+      "risk_level": "First-episode psychosis; fear/paranoia; low violence; medical rule-outs needed.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Isaac Moore",
+          "city": "Madison, Wisconsin, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "عمر بني مصطفى",
+          "city": "إربد، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — إربد"
+        }
+      ],
+      "teaching_traps": [
+        "Argue delusions",
+        "Miss negative symptoms",
+        "Ignore medical differentials in FEP",
+        "Skip substance screen",
+        "Stigma-heavy tone"
+      ],
+      "educational_objectives": [
+        "Assess psychosis gently",
+        "Risk to self/others",
+        "Function and supports",
+        "Substance screen",
+        "Engage collateral carefully"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-036",
+      "file": "personas/geraldine-moss.case.json",
+      "slug": "geraldine-moss",
+      "legacy_name": "Geraldine Moss",
+      "disorder": "Obsessive-Compulsive Disorder",
+      "dsm5_code": "300.3",
+      "icd10_code": "F42.2",
+      "icd11_code": "6B20",
+      "severity": "severe",
+      "age": 62,
+      "gender": "female",
+      "category": "Anxiety Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Low SI; severe hoarding impairment; fire/fall safety teaching.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Geraldine Moss",
+          "city": "Buffalo, New York, United States",
+          "dialect": "American English (Northeast)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "فوزية الشوابكة",
+          "city": "مأدبا، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — مأدبا"
+        }
+      ],
+      "teaching_traps": [
+        "Reassurance loops",
+        "Argue content rationality",
+        "Miss hoarding/insight spectrum",
+        "Push ERP day one without alliance",
+        "Shame about taboo obsessions"
+      ],
+      "educational_objectives": [
+        "Map obsessions/compulsions",
+        "Insight continuum",
+        "Avoid reassurance trap",
+        "ERP-informed framing",
+        "Function/impairment"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-037",
+      "file": "personas/linda-cho.case.json",
+      "slug": "linda-cho",
+      "legacy_name": "Linda Cho",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 54,
+      "gender": "female",
+      "category": "Consultation-Liaison",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI; oncology C-L depression; demoralization vs MDD.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Linda Cho",
+          "city": "Houston, Texas, United States",
+          "dialect": "American English (Texas)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "نادية الحوراني",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-038",
+      "file": "personas/nadia-farouk.case.json",
+      "slug": "nadia-farouk",
+      "legacy_name": "Nadia Farouk",
+      "disorder": "Posttraumatic Stress Disorder",
+      "dsm5_code": "309.81",
+      "icd10_code": "F43.10",
+      "icd11_code": "6B40",
+      "severity": "moderate",
+      "age": 29,
+      "gender": "female",
+      "category": "Trauma Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI; ongoing contact risk; DV trauma safety planning.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Nadia Farouk",
+          "city": "Columbus, Ohio, United States",
+          "dialect": "American English (Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "رانية العبادي",
+          "city": "الزرقاء، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الزرقاء"
+        }
+      ],
+      "teaching_traps": [
+        "Flood trauma narrative",
+        "Miss avoidance/hyperarousal map",
+        "Moralize coping substances",
+        "Skip safety",
+        "Voyeuristic detail seeking"
+      ],
+      "educational_objectives": [
+        "Trauma-informed intake without flooding",
+        "Map clusters",
+        "Safety assessment",
+        "Titrate disclosure",
+        "Grounding early targets"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-039",
+      "file": "personas/vincent-rossi.case.json",
+      "slug": "vincent-rossi",
+      "legacy_name": "Vincent Rossi",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 46,
+      "gender": "male",
+      "category": "Mood Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI after gambling losses; financial crisis; alcohol evenings.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Vincent Rossi",
+          "city": "Las Vegas, Nevada, United States",
+          "dialect": "American English (West)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "وليد المجالي",
+          "city": "العقبة، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — العقبة"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-040",
+      "file": "personas/zoe-carter.case.json",
+      "slug": "zoe-carter",
+      "legacy_name": "Zoe Carter",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 15,
+      "gender": "female",
+      "category": "Child Psychiatry",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI intermittent; family-conflict identified patient; no plan.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Zoe Carter",
+          "city": "Portland, Oregon, United States",
+          "dialect": "American English (teen; Pacific NW)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "سارا الحمود",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-041",
+      "file": "personas/arthur-bell.case.json",
+      "slug": "arthur-bell",
+      "legacy_name": "Arthur Bell",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 81,
+      "gender": "male",
+      "category": "Neurocognitive",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Passive SI; cognitive concerns + depression; rule out delirium/MCI interplay.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Arthur Bell",
+          "city": "Des Moines, Iowa, United States",
+          "dialect": "American English (Midwest rural)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "عبد الرحمن الشطناوي",
+          "city": "الكرك، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الكرك"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-042",
+      "file": "personas/raven-solis.case.json",
+      "slug": "raven-solis",
+      "legacy_name": "Raven Solis",
+      "disorder": "Complex PTSD",
+      "dsm5_code": "309.81",
+      "icd10_code": "F43.1",
+      "icd11_code": "6B41",
+      "severity": "severe",
+      "age": 30,
+      "gender": "female",
+      "category": "Trauma Disorders",
+      "difficulty": "expert",
+      "track": "expert",
+      "risk_level": "Passive SI; dissociation prominent; complex trauma; no current SH.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Raven Solis",
+          "city": "Tucson, Arizona, United States",
+          "dialect": "American English (Southwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "ميساء الرواشدة",
+          "city": "السلط، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — السلط"
+        }
+      ],
+      "teaching_traps": [
+        "Chronic trauma missed behind anger/chaos",
+        "Flooding causes dissociation",
+        "Shame about still not over it",
+        "Substance minimization",
+        "Mislabel as BPD only"
+      ],
+      "educational_objectives": [
+        "Assess CPTSD without flooding",
+        "Differentiate CPTSD vs BPD/PTSD",
+        "Map dissociation",
+        "Safety around SI/substances",
+        "Phase-based framing"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-043",
+      "file": "personas/terry-hughes.case.json",
+      "slug": "terry-hughes",
+      "legacy_name": "Terry Hughes",
+      "disorder": "Alcohol Use Disorder",
+      "dsm5_code": "305.00",
+      "icd10_code": "F10.10",
+      "icd11_code": "6C40.1",
+      "severity": "severe",
+      "age": 49,
+      "gender": "male",
+      "category": "Substance Use",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Alcohol dependence; morning tremor; MI advanced; withdrawal risk if abrupt stop.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Terry Hughes",
+          "city": "Louisville, Kentucky, United States",
+          "dialect": "American English (Southern Midwest)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "نضال عبيدات",
+          "city": "إربد، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — إربد"
+        }
+      ],
+      "teaching_traps": [
+        "Moralize use",
+        "Miss withdrawal risk",
+        "Argue labels early",
+        "Ignore dual diagnosis mood",
+        "Collude with minimization"
+      ],
+      "educational_objectives": [
+        "Nonjudgmental use map",
+        "MI spirit (evocation)",
+        "Withdrawal/safety screen",
+        "Goals discrepancy",
+        "Harm reduction vs abstinence collaboratively"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-044",
+      "file": "personas/jade-whitmore.case.json",
+      "slug": "jade-whitmore",
+      "legacy_name": "Jade Whitmore",
+      "disorder": "Borderline Personality Disorder",
+      "dsm5_code": "301.83",
+      "icd10_code": "F60.3",
+      "icd11_code": "6D10.0",
+      "severity": "moderate",
+      "age": 27,
+      "gender": "female",
+      "category": "Personality Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI; self-harm urges without current acts; DBT skills candidate different from Riley.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Jade Whitmore",
+          "city": "Nashville, Tennessee, United States",
+          "dialect": "American English (Southern)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "جوان العلي",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Validate without structure",
+        "Structure without validation",
+        "Miss self-harm safety",
+        "Collude with crisis-only care",
+        "Stigmatizing language"
+      ],
+      "educational_objectives": [
+        "Assess identity/affect/relationship patterns",
+        "Safety for SH/SI",
+        "Validation then change",
+        "DBT skills framing",
+        "Boundaries without abandonment"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-045",
+      "file": "personas/simon-park.case.json",
+      "slug": "simon-park",
+      "legacy_name": "Simon Park",
+      "disorder": "Generalized Anxiety Disorder, with panic attacks",
+      "dsm5_code": "300.02",
+      "icd10_code": "F41.1",
+      "icd11_code": "6B00",
+      "severity": "moderate",
+      "age": 37,
+      "gender": "male",
+      "category": "Anxiety Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Low SI; CBT skills GAD different from Jordan; worry/IU focus.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Simon Park",
+          "city": "San Jose, California, United States",
+          "dialect": "American English (California)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "فادي النعيمات",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Endless reassurance",
+        "Miss somatic channel",
+        "Ignore sleep focus if primary",
+        "Skip panic attack screen",
+        "Intellectualize without skills"
+      ],
+      "educational_objectives": [
+        "Map worry domains",
+        "Differentiate GAD vs panic/OCD",
+        "Identify intolerance of uncertainty",
+        "Introduce CBT skills collaboratively",
+        "Address sleep/somatic as indicated"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-046",
+      "file": "personas/amelia-frost.case.json",
+      "slug": "amelia-frost",
+      "legacy_name": "Amelia Frost",
+      "disorder": "Bipolar I Disorder, current manic episode",
+      "dsm5_code": "296.44",
+      "icd10_code": "F31.2",
+      "icd11_code": "6A60.1",
+      "severity": "severe",
+      "age": 28,
+      "gender": "female",
+      "category": "Mood Disorders",
+      "difficulty": "osce",
+      "track": "osce",
+      "risk_level": "Manic OSCE; impulsivity; spending; decreased sleep; low current SI; grandiosity.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Amelia Frost",
+          "city": "Miami, Florida, United States",
+          "dialect": "American English (fast; Florida)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "لارا الخطيب",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Treat mixed as unipolar MDD",
+        "Miss sleep/energy discordance",
+        "Encourage overactivation",
+        "Ignore med changes",
+        "Collude with stopping stabilizers"
+      ],
+      "educational_objectives": [
+        "Identify mood state/mixed features",
+        "Sleep stabilization",
+        "Safety/impulsivity",
+        "Med collaboration framing",
+        "Psychoeducation without lecturing"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-047",
+      "file": "personas/logan-pierce.case.json",
+      "slug": "logan-pierce",
+      "legacy_name": "Logan Pierce",
+      "disorder": "Anorexia Nervosa, restricting type (male presentation)",
+      "dsm5_code": "307.1",
+      "icd10_code": "F50.01",
+      "icd11_code": "6B80",
+      "severity": "moderate",
+      "age": 22,
+      "gender": "male",
+      "category": "Eating Disorders",
+      "difficulty": "advanced",
+      "track": "advanced",
+      "risk_level": "Medical risk from restriction/overexercise; male AN under-recognized; low SI.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Logan Pierce",
+          "city": "Boulder, Colorado, United States",
+          "dialect": "American English (West)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "زياد الحمود",
+          "city": "العقبة، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — العقبة"
+        }
+      ],
+      "teaching_traps": [
+        "Collude with minimization",
+        "Miss medical risk",
+        "Focus only on weight number",
+        "Moralize control",
+        "Ignore compensatory methods"
+      ],
+      "educational_objectives": [
+        "Map eating behaviours nonjudgmentally",
+        "Medical safety screen",
+        "Shape/weight overvaluation",
+        "Affect regulation alternatives",
+        "Collaborative structure"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-048",
+      "file": "personas/billy-ray-cobb.case.json",
+      "slug": "billy-ray-cobb",
+      "legacy_name": "Billy Ray Cobb",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 55,
+      "gender": "male",
+      "category": "Mood Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI; rural low SES; access barriers; firearm in home — safety teaching.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Billy Ray Cobb",
+          "city": "Pikeville, Kentucky, United States",
+          "dialect": "American English (Appalachian)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "يوسف الشوابكة",
+          "city": "الكرك، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — الكرك"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-049",
+      "file": "personas/victoria-ashford.case.json",
+      "slug": "victoria-ashford",
+      "legacy_name": "Victoria Ashford",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 44,
+      "gender": "female",
+      "category": "Mood Disorders",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI rare; high SES executive burnout depression; alcohol evenings.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Victoria Ashford",
+          "city": "New York, New York, United States",
+          "dialect": "American English (NYC professional)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "داليا خوري",
+          "city": "عمّان، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — عمّان"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
+      "clinical_accuracy": {
+        "en-US": 9.5,
+        "ar-JO": 9.5
+      }
+    },
+    {
+      "case_id": "VPSY-CASE-050",
+      "file": "personas/careen-shaw.case.json",
+      "slug": "careen-shaw",
+      "legacy_name": "Careen Shaw",
+      "disorder": "Major Depressive Disorder, recurrent episode, moderate",
+      "dsm5_code": "296.32",
+      "icd10_code": "F33.1",
+      "icd11_code": "6A71.1",
+      "severity": "moderate",
+      "age": 61,
+      "gender": "female",
+      "category": "Geriatric Psychiatry",
+      "difficulty": "intermediate",
+      "track": "intermediate",
+      "risk_level": "Passive SI; caregiver burnout depression; resentment shame.",
+      "default_locale": "en-US",
+      "library_wave": 2,
+      "personalities": [
+        {
+          "locale": "en-US",
+          "display_name": "Careen Shaw",
+          "city": "Richmond, Virginia, United States",
+          "dialect": "American English (Southern Mid-Atlantic)"
+        },
+        {
+          "locale": "ar-JO",
+          "display_name": "سناء الرواشدة",
+          "city": "السلط، الأردن",
+          "dialect": "Jordanian (Levantine) Arabic — السلط"
+        }
+      ],
+      "teaching_traps": [
+        "Miss SI structured assessment",
+        "Minimize high-functioning depression",
+        "Ignore medical/context",
+        "Lecture gratitude",
+        "Skip substance screen"
+      ],
+      "educational_objectives": [
+        "Map MDE criteria",
+        "Structured safety assessment",
+        "Context and precipitants",
+        "Collaborative early interventions",
+        "Differentiate grief/adjustment when relevant"
+      ],
+      "examination_status": "APPROVED — 2 library",
       "clinical_accuracy": {
         "en-US": 9.5,
         "ar-JO": 9.5

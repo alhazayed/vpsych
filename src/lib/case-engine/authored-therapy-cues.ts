@@ -14,11 +14,16 @@ import {
   WAVE1_THERAPY_CUES,
   type Wave1TherapyCueKey,
 } from "@/lib/case-engine/authored-therapy-cues-wave1";
+import {
+  WAVE2_THERAPY_CUES,
+  type Wave2TherapyCueKey,
+} from "@/lib/case-engine/authored-therapy-cues-wave2";
 
 export type AuthoredTherapyCueKey =
   | "maya-chen"
   | "jordan-hale"
-  | Wave1TherapyCueKey;
+  | Wave1TherapyCueKey
+  | Wave2TherapyCueKey;
 
 export type AuthoredTherapyCues = {
   slug: AuthoredTherapyCueKey;
@@ -86,6 +91,7 @@ const BY_SLUG: Record<AuthoredTherapyCueKey, AuthoredTherapyCues> = {
   "maya-chen": MAYA,
   "jordan-hale": JORDAN,
   ...(WAVE1_THERAPY_CUES as Record<Wave1TherapyCueKey, AuthoredTherapyCues>),
+  ...(WAVE2_THERAPY_CUES as Record<Wave2TherapyCueKey, AuthoredTherapyCues>),
 };
 
 export function authoredTherapyCuesFor(
