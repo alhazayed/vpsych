@@ -6,35 +6,12 @@
 -- ---------------------------------------------------------------------------
 -- Enum extensions (RBAC)
 -- ---------------------------------------------------------------------------
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'supervisor';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'observer';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'research_coordinator';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'guest';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'support';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-  ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'therapist';
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'supervisor';
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'observer';
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'research_coordinator';
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'guest';
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'support';
+ALTER TYPE public.enterprise_membership_role ADD VALUE IF NOT EXISTS 'therapist';
 
 DO $$ BEGIN
   CREATE TYPE public.enterprise_tenant_type AS ENUM (
