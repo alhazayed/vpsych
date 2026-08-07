@@ -7,6 +7,7 @@ export const assessmentStructuredSchema = z.object({
       id: z.string(),
       score: z.number().min(0).max(5),
       feedback: z.string(),
+      examples: z.array(z.string()).optional(),
     }),
   ),
   narrative: z.string(),
@@ -27,6 +28,14 @@ export const assessmentSchema = z.object({
         return Math.min(5, Math.max(0, n));
       }),
       feedback: z.string().catch(""),
+      examples: z
+        .array(z.string())
+        .optional()
+        .transform((arr) => {
+          if (!arr) return undefined;
+          const cleaned = arr.filter((s) => s.trim()).slice(0, 3);
+          return cleaned.length ? cleaned : undefined;
+        }),
     }),
   ),
   narrative: z.string(),
@@ -85,6 +94,9 @@ export function normalizeAssessmentPayload(raw: unknown): unknown {
             id: typeof v.id === "string" && v.id.trim() ? v.id : key,
             score: v.score,
             feedback: typeof v.feedback === "string" ? v.feedback : "",
+            examples: Array.isArray(v.examples)
+              ? v.examples.filter((e): e is string => typeof e === "string")
+              : undefined,
           };
         }
         return { id: key, score: value, feedback: "" };

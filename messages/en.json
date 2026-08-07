@@ -40,6 +40,7 @@
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
+      "clinicalEducator": "Clinical Educator",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
     }
@@ -50,6 +51,7 @@
     "mySessions": "My Sessions",
     "adaptiveLearning": "My Learning",
     "competencyGraph": "Competency Graph",
+    "clinicalEducator": "Clinical Educator",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "voiceManagement": "Voice Management",
@@ -637,6 +639,10 @@
     "graph": {
       "title": "Competency Graph Engine",
       "subtitle": "Inspect learner and cohort DAGs, lock or unlock competencies, approve mastery, and assign reassessment."
+    },
+    "clinicalEducator": {
+      "title": "Clinical Educator",
+      "subtitle": "Ten competency dimensions with educational feedback and transcript examples — not a single overall score."
     },
     "voices": {
       "title": "Voice Management",

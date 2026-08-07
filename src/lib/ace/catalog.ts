@@ -196,6 +196,22 @@ export const COMPETENCY_IDS: CompetencyId[] = COMPETENCY_DOMAINS.map(
 
 /** Map legacy session rubric item ids → ACE competencies. */
 export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
+  // Mission 9 Clinical Educator dimensions
+  rapport: ["therapeutic_alliance", "empathy", "professional_communication"],
+  empathy: ["empathy"],
+  risk_assessment: ["risk_assessment", "suicide_assessment"],
+  history_taking: [
+    "diagnostic_interview",
+    "mental_status_examination",
+    "differential_diagnosis",
+  ],
+  dsm_reasoning: ["dsm5_reasoning", "differential_diagnosis"],
+  therapeutic_alliance: ["therapeutic_alliance", "empathy"],
+  communication: ["professional_communication"],
+  professionalism: ["ethical_decision_making", "professional_communication"],
+  session_structure: ["time_management", "documentation", "professional_communication"],
+  treatment_planning: ["treatment_planning", "cbt_skills", "psychoeducation"],
+  // Legacy Wave-3 / avatar-authored ids
   alliance: ["therapeutic_alliance", "empathy"],
   // Interview/MSE only — coding systems scored via dedicated rubric items.
   assessment: [
@@ -208,7 +224,6 @@ export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
   structure: ["time_management", "documentation", "professional_communication"],
   // Dual-coding + formulation educational competencies (W3-H3)
   diagnostic_accuracy: ["dsm5_reasoning", "icd11_reasoning", "differential_diagnosis"],
-  dsm_reasoning: ["dsm5_reasoning", "differential_diagnosis"],
   icd_reasoning: ["icd11_reasoning", "differential_diagnosis"],
   clinical_formulation: [
     "psychodynamic_interviewing",
@@ -223,15 +238,9 @@ export const RUBRIC_TO_COMPETENCIES: Record<string, CompetencyId[]> = {
     "psychoeducation",
     "time_management",
   ],
-  communication: ["professional_communication"],
-  empathy: ["empathy"],
-  therapeutic_alliance: ["therapeutic_alliance"],
-  risk_assessment: ["risk_assessment"],
   safety_planning: ["suicide_assessment", "risk_assessment"],
   documentation: ["documentation"],
-  treatment_planning: ["treatment_planning"],
   medication_decisions: ["medication_management"],
-  professionalism: ["ethical_decision_making", "professional_communication"],
   time_management: ["time_management"],
 };
 

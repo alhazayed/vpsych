@@ -107,6 +107,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       icon: "account_tree",
       match: (p) => p.startsWith("/admin/graph"),
     },
+    {
+      href: "/admin/clinical-educator",
+      label: t("clinicalEducator"),
+      icon: "menu_book",
+      match: (p) => p.startsWith("/admin/clinical-educator"),
+    },
   ];
 }
 
@@ -188,6 +194,8 @@ export function AppShell({
       return tShell("pageTitle.adaptiveCurriculum");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
+    if (pathname.startsWith("/admin/clinical-educator"))
+      return tShell("pageTitle.clinicalEducator");
     if (pathname.startsWith("/learning/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning"))

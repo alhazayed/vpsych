@@ -324,14 +324,22 @@ export type ScoreEntry = {
   max: number;
   weight: number;
   feedback: string;
+  /** Verbatim transcript excerpts supporting this dimension (Clinical Educator). */
+  examples?: string[];
 };
 
 export type SessionReport = {
   id: string;
   session_id: string;
   scores: {
+    /**
+     * Weighted composite retained for ACE/ERI/AVI compatibility.
+     * Clinical Educator UI leads with per-dimension scores, not this alone.
+     */
     overall: number;
     items: ScoreEntry[];
+    /** Mission 9 Clinical Educator multi-dimension educational report. */
+    clinical_educator?: import("@/lib/clinical-educator/types").ClinicalEducatorReport;
   };
   narrative: string;
   excerpts: string[];

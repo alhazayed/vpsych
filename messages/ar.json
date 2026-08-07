@@ -40,6 +40,7 @@
       "adaptiveCurriculum": "المنهج التكيفي",
       "adaptiveLearning": "تعلّمي",
       "competencyGraph": "رسم الكفاءات",
+      "clinicalEducator": "المعلّم السريري",
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح"
     }
@@ -50,6 +51,7 @@
     "mySessions": "جلساتي",
     "adaptiveLearning": "تعلّمي",
     "competencyGraph": "رسم الكفاءات",
+    "clinicalEducator": "المعلّم السريري",
     "reportsLibrary": "مكتبة التقارير",
     "avatarPresets": "نماذج الشخصيات",
     "voiceManagement": "إدارة الأصوات",
@@ -637,6 +639,10 @@
     "graph": {
       "title": "محرك رسم الكفاءات",
       "subtitle": "افحص رسوم المتعلمين والمجموعات، اقفل أو افتح الكفاءات، اعتمد الإتقان، واطلب إعادة التقييم."
+    },
+    "clinicalEducator": {
+      "title": "المعلّم السريري",
+      "subtitle": "عشرة أبعاد كفاءة مع ملاحظات تعليمية وأمثلة من النص — وليس درجة إجمالية واحدة."
     },
     "voices": {
       "title": "إدارة الأصوات",

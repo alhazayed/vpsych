@@ -6,7 +6,7 @@
 export const PROMPT_ENGINE_VERSION = "2.0.0";
 
 /** Examiner assessment structured output / scoring schema version. */
-export const ASSESSMENT_SCHEMA_VERSION = "1.1.0";
+export const ASSESSMENT_SCHEMA_VERSION = "2.0.0";
 
 /** CaseInstance snapshot schema version (types.CaseInstanceSnapshot.version). */
 export const CASE_SNAPSHOT_VERSION = 2 as const;
@@ -17,8 +17,8 @@ export const ACE_ENGINE_VERSION = "3.0.0";
 /** Competency Graph Engine scientific contract version. */
 export const CGE_ENGINE_VERSION = "3.0.0";
 
-/** Default rubric schema id for examiner scoring. */
-export const RUBRIC_SCHEMA_VERSION = "default-v1";
+/** Default rubric schema id for examiner scoring (Mission 9 Clinical Educator). */
+export const RUBRIC_SCHEMA_VERSION = "clinical-educator-v1";
 
 export type ScientificProvenance = {
   prompt_engine_version: string;
