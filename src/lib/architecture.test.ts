@@ -806,4 +806,47 @@ describe("architecture invariants", () => {
       /rate limits, timeouts, correlation, env checks, CI gates/,
     );
   });
+
+  it("CIDP feedback framework never owns patient cognition", () => {
+    const barrel = readFileSync(join(root, "lib/feedback/index.ts"), "utf8");
+    const versions = readFileSync(
+      join(root, "lib/feedback/versions.ts"),
+      "utf8",
+    );
+    const engine = readFileSync(join(root, "lib/feedback/engine.ts"), "utf8");
+    const route = readFileSync(join(root, "app/api/feedback/route.ts"), "utf8");
+    const admin = readFileSync(
+      join(root, "app/api/admin/feedback/route.ts"),
+      "utf8",
+    );
+    expect(barrel).toMatch(/NEVER modifies patient/);
+    expect(versions).toMatch(/Never writes clinical_snapshot/);
+    expect(engine).toMatch(/clinical_snapshot/);
+    expect(engine).toMatch(/decision_plan/);
+    expect(route).toMatch(/rateLimit/);
+    expect(admin).toMatch(/requireApiAdmin/);
+    expect(admin).toMatch(/rateLimit/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/clinical-intelligence["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+
+    const docs = join(process.cwd(), "docs");
+    for (const name of [
+      "GA_DEPLOYMENT_GUIDE.md",
+      "INSTITUTIONAL_ONBOARDING.md",
+      "FACULTY_MANUAL.md",
+      "RESIDENT_MANUAL.md",
+      "SUPERVISOR_MANUAL.md",
+      "RESEARCH_PROTOCOL.md",
+      "USER_FEEDBACK_FRAMEWORK.md",
+      "OPERATIONS_MONITORING.md",
+      "PRODUCTION_METRICS.md",
+      "ROLLBACK_PROCEDURES.md",
+      "GA_READINESS_REPORT.md",
+    ]) {
+      expect(() => readFileSync(join(docs, name), "utf8")).not.toThrow();
+    }
+    const readiness = readFileSync(join(docs, "GA_READINESS_REPORT.md"), "utf8");
+    expect(readiness).toMatch(/NO-GO/);
+  });
 });
+

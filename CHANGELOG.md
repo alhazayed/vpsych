@@ -2,6 +2,21 @@
 
 All notable changes to VPsych are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/). Versioning follows semver.
 
+## [Unreleased] — Controlled Institutional Deployment (CIDP)
+
+### Added
+
+- Institutional feedback framework (`src/lib/feedback`, `POST /api/feedback`, admin list) with migration `20260807184117_institutional_feedback_ga.sql`.
+- Production telemetry + GA dashboards (`GET /api/admin/ops/dashboards`) and validation suite (`GET /api/admin/ops/validation`).
+- Institutional manuals: `GA_DEPLOYMENT_GUIDE.md`, `INSTITUTIONAL_ONBOARDING.md`, Faculty/Resident/Supervisor manuals, `RESEARCH_PROTOCOL.md`, monitoring/metrics/rollback docs.
+- GA readiness package under `docs/ga/` + `GA_READINESS_REPORT.md` (**NO-GO** for full GA).
+- CI script `npm run test:ga-validation`.
+
+### Notes
+
+- Tag `v1.0.0-rc.1` published; PR #176 merged. Patient cognition unchanged.
+- Full GA blocked on live DR drill + external pilot critical clearance (RDL-029).
+
 ## [1.0.0-rc.1] — 2026-08-07
 
 ### Added
@@ -28,6 +43,7 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 
 - Stages 1–11 remain canonical; Stage 12 does not add patient or supervisor cognition.
 - Competency scores remain **unvalidated** — see `KNOWN_LIMITATIONS.md`.
+
 
 ## [0.1.0] — 2026-08-06
 

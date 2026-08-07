@@ -2,7 +2,8 @@
 
 **Date:** 2026-08-07  
 **Rule:** Debt is inventoried here for v1.1 — not fixed unless it blocks production integrity.  
-**Stage 12 delta:** see [`stage12/TECHNICAL_DEBT.md`](./stage12/TECHNICAL_DEBT.md).
+**Stage 12 delta:** see [`stage12/TECHNICAL_DEBT.md`](./stage12/TECHNICAL_DEBT.md).  
+**CIDP / GA residuals:** see [`ga/REMAINING_TECHNICAL_DEBT.md`](./ga/REMAINING_TECHNICAL_DEBT.md) — full GA **NO-GO** until DR drill + pilot clearance.
 
 > **Stage 5 clinical-intelligence gaps** are catalogued under  
 > [`clinical-intelligence/`](./clinical-intelligence/) (IDs `CI-*`) and sequenced in  

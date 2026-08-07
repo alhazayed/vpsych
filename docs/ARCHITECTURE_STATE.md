@@ -88,6 +88,7 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Enterprise / multi-tenant | `ENTERPRISE_ARCHITECTURE.md` · `TENANT_MODEL.md` · `RBAC_MODEL.md` (Stage 10) |
 | Realtime simulation | `REALTIME_ARCHITECTURE.md` · `VOICE_PIPELINE.md` · `AVATAR_ARCHITECTURE.md` (Stage 11) |
 | Production / Version 1.0 RC | `RELEASE_CERTIFICATION.md` · `PRODUCTION_READINESS.md` · `VERSION_1_0_RELEASE_REPORT.md` (Stage 12) |
+| CIDP / GA readiness | `GA_READINESS_REPORT.md` · `GA_DEPLOYMENT_GUIDE.md` · `ga/*` · `USER_FEEDBACK_FRAMEWORK.md` |
 | Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
 | Security | `SECURITY_AUDIT.md` · `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` · `DEPLOYMENT_GUIDE.md` · `DISASTER_RECOVERY.md` · `INCIDENT_RESPONSE.md` |
@@ -109,4 +110,5 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | 9 Supervisor AI · Expert Review · Competency | Implemented · Needs Human Review | `src/lib/supervisor/` + `docs/SUPERVISOR_ARCHITECTURE.md` |
 | 10 Enterprise Platform · Multi-Tenant | Implemented · Needs Human Review | `src/lib/enterprise/` + `docs/ENTERPRISE_ARCHITECTURE.md` |
 | 11 Real-Time Clinical Simulation | Implemented · Needs Human Review | `src/lib/realtime/` + `docs/REALTIME_ARCHITECTURE.md` |
-| 12 Production Release Certification | **RC1 `1.0.0-rc.1`** · Needs Board soak | `docs/RELEASE_CERTIFICATION.md` · `docs/VERSION_1_0_RELEASE_REPORT.md` · harden in `lib/ops`, CI, voice timeout, admin RL |
+| 12 Production Release Certification | **RC1 `1.0.0-rc.1`** tagged · PR #176 merged | `docs/RELEASE_CERTIFICATION.md` · `docs/VERSION_1_0_RELEASE_REPORT.md` · harden in `lib/ops`, CI, voice timeout, admin RL |
+| CIDP → GA | **NO-GO for full GA** · CIDP authorized | `docs/GA_READINESS_REPORT.md` · `src/lib/feedback/` · ops dashboards/telemetry · institutional manuals |
