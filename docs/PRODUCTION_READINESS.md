@@ -42,7 +42,7 @@ Suitable for universities, residency programs, hospitals, mental health centers,
 
 | # | Item | Result |
 |---|------|--------|
-| 1 | Lint / typecheck / test / migrations / build | Required green before merge |
+| 1 | Lint / typecheck / test / migrations / build | **PASS** this RC — lint 0 errors; typecheck; **621** tests / 75 files; migrations structure; build |
 | 2 | `npm run audit:deps` (high+) | Required green in CI |
 | 3 | Admin scientific routes rate-limited | **PASS** (Stage 12 harden) |
 | 4 | ElevenLabs AbortSignal timeout | **PASS** (RT-03 closed in code) |

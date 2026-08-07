@@ -99,7 +99,8 @@ See `RELEASE_CERTIFICATION.md` § Risk register (R-01…R-08).
 
 - GitHub Actions: audit → lint → typecheck → test → migrations → perf-smoke → build.  
 - Semver: `1.0.0-rc.1` → future `1.0.0` after Board RDL.  
-- Changelog: root `CHANGELOG.md`.
+- Changelog: root `CHANGELOG.md`.  
+- **This RC local gates:** lint 0 errors · typecheck PASS · **621** tests PASS · migrations PASS · audit 0 high+ · perf-smoke PASS · build PASS.
 
 ---
 

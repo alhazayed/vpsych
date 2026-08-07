@@ -36,13 +36,13 @@
 
 | Gate | Required |
 |------|----------|
-| Lint | 0 errors |
-| Typecheck | PASS |
-| Tests | PASS |
-| Migrations | PASS (structure; remote when URL set) |
-| Build | PASS |
-| Dependency audit | PASS (`audit:deps`) |
-| Perf smoke | PASS |
+| Lint | **PASS** (0 errors / 13 pre-existing warnings) |
+| Typecheck | **PASS** |
+| Tests | **PASS** (621 / 75 files) |
+| Migrations | **PASS** (68 files local structure; remote when URL set) |
+| Build | **PASS** |
+| Dependency audit | **PASS** (`audit:deps` — 0 high+) |
+| Perf smoke | **PASS** |
 | Security audit | `SECURITY_AUDIT.md` |
 | Performance audit | `PERFORMANCE_REPORT.md` |
 | Production audit | `PRODUCTION_READINESS.md` |

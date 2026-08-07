@@ -797,8 +797,13 @@ describe("architecture invariants", () => {
       join(docs, "runtime/ENGINE_OWNERSHIP.md"),
       "utf8",
     );
-    expect(ownership).toMatch(/Never writes clinical_snapshot|Forbidden ownership/);
-    // Stage 12 must not claim patient cognition ownership
-    expect(ownership).not.toMatch(/Stage 12.*PatientDecisionPlan/);
+    expect(ownership).toMatch(/Forbidden ownership claims/);
+    // Stage 12 may only harden cross-cutting controls — never own cognition.
+    expect(ownership).toMatch(
+      /Stage 12 \*\*does not\*\* own PatientDecisionPlan/,
+    );
+    expect(ownership).toMatch(
+      /rate limits, timeouts, correlation, env checks, CI gates/,
+    );
   });
 });
