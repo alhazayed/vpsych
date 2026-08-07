@@ -76,7 +76,7 @@ function minimalSnapshot(slug: string): CaseInstanceSnapshot {
     randomized_context: {},
     memory_scope: "case_instance",
     generated_at: new Date().toISOString(),
-  } as CaseInstanceSnapshot;
+  } as unknown as CaseInstanceSnapshot;
 }
 
 const THERAPIST_LINES = [

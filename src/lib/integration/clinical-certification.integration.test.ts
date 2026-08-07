@@ -226,7 +226,7 @@ function minimalSnapshot(slug: string): CaseInstanceSnapshot {
     randomized_context: {},
     memory_scope: "case_instance",
     generated_at: new Date().toISOString(),
-  } as CaseInstanceSnapshot;
+  } as unknown as CaseInstanceSnapshot;
 }
 
 function runScenario(scenario: (typeof SCENARIOS)[number]): ScenarioResult {
@@ -343,7 +343,7 @@ function runScenario(scenario: (typeof SCENARIOS)[number]): ScenarioResult {
   const fillers = [];
   for (let i = 0; i < MEMORY_SOFT_CAP + 10; i++) {
     fillers.push({
-      category: (i % 2 === 0 ? "life_event" : "other") as const,
+      category: i % 2 === 0 ? ("life_event" as const) : ("other" as const),
       content: `Session filler life detail ${i} about weekend errands and plans`,
       salience: 0.35,
       topics: ["life_event"],
