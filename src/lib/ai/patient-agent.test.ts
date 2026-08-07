@@ -109,4 +109,26 @@ describe("generatePatientReply resilience", () => {
       }),
     ).resolves.toBe("ok");
   });
+
+  it("appends Conversation Behaviour reinforcement to the therapist turn", async () => {
+    chatMock.mockResolvedValue({ text: "…", model: "gpt-5" });
+    const { generatePatientReplyDetailed } = await import(
+      "@/lib/ai/patient-agent"
+    );
+    await generatePatientReplyDetailed({
+      avatar,
+      history: [],
+      userMessage: "How are you feeling?",
+      behaviourReinforcement:
+        "CONVERSATION BEHAVIOUR THIS TURN\n- Do not answer everything.",
+    });
+    expect(chatMock).toHaveBeenCalled();
+    const payload = chatMock.mock.calls[0]![0] as {
+      messages: { role: string; content: string }[];
+    };
+    const userTurn = payload.messages.find((m) => m.role === "user");
+    expect(userTurn?.content).toContain("How are you feeling?");
+    expect(userTurn?.content).toContain("Stay in character.");
+    expect(userTurn?.content).toContain("CONVERSATION BEHAVIOUR THIS TURN");
+  });
 });

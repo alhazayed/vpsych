@@ -39,6 +39,16 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/error: "Server misconfigured"/);
   });
 
+  it("wires Conversation Behaviour Engine into the message route (Mission 7)", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).toMatch(/planConversationBehaviour/);
+    expect(message).toMatch(/behaviourReinforcement/);
+    expect(message).toMatch(/CBE plan failed/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),

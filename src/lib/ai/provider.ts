@@ -1,7 +1,11 @@
 import { hasOpenAIApiKey } from "@/lib/ai/openai";
 
-/** Reply / assessment provenance returned to clients (never hide fallback). */
-export type AiSource = "gpt" | "gateway" | "persona_fallback";
+/**
+ * Reply / assessment provenance returned to clients (never hide fallback).
+ * `cbe_direct` = Conversation Behaviour Engine short-circuit (silence /
+ * interruption stall) — not a model completion.
+ */
+export type AiSource = "gpt" | "gateway" | "persona_fallback" | "cbe_direct";
 
 export function hasGatewayKey() {
   return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
