@@ -1,54 +1,58 @@
-# Known Limitations — VPsych Professional Preview 1.0
+# Known Limitations — VPsych Version 1.0 RC1 (CIDP)
 
-**Audience:** Invited clinical experts and program leads  
-**Baseline:** production @ `7dc9a35` / `dpl_2fxxbz…` (Mission Omega)  
-**Prior freeze note:** RC1 packaging originally froze `d4c4fae`; subsequent merges #139–#143 are on the current baseline under Limited Professional Preview constraints.  
-**Purpose:** Set honest expectations before evaluation. These are intentional or known gaps — not defects to “fix during review” unless Critical.
+**Audience:** Institutional pilots, faculty, residents, researchers, administrators  
+**Baseline:** `main` after PR #176 · tag `v1.0.0-rc.1` · Program `VPSYCH-1.0-CIDP-GA`  
+**Purpose:** Honest constraints for Controlled Institutional Deployment. Full GA requires clearance of residuals below.
 
 ---
 
 ## Clinical & educational measurement
 
-1. **Competency scores are not yet validated.** Assessment machinery exists; published reliability/validity coefficients are not claimed. Treat scores as formative feedback for training discussion, not high-stakes credentialing.  
+1. **Competency scores are not yet validated.** Treat as formative only — not high-stakes credentialing.  
 2. **Admin reports only.** Therapists do not see full performance reports by design.  
-3. **Heuristic fallbacks** may appear if model providers are unavailable; the UI should surface `aiSource` (including `persona_fallback`) — never treat fallback as a model reply.
+3. **Heuristic fallbacks** may appear if model providers are unavailable; UI must surface `aiSource`.
 
 ---
 
 ## Simulation fidelity
 
-4. **AI patients are synthetic / fictional.** Never real persons. Pathways are training constructs.  
-5. **Conversational phenotype** varies by disorder package richness; some presentations are stronger than others.  
-6. **Excellence / mind-engine / longitudinal therapy-response stacks** (PME, TRE, HCTF, CQI, EOI, CVL, HFTE, VMHC) are **not** in this preview — they remain open experimental/roadmap PRs.
+4. **AI patients are synthetic / fictional.** Never real persons.  
+5. **Conversational phenotype** varies by disorder package richness.  
+6. **Excellence / experimental stacks** (PME, TRE, HCTF, CQI, EOI, CVL, HFTE) remain out of production activation without Board unlock.  
+7. **Therapy Room / Realtime flags** default **off**; classic VoiceSession is the institutional default.
 
 ---
 
-## Product scope
+## Enterprise & tenancy
 
-7. **Single-tenant preview.** Institutional multi-tenant, DSAR automation, and full enterprise compliance suites are deferred (`[v1.1]` backlog).  
-8. **Avatar catalog** on production may be limited to active seeded patients (evaluate what is live, not the full research library).  
+8. **Enterprise control plane** is present (Stage 10); live SSO IdP, LMS adapters, and multi-instance stores remain deepening items.  
 9. **Session hard cap** is 40 minutes server-side.  
-10. **Arabic and English** are supported; quality may differ by voice casting and personality authorship.  
-11. **Therapy Room Mode** may exist in code but is **disabled by default** (`NEXT_PUBLIC_THERAPY_ROOM_MODE`); classic VoiceSession is the preview default.
+10. **Arabic and English** supported; quality may differ by voice casting and authorship.
 
 ---
 
-## Operations & security residuals
+## Operations & security residuals (GA blockers)
 
-12. **Rate limits** apply (sessions, messages, STT, TTS). Heavy testing may hit 429.  
-13. **Secrets and provider keys** are ops-managed; TTS requires a valid ElevenLabs `sk_…` Production key (fixed for Wave 3 H5).  
-14. **Assessment reliability corpus** needs real clinician ratings before scientific publication claims.  
-15. **Supabase Auth leaked-password protection** remains disabled (ops residual).  
-16. **Monitoring/APM and DR drills** are not production-certified.
+11. **Supabase Auth leaked-password protection** may still need enablement (ops).  
+12. **Upstash Redis** required for horizontally safe rate limits.  
+13. **Vendor APM (Sentry)** not mandatory in-app — wire externally; in-app dashboards exist.  
+14. **Live DR PITR restore drill** not yet Board-signed.  
+15. **External pilot critical-issue clearance** required before unconstrained GA.  
+16. **Assessment reliability corpus** needs clinician ratings before publication claims.
 
 ---
 
-## What evaluators should not expect
+## Feedback
+
+17. Institutional feedback never modifies patient cognition; Critical/High open items block GA promotion.
+
+---
+
+## What not to expect
 
 - Automated clinical decision support for real patients  
+- Validated OSCE-equivalent scoring  
 - Guaranteed identical scores across models/providers  
-- Public marketing site polish beyond current app shell  
-- Immediate merge of experimental excellence PRs during the preview window  
-- Full expert clinical-validation completion (Mission Omega recommendation is Limited Professional Preview only)
+- Immediate merge of experimental excellence PRs  
 
-If you discover a **Critical** safety or data-integrity issue in production, report it immediately through the Feedback Guide’s Critical channel — do not wait for the scheduled debrief.
+Report **Critical** safety or data-integrity issues immediately via `POST /api/feedback` (`severity: critical`) and your program administrator.

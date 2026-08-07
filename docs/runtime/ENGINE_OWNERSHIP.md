@@ -43,6 +43,7 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Rate limit counters | rate-limit | Redis/memory | — |
 | Production ops metrics / env posture | Ops (`lib/ops`, `lib/env`) | ephemeral | Admin dashboard only |
 | Request correlation id | request-id | response headers | STT / message / TTS may echo |
+| Institutional product feedback | Feedback (`lib/feedback`) | `institutional_feedback` (+ memory) | Observe product UX only — **never** patient writers |
 
 ---
 
@@ -80,4 +81,5 @@ Stage 12 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore
 - Enterprise must not write clinical_snapshot, patient case_memory, LTM, or DecisionPlan.  
 - Realtime must not write clinical_snapshot, patient case_memory, LTM, or DecisionPlan.  
 - Voice/avatar/realtime must not mutate ClinicalCore or fork Patient Agent cognition.  
+- Institutional feedback must not write clinical_snapshot, case_memory, LTM, or DecisionPlan.  
 - No engine may define a second Patient type (Stage 3).

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:migrations": "node scripts/verify-migration-parity.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
-    "test:perf-smoke": "node scripts/perf-smoke.mjs"
+    "test:perf-smoke": "node scripts/perf-smoke.mjs",
+    "test:ga-validation": "node scripts/ga-operational-validation.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.24",
