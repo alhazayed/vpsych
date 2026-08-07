@@ -109,13 +109,15 @@ Request
   → session_has_report? → alreadyExists (skip rest)
   → Load messages → resolveAvatar
   → Scoring assessSession()
-  → ★ ACE runAceAfterAssessment
+  → ★ Education runEducationAfterAssessment (wraps ACE)
   → ★ Memory runPatientMemoryAfterSession
   → Reporting (service role INSERT or HMAC RPC)
   → ★ Quality Ledger seal (+ VQI in-process ping)
   → Telemetry headers X-AI-* / X-Quality-Ledger-Id
-  → Completion { ok, reportId, ledgerId, … }  // no report body
+  → Completion { ok, reportId, ledgerId, adaptive, education, … }  // no report body
 ```
+
+Education is trainee-only: observe/evaluate/teach. It never mutates the patient mind or clinical_snapshot.
 
 ---
 

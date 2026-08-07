@@ -111,11 +111,23 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | Turn-level realism auditor | Medium | Open | R-I11 |
 | Atomic case_memory merge helper | Medium | Open | ARCH-S2-02 / OWN-01 |
 
+## Education debt (Stage 7 remainder)
+
+| ID | Severity | Item | Notes |
+|----|----------|------|-------|
+| EDU-01 | Low | Persist education session bundles | Ephemeral today; see `docs/education/MIGRATION.md` |
+| EDU-02 | Medium | Arabic interview-process heuristics | EN-biased transcript markers |
+| EDU-03 | Medium | Difficulty biases → next case mint modifiers | Recommendations only today |
+| EDU-04 | Medium | Learning UI radar on `/api/education/summary` | API ready; UI pending |
+| EDU-05 | High (claims) | Validated competency instruments | Unchanged product debt — do not claim validation |
+| EDU-06 | Medium | Assessor missed-disclosure telemetry | R-I8 / assessment side |
+
 ## Duplicate logic
 
 | Item | Notes |
 |------|-------|
 | Instructor preset heuristic grader vs assessment `weightedOverall` | Different purposes — keep separate; do not merge |
+| Education domain scores vs ACE CompetencyId EMAs | Education aggregates ACE — ACE remains SSOT for persistence |
 | Historical cert docs vs Omega package | Prefer Omega + RC1 for current truth |
 
 ## v1.1 roadmap pointer
