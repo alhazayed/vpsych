@@ -151,3 +151,31 @@ export type { EnterpriseRunInput } from "@/lib/enterprise/engine";
 
 export { runEnterpriseAfterAssessment } from "@/lib/enterprise/session-bridge";
 export type { EnterpriseBridgeResult } from "@/lib/enterprise/session-bridge";
+
+export {
+  FEEDBACK_ROLES,
+  FEEDBACK_SEVERITIES,
+  FEEDBACK_CLASSIFICATIONS,
+  FEEDBACK_PRIORITIES,
+  FEEDBACK_STATUSES,
+  FEEDBACK_REPRODUCIBILITY,
+  FEEDBACK_CATEGORIES,
+  defaultPriorityForSeverity,
+  normalizeFeedbackSeverity,
+  classifyFeedbackSeverity,
+  appendFeedbackAudit,
+  validateFeedbackInput,
+  validateFeedbackAdminPatch,
+  summarizeFeedback,
+} from "@/lib/enterprise/feedback";
+export type {
+  FeedbackRole,
+  FeedbackSeverity,
+  FeedbackClassification,
+  FeedbackPriority,
+  FeedbackStatus,
+  FeedbackReproducibility,
+  FeedbackAuditEvent,
+  InstitutionalFeedbackInput,
+  InstitutionalFeedbackRecord,
+} from "@/lib/enterprise/feedback";

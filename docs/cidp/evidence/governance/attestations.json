@@ -1,0 +1,23 @@
+{
+  "cert_id": "VPSYCH-1.0-RC1-CIDP",
+  "package_version": "1.0.0-rc.1",
+  "generated_at": "2026-08-07T19:09:00Z",
+  "cidp_status": "GO",
+  "ga_status": "NO-GO",
+  "domains": [
+    { "id": "release", "status": "PASS_CIDP" },
+    { "id": "deployment", "status": "PASS_CIDP" },
+    { "id": "version", "status": "PASS" },
+    { "id": "architecture", "status": "PASS" },
+    { "id": "clinical", "status": "PASS_WITH_LIMITATIONS" },
+    { "id": "security", "status": "PASS_WITH_RESIDUALS" },
+    { "id": "research", "status": "PASS_OBSERVATIONAL" },
+    { "id": "operational", "status": "PASS_CIDP" }
+  ],
+  "invariants": [
+    "No Clinical Core cognition changes",
+    "No new patient-state writers",
+    "No PHI in dashboards or feedback metadata clinical keys",
+    "GA blocked until readiness matrix complete"
+  ]
+}

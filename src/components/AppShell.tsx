@@ -60,6 +60,12 @@ function therapistNav(
       icon: "psychology",
       match: (p) => p.startsWith("/learning/supervisor"),
     },
+    {
+      href: "/feedback",
+      label: t("institutionalFeedback"),
+      icon: "rate_review",
+      match: (p) => p === "/feedback" || p.startsWith("/feedback?"),
+    },
   ];
 }
 
@@ -136,6 +142,18 @@ function adminNav(t: (key: string) => string): NavItem[] {
       label: t("enterprisePlatform"),
       icon: "domain",
       match: (p) => p.startsWith("/admin/enterprise"),
+    },
+    {
+      href: "/admin/cidp",
+      label: t("cidpOperations"),
+      icon: "monitoring",
+      match: (p) => p.startsWith("/admin/cidp"),
+    },
+    {
+      href: "/admin/feedback",
+      label: t("feedbackQueue"),
+      icon: "inbox",
+      match: (p) => p.startsWith("/admin/feedback"),
     },
   ];
 }
@@ -230,6 +248,12 @@ export function AppShell({
       return tShell("pageTitle.supervisorAi");
     if (pathname.startsWith("/admin/enterprise"))
       return tShell("pageTitle.enterprisePlatform");
+    if (pathname.startsWith("/admin/cidp"))
+      return tShell("pageTitle.cidpOperations");
+    if (pathname.startsWith("/admin/feedback"))
+      return tShell("pageTitle.feedbackQueue");
+    if (pathname.startsWith("/feedback"))
+      return tShell("pageTitle.institutionalFeedback");
     if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");

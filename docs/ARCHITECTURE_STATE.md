@@ -14,6 +14,7 @@
 > **Stage 10 enterprise:** [`ENTERPRISE_ARCHITECTURE.md`](./ENTERPRISE_ARCHITECTURE.md) · code `src/lib/enterprise/`.  
 > **Stage 11 realtime:** [`REALTIME_ARCHITECTURE.md`](./REALTIME_ARCHITECTURE.md) · code `src/lib/realtime/`.  
 > **Stage 12 production certification:** [`RELEASE_CERTIFICATION.md`](./RELEASE_CERTIFICATION.md) · [`PRODUCTION_READINESS.md`](./PRODUCTION_READINESS.md) · [`VERSION_1_0_RELEASE_REPORT.md`](./VERSION_1_0_RELEASE_REPORT.md).  
+> **CIDP (Controlled Institutional Deployment):** [`cidp/README.md`](./cidp/README.md) · dashboards `/admin/cidp` · feedback `/feedback`.  
 > This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology

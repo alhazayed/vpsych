@@ -45,7 +45,10 @@
       "apiIntegrations": "تكاملات واجهة البرمجة",
       "securityKeys": "الأمان والمفاتيح",
       "supervisorAi": "مشرف الذكاء الاصطناعي",
-      "enterprisePlatform": "المنصة المؤسسية"
+      "enterprisePlatform": "المنصة المؤسسية",
+      "cidpOperations": "عمليات النشر المؤسسي",
+      "feedbackQueue": "قائمة الملاحظات",
+      "institutionalFeedback": "ملاحظات مؤسسية"
     }
   },
   "nav": {
@@ -66,7 +69,10 @@
     "apiIntegrations": "تكاملات واجهة البرمجة",
     "securityKeys": "الأمان والمفاتيح",
     "supervisorAi": "مشرف الذكاء الاصطناعي",
-    "enterprisePlatform": "المنصة المؤسسية"
+    "enterprisePlatform": "المنصة المؤسسية",
+    "cidpOperations": "عمليات النشر المؤسسي",
+    "feedbackQueue": "قائمة الملاحظات",
+    "institutionalFeedback": "ملاحظات مؤسسية"
   },
   "learning": {
     "title": "التعلّم التكيفي",

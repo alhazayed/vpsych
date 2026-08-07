@@ -33,7 +33,7 @@ export const ENTERPRISE_FORBIDDEN_WRITES = [
 ] as const;
 
 export const ENTERPRISE_OWNERSHIP_RULE =
-  "Enterprise owns tenancy, RBAC, org hierarchy, courses, org certificates, analytics dashboards, research study metadata, webhooks, and observability. Never owns Patient, Memory, Emotion, Adaptation, Case Engine, Clinical Intelligence, Validation scoring, or Supervisor skill evaluation. Never changes patient state or cognition. Never exposes session_reports to therapists.";
+  "Enterprise owns tenancy, RBAC, org hierarchy, courses, org certificates, analytics dashboards, research study metadata, webhooks, observability, and institutional pilot feedback (CIDP). Never owns Patient, Memory, Emotion, Adaptation, Case Engine, Clinical Intelligence, Validation scoring, or Supervisor skill evaluation. Never changes patient state or cognition. Never exposes session_reports to therapists.";
 
 export function buildEnterpriseVersionLock(opts?: {
   computed_at?: string;
