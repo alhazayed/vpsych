@@ -16,13 +16,14 @@
 | Security Governance | **PASS (residuals)** | `SECURITY_REPORT.md`; ops residuals block GA not CIDP |
 | Research Governance | **PASS (observational)** | `RESEARCH_GUIDE.md`; de-identification rules |
 | Operational Governance | **PASS (CIDP)** | Ops manual; CIDP dashboards; weekly reports API |
+| Phase 14 Evidence Governance | **PASS (program)** | `../../stage14/`; GA gates code; risk/lessons logs; RDL-031 |
 
 ## Signed statements (process)
 
-1. **Architecture:** CIDP does not own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, or Assessment formulas.  
+1. **Architecture:** CIDP / Phase 14 do not own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, or Assessment formulas.  
 2. **Clinical Safety:** No claim of validated competency scoring; no real-patient PHI workflows.  
-3. **Security:** No unresolved Critical/High application findings introduced by CIDP execution.  
-4. **Release:** GA remains **NO-GO** until `GA_READINESS_REPORT.md` criteria PASS.
+3. **Security:** No unresolved Critical/High application findings introduced by CIDP / Phase 14.  
+4. **Release:** GA remains **NO-GO** until ten-gate framework PASS + authorizing RDL.
 
 | Role | Attestation | Date |
 |------|-------------|------|
@@ -31,3 +32,4 @@
 | Enterprise Deployment Lead | Aye — CIDP package operational | 2026-08-07 |
 | DevSecOps Lead | Aye — security/DR evidence maintained | 2026-08-07 |
 | Release Manager | Aye — RDL-030 CIDP execution | 2026-08-07 |
+| Phase 14 Board (collective) | Aye — RDL-031 evidence program; GA still NO-GO | 2026-08-07 |

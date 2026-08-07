@@ -9,7 +9,13 @@ import type { PilotPortfolioSummary } from "@/lib/ops/cidp-pilot";
 import { PACKAGE_VERSION } from "@/lib/ops/versions";
 import { CIDP_CERT_ID } from "@/lib/ops/cidp-dashboards";
 
-export type WeeklyReportKind = "executive" | "clinical" | "security";
+export type WeeklyReportKind =
+  | "executive"
+  | "clinical"
+  | "security"
+  | "research"
+  | "educational"
+  | "operations";
 
 export type WeeklyReportInput = {
   week_ending: string;
@@ -19,6 +25,7 @@ export type WeeklyReportInput = {
   open_critical_feedback: number;
   open_high_feedback: number;
   security_alerts?: number;
+  open_critical_risks?: number;
   notes?: string[];
 };
 
@@ -66,6 +73,27 @@ export function buildWeeklyReports(input: WeeklyReportInput): WeeklyReport[] {
     `Open critical feedback: ${input.open_critical_feedback} · high: ${input.open_high_feedback}`,
   ];
 
+  const researchHighlights = [
+    `Datasets: ${metric(input.dashboards, "research", "datasets")}`,
+    `Validation runs: ${metric(input.dashboards, "research", "validation_runs")}`,
+    `Inter-rater agreement: ${metric(input.dashboards, "research", "ira")}%`,
+    `Research-participating orgs: ${input.pilots.research_participating_orgs}`,
+  ];
+
+  const educationalHighlights = [
+    `Curriculum completion: ${metric(input.dashboards, "educational", "curriculum_completion")}%`,
+    `Certification progress: ${metric(input.dashboards, "educational", "certification_progress")}%`,
+    `Competency growth: ${metric(input.dashboards, "educational", "competency_growth")}%`,
+    `Resident engagement: ${metric(input.dashboards, "educational", "resident_engagement")}%`,
+  ];
+
+  const operationsHighlights = [
+    `Uptime: ${metric(input.dashboards, "system", "uptime")}%`,
+    `API p95: ${metric(input.dashboards, "system", "api_p95")}ms`,
+    `Error rate: ${metric(input.dashboards, "system", "error_rate")}%`,
+    `Open critical risks: ${input.open_critical_risks ?? 0}`,
+  ];
+
   return [
     {
       ...common,
@@ -84,6 +112,24 @@ export function buildWeeklyReports(input: WeeklyReportInput): WeeklyReport[] {
       kind: "security",
       highlights: securityHighlights,
       markdown: renderSecurity(input, securityHighlights),
+    },
+    {
+      ...common,
+      kind: "research",
+      highlights: researchHighlights,
+      markdown: renderResearch(input, researchHighlights),
+    },
+    {
+      ...common,
+      kind: "educational",
+      highlights: educationalHighlights,
+      markdown: renderEducational(input, educationalHighlights),
+    },
+    {
+      ...common,
+      kind: "operations",
+      highlights: operationsHighlights,
+      markdown: renderOperations(input, operationsHighlights),
     },
   ];
 }
@@ -182,4 +228,71 @@ function panelLines(dash: CidpDashboardBundle, id: string): string[] {
   return panel.metrics.map(
     (m) => `- ${m.label}: ${m.value}${m.unit ?? ""}`,
   );
+}
+
+function renderResearch(input: WeeklyReportInput, highlights: string[]): string {
+  return [
+    `# CIDP Weekly Research Report`,
+    ``,
+    `**Week ending:** ${input.week_ending}`,
+    `**Version:** ${PACKAGE_VERSION}`,
+    `**CIDP:** GO · **GA:** NO-GO`,
+    ``,
+    `> Observational research metrics only. Never assigns diagnoses.`,
+    ``,
+    `## Highlights`,
+    ...highlights.map((h) => `- ${h}`),
+    ``,
+    `## Research panel`,
+    ...panelLines(input.dashboards, "research"),
+    ``,
+    `## Multicenter`,
+    `- Research-participating organizations: ${input.pilots.research_participating_orgs}`,
+    ``,
+  ].join("\n");
+}
+
+function renderEducational(input: WeeklyReportInput, highlights: string[]): string {
+  return [
+    `# CIDP Weekly Educational Outcomes Report`,
+    ``,
+    `**Week ending:** ${input.week_ending}`,
+    `**Version:** ${PACKAGE_VERSION}`,
+    ``,
+    `> Formative educational analytics — competency scores are not validated instruments.`,
+    ``,
+    `## Highlights`,
+    ...highlights.map((h) => `- ${h}`),
+    ``,
+    `## Educational panel`,
+    ...panelLines(input.dashboards, "educational"),
+    ``,
+    `## Pilot learning`,
+    `- Mean training completion: ${input.pilots.mean_training_completion_rate}%`,
+    `- Active residents: ${input.pilots.total_residents_active}`,
+    `- Active faculty: ${input.pilots.total_faculty_active}`,
+    ``,
+  ].join("\n");
+}
+
+function renderOperations(input: WeeklyReportInput, highlights: string[]): string {
+  return [
+    `# CIDP Weekly Operations Report`,
+    ``,
+    `**Week ending:** ${input.week_ending}`,
+    `**Version:** ${PACKAGE_VERSION}`,
+    `**CIDP:** GO · **GA:** NO-GO`,
+    ``,
+    `## Highlights`,
+    ...highlights.map((h) => `- ${h}`),
+    ``,
+    `## System panel`,
+    ...panelLines(input.dashboards, "system"),
+    ``,
+    `## Risk & feedback pressure`,
+    `- Open critical feedback: ${input.open_critical_feedback}`,
+    `- Open high feedback: ${input.open_high_feedback}`,
+    `- Open critical risks: ${input.open_critical_risks ?? 0}`,
+    ``,
+  ].join("\n");
 }

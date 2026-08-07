@@ -50,6 +50,18 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 
 Stage 12 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment scoring formulas, Education domains, Validation realism scores, Supervisor skill models, Enterprise tenancy rules, or Realtime presentation FSMs. It may only harden cross-cutting production controls (rate limits, timeouts, correlation, env checks, CI gates, documentation).
 
+## Phase 14 ownership note
+
+Phase 14 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment formulas, Education domains, Validation realism ownership, Supervisor skill models, Enterprise tenancy rules, or Realtime presentation FSMs. It owns institutional pilot **evidence**, risk/lessons registers, GA gating evaluation, and expanded weekly reporting façades under `lib/ops` — **never patient-state writers**.
+
+## Phase 15 ownership note
+
+Phase 15 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment formulas, Scientific validation engine logic, Supervisor decision logic, Enterprise architecture, or Realtime presentation FSMs. It owns final **GA authorization evaluation**, pilot-completion reporting, and workstream certification evidence packaging under `lib/ops` — **never patient-state writers**.
+
+## Phase 16 ownership note
+
+Phase 16 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment formulas, Supervisor AI logic, scientific validation engines, Enterprise architecture, or patient behaviour. It owns **institutional pilot execution evidence**, Evidence-Pending dashboards/reports, and GA gate display under `lib/ops` — **never patient-state writers** and **never fabricated operational evidence**.
+
 ## CIDP ownership note
 
 Controlled Institutional Deployment **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment scoring formulas, Education domains, Validation realism scores, Supervisor skill models, or Realtime presentation FSMs. CIDP may add institutional governance docs, monitoring dashboards, DR/security evidence, and enterprise-owned `institutional_feedback` only — never patient-state writers.
