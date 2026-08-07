@@ -24,6 +24,11 @@ export type PromptFidelityHints = {
    * assembling Module 1; never leave the model with speech-pace alone.
    */
   therapy_process_cue?: string;
+  /**
+   * Mission 8 — Patient Adaptation Engine expression block (rapport / trust /
+   * withdrawal / anger / disclosure readiness for THIS therapist turn).
+   */
+  adaptation_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -158,6 +163,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.difficulty_behavior}}
 
 {{fidelity.therapy_process_cue}}
+
+{{fidelity.adaptation_block}}
 
 Conversational naturalness (mandatory):
 - Sound like a real person in a psychiatric interview — not a chatbot, textbook,
@@ -349,6 +356,7 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- No symptom lists, no DSM self-lecture, no chatbot empathy.",
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
+      adaptation_block: input.fidelity?.adaptation_block?.trim() || "",
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);

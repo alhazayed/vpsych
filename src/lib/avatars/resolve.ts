@@ -30,6 +30,11 @@ import { projectAvatarVoiceFields } from "@/lib/voice/registry";
 export type ResolveAvatarOptions = {
   /** Immutable CaseInstance snapshot — diagnosis comes from here, not the avatar. */
   caseSnapshot?: CaseInstanceSnapshot | null;
+  /**
+   * Mission 8 — preformatted Patient Adaptation Engine expression block for
+   * THIS therapist turn (rapport / trust / withdrawal / anger / disclosure).
+   */
+  adaptationBlock?: string | null;
 };
 
 /** Avatar slug → default disorder slug when no case override is applied. */
@@ -397,20 +402,26 @@ export function resolveAvatar(
         }
       : core;
 
+    const fidelity = fidelityHintsFromSnapshot(snapshot, {
+      disorderHint: slugHintFromDisorderName(
+        mergedCore.disorder ?? avatar.disorder,
+      ),
+      avatarSlug: avatar.slug,
+      locale,
+      diagnosisOverride: snapshot
+        ? isCaseDiagnosisOverride(avatar, snapshot)
+        : false,
+    });
+    if (options?.adaptationBlock?.trim()) {
+      fidelity.adaptation_block = options.adaptationBlock.trim();
+    }
+
     const assembly = {
       clinical_core: mergedCore,
       personality,
       session: { locale },
-      fidelity: fidelityHintsFromSnapshot(snapshot, {
-        disorderHint: slugHintFromDisorderName(
-          mergedCore.disorder ?? avatar.disorder,
-        ),
-        avatarSlug: avatar.slug,
-        locale,
-        diagnosisOverride: snapshot
-          ? isCaseDiagnosisOverride(avatar, snapshot)
-          : false,
-      }),
+      // `fidelity` may carry Mission 8 adaptation_block for this therapist turn.
+      fidelity,
       human_personality: resolveHumanPersonality({
         avatar,
         locale,
@@ -506,6 +517,12 @@ export function resolveAvatar(
     personality: assembly.personality,
     snapshotProfile: snapshot?.human_personality ?? null,
   });
+  if (options?.adaptationBlock?.trim()) {
+    assembly.fidelity = {
+      ...assembly.fidelity,
+      adaptation_block: options.adaptationBlock.trim(),
+    };
+  }
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 

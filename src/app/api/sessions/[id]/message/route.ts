@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import {
+  createAdaptationState,
+  loadAdaptationState,
+  processTherapistTurn,
+  saveAdaptationState,
+} from "@/lib/adaptation";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -73,9 +79,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  // Mission 8 — Patient Adaptation (rapport / trust / withdrawal / disclosure).
+  // Best-effort: missing case_memory must never block the reply.
+  const caseInstanceId = typed.case_instance_id ?? null;
+  const loaded = await loadAdaptationState(supabase, caseInstanceId);
+  let adaptation =
+    loaded.state ??
+    createAdaptationState({
+      caseInstanceId,
+      therapistId: user.id,
+    });
+  const adapted = processTherapistTurn(adaptation, message);
+  adaptation = adapted.state;
+  void saveAdaptationState(supabase, caseInstanceId, adaptation, loaded.raw);
+
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
+    adaptationBlock: adapted.expressionBlock,
   });
 
   const { data: userMsg, error: userMsgError } = await supabase
