@@ -23,6 +23,9 @@ export type ElevenLabsSynthesizeParams = {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  /** Mission 10 — optional Humanization Engine prosody overrides. */
+  stability?: number | null;
+  style?: number | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -251,6 +254,15 @@ export const elevenLabsService = {
       speechEnergy: params.speechEnergy,
       disorderSlug: params.disorderSlug,
     });
+    if (
+      typeof params.stability === "number" &&
+      Number.isFinite(params.stability)
+    ) {
+      voiceSettings.stability = Math.max(0, Math.min(1, params.stability));
+    }
+    if (typeof params.style === "number" && Number.isFinite(params.style)) {
+      voiceSettings.style = Math.max(0, Math.min(1, params.style));
+    }
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
 

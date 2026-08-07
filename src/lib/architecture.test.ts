@@ -177,4 +177,25 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
   });
+
+  it("wires Mission 10 Humanization Engine into the message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/humanization/index.ts"), "utf8");
+    expect(message).toMatch(/buildHumanizationTurn/);
+    expect(message).toMatch(/humanizationEnabled/);
+    expect(message).toMatch(/voiceHints/);
+    expect(barrel).toMatch(/emotionTick/);
+    expect(barrel).toMatch(/behaviorTick/);
+    expect(barrel).toMatch(/memoryTick/);
+    expect(barrel).toMatch(/voiceTick/);
+    // Clinical gates must remain — humanity never overrides risk safety.
+    const gates = readFileSync(
+      join(root, "lib/humanization/clinical-gates.ts"),
+      "utf8",
+    );
+    expect(gates).toMatch(/blocked during active risk/);
+  });
 });
