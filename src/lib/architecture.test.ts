@@ -428,4 +428,40 @@ describe("architecture invariants", () => {
     expect(decision).toBeGreaterThan(cbe);
     expect(hum).toBeGreaterThan(decision);
   });
+
+  it("Stage 7 Education layer observes ACE/assessment and never owns patient mind", () => {
+    const barrel = readFileSync(join(root, "lib/education/index.ts"), "utf8");
+    const bridge = readFileSync(
+      join(root, "lib/education/session-bridge.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const cgeBarrel = readFileSync(join(root, "lib/cge/index.ts"), "utf8");
+    const framework = readFileSync(
+      join(root, "lib/education/competency-framework.ts"),
+      "utf8",
+    );
+
+    expect(barrel).toMatch(/runEducationAfterAssessment/);
+    expect(barrel).toMatch(/scoreEducationCompetencies/);
+    expect(bridge).toMatch(/runAceAfterAssessment/);
+    expect(bridge).toMatch(/Never writes patient clinical state|never touches patient/i);
+    expect(end).toMatch(/runEducationAfterAssessment/);
+    expect(end).not.toMatch(/from ["']@\/lib\/ace\/session-hook["']/);
+    // CGE must still not re-export ace-bridge (comment mention is OK)
+    expect(cgeBarrel).not.toMatch(/from\s+["']\.\/ace-bridge["']/);
+    expect(cgeBarrel).not.toMatch(/export\s+\*\s+from\s+["']\.\/ace-bridge["']/);
+    // Must not fork weightedOverall
+    expect(framework).not.toMatch(/weightedOverall\s*\(/);
+    expect(framework).toMatch(/weightedEducationOverall/);
+
+    const eduDocs = join(process.cwd(), "docs/education");
+    expect(() => readFileSync(join(eduDocs, "README.md"), "utf8")).not.toThrow();
+    expect(() =>
+      readFileSync(join(eduDocs, "IMPLEMENTATION.md"), "utf8"),
+    ).not.toThrow();
+  });
 });

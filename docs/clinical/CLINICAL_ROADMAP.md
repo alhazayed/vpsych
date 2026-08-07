@@ -170,6 +170,22 @@ flowchart TD
 
 ---
 
+## Stage 7 — Curriculum & Expert Training (educational layer)
+
+Canonical design + report: [`../education/README.md`](../education/README.md) · [`../education/IMPLEMENTATION.md`](../education/IMPLEMENTATION.md).  
+Code: `src/lib/education/`. **Never modifies the patient** — observes assessment + ACE/CGE only.
+
+| ID | Concept | Owner | Impact | Status |
+|----|---------|-------|--------|--------|
+| R-E1 | 20-domain education competency framework over ACE | Education | M | **Done** |
+| R-E2 | Session interview evaluation + expert feedback | Education | M | **Done** |
+| R-E3 | Clinical reasoning graph + DSM/ICD educational mapping | Education | M | **Done** (case-key grounded) |
+| R-E4 | Certification milestones + portfolio + analytics | Education | M | **Done** |
+| R-E5 | Longitudinal 10/25/50/100 trainee horizons | Education | S–M | **Done** (projection + sim) |
+| R-E6 | Persist education bundles / Arabic heuristics / UI radar | Education + Learning UI | M | Open (EDU-01–04) |
+
+---
+
 ## Out of scope for clinical model work
 
 - Implementing engines in documentation stages.  
@@ -177,6 +193,7 @@ flowchart TD
 - Rewriting prompt Modules 2–4 for convenience.  
 - Storing permanent diagnosis on avatars.  
 - Redesigning Stages 1–4 architecture or ontology roots.
+- Education writing patient clinical_snapshot / DecisionPlan / LTM.
 
 ---
 

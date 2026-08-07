@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
-import { runAceAfterAssessment } from "@/lib/ace/session-hook";
+import { runEducationAfterAssessment } from "@/lib/education";
 import { runPatientMemoryAfterSession } from "@/lib/patient-memory";
 import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
@@ -187,17 +187,19 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
-  // Adaptive Curriculum Engine — update learner competencies + next case
-  const ace = await runAceAfterAssessment(supabase, {
+  // Stage 7 Education + ACE — best-effort; never blocks report; never touches patient mind.
+  const education = await runEducationAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,
     items: assessment.scores.items,
+    messages: (messages ?? []) as Array<{ role: string; content: string }>,
     language: assessment.language ?? resolved.locale,
     diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
     narrative,
     durationSec,
     timeLimitSec: typed.max_duration_sec,
+    clinicalSnapshot: typed.clinical_snapshot ?? null,
   });
 
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
@@ -268,31 +270,14 @@ export async function POST(_request: Request, { params }: Params) {
     });
 
     return NextResponse.json(
-      {
-        ok: true,
+      educationEndPayload({
         reportId: inserted?.id,
         ledgerId,
-        // Additive — same AI pipeline provenance as conversation turns.
-        aiSource: assessment.aiSource,
-        aiModel: assessment.model ?? null,
-        aiErrorKind: assessment.errorKind ?? null,
-        adaptive: ace.ok
-          ? {
-              learnerId: ace.learnerId,
-              nextCase: ace.nextCase,
-              coachSummary: ace.coach?.supervisor_feedback ?? null,
-            }
-          : null,
-      },
+        assessment,
+        education,
+      }),
       {
-        headers: {
-          "X-AI-Source": assessment.aiSource,
-          ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
-          ...(assessment.errorKind
-            ? { "X-AI-Error-Kind": assessment.errorKind }
-            : {}),
-          ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
-        },
+        headers: educationEndHeaders(assessment, ledgerId),
       },
     );
   }
@@ -357,31 +342,69 @@ export async function POST(_request: Request, { params }: Params) {
   });
 
   return NextResponse.json(
-    {
-      ok: true,
+    educationEndPayload({
       reportId,
       ledgerId,
-      // Do not return report content to therapist — admin only
-      aiSource: assessment.aiSource,
-      aiModel: assessment.model ?? null,
-      aiErrorKind: assessment.errorKind ?? null,
-      adaptive: ace.ok
-        ? {
-            learnerId: ace.learnerId,
-            nextCase: ace.nextCase,
-            coachSummary: ace.coach?.supervisor_feedback ?? null,
-          }
-        : null,
-    },
+      assessment,
+      education,
+    }),
     {
-      headers: {
-        "X-AI-Source": assessment.aiSource,
-        ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
-        ...(assessment.errorKind
-          ? { "X-AI-Error-Kind": assessment.errorKind }
-          : {}),
-        ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
-      },
+      headers: educationEndHeaders(assessment, ledgerId),
     },
   );
+}
+
+/** Additive education + ACE summary — never includes admin-only report body. */
+function educationEndPayload(opts: {
+  reportId: string | null | undefined;
+  ledgerId: string | null;
+  assessment: Awaited<ReturnType<typeof assessSession>>;
+  education: Awaited<ReturnType<typeof runEducationAfterAssessment>>;
+}) {
+  const { assessment, education, reportId, ledgerId } = opts;
+  const ace = education.ace;
+  const bundle = education.bundle;
+  return {
+    ok: true as const,
+    reportId,
+    ledgerId,
+    aiSource: assessment.aiSource,
+    aiModel: assessment.model ?? null,
+    aiErrorKind: assessment.errorKind ?? null,
+    adaptive: ace.ok
+      ? {
+          learnerId: ace.learnerId,
+          nextCase: ace.nextCase,
+          coachSummary: ace.coach?.supervisor_feedback ?? null,
+        }
+      : null,
+    education: bundle
+      ? {
+          version: bundle.version,
+          milestone: bundle.milestone,
+          priorityImprovements: bundle.feedback.priority_improvements.slice(0, 5),
+          missedOpportunities: bundle.evaluation.missed_opportunities.slice(0, 5),
+          interviewCoverage: bundle.evaluation.coverage,
+          diagnosticConfidence:
+            bundle.diagnostic.supported_diagnoses[0]?.confidence ?? null,
+          learningPath: bundle.learning_path_summary.slice(0, 5),
+          plateau: education.longitudinal?.plateau_detected ?? null,
+          regression: education.longitudinal?.regression_detected ?? null,
+        }
+      : null,
+  };
+}
+
+function educationEndHeaders(
+  assessment: Awaited<ReturnType<typeof assessSession>>,
+  ledgerId: string | null,
+): Record<string, string> {
+  return {
+    "X-AI-Source": assessment.aiSource,
+    ...(assessment.model ? { "X-AI-Model": assessment.model } : {}),
+    ...(assessment.errorKind
+      ? { "X-AI-Error-Kind": assessment.errorKind }
+      : {}),
+    ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
+  };
 }
