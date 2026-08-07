@@ -256,7 +256,7 @@ describe("Emotion expression layer", () => {
 
 describe("Mission examples end-to-end", () => {
   it("Validation → trust↑ anger↓; Empathy → hope↑; Hostility → withdrawal", () => {
-    let state = initEmotionState({
+    const state = initEmotionState({
       disorderSlug: "mdd-recurrent-moderate",
       overrides: { trust: 40, anger: 50, hope: 30, rapport: 35 },
     });
