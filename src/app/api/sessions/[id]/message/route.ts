@@ -7,6 +7,11 @@ import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import {
+  expressionPromptBlock,
+  processEmotionTurn,
+} from "@/lib/emotion";
+import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -100,10 +105,80 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  // Prefer service role; fall back to authenticated client. RPC bodies enforce
+  // ownership, active status, and "assistant after user" turn order.
+  const writer = messageRpcClient(supabase);
+
+  // Emotion Engine (Mission 2) — best-effort; never blocks the reply path.
+  const snap = typed.clinical_snapshot as CaseInstanceSnapshot | null | undefined;
+  const disorderSlug =
+    snap?.primary_diagnosis?.slug ??
+    null;
+  const elapsedSec =
+    typed.max_duration_sec - remainingSeconds(typed.started_at, typed.max_duration_sec);
+
+  let emotionPayload: {
+    mode: string;
+    variables: Record<string, number>;
+    expression: {
+      facial_affect: string;
+      voice: Record<string, number>;
+      hesitation_ms: number;
+      word_choice: string[];
+      body_language: string[];
+      animation_hooks: string[];
+      openness: number;
+      summary: string;
+    };
+    applied: { intervention: string };
+  } | null = null;
+
+  let emotionSystemExtra = "";
+  try {
+    const emotionResult = await processEmotionTurn({
+      supabase: writer,
+      caseInstanceId: typed.case_instance_id,
+      sessionId,
+      disorderSlug,
+      therapistMessage: message,
+      elapsedSeconds: Math.max(0, elapsedSec),
+    });
+    if (emotionResult.ok) {
+      emotionSystemExtra = `\n\n${expressionPromptBlock(emotionResult.expression)}`;
+      emotionPayload = {
+        mode: emotionResult.state.mode,
+        variables: emotionResult.state.variables,
+        expression: {
+          facial_affect: emotionResult.expression.facial_affect,
+          voice: emotionResult.expression.voice,
+          hesitation_ms: emotionResult.expression.hesitation_ms,
+          word_choice: emotionResult.expression.word_choice,
+          body_language: emotionResult.expression.body_language,
+          animation_hooks: emotionResult.expression.animation_hooks,
+          openness: emotionResult.expression.openness,
+          summary: emotionResult.expression.summary,
+        },
+        applied: { intervention: emotionResult.applied.intervention },
+      };
+    }
+  } catch (err) {
+    console.warn("[sessions/message] emotion engine soft-fail", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  const avatarForReply = emotionSystemExtra
+    ? {
+        ...resolved,
+        system_prompt: `${resolved.system_prompt}${emotionSystemExtra}`,
+      }
+    : resolved;
+
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
+      avatar: avatarForReply,
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
@@ -125,11 +200,9 @@ export async function POST(request: Request, { params }: Params) {
     aiSource: replyMeta.aiSource,
     aiModel: replyMeta.model ?? null,
     errorKind: replyMeta.errorKind ?? null,
+    emotionMode: emotionPayload?.mode ?? null,
   });
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
-  const writer = messageRpcClient(supabase);
   const { data: assistantMsg, error: assistantError } = await writer.rpc(
     "insert_assistant_message",
     {
@@ -163,6 +236,8 @@ export async function POST(request: Request, { params }: Params) {
       aiSource: replyMeta.aiSource,
       aiModel: replyMeta.model ?? null,
       aiErrorKind: replyMeta.errorKind ?? null,
+      // Additive Emotion Engine packet (Mission 2) — null when soft-failed.
+      emotion: emotionPayload,
     },
     {
       headers: {
