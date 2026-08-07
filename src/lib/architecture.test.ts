@@ -806,4 +806,52 @@ describe("architecture invariants", () => {
       /rate limits, timeouts, correlation, env checks, CI gates/,
     );
   });
+
+  it("CIDP package exists without claiming Clinical Core ownership", () => {
+    const cidp = join(process.cwd(), "docs/cidp");
+    for (const name of [
+      "README.md",
+      "EXECUTIVE_DEPLOYMENT_REPORT.md",
+      "INSTITUTIONAL_DEPLOYMENT_CHECKLIST.md",
+      "ADMINISTRATOR_GUIDE.md",
+      "FACULTY_GUIDE.md",
+      "RESIDENT_GUIDE.md",
+      "RESEARCH_GUIDE.md",
+      "IT_OPERATIONS_GUIDE.md",
+      "OPERATIONS_MANUAL.md",
+      "SECURITY_REPORT.md",
+      "DISASTER_RECOVERY_REPORT.md",
+      "PILOT_REPORT_TEMPLATE.md",
+      "GA_READINESS_REPORT.md",
+      "RELEASE_BOARD_PACKAGE.md",
+      "FEEDBACK_MANAGEMENT.md",
+    ]) {
+      expect(() => readFileSync(join(cidp, name), "utf8")).not.toThrow();
+    }
+
+    const ga = readFileSync(join(cidp, "GA_READINESS_REPORT.md"), "utf8");
+    expect(ga).toMatch(/Do NOT declare General Availability/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/CIDP ownership note/);
+    expect(ownership).toMatch(/never patient-state writers/);
+
+    const feedbackRoute = readFileSync(
+      join(root, "app/api/feedback/route.ts"),
+      "utf8",
+    );
+    expect(feedbackRoute).toMatch(/requireApiUser/);
+    expect(feedbackRoute).toMatch(/rateLimit/);
+    expect(feedbackRoute).not.toMatch(/clinical_snapshot/);
+
+    const cidpRoute = readFileSync(
+      join(root, "app/api/admin/ops/cidp/route.ts"),
+      "utf8",
+    );
+    expect(cidpRoute).toMatch(/requireApiAdmin/);
+    expect(cidpRoute).toMatch(/buildCidpDashboards/);
+  });
 });

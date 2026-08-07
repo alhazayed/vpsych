@@ -39,7 +39,8 @@
 13. **Secrets and provider keys** are ops-managed; TTS requires a valid ElevenLabs `sk_…` Production key (fixed for Wave 3 H5).  
 14. **Assessment reliability corpus** needs real clinician ratings before scientific publication claims.  
 15. **Supabase Auth leaked-password protection** remains disabled (ops residual).  
-16. **Monitoring/APM and DR drills** are not production-certified.
+16. **Monitoring/APM and DR drills** are not production-certified for GA. CIDP ships in-app ops/CIDP dashboards and DR procedures; vendor APM and signed PITR drill evidence remain open.  
+17. **Controlled Institutional Deployment** (`docs/cidp/`) is governed Limited Institutional Production — **not** General Availability.
 
 ---
 

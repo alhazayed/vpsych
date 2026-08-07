@@ -1,0 +1,62 @@
+{
+  "cert_id": "VPSYCH-1.0-RC1-CIDP",
+  "package_version": "1.0.0-rc.1",
+  "alerts": [
+    {
+      "id": "CIDP-A01",
+      "name": "Health check failing",
+      "severity": "critical",
+      "condition": "GET /api/health ok!=true for >2m",
+      "action": "Page on-call; check Vercel+Supabase status"
+    },
+    {
+      "id": "CIDP-A02",
+      "name": "Production deploy failed",
+      "severity": "critical",
+      "condition": "Vercel production deploy ERROR on main",
+      "action": "Promote last READY deploy; open incident"
+    },
+    {
+      "id": "CIDP-A03",
+      "name": "API latency degraded",
+      "severity": "high",
+      "condition": "api_latency_p95_ms > 5000 for 15m",
+      "action": "Check providers; shed admin analytics"
+    },
+    {
+      "id": "CIDP-A04",
+      "name": "Voice pipeline failure spike",
+      "severity": "high",
+      "condition": "TTS or STT error rate > 10% over 15m",
+      "action": "Verify ElevenLabs/OpenAI keys; offer text-only"
+    },
+    {
+      "id": "CIDP-A05",
+      "name": "Open critical feedback",
+      "severity": "high",
+      "condition": "open_critical_feedback > 0 for >24h without owner",
+      "action": "Assign triage in /admin/feedback"
+    },
+    {
+      "id": "CIDP-A06",
+      "name": "RBAC denial burst",
+      "severity": "medium",
+      "condition": "rbac_violations spike vs baseline",
+      "action": "Review security_audit_events; check misconfigured roles"
+    },
+    {
+      "id": "CIDP-A07",
+      "name": "Rate limit saturation",
+      "severity": "medium",
+      "condition": "rate_limit_hits elevated with user impact",
+      "action": "Confirm Upstash; adjust budgets only with Board"
+    },
+    {
+      "id": "CIDP-A08",
+      "name": "Migration drift",
+      "severity": "critical",
+      "condition": "test:migrations remote parity FAIL",
+      "action": "Stop release; reconcile schema_migrations"
+    }
+  ]
+}

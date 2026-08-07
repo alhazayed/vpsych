@@ -1,0 +1,6 @@
+{
+  "$comment": "Operational copy of CIDP dashboard config for deploy pipelines",
+  "ref": "docs/cidp/monitoring/DASHBOARD_CONFIG.json",
+  "endpoint": "/api/admin/ops/cidp",
+  "ui": "/admin/cidp"
+}

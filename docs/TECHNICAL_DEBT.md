@@ -76,7 +76,8 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | Leaked-password protection disabled | Medium | Ops residual (SEC-S12-01) |
 | In-memory rate limit without Upstash (multi-instance) | Medium | Confirm Upstash in prod |
 | No Sentry/APM baseline | Medium | In-app `/api/admin/ops/metrics` shipped; vendor APM still open |
-| DR drill not certified | Medium | Procedures in `DISASTER_RECOVERY.md`; drill evidence open |
+| DR drill not certified | Medium | Procedures in `DISASTER_RECOVERY.md` + `cidp/DISASTER_RECOVERY_REPORT.md`; drill evidence still open (blocks GA, not CIDP) |
+| CIDP active_* / research metrics sparse wiring | Low | Dashboard soft-fails to 0 until membership/research aggregates are wired |
 | Audit credential vault churn | High for certification velocity | Credential Verification Gate still binding |
 | Open PR sprawl | Medium hygiene | Do not merge experimental engines during RC |
 

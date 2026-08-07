@@ -1,0 +1,76 @@
+{
+  "cert_id": "VPSYCH-1.0-RC1-CIDP",
+  "package_version": "1.0.0-rc.1",
+  "phi_policy": "counts_and_aggregates_only",
+  "sources": {
+    "ops_metrics": "GET /api/admin/ops/metrics",
+    "cidp_dashboards": "GET /api/admin/ops/cidp",
+    "admin_ui": "/admin/cidp",
+    "feedback_queue": "/admin/feedback"
+  },
+  "panels": [
+    {
+      "id": "system",
+      "metrics": [
+        "uptime",
+        "api_latency_p50_ms",
+        "api_latency_p95_ms",
+        "sse_p95_ms",
+        "voice_e2e_p95_ms",
+        "queue_depth"
+      ]
+    },
+    {
+      "id": "clinical",
+      "metrics": [
+        "simulations_completed",
+        "simulations_abandoned",
+        "assessments_completed",
+        "supervisor_completed",
+        "validation_completed",
+        "simulation_completion_rate"
+      ]
+    },
+    {
+      "id": "institution",
+      "metrics": [
+        "active_residents",
+        "active_faculty",
+        "institutions",
+        "departments",
+        "campuses"
+      ]
+    },
+    {
+      "id": "research",
+      "metrics": [
+        "datasets",
+        "validation_runs",
+        "inter_rater_agreement",
+        "realism_score_mean"
+      ]
+    },
+    {
+      "id": "security",
+      "metrics": [
+        "authentication_failures",
+        "rbac_violations",
+        "rate_limit_hits",
+        "audit_events"
+      ]
+    },
+    {
+      "id": "executive",
+      "metrics": [
+        "dau",
+        "wau",
+        "simulation_completion_rate",
+        "avg_session_duration_sec",
+        "learning_progress_mean",
+        "certification_rate",
+        "supervisor_agreement",
+        "system_uptime"
+      ]
+    }
+  ]
+}
