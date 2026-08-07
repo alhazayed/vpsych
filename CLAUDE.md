@@ -91,6 +91,7 @@ Read the matching file in `docs/` before changing any of them.
 | Adaptive Curriculum Engine (ACE) | `lib/ace/` | `docs/ADAPTIVE_CURRICULUM_ENGINE.md` |
 | Competency Graph Engine (CGE) | `lib/cge/` | `docs/COMPETENCY_GRAPH_ENGINE.md` |
 | Human Personality Engine | `lib/personality-engine/` | `docs/HUMAN_PERSONALITY_ENGINE.md` |
+| Clinical Voice Profiles (CVP) | `lib/clinical-voice/` | `docs/CLINICAL_VOICE_PROFILES.md` |
 
 Therapy Room Mode (optional immersive session UI) lives in `lib/therapy-room/` +
 `components/therapy-room/` — see `docs/THERAPY_ROOM_MODE.md`. Enabled only when

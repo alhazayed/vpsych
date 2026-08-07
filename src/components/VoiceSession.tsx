@@ -83,6 +83,8 @@ export function VoiceSession({
   const router = useRouter();
   const t = useTranslations("session");
   const locale = resolvePipelineLocale(session.language, avatar.language);
+  const disorderSlug =
+    session.clinical_snapshot?.primary_diagnosis?.slug ?? null;
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>
     remainingSeconds(session.started_at, session.max_duration_sec),
@@ -182,6 +184,7 @@ export function VoiceSession({
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
         speechPace: avatar.personality?.speech?.pace ?? null,
+        disorderSlug,
         audioRef,
         handlers: {
           onstart: () => setSpeaking(true),
@@ -199,6 +202,7 @@ export function VoiceSession({
       avatar.voice_id,
       avatar.voice_id_ar,
       avatar.voice_profile_id,
+      disorderSlug,
       locale,
       stopPlayback,
       t,
@@ -271,6 +275,7 @@ export function VoiceSession({
         voiceProfileId: avatar.voice_profile_id,
         avatarId: avatar.id,
         speechPace: avatar.personality?.speech?.pace ?? null,
+        disorderSlug,
         audioRef,
         onTranscript: (transcript) => setDraft(transcript),
         onMessages: (userMessage, assistantMessage) => {

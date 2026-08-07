@@ -147,7 +147,7 @@ export type PersonalityVoice = {
   pitch?: number;
 };
 
-/** Row shape for `public.voice_profiles` (ElevenLabs voice registry). */
+/** Row shape for `public.voice_profiles` (ElevenLabs + clinical delivery). */
 export type VoiceProfile = {
   id: string;
   provider: string;
@@ -158,6 +158,24 @@ export type VoiceProfile = {
   gender: string | null;
   is_active: boolean;
   created_at: string;
+  /** Mission 3 — clinical voice parameters (nullable until migration applied). */
+  speech_rate?: number;
+  pitch?: number;
+  energy?: "low" | "moderate" | "high" | "labile";
+  prosody?:
+    | "flat"
+    | "measured"
+    | "anxious_edge"
+    | "pressured"
+    | "fragmented"
+    | "labile";
+  breathing?: "calm" | "short" | "deep" | "irregular" | "held";
+  hesitation_frequency?: number;
+  speaker_boost?: number;
+  emotion_modulation?: boolean;
+  pronunciation_ar?: string | null;
+  pronunciation_en?: string | null;
+  updated_at?: string | null;
 };
 
 /** Module 2 — natively authored personality for one locale. */

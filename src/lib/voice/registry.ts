@@ -20,6 +20,8 @@ export type VoiceResolution = {
   voiceProfileId?: string | null;
   provider?: string;
   locale: SessionSpeechLocale;
+  /** Mission 3 — full registry row for clinical live-switching (when loaded). */
+  clinicalProfile?: VoiceProfile | null;
 };
 
 /** Normalize PostgREST embed shapes (object | array | null). */
@@ -65,6 +67,7 @@ export function resolveAvatarSpeechVoice(params: {
         voiceProfileId: profile.id,
         provider: profile.provider,
         locale,
+        clinicalProfile: profile,
       };
     }
   }
@@ -85,6 +88,7 @@ export function resolveAvatarSpeechVoice(params: {
     voiceProfileId: params.voiceProfileId ?? profile?.id ?? null,
     provider: "elevenlabs",
     locale,
+    clinicalProfile: profile,
   };
 }
 

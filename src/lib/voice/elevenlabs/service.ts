@@ -23,6 +23,14 @@ export type ElevenLabsSynthesizeParams = {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  /**
+   * Mission 3 — clinical emotion for live voice switching.
+   * When set (or inferred from disorderSlug) with a clinical profile,
+   * overrides pace/energy defaults via Clinical Voice Profile Manager.
+   */
+  emotion?: string | null;
+  /** Pre-resolved ElevenLabs settings (e.g. from liveSwitchVoice). */
+  clinicalVoiceSettings?: ElevenLabsVoiceSettings | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -246,11 +254,13 @@ export const elevenLabsService = {
     }
 
     const model = modelId();
-    const voiceSettings = resolveVoiceSettings({
-      speechPace: params.speechPace,
-      speechEnergy: params.speechEnergy,
-      disorderSlug: params.disorderSlug,
-    });
+    const voiceSettings: ElevenLabsVoiceSettings =
+      params.clinicalVoiceSettings ??
+      resolveVoiceSettings({
+        speechPace: params.speechPace,
+        speechEnergy: params.speechEnergy,
+        disorderSlug: params.disorderSlug,
+      });
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
 
