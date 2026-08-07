@@ -177,4 +177,23 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
   });
+
+  it("Emotion Engine soft-fails on the message path and exposes a session API", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const emotionApi = readFileSync(
+      join(root, "app/api/sessions/[id]/emotion/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/emotion/index.ts"), "utf8");
+    expect(message).toMatch(/processEmotionTurn/);
+    expect(message).toMatch(/emotion engine soft-fail/);
+    expect(message).toMatch(/emotion:\s*emotionPayload/);
+    expect(emotionApi).toMatch(/rateLimit/);
+    expect(emotionApi).toMatch(/ensureEmotionState|processEmotionTurn/);
+    expect(barrel).toMatch(/tickEmotion/);
+    expect(barrel).toMatch(/deriveExpression/);
+  });
 });
