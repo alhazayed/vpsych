@@ -63,7 +63,7 @@ describe("Mission 8 — Patient Adaptation", () => {
 
   describe("Rapport Model", () => {
     it("warm therapist → rapport grows faster (velocity rises)", () => {
-      let rapport = createRapportState();
+      const rapport = createRapportState();
       const warm = signalTherapistBehaviour(
         "I'm glad you're here. Take your time — I'm with you.",
       );
