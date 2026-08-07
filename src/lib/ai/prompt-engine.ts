@@ -2,6 +2,11 @@ import type {
   AvatarPersonality,
   ClinicalCore,
 } from "@/lib/types";
+import type { HumanPersonalityProfile } from "@/lib/personality-engine";
+import {
+  formatHumanPersonalityForPrompt,
+  formatHumanPersonalityPerTurnCue,
+} from "@/lib/personality-engine";
 
 export type PromptSessionContext = {
   /** BCP-47 locale for this session (e.g. en-US, ar-JO). */
@@ -27,6 +32,11 @@ export type PromptAssemblyInput = {
   session: PromptSessionContext;
   /** Optional Wave 3 HCF cues from case snapshot (never invent if absent). */
   fidelity?: PromptFidelityHints;
+  /**
+   * Human Personality Engine profile — structured traits injected every turn.
+   * Independent of GPT; when absent, Module 2b is omitted (legacy avatars).
+   */
+  human_personality?: HumanPersonalityProfile | null;
 };
 
 type TemplateScope = Record<string, unknown>;
@@ -218,6 +228,11 @@ version of any other personality. Do not import names, places, institutions,
 or references from another locale.
 
 ──────────────────────────────────────────────
+MODULE 2b — HUMAN PERSONALITY  (trait engine; independent of GPT authorship)
+──────────────────────────────────────────────
+{{human_personality_block}}
+
+──────────────────────────────────────────────
 MODULE 3 — LANGUAGE  ({{session.locale}} · {{personality.dialect}})
 ──────────────────────────────────────────────
 
@@ -310,10 +325,14 @@ when a real patient would. One disclosure layer per turn.)
  * Assemble Claude's multilingual patient-avatar system prompt (Modules 1–4).
  */
 export function assembleSystemPrompt(input: PromptAssemblyInput): string {
+  const humanBlock = input.human_personality
+    ? formatHumanPersonalityForPrompt(input.human_personality)
+    : "HUMAN PERSONALITY PROFILE: not authored for this avatar — stay consistent with Module 2 identity and speech only.";
   const scope: TemplateScope = {
     clinical_core: input.clinical_core,
     personality: input.personality,
     session: input.session,
+    human_personality_block: humanBlock,
     fidelity: {
       speech_behavior_cue:
         input.fidelity?.speech_behavior_cue?.trim() ||
@@ -348,10 +367,13 @@ export function assemblePerTurnReinforcement(
     session: input.session,
   };
   const fromTemplate = renderPromptTemplate(PER_TURN_TEMPLATE, scope);
-  if (custom && fromTemplate) {
-    return `${fromTemplate}\n(${custom})`;
-  }
-  return custom || fromTemplate;
+  const traitCue = input.human_personality
+    ? formatHumanPersonalityPerTurnCue(input.human_personality)
+    : "";
+  const parts = [fromTemplate];
+  if (custom) parts.push(`(${custom})`);
+  if (traitCue) parts.push(`(${traitCue})`);
+  return parts.filter(Boolean).join("\n");
 }
 
 /**

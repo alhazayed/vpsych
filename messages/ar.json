@@ -33,6 +33,7 @@
       "mySessions": "جلساتي",
       "reportsLibrary": "مكتبة التقارير",
       "avatarPresets": "نماذج الشخصيات",
+      "humanPersonality": "الشخصية الإنسانية",
       "voiceManagement": "إدارة الأصوات",
       "caseEngine": "محرك الحالات",
       "scenarioTemplates": "قوالب السيناريو",
@@ -52,6 +53,7 @@
     "competencyGraph": "رسم الكفاءات",
     "reportsLibrary": "مكتبة التقارير",
     "avatarPresets": "نماذج الشخصيات",
+    "humanPersonality": "الشخصية الإنسانية",
     "voiceManagement": "إدارة الأصوات",
     "caseEngine": "محرك الحالات",
     "scenarioTemplates": "قوالب السيناريو",
@@ -609,6 +611,11 @@
       "rubricItem": "{label} (الحد الأقصى {max}، الوزن {weight})",
       "voiceProfile": "ملف الصوت",
       "voiceLegacyNote": "تُحدَّث أعمدة voice_id القديمة للتوافق"
+    },
+    "personality": {
+      "title": "محرك الشخصية الإنسانية",
+      "subtitle": "ملفات سمات ثابتة مستقلة عن GPT وعن التشخيص. كل دور للمريض يتلقّى المزاج والتعلّق والعوامل الخمسة والكلام وذاكرة المعالج وتوقعات العلاج.",
+      "editor": "محرّر الشخصية"
     },
     "cases": {
       "title": "محرك الحالات السريرية الديناميكي",

@@ -33,6 +33,7 @@
       "mySessions": "My Sessions",
       "reportsLibrary": "Reports Library",
       "avatarPresets": "Avatar Presets",
+      "humanPersonality": "Human Personality",
       "voiceManagement": "Voice Management",
       "caseEngine": "Case Engine",
       "scenarioTemplates": "Scenario Templates",
@@ -52,6 +53,7 @@
     "competencyGraph": "Competency Graph",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
+    "humanPersonality": "Human Personality",
     "voiceManagement": "Voice Management",
     "caseEngine": "Case Engine",
     "scenarioTemplates": "Scenario Templates",
@@ -609,6 +611,11 @@
       "rubricItem": "{label} (max {max}, weight {weight})",
       "voiceProfile": "Voice profile",
       "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility"
+    },
+    "personality": {
+      "title": "Human Personality Engine",
+      "subtitle": "Persistent trait profiles independent of GPT and of diagnosis. Every patient turn receives temperament, attachment, Big Five, speech, memory of therapist, and treatment expectations.",
+      "editor": "Personality editor"
     },
     "cases": {
       "title": "Dynamic Clinical Case Engine",

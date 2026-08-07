@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpsych.local/schemas/human-personality.v1.json",
+  "title": "HumanPersonalityProfile",
+  "description": "VPsych Human Personality Engine v1 — structured traits independent of GPT. Injected every patient turn.",
+  "type": "object",
+  "required": [
+    "version",
+    "locale",
+    "temperament",
+    "attachment_style",
+    "attachment_notes",
+    "intelligence",
+    "education",
+    "occupation",
+    "culture",
+    "religion",
+    "resilience",
+    "openness",
+    "agreeableness",
+    "conscientiousness",
+    "neuroticism",
+    "coping_style",
+    "coping_notes",
+    "humor",
+    "humor_notes",
+    "trust_level",
+    "trust_notes",
+    "emotional_regulation",
+    "emotional_regulation_notes",
+    "speech_style",
+    "vocabulary",
+    "preferred_topics",
+    "avoidant_topics",
+    "memory_of_therapist",
+    "treatment_expectations"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "avatar_slug": { "type": "string" },
+    "locale": { "type": "string", "minLength": 2 },
+    "temperament": { "type": "string", "minLength": 1 },
+    "attachment_style": {
+      "enum": [
+        "secure",
+        "anxious_preoccupied",
+        "dismissive_avoidant",
+        "fearful_avoidant",
+        "disorganized"
+      ]
+    },
+    "attachment_notes": { "type": "string", "minLength": 1 },
+    "intelligence": {
+      "type": "object",
+      "required": ["band", "strengths", "style"],
+      "properties": {
+        "band": {
+          "enum": ["average", "above_average", "high", "very_high"]
+        },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "style": { "type": "string", "minLength": 1 }
+      }
+    },
+    "education": { "type": "string", "minLength": 1 },
+    "occupation": { "type": "string", "minLength": 1 },
+    "culture": { "type": "string", "minLength": 1 },
+    "religion": { "type": "string", "minLength": 1 },
+    "resilience": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "openness": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "agreeableness": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "conscientiousness": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "neuroticism": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "coping_style": {
+      "enum": [
+        "problem_focused",
+        "emotion_focused",
+        "avoidant",
+        "support_seeking",
+        "intellectualizing",
+        "withdrawal",
+        "reassurance_seeking",
+        "somatic",
+        "mixed"
+      ]
+    },
+    "coping_notes": { "type": "string", "minLength": 1 },
+    "humor": {
+      "enum": [
+        "none",
+        "dry",
+        "self_deprecating",
+        "warm",
+        "deflective",
+        "dark",
+        "rare_soft"
+      ]
+    },
+    "humor_notes": { "type": "string", "minLength": 1 },
+    "trust_level": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "trust_notes": { "type": "string", "minLength": 1 },
+    "emotional_regulation": {
+      "enum": [
+        "expressive",
+        "suppressive",
+        "volatile",
+        "intellectualized",
+        "somatic_channel",
+        "delayed_flood",
+        "mixed"
+      ]
+    },
+    "emotional_regulation_notes": { "type": "string", "minLength": 1 },
+    "speech_style": { "type": "string", "minLength": 1 },
+    "vocabulary": {
+      "type": "object",
+      "required": ["register", "markers", "avoids"],
+      "properties": {
+        "register": {
+          "enum": ["concrete", "everyday", "educated", "technical", "mixed"]
+        },
+        "markers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "avoids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "preferred_topics": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "avoidant_topics": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "memory_of_therapist": {
+      "type": "object",
+      "required": [
+        "remembers_name",
+        "remembers_prior_sessions",
+        "alliance_sensitivity",
+        "rupture_style",
+        "notes"
+      ],
+      "properties": {
+        "remembers_name": { "type": "boolean" },
+        "remembers_prior_sessions": { "type": "boolean" },
+        "alliance_sensitivity": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "rupture_style": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    },
+    "treatment_expectations": { "type": "string", "minLength": 1 },
+    "author_notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}
