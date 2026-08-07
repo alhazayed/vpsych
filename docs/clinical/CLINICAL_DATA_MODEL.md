@@ -1,9 +1,10 @@
 # VPsych Clinical Data Model
 
 **Stage:** 3 — Clinical Data Architecture & Knowledge Model  
-**Status:** Phase Complete · Needs Human Review  
+**Status:** Ready for Staging  
 **Baseline:** live `src/lib/types.ts`, `case-engine`, `personality-engine`, engine state types, `personas/*.case.json`, `supabase/migrations/`  
-**Rule:** This package documents the **actual** clinical information model. Gaps are catalogued, not invented.
+**Rule:** This package documents the **actual** clinical information model. Gaps are catalogued, not invented.  
+**Certification:** Stage 3 marked **Ready** (human review accepted for merge).
 
 ---
 
@@ -132,6 +133,8 @@ Details: [`../SOFTWARE_ARCHITECTURE.md`](../SOFTWARE_ARCHITECTURE.md) § Prompt 
 | No fabricated features | Yes — gaps marked Missing |
 | Reflects live implementation | Yes — code-traced |
 
-**Release status:** Phase Complete · Needs Human Review
+**Release status:** Ready for Staging
+
+**Certification note:** Stage 3 clinical documentation is marked Ready for merge to `main`. Runtime behaviour is unchanged; remaining clinical gaps stay tracked in `CLINICAL_GAP_ANALYSIS.md` / `CLINICAL_ROADMAP.md`.
 
 **Rollback:** documentation-only; revert the docs commit.
