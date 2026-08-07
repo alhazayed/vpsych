@@ -925,4 +925,62 @@ describe("architecture invariants", () => {
     );
     expect(riskLog).toMatch(/RISK-P14-01/);
   });
+
+  it("Phase 15 GA authorization package refuses GA without fabricating drills", () => {
+    const stage15 = join(process.cwd(), "docs/stage15");
+    for (const name of [
+      "README.md",
+      "GA_AUTHORIZATION.md",
+      "FINAL_GA_READINESS_REPORT.md",
+      "EXECUTIVE_BOARD_PACKAGE.md",
+      "CLINICAL_VALIDATION_REPORT.md",
+      "EDUCATIONAL_VALIDATION_REPORT.md",
+      "RESEARCH_VALIDATION_REPORT.md",
+      "SECURITY_CERTIFICATION_REPORT.md",
+      "DISASTER_RECOVERY_CERTIFICATION.md",
+      "INFRASTRUCTURE_CERTIFICATION.md",
+      "PILOT_COMPLETION_REPORT.md",
+      "RISK_CLOSURE_REPORT.md",
+      "LESSONS_LEARNED_REPORT.md",
+      "FINAL_RELEASE_NOTES.md",
+    ]) {
+      expect(() => readFileSync(join(stage15, name), "utf8")).not.toThrow();
+    }
+
+    const authDoc = readFileSync(join(stage15, "GA_AUTHORIZATION.md"), "utf8");
+    expect(authDoc).toMatch(/NO-GO/);
+    expect(authDoc).toMatch(/Do not authorize/);
+    expect(authDoc).not.toMatch(/AUTHORIZED — tag v1\.0\.0/);
+
+    const authCode = readFileSync(
+      join(root, "lib/ops/phase15-ga-authorization.ts"),
+      "utf8",
+    );
+    expect(authCode).toMatch(/evaluatePhase15Authorization/);
+    expect(authCode).toMatch(/never writes Clinical Core/);
+    expect(authCode).toMatch(/Fabricating DR\/PITR\/pilot evidence is prohibited/);
+
+    const route = readFileSync(
+      join(root, "app/api/admin/ops/phase15/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/buildPhase15Readiness/);
+    expect(route).not.toMatch(/clinical_snapshot/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Phase 15 ownership note/);
+    expect(ownership).toMatch(/never patient-state writers/);
+
+    const rdl = readFileSync(
+      join(process.cwd(), "docs/RELEASE_DECISION_LOG.md"),
+      "utf8",
+    );
+    expect(rdl).toMatch(/RDL-032/);
+    expect(rdl).toMatch(/GA NO-GO/);
+  });
 });

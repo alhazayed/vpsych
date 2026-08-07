@@ -54,6 +54,10 @@ Stage 12 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore
 
 Phase 14 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment formulas, Education domains, Validation realism ownership, Supervisor skill models, Enterprise tenancy rules, or Realtime presentation FSMs. It owns institutional pilot **evidence**, risk/lessons registers, GA gating evaluation, and expanded weekly reporting façades under `lib/ops` — **never patient-state writers**.
 
+## Phase 15 ownership note
+
+Phase 15 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment formulas, Scientific validation engine logic, Supervisor decision logic, Enterprise architecture, or Realtime presentation FSMs. It owns final **GA authorization evaluation**, pilot-completion reporting, and workstream certification evidence packaging under `lib/ops` — **never patient-state writers**.
+
 ## CIDP ownership note
 
 Controlled Institutional Deployment **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment scoring formulas, Education domains, Validation realism scores, Supervisor skill models, or Realtime presentation FSMs. CIDP may add institutional governance docs, monitoring dashboards, DR/security evidence, and enterprise-owned `institutional_feedback` only — never patient-state writers.

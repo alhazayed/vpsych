@@ -90,3 +90,47 @@ export type {
   Phase14ReadinessInput,
   Phase14ReadinessPackage,
 } from "./phase14-readiness";
+
+export {
+  evaluatePhase15Authorization,
+  PHASE15_CERT_ID,
+  PHASE15_BOARD_GATES,
+} from "./phase15-ga-authorization";
+export type {
+  Phase15AuthorizationDecision,
+  Phase15AuthorizationInput,
+  Phase15BoardGate,
+  Phase15BoardGateId,
+  Phase15GateStatus,
+} from "./phase15-ga-authorization";
+
+export { buildPilotCompletionReport } from "./phase15-pilot-completion";
+export type {
+  PilotCompletionReport,
+  PilotInstitutionExtended,
+} from "./phase15-pilot-completion";
+
+export {
+  buildPhase15Certifications,
+  buildSecurityCertification,
+  buildDisasterRecoveryCertification,
+  buildInfrastructureCertification,
+  buildClinicalCertification,
+  buildEducationalCertification,
+  buildResearchCertification,
+  buildOperationalCertification,
+} from "./phase15-certification";
+export type {
+  CertificationCheck,
+  CertificationStatus,
+  Phase15CertificationBundle,
+  WorkstreamCertification,
+} from "./phase15-certification";
+
+export { buildPhase15Readiness } from "./phase15-readiness";
+export type {
+  Phase15ReadinessInput,
+  Phase15ReadinessPackage,
+} from "./phase15-readiness";
+
+export { PHASE15_PROGRAM_ID } from "./versions";
