@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { BUILTIN_DISORDERS, DISORDER_IDS } from "@/lib/case-engine/catalog";
 import { generateCaseInstance } from "@/lib/case-engine/generator";
 import type { PersonaRow } from "@/lib/case-engine/types";
@@ -36,6 +37,13 @@ export async function GET(request: Request) {
     resourceType: "clinical_fidelity_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-cfi:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data, error } = await auth.supabase
     .from("clinical_fidelity_scores")
@@ -103,6 +111,13 @@ export async function POST(request: Request) {
     resourceType: "clinical_fidelity_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-cfi:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   let persist = false;
   try {

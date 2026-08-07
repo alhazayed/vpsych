@@ -1,6 +1,6 @@
-# Architecture State — Mission Omega
+# Architecture State — Version 1.0 RC1 (Stage 12)
 
-**As of:** 2026-08-07 · Stage 11 Realtime on branch; Stages 1–10 canonical on main
+**As of:** 2026-08-07 · Stages 1–11 canonical on main · Stage 12 Production Release Certification (`1.0.0-rc.1`)
 
 > **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
 > for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
@@ -13,6 +13,7 @@
 > **Stage 9 supervisor:** [`SUPERVISOR_ARCHITECTURE.md`](./SUPERVISOR_ARCHITECTURE.md) · code `src/lib/supervisor/`.  
 > **Stage 10 enterprise:** [`ENTERPRISE_ARCHITECTURE.md`](./ENTERPRISE_ARCHITECTURE.md) · code `src/lib/enterprise/`.  
 > **Stage 11 realtime:** [`REALTIME_ARCHITECTURE.md`](./REALTIME_ARCHITECTURE.md) · code `src/lib/realtime/`.  
+> **Stage 12 production certification:** [`RELEASE_CERTIFICATION.md`](./RELEASE_CERTIFICATION.md) · [`PRODUCTION_READINESS.md`](./PRODUCTION_READINESS.md) · [`VERSION_1_0_RELEASE_REPORT.md`](./VERSION_1_0_RELEASE_REPORT.md).  
 > This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology
@@ -43,6 +44,7 @@ Browser (EN/AR, cookie locale)
 | SUP | Supervisor (`lib/supervisor`) | Therapist supervision only; never writes patient mind |
 | ENT | Enterprise (`lib/enterprise`) | Tenancy / RBAC / courses / org certs / analytics; never writes patient mind |
 | RT | Realtime (`lib/realtime`) | Voice gateway / streaming / avatar presentation; never writes patient mind |
+| OPS | Ops (`lib/ops`, `lib/env`, `lib/request-id`) | Production metrics / env posture / correlation — never owns cognition |
 
 ## Session lifecycle (canonical)
 
@@ -85,11 +87,12 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Supervisor AI | `SUPERVISOR_ARCHITECTURE.md` · `COMPETENCY_FRAMEWORK.md` (Stage 9) |
 | Enterprise / multi-tenant | `ENTERPRISE_ARCHITECTURE.md` · `TENANT_MODEL.md` · `RBAC_MODEL.md` (Stage 10) |
 | Realtime simulation | `REALTIME_ARCHITECTURE.md` · `VOICE_PIPELINE.md` · `AVATAR_ARCHITECTURE.md` (Stage 11) |
+| Production / Version 1.0 RC | `RELEASE_CERTIFICATION.md` · `PRODUCTION_READINESS.md` · `VERSION_1_0_RELEASE_REPORT.md` (Stage 12) |
 | Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
-| Security | `SECURITY_CERTIFICATION.md` |
-| Ops | `OPERATIONS_RUNBOOK.md` |
+| Security | `SECURITY_AUDIT.md` · `SECURITY_CERTIFICATION.md` |
+| Ops | `OPERATIONS_RUNBOOK.md` · `DEPLOYMENT_GUIDE.md` · `DISASTER_RECOVERY.md` · `INCIDENT_RESPONSE.md` |
 | Developer | `CLAUDE.md` (note: some reliability sections are stale — see TECHNICAL_DEBT) |
-| Release governance | `RELEASE_DECISION_LOG.md`, `RELEASE_GOVERNANCE.md` (if present) |
+| Release governance | `RELEASE_DECISION_LOG.md`, `CHANGELOG.md` |
 
 ## Stage map (canonical — do not redesign closed stages)
 
@@ -106,3 +109,4 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | 9 Supervisor AI · Expert Review · Competency | Implemented · Needs Human Review | `src/lib/supervisor/` + `docs/SUPERVISOR_ARCHITECTURE.md` |
 | 10 Enterprise Platform · Multi-Tenant | Implemented · Needs Human Review | `src/lib/enterprise/` + `docs/ENTERPRISE_ARCHITECTURE.md` |
 | 11 Real-Time Clinical Simulation | Implemented · Needs Human Review | `src/lib/realtime/` + `docs/REALTIME_ARCHITECTURE.md` |
+| 12 Production Release Certification | **RC1 `1.0.0-rc.1`** · Needs Board soak | `docs/RELEASE_CERTIFICATION.md` · `docs/VERSION_1_0_RELEASE_REPORT.md` · harden in `lib/ops`, CI, voice timeout, admin RL |

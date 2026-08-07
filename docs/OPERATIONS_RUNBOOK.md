@@ -1,9 +1,11 @@
-# Operations Runbook — Mission Omega
+# Operations Runbook — Version 1.0 RC1 (Stage 12)
 
 **Audience:** Release Manager / on-call  
 **Production:** `https://vpsych.vercel.app`  
 **Supabase ref:** `rrzudbkxigeavfdnidnm`  
-**Vercel project:** `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm`
+**Vercel project:** `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm`  
+**Package:** `1.0.0-rc.1` · Cert `VPSYCH-1.0-RC1-STAGE12`  
+**Companions:** `DEPLOYMENT_GUIDE.md` · `DISASTER_RECOVERY.md` · `INCIDENT_RESPONSE.md`
 
 ---
 
@@ -11,13 +13,15 @@
 
 ```bash
 curl -sS https://vpsych.vercel.app/api/health
-# expect: {"ok":true,"service":"vpsych",...}
+# expect: {"ok":true,"service":"vpsych","version":"1.0.0-rc.1",...}
 
 curl -sS -o /dev/null -w '%{http_code}\n' https://vpsych.vercel.app/login
 # expect: 200
 
 curl -sS -X POST https://vpsych.vercel.app/api/sessions -H 'content-type: application/json' -d '{}'
 # expect: 401 {"error":"Unauthorized"}
+
+# Admin ops dashboard (requires admin auth): GET /api/admin/ops/metrics
 ```
 
 Authenticated checks require vault `VPSYCH_AUDIT_*` after Credential Verification Gate (see `RELEASE_DECISION_LOG` RDL-009/011).

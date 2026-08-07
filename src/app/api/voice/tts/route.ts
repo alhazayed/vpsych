@@ -11,6 +11,7 @@ import {
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
+import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
   elevenLabsSettingsFromEffective,
   liveSwitchVoice,
@@ -47,19 +48,29 @@ type TtsBody = {
  * Clients that cannot stream still receive a complete MPEG response body.
  */
 export async function POST(request: Request) {
+  const requestId = resolveRequestId(request);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: requestIdHeaders(requestId) },
+    );
   }
 
   const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(limited.retryAfterSec),
+          ...requestIdHeaders(requestId),
+        },
+      },
     );
   }
 
@@ -128,6 +139,7 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        ...requestIdHeaders(requestId),
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }
           : {}),
@@ -145,13 +157,13 @@ export async function POST(request: Request) {
           error: "Text-to-speech failed",
           code: error.code || "TTS_FAILED",
         },
-        { status: error.status },
+        { status: error.status, headers: requestIdHeaders(requestId) },
       );
     }
     console.warn("[tts]", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
-      { status: 502 },
+      { status: 502, headers: requestIdHeaders(requestId) },
     );
   }
 }

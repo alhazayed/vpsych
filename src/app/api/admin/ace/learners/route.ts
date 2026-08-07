@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { COMPETENCY_DOMAINS } from "@/lib/ace";
 
 export async function GET(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-ace-learners:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
   const { supabase } = auth;
 
   const { data: learners, error } = await supabase
@@ -35,6 +43,13 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   const auth = await requireApiAdmin(request);
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-ace-learners:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
   const { supabase } = auth;
 
   const body = (await request.json()) as {

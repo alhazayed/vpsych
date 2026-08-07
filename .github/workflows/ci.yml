@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Dependency audit
+        run: npm run audit:deps
+
       - name: Lint
         run: npm run lint
 
@@ -35,6 +38,9 @@ jobs:
           # Optional: set SUPABASE_DB_URL in repo secrets to also compare
           # remote supabase_migrations.schema_migrations against git.
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Performance smoke (local budgets)
+        run: npm run test:perf-smoke
 
       - name: Build
         run: npm run build

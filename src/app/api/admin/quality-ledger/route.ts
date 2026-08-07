@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   QUALITY_ALGORITHM_VERSION,
   QUALITY_LEDGER_VERSION,
@@ -137,6 +138,13 @@ export async function GET(request: Request) {
     });
   }
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-quality-ledger:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const url = new URL(request.url);
   const format = url.searchParams.get("format") ?? "dashboard";

@@ -99,6 +99,29 @@ describe("elevenLabsService", () => {
     ).rejects.toMatchObject({ code: "TTS_FAILED", status: 502 });
   });
 
+  it("maps AbortSignal timeout to TTS_TIMEOUT (Stage 12 / RT-03)", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    process.env.ELEVENLABS_TIMEOUT_MS = "50";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { signal?: AbortSignal }) => {
+        const err = new Error("The operation was aborted due to timeout");
+        err.name = "TimeoutError";
+        // Honour the signal when present (mirrors undici AbortSignal.timeout).
+        if (init?.signal?.aborted) throw err;
+        await new Promise((_, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(err));
+        });
+        return new Response();
+      }),
+    );
+
+    await expect(
+      elevenLabsService.synthesize({ text: "Hello", locale: "en" }),
+    ).rejects.toMatchObject({ code: "TTS_TIMEOUT", status: 504 });
+    delete process.env.ELEVENLABS_TIMEOUT_MS;
+  });
+
   it("retries with the default premade voice after paid_plan_required", async () => {
     process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     const calls: string[] = [];

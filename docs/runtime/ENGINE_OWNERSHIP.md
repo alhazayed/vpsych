@@ -41,6 +41,14 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Quality seal | Quality Ledger | `quality_ledgers` | — |
 | Authz role | profiles.role | profiles | — |
 | Rate limit counters | rate-limit | Redis/memory | — |
+| Production ops metrics / env posture | Ops (`lib/ops`, `lib/env`) | ephemeral | Admin dashboard only |
+| Request correlation id | request-id | response headers | STT / message / TTS may echo |
+
+---
+
+## Stage 12 ownership note
+
+Stage 12 **does not** own PatientDecisionPlan, Emotion, Adaptation, ClinicalCore, Assessment scoring formulas, Education domains, Validation realism scores, Supervisor skill models, Enterprise tenancy rules, or Realtime presentation FSMs. It may only harden cross-cutting production controls (rate limits, timeouts, correlation, env checks, CI gates, documentation).
 
 ---
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   buildEriDashboard,
   buildEriOfflineCorpus,
@@ -20,6 +21,13 @@ export async function GET(request: Request) {
     resourceType: "educational_reliability_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-eri:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data, error } = await auth.supabase
     .from("educational_reliability_scores")
@@ -92,6 +100,13 @@ export async function POST(request: Request) {
     resourceType: "educational_reliability_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-eri:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   let persist = false;
   try {

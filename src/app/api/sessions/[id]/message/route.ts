@@ -23,6 +23,7 @@ import {
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
+import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import { clientSafeError } from "@/lib/api-errors";
 import {
   expressionPromptBlock,
@@ -51,20 +52,30 @@ import { MAX_SESSION_SECONDS } from "@/lib/types";
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const requestId = resolveRequestId(request);
   const { id: sessionId } = await params;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: requestIdHeaders(requestId) },
+    );
   }
 
   const limited = await rateLimit(`msg:${user.id}`, 120, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(limited.retryAfterSec),
+          ...requestIdHeaders(requestId),
+        },
+      },
     );
   }
 
@@ -573,6 +584,7 @@ export async function POST(request: Request, { params }: Params) {
     {
       headers: {
         "X-AI-Source": replyMeta.aiSource,
+        ...requestIdHeaders(requestId),
         ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
         ...(replyMeta.errorKind
           ? { "X-AI-Error-Kind": replyMeta.errorKind }
