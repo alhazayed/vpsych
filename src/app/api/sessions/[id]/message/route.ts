@@ -207,19 +207,15 @@ export async function POST(request: Request, { params }: Params) {
 
   const avatarForReply = emotionSystemExtra
     ? {
-        ...resolved,
-        system_prompt: `${resolved.system_prompt}${emotionSystemExtra}`,
+        ...avatarWithMemory,
+        system_prompt: `${avatarWithMemory.system_prompt}${emotionSystemExtra}`,
       }
-    : resolved;
+    : avatarWithMemory;
 
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
-<<<<<<< HEAD
       avatar: avatarForReply,
-=======
-      avatar: avatarWithMemory,
->>>>>>> origin/cursor/long-term-patient-memory-449f
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
