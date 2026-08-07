@@ -9,6 +9,8 @@
 
 **Clinical information model (Stage 3):** [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md) — canonical patient ontology, lifecycle, DSM/ICD, gaps, and roadmap. Engines must not invent a parallel patient model.
 
+**Runtime / cognitive orchestration (Stage 4):** [`runtime/COGNITIVE_ARCHITECTURE.md`](./runtime/COGNITIVE_ARCHITECTURE.md) — one-mind pipeline, engine contracts, state machine, failure/recovery, budgets, and runtime debt. Does not replace Stage 2 boundaries or Stage 3 ontology.
+
 ---
 
 ## 1. Platform identity
@@ -319,16 +321,18 @@ sequenceDiagram
   API->>E: processEmotionTurn
   E-->>API: expression block
   API->>C: planConversationBehaviour
+  API->>H: buildHumanizationTurn
   alt cbe_direct
     C-->>API: directReply
   else LLM path
-    API->>H: buildHumanizationTurn
     API->>P: generatePatientReplyDetailed
     P-->>API: text + aiSource
   end
   API->>DB: insert_assistant_message
   API-->>T: reply JSON
 ```
+
+Canonical Stage 4 detail: [`runtime/RUNTIME_PIPELINE.md`](./runtime/RUNTIME_PIPELINE.md).
 
 ### 6.3 Session end — `POST /api/sessions/[id]/end`
 

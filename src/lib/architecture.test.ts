@@ -317,4 +317,40 @@ describe("architecture invariants", () => {
       expect(() => readFileSync(join(rootDocs, name), "utf8")).not.toThrow();
     }
   });
+
+  it("keeps Stage 4 canonical runtime cognitive architecture present", () => {
+    const rootDocs = join(process.cwd(), "docs/runtime");
+    const cognitive = readFileSync(
+      join(rootDocs, "COGNITIVE_ARCHITECTURE.md"),
+      "utf8",
+    );
+    const pipeline = readFileSync(join(rootDocs, "RUNTIME_PIPELINE.md"), "utf8");
+    const ownership = readFileSync(
+      join(rootDocs, "ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    const debt = readFileSync(join(rootDocs, "RUNTIME_DEBT.md"), "utf8");
+    expect(cognitive).toMatch(/one psychiatric patient mind|One mind/i);
+    expect(cognitive).toMatch(/composition root/i);
+    expect(pipeline).toMatch(/Adaptation/);
+    expect(pipeline).toMatch(/Humanization/);
+    expect(pipeline).toMatch(
+      /Emotion[\s\S]*CBE[\s\S]*Humanization[\s\S]*Reply|cbe_direct/,
+    );
+    expect(ownership).toMatch(/case_memory/);
+    expect(debt).toMatch(/RT-01/);
+    for (const name of [
+      "ENGINE_CONTRACTS.md",
+      "ENGINE_INTERACTIONS.md",
+      "ORCHESTRATION.md",
+      "STATE_MACHINE.md",
+      "FAILURE_RECOVERY.md",
+      "LATENCY_BUDGET.md",
+      "TOKEN_BUDGET.md",
+      "PERFORMANCE_MODEL.md",
+      "OBSERVABILITY.md",
+    ]) {
+      expect(() => readFileSync(join(rootDocs, name), "utf8")).not.toThrow();
+    }
+  });
 });

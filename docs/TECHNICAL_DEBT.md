@@ -38,6 +38,19 @@ Full catalogue: `docs/clinical/CLINICAL_GAP_ANALYSIS.md` + roadmap in `CLINICAL_
 | CLIN-S3-05 | Medium | Emotion vs Adaptation overlapping trust/rapport variables |
 | CLIN-S3-06 | Medium | Living environment is prose only (no engine) |
 
+## Runtime orchestration debt (Stage 4)
+
+Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
+
+| ID | Severity | Item |
+|----|----------|------|
+| RT-01 | High | Dual `case_memory` writers + void adaptation save |
+| RT-03 | High | ElevenLabs fetch without timeout/AbortSignal |
+| RT-04 | Medium | Message god-route (no `lib/session-turn` yet) |
+| RT-05 | High | Unbounded prompt token growth |
+| RT-06 | Medium | `therapistInterrupted` not sent by clients |
+| RT-12 | Medium | No APM / trace correlation across STT→message→TTS |
+
 ## Code residue
 
 | Item | Severity | Notes |
