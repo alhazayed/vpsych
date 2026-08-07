@@ -144,8 +144,31 @@ export type HumanizationTurnInput = {
   sessionLanguage: string;
   elapsedSeconds: number;
   maxDurationSec: number;
-  /** Optional case_memory.memory blob (may include prior HCE/humanization state). */
+  /**
+   * @deprecated Humanization must not scrape case_memory for facts.
+   * Prefer `hasPriorSessionMemory` from Patient Memory retrieval.
+   */
   caseMemory?: Record<string, unknown> | null;
+  /** True when Patient Memory retrieved ≥1 durable fact this turn. */
+  hasPriorSessionMemory?: boolean;
+  /**
+   * Mission 2 Emotion Engine presentation packet (optional).
+   * When present, humanization maps delivery colour from it — never invents affect.
+   */
+  externalEmotion?: {
+    mode?: string | null;
+    facial_affect?: string | null;
+    openness?: number | null;
+    hesitation_ms?: number | null;
+    variables?: {
+      current_mood?: number;
+      trust?: number;
+      anger?: number;
+      hope?: number;
+      fatigue?: number;
+      fear?: number;
+    } | null;
+  } | null;
   /** Deterministic seed override (tests). */
   seed?: string | number;
 };

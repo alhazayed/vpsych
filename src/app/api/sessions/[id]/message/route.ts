@@ -95,23 +95,32 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   // Mission 8 — Patient Adaptation (rapport / trust / withdrawal / disclosure).
-  // Best-effort: missing case_memory must never block the reply.
+  // Soft-fail: never block the patient reply path.
   const caseInstanceId = typed.case_instance_id ?? null;
-  const loaded = await loadAdaptationState(supabase, caseInstanceId);
-  let adaptation =
-    loaded.state ??
-    createAdaptationState({
-      caseInstanceId,
-      therapistId: user.id,
+  let adaptationBlock: string | null = null;
+  try {
+    const loaded = await loadAdaptationState(supabase, caseInstanceId);
+    let adaptation =
+      loaded.state ??
+      createAdaptationState({
+        caseInstanceId,
+        therapistId: user.id,
+      });
+    const adapted = processTherapistTurn(adaptation, message);
+    adaptation = adapted.state;
+    adaptationBlock = adapted.expressionBlock;
+    void saveAdaptationState(supabase, caseInstanceId, adaptation, loaded.raw);
+  } catch (err) {
+    console.warn("[sessions/message] adaptation engine soft-fail", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
     });
-  const adapted = processTherapistTurn(adaptation, message);
-  adaptation = adapted.state;
-  void saveAdaptationState(supabase, caseInstanceId, adaptation, loaded.raw);
+  }
 
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
-    adaptationBlock: adapted.expressionBlock,
+    adaptationBlock,
   });
 
   // Mission 4 — Long-Term Patient Memory: retrieve prior facts for this dyad.
@@ -255,21 +264,9 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
-  // Mission 10 — Humanization Layer (subtle realism only; never blocks reply).
+  // Mission 10 — Humanization Layer (presentation-only; never blocks reply).
   let humanization: ReturnType<typeof buildHumanizationTurn> = null;
   try {
-    let caseMemory: Record<string, unknown> | null = null;
-    if (typed.case_instance_id) {
-      const { data: memRow } = await supabase
-        .from("case_memory")
-        .select("memory")
-        .eq("case_instance_id", typed.case_instance_id)
-        .maybeSingle();
-      if (memRow?.memory && typeof memRow.memory === "object") {
-        caseMemory = memRow.memory as Record<string, unknown>;
-      }
-    }
-
     const maxDur = typed.max_duration_sec ?? MAX_SESSION_SECONDS;
     const elapsedSeconds = Math.max(
       0,
@@ -285,7 +282,25 @@ export async function POST(request: Request, { params }: Params) {
       sessionLanguage: typed.language ?? "en",
       elapsedSeconds,
       maxDurationSec: maxDur,
-      caseMemory,
+      // Patient Memory owns facts — humanization only learns if any were retrieved.
+      hasPriorSessionMemory: (memoryCtx.retrieval?.hits?.length ?? 0) > 0,
+      // Mission 2 owns affect — map delivery colour/timing from it when present.
+      externalEmotion: emotionPayload
+        ? {
+            mode: emotionPayload.mode,
+            facial_affect: emotionPayload.expression.facial_affect,
+            openness: emotionPayload.expression.openness,
+            hesitation_ms: emotionPayload.expression.hesitation_ms,
+            variables: {
+              current_mood: emotionPayload.variables.current_mood,
+              trust: emotionPayload.variables.trust,
+              anger: emotionPayload.variables.anger,
+              hope: emotionPayload.variables.hope,
+              fatigue: emotionPayload.variables.fatigue,
+              fear: emotionPayload.variables.fear,
+            },
+          }
+        : null,
     });
 
     if (humanization) {

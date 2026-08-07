@@ -1,6 +1,11 @@
 /**
- * Humanization Layer — orchestrates Emotion / Behavior / Memory / Voice
- * engines and selects clinically gated micro-behaviours per turn.
+ * Humanization Layer — presentation-only micro-behaviours.
+ *
+ * Owns: hesitations, pauses, fillers, false starts, emotional timing cues,
+ * natural speech cadence for TTS/prompt delivery.
+ *
+ * Does NOT own: personality, emotional state, durable memory, adaptation,
+ * or conversation behaviour decisions (those engines inject separately).
  */
 
 import { createRng } from "@/lib/case-engine/generator";
@@ -45,6 +50,7 @@ function fatigueFromElapsed(
   const ratio = maxDurationSec > 0 ? elapsedSeconds / maxDurationSec : 0;
   let fatigue = ratio * 0.7;
   if (energy === "low") fatigue += 0.15;
+  // Prefer Mission 2 fatigue when available (presentation timing only).
   return Math.max(0, Math.min(1, fatigue));
 }
 
@@ -86,14 +92,13 @@ function pickBehaviors(
 }
 
 function behaviorsPerTurn(rng: () => number, intensity: number): number {
-  // Usually 2–3; high affect may add one more.
   let n = 2 + (rng() > 0.55 ? 1 : 0);
   if (intensity >= 8 && rng() > 0.4) n += 1;
   return Math.min(4, n);
 }
 
 /**
- * Build a full Humanization Turn Plan, or null when disabled.
+ * Build a presentation-only Humanization Turn Plan, or null when disabled.
  */
 export function buildHumanizationTurn(
   input: HumanizationTurnInput,
@@ -107,40 +112,51 @@ export function buildHumanizationTurn(
   const phase = sessionPhase(input.elapsedSeconds, input.maxDurationSec);
   const turnIndex = input.history.filter((m) => m.role === "user").length;
 
-  // Emotion first (needs provisional fatigue from elapsed only).
-  const provisionalFatigue = fatigueFromElapsed(
-    input.elapsedSeconds,
-    input.maxDurationSec,
-    "moderate",
-  );
+  const externalFatigue =
+    typeof input.externalEmotion?.variables?.fatigue === "number"
+      ? input.externalEmotion.variables.fatigue / 100
+      : null;
 
+  const provisionalFatigue =
+    externalFatigue ??
+    fatigueFromElapsed(input.elapsedSeconds, input.maxDurationSec, "moderate");
+
+  // Map Mission 2 affect for gating; never invent clinical emotion.
   const emotion = emotionTick({
     snapshot: input.caseSnapshot,
     clinicalCore: input.clinicalCore,
-    therapistMove,
-    userMessage: input.userMessage,
     fatigue: provisionalFatigue,
+    external: input.externalEmotion ?? null,
   });
 
   const behavior = behaviorTick({
     snapshot: input.caseSnapshot,
     clinicalCore: input.clinicalCore,
-    therapistMove,
     emotion,
     fatigue: provisionalFatigue,
   });
 
-  const fatigue = fatigueFromElapsed(
-    input.elapsedSeconds,
-    input.maxDurationSec,
-    behavior.speech_energy,
-  );
+  const fatigue =
+    externalFatigue ??
+    fatigueFromElapsed(
+      input.elapsedSeconds,
+      input.maxDurationSec,
+      behavior.speech_energy,
+    );
+
+  // Flag only — Patient Memory owns facts.
+  const hasPrior =
+    input.hasPriorSessionMemory === true ||
+    // Legacy test path: caseMemory presence treated as prior-session flag only.
+    Boolean(
+      input.caseMemory &&
+        ((input.caseMemory.humanization as { prior_session_notes?: unknown })
+          ?.prior_session_notes ||
+          (input.caseMemory.hce as { episodic?: unknown })?.episodic),
+    );
 
   const memory = memoryTick({
-    history: input.history,
-    userMessage: input.userMessage,
-    therapistMove,
-    caseMemory: input.caseMemory,
+    hasPriorSessionMemory: hasPrior,
   });
 
   const gates = applyClinicalGates({
@@ -150,7 +166,7 @@ export function buildHumanizationTurn(
     affect: emotion.primary,
     intensity: emotion.intensity,
     sessionPhase: phase,
-    hasPriorSessionMemory: memory.prior_session_cues.length > 0,
+    hasPriorSessionMemory: hasPrior,
     turnIndex,
   });
 
@@ -186,6 +202,14 @@ export function buildHumanizationTurn(
     selected,
     fatigue,
   });
+
+  // Prefer Mission 2 hesitation when available (presentation timing).
+  if (
+    typeof input.externalEmotion?.hesitation_ms === "number" &&
+    input.externalEmotion.hesitation_ms > voice.pause_before_ms
+  ) {
+    voice.pause_before_ms = Math.round(input.externalEmotion.hesitation_ms);
+  }
 
   const nonverbal_cues = nonverbalCuesFor(selected, input.sessionLanguage);
   const plan: HumanizationTurnPlan = {

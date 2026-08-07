@@ -205,45 +205,49 @@ describe("clinical gates", () => {
   });
 });
 
-describe("engine ticks", () => {
-  it("Emotion Engine reacts to triggers and moves", () => {
+describe("engine ticks (presentation-only)", () => {
+  it("emotionTick maps Mission 2 expression without inventing triggers", () => {
     const out = emotionTick({
       snapshot: minimalSnapshot(),
-      therapistMove: "invalidation",
-      userMessage: "You're fine, stop worrying about your mother.",
       fatigue: 0.2,
+      external: {
+        mode: "guarded",
+        facial_affect: "anxious_tense",
+        openness: 35,
+        variables: { anger: 40, fear: 70, current_mood: 35, fatigue: 40 },
+      },
     });
-    expect(out.triggers_fired.length).toBeGreaterThan(0);
-    expect(out.primary).toBeTruthy();
+    expect(out.triggers_fired).toEqual([]);
+    expect(out.directives).toEqual([]);
+    expect(out.primary).toBe("anxious");
+    expect(out.congruence).toBe("guarded");
     expect(out.intensity).toBeGreaterThanOrEqual(1);
     expect(out.intensity).toBeLessThanOrEqual(10);
   });
 
-  it("Behavior Engine follows speech phenotype for MDD", () => {
+  it("behaviorTick follows speech phenotype for MDD without defenses", () => {
     const emotion = emotionTick({
       snapshot: minimalSnapshot(),
-      therapistMove: "open_question",
-      userMessage: "How are you feeling today?",
       fatigue: 0.1,
     });
     const behavior = behaviorTick({
       snapshot: minimalSnapshot(),
-      therapistMove: "open_question",
       emotion,
       fatigue: 0.1,
     });
     expect(behavior.speech_pace).toBe("slow");
     expect(behavior.speech_energy).toBe("low");
     expect(behavior.category).toBe("mood");
+    expect(behavior.defense_active).toBeNull();
+    expect(behavior.resistance_mode).toBe("presentation_only");
   });
 
-  it("Memory Engine surfaces prior-session cues", () => {
+  it("memoryTick only flags prior-session availability — no fact extraction", () => {
     const mem = memoryTick({
+      hasPriorSessionMemory: true,
       history: [
         { role: "assistant", content: "I've been sleeping maybe four hours." },
       ],
-      userMessage: "Last time we talked about work — how is that?",
-      therapistMove: "open_question",
       caseMemory: {
         humanization: {
           prior_session_notes: ["Mentioned conflict with manager at work"],
@@ -251,20 +255,18 @@ describe("engine ticks", () => {
       },
     });
     expect(mem.prior_session_cues.length).toBeGreaterThan(0);
-    expect(mem.recalled_facts.length).toBeGreaterThan(0);
+    expect(mem.recalled_facts).toEqual([]);
+    expect(mem.directives).toEqual([]);
     expect(mem.imperfect_recall_ok).toBe(true);
   });
 
   it("Voice Engine lengthens pause for thinking_pause / silence", () => {
     const emotion = emotionTick({
       snapshot: minimalSnapshot(),
-      therapistMove: "silence",
-      userMessage: "...",
       fatigue: 0.4,
     });
     const behavior = behaviorTick({
       snapshot: minimalSnapshot(),
-      therapistMove: "silence",
       emotion,
       fatigue: 0.4,
     });
@@ -357,9 +359,7 @@ describe("buildHumanizationTurn", () => {
     expect(plan!.prompt_cue.length).toBeGreaterThan(40);
   });
 
-  it("can select remembering_previous_sessions when memory exists", () => {
-    // Run several seeds; at least one should include prior-session behaviour
-    // when it is allowed (not guaranteed every seed due to weighted pick).
+  it("can select remembering_previous_sessions when prior memory flag is set", () => {
     let seen = false;
     for (let i = 0; i < 40; i++) {
       const plan = buildHumanizationTurn({
@@ -371,11 +371,7 @@ describe("buildHumanizationTurn", () => {
         elapsedSeconds: 200,
         maxDurationSec: 2400,
         seed: `mem-seed-${i}`,
-        caseMemory: {
-          humanization: {
-            prior_session_notes: ["Conflict with manager last session"],
-          },
-        },
+        hasPriorSessionMemory: true,
       });
       if (plan?.behaviors.includes("remembering_previous_sessions")) {
         seen = true;
@@ -383,6 +379,29 @@ describe("buildHumanizationTurn", () => {
       }
     }
     expect(seen).toBe(true);
+  });
+
+  it("prompt cue stays presentation-only (no memory fact injection)", () => {
+    const plan = buildHumanizationTurn({
+      sessionId: "sess-pres",
+      caseSnapshot: minimalSnapshot(),
+      history: [
+        {
+          role: "assistant",
+          content: "I work nights at the hospital and take sertraline.",
+        },
+      ],
+      userMessage: "Tell me more about work.",
+      sessionLanguage: "en",
+      elapsedSeconds: 100,
+      maxDurationSec: 2400,
+      seed: "pres-1",
+      hasPriorSessionMemory: true,
+    });
+    expect(plan!.prompt_cue).toMatch(/presentation only/i);
+    expect(plan!.prompt_cue).not.toMatch(/sertraline|hospital/i);
+    expect(plan!.prompt_cue).not.toMatch(/Prior-session memory \(imperfect/);
+    expect(plan!.memory.recalled_facts).toEqual([]);
   });
 });
 
@@ -398,7 +417,7 @@ describe("clinical accuracy invariants", () => {
       maxDurationSec: 2400,
       seed: "inv-1",
     });
-    expect(plan!.prompt_cue).toMatch(/Never break clinical disclosure/i);
+    expect(plan!.prompt_cue).toMatch(/Never.*clinical disclosure/i);
   });
 
   it("manic plan prefers activation-compatible behaviours when selected", () => {

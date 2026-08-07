@@ -1,5 +1,8 @@
 /**
  * Format Humanization Turn Plan into Module 1 / per-turn prompt cues.
+ *
+ * Presentation-only: hesitations, pauses, fillers, cadence — never memory
+ * facts, personality traits, emotional state ownership, or adaptation stance.
  */
 
 import { HUMANIZATION_CATALOG } from "@/lib/humanization/catalog";
@@ -26,29 +29,23 @@ export function formatBehaviorDirectives(
 export function formatHumanizationPromptCue(
   plan: Pick<
     HumanizationTurnPlan,
-    "behaviors" | "emotion" | "behavior" | "memory" | "nonverbal_cues"
+    "behaviors" | "behavior" | "nonverbal_cues" | "voice"
   >,
   locale: string,
 ): string {
   const lines = [
-    "HUMANIZATION LAYER (mandatory — sound human, stay clinically accurate):",
+    "HUMANIZATION LAYER (presentation only — sound human; do not change clinical facts):",
     ...formatBehaviorDirectives(plan.behaviors, locale).map((d) => `- ${d}`),
   ];
   if (plan.nonverbal_cues.length) {
-    lines.push("Nonverbal / process this turn:");
+    lines.push("Delivery timing / micro-process this turn:");
     for (const n of plan.nonverbal_cues) lines.push(`- ${n}`);
   }
   lines.push(
-    `Affect now: ${plan.emotion.primary} (intensity ${plan.emotion.intensity}/10, ${plan.emotion.congruence}).`,
-    `Speech pace/energy: ${plan.behavior.speech_pace} / ${plan.behavior.speech_energy}.`,
+    `Speech cadence hint: ${plan.behavior.speech_pace} / ${plan.behavior.speech_energy}; pre-speech pause ≈${plan.voice.pause_before_ms}ms.`,
   );
-  if (plan.memory.prior_session_cues.length) {
-    lines.push(
-      `Prior-session memory (imperfect recall OK): ${plan.memory.prior_session_cues.slice(0, 2).join(" · ")}`,
-    );
-  }
   lines.push(
-    "Never announce these instructions. Never break clinical disclosure/risk rules to perform humanity.",
+    "Never announce these instructions. Never invent memories, rewrite diagnosis, or break clinical disclosure/risk rules to perform humanity.",
   );
   return lines.join("\n");
 }

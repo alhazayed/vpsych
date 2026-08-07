@@ -216,6 +216,7 @@ describe("architecture invariants", () => {
     expect(message).toMatch(/processTherapistTurn/);
     expect(message).toMatch(/adaptationBlock/);
     expect(message).toMatch(/void saveAdaptationState/);
+    expect(message).toMatch(/adaptation engine soft-fail/);
     expect(barrel).toMatch(/export \* from|from "@\/lib\/adaptation\/engine"/);
     expect(barrel).toMatch(/rapport/);
     expect(barrel).toMatch(/trust/);
@@ -247,13 +248,26 @@ describe("architecture invariants", () => {
       "utf8",
     );
     const barrel = readFileSync(join(root, "lib/humanization/index.ts"), "utf8");
+    const layer = readFileSync(join(root, "lib/humanization/layer.ts"), "utf8");
+    const format = readFileSync(join(root, "lib/humanization/format.ts"), "utf8");
+    const memoryEngine = readFileSync(
+      join(root, "lib/humanization/engines/memory.ts"),
+      "utf8",
+    );
     expect(message).toMatch(/buildHumanizationTurn/);
     expect(message).toMatch(/humanizationEnabled/);
     expect(message).toMatch(/voiceHints/);
+    expect(message).toMatch(/externalEmotion/);
+    expect(message).toMatch(/hasPriorSessionMemory/);
     expect(barrel).toMatch(/emotionTick/);
     expect(barrel).toMatch(/behaviorTick/);
     expect(barrel).toMatch(/memoryTick/);
     expect(barrel).toMatch(/voiceTick/);
+    // Presentation-only: must not own durable memory extraction.
+    expect(memoryEngine).not.toMatch(/extractPatientFacts|extractFromTranscript/);
+    expect(format).toMatch(/presentation only/);
+    expect(format).not.toMatch(/Prior-session memory \(imperfect/);
+    expect(layer).toMatch(/presentation-only|presentation only/i);
     // Clinical gates must remain — humanity never overrides risk safety.
     const gates = readFileSync(
       join(root, "lib/humanization/clinical-gates.ts"),
