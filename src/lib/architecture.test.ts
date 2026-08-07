@@ -177,4 +177,24 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
   });
+
+  it("Mission 4 long-term patient memory is wired best-effort on message + end", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(
+      join(root, "lib/patient-memory/index.ts"),
+      "utf8",
+    );
+    expect(message).toMatch(/prepareMemoryForTurn/);
+    expect(end).toMatch(/runPatientMemoryAfterSession/);
+    expect(barrel).toMatch(/summarize/);
+    expect(barrel).toMatch(/compress/);
+    expect(barrel).toMatch(/retrieve/);
+  });
 });
