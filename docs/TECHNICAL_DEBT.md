@@ -25,6 +25,19 @@
 | ARCH-S2-06 | Low | Message route is composition root inline | Optional `lib/session-turn` orchestrator (no behaviour change) |
 | ARCH-S2-07 | Medium | Migration ledger / CLAUDE counts vs 66 files | Refresh ledger after next DB parity run |
 
+## Clinical model gaps (Stage 3)
+
+Full catalogue: `docs/clinical/CLINICAL_GAP_ANALYSIS.md` + roadmap in `CLINICAL_ROADMAP.md`.
+
+| ID | Severity | Item |
+|----|----------|------|
+| CLIN-S3-01 | Critical | Dual model: authored persona case_file (MSE, protectives) vs slim runtime ClinicalCore |
+| CLIN-S3-02 | Critical | Protective factors not on ClinicalCore (CFI notes gap) |
+| CLIN-S3-03 | Critical | No runtime MSE object / Module 1 MSE injection |
+| CLIN-S3-04 | High | No structured medication / substance-pattern models |
+| CLIN-S3-05 | Medium | Emotion vs Adaptation overlapping trust/rapport variables |
+| CLIN-S3-06 | Medium | Living environment is prose only (no engine) |
+
 ## Code residue
 
 | Item | Severity | Notes |

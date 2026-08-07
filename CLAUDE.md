@@ -282,7 +282,8 @@ update public.profiles set role = 'admin' where id = '<user-uuid>';
 ## Docs worth reading before large changes
 
 `docs/SOFTWARE_ARCHITECTURE.md` (Stage 2 — ownership, dependencies, runtime,
-API/DB maps), `docs/ARCHITECTURE_CERTIFICATION.md`,
+API/DB maps), `docs/clinical/CLINICAL_DATA_MODEL.md` (Stage 3 — patient
+ontology and clinical knowledge model), `docs/ARCHITECTURE_CERTIFICATION.md`,
 `docs/PRODUCTION_SECURITY_CERTIFICATION.md`, and
 `docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
 constraints above, including the specific regressions that motivated the

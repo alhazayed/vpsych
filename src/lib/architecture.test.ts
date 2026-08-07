@@ -279,4 +279,42 @@ describe("architecture invariants", () => {
       /Adaptation[\s\S]*resolveAvatar[\s\S]*Patient Memory[\s\S]*Emotion[\s\S]*CBE[\s\S]*Humanization/,
     );
   });
+
+  it("keeps Stage 3 canonical clinical information model present", () => {
+    const rootDocs = join(process.cwd(), "docs/clinical");
+    const dataModel = readFileSync(
+      join(rootDocs, "CLINICAL_DATA_MODEL.md"),
+      "utf8",
+    );
+    const ontology = readFileSync(join(rootDocs, "PATIENT_ONTOLOGY.md"), "utf8");
+    const gaps = readFileSync(
+      join(rootDocs, "CLINICAL_GAP_ANALYSIS.md"),
+      "utf8",
+    );
+    const roadmap = readFileSync(join(rootDocs, "CLINICAL_ROADMAP.md"), "utf8");
+    expect(dataModel).toMatch(/PATIENT_ONTOLOGY/);
+    expect(dataModel).toMatch(/Single patient ontology/);
+    expect(ontology).toMatch(/SyntheticPatient/);
+    expect(ontology).toMatch(/ClinicalCore/);
+    expect(ontology).toMatch(/One owner per concept/);
+    expect(gaps).toMatch(/Protective factors/);
+    expect(gaps).toMatch(/Mental Status/);
+    expect(roadmap).toMatch(/Critical/);
+    // Required Stage 3 package files must exist.
+    for (const name of [
+      "PATIENT_LIFECYCLE.md",
+      "CASE_MODEL.md",
+      "DSM_MAPPING.md",
+      "ICD_MAPPING.md",
+      "SYMPTOM_MODEL.md",
+      "MENTAL_STATUS_MODEL.md",
+      "THERAPY_STATE_MODEL.md",
+      "RISK_MODEL.md",
+      "MEMORY_MODEL.md",
+      "LIVING_ENVIRONMENT_MODEL.md",
+      "CULTURAL_CONTEXT_MODEL.md",
+    ]) {
+      expect(() => readFileSync(join(rootDocs, name), "utf8")).not.toThrow();
+    }
+  });
 });
