@@ -21,6 +21,7 @@ import {
   formatSpeechBehaviorForPrompt,
   speechBehaviorForDisorder,
 } from "@/lib/case-engine/speech-behavior";
+import { generateLivingWorld } from "@/lib/living-environment";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
 
 /** Prefer richer notes when both package and persona share a disclosure topic. */
@@ -303,6 +304,37 @@ export function generateCaseInstance(
     ),
   };
 
+  const livingResult = generateLivingWorld({
+    seed: `${seed}:living`,
+    locale: req.locale,
+    age: clinical_core.age,
+    gender: clinical_core.gender,
+    personaSlug: req.persona.slug,
+    displayName: req.persona.display_name,
+    occupationBaseline:
+      req.persona.identity.occupation_baseline ?? undefined,
+    educationBaseline:
+      req.persona.identity.education_baseline ?? undefined,
+    familyBaseline: req.persona.identity.family_baseline ?? undefined,
+    randomized: {
+      financial_situation: randomized.financial_situation,
+      relationship_detail: randomized.relationship_detail,
+      occupation_variant: randomized.occupation_variant,
+      recent_stressor: randomized.recent_stressor,
+      minor_life_event: randomized.minor_life_event,
+    },
+  });
+  if (!livingResult.ok) {
+    return {
+      ok: false,
+      issues: livingResult.issues.map((i) => ({
+        code: `living_world_${i.code}`,
+        message: i.message,
+        path: i.path ?? i.domains?.[0],
+      })),
+    };
+  }
+
   const snapshot: CaseInstanceSnapshot = {
     version: 2,
     assessment_id,
@@ -335,6 +367,7 @@ export function generateCaseInstance(
     severity: clinical_core.severity ?? "moderate",
     clinical_core,
     randomized_context: randomized,
+    living_world: livingResult.world,
     clinical_teaching,
     memory_scope: "case_instance",
     generated_at: new Date().toISOString(),

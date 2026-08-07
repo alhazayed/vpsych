@@ -199,6 +199,11 @@ export type CaseInstanceSnapshot = {
   severity: CaseSeverity;
   clinical_core: ClinicalCore;
   randomized_context: RandomizedContext;
+  /**
+   * Mission 6 — immutable living world for this CaseInstance.
+   * Home/family/work/friends/finances/medical/routine/social/education.
+   */
+  living_world?: import("@/lib/living-environment/types").LivingWorld;
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
