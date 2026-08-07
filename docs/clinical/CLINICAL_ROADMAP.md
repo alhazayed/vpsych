@@ -23,11 +23,11 @@ Architectural impact scale: **S** = types/docs · **M** = Case Engine + migratio
 
 ## Critical
 
-| ID | Concept | Owner | Impact | Rationale |
-|----|---------|-------|--------|-----------|
-| R-C1 | Promote protective factors onto ClinicalCore / package | Case Engine | M | Closes CFI + risk teaching gap (G-01) |
-| R-C2 | Define runtime MSE subset; snapshot + optional Module 1 fidelity | Case Engine | M–L | Ends dual-model drift (G-02, G-18) |
-| R-C3 | Documented promotion pipeline: persona case_file → snapshot | Case Engine | M | Prevents hidden assumptions (G-18) |
+| ID | Concept | Owner | Impact | Status |
+|----|---------|-------|--------|--------|
+| R-C1 | Promote protective factors onto ClinicalCore / package | Case Engine | M | **Done (Stage 6)** |
+| R-C2 | Define runtime MSE subset; snapshot + optional Module 1 fidelity | Case Engine | M–L | **Done (Stage 6)** |
+| R-C3 | Documented promotion pipeline: persona case_file → snapshot | Case Engine | M | **Partial** — package seeds + promote API; authored persona JSON MSE still thin |
 
 **Suggested sequence:** R-C3 contract → R-C1 fields → R-C2 MSE subset (speech/mood/affect/insight/judgement/risk first; thought/perception next).
 
@@ -114,37 +114,37 @@ flowchart TD
 
 ## Stage 5 — Clinical Intelligence (implementation backlog)
 
-Canonical designs live in [`../clinical-intelligence/`](../clinical-intelligence/). **Do not implement in doc stages.** Sequence after Critical Stage 3 promotions where noted.
-
-**Stage 6 blueprint:** ordered phases, module layout, types, migrations, and anti-duplication rules are in [`../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).
+Canonical designs live in [`../clinical-intelligence/`](../clinical-intelligence/).  
+**Stage 6 implementation:** [`../clinical-intelligence/IMPLEMENTATION.md`](../clinical-intelligence/IMPLEMENTATION.md) · code `src/lib/clinical-intelligence/`.  
+Blueprint: [`../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).
 
 ### Critical (intelligence)
 
-| ID | Concept | Owner | Impact | Design doc / gap |
-|----|---------|-------|--------|------------------|
-| R-I1 | Wire Adaptation `beginNextSession` for longitudinal curricula | Adaptation + session create | M | CI-L01 |
-| R-I2 | Patient formulation object (beliefs / schemas / goals) on Case teaching package | Case Engine | M–L | CI-C01 · CI-C02 · G-06 |
-| R-I3 | Typed `TherapyResponseProfile` replacing thin reaction strings | Case Engine therapy-process | M | CI-T01 · CI-T02 |
+| ID | Concept | Owner | Impact | Status |
+|----|---------|-------|--------|--------|
+| R-I1 | Wire Adaptation `beginNextSession` for longitudinal curricula | Adaptation + session create | M | **Done** — dyad carry on create/message |
+| R-I2 | Patient formulation object (beliefs / schemas / goals) on Case teaching package | Case Engine | M–L | **Done** — ClinicalCore.formulation |
+| R-I3 | Typed `TherapyResponseProfile` replacing thin reaction strings | Case Engine therapy-process | M | **Done** — v1 additive; legacy bags normalize |
 
 ### High (intelligence)
 
-| ID | Concept | Owner | Impact | Design doc / gap |
-|----|---------|-------|--------|------------------|
-| R-I4 | DecisionPlan façade over CBE + Adaptation + Emotion | Runtime orchestration | M | CI-P01 · RT-04 |
-| R-I5 | Behaviour / cognitive pattern tags on disorder packages | Case Engine catalog | S–M | CI-D03 · DSM_MAPPING |
-| R-I6 | Curriculum horizons `10\|25\|50\|100` + `pin_disorder` | Instructor presets + ACE | M | CI-V01 · PATIENT_EVOLUTION |
-| R-I7 | Dissociation / numbing decision bias for trauma packages | Decision + CBE | S–M | CI-P02 |
-| R-I8 | Assessor optional telemetry features (missed disclosure, hostility turns) | Assessment | M | CI-S02 |
+| ID | Concept | Owner | Impact | Status |
+|----|---------|-------|--------|--------|
+| R-I4 | DecisionPlan façade over CBE + Adaptation + Emotion | Runtime orchestration | M | **Done** — `decidePatientTurn` |
+| R-I5 | Behaviour / cognitive pattern tags on disorder packages | Case Engine catalog | S–M | **Partial** — package seeds `pattern_tags` |
+| R-I6 | Curriculum horizons `10\|25\|50\|100` + `pin_disorder` | Instructor presets + ACE | M | **Partial** — helpers/tests; preset wire remain |
+| R-I7 | Dissociation / numbing decision bias for trauma packages | Decision + CBE | S–M | **Done** — DecisionPlan.dissociation |
+| R-I8 | Assessor optional telemetry features (missed disclosure, hostility turns) | Assessment | M | Open |
 
 ### Medium (intelligence)
 
-| ID | Concept | Owner | Impact | Design doc / gap |
-|----|---------|-------|--------|------------------|
-| R-I9 | Homework / adherence state | Adaptation / therapy-process | S–M | CI-B01 · G-10 |
-| R-I10 | Emotion crisis_band mode (after RiskProfile extensions) | Emotion | M | CI-E04 |
-| R-I11 | Turn-level realism auditor (expression vs reply) | Platform / CFI bridge | M | CI-R03 |
-| R-I12 | Unified nonverbal cue ID registry | Emotion + NBE + TRM | S | CI-B04 |
-| R-I13 | Recovery stage enum enforcing authored session_arc | Case + ACE | M | CI-L02 · G-09 |
+| ID | Concept | Owner | Impact | Status |
+|----|---------|-------|--------|--------|
+| R-I9 | Homework / adherence state | Adaptation / therapy-process | S–M | **Done** — mind-state adherence |
+| R-I10 | Emotion crisis_band mode (after RiskProfile extensions) | Emotion | M | Open (CrisisRisk type present) |
+| R-I11 | Turn-level realism auditor (expression vs reply) | Platform / CFI bridge | M | Open |
+| R-I12 | Unified nonverbal cue ID registry | Emotion + NBE + TRM | S | Open |
+| R-I13 | Recovery stage enum enforcing authored session_arc | Case + ACE | M | **Partial** — RecoveryTrajectory runtime |
 
 ### Dependency sketch (intelligence on clinical)
 

@@ -11,12 +11,17 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Capability | Owner | Persist | Others may |
 |------------|-------|---------|------------|
 | Clinical snapshot / diagnosis | Case Engine | `clinical_snapshot` | Read only |
+| Formulation / MSE / protective factors | Case Engine (+ CI promote) | `clinical_snapshot.clinical_core` | Read / Module 1 fidelity |
+| TherapyResponseProfile | Case Engine | `therapy_reaction_rules` | DecisionPlan biases |
 | Prompt Modules 1–4 template | Prompt Engine | code | Contribute fidelity *blocks* via resolve |
 | Module 2b traits | Personality Engine | snapshot freeze | Read |
 | Adaptation / rapport / trust / stance | Adaptation | `case_memory…patient_adaptation` | Read expression block |
+| Treatment / homework / medication adherence | Adaptation (+ CI mind state) | `case_memory…clinical_intelligence` | Read |
 | Emotion variables / expression | Emotion | `case_memory…emotion` | Read expression |
 | Longitudinal facts | Patient Memory | `patient_long_term_memory` | — |
 | Turn behaviour plan / cbe_direct | CBE | ephemeral | — |
+| PatientDecisionPlan / BehaviorProfile | Clinical Intelligence façade | ephemeral (+ optional traces) | Observability headers |
+| Recovery / relapse / chronic stress | CI longitudinal helpers | `case_memory…clinical_intelligence` | Case/Adaptation read |
 | Micro-realism / voiceHints | Humanization | ephemeral | Read case_memory |
 | Patient reply text | Patient Agent | via message RPC | — |
 | `aiSource` truth | Patient Agent / CBE direct | response | Clients must surface |

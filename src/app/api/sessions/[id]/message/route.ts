@@ -8,6 +8,7 @@ import {
   loadAdaptationState,
   processTherapistTurn,
   saveAdaptationState,
+  type CaseMemoryBlob,
 } from "@/lib/adaptation";
 import { prepareMemoryForTurn } from "@/lib/patient-memory";
 import {
@@ -146,12 +147,12 @@ export async function POST(request: Request, { params }: Params) {
   });
   const adapted = processTherapistTurn(adaptation, message);
   adaptation = adapted.state;
-  let memoryRaw = loaded.raw ?? {};
+  let memoryRaw: CaseMemoryBlob = loaded.raw ?? {};
   if (carriedMind && !extractMindState(memoryRaw)) {
     memoryRaw = embedMindState(memoryRaw, {
       ...carriedMind,
       case_instance_id: caseInstanceId,
-    });
+    }) as CaseMemoryBlob;
   }
   void saveAdaptationState(supabase, caseInstanceId, adaptation, memoryRaw);
 
