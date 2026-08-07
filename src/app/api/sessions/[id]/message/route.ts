@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { prepareMemoryForTurn } from "@/lib/patient-memory";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -73,6 +74,21 @@ export async function POST(request: Request, { params }: Params) {
     caseSnapshot: typed.clinical_snapshot,
   });
 
+  // Mission 4 — Long-Term Patient Memory: retrieve prior facts for this dyad.
+  // Best-effort; never blocks the turn if the table is missing.
+  const memoryCtx = await prepareMemoryForTurn(supabase, {
+    therapistId: user.id,
+    avatarId: typed.avatar_id,
+    longitudinalGroupId: null,
+    userMessage: message,
+    systemPrompt: resolved.system_prompt,
+    identity: resolved.personality?.identity ?? null,
+  });
+  const avatarWithMemory = {
+    ...resolved,
+    system_prompt: memoryCtx.systemPrompt,
+  };
+
   const { data: userMsg, error: userMsgError } = await supabase
     .from("session_messages")
     .insert({
@@ -103,7 +119,7 @@ export async function POST(request: Request, { params }: Params) {
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
+      avatar: avatarWithMemory,
       history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
       userMessage: message,
     });
