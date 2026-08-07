@@ -23,6 +23,8 @@ export async function synthesizeSpeech(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  /** Mission 3 — clinical emotion live switch. */
+  emotion?: string | null;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -38,6 +40,7 @@ export async function synthesizeSpeech(params: {
         speechPace: params.speechPace ?? undefined,
         speechEnergy: params.speechEnergy ?? undefined,
         disorderSlug: params.disorderSlug ?? undefined,
+        emotion: params.emotion ?? undefined,
         stream: true,
       }),
     });

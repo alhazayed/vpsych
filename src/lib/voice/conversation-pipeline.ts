@@ -146,6 +146,7 @@ export async function playPatientSpeech(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  emotion?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
   /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
@@ -169,6 +170,7 @@ export async function playPatientSpeech(params: {
     speechPace: params.speechPace,
     speechEnergy: params.speechEnergy,
     disorderSlug: params.disorderSlug,
+    emotion: params.emotion,
   });
 
   if (params.signal?.aborted) {
@@ -310,6 +312,7 @@ export async function runVoiceConversationTurn(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  emotion?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
@@ -376,6 +379,7 @@ export async function runVoiceConversationTurn(params: {
       speechPace: params.speechPace,
       speechEnergy: params.speechEnergy,
       disorderSlug: params.disorderSlug,
+      emotion: params.emotion,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
     });

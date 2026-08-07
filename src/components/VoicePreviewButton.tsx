@@ -13,6 +13,8 @@ export function VoicePreviewButton({
   voiceIdAr,
   voiceProfileId,
   avatarId,
+  emotion,
+  disorderSlug,
   label,
 }: {
   locale: SessionSpeechLocale;
@@ -20,6 +22,9 @@ export function VoicePreviewButton({
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
   avatarId?: string | null;
+  /** Mission 3 — live clinical emotion for preview switching. */
+  emotion?: string | null;
+  disorderSlug?: string | null;
   label: string;
 }) {
   const [busy, setBusy] = useState(false);
@@ -44,6 +49,8 @@ export function VoicePreviewButton({
           voiceIdAr: voiceIdAr ?? undefined,
           voiceProfileId: voiceProfileId ?? undefined,
           avatarId: avatarId ?? undefined,
+          emotion: emotion ?? undefined,
+          disorderSlug: disorderSlug ?? undefined,
         }),
       });
       if (!res.ok) {
