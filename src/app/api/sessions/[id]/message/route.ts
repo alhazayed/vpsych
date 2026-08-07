@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import {
+  buildHumanizationTurn,
+  toClientHints,
+} from "@/lib/humanization";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import { MAX_SESSION_SECONDS } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -100,11 +105,60 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  const typedHistory = (history ?? []) as Pick<
+    SessionMessage,
+    "role" | "content"
+  >[];
+
+  // Mission 10 — Humanization Layer (Emotion / Behavior / Memory / Voice).
+  let caseMemory: Record<string, unknown> | null = null;
+  if (typed.case_instance_id) {
+    const { data: memRow } = await supabase
+      .from("case_memory")
+      .select("memory")
+      .eq("case_instance_id", typed.case_instance_id)
+      .maybeSingle();
+    if (memRow?.memory && typeof memRow.memory === "object") {
+      caseMemory = memRow.memory as Record<string, unknown>;
+    }
+  }
+
+  const maxDur = typed.max_duration_sec ?? MAX_SESSION_SECONDS;
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(typed.started_at).getTime()) / 1000),
+  );
+
+  const humanization = buildHumanizationTurn({
+    sessionId,
+    caseSnapshot: typed.clinical_snapshot ?? null,
+    clinicalCore: typed.clinical_snapshot?.clinical_core ?? null,
+    history: typedHistory,
+    userMessage: message,
+    sessionLanguage: typed.language ?? "en",
+    elapsedSeconds,
+    maxDurationSec: maxDur,
+    caseMemory,
+  });
+
+  const avatarForTurn = humanization
+    ? {
+        ...resolved,
+        system_prompt: `${resolved.system_prompt}\n\n${humanization.prompt_cue}`,
+        per_turn_reinforcement: [
+          resolved.per_turn_reinforcement?.trim(),
+          humanization.per_turn_cue,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      }
+    : resolved;
+
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
     replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
+      avatar: avatarForTurn,
+      history: typedHistory,
       userMessage: message,
     });
   } catch (err) {
@@ -149,6 +203,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  const humanizationHints = humanization ? toClientHints(humanization) : null;
+
   return NextResponse.json(
     {
       userMessage: userMsg,
@@ -163,6 +219,10 @@ export async function POST(request: Request, { params }: Params) {
       aiSource: replyMeta.aiSource,
       aiModel: replyMeta.model ?? null,
       aiErrorKind: replyMeta.errorKind ?? null,
+      // Mission 10 — Humanization Engine (additive; clients may ignore).
+      humanizationEnabled: Boolean(humanization),
+      humanization: humanizationHints,
+      voiceHints: humanizationHints?.voiceHints ?? null,
     },
     {
       headers: {
@@ -170,6 +230,9 @@ export async function POST(request: Request, { params }: Params) {
         ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
         ...(replyMeta.errorKind
           ? { "X-AI-Error-Kind": replyMeta.errorKind }
+          : {}),
+        ...(humanization
+          ? { "X-Humanization": humanization.behaviors.join(",") }
           : {}),
       },
     },

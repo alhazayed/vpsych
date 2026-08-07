@@ -19,6 +19,11 @@ export type PromptFidelityHints = {
    * assembling Module 1; never leave the model with speech-pace alone.
    */
   therapy_process_cue?: string;
+  /**
+   * Mission 10 Humanization Layer — per-turn micro-behaviours (hesitation,
+   * false starts, silence, etc.). Optional; injected when the engine runs.
+   */
+  humanization_cue?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -148,6 +153,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.difficulty_behavior}}
 
 {{fidelity.therapy_process_cue}}
+
+{{fidelity.humanization_cue}}
 
 Conversational naturalness (mandatory):
 - Sound like a real person in a psychiatric interview — not a chatbot, textbook,
@@ -330,6 +337,7 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- No symptom lists, no DSM self-lecture, no chatbot empathy.",
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
+      humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);

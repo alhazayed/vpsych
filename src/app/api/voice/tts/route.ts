@@ -28,6 +28,9 @@ type TtsBody = {
   speechPace?: string;
   speechEnergy?: string;
   disorderSlug?: string;
+  /** Mission 10 — Humanization Engine prosody overrides. */
+  stability?: number;
+  style?: number;
 };
 
 /**
@@ -77,6 +80,8 @@ export async function POST(request: Request) {
       speechPace: body.speechPace,
       speechEnergy: body.speechEnergy,
       disorderSlug: body.disorderSlug,
+      stability: body.stability,
+      style: body.style,
     });
 
     return new NextResponse(result.body, {
