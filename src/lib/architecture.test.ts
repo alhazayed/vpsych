@@ -825,12 +825,25 @@ describe("architecture invariants", () => {
       "GA_READINESS_REPORT.md",
       "RELEASE_BOARD_PACKAGE.md",
       "FEEDBACK_MANAGEMENT.md",
+      "EXECUTIVE_LEADERSHIP_BRIEF.md",
+      "HOSPITAL_ADMINISTRATION_GUIDE.md",
+      "evidence/governance/GOVERNANCE_ATTESTATIONS.md",
+      "evidence/security/SECURITY_EVIDENCE_LOG.md",
+      "evidence/dr/DR_EVIDENCE_LOG.md",
     ]) {
       expect(() => readFileSync(join(cidp, name), "utf8")).not.toThrow();
     }
 
     const ga = readFileSync(join(cidp, "GA_READINESS_REPORT.md"), "utf8");
     expect(ga).toMatch(/Do NOT declare General Availability/);
+    expect(ga).toMatch(/GO for CIDP/);
+
+    const weekly = readFileSync(
+      join(root, "app/api/admin/ops/cidp/weekly/route.ts"),
+      "utf8",
+    );
+    expect(weekly).toMatch(/requireApiAdmin/);
+    expect(weekly).toMatch(/buildWeeklyReports/);
 
     const ownership = readFileSync(
       join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),

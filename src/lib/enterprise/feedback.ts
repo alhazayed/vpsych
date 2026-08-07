@@ -27,9 +27,22 @@ export const FEEDBACK_SEVERITIES = [
   "medium",
   "low",
   "wishlist",
+  "suggestion",
 ] as const;
 
 export type FeedbackSeverity = (typeof FEEDBACK_SEVERITIES)[number];
+
+/** Public classification labels for CIDP triage boards. */
+export const FEEDBACK_CLASSIFICATIONS = [
+  "Critical",
+  "High",
+  "Medium",
+  "Low",
+  "Suggestion",
+] as const;
+
+export type FeedbackClassification =
+  (typeof FEEDBACK_CLASSIFICATIONS)[number];
 
 export const FEEDBACK_PRIORITIES = ["p0", "p1", "p2", "p3"] as const;
 export type FeedbackPriority = (typeof FEEDBACK_PRIORITIES)[number];
@@ -102,6 +115,15 @@ export type InstitutionalFeedbackInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type FeedbackAuditEvent = {
+  at: string;
+  actor_user_id: string | null;
+  action: string;
+  from?: Record<string, unknown>;
+  to?: Record<string, unknown>;
+  note?: string;
+};
+
 export type InstitutionalFeedbackRecord = {
   id: string;
   submitter_id: string;
@@ -119,6 +141,9 @@ export type InstitutionalFeedbackRecord = {
   suggested_action: string;
   platform_version: string;
   session_id: string | null;
+  assigned_owner_id: string | null;
+  resolution: string;
+  audit_trail: FeedbackAuditEvent[];
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -153,6 +178,35 @@ function includes<T extends string>(list: readonly T[], v: string): v is T {
   return (list as readonly string[]).includes(v);
 }
 
+/** Normalize inbound severity aliases (suggestion ↔ wishlist). */
+export function normalizeFeedbackSeverity(raw: string): FeedbackSeverity | null {
+  const s = raw.trim().toLowerCase();
+  if (s === "suggestion") return "suggestion";
+  if (includes(FEEDBACK_SEVERITIES, s)) return s;
+  return null;
+}
+
+/** Map severity to CIDP classification board label. */
+export function classifyFeedbackSeverity(
+  severity: FeedbackSeverity | string,
+): FeedbackClassification {
+  switch (String(severity).toLowerCase()) {
+    case "critical":
+      return "Critical";
+    case "high":
+      return "High";
+    case "medium":
+      return "Medium";
+    case "low":
+      return "Low";
+    case "wishlist":
+    case "suggestion":
+      return "Suggestion";
+    default:
+      return "Medium";
+  }
+}
+
 /** Default priority from severity for triage. */
 export function defaultPriorityForSeverity(
   severity: FeedbackSeverity,
@@ -166,8 +220,24 @@ export function defaultPriorityForSeverity(
       return "p2";
     case "low":
     case "wishlist":
+    case "suggestion":
       return "p3";
   }
+}
+
+export function appendFeedbackAudit(
+  trail: FeedbackAuditEvent[] | null | undefined,
+  event: Omit<FeedbackAuditEvent, "at"> & { at?: string },
+): FeedbackAuditEvent[] {
+  const next: FeedbackAuditEvent = {
+    at: event.at ?? new Date().toISOString(),
+    actor_user_id: event.actor_user_id,
+    action: event.action,
+    from: event.from,
+    to: event.to,
+    note: event.note,
+  };
+  return [...(trail ?? []), next].slice(-100);
 }
 
 export function validateFeedbackInput(
@@ -183,8 +253,9 @@ export function validateFeedbackInput(
     return { ok: false, error: "Invalid submitter_role" };
   }
 
-  const severity = String(b.severity ?? "medium");
-  if (!includes(FEEDBACK_SEVERITIES, severity)) {
+  const severityRaw = String(b.severity ?? "medium");
+  const severity = normalizeFeedbackSeverity(severityRaw);
+  if (!severity) {
     return { ok: false, error: "Invalid severity" };
   }
 
@@ -275,6 +346,8 @@ export type FeedbackAdminPatch = {
   priority?: FeedbackPriority;
   severity?: FeedbackSeverity;
   suggested_action?: string;
+  assigned_owner_id?: string | null;
+  resolution?: string;
 };
 
 export function validateFeedbackAdminPatch(
@@ -301,8 +374,8 @@ export function validateFeedbackAdminPatch(
     value.priority = p;
   }
   if (b.severity !== undefined) {
-    const sev = String(b.severity);
-    if (!includes(FEEDBACK_SEVERITIES, sev)) {
+    const sev = normalizeFeedbackSeverity(String(b.severity));
+    if (!sev) {
       return { ok: false, error: "Invalid severity" };
     }
     value.severity = sev;
@@ -313,6 +386,28 @@ export function validateFeedbackAdminPatch(
       return { ok: false, error: "Suggested action too long" };
     }
     value.suggested_action = a;
+  }
+  if (b.assigned_owner_id !== undefined) {
+    if (b.assigned_owner_id === null || b.assigned_owner_id === "") {
+      value.assigned_owner_id = null;
+    } else if (typeof b.assigned_owner_id === "string") {
+      value.assigned_owner_id = b.assigned_owner_id;
+    } else {
+      return { ok: false, error: "Invalid assigned_owner_id" };
+    }
+  }
+  if (b.resolution !== undefined) {
+    const r = String(b.resolution).trim();
+    if (r.length > 4000) {
+      return { ok: false, error: "Resolution too long" };
+    }
+    if (PHI_HINT.test(r)) {
+      return {
+        ok: false,
+        error: "Possible PHI in resolution — remove identifiable content",
+      };
+    }
+    value.resolution = r;
   }
 
   if (Object.keys(value).length === 0) {

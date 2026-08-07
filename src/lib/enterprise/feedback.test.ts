@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendFeedbackAudit,
+  classifyFeedbackSeverity,
   defaultPriorityForSeverity,
+  normalizeFeedbackSeverity,
   summarizeFeedback,
   validateFeedbackAdminPatch,
   validateFeedbackInput,
@@ -40,16 +43,43 @@ describe("institutional feedback (CIDP)", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("maps severity to default priority", () => {
+  it("maps severity to default priority and classification", () => {
     expect(defaultPriorityForSeverity("critical")).toBe("p0");
     expect(defaultPriorityForSeverity("wishlist")).toBe("p3");
+    expect(normalizeFeedbackSeverity("suggestion")).toBe("suggestion");
+    expect(classifyFeedbackSeverity("suggestion")).toBe("Suggestion");
+    expect(classifyFeedbackSeverity("critical")).toBe("Critical");
   });
 
-  it("validates admin patches", () => {
-    const ok = validateFeedbackAdminPatch({ status: "triaged", priority: "p0" });
+  it("validates admin patches including owner and resolution", () => {
+    const ok = validateFeedbackAdminPatch({
+      status: "triaged",
+      priority: "p0",
+      assigned_owner_id: "00000000-0000-4000-8000-000000000001",
+      resolution: "Assigned to platform ops",
+    });
     expect(ok.ok).toBe(true);
     const bad = validateFeedbackAdminPatch({ status: "nope" });
     expect(bad.ok).toBe(false);
+    const phi = validateFeedbackAdminPatch({
+      resolution: "Real patient name is Jane",
+    });
+    expect(phi.ok).toBe(false);
+  });
+
+  it("appends audit trail events", () => {
+    const trail = appendFeedbackAudit([], {
+      actor_user_id: "u1",
+      action: "submit",
+    });
+    expect(trail).toHaveLength(1);
+    expect(trail[0]?.action).toBe("submit");
+    const next = appendFeedbackAudit(trail, {
+      actor_user_id: "admin",
+      action: "admin.patch",
+      to: { status: "triaged" },
+    });
+    expect(next).toHaveLength(2);
   });
 
   it("summarizes open criticals", () => {

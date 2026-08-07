@@ -27,6 +27,7 @@ type Summary = {
   by_status: Record<string, number>;
   by_role: Record<string, number>;
   by_severity: Record<string, number>;
+  by_classification?: Record<string, number>;
 };
 
 export function AdminFeedbackPanel() {
@@ -84,6 +85,13 @@ export function AdminFeedbackPanel() {
         <ul className="flex flex-wrap gap-6 text-sm">
           <li>Total: {summary.total}</li>
           <li>Open critical: {summary.open_critical}</li>
+          {summary.by_classification
+            ? Object.entries(summary.by_classification).map(([k, v]) => (
+                <li key={k}>
+                  {k}: {v}
+                </li>
+              ))
+            : null}
         </ul>
       ) : null}
 

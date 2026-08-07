@@ -23,6 +23,7 @@ export const ENTERPRISE_REST_ROUTES = [
   { method: "GET", path: "/api/admin/feedback", auth: "admin" },
   { method: "PATCH", path: "/api/admin/feedback", auth: "admin" },
   { method: "GET", path: "/api/admin/ops/cidp", auth: "admin" },
+  { method: "GET", path: "/api/admin/ops/cidp/weekly", auth: "admin" },
 ] as const;
 
 export function integrationCatalog(): IntegrationDescriptor[] {

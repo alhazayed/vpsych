@@ -26,9 +26,11 @@
 | Artifact | Path |
 |----------|------|
 | Executive deployment report | `EXECUTIVE_DEPLOYMENT_REPORT.md` |
+| Executive leadership brief | `EXECUTIVE_LEADERSHIP_BRIEF.md` |
 | Institutional deployment checklist | `INSTITUTIONAL_DEPLOYMENT_CHECKLIST.md` |
 | Operations manual | `OPERATIONS_MANUAL.md` |
 | Administrator guide | `ADMINISTRATOR_GUIDE.md` |
+| Hospital administration guide | `HOSPITAL_ADMINISTRATION_GUIDE.md` |
 | Faculty guide | `FACULTY_GUIDE.md` |
 | Resident guide | `RESIDENT_GUIDE.md` |
 | Research guide | `RESEARCH_GUIDE.md` |
@@ -39,6 +41,9 @@
 | GA readiness report | `GA_READINESS_REPORT.md` |
 | Final Release Board package | `RELEASE_BOARD_PACKAGE.md` |
 | Feedback management | `FEEDBACK_MANAGEMENT.md` |
+| Governance attestations | `evidence/governance/` |
+| Security / DR evidence logs | `evidence/security/`, `evidence/dr/` |
+| Weekly report archive | `reports/weekly/` |
 | Dashboard / monitoring config | `monitoring/` |
 | Stage 12 prerequisites | `../RELEASE_CERTIFICATION.md`, `../DEPLOYMENT_GUIDE.md`, `../DISASTER_RECOVERY.md` |
 
@@ -47,11 +52,16 @@
 | Surface | Auth | Purpose |
 |---------|------|---------|
 | `/feedback` | Authenticated | Structured institutional feedback |
-| `/admin/feedback` | Admin | Triage queue |
+| `/admin/feedback` | Admin | Triage queue (owner · resolution · audit) |
 | `/admin/cidp` | Admin | CIDP operational dashboards |
-| `GET /api/admin/ops/cidp` | Admin | Dashboard JSON |
+| `GET /api/admin/ops/cidp` | Admin | Dashboard + success metrics + pilot summary |
+| `GET /api/admin/ops/cidp/weekly` | Admin | Weekly executive / clinical / security reports |
 | `GET /api/admin/ops/metrics` | Admin | Stage 12 ops snapshot |
+
+## Status
+
+**CIDP:** GO · **GA:** NO-GO (see `GA_READINESS_REPORT.md`)
 
 ## Related decisions
 
-Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028 Stage 12 RC; RDL-029 CIDP).
+Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028 Stage 12 RC; RDL-029 CIDP authorize; RDL-030 CIDP execution).

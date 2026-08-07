@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
-import { validateFeedbackInput } from "@/lib/enterprise/feedback";
+import {
+  appendFeedbackAudit,
+  validateFeedbackInput,
+} from "@/lib/enterprise/feedback";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +50,17 @@ export async function POST(request: Request) {
     const row = {
       ...validated.value,
       submitter_id: auth.user.id,
+      assigned_owner_id: null,
+      resolution: "",
+      audit_trail: appendFeedbackAudit([], {
+        actor_user_id: auth.user.id,
+        action: "submit",
+        to: {
+          severity: validated.value.severity,
+          status: "submitted",
+          category: validated.value.category,
+        },
+      }),
     };
 
     const { data, error } = await auth.supabase

@@ -3,8 +3,11 @@ import { requireApiAdmin } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import {
+  appendFeedbackAudit,
+  classifyFeedbackSeverity,
   summarizeFeedback,
   validateFeedbackAdminPatch,
+  type FeedbackAuditEvent,
 } from "@/lib/enterprise/feedback";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 
@@ -66,10 +69,18 @@ export async function GET(request: Request) {
   }
 
   const items = data ?? [];
+  const summary = summarizeFeedback(items);
+  const by_classification: Record<string, number> = {};
+  for (const item of items) {
+    const label = classifyFeedbackSeverity(
+      String((item as { severity?: string }).severity ?? "medium"),
+    );
+    by_classification[label] = (by_classification[label] ?? 0) + 1;
+  }
   return NextResponse.json(
     {
       items,
-      summary: summarizeFeedback(items),
+      summary: { ...summary, by_classification },
     },
     {
       headers: {
@@ -124,9 +135,49 @@ export async function PATCH(request: Request) {
       );
     }
 
+    const { data: existing, error: loadError } = await auth.supabase
+      .from("institutional_feedback")
+      .select(
+        "id, status, priority, severity, suggested_action, assigned_owner_id, resolution, audit_trail",
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (loadError || !existing) {
+      return NextResponse.json(
+        { error: clientSafeError("Unable to load feedback", loadError) },
+        { status: 404, headers: requestIdHeaders(requestId) },
+      );
+    }
+
+    const from: Record<string, unknown> = {};
+    const to: Record<string, unknown> = {};
+    for (const key of Object.keys(patch.value) as Array<
+      keyof typeof patch.value
+    >) {
+      const nextVal = patch.value[key];
+      if (nextVal === undefined) continue;
+      from[key] = (existing as Record<string, unknown>)[key];
+      to[key] = nextVal;
+    }
+
+    const priorTrail = Array.isArray(existing.audit_trail)
+      ? (existing.audit_trail as FeedbackAuditEvent[])
+      : [];
+    const audit_trail = appendFeedbackAudit(priorTrail, {
+      actor_user_id: auth.user.id,
+      action: "admin.patch",
+      from,
+      to,
+    });
+
     const { data, error } = await auth.supabase
       .from("institutional_feedback")
-      .update({ ...patch.value, updated_at: new Date().toISOString() })
+      .update({
+        ...patch.value,
+        audit_trail,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", id)
       .select("*")
       .single();
@@ -139,7 +190,13 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json(
-      { ok: true, feedback: data },
+      {
+        ok: true,
+        feedback: data,
+        classification: classifyFeedbackSeverity(
+          String((data as { severity?: string }).severity ?? "medium"),
+        ),
+      },
       {
         headers: {
           "Cache-Control": "no-store",

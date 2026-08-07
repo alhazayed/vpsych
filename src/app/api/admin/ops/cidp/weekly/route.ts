@@ -5,26 +5,26 @@ import { clientSafeError } from "@/lib/api-errors";
 import { buildCidpDashboards } from "@/lib/ops/cidp-dashboards";
 import { buildCidpSuccessMetrics } from "@/lib/ops/cidp-success-metrics";
 import { emptyPilotPortfolio } from "@/lib/ops/cidp-pilot";
+import { buildWeeklyReports } from "@/lib/ops/cidp-weekly-reports";
 import { buildProductionOpsSnapshot } from "@/lib/ops";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/ops/cidp — Controlled Institutional Deployment dashboards.
- * Counts only; soft-fails to zeros when tables are empty or unavailable.
+ * GET /api/admin/ops/cidp/weekly — weekly executive/clinical/security reports.
  */
 export async function GET(request: Request) {
   const requestId = resolveRequestId(request);
   const auth = await requireApiAdmin(request, {
-    action: "admin.ops.cidp",
+    action: "admin.ops.cidp.weekly",
     resourceType: "ops",
   });
   if (!auth.ok) return auth.response;
 
   const limited = await rateLimit(
-    `admin-ops-cidp:${auth.user.id}`,
-    60,
+    `admin-ops-cidp-weekly:${auth.user.id}`,
+    30,
     60 * 60 * 1000,
   );
   if (!limited.ok) {
@@ -42,20 +42,21 @@ export async function GET(request: Request) {
 
   try {
     const ops = buildProductionOpsSnapshot();
+    const url = new URL(request.url);
+    const weekEnding =
+      url.searchParams.get("weekEnding") ??
+      new Date().toISOString().slice(0, 10);
 
     const [
       completedRes,
       abandonedRes,
       activeRes,
+      feedbackCritical,
+      feedbackHigh,
+      feedbackResolved,
+      feedbackTotal,
       institutionsRes,
-      campusesRes,
-      departmentsRes,
       auditRes,
-      feedbackCriticalRes,
-      feedbackHighRes,
-      feedbackResolvedRes,
-      feedbackTotalRes,
-      deniedAuditRes,
     ] = await Promise.all([
       auth.supabase
         .from("sessions")
@@ -69,18 +70,6 @@ export async function GET(request: Request) {
         .from("sessions")
         .select("id", { count: "exact", head: true })
         .eq("status", "active"),
-      auth.supabase
-        .from("institutions")
-        .select("id", { count: "exact", head: true }),
-      auth.supabase
-        .from("enterprise_campuses")
-        .select("id", { count: "exact", head: true }),
-      auth.supabase
-        .from("departments")
-        .select("id", { count: "exact", head: true }),
-      auth.supabase
-        .from("security_audit_events")
-        .select("id", { count: "exact", head: true }),
       auth.supabase
         .from("institutional_feedback")
         .select("id", { count: "exact", head: true })
@@ -99,9 +88,11 @@ export async function GET(request: Request) {
         .from("institutional_feedback")
         .select("id", { count: "exact", head: true }),
       auth.supabase
+        .from("institutions")
+        .select("id", { count: "exact", head: true }),
+      auth.supabase
         .from("security_audit_events")
-        .select("id", { count: "exact", head: true })
-        .eq("outcome", "denied"),
+        .select("id", { count: "exact", head: true }),
     ]);
 
     const completed = completedRes.count ?? 0;
@@ -109,7 +100,6 @@ export async function GET(request: Request) {
     const active = activeRes.count ?? 0;
     const started = completed + abandoned + active;
     const failureRate = ops.enterprise.failure_rate ?? 0;
-    const pilots = emptyPilotPortfolio();
 
     const dashboards = buildCidpDashboards({
       uptime_ratio: ops.health.liveness === "ok" ? 1 : 0.9,
@@ -124,33 +114,18 @@ export async function GET(request: Request) {
       simulations_abandoned: abandoned,
       assessments_completed: completed,
       institutions: institutionsRes.count ?? 0,
-      campuses: campusesRes.count ?? 0,
-      departments: departmentsRes.count ?? 0,
       audit_events: auditRes.count ?? 0,
-      rbac_violations: deniedAuditRes.count ?? 0,
-      auth_failures: 0,
-      rate_limit_hits: 0,
-      security_alerts: 0,
-      feedback_total: feedbackTotalRes.count ?? 0,
-      feedback_open_critical: feedbackCriticalRes.count ?? 0,
-      feedback_open_high: feedbackHighRes.count ?? 0,
-      feedback_resolved: feedbackResolvedRes.count ?? 0,
-      pilots_active: pilots.by_status.active ?? 0,
-      pilots_planned: pilots.by_status.planned ?? 0,
-      support_requests: 0,
-      datasets: 0,
-      validation_runs: 0,
-      inter_rater_agreement: 0,
-      realism_score_mean: 0,
-      publication_datasets: 0,
-      active_residents: 0,
-      active_faculty: 0,
+      feedback_total: feedbackTotal.count ?? 0,
+      feedback_open_critical: feedbackCritical.count ?? 0,
+      feedback_open_high: feedbackHigh.count ?? 0,
+      feedback_resolved: feedbackResolved.count ?? 0,
       dau: ops.enterprise.active_sessions,
       wau: ops.enterprise.active_sessions,
     });
 
+    const pilots = emptyPilotPortfolio();
     const success = buildCidpSuccessMetrics({
-      pilots_total: Math.max(1, pilots.pilots || 1),
+      pilots_total: Math.max(1, pilots.pilots),
       pilots_deployed_ok: pilots.pilots,
       uptime_ratio: ops.health.liveness === "ok" ? 1 : 0.9,
       api_latency_p95_ms: ops.enterprise.api_latency_p95_ms,
@@ -160,17 +135,26 @@ export async function GET(request: Request) {
       institutions: institutionsRes.count ?? 0,
     });
 
+    const reports = buildWeeklyReports({
+      week_ending: weekEnding,
+      dashboards,
+      success,
+      pilots,
+      open_critical_feedback: feedbackCritical.count ?? 0,
+      open_high_feedback: feedbackHigh.count ?? 0,
+      notes: [
+        "Pilot registry empty until institutions are onboarded via checklist.",
+      ],
+    });
+
     return NextResponse.json(
       {
-        ...dashboards,
-        ops_health: ops.health,
-        open_critical_feedback: feedbackCriticalRes.count ?? 0,
-        open_high_feedback: feedbackHighRes.count ?? 0,
-        success_metrics: success,
-        pilots,
+        week_ending: weekEnding,
         ga_status: "NO-GO",
         cidp_status: "GO",
-        weekly_reports_path: "/api/admin/ops/cidp/weekly",
+        success,
+        pilots,
+        reports,
       },
       {
         headers: {
@@ -183,7 +167,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error: clientSafeError(
-          "Unable to build CIDP dashboards",
+          "Unable to build weekly CIDP reports",
           err instanceof Error ? err : null,
         ),
       },

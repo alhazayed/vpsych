@@ -16,6 +16,7 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 - Institutional feedback system: `institutional_feedback` migration, `POST/GET /api/feedback`, admin triage APIs/UI, PHI heuristics.
 - CIDP operational dashboards: `GET /api/admin/ops/cidp`, `/admin/cidp`, monitoring configs under `docs/cidp/monitoring/`.
 - Restored `docs/RELEASE_GOVERNANCE.md` and `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
+- CIDP execution: feedback `assigned_owner_id` / `resolution` / `audit_trail`; auto-classification Critical→Suggestion; educational/feedback/pilot dashboard panels; success metrics; pilot portfolio summary; weekly reports at `GET /api/admin/ops/cidp/weekly`; governance attestations + security/DR evidence logs; executive leadership + hospital administration guides.
 
 ### Changed
 

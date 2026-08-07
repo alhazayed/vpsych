@@ -36,7 +36,18 @@
 4. Update `package.json` version to `1.0.0`.  
 5. Communicate GA scope and limitations to institutions.
 
+## Continuous tracking (CIDP execution)
+
+| Source | What it shows |
+|--------|----------------|
+| `GET /api/admin/ops/cidp` | `ga_status: NO-GO`, `cidp_status: GO`, success metrics |
+| `GET /api/admin/ops/cidp/weekly` | Weekly executive / clinical / security packs |
+| `evidence/dr/DR_EVIDENCE_LOG.md` | Drill rows (empty → GA blocked) |
+| `evidence/security/SECURITY_EVIDENCE_LOG.md` | Per-deploy security evidence |
+| `evidence/governance/GOVERNANCE_ATTESTATIONS.md` | Domain attestations |
+
 ## Current recommendation
 
 **Remain on Controlled Institutional Deployment (`1.0.0-rc.1`).**  
+**GO for CIDP.**  
 **NO-GO for GA** until criteria 1–9 are satisfied.

@@ -23,6 +23,14 @@ type Payload = {
   panels?: Panel[];
   executive?: Metric[];
   open_critical_feedback?: number;
+  open_high_feedback?: number;
+  ga_status?: string;
+  cidp_status?: string;
+  success_metrics?: {
+    overall_health?: string;
+    metrics?: Metric[];
+  };
+  weekly_reports_path?: string;
 };
 
 export function CidpDashboardPanel() {
@@ -68,12 +76,43 @@ export function CidpDashboardPanel() {
           {data.phi_policy}
         </p>
         <p className="mt-2 text-sm">
+          CIDP: {data.cidp_status ?? "GO"} · GA: {data.ga_status ?? "NO-GO"} ·
+          Health: {data.success_metrics?.overall_health ?? "n/a"}
+        </p>
+        <p className="mt-2 text-sm">
           Open critical feedback:{" "}
           <span className="tabular-nums">
             {data.open_critical_feedback ?? 0}
           </span>
+          {" · "}
+          Open high:{" "}
+          <span className="tabular-nums">{data.open_high_feedback ?? 0}</span>
         </p>
+        {data.weekly_reports_path ? (
+          <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
+            Weekly reports: {data.weekly_reports_path}
+          </p>
+        ) : null}
       </section>
+
+      {data.success_metrics?.metrics?.length ? (
+        <section>
+          <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
+            Success metrics
+          </h2>
+          <ul className="mt-3 space-y-1 text-sm">
+            {data.success_metrics.metrics.map((m) => (
+              <li key={m.id}>
+                {m.label}:{" "}
+                <span className="tabular-nums">
+                  {m.value}
+                  {m.unit ?? ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">

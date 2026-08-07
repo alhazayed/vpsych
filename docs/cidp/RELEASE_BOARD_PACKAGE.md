@@ -47,7 +47,8 @@ Authorize **Controlled Institutional Deployment** of VPsych `1.0.0-rc.1` for gov
 1. **Motion A — Authorize CIDP** for `1.0.0-rc.1`.  
 2. **Motion B — Direct RM** to tag `v1.0.0-rc.1` after merge + CI green.  
 3. **Motion C — Refuse GA** until `GA_READINESS_REPORT.md` is all PASS.  
-4. **Motion D — Require** pilot reports using `PILOT_REPORT_TEMPLATE.md`.
+4. **Motion D — Require** pilot reports using `PILOT_REPORT_TEMPLATE.md`.  
+5. **Motion E — Execute CIDP** (RDL-030): operate feedback audit trail, weekly reports, governance evidence logs; continue **GO for CIDP / NO-GO for GA**.
 
 ## Sign-off block
 

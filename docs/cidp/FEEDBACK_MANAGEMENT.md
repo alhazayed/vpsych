@@ -20,8 +20,9 @@ This replaces ad-hoc off-platform-only collection for CIDP while remaining compa
 
 | Field | Values / notes |
 |-------|----------------|
-| Severity | critical · high · medium · low · wishlist |
-| Category | clinical_simulation, assessment, curriculum, supervisor, analytics, research_export, authentication, performance, voice_realtime, security, deployment, documentation, usability, other |
+| Severity | critical · high · medium · low · wishlist · suggestion |
+| Classification | Critical · High · Medium · Low · Suggestion (auto from severity) |
+| Category | clinical realism / educational / simulation / assessment / curriculum / supervisor / analytics / research / auth / performance / voice / security / deployment / documentation / usability / bug / other |
 | Reproducibility | always · often · sometimes · rare · unknown |
 | Suggested action | Free text (optional but encouraged) |
 | Priority | p0–p3 (defaulted from severity; admin may override) |
@@ -29,6 +30,9 @@ This replaces ad-hoc off-platform-only collection for CIDP while remaining compa
 | Institution | Name (+ optional institution_id) |
 | Department | Free text |
 | Version | Defaults to `1.0.0-rc.1` |
+| Assigned owner | `assigned_owner_id` (profiles.id) — admin triage |
+| Resolution | Free text (no PHI) |
+| Audit trail | Append-only JSON events (`submit`, `admin.patch`, …) |
 
 ## PHI policy
 

@@ -1,9 +1,9 @@
 /**
  * Controlled Institutional Deployment (CIDP) operational dashboards.
  *
- * Aggregates observational KPIs for System · Clinical · Institution ·
- * Research · Security · Executive views. Never includes patient-identifiable
- * content or session_reports narrative.
+ * Aggregates observational KPIs for System · Clinical · Educational ·
+ * Institution · Research · Security · Feedback · Pilot · Executive views.
+ * Never includes patient-identifiable content or session_reports narrative.
  */
 
 import { PACKAGE_VERSION, STAGE12_CERT_ID } from "@/lib/ops/versions";
@@ -32,12 +32,19 @@ export type CidpDashboardInput = {
   sse_p95_ms?: number;
   voice_e2e_p95_ms?: number;
   queue_depth?: number;
+  error_rate?: number;
   /** Clinical (simulation lifecycle — not patient PHI) */
+  simulations_started?: number;
   simulations_completed?: number;
   simulations_abandoned?: number;
   assessments_completed?: number;
   supervisor_completed?: number;
   validation_completed?: number;
+  /** Educational */
+  curriculum_completion_rate?: number;
+  certification_progress?: number;
+  competency_growth?: number;
+  resident_engagement?: number;
   /** Institution */
   active_residents?: number;
   active_faculty?: number;
@@ -49,11 +56,22 @@ export type CidpDashboardInput = {
   validation_runs?: number;
   inter_rater_agreement?: number;
   realism_score_mean?: number;
+  publication_datasets?: number;
   /** Security */
   auth_failures?: number;
   rbac_violations?: number;
   rate_limit_hits?: number;
   audit_events?: number;
+  security_alerts?: number;
+  /** Feedback */
+  feedback_total?: number;
+  feedback_open_critical?: number;
+  feedback_open_high?: number;
+  feedback_resolved?: number;
+  /** Pilot */
+  pilots_active?: number;
+  pilots_planned?: number;
+  support_requests?: number;
   /** Executive */
   dau?: number;
   wau?: number;
@@ -87,7 +105,10 @@ export function buildCidpDashboards(
 ): CidpDashboardBundle {
   const completed = num(input.simulations_completed);
   const abandoned = num(input.simulations_abandoned);
-  const started = completed + abandoned;
+  const started = Math.max(
+    num(input.simulations_started),
+    completed + abandoned,
+  );
   const completion_rate = started === 0 ? 0 : completed / started;
 
   const system: CidpDashboardPanel = {
@@ -129,6 +150,12 @@ export function buildCidpDashboards(
         label: "Queue depth",
         value: num(input.queue_depth),
       },
+      {
+        id: "error_rate",
+        label: "Error rate",
+        value: pct(num(input.error_rate)),
+        unit: "%",
+      },
     ],
   };
 
@@ -136,6 +163,11 @@ export function buildCidpDashboards(
     id: "clinical",
     title: "Clinical simulation (counts only)",
     metrics: [
+      {
+        id: "sim_started",
+        label: "Simulations started",
+        value: started,
+      },
       {
         id: "sim_completed",
         label: "Completed simulations",
@@ -165,6 +197,39 @@ export function buildCidpDashboards(
         id: "completion_rate",
         label: "Simulation completion rate",
         value: pct(completion_rate),
+        unit: "%",
+      },
+    ],
+  };
+
+  const educational: CidpDashboardPanel = {
+    id: "educational",
+    title: "Educational",
+    metrics: [
+      {
+        id: "curriculum_completion",
+        label: "Curriculum completion",
+        value: pct(num(input.curriculum_completion_rate)),
+        unit: "%",
+        note: "Formative",
+      },
+      {
+        id: "certification_progress",
+        label: "Certification progress",
+        value: pct(num(input.certification_progress)),
+        unit: "%",
+      },
+      {
+        id: "competency_growth",
+        label: "Competency growth",
+        value: pct(num(input.competency_growth)),
+        unit: "%",
+        note: "Not a validated instrument",
+      },
+      {
+        id: "resident_engagement",
+        label: "Resident engagement",
+        value: pct(num(input.resident_engagement)),
         unit: "%",
       },
     ],
@@ -221,6 +286,11 @@ export function buildCidpDashboards(
         value: Math.round(num(input.realism_score_mean) * 10) / 10,
         note: "Formative observational index",
       },
+      {
+        id: "publication_datasets",
+        label: "Publication datasets",
+        value: num(input.publication_datasets),
+      },
     ],
   };
 
@@ -247,6 +317,60 @@ export function buildCidpDashboards(
         id: "audit_events",
         label: "Audit events",
         value: num(input.audit_events),
+      },
+      {
+        id: "security_alerts",
+        label: "Security alerts",
+        value: num(input.security_alerts),
+      },
+    ],
+  };
+
+  const feedback: CidpDashboardPanel = {
+    id: "feedback",
+    title: "Feedback",
+    metrics: [
+      {
+        id: "feedback_total",
+        label: "Total feedback",
+        value: num(input.feedback_total),
+      },
+      {
+        id: "open_critical",
+        label: "Open critical",
+        value: num(input.feedback_open_critical),
+      },
+      {
+        id: "open_high",
+        label: "Open high",
+        value: num(input.feedback_open_high),
+      },
+      {
+        id: "resolved",
+        label: "Resolved",
+        value: num(input.feedback_resolved),
+      },
+    ],
+  };
+
+  const pilot: CidpDashboardPanel = {
+    id: "pilot",
+    title: "Pilot status",
+    metrics: [
+      {
+        id: "pilots_active",
+        label: "Active pilots",
+        value: num(input.pilots_active),
+      },
+      {
+        id: "pilots_planned",
+        label: "Planned pilots",
+        value: num(input.pilots_planned),
+      },
+      {
+        id: "support_requests",
+        label: "Support requests",
+        value: num(input.support_requests),
       },
     ],
   };
@@ -300,7 +424,16 @@ export function buildCidpDashboards(
     generated_at: new Date().toISOString(),
     phi_policy:
       "No patient-identifiable information. Counts and formative aggregates only.",
-    panels: [system, clinical, institution, research, security],
+    panels: [
+      system,
+      clinical,
+      educational,
+      institution,
+      research,
+      security,
+      feedback,
+      pilot,
+    ],
     executive,
   };
 }

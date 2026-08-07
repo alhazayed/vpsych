@@ -19,9 +19,12 @@ describe("CIDP dashboards", () => {
     expect(dash.panels.map((p) => p.id)).toEqual([
       "system",
       "clinical",
+      "educational",
       "institution",
       "research",
       "security",
+      "feedback",
+      "pilot",
     ]);
     const completion = dash.executive.find((m) => m.id === "completion_rate");
     expect(completion?.value).toBe(80);
