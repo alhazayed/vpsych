@@ -23,7 +23,13 @@ export async function synthesizeSpeech(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  /** Cancels the TTS fetch (barge-in / pause / end). */
+  signal?: AbortSignal;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
+  if (params.signal?.aborted) {
+    return { mode: "browser" };
+  }
+
   try {
     const res = await fetch("/api/voice/tts", {
       method: "POST",
@@ -40,6 +46,7 @@ export async function synthesizeSpeech(params: {
         disorderSlug: params.disorderSlug ?? undefined,
         stream: true,
       }),
+      signal: params.signal,
     });
 
     if (res.ok && res.body) {
@@ -53,6 +60,12 @@ export async function synthesizeSpeech(params: {
       console.warn("ElevenLabs TTS failed; falling back to browser.", res.status);
     }
   } catch (err) {
+    if (
+      params.signal?.aborted ||
+      (err instanceof DOMException && err.name === "AbortError")
+    ) {
+      return { mode: "browser" };
+    }
     console.warn("ElevenLabs TTS unavailable; falling back to browser.", err);
   }
 

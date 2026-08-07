@@ -142,6 +142,11 @@ describe("architecture invariants", () => {
     expect(fsm).toMatch(/BARGE_IN/);
     expect(room).toMatch(/createConversationFsm/);
     expect(room).toMatch(/data-trm-hands-free/);
+    // Barge-in must arm after playback starts — never during TTS fetch.
+    expect(room).toMatch(/armBargeInAfterPlayback/);
+    expect(room).not.toMatch(
+      /bargeInStopRef\.current\s*=\s*await\s+startBargeInMonitor/,
+    );
     expect(room).not.toMatch(/startRecording|toggleMic|click.*microphone/i);
     expect(constraints).toMatch(/autoGainControl:\s*true/);
     expect(constraints).toMatch(/echoCancellation:\s*true/);

@@ -157,7 +157,8 @@ export async function playPatientSpeech(params: {
     return "interrupted";
   }
 
-  handlers.onstart?.();
+  // Do not call onstart before HTMLAudioElement exists — callers apply
+  // volume/playbackRate in onstart and need a live audio element.
 
   const result = await synthesizeSpeech({
     text: params.text,
@@ -169,6 +170,7 @@ export async function playPatientSpeech(params: {
     speechPace: params.speechPace,
     speechEnergy: params.speechEnergy,
     disorderSlug: params.disorderSlug,
+    signal: params.signal,
   });
 
   if (params.signal?.aborted) {
@@ -204,11 +206,16 @@ export async function playPatientSpeech(params: {
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
     const audio = new Audio(result.objectUrl);
+    // Explicit audible defaults — never leave muted/zero from a prior element.
+    audio.muted = false;
+    audio.volume = 1;
+    audio.playbackRate = 1;
     if (params.audioRef) params.audioRef.current = audio;
 
     return await new Promise<"elevenlabs" | "browser" | "interrupted">(
       (resolve) => {
         let settled = false;
+        let started = false;
         const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
           if (settled) return;
           settled = true;
@@ -238,18 +245,34 @@ export async function playPatientSpeech(params: {
             finish("interrupted");
             return;
           }
+          if (params.audioRef) params.audioRef.current = null;
           browserFallback(() => finish("browser"));
         };
 
         params.signal?.addEventListener("abort", onAbort, { once: true });
 
-        void audio.play().catch(() => {
-          if (params.signal?.aborted) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
-        });
+        void audio
+          .play()
+          .then(() => {
+            if (settled || params.signal?.aborted) return;
+            if (audio.muted) audio.muted = false;
+            if (!started) {
+              started = true;
+              // Callers apply volume/rate and arm barge-in once play() grants.
+              handlers.onstart?.();
+            }
+          })
+          .catch((err: unknown) => {
+            if (params.signal?.aborted) {
+              finish("interrupted");
+              return;
+            }
+            const message =
+              err instanceof Error ? err.message : String(err ?? "play_failed");
+            console.warn("[playback] HTMLAudioElement.play() rejected:", message);
+            if (params.audioRef) params.audioRef.current = null;
+            browserFallback(() => finish("browser"));
+          });
       },
     );
   }
