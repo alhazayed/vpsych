@@ -4,7 +4,8 @@
 
 > **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
 > for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
-> This file remains a short ops/topology snapshot; prefer `SOFTWARE_ARCHITECTURE.md` for system boundaries.
+> **Canonical clinical model (Stage 3):** see [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md).  
+> This file remains a short ops/topology snapshot; prefer those docs for system / clinical boundaries.
 
 ## Runtime topology
 

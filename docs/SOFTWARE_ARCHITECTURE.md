@@ -7,6 +7,8 @@
 
 **Rationale:** A senior engineer must understand the complete system from architecture alone. Guesswork is forbidden; every claim below is grounded in `src/` and `supabase/migrations/`.
 
+**Clinical information model (Stage 3):** [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md) — canonical patient ontology, lifecycle, DSM/ICD, gaps, and roadmap. Engines must not invent a parallel patient model.
+
 ---
 
 ## 1. Platform identity
