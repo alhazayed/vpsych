@@ -19,6 +19,11 @@ export type PromptFidelityHints = {
    * assembling Module 1; never leave the model with speech-pace alone.
    */
   therapy_process_cue?: string;
+  /**
+   * Mission 6 — immutable living world (home/family/work/friends/finances/
+   * medical/routine/social/education). Empty string when absent.
+   */
+  living_environment_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -218,6 +223,11 @@ version of any other personality. Do not import names, places, institutions,
 or references from another locale.
 
 ──────────────────────────────────────────────
+MODULE 2B — LIVING ENVIRONMENT  (immutable for this case)
+──────────────────────────────────────────────
+{{fidelity.living_environment_block}}
+
+──────────────────────────────────────────────
 MODULE 3 — LANGUAGE  ({{session.locale}} · {{personality.dialect}})
 ──────────────────────────────────────────────
 
@@ -330,6 +340,8 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- No symptom lists, no DSM self-lecture, no chatbot empathy.",
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
+      living_environment_block:
+        input.fidelity?.living_environment_block?.trim() || "",
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);

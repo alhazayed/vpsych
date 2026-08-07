@@ -16,6 +16,7 @@ import {
   formatTherapyReactionForPrompt,
 } from "@/lib/case-engine/therapy-process";
 import { formatAuthoredTherapyCuesForPrompt } from "@/lib/case-engine/authored-therapy-cues";
+import { formatLivingWorldForPrompt } from "@/lib/living-environment";
 import type {
   Avatar,
   AvatarPersonality,
@@ -142,6 +143,9 @@ function fidelityHintsFromSnapshot(
       ? formatDifficultyBehaviorForPrompt(mods)
       : undefined,
     therapy_process_cue,
+    living_environment_block: snapshot?.living_world
+      ? formatLivingWorldForPrompt(snapshot.living_world)
+      : undefined,
   };
 }
 

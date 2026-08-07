@@ -27,6 +27,32 @@ import {
   type InstructorPreset,
 } from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
+import {
+  embedLivingWorldInMemory,
+  saveLivingWorld,
+  type LivingWorld,
+} from "@/lib/living-environment";
+
+/** Bind case id + best-effort persist living world; returns memory blob extras. */
+function attachLivingWorld(
+  supabase: SupabaseClient,
+  snapshot: CaseInstanceSnapshot,
+  caseInstanceId: string,
+  baseMemory: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!snapshot.living_world) return baseMemory;
+  const world: LivingWorld = {
+    ...snapshot.living_world,
+    case_instance_id: caseInstanceId,
+  };
+  snapshot.living_world = world;
+  void saveLivingWorld(supabase, world, caseInstanceId).then((res) => {
+    if (res.error) {
+      console.warn("[case-engine] living_world persist:", res.error);
+    }
+  });
+  return embedLivingWorldInMemory(baseMemory, world);
+}
 
 export type StartCaseOptions = {
   avatar: Avatar;
@@ -445,15 +471,16 @@ export async function createCaseForSession(
     }
 
     snapshot.case_instance_id = inserted.id;
+    const memory = attachLivingWorld(supabase, snapshot, inserted.id, {
+      turns: [],
+      notes: [],
+      scope: "case_instance",
+      template_id: snapshot.template?.id,
+      instructor_preset_id: resolvedPreset.id,
+    });
     await supabase.from("case_memory").insert({
       case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
-        template_id: snapshot.template?.id,
-        instructor_preset_id: resolvedPreset.id,
-      },
+      memory,
     });
     await supabase
       .from("case_instances")
@@ -651,14 +678,15 @@ export async function createCaseForSession(
     }
 
     snapshot.case_instance_id = inserted.id;
+    const memory = attachLivingWorld(supabase, snapshot, inserted.id, {
+      turns: [],
+      notes: [],
+      scope: "case_instance",
+      template_id: resolvedTemplate.id,
+    });
     await supabase.from("case_memory").insert({
       case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
-        template_id: resolvedTemplate.id,
-      },
+      memory,
     });
     await supabase
       .from("case_instances")
@@ -831,10 +859,15 @@ export async function createCaseForSession(
   }
 
   snapshot.case_instance_id = inserted.id;
+  const memoryBlob = attachLivingWorld(supabase, snapshot, inserted.id, {
+    turns: [],
+    notes: [],
+    scope: "case_instance",
+  });
 
   const { error: memErr } = await supabase.from("case_memory").insert({
     case_instance_id: inserted.id,
-    memory: { turns: [], notes: [], scope: "case_instance" },
+    memory: memoryBlob,
   });
   if (memErr) {
     console.warn("[case-engine] case_memory insert failed:", memErr.message);
