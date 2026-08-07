@@ -147,7 +147,7 @@ export type PersonalityVoice = {
   pitch?: number;
 };
 
-/** Row shape for `public.voice_profiles` (ElevenLabs voice registry). */
+/** Row shape for `public.voice_profiles` (ElevenLabs + clinical delivery). */
 export type VoiceProfile = {
   id: string;
   provider: string;
@@ -158,6 +158,24 @@ export type VoiceProfile = {
   gender: string | null;
   is_active: boolean;
   created_at: string;
+  /** Mission 3 — clinical voice parameters (nullable until migration applied). */
+  speech_rate?: number;
+  pitch?: number;
+  energy?: "low" | "moderate" | "high" | "labile";
+  prosody?:
+    | "flat"
+    | "measured"
+    | "anxious_edge"
+    | "pressured"
+    | "fragmented"
+    | "labile";
+  breathing?: "calm" | "short" | "deep" | "irregular" | "held";
+  hesitation_frequency?: number;
+  speaker_boost?: number;
+  emotion_modulation?: boolean;
+  pronunciation_ar?: string | null;
+  pronunciation_en?: string | null;
+  updated_at?: string | null;
 };
 
 /** Module 2 — natively authored personality for one locale. */
@@ -236,6 +254,12 @@ export type Avatar = {
   available_locales?: string[] | null;
   clinical_core?: ClinicalCore | null;
   personalities?: Partial<Record<string, AvatarPersonality>> | null;
+  /**
+   * Human Personality Engine — locale → structured trait profile.
+   * Independent of GPT; injected every patient turn. See
+   * `lib/personality-engine` and `docs/HUMAN_PERSONALITY_ENGINE.md`.
+   */
+  human_personality?: import("@/lib/personality-engine").HumanPersonalityMap | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -273,6 +297,8 @@ export type ResolvedAvatar = {
   fallback_replies: string[];
   per_turn_reinforcement?: string;
   personality?: AvatarPersonality;
+  /** Resolved Human Personality Engine profile for this locale/session. */
+  human_personality?: import("@/lib/personality-engine").HumanPersonalityProfile | null;
   clinical_core?: ClinicalCore | null;
 };
 

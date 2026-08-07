@@ -39,6 +39,16 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/error: "Server misconfigured"/);
   });
 
+  it("wires Conversation Behaviour Engine into the message route (Mission 7)", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).toMatch(/planConversationBehaviour/);
+    expect(message).toMatch(/behaviourReinforcement/);
+    expect(message).toMatch(/CBE plan failed/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),
@@ -176,5 +186,79 @@ describe("architecture invariants", () => {
     );
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
+  });
+
+  it("Emotion Engine soft-fails on the message path and exposes a session API", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const emotionApi = readFileSync(
+      join(root, "app/api/sessions/[id]/emotion/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/emotion/index.ts"), "utf8");
+    expect(message).toMatch(/processEmotionTurn/);
+    expect(message).toMatch(/emotion engine soft-fail/);
+    expect(message).toMatch(/emotion:\s*emotionPayload/);
+    expect(emotionApi).toMatch(/rateLimit/);
+    expect(emotionApi).toMatch(/ensureEmotionState|processEmotionTurn/);
+    expect(barrel).toMatch(/tickEmotion/);
+    expect(barrel).toMatch(/deriveExpression/);
+  });
+
+  it("Mission 8 adaptation is best-effort on the message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/adaptation/index.ts"), "utf8");
+    expect(message).toMatch(/processTherapistTurn/);
+    expect(message).toMatch(/adaptationBlock/);
+    expect(message).toMatch(/void saveAdaptationState/);
+    expect(barrel).toMatch(/export \* from|from "@\/lib\/adaptation\/engine"/);
+    expect(barrel).toMatch(/rapport/);
+    expect(barrel).toMatch(/trust/);
+  });
+
+  it("Mission 4 long-term patient memory is wired best-effort on message + end", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(
+      join(root, "lib/patient-memory/index.ts"),
+      "utf8",
+    );
+    expect(message).toMatch(/prepareMemoryForTurn/);
+    expect(end).toMatch(/runPatientMemoryAfterSession/);
+    expect(barrel).toMatch(/summarize/);
+    expect(barrel).toMatch(/compress/);
+    expect(barrel).toMatch(/retrieve/);
+  });
+
+  it("wires Mission 10 Humanization Engine into the message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/humanization/index.ts"), "utf8");
+    expect(message).toMatch(/buildHumanizationTurn/);
+    expect(message).toMatch(/humanizationEnabled/);
+    expect(message).toMatch(/voiceHints/);
+    expect(barrel).toMatch(/emotionTick/);
+    expect(barrel).toMatch(/behaviorTick/);
+    expect(barrel).toMatch(/memoryTick/);
+    expect(barrel).toMatch(/voiceTick/);
+    // Clinical gates must remain — humanity never overrides risk safety.
+    const gates = readFileSync(
+      join(root, "lib/humanization/clinical-gates.ts"),
+      "utf8",
+    );
+    expect(gates).toMatch(/blocked during active risk/);
   });
 });

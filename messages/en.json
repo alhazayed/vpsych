@@ -33,6 +33,7 @@
       "mySessions": "My Sessions",
       "reportsLibrary": "Reports Library",
       "avatarPresets": "Avatar Presets",
+      "humanPersonality": "Human Personality",
       "voiceManagement": "Voice Management",
       "caseEngine": "Case Engine",
       "scenarioTemplates": "Scenario Templates",
@@ -52,6 +53,7 @@
     "competencyGraph": "Competency Graph",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
+    "humanPersonality": "Human Personality",
     "voiceManagement": "Voice Management",
     "caseEngine": "Case Engine",
     "scenarioTemplates": "Scenario Templates",
@@ -610,6 +612,11 @@
       "voiceProfile": "Voice profile",
       "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility"
     },
+    "personality": {
+      "title": "Human Personality Engine",
+      "subtitle": "Persistent trait profiles independent of GPT and of diagnosis. Every patient turn receives temperament, attachment, Big Five, speech, memory of therapist, and treatment expectations.",
+      "editor": "Personality editor"
+    },
     "cases": {
       "title": "Dynamic Clinical Case Engine",
       "subtitle": "Personas stay constant. Each assessment generates a new immutable clinical case (diagnosis, comorbidity, difficulty, therapy modality, language).",
@@ -639,13 +646,14 @@
       "subtitle": "Inspect learner and cohort DAGs, lock or unlock competencies, approve mastery, and assign reassessment."
     },
     "voices": {
-      "title": "Voice Management",
-      "subtitle": "ElevenLabs voice registry. Avatars speak through an assigned voice profile.",
+      "title": "Voice Profile Manager",
+      "subtitle": "Clinical voice database. Every patient speaks through a unique profile with emotion-aware delivery.",
       "columns": {
         "gender": "Gender",
         "language": "Language",
         "dialect": "Dialect",
-        "provider": "Provider"
+        "provider": "Provider",
+        "rate": "Rate / energy"
       },
       "preview": "Preview voice",
       "enable": "Enable",
@@ -656,9 +664,41 @@
       "assignedTo": "Assigned to: {names}",
       "unassigned": "Not assigned to any avatar yet.",
       "empty": "No voice profiles found. Run the voice registry migration.",
+      "editor": {
+        "open": "Edit clinical profile",
+        "close": "Close editor",
+        "title": "Clinical voice editor",
+        "subtitle": "Speech rate, pitch, energy, prosody, breathing, hesitations, speaker boost, and pronunciation.",
+        "speechRate": "Speech rate",
+        "pitch": "Pitch",
+        "energy": "Energy",
+        "prosody": "Prosody",
+        "breathing": "Breathing",
+        "hesitation": "Hesitation frequency",
+        "speakerBoost": "Speaker boost",
+        "emotionModulation": "Emotion modulation enabled",
+        "pronunciationAr": "Arabic pronunciation",
+        "pronunciationEn": "English pronunciation",
+        "save": "Save clinical profile"
+      },
+      "liveSwitch": {
+        "title": "Live emotion switching",
+        "subtitle": "Voice ID stays fixed; delivery parameters change with affect.",
+        "pauseScale": "Pause scale",
+        "note": "Modulation",
+        "emotions": {
+          "neutral": "Neutral",
+          "depressed": "Depressed",
+          "anxious": "Anxious",
+          "manic": "Manic",
+          "psychotic": "Psychotic"
+        }
+      },
       "errors": {
         "toggle": "Could not update voice status.",
-        "assign": "Could not assign voice to avatar."
+        "assign": "Could not assign voice to avatar.",
+        "save": "Could not save clinical voice profile.",
+        "liveSwitch": "Could not preview live emotion switch."
       }
     },
     "integrations": {

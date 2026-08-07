@@ -545,7 +545,7 @@ export async function assessSession(params: {
 
   const toAssessment = (
     output: AssessmentModelOutput,
-    aiSource: Exclude<AiSource, "persona_fallback">,
+    aiSource: Exclude<AiSource, "persona_fallback" | "cbe_direct">,
     model: string,
     errorKind?: OpenAIErrorKind,
   ): SessionAssessment => {

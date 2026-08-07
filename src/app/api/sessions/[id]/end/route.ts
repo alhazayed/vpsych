@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
+import { runPatientMemoryAfterSession } from "@/lib/patient-memory";
 import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
@@ -198,6 +199,32 @@ export async function POST(_request: Request, { params }: Params) {
     durationSec,
     timeLimitSec: typed.max_duration_sec,
   });
+
+  // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
+  const memoryWriter = createServiceClient() ?? supabase;
+  const patientMemory = await runPatientMemoryAfterSession(memoryWriter, {
+    therapistId: user.id,
+    avatarId: typed.avatar_id,
+    sessionId,
+    messages: (messages ?? []) as Array<{
+      role: string;
+      content: string;
+      created_at?: string;
+    }>,
+    startedAt: typed.started_at,
+    endedAt: typed.ended_at,
+    identity: resolved.personality?.identity ?? null,
+  });
+  if (!patientMemory.ok) {
+    console.warn("[sessions/end] patient memory:", patientMemory.error);
+  } else {
+    console.info("[sessions/end] patient memory", {
+      sessionId,
+      addedCount: patientMemory.addedCount,
+      compressed: patientMemory.compressed,
+      persisted: patientMemory.persisted,
+    });
+  }
 
   const admin = createServiceClient();
   if (admin) {

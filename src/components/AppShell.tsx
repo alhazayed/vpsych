@@ -72,6 +72,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       match: (p) => p.startsWith("/admin/avatars"),
     },
     {
+      href: "/admin/personality",
+      label: t("humanPersonality"),
+      icon: "face",
+      match: (p) => p.startsWith("/admin/personality"),
+    },
+    {
       href: "/admin/voices",
       label: t("voiceManagement"),
       icon: "record_voice_over",
@@ -176,6 +182,8 @@ export function AppShell({
       return tShell("pageTitle.reportsLibrary");
     if (pathname.startsWith("/admin/avatars"))
       return tShell("pageTitle.avatarPresets");
+    if (pathname.startsWith("/admin/personality"))
+      return tShell("pageTitle.humanPersonality");
     if (pathname.startsWith("/admin/voices"))
       return tShell("pageTitle.voiceManagement");
     if (pathname.startsWith("/admin/cases"))

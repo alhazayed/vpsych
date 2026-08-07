@@ -22,6 +22,7 @@ import {
   speechBehaviorForDisorder,
 } from "@/lib/case-engine/speech-behavior";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
+import { freezeHumanPersonalityForCase } from "@/lib/personality-engine";
 
 /** Prefer richer notes when both package and persona share a disclosure topic. */
 export function mergeDisclosureRules(
@@ -340,6 +341,20 @@ export function generateCaseInstance(
     generated_at: new Date().toISOString(),
     scientific_meta: buildGenerationScientificMeta({
       disorder_package_version: "catalog-builtin-1",
+    }),
+    human_personality: freezeHumanPersonalityForCase({
+      personaSlug: req.persona.slug,
+      locale: req.locale,
+      personaTraits: req.persona.traits,
+      avatar: {
+        id: req.avatarId,
+        name: req.avatarName ?? req.persona.display_name,
+        disorder: req.avatarDisorder ?? "unspecified",
+        age: req.persona.identity?.age ?? null,
+        gender: req.persona.identity?.gender ?? null,
+        slug: req.avatarSlug ?? req.persona.slug,
+        human_personality: req.avatarHumanPersonality ?? null,
+      },
     }),
   };
 

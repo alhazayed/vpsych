@@ -11,6 +11,12 @@ import {
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  elevenLabsSettingsFromEffective,
+  liveSwitchVoice,
+  resolveLiveEmotion,
+  toClinicalVoiceProfile,
+} from "@/lib/clinical-voice";
 
 type TtsBody = {
   text?: string;
@@ -28,6 +34,11 @@ type TtsBody = {
   speechPace?: string;
   speechEnergy?: string;
   disorderSlug?: string;
+  /** Mission 3 — live emotion switch (depressed|anxious|manic|psychotic|neutral). */
+  emotion?: string;
+  /** Mission 10 — Humanization Engine prosody overrides. */
+  stability?: number;
+  style?: number;
 };
 
 /**
@@ -67,6 +78,27 @@ export async function POST(request: Request) {
       voiceIdAr: body.voiceIdAr,
     });
 
+    // Mission 3 — live clinical emotion switching when a registry profile exists.
+    let clinicalVoiceSettings = undefined as
+      | ReturnType<typeof elevenLabsSettingsFromEffective>
+      | undefined;
+    let liveEmotion: string | undefined;
+    if (resolved.clinicalProfile) {
+      const clinical = toClinicalVoiceProfile(resolved.clinicalProfile);
+      const effective = liveSwitchVoice({
+        profile: clinical,
+        emotion: body.emotion,
+        disorderSlug: body.disorderSlug,
+      });
+      clinicalVoiceSettings = elevenLabsSettingsFromEffective(effective);
+      liveEmotion = effective.emotion;
+    } else if (body.emotion || body.disorderSlug) {
+      liveEmotion = resolveLiveEmotion({
+        emotion: body.emotion,
+        disorderSlug: body.disorderSlug,
+      });
+    }
+
     // Resolved id already accounts for profile + legacy + env defaults.
     const result = await elevenLabsService.synthesize({
       text,
@@ -77,6 +109,10 @@ export async function POST(request: Request) {
       speechPace: body.speechPace,
       speechEnergy: body.speechEnergy,
       disorderSlug: body.disorderSlug,
+      emotion: body.emotion ?? liveEmotion,
+      clinicalVoiceSettings,
+      stability: body.stability,
+      style: body.style,
     });
 
     return new NextResponse(result.body, {
@@ -95,6 +131,7 @@ export async function POST(request: Request) {
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }
           : {}),
+        ...(liveEmotion ? { "X-Voice-Emotion": liveEmotion } : {}),
         ...(resolved.voiceProfileId
           ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
           : {}),
