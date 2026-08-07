@@ -8,13 +8,19 @@ import type { Avatar, AvatarPersonality, ClinicalCore } from "@/lib/types";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 
 describe("CB-HCF-006 authored therapy cues", () => {
-  it("loads condensed Maya and Jordan process cues", () => {
+  it("loads condensed Maya, Jordan, and Wave-1 process cues", () => {
     expect(authoredTherapyCuesFor("maya-chen")?.process_lines.length).toBeGreaterThan(
       5,
     );
     expect(
       authoredTherapyCuesFor("jordan-hale")?.process_lines.length,
     ).toBeGreaterThan(5);
+    expect(
+      authoredTherapyCuesFor("elena-vasquez")?.process_lines.length,
+    ).toBeGreaterThan(4);
+    expect(
+      authoredTherapyCuesFor("marcus-okonkwo")?.process_lines.length,
+    ).toBeGreaterThan(4);
     expect(authoredTherapyCuesFor("unknown")).toBeNull();
   });
 
