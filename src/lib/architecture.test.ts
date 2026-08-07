@@ -578,6 +578,81 @@ describe("architecture invariants", () => {
     ).not.toThrow();
   });
 
+  it("Stage 11 Realtime owns presentation only and never owns patient mind", () => {
+    const barrel = readFileSync(join(root, "lib/realtime/index.ts"), "utf8");
+    const bridge = readFileSync(
+      join(root, "lib/realtime/session-bridge.ts"),
+      "utf8",
+    );
+    const versions = readFileSync(
+      join(root, "lib/realtime/versions.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const summary = readFileSync(
+      join(root, "app/api/realtime/summary/route.ts"),
+      "utf8",
+    );
+    const admin = readFileSync(
+      join(root, "app/api/admin/realtime/route.ts"),
+      "utf8",
+    );
+    const stream = readFileSync(
+      join(root, "app/api/sessions/[id]/message/stream/route.ts"),
+      "utf8",
+    );
+    const pipeline = readFileSync(
+      join(root, "lib/voice/conversation-pipeline.ts"),
+      "utf8",
+    );
+
+    expect(barrel).toMatch(/runRealtimeAfterAssessment/);
+    expect(barrel).toMatch(/runRealtimeEngine/);
+    expect(barrel).toMatch(/createVoiceGateway/);
+    expect(bridge).toMatch(/Never writes clinical_snapshot/);
+    expect(bridge).toMatch(/Never owns Emotion|presentation/i);
+    expect(versions).toMatch(/REALTIME_OWNERSHIP_RULE/);
+    expect(versions).toMatch(/clinical_snapshot/);
+    expect(end).toMatch(/runRealtimeAfterAssessment/);
+    expect(end).toMatch(/realtime soft-fail|Stage 11 Realtime/);
+    expect(summary).toMatch(/rateLimit/);
+    expect(admin).toMatch(/requireApiAdmin/);
+    expect(admin).toMatch(/rateLimit/);
+    expect(stream).toMatch(/classicMessagePost|POST as classicMessagePost/);
+    expect(stream).toMatch(/isRealtimeStreamingEnabled/);
+    expect(pipeline).toMatch(/therapistInterrupted/);
+
+    // Must not re-export patient cognition owners
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/adaptation["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/clinical-intelligence["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/case-engine["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/enterprise["']/);
+
+    const docs = join(process.cwd(), "docs");
+    expect(() =>
+      readFileSync(join(docs, "REALTIME_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "VOICE_PIPELINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "AVATAR_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "STREAMING_ENGINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "MULTILINGUAL_ENGINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "PERFORMANCE_GUIDE.md"), "utf8"),
+    ).not.toThrow();
+  });
+
   it("Stage 10 Enterprise Platform owns tenancy only and never owns patient mind", () => {
     const barrel = readFileSync(join(root, "lib/enterprise/index.ts"), "utf8");
     const bridge = readFileSync(

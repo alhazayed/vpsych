@@ -60,6 +60,15 @@ export type ChatCompletionResult = {
   };
 };
 
+export type ChatStreamHandlers = {
+  onToken?: (token: string, fullText: string) => void;
+  signal?: AbortSignal;
+};
+
+export type ChatStreamResult = ChatCompletionResult & {
+  interrupted: boolean;
+};
+
 export type SpeechToTextParams = {
   audio: Blob | ArrayBuffer | Buffer | Uint8Array;
   /** Filename hint for MIME/type detection (e.g. audio.wav). */
@@ -183,6 +192,69 @@ export const openAIService = {
         throw toOpenAIServiceError(error);
       }
     });
+  },
+
+  /**
+   * Streaming chat completion (Stage 11). Additive — non-streaming `chat`
+   * remains the default patient path.
+   */
+  async chatStream(
+    params: ChatCompletionParams,
+    handlers: ChatStreamHandlers = {},
+  ): Promise<ChatStreamResult> {
+    try {
+      const client = getOpenAIClient();
+      const model = chatModelId(params.model);
+      const reasoning = isReasoningModel(model);
+      const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
+        {
+          model,
+          messages: params.messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          max_completion_tokens: params.maxCompletionTokens,
+          stream: true,
+        };
+      if (reasoning) {
+        request.reasoning_effort = reasoningEffort();
+      } else if (params.temperature !== undefined) {
+        request.temperature = params.temperature;
+      }
+      if (params.json) {
+        request.response_format = { type: "json_object" };
+      }
+
+      const stream = await client.chat.completions.create(request, {
+        signal: handlers.signal,
+      });
+
+      let text = "";
+      let resolvedModel = model;
+      let interrupted = false;
+
+      for await (const chunk of stream) {
+        if (handlers.signal?.aborted) {
+          interrupted = true;
+          break;
+        }
+        const delta = chunk.choices[0]?.delta?.content ?? "";
+        if (chunk.model) resolvedModel = chunk.model;
+        if (delta) {
+          text += delta;
+          handlers.onToken?.(delta, text);
+        }
+      }
+
+      return {
+        text: text.trim(),
+        model: resolvedModel,
+        provider: "openai" as const,
+        interrupted,
+      };
+    } catch (error) {
+      throw toOpenAIServiceError(error);
+    }
   },
 
   /** Speech-to-text via OpenAI audio transcriptions. */

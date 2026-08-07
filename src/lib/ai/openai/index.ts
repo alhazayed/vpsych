@@ -20,6 +20,8 @@ export {
   type ChatMessage,
   type ChatCompletionParams,
   type ChatCompletionResult,
+  type ChatStreamHandlers,
+  type ChatStreamResult,
   type SpeechToTextParams,
   type SpeechToTextResult,
   type OpenAIHealthStatus,
