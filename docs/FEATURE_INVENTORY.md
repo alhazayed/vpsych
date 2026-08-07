@@ -11,7 +11,7 @@
 | Authorization (profiles.role, admin gate) | Implemented · Production | Yes | Middleware + `requireApiAdmin` |
 | Patient generation (Case Engine) | Implemented · Production | Yes | Immutable `CaseInstance` per session |
 | Therapy Response / conversation (patient agent) | Implemented · Production | Yes | `generatePatientReplyDetailed`; `aiSource` surfaced |
-| Assessment Engine | Implemented · Production | Yes | Scores **not validated** |
+| Assessment Engine | Implemented · Production | Yes | Clinical Educator 10-dimension rubric; scores **not validated** |
 | Admin reports | Implemented · Production | Yes | Therapist cannot read reports (RLS) |
 | ACE | Implemented · Production | Yes | Best-effort, non-blocking |
 | CGE | Implemented · Production | Yes | Best-effort; no ace-bridge re-export |

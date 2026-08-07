@@ -21,6 +21,8 @@ describe("localizeRubricLabel", () => {
   it("returns native Arabic labels for known ids", () => {
     expect(localizeRubricLabel("alliance", "Alliance", "ar")).toContain("التحالف");
     expect(localizeRubricLabel("alliance", "Alliance", "en")).toMatch(/alliance/i);
+    expect(localizeRubricLabel("rapport", "Rapport", "en")).toBe("Rapport");
+    expect(localizeRubricLabel("empathy", "Empathy", "ar")).toBe("التعاطف");
   });
 });
 
@@ -59,7 +61,7 @@ describe("heuristicCopy", () => {
   it("returns Arabic heuristic copy for ar", () => {
     const copy = heuristicCopy("ar", 3);
     expect(copy.feedback).toContain("درجة تقديرية");
-    expect(copy.narrativeWithTurns).toContain("تقييم آلي");
+    expect(copy.narrativeWithTurns).toContain("المعلّم السريري");
   });
 
   it("does not claim key missing when AI was unavailable", () => {

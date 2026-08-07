@@ -36,6 +36,14 @@ import {
   computeAssessmentValidityIndex,
   aviInputFromAssessment,
 } from "@/lib/avi";
+import {
+  clinicalEducatorDefaultRubric,
+  clinicalEducatorFromAssessment,
+  extractTranscriptExamples,
+  heuristicClinicalEducatorScores,
+  type ClinicalEducatorReport,
+} from "@/lib/clinical-educator";
+import { CLINICAL_EDUCATOR_RUBRIC } from "@/lib/clinical-educator/rubrics";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -43,28 +51,9 @@ import type {
   SessionMessage,
 } from "@/lib/types";
 
+/** Mission 9 Clinical Educator — 10 OSCE dimensions (weights sum to 100). */
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
-  // Wave 3 educational rubric — dual coding + formulation + educational map.
-  // Weights sum to 100 so overall remains a proper weighted percentage.
-  const ids = [
-    { id: "alliance", weight: 10 },
-    { id: "assessment", weight: 8 },
-    { id: "dsm_reasoning", weight: 11 },
-    { id: "icd_reasoning", weight: 11 },
-    { id: "clinical_formulation", weight: 10 },
-    { id: "differential_diagnosis", weight: 10 },
-    { id: "risk_formulation", weight: 12 },
-    { id: "educational_competency", weight: 8 },
-    { id: "interventions", weight: 8 },
-    { id: "safety", weight: 8 },
-    { id: "structure", weight: 4 },
-  ] as const;
-  return ids.map((r) => ({
-    id: r.id,
-    label: localizeRubricLabel(r.id, r.id, language),
-    weight: r.weight,
-    max: 5,
-  }));
+  return clinicalEducatorDefaultRubric(language);
 }
 
 function heuristicAssessment(
@@ -76,133 +65,40 @@ function heuristicAssessment(
   failureDetail?: string,
 ) {
   const therapistTurns = messages.filter((m) => m.role === "user");
-  const joined = therapistTurns.map((m) => m.content.toLowerCase()).join(" ");
   const turnCount = therapistTurns.length;
   const copy = heuristicCopy(language, turnCount, reason);
 
-  const empathyWords = [
-    "hear",
-    "sounds",
-    "feel",
-    "understand",
-    "validate",
-    "thank",
-    "أفهم",
-    "يبدو",
-    "تشعر",
-    "شكرا",
-  ];
-  const safetyWords = [
-    "suicid",
-    "harm",
-    "safe",
-    "kill",
-    "hurt yourself",
-    "plan",
-    "انتحار",
-    "أذى",
-    "آمن",
-    "خطة",
-  ];
-  const structureWords = [
-    "today",
-    "goal",
-    "summarize",
-    "agenda",
-    "homework",
-    "next",
-    "اليوم",
-    "هدف",
-    "نلخّص",
-    "ملخص",
-    "واجب",
-  ];
+  // Prefer Clinical Educator heuristic when using the Mission 9 default rubric.
+  const educatorItems = heuristicClinicalEducatorScores(messages, language);
+  const useEducator =
+    rubric.length > 0 &&
+    rubric.every((r) => educatorItems.some((e) => e.id === r.id));
 
-  const codingWords = [
-    "dsm",
-    "icd",
-    "differential",
-    "criteria",
-    "diagnosis",
-    "formulation",
-    "risk",
-    "تشخيص",
-    "معايير",
-    "تفريق",
-    "صياغة",
-  ];
-  const formulationWords = [
-    "formulation",
-    "case conceptualization",
-    "maintain",
-    "precipitat",
-    "صياغة",
-    "مفاهيم",
-  ];
-  const educationalWords = [
-    "objective",
-    "competenc",
-    "learning",
-    "feedback",
-    "هدف",
-    "كفاءة",
-    "تعلّم",
-  ];
-  const empathyHits = empathyWords.filter((w) => joined.includes(w)).length;
-  const safetyHits = safetyWords.filter((w) => joined.includes(w)).length;
-  const structureHits = structureWords.filter((w) => joined.includes(w)).length;
-  const codingHits = codingWords.filter((w) => joined.includes(w)).length;
-  const formulationHits = formulationWords.filter((w) =>
-    joined.includes(w),
-  ).length;
-  const educationalHits = educationalWords.filter((w) =>
-    joined.includes(w),
-  ).length;
-
-  const base = Math.min(5, Math.max(1, Math.round(turnCount / 3)));
-
-  const items: ScoreEntry[] = rubric.map((r) => {
-    let score = base;
-    if (r.id === "alliance") score = Math.min(5, base + Math.min(2, empathyHits));
-    if (r.id === "safety" || r.id === "risk_formulation")
-      score = safetyHits > 0 ? Math.min(5, 3 + safetyHits) : Math.max(1, base - 1);
-    if (r.id === "structure")
-      score = Math.min(5, Math.max(1, base - 1 + structureHits));
-    if (r.id === "assessment") score = Math.min(5, Math.max(2, turnCount > 4 ? 4 : 2));
-    if (r.id === "interventions")
-      score = Math.min(5, Math.max(1, turnCount > 6 ? 3 : 2));
-    if (
-      r.id === "dsm_reasoning" ||
-      r.id === "icd_reasoning" ||
-      r.id === "differential_diagnosis"
-    ) {
-      score = Math.min(
-        5,
-        Math.max(1, base - 1 + Math.min(2, codingHits) + (turnCount > 3 ? 1 : 0)),
-      );
-    }
-    if (r.id === "clinical_formulation") {
-      score = Math.min(
-        5,
-        Math.max(1, base - 1 + Math.min(2, formulationHits + codingHits)),
-      );
-    }
-    if (r.id === "educational_competency") {
-      score = Math.min(
-        5,
-        Math.max(1, base - 1 + Math.min(2, educationalHits) + (turnCount > 4 ? 1 : 0)),
-      );
-    }
-
-    return {
-      id: r.id,
-      label: localizeRubricLabel(r.id, r.label, language),
-      score,
-      max: r.max,
-      weight: r.weight,
-      feedback: copy.feedback,
-    };
-  });
+  const items: ScoreEntry[] = useEducator
+    ? rubric.map((r) => {
+        const found = educatorItems.find((e) => e.id === r.id)!;
+        return {
+          ...found,
+          label: localizeRubricLabel(r.id, r.label, language),
+          max: r.max,
+          weight: r.weight,
+        };
+      })
+    : rubric.map((r) => {
+        const base = Math.min(5, Math.max(1, Math.round(turnCount / 3)));
+        const cues =
+          CLINICAL_EDUCATOR_RUBRIC.find((c) => c.id === (r.id as never))
+            ?.example_cues ?? [];
+        return {
+          id: r.id,
+          label: localizeRubricLabel(r.id, r.label, language),
+          score: base,
+          max: r.max,
+          weight: r.weight,
+          feedback: copy.feedback,
+          examples: extractTranscriptExamples(messages, cues),
+        };
+      });
 
   const overall = weightedOverall(items);
   console.warn("[assessment]", {
@@ -219,11 +115,20 @@ function heuristicAssessment(
   const narrative =
     turnCount === 0 ? copy.narrativeEmpty : copy.narrativeWithTurns;
   const excerpts = therapistTurns.slice(0, 3).map((m) => m.content);
+  const clinical_educator = clinicalEducatorFromAssessment({
+    items,
+    messages,
+    language,
+    narrative,
+    excerpts,
+    assessment_mode: "heuristic_fallback",
+  });
   return {
     language,
     scores: {
       overall,
       items,
+      clinical_educator,
       scientific_provenance: provenance,
       assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
       educational_reliability: attachEducationalReliability({
@@ -290,8 +195,14 @@ function errorDetails(err: unknown) {
 export type SessionAssessment = {
   language: "en" | "ar";
   scores: {
+    /**
+     * Weighted composite for ACE/ERI/AVI compatibility.
+     * Prefer scores.clinical_educator.dimensions for educator UX.
+     */
     overall: number;
     items: ScoreEntry[];
+    /** Mission 9 Clinical Educator multi-dimension educational report. */
+    clinical_educator?: ClinicalEducatorReport;
     /** Scientific reproducibility / disclosure (Mission 19). */
     scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
     assessment_schema_version?: string;
@@ -551,6 +462,13 @@ export async function assessSession(params: {
   ): SessionAssessment => {
     const items: ScoreEntry[] = rubric.map((r) => {
       const found = output.items.find((i) => i.id === r.id);
+      const cues =
+        CLINICAL_EDUCATOR_RUBRIC.find((c) => c.id === (r.id as never))
+          ?.example_cues ?? [];
+      const modelExamples =
+        found && "examples" in found && Array.isArray(found.examples)
+          ? found.examples.filter((e) => typeof e === "string" && e.trim()).slice(0, 3)
+          : [];
       return {
         id: r.id,
         label: r.label,
@@ -560,6 +478,10 @@ export async function assessSession(params: {
         feedback:
           found?.feedback ??
           (language === "ar" ? "لا توجد ملاحظات." : "No feedback provided."),
+        examples:
+          modelExamples.length > 0
+            ? modelExamples
+            : extractTranscriptExamples(messages, cues),
       };
     });
 
@@ -571,11 +493,21 @@ export async function assessSession(params: {
     });
 
     const overall = weightedOverall(items);
+    const excerpts = output.excerpts.slice(0, 5);
+    const clinical_educator = clinicalEducatorFromAssessment({
+      items,
+      messages,
+      language,
+      narrative: output.narrative,
+      excerpts,
+      assessment_mode: "llm_examiner",
+    });
     return {
       language,
       scores: {
         overall,
         items,
+        clinical_educator,
         scientific_provenance: buildAssessmentProvenance({
           aiSource,
           model,
@@ -585,7 +517,7 @@ export async function assessSession(params: {
           overall,
           items,
           narrative: output.narrative,
-          excerpts: output.excerpts.slice(0, 5),
+          excerpts,
           language,
           assessment_mode: "llm_examiner",
           model,
@@ -594,14 +526,14 @@ export async function assessSession(params: {
           overall,
           items,
           narrative: output.narrative,
-          excerpts: output.excerpts.slice(0, 5),
+          excerpts,
           language,
           assessment_mode: "llm_examiner",
           model,
         }),
       },
       narrative: output.narrative,
-      excerpts: output.excerpts.slice(0, 5),
+      excerpts,
       aiSource,
       model,
       errorKind,

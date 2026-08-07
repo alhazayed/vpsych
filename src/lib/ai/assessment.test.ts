@@ -37,21 +37,58 @@ const messages = [
 
 const goodJson = JSON.stringify({
   items: [
-    { id: "alliance", score: 4, feedback: "Warm opening matched patient affect." },
-    { id: "assessment", score: 3, feedback: "Asked about mood; limited depth." },
+    {
+      id: "rapport",
+      score: 4,
+      feedback: "Warm opening matched patient affect.",
+      examples: ["How have you been feeling this week?"],
+    },
+    {
+      id: "empathy",
+      score: 4,
+      feedback: "Reflected fatigue without empty reassurance.",
+      examples: ["How have you been feeling this week?"],
+    },
+    {
+      id: "risk_assessment",
+      score: 2,
+      feedback: "No safety screen yet.",
+    },
+    {
+      id: "history_taking",
+      score: 3,
+      feedback: "Asked about mood; limited depth.",
+    },
     {
       id: "dsm_reasoning",
       score: 3,
       feedback: "Named mood episode features without over-claiming MDD.",
     },
     {
-      id: "icd_reasoning",
+      id: "therapeutic_alliance",
       score: 3,
-      feedback: "Linked presentation to ICD-11 mood episode language.",
+      feedback: "Collaborative tone present.",
     },
-    { id: "interventions", score: 2, feedback: "Mostly supportive listening." },
-    { id: "safety", score: 2, feedback: "No safety screen yet." },
-    { id: "structure", score: 3, feedback: "Clear opening question." },
+    {
+      id: "communication",
+      score: 3,
+      feedback: "Clear opening question.",
+    },
+    {
+      id: "professionalism",
+      score: 3,
+      feedback: "Respectful framing.",
+    },
+    {
+      id: "session_structure",
+      score: 3,
+      feedback: "Clear opening; thin close.",
+    },
+    {
+      id: "treatment_planning",
+      score: 2,
+      feedback: "Mostly supportive listening.",
+    },
   ],
   narrative:
     "Therapist opened with mood inquiry; patient reported fatigue and work stress.",
@@ -119,17 +156,22 @@ describe("assessSession parse failover", () => {
       language: "en",
     });
     expect(result.aiSource).toBe("gpt");
-    // Default Wave-3 educational rubric (11 dimensions, weights sum 100)
-    expect(result.scores.items).toHaveLength(11);
+    // Mission 9 Clinical Educator rubric (10 dimensions, weights sum 100)
+    expect(result.scores.items).toHaveLength(10);
     expect(result.scores.items.map((i) => i.id)).toEqual(
       expect.arrayContaining([
+        "rapport",
+        "empathy",
+        "risk_assessment",
+        "history_taking",
         "dsm_reasoning",
-        "icd_reasoning",
-        "clinical_formulation",
-        "differential_diagnosis",
-        "risk_formulation",
-        "educational_competency",
+        "therapeutic_alliance",
+        "communication",
+        "professionalism",
+        "session_structure",
+        "treatment_planning",
       ]),
     );
+    expect(result.scores.clinical_educator?.dimensions).toHaveLength(10);
   });
 });
