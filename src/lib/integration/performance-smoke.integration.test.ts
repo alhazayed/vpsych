@@ -145,8 +145,8 @@ describe("Phase 6 — performance smoke", () => {
 
     const cueAvg =
       cueSizes.reduce((a, b) => a + b, 0) / Math.max(1, cueSizes.length);
-    const cueMax = Math.max(...cueSizes, 0);
-    const cueMin = Math.min(...cueSizes, 0);
+    const cueMax = cueSizes.length ? Math.max(...cueSizes) : 0;
+    const cueMin = cueSizes.length ? Math.min(...cueSizes) : 0;
 
     // --- Memory: 20 extract + retrieve + compress cycles ---
     let store = emptyPatientMemoryStore({
