@@ -340,12 +340,17 @@ export function TherapyRoomSession({
         if (bargeInArmScheduled || bargeInFired || endingRef.current) return;
         if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) return;
         bargeInArmScheduled = true;
-        // Short grace so speaker bleed / AGC does not false-trigger.
+        // Grace so TTS is audible before barge-in arms; require sustained
+        // speech so speaker bleed / residual noise does not abort playback.
         bargeInArmTimer = window.setTimeout(() => {
           bargeInArmTimer = null;
           if (bargeInFired || endingRef.current || abort.signal.aborted) return;
           if (!fsmRef.current.isCurrent(generation)) return;
-          void startBargeInMonitor({ onBargeIn }).then((stop) => {
+          void startBargeInMonitor({
+            onBargeIn,
+            threshold: 0.035,
+            minSpeechMs: 700,
+          }).then((stop) => {
             if (bargeInFired || abort.signal.aborted || endingRef.current) {
               stop();
               return;
@@ -356,7 +361,7 @@ export function TherapyRoomSession({
             }
             bargeInStopRef.current = stop;
           });
-        }, 550);
+        }, 1600);
       };
 
       const mode = await playPatientSpeech({
