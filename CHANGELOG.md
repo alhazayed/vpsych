@@ -17,6 +17,9 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 - CIDP operational dashboards: `GET /api/admin/ops/cidp`, `/admin/cidp`, monitoring configs under `docs/cidp/monitoring/`.
 - Restored `docs/RELEASE_GOVERNANCE.md` and `docs/RELEASE_OPERATIONS_CHECKLIST.md`.
 - CIDP execution: feedback `assigned_owner_id` / `resolution` / `audit_trail`; auto-classification Critical→Suggestion; educational/feedback/pilot dashboard panels; success metrics; pilot portfolio summary; weekly reports at `GET /api/admin/ops/cidp/weekly`; governance attestations + security/DR evidence logs; executive leadership + hospital administration guides.
+- **Phase 14** Global Institutional Pilot / GA readiness (`docs/stage14/`): ten-gate `evaluateGaReadiness()`, risk register, lessons learned, clinical/educational/research evidence aggregators, longitudinal trends, `GET /api/admin/ops/phase14`, Phase 14 panel on `/admin/cidp`, expanded weekly report kinds (research · educational · operations), living evidence logs under `docs/cidp/evidence/`.
+- **Phase 15** Final GA Authorization & Global Clinical Validation (`docs/stage15/`): `evaluatePhase15Authorization()` Board gates, pilot completion reporting, security/DR/infra/clinical/educational/research/operational certification aggregators, `GET /api/admin/ops/phase15`, Phase 15 panel, Board package with **NO-GO for `v1.0.0`** (RDL-032). Version remains `1.0.0-rc.1`.
+- **Phase 16** Institutional Pilot Execution & Evidence Collection (`docs/stage16/`): Evidence-Pending-first dashboards/registry/reports, `evaluatePhase16GaGates()` (incl. pen-test), weekly/monthly executive reports, `GET /api/admin/ops/phase16`, Phase 16 panel. **No fabricated pilots/drills/outcomes.** GA remains NO-GO (RDL-033).
 
 ### Changed
 
@@ -24,6 +27,7 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 - ElevenLabs TTS uses `AbortSignal.timeout` (default 30s; `ELEVENLABS_TIMEOUT_MS`).
 - Scientific admin dashboards (ALE/AVI/CFI/CGE/ERI/RRS/VQI/quality-ledger/ACE learners) and OpenAI health probe are rate-limited.
 - Enterprise ownership rule documents institutional pilot feedback (CIDP) without patient-state writes.
+- Weekly CIDP reports now include research, educational, and operations packs (Phase 14).
 
 ### Security
 
@@ -33,9 +37,9 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 
 ### Notes
 
-- Stages 1–11 remain canonical; Stage 12 / CIDP do not add patient or supervisor cognition.
+- Stages 1–11 remain canonical; Stage 12 / CIDP / Phase 14 do not add patient or supervisor cognition.
 - Competency scores remain **unvalidated** — see `KNOWN_LIMITATIONS.md`.
-- CIDP is **not** General Availability — see `docs/cidp/GA_READINESS_REPORT.md` and RDL-029.
+- CIDP is **not** General Availability — see `docs/stage16/GA_READINESS_DASHBOARD.md`, RDL-029…033. Version `1.0.0` is **not** authorized. Missing evidence displays **Evidence Pending**.
 
 ## [0.1.0] — 2026-08-06
 

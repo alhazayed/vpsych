@@ -867,4 +867,182 @@ describe("architecture invariants", () => {
     expect(cidpRoute).toMatch(/requireApiAdmin/);
     expect(cidpRoute).toMatch(/buildCidpDashboards/);
   });
+
+  it("Phase 14 GA readiness program never owns Clinical Core", () => {
+    const stage14 = join(process.cwd(), "docs/stage14");
+    for (const name of [
+      "README.md",
+      "EXECUTIVE_SUMMARY.md",
+      "GA_DECISION_FRAMEWORK.md",
+      "RISK_REGISTER.md",
+      "LESSONS_LEARNED_REGISTER.md",
+      "RELEASE_BOARD_PACKAGE.md",
+      "FINAL_V1_AUTHORIZATION_PACKAGE.md",
+      "GLOBAL_INSTITUTIONAL_PILOT.md",
+      "CLINICAL_EVIDENCE_FRAMEWORK.md",
+    ]) {
+      expect(() => readFileSync(join(stage14, name), "utf8")).not.toThrow();
+    }
+
+    const exec = readFileSync(join(stage14, "EXECUTIVE_SUMMARY.md"), "utf8");
+    expect(exec).toMatch(/NO-GO for General Availability/);
+    expect(exec).toMatch(/GO for CIDP/);
+
+    const gates = readFileSync(
+      join(root, "lib/ops/phase14-ga-gates.ts"),
+      "utf8",
+    );
+    expect(gates).toMatch(/evaluateGaReadiness/);
+    expect(gates).toMatch(/dr_drill_completed/);
+    expect(gates).toMatch(/executive_release_board_authorization/);
+    expect(gates).not.toMatch(/clinical_snapshot/);
+
+    const readiness = readFileSync(
+      join(root, "lib/ops/phase14-readiness.ts"),
+      "utf8",
+    );
+    expect(readiness).toMatch(/Never writes Clinical Core/);
+
+    const route = readFileSync(
+      join(root, "app/api/admin/ops/phase14/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/buildPhase14Readiness/);
+    expect(route).not.toMatch(/clinical_snapshot/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Phase 14 ownership note/);
+    expect(ownership).toMatch(/never patient-state writers/);
+
+    const riskLog = readFileSync(
+      join(process.cwd(), "docs/cidp/evidence/risk/RISK_REGISTER.md"),
+      "utf8",
+    );
+    expect(riskLog).toMatch(/RISK-P14-01/);
+  });
+
+  it("Phase 15 GA authorization package refuses GA without fabricating drills", () => {
+    const stage15 = join(process.cwd(), "docs/stage15");
+    for (const name of [
+      "README.md",
+      "GA_AUTHORIZATION.md",
+      "FINAL_GA_READINESS_REPORT.md",
+      "EXECUTIVE_BOARD_PACKAGE.md",
+      "CLINICAL_VALIDATION_REPORT.md",
+      "EDUCATIONAL_VALIDATION_REPORT.md",
+      "RESEARCH_VALIDATION_REPORT.md",
+      "SECURITY_CERTIFICATION_REPORT.md",
+      "DISASTER_RECOVERY_CERTIFICATION.md",
+      "INFRASTRUCTURE_CERTIFICATION.md",
+      "PILOT_COMPLETION_REPORT.md",
+      "RISK_CLOSURE_REPORT.md",
+      "LESSONS_LEARNED_REPORT.md",
+      "FINAL_RELEASE_NOTES.md",
+    ]) {
+      expect(() => readFileSync(join(stage15, name), "utf8")).not.toThrow();
+    }
+
+    const authDoc = readFileSync(join(stage15, "GA_AUTHORIZATION.md"), "utf8");
+    expect(authDoc).toMatch(/NO-GO/);
+    expect(authDoc).toMatch(/Do not authorize/);
+    expect(authDoc).not.toMatch(/AUTHORIZED — tag v1\.0\.0/);
+
+    const authCode = readFileSync(
+      join(root, "lib/ops/phase15-ga-authorization.ts"),
+      "utf8",
+    );
+    expect(authCode).toMatch(/evaluatePhase15Authorization/);
+    expect(authCode).toMatch(/never writes Clinical Core/);
+    expect(authCode).toMatch(/Fabricating DR\/PITR\/pilot evidence is prohibited/);
+
+    const route = readFileSync(
+      join(root, "app/api/admin/ops/phase15/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/buildPhase15Readiness/);
+    expect(route).not.toMatch(/clinical_snapshot/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Phase 15 ownership note/);
+    expect(ownership).toMatch(/never patient-state writers/);
+
+    const rdl = readFileSync(
+      join(process.cwd(), "docs/RELEASE_DECISION_LOG.md"),
+      "utf8",
+    );
+    expect(rdl).toMatch(/RDL-032/);
+    expect(rdl).toMatch(/GA NO-GO/);
+  });
+
+  it("Phase 16 execution evidence never fabricates pilots or drills", () => {
+    const stage16 = join(process.cwd(), "docs/stage16");
+    for (const name of [
+      "README.md",
+      "EVIDENCE_POLICY.md",
+      "EXECUTION_CHARTER.md",
+      "GA_READINESS_DASHBOARD.md",
+      "WEEKLY_EXECUTIVE_REPORT.md",
+      "MONTHLY_PILOT_REPORT.md",
+      "FINAL_RELEASE_AUTHORIZATION_PACKAGE.md",
+    ]) {
+      expect(() => readFileSync(join(stage16, name), "utf8")).not.toThrow();
+    }
+
+    const policy = readFileSync(join(stage16, "EVIDENCE_POLICY.md"), "utf8");
+    expect(policy).toMatch(/Evidence Pending/);
+    expect(policy).toMatch(/Do \*\*not\*\* fabricate/);
+
+    const state = readFileSync(
+      join(root, "lib/ops/phase16-evidence-state.ts"),
+      "utf8",
+    );
+    expect(state).toMatch(/EVIDENCE_PENDING/);
+    expect(state).toMatch(/Never fabricate/);
+
+    const institutions = readFileSync(
+      join(root, "lib/ops/phase16-institutions.ts"),
+      "utf8",
+    );
+    expect(institutions).toMatch(/do not invent pilots/);
+
+    const gates = readFileSync(
+      join(root, "lib/ops/phase16-ga-gates.ts"),
+      "utf8",
+    );
+    expect(gates).toMatch(/penetration_test_completed/);
+    expect(gates).toMatch(/Evidence Pending/);
+
+    const route = readFileSync(
+      join(root, "app/api/admin/ops/phase16/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/buildPhase16Execution/);
+    expect(route).toMatch(/institutions: \[\]/);
+    expect(route).not.toMatch(/clinical_snapshot/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Phase 16 ownership note/);
+    expect(ownership).toMatch(/never fabricated operational evidence/);
+
+    const rdl = readFileSync(
+      join(process.cwd(), "docs/RELEASE_DECISION_LOG.md"),
+      "utf8",
+    );
+    expect(rdl).toMatch(/RDL-033/);
+  });
 });

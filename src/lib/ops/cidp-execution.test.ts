@@ -82,6 +82,9 @@ describe("CIDP execution engines", () => {
       "executive",
       "clinical",
       "security",
+      "research",
+      "educational",
+      "operations",
     ]);
     for (const r of reports) {
       expect(r.ga_status).toBe("NO-GO");

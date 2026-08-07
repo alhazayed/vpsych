@@ -78,6 +78,9 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | No Sentry/APM baseline | Medium | In-app `/api/admin/ops/metrics` shipped; vendor APM still open |
 | DR drill not certified | Medium | Procedures in `DISASTER_RECOVERY.md` + `cidp/DISASTER_RECOVERY_REPORT.md`; drill evidence still open (blocks GA, not CIDP) |
 | CIDP active_* / research metrics sparse wiring | Low | Dashboard soft-fails to 0 until membership/research aggregates are wired |
+| Phase 14 GA gates open (DR/PITR/security residuals/pilot observation) | High (GA only) | Tracked in `stage14/TECHNICAL_DEBT.md` + risk register; CIDP remains GO |
+| Phase 15 Board refused `v1.0.0` (RDL-032) — open DR/security/pilot/validation gates | High (GA only) | `stage15/TECHNICAL_DEBT.md` · `stage15/GA_AUTHORIZATION.md`; do not tag 1.0.0 |
+| Phase 16 execution — Evidence Pending for pilots/drills/pen-test/surveys (RDL-033) | High (GA only) | `stage16/TECHNICAL_DEBT.md`; collect real evidence only |
 | Audit credential vault churn | High for certification velocity | Credential Verification Gate still binding |
 | Open PR sprawl | Medium hygiene | Do not merge experimental engines during RC |
 
