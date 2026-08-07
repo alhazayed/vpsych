@@ -6,7 +6,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runAceAfterAssessment } from "@/lib/ace/session-hook";
 import { ensureLearnerProfile } from "@/lib/ace/persist";
-import type { AdaptiveCaseRequest, CoachFeedback } from "@/lib/ace/types";
+import type { AdaptiveCaseRequest } from "@/lib/ace/types";
 import type { ScoreEntry } from "@/lib/types";
 import { buildEducationAnalytics } from "@/lib/education/analytics";
 import { evaluateCertificationMilestone } from "@/lib/education/certification";
