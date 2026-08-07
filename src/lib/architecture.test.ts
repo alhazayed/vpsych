@@ -353,4 +353,79 @@ describe("architecture invariants", () => {
       expect(() => readFileSync(join(rootDocs, name), "utf8")).not.toThrow();
     }
   });
+
+  it("Stage 6 Clinical Intelligence layer is present and wired without replacing engines", () => {
+    const barrel = readFileSync(
+      join(root, "lib/clinical-intelligence/index.ts"),
+      "utf8",
+    );
+    const decision = readFileSync(
+      join(root, "lib/clinical-intelligence/decision.ts"),
+      "utf8",
+    );
+    const promote = readFileSync(
+      join(root, "lib/clinical-intelligence/promote.ts"),
+      "utf8",
+    );
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    const generator = readFileSync(
+      join(root, "lib/case-engine/generator.ts"),
+      "utf8",
+    );
+    const types = readFileSync(join(root, "lib/types.ts"), "utf8");
+    const memoryTypes = readFileSync(
+      join(root, "lib/patient-memory/types.ts"),
+      "utf8",
+    );
+
+    expect(barrel).toMatch(/clinical-intelligence\/decision/);
+    expect(barrel).toMatch(/clinical-intelligence\/promote/);
+    expect(barrel).toMatch(/clinical-intelligence\/longitudinal/);
+    expect(decision).toMatch(/export function decidePatientTurn/);
+    expect(promote).toMatch(/export function promoteClinicalIntelligence/);
+    expect(message).toMatch(/decidePatientTurn/);
+    expect(message).toMatch(/decision plan soft-fail/);
+    expect(message).toMatch(/loadDyadClinicalCarry/);
+    expect(start).toMatch(/loadDyadClinicalCarry/);
+    expect(generator).toMatch(/promoteClinicalIntelligence/);
+    expect(types).toMatch(/protective_factors\?/);
+    expect(types).toMatch(/formulation\?/);
+    expect(types).toMatch(/mse\?/);
+    // Must not invent a parallel patient mind barrel that re-exports Emotion/CBE as owners
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/conversation-behaviour["']/);
+    // LTM extensions are additive
+    expect(memoryTypes).toMatch(/"belief"/);
+    expect(memoryTypes).toMatch(/"protective"/);
+    expect(memoryTypes).toMatch(/"previous_session"/);
+
+    const ciDocs = join(process.cwd(), "docs/clinical-intelligence");
+    expect(() => readFileSync(join(ciDocs, "README.md"), "utf8")).not.toThrow();
+  });
+
+  it("Stage 6 preserves Adaptation→resolve→Memory→Emotion→CBE→Humanization order", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    // Match call sites, not imports.
+    const adp = message.indexOf("const adapted = processTherapistTurn");
+    const resolve = message.indexOf("const resolved = resolveAvatar");
+    const mem = message.indexOf("const memoryCtx = await prepareMemoryForTurn");
+    const emo = message.indexOf("await processEmotionTurn");
+    const cbe = message.indexOf("behaviourPlan = planConversationBehaviour");
+    const decision = message.indexOf("decisionPlan = decidePatientTurn");
+    const hum = message.indexOf("humanization = buildHumanizationTurn");
+    expect(adp).toBeGreaterThan(-1);
+    expect(resolve).toBeGreaterThan(adp);
+    expect(mem).toBeGreaterThan(resolve);
+    expect(emo).toBeGreaterThan(mem);
+    expect(cbe).toBeGreaterThan(emo);
+    expect(decision).toBeGreaterThan(cbe);
+    expect(hum).toBeGreaterThan(decision);
+  });
 });

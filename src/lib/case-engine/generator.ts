@@ -23,6 +23,8 @@ import {
 } from "@/lib/case-engine/speech-behavior";
 import type { ClinicalCore, DisclosureRule } from "@/lib/types";
 import { freezeHumanPersonalityForCase } from "@/lib/personality-engine";
+import { promoteClinicalIntelligence } from "@/lib/clinical-intelligence";
+import { serializeTherapyResponseProfile } from "@/lib/clinical-intelligence/serialize";
 
 /** Prefer richer notes when both package and persona share a disclosure topic. */
 export function mergeDisclosureRules(
@@ -277,6 +279,17 @@ export function generateCaseInstance(
       .join(" "),
   };
 
+  // Stage 6 — Clinical Intelligence promotion onto ClinicalCore (additive).
+  const ci = promoteClinicalIntelligence({
+    clinicalCore: clinical_core,
+    disorderSlug: req.primaryDisorder.slug,
+    difficultyInsight: difficultyProfile.modifiers.insight,
+    modality: req.therapyModality,
+    legacyTherapyRules: therapyProfile.patient_reaction_rules,
+    personaValues: req.persona.identity.values ?? null,
+  });
+  clinical_core = ci.clinical_core;
+
   const assessment_id = `VPSY-ASM-${randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
 
   const pkg = req.primaryDisorder.package ?? {};
@@ -331,7 +344,9 @@ export function generateCaseInstance(
     difficulty: req.difficulty,
     difficulty_modifiers: difficultyProfile.modifiers,
     therapy_modality: req.therapyModality,
-    therapy_reaction_rules: therapyProfile.patient_reaction_rules,
+    therapy_reaction_rules: serializeTherapyResponseProfile(
+      ci.therapy_response_profile,
+    ),
     locale: req.locale,
     severity: clinical_core.severity ?? "moderate",
     clinical_core,

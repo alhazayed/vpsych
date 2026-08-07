@@ -58,6 +58,11 @@ export type RiskProfile = {
   harm_to_others?: boolean;
   substance_use?: boolean;
   escalation_rules?: string;
+  /** Educational extensions (Stage 6) — not validated risk instruments. */
+  self_neglect?: boolean;
+  risk_to_dependents?: boolean;
+  static_factors?: string[];
+  dynamic_factors?: string[];
 };
 
 /** Module 1 — language-neutral clinical presentation. */
@@ -71,9 +76,17 @@ export type ClinicalCore = {
   onset_duration?: string;
   symptom_profile: SymptomProfileItem[];
   disclosure_rules: DisclosureRule[];
+  /** Trainee teaching targets — not patient goals ontology (CI-C02). */
   session_goals: string[];
   ideal_approach: string;
   risk_profile: RiskProfile;
+  /**
+   * Stage 6 Clinical Intelligence — Case Engine owned, additive.
+   * Optional for legacy slim snapshots; readers must default-absent.
+   */
+  protective_factors?: import("@/lib/clinical-intelligence").ProtectiveFactor[];
+  mse?: import("@/lib/clinical-intelligence").MentalStatusExam;
+  formulation?: import("@/lib/clinical-intelligence").PatientFormulation;
 };
 
 export type PersonalityIdentity = {

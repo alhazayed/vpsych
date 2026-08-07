@@ -11,6 +11,12 @@ import {
   findPresetById,
   findPresetBySlug,
 } from "@/lib/instructor-presets";
+import {
+  createMindState,
+  embedMindState,
+  loadDyadClinicalCarry,
+} from "@/lib/clinical-intelligence";
+import { embedAdaptationInMemory } from "@/lib/adaptation";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
@@ -212,6 +218,46 @@ export async function POST(request: Request) {
       { error: clientSafeError("Failed to start session", sysErr) },
       { status: 500 },
     );
+  }
+
+  // Stage 6 — seed case_memory with dyad Adaptation carry + CI mind state (R-I1).
+  // Best-effort; never blocks session create.
+  const newCaseId = caseResult.caseInstanceId.startsWith("VPSY-")
+    ? null
+    : caseResult.caseInstanceId;
+  if (newCaseId) {
+    try {
+      const carry = await loadDyadClinicalCarry(supabase, {
+        therapistId: user.id,
+        avatarId: body.avatarId!,
+        excludeSessionId: session.id,
+        newCaseInstanceId: newCaseId,
+      });
+      const mind =
+        carry.mind ??
+        createMindState({
+          caseInstanceId: newCaseId,
+          formulation: caseResult.snapshot.clinical_core?.formulation ?? null,
+        });
+      let memory: Record<string, unknown> = {};
+      if (carry.adaptation) {
+        memory = embedAdaptationInMemory(memory, carry.adaptation);
+      }
+      memory = embedMindState(memory, {
+        ...mind,
+        case_instance_id: newCaseId,
+      });
+      void supabase.from("case_memory").upsert({
+        case_instance_id: newCaseId,
+        memory,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn("[sessions] clinical intelligence seed soft-fail", {
+        sessionId: session.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   return NextResponse.json({

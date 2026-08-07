@@ -85,6 +85,10 @@ export type CfiComputeInput = {
   has_trauma_cue?: boolean;
   has_culture_cue?: boolean;
   has_voice_profile?: boolean;
+  /** Stage 6 — explicit protective_factors on ClinicalCore. */
+  protective_factors_count?: number;
+  has_mse?: boolean;
+  has_formulation?: boolean;
   prompt_version?: string | null;
   model_version?: string | null;
   persona_version?: string | null;

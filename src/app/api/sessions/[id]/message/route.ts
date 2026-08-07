@@ -4,7 +4,7 @@ import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import {
-  createAdaptationState,
+  embedAdaptationInMemory,
   loadAdaptationState,
   processTherapistTurn,
   saveAdaptationState,
@@ -27,6 +27,22 @@ import {
   expressionPromptBlock,
   processEmotionTurn,
 } from "@/lib/emotion";
+import {
+  appendDecisionTrace,
+  buildBehaviorProfile,
+  createMindState,
+  decidePatientTurn,
+  embedMindState,
+  extractMindState,
+  formatDecisionPlanForPrompt,
+  loadDyadClinicalCarry,
+  normalizeTherapyResponseProfile,
+  resolveAdaptationForSession,
+  therapyAllianceFromAdaptation,
+  updateHomeworkAdherence,
+  recomputeTreatmentOverall,
+  type PatientDecisionPlan,
+} from "@/lib/clinical-intelligence";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 import { MAX_SESSION_SECONDS } from "@/lib/types";
@@ -96,17 +112,48 @@ export async function POST(request: Request, { params }: Params) {
 
   // Mission 8 — Patient Adaptation (rapport / trust / withdrawal / disclosure).
   // Best-effort: missing case_memory must never block the reply.
+  // Stage 6: when no in-case state, carry dyad Adaptation via beginNextSession (R-I1).
   const caseInstanceId = typed.case_instance_id ?? null;
   const loaded = await loadAdaptationState(supabase, caseInstanceId);
-  let adaptation =
-    loaded.state ??
-    createAdaptationState({
-      caseInstanceId,
-      therapistId: user.id,
-    });
+  let carriedAdaptation = null as Awaited<
+    ReturnType<typeof loadDyadClinicalCarry>
+  >["adaptation"];
+  let carriedMind = null as Awaited<
+    ReturnType<typeof loadDyadClinicalCarry>
+  >["mind"];
+  if (!loaded.state) {
+    try {
+      const carry = await loadDyadClinicalCarry(supabase, {
+        therapistId: user.id,
+        avatarId: typed.avatar_id,
+        excludeSessionId: sessionId,
+        newCaseInstanceId: caseInstanceId,
+      });
+      carriedAdaptation = carry.adaptation;
+      carriedMind = carry.mind;
+    } catch (err) {
+      console.warn("[sessions/message] dyad carry soft-fail", {
+        sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  let adaptation = resolveAdaptationForSession({
+    loaded: loaded.state,
+    carried: carriedAdaptation,
+    caseInstanceId,
+    therapistId: user.id,
+  });
   const adapted = processTherapistTurn(adaptation, message);
   adaptation = adapted.state;
-  void saveAdaptationState(supabase, caseInstanceId, adaptation, loaded.raw);
+  let memoryRaw = loaded.raw ?? {};
+  if (carriedMind && !extractMindState(memoryRaw)) {
+    memoryRaw = embedMindState(memoryRaw, {
+      ...carriedMind,
+      case_instance_id: caseInstanceId,
+    });
+  }
+  void saveAdaptationState(supabase, caseInstanceId, adaptation, memoryRaw);
 
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
@@ -255,6 +302,120 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
+  // Stage 6 — PatientDecisionPlan façade (aggregates Adaptation + Emotion + CBE).
+  // Soft-fail; never blocks reply. Does not replace CBE / Emotion / Adaptation.
+  let decisionPlan: PatientDecisionPlan | null = null;
+  try {
+    const therapyProfile = snap
+      ? normalizeTherapyResponseProfile(
+          snap.therapy_reaction_rules,
+          snap.therapy_modality,
+        )
+      : null;
+    decisionPlan = decidePatientTurn({
+      adaptation,
+      emotion: emotionPayload
+        ? {
+            mode: emotionPayload.mode as
+              | "engaged"
+              | "guarded"
+              | "withdrawn"
+              | "activated"
+              | "collapsed"
+              | "warming",
+            variables: emotionPayload.variables as {
+              baseline_mood: number;
+              current_mood: number;
+              stress: number;
+              fear: number;
+              anger: number;
+              hope: number;
+              trust: number;
+              rapport: number;
+              fatigue: number;
+              motivation: number;
+            },
+          }
+        : null,
+      behaviour: behaviourPlan,
+      formulation: snap?.clinical_core?.formulation ?? null,
+      therapyProfile,
+      modality: snap?.therapy_modality ?? null,
+      therapistMessage: message,
+      disorderSlug,
+      dissociationBias:
+        /ptsd|trauma|cptsd/i.test(disorderSlug ?? "")
+          ? "mild_detachment"
+          : "none",
+    });
+
+    const decisionBlock = formatDecisionPlanForPrompt(decisionPlan);
+    if (decisionBlock) {
+      avatarForReply = {
+        ...avatarForReply,
+        system_prompt: `${avatarForReply.system_prompt}\n\n${decisionBlock}`,
+      };
+    }
+
+    // Best-effort mind-state update (namespaced; never clobbers emotion/adaptation).
+    if (caseInstanceId) {
+      let mind =
+        extractMindState(memoryRaw) ??
+        carriedMind ??
+        createMindState({
+          caseInstanceId,
+          formulation: snap?.clinical_core?.formulation ?? null,
+        });
+      mind = appendDecisionTrace(mind, {
+        plan: decisionPlan,
+        turn_index: turnIndex,
+        at: new Date().toISOString(),
+      });
+      const alliance = therapyAllianceFromAdaptation(adaptation);
+      if (
+        decisionPlan.meta.therapy_bias?.includes("resist_advice") === false &&
+        /\b(homework|thought record|worksheet)\b/i.test(message)
+      ) {
+        mind.adherence = recomputeTreatmentOverall(
+          {
+            ...mind.adherence,
+            homework: updateHomeworkAdherence({
+              current: mind.adherence.homework,
+              allianceTrust: alliance.trust,
+              conscientiousness:
+                snap?.human_personality?.conscientiousness ?? 3,
+              assignedThisTurn: true,
+              delta: 1,
+            }),
+          },
+          alliance,
+        );
+      }
+      const patched = embedMindState(
+        embedAdaptationInMemory(memoryRaw, adaptation),
+        mind,
+      );
+      void supabase.from("case_memory").upsert({
+        case_instance_id: caseInstanceId,
+        memory: patched,
+        updated_at: new Date().toISOString(),
+      });
+      // Keep BehaviorProfile construction referenced for observability.
+      void buildBehaviorProfile({
+        plan: decisionPlan,
+        behaviour: behaviourPlan,
+        patternTags: [],
+        engagement: alliance.engagement,
+      });
+    }
+  } catch (err) {
+    console.warn("[sessions/message] decision plan soft-fail", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    decisionPlan = null;
+  }
+
   // Mission 10 — Humanization Layer (subtle realism only; never blocks reply).
   let humanization: ReturnType<typeof buildHumanizationTurn> = null;
   try {
@@ -351,6 +512,8 @@ export async function POST(request: Request, { params }: Params) {
     cbePrimary: behaviourPlan?.primary ?? null,
     cbeGate: behaviourPlan?.disclosureGate ?? null,
     cbeRapport: behaviourPlan?.rapport ?? null,
+    decisionSpeak: decisionPlan?.speak ?? null,
+    decisionAct: decisionPlan?.act ?? null,
     humanizationBehaviors: humanization?.behaviors ?? null,
   });
 
@@ -396,6 +559,11 @@ export async function POST(request: Request, { params }: Params) {
       cbePrimary: behaviourPlan?.primary ?? null,
       cbeDisclosureGate: behaviourPlan?.disclosureGate ?? null,
       cbeRapport: behaviourPlan?.rapport ?? null,
+      // Stage 6 DecisionPlan — additive observability only.
+      decisionSpeak: decisionPlan?.speak ?? null,
+      decisionAct: decisionPlan?.act ?? null,
+      decisionDisclosure: decisionPlan?.disclosure ?? null,
+      decisionCognitiveMove: decisionPlan?.cognitive_move ?? null,
       // Mission 10 — Humanization Engine (additive; clients may ignore).
       humanizationEnabled: Boolean(humanization),
       humanization: humanizationHints,
@@ -410,6 +578,10 @@ export async function POST(request: Request, { params }: Params) {
           : {}),
         ...(behaviourPlan?.primary
           ? { "X-CBE-Primary": behaviourPlan.primary }
+          : {}),
+        ...(decisionPlan?.speak ? { "X-CI-Speak": decisionPlan.speak } : {}),
+        ...(decisionPlan?.act
+          ? { "X-CI-Act": String(decisionPlan.act) }
           : {}),
         ...(humanization
           ? { "X-Humanization": humanization.behaviors.join(",") }

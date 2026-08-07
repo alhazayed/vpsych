@@ -1054,26 +1054,100 @@ const THERAPY_ENTRIES: Array<[TherapyModality, string]> = [
 ];
 
 export const BUILTIN_THERAPY_PROFILES: TherapyProfile[] = THERAPY_ENTRIES.map(
-  ([modality, label], i) => ({
-    id: `c1000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`,
-    slug: modality,
-    modality,
-    label,
-    is_active: true,
-    patient_reaction_rules: {
-      engages_with:
-        modality === "cbt"
-          ? ["structured questions", "thought records"]
-          : modality === "crisis_intervention"
-            ? ["safety focus", "grounding"]
-            : ["empathy", "collaboration"],
-      resists:
-        modality === "motivational_interviewing"
-          ? ["advice-giving"]
-          : ["premature confrontation"],
-      alliance_cue: `${label}: patient reacts to modality-congruent stance.`,
-    },
-  }),
+  ([modality, label], i) => {
+    const base =
+      modality === "cbt"
+        ? {
+            engages_with: ["structured questions", "thought records"],
+            resists: ["premature confrontation"],
+            response_biases: {
+              trust_gate: true,
+              homework_sensitivity: "medium" as const,
+              advice_sensitivity: "medium" as const,
+              exposure_readiness: "low" as const,
+            },
+          }
+        : modality === "dbt"
+          ? {
+              engages_with: ["validation", "collaboration"],
+              resists: ["change without validation", "premature confrontation"],
+              response_biases: {
+                validation_required: true,
+                trust_gate: true,
+                advice_sensitivity: "medium" as const,
+              },
+            }
+          : modality === "motivational_interviewing"
+            ? {
+                engages_with: ["empathy", "collaboration", "evocation"],
+                resists: ["advice-giving"],
+                response_biases: {
+                  advice_sensitivity: "high" as const,
+                  trust_gate: true,
+                },
+              }
+            : modality === "act"
+              ? {
+                  engages_with: ["values exploration", "defusion", "collaboration"],
+                  resists: ["premature confrontation"],
+                  response_biases: {
+                    trust_gate: true,
+                    advice_sensitivity: "low" as const,
+                  },
+                }
+              : modality === "psychodynamic"
+                ? {
+                    engages_with: ["empathy", "exploration"],
+                    resists: ["premature confrontation"],
+                    response_biases: {
+                      defence_on_interpretation: true,
+                      advice_sensitivity: "medium" as const,
+                    },
+                  }
+                : modality === "crisis_intervention"
+                  ? {
+                      engages_with: ["safety focus", "grounding"],
+                      resists: ["premature confrontation"],
+                      response_biases: {
+                        trust_gate: false,
+                        advice_sensitivity: "low" as const,
+                        exposure_readiness: "none" as const,
+                      },
+                    }
+                  : modality === "exposure_therapy"
+                    ? {
+                        engages_with: ["graded exposure", "collaboration"],
+                        resists: ["forced flooding", "premature confrontation"],
+                        response_biases: {
+                          exposure_readiness: "moderate" as const,
+                          trust_gate: true,
+                          homework_sensitivity: "high" as const,
+                        },
+                      }
+                    : {
+                        engages_with: ["empathy", "collaboration"],
+                        resists: ["premature confrontation"],
+                        response_biases: {
+                          trust_gate: true,
+                          advice_sensitivity: "medium" as const,
+                        },
+                      };
+    return {
+      id: `c1000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`,
+      slug: modality,
+      modality,
+      label,
+      is_active: true,
+      patient_reaction_rules: {
+        version: 1,
+        modality,
+        engages_with: base.engages_with,
+        resists: base.resists,
+        alliance_cue: `${label}: patient reacts to modality-congruent stance.`,
+        response_biases: base.response_biases,
+      },
+    };
+  },
 );
 
 export function getBuiltinCatalog(): CaseEngineCatalog {

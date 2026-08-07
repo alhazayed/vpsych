@@ -17,6 +17,13 @@ import {
 } from "@/lib/case-engine/therapy-process";
 import { formatAuthoredTherapyCuesForPrompt } from "@/lib/case-engine/authored-therapy-cues";
 import { resolveHumanPersonality } from "@/lib/personality-engine";
+import {
+  formatFormulationForPrompt,
+  formatMseForPrompt,
+  formatProtectivesForPrompt,
+  formatTherapyResponseForPrompt,
+  normalizeTherapyResponseProfile,
+} from "@/lib/clinical-intelligence";
 import type {
   Avatar,
   AvatarPersonality,
@@ -142,12 +149,29 @@ function fidelityHintsFromSnapshot(
   const therapy_process_cue = [processCue, reactionCue, authored]
     .filter((s) => Boolean(s?.trim()))
     .join("\n\n");
+
+  const core = snapshot?.clinical_core;
+  const modality = snapshot?.therapy_modality ?? "supportive";
+  const therapyProfile = normalizeTherapyResponseProfile(
+    snapshot?.therapy_reaction_rules ?? null,
+    modality,
+  );
+  const ciBlock = [
+    formatProtectivesForPrompt(core?.protective_factors),
+    formatMseForPrompt(core?.mse),
+    formatFormulationForPrompt(core?.formulation),
+    formatTherapyResponseForPrompt(therapyProfile),
+  ]
+    .filter((s) => Boolean(s?.trim()))
+    .join("\n\n");
+
   return {
     speech_behavior_cue: speech,
     difficulty_behavior: mods
       ? formatDifficultyBehaviorForPrompt(mods)
       : undefined,
     therapy_process_cue,
+    clinical_intelligence_block: ciBlock || undefined,
   };
 }
 

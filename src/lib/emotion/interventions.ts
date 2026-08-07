@@ -190,6 +190,17 @@ const EFFECTS: Record<TherapistIntervention, InterventionEffect> = {
     hostile: false,
     allianceBuilding: false,
   },
+  homework_review: {
+    deltas: {
+      motivation: 4,
+      rapport: 2,
+      trust: 2,
+      hope: 2,
+    },
+    note: "Collaborative homework review — mild engagement lift",
+    hostile: false,
+    allianceBuilding: true,
+  },
   other: {
     deltas: {},
     note: "Neutral / unclassified move",
