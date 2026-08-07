@@ -30,9 +30,12 @@ export const assessmentSchema = z.object({
       feedback: z.string().catch(""),
       examples: z
         .array(z.string())
-        .catch([])
         .optional()
-        .transform((arr) => (arr ?? []).filter((s) => s.trim()).slice(0, 3)),
+        .transform((arr) => {
+          if (!arr) return undefined;
+          const cleaned = arr.filter((s) => s.trim()).slice(0, 3);
+          return cleaned.length ? cleaned : undefined;
+        }),
     }),
   ),
   narrative: z.string(),

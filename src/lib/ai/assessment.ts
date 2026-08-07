@@ -451,7 +451,16 @@ export async function assessSession(params: {
     if (!generated.output) {
       throw new Error("gateway assessment returned empty structured output");
     }
-    return { output: generated.output, model };
+    // Structured schema keeps examples optional; AssessmentModelOutput allows
+    // examples?: string[] — normalize missing key for shared toAssessment path.
+    const output: AssessmentModelOutput = {
+      ...generated.output,
+      items: generated.output.items.map((item) => ({
+        ...item,
+        examples: item.examples,
+      })),
+    };
+    return { output, model };
   };
 
   const toAssessment = (

@@ -3,18 +3,10 @@ import { assessSession } from "@/lib/ai/assessment";
 import { RUBRIC_TO_COMPETENCIES } from "@/lib/ace/catalog";
 import { mapRubricToCompetencies } from "@/lib/ace/analytics";
 import { DEFAULT_RUBRIC_LABELS_EN } from "@/lib/ai/report-locale";
+import { CLINICAL_EDUCATOR_DIMENSION_IDS } from "@/lib/clinical-educator";
 
-const W3_H3_REQUIRED = [
-  "dsm_reasoning",
-  "icd_reasoning",
-  "clinical_formulation",
-  "differential_diagnosis",
-  "risk_formulation",
-  "educational_competency",
-] as const;
-
-describe("W3-H3 dual-coding + educational rubric", () => {
-  it("default heuristic assessment emits all Wave-3 educational dimensions", async () => {
+describe("Mission 9 Clinical Educator default rubric", () => {
+  it("default heuristic assessment emits all ten Clinical Educator dimensions", async () => {
     const prevOpenAi = process.env.OPENAI_API_KEY;
     const prevGateway = process.env.AI_GATEWAY_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -34,7 +26,7 @@ describe("W3-H3 dual-coding + educational rubric", () => {
           {
             role: "user",
             content:
-              "Let's walk through DSM criteria and also the ICD-11 diagnosis differential for PTSD versus CPTSD, then build a formulation and risk plan aligned to learning objectives.",
+              "Nice to meet you. Sounds hard. When did symptoms start? Any thoughts of harming yourself? We can work together on a plan before we end today.",
             created_at: new Date().toISOString(),
           },
           {
@@ -44,7 +36,8 @@ describe("W3-H3 dual-coding + educational rubric", () => {
           },
           {
             role: "user",
-            content: "Any thoughts of harming yourself?",
+            content:
+              "Let's walk through DSM criteria carefully and set next treatment steps.",
             created_at: new Date().toISOString(),
           },
         ],
@@ -52,32 +45,52 @@ describe("W3-H3 dual-coding + educational rubric", () => {
         language: "en",
       });
       const ids = result.scores.items.map((i) => i.id);
-      for (const id of W3_H3_REQUIRED) {
+      for (const id of CLINICAL_EDUCATOR_DIMENSION_IDS) {
         expect(ids).toContain(id);
         expect(DEFAULT_RUBRIC_LABELS_EN[id]).toBeTruthy();
       }
-      expect(result.scores.items).toHaveLength(11);
+      expect(result.scores.items).toHaveLength(10);
       expect(
         result.scores.items.reduce((a, i) => a + i.weight, 0),
       ).toBe(100);
       expect(result.scores.overall).toBeGreaterThan(0);
+      expect(result.scores.clinical_educator?.dimensions).toHaveLength(10);
 
       const mapped = mapRubricToCompetencies(
         result.scores.items,
         result.scores.overall,
       );
       expect(mapped.dsm5_reasoning).toBeTypeOf("number");
-      expect(mapped.icd11_reasoning).toBeTypeOf("number");
-      expect(mapped.differential_diagnosis).toBeTypeOf("number");
       expect(mapped.risk_assessment).toBeTypeOf("number");
+      expect(mapped.therapeutic_alliance).toBeTypeOf("number");
+      expect(mapped.empathy).toBeTypeOf("number");
+      expect(mapped.treatment_planning).toBeTypeOf("number");
     } finally {
       if (prevOpenAi) process.env.OPENAI_API_KEY = prevOpenAi;
       if (prevGateway) process.env.AI_GATEWAY_API_KEY = prevGateway;
     }
   });
 
-  it("rubric map keeps dual-coding and formulation distinct", () => {
+  it("rubric map keeps Mission 9 + legacy dual-coding maps distinct", () => {
+    expect(RUBRIC_TO_COMPETENCIES.rapport).toContain("therapeutic_alliance");
+    expect(RUBRIC_TO_COMPETENCIES.empathy).toContain("empathy");
+    expect(RUBRIC_TO_COMPETENCIES.risk_assessment).toContain("risk_assessment");
+    expect(RUBRIC_TO_COMPETENCIES.history_taking).toContain("diagnostic_interview");
     expect(RUBRIC_TO_COMPETENCIES.dsm_reasoning).toContain("dsm5_reasoning");
+    expect(RUBRIC_TO_COMPETENCIES.therapeutic_alliance).toContain(
+      "therapeutic_alliance",
+    );
+    expect(RUBRIC_TO_COMPETENCIES.communication).toContain(
+      "professional_communication",
+    );
+    expect(RUBRIC_TO_COMPETENCIES.professionalism).toContain(
+      "ethical_decision_making",
+    );
+    expect(RUBRIC_TO_COMPETENCIES.session_structure).toContain("time_management");
+    expect(RUBRIC_TO_COMPETENCIES.treatment_planning).toContain(
+      "treatment_planning",
+    );
+    // Legacy Wave-3 maps retained for avatar-authored rubrics
     expect(RUBRIC_TO_COMPETENCIES.icd_reasoning).toContain("icd11_reasoning");
     expect(RUBRIC_TO_COMPETENCIES.clinical_formulation?.length).toBeGreaterThan(
       0,
