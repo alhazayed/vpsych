@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import {
+  isConversationBehaviourEnabled,
+  planConversationBehaviour,
+  type ConversationBehaviourPlan,
+} from "@/lib/conversation-behaviour";
 import { remainingSeconds } from "@/lib/session-timer";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
@@ -29,7 +34,11 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const body = (await request.json()) as { message?: string };
+  const body = (await request.json()) as {
+    message?: string;
+    /** True when the therapist barge-in / cut off the prior patient turn. */
+    therapistInterrupted?: boolean;
+  };
   const message = body.message?.trim();
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
@@ -100,13 +109,57 @@ export async function POST(request: Request, { params }: Params) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  const historyRows = (history ?? []) as Pick<
+    SessionMessage,
+    "role" | "content"
+  >[];
+  // History includes the user message just inserted; assistant count ≈ prior turns.
+  const turnIndex = historyRows.filter((m) => m.role === "assistant").length;
+
+  let behaviourPlan: ConversationBehaviourPlan | null = null;
+  if (isConversationBehaviourEnabled()) {
+    try {
+      behaviourPlan = planConversationBehaviour({
+        sessionId,
+        turnIndex,
+        userMessage: message,
+        history: historyRows,
+        difficulty: typed.clinical_snapshot?.difficulty_modifiers ?? null,
+        disorderSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+        therapistInterrupted: Boolean(body.therapistInterrupted),
+        language: typed.language,
+      });
+    } catch (err) {
+      // CBE is best-effort — never block the patient reply path.
+      console.warn("[sessions/message] CBE plan failed", {
+        sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      behaviourPlan = null;
+    }
+  }
+
   let replyMeta: Awaited<ReturnType<typeof generatePatientReplyDetailed>>;
   try {
-    replyMeta = await generatePatientReplyDetailed({
-      avatar: resolved,
-      history: (history ?? []) as Pick<SessionMessage, "role" | "content">[],
-      userMessage: message,
-    });
+    // Guaranteed silence / interruption stall when the engine short-circuits.
+    if (behaviourPlan?.directReply?.trim()) {
+      replyMeta = {
+        text: behaviourPlan.directReply.trim(),
+        aiSource: "cbe_direct",
+      };
+      console.info("[sessions/message] cbe_direct_reply", {
+        sessionId,
+        primary: behaviourPlan.primary,
+        gate: behaviourPlan.disclosureGate,
+      });
+    } else {
+      replyMeta = await generatePatientReplyDetailed({
+        avatar: resolved,
+        history: historyRows,
+        userMessage: message,
+        behaviourReinforcement: behaviourPlan?.promptBlock ?? null,
+      });
+    }
   } catch (err) {
     console.error("[sessions/message] patient reply generation failed", {
       sessionId,
@@ -125,6 +178,9 @@ export async function POST(request: Request, { params }: Params) {
     aiSource: replyMeta.aiSource,
     aiModel: replyMeta.model ?? null,
     errorKind: replyMeta.errorKind ?? null,
+    cbePrimary: behaviourPlan?.primary ?? null,
+    cbeGate: behaviourPlan?.disclosureGate ?? null,
+    cbeRapport: behaviourPlan?.rapport ?? null,
   });
 
   // Prefer service role; fall back to authenticated client. RPC bodies enforce
@@ -163,6 +219,11 @@ export async function POST(request: Request, { params }: Params) {
       aiSource: replyMeta.aiSource,
       aiModel: replyMeta.model ?? null,
       aiErrorKind: replyMeta.errorKind ?? null,
+      // Mission 7 CBE — additive; never clinical ground truth for the trainee UI.
+      cbeEnabled: Boolean(behaviourPlan),
+      cbePrimary: behaviourPlan?.primary ?? null,
+      cbeDisclosureGate: behaviourPlan?.disclosureGate ?? null,
+      cbeRapport: behaviourPlan?.rapport ?? null,
     },
     {
       headers: {
@@ -170,6 +231,9 @@ export async function POST(request: Request, { params }: Params) {
         ...(replyMeta.model ? { "X-AI-Model": replyMeta.model } : {}),
         ...(replyMeta.errorKind
           ? { "X-AI-Error-Kind": replyMeta.errorKind }
+          : {}),
+        ...(behaviourPlan?.primary
+          ? { "X-CBE-Primary": behaviourPlan.primary }
           : {}),
       },
     },

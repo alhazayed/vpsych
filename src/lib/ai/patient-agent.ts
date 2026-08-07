@@ -25,7 +25,7 @@ const DEFAULT_FALLBACK_REPLIES = [
 
 export type PatientReplyResult = {
   text: string;
-  /** gpt | gateway | persona_fallback — always set; never omit on fallback. */
+  /** gpt | gateway | persona_fallback | cbe_direct — always set; never omit on fallback. */
   aiSource: AiSource;
   model?: string;
   /** Present when a model path failed before the returned source. */
@@ -97,8 +97,14 @@ export async function generatePatientReplyDetailed(params: {
   >;
   history: Pick<SessionMessage, "role" | "content">[];
   userMessage: string;
+  /**
+   * Optional Conversation Behaviour Engine turn brief (Mission 7).
+   * Merged into per-turn reinforcement so the patient does not instantly
+   * over-disclose. Never persisted on the user message row.
+   */
+  behaviourReinforcement?: string | null;
 }): Promise<PatientReplyResult> {
-  const { avatar, history, userMessage } = params;
+  const { avatar, history, userMessage, behaviourReinforcement } = params;
   const fallbacks =
     avatar.fallback_replies?.length > 0
       ? avatar.fallback_replies
@@ -134,10 +140,16 @@ export async function generatePatientReplyDetailed(params: {
       content: m.content,
     }));
 
-  // Per-turn reinforcement is appended to the therapist turn (not stored).
-  const reinforced = avatar.per_turn_reinforcement
-    ? `${userMessage}\n\n${avatar.per_turn_reinforcement}`
-    : userMessage;
+  // Per-turn reinforcement (+ optional CBE block) is appended to the therapist
+  // turn only — never stored on session_messages.
+  const reinforcementParts = [
+    avatar.per_turn_reinforcement?.trim(),
+    behaviourReinforcement?.trim(),
+  ].filter(Boolean);
+  const reinforced =
+    reinforcementParts.length > 0
+      ? `${userMessage}\n\n${reinforcementParts.join("\n\n")}`
+      : userMessage;
 
   const viaGateway = async (
     priorErrorKind?: OpenAIErrorKind,
