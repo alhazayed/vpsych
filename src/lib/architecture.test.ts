@@ -177,4 +177,18 @@ describe("architecture invariants", () => {
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
   });
+
+  it("Mission 8 adaptation is best-effort on the message route", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const barrel = readFileSync(join(root, "lib/adaptation/index.ts"), "utf8");
+    expect(message).toMatch(/processTherapistTurn/);
+    expect(message).toMatch(/adaptationBlock/);
+    expect(message).toMatch(/void saveAdaptationState/);
+    expect(barrel).toMatch(/export \* from|from "@\/lib\/adaptation\/engine"/);
+    expect(barrel).toMatch(/rapport/);
+    expect(barrel).toMatch(/trust/);
+  });
 });
