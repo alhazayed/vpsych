@@ -131,12 +131,23 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | VAL-03 | High | Criterion validity / OSCE co-validation absent | Intentional null until study |
 | CI-S05 | High | Assessment reliability harness still `[v1.1]` | Stage 8 inter-rater store is complementary, not a full calibration harness |
 
+## Supervisor debt (Stage 9)
+
+| ID | Severity | Item | Notes |
+|----|----------|------|-------|
+| SUP-01 | Low | Persist supervisor bundles | Ephemeral memory; see `docs/stage9/TECHNICAL_DEBT.md` |
+| SUP-02 | Medium | Arabic therapist-process heuristics | EN-biased markers |
+| SUP-03 | Medium | Durable multi-instance portfolio | Process memory today |
+| SUP-04 | High (claims) | Validated competency instruments | Do not claim validation |
+| SUP-05 | Low | Admin cross-trainee supervision picker | Catalogue-only admin UI today |
+
 ## Duplicate logic
 
 | Item | Notes |
 |------|-------|
 | Instructor preset heuristic grader vs assessment `weightedOverall` | Different purposes — keep separate; do not merge |
 | Education domain scores vs ACE CompetencyId EMAs | Education aggregates ACE — ACE remains SSOT for persistence |
+| Supervisor therapist skills vs Education domains | Supervisor evaluates process skills; Education owns curriculum domains — do not merge |
 | Historical cert docs vs Omega package | Prefer Omega + RC1 for current truth |
 
 ## v1.1 roadmap pointer

@@ -9,6 +9,7 @@ import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
+import { runSupervisorAfterAssessment } from "@/lib/supervisor";
 import { runValidationAfterAssessment } from "@/lib/validation";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
@@ -221,6 +222,24 @@ export async function POST(_request: Request, { params }: Params) {
     console.warn("[sessions/end] validation soft-fail:", validation.error);
   }
 
+  // Stage 9 Supervisor AI — evaluates therapist only; soft-fail; never touches patient mind.
+  const supervisor = await runSupervisorAfterAssessment(supabase, {
+    userId: user.id,
+    sessionId,
+    overall: assessment.scores.overall,
+    items: assessment.scores.items,
+    messages: (messages ?? []) as Array<{ role: string; content: string }>,
+    language: assessment.language ?? resolved.locale,
+    narrative,
+    diagnosisSlug: typed.clinical_snapshot?.primary_diagnosis?.slug ?? null,
+    clinicalSnapshot: typed.clinical_snapshot ?? null,
+    educationBundle: education.bundle,
+    validationRun: validation.run,
+  });
+  if (!supervisor.ok) {
+    console.warn("[sessions/end] supervisor soft-fail:", supervisor.error);
+  }
+
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
   const memoryWriter = createServiceClient() ?? supabase;
   const patientMemory = await runPatientMemoryAfterSession(memoryWriter, {
@@ -294,12 +313,14 @@ export async function POST(_request: Request, { params }: Params) {
         ledgerId,
         assessment,
         education,
+        supervisor,
       }),
       {
         headers: educationEndHeaders(
           assessment,
           ledgerId,
           validation.run?.id ?? null,
+          supervisor.bundle?.session_id ?? null,
         ),
       },
     );
@@ -370,27 +391,31 @@ export async function POST(_request: Request, { params }: Params) {
       ledgerId,
       assessment,
       education,
+      supervisor,
     }),
     {
       headers: educationEndHeaders(
         assessment,
         ledgerId,
         validation.run?.id ?? null,
+        supervisor.bundle?.session_id ?? null,
       ),
     },
   );
 }
 
-/** Additive education + ACE summary — never includes admin-only report body. */
+/** Additive education + ACE + supervisor summary — never includes admin-only report body. */
 function educationEndPayload(opts: {
   reportId: string | null | undefined;
   ledgerId: string | null;
   assessment: Awaited<ReturnType<typeof assessSession>>;
   education: Awaited<ReturnType<typeof runEducationAfterAssessment>>;
+  supervisor: Awaited<ReturnType<typeof runSupervisorAfterAssessment>>;
 }) {
-  const { assessment, education, reportId, ledgerId } = opts;
+  const { assessment, education, supervisor, reportId, ledgerId } = opts;
   const ace = education.ace;
   const bundle = education.bundle;
+  const sup = supervisor.bundle;
   return {
     ok: true as const,
     reportId,
@@ -419,6 +444,24 @@ function educationEndPayload(opts: {
           regression: education.longitudinal?.regression_detected ?? null,
         }
       : null,
+    supervisor: sup
+      ? {
+          version: sup.version,
+          band: sup.feedback.primary.band,
+          overallLevel: sup.competencies.overall_level,
+          topRecommendations: sup.recommendations.slice(0, 5).map((r) => r.title),
+          strengths: sup.expert_review.session_review.strengths.slice(0, 5),
+          missedOpportunities:
+            sup.expert_review.session_review.missed_opportunities.slice(0, 5),
+          modalities: sup.expert_review.modalities_observed
+            .filter((m) => m.modality !== "unknown")
+            .slice(0, 3)
+            .map((m) => m.modality),
+          certificationProgress: sup.certification.progress_pct,
+          boardReady: sup.certification.board_ready,
+          reflectionQuestions: sup.reflective.reflection_questions.slice(0, 3),
+        }
+      : null,
   };
 }
 
@@ -426,6 +469,7 @@ function educationEndHeaders(
   assessment: Awaited<ReturnType<typeof assessSession>>,
   ledgerId: string | null,
   validationRunId: string | null = null,
+  supervisorSessionId: string | null = null,
 ): Record<string, string> {
   return {
     "X-AI-Source": assessment.aiSource,
@@ -436,5 +480,8 @@ function educationEndHeaders(
     ...(ledgerId ? { "X-Quality-Ledger-Id": ledgerId } : {}),
     // Validation reports remain admin-only; id is an observability breadcrumb.
     ...(validationRunId ? { "X-Validation-Run-Id": validationRunId } : {}),
+    ...(supervisorSessionId
+      ? { "X-Supervisor-Session-Id": supervisorSessionId }
+      : {}),
   };
 }

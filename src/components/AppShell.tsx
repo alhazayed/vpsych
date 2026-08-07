@@ -54,6 +54,12 @@ function therapistNav(
       icon: "account_tree",
       match: (p) => p.startsWith("/learning/graph"),
     },
+    {
+      href: "/learning/supervisor",
+      label: t("supervisorAi"),
+      icon: "psychology",
+      match: (p) => p.startsWith("/learning/supervisor"),
+    },
   ];
 }
 
@@ -118,6 +124,12 @@ function adminNav(t: (key: string) => string): NavItem[] {
       label: t("researchValidation"),
       icon: "science",
       match: (p) => p.startsWith("/admin/research"),
+    },
+    {
+      href: "/admin/supervisor",
+      label: t("supervisorAi"),
+      icon: "supervisor_account",
+      match: (p) => p.startsWith("/admin/supervisor"),
     },
   ];
 }
@@ -202,10 +214,14 @@ export function AppShell({
       return tShell("pageTitle.adaptiveCurriculum");
     if (pathname.startsWith("/admin/graph"))
       return tShell("pageTitle.competencyGraph");
+    if (pathname.startsWith("/learning/supervisor"))
+      return tShell("pageTitle.supervisorAi");
     if (pathname.startsWith("/learning/graph"))
       return tShell("pageTitle.competencyGraph");
     if (pathname.startsWith("/learning"))
       return tShell("pageTitle.adaptiveLearning");
+    if (pathname.startsWith("/admin/supervisor"))
+      return tShell("pageTitle.supervisorAi");
     if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
