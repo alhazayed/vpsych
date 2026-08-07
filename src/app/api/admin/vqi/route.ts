@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   VQI_VERSION,
   buildVqiDashboard,
@@ -42,6 +43,13 @@ export async function GET(request: Request) {
     resourceType: "vpsych_quality_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-vqi:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const url = new URL(request.url);
   const format = url.searchParams.get("format") ?? "dashboard";
@@ -176,6 +184,13 @@ export async function POST(request: Request) {
     resourceType: "vpsych_quality_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-vqi:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   let body: {
     action?: string;

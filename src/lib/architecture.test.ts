@@ -723,4 +723,87 @@ describe("architecture invariants", () => {
     expect(() => readFileSync(join(docs, "OBSERVABILITY.md"), "utf8")).not.toThrow();
     expect(() => readFileSync(join(docs, "API_GUIDE.md"), "utf8")).not.toThrow();
   });
+
+  it("Stage 12 rate-limits scientific admin dashboards and OpenAI health", () => {
+    const routes = [
+      "app/api/admin/ale/route.ts",
+      "app/api/admin/avi/route.ts",
+      "app/api/admin/cfi/route.ts",
+      "app/api/admin/cge/route.ts",
+      "app/api/admin/eri/route.ts",
+      "app/api/admin/rrs/route.ts",
+      "app/api/admin/vqi/route.ts",
+      "app/api/admin/quality-ledger/route.ts",
+      "app/api/admin/ace/learners/route.ts",
+      "app/api/health/openai/route.ts",
+      "app/api/admin/ops/metrics/route.ts",
+    ];
+    for (const rel of routes) {
+      const src = readFileSync(join(root, rel), "utf8");
+      expect(src, rel).toMatch(/rateLimit/);
+      expect(src, rel).toMatch(/requireApiAdmin/);
+    }
+  });
+
+  it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
+    const service = readFileSync(
+      join(root, "lib/voice/elevenlabs/service.ts"),
+      "utf8",
+    );
+    expect(service).toMatch(/AbortSignal\.timeout/);
+    expect(service).toMatch(/elevenLabsTimeoutMs/);
+    expect(service).toMatch(/TTS_TIMEOUT/);
+  });
+
+  it("Stage 12 correlates STT → message → TTS with X-Request-Id", () => {
+    const stt = readFileSync(
+      join(root, "app/api/voice/transcribe/route.ts"),
+      "utf8",
+    );
+    const msg = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const tts = readFileSync(join(root, "app/api/voice/tts/route.ts"), "utf8");
+    for (const src of [stt, msg, tts]) {
+      expect(src).toMatch(/resolveRequestId/);
+      expect(src).toMatch(/requestIdHeaders/);
+    }
+  });
+
+  it("Stage 12 production certification docs exist and ownership is preserved", () => {
+    const docs = join(process.cwd(), "docs");
+    for (const name of [
+      "PRODUCTION_READINESS.md",
+      "SECURITY_AUDIT.md",
+      "DEPLOYMENT_GUIDE.md",
+      "DISASTER_RECOVERY.md",
+      "INCIDENT_RESPONSE.md",
+      "PERFORMANCE_REPORT.md",
+      "RELEASE_CERTIFICATION.md",
+      "OPERATIONS_RUNBOOK.md",
+    ]) {
+      expect(() => readFileSync(join(docs, name), "utf8")).not.toThrow();
+    }
+    expect(() =>
+      readFileSync(join(process.cwd(), "CHANGELOG.md"), "utf8"),
+    ).not.toThrow();
+
+    const state = readFileSync(join(docs, "ARCHITECTURE_STATE.md"), "utf8");
+    expect(state).toMatch(/Stage 12/);
+    expect(state).toMatch(/Production Release Certification/);
+
+    const ownership = readFileSync(
+      join(docs, "runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Forbidden ownership claims/);
+    // Stage 12 may only harden cross-cutting controls — never own cognition.
+    expect(ownership).toMatch(
+      /Stage 12 \*\*does not\*\* own PatientDecisionPlan/,
+    );
+    expect(ownership).toMatch(
+      /rate limits, timeouts, correlation, env checks, CI gates/,
+    );
+  });
 });

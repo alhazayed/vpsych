@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   ALE_VERSION,
   ALE_WEIGHT_MATRIX,
@@ -20,6 +21,13 @@ export async function GET(request: Request) {
     resourceType: "adaptive_learning_effectiveness_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-ale:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const { data, error } = await auth.supabase
     .from("adaptive_learning_effectiveness_scores")
@@ -84,6 +92,13 @@ export async function POST(request: Request) {
     resourceType: "adaptive_learning_effectiveness_scores",
   });
   if (!auth.ok) return auth.response;
+  const limited = await rateLimit(`admin-ale:${auth.user.id}`, 60, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   let persist = false;
   try {

@@ -1,6 +1,6 @@
 {
   "name": "vpsych",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:migrations": "node scripts/verify-migration-parity.mjs"
+    "test:migrations": "node scripts/verify-migration-parity.mjs",
+    "audit:deps": "npm audit --omit=dev --audit-level=high",
+    "test:perf-smoke": "node scripts/perf-smoke.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.24",

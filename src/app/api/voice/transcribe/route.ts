@@ -6,6 +6,7 @@ import {
   OpenAIServiceError,
 } from "@/lib/ai/openai";
 import { rateLimit } from "@/lib/rate-limit";
+import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
   audioTooLargeError,
   audioTypeNotAllowedError,
@@ -31,19 +32,29 @@ import { sanitizeProviderError } from "@/lib/safe-client-error";
  *     - { transcript, provider: "openai", model, locale, language }
  */
 export async function POST(request: Request) {
+  const requestId = resolveRequestId(request);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: requestIdHeaders(requestId) },
+    );
   }
 
   const limited = await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(limited.retryAfterSec),
+          ...requestIdHeaders(requestId),
+        },
+      },
     );
   }
 
@@ -102,7 +113,7 @@ export async function POST(request: Request) {
       language,
     };
 
-    return NextResponse.json(body);
+    return NextResponse.json(body, { headers: requestIdHeaders(requestId) });
   } catch (error) {
     console.warn(
       "[stt]",
@@ -128,7 +139,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: mapped.error, code: mapped.code },
-      { status: mapped.status },
+      { status: mapped.status, headers: requestIdHeaders(requestId) },
     );
   }
 }

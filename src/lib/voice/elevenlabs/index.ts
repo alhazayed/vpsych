@@ -3,6 +3,7 @@ export {
   resetElevenLabsCache,
   elevenLabsCacheSize,
   isValidElevenLabsApiKey,
+  elevenLabsTimeoutMs,
   ElevenLabsError,
   type ElevenLabsSynthesizeParams,
   type ElevenLabsSynthesizeResult,

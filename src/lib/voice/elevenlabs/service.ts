@@ -74,9 +74,16 @@ type CacheEntry = {
 
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_CACHE_MAX_ENTRIES = 64;
+/** Upstream TTS hard timeout (Stage 12 / RT-03). */
+const DEFAULT_TTS_TIMEOUT_MS = 30_000;
 
 function cacheTtlMs() {
   return Number(process.env.ELEVENLABS_CACHE_TTL_MS ?? DEFAULT_CACHE_TTL_MS);
+}
+
+export function elevenLabsTimeoutMs(): number {
+  const n = Number(process.env.ELEVENLABS_TIMEOUT_MS ?? DEFAULT_TTS_TIMEOUT_MS);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_TTS_TIMEOUT_MS;
 }
 
 function cacheMaxEntries() {
@@ -316,19 +323,35 @@ export const elevenLabsService = {
         ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
         : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-      const res = await fetch(path, {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey(),
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-        },
-        body: JSON.stringify({
-          text,
-          model_id: model,
-          voice_settings: voiceSettings,
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch(path, {
+          method: "POST",
+          headers: {
+            "xi-api-key": apiKey(),
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+          },
+          body: JSON.stringify({
+            text,
+            model_id: model,
+            voice_settings: voiceSettings,
+          }),
+          // Abort hung upstream TTS (RT-03 / RT-S11-04).
+          signal: AbortSignal.timeout(elevenLabsTimeoutMs()),
+        });
+      } catch (err) {
+        const name = err instanceof Error ? err.name : "";
+        const msg = err instanceof Error ? err.message : String(err);
+        if (name === "TimeoutError" || name === "AbortError" || /aborted|timeout/i.test(msg)) {
+          throw new ElevenLabsError("ElevenLabs TTS timed out", {
+            code: "TTS_TIMEOUT",
+            status: 504,
+            detail: `timeout_ms=${elevenLabsTimeoutMs()} voice=${voiceId}`,
+          });
+        }
+        throw err;
+      }
 
       if (res.ok && res.body) {
         if (i > 0) {

@@ -1,7 +1,8 @@
-# Technical Debt — Mission Omega
+# Technical Debt — Version 1.0 RC1 (Stage 12)
 
 **Date:** 2026-08-07  
-**Rule:** Debt is inventoried here for v1.1 — not fixed unless it blocks production integrity.
+**Rule:** Debt is inventoried here for v1.1 — not fixed unless it blocks production integrity.  
+**Stage 12 delta:** see [`stage12/TECHNICAL_DEBT.md`](./stage12/TECHNICAL_DEBT.md).
 
 > **Stage 5 clinical-intelligence gaps** are catalogued under  
 > [`clinical-intelligence/`](./clinical-intelligence/) (IDs `CI-*`) and sequenced in  
@@ -27,7 +28,7 @@
 | ARCH-S2-02 | Medium | Emotion + Adaptation both upsert `case_memory` | Atomic namespaced patch helper |
 | ARCH-S2-03 | Medium | Dual TRM flags (`THERAPY_ROOM_MODE` vs `FEATURE_THERAPY_ROOM`) | Single flag matrix in `features.ts` |
 | ARCH-S2-04 | Medium | Case ↔ Template ↔ Preset mutual imports | Extract `lib/case-contracts` |
-| ARCH-S2-05 | Low | Some admin scientific routes lack rate limits | Align to 30–60/h |
+| ARCH-S2-05 | Low | Some admin scientific routes lack rate limits | **Closed (Stage 12)** — 60/h on ALE/AVI/CFI/CGE/ERI/RRS/VQI/QL/ACE learners; 30/h OpenAI health |
 | ARCH-S2-06 | Low | Message route is composition root inline | Optional `lib/session-turn` orchestrator (no behaviour change) |
 | ARCH-S2-07 | Medium | Migration ledger / CLAUDE counts vs 66 files | Refresh ledger after next DB parity run |
 
@@ -51,11 +52,11 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | ID | Severity | Item |
 |----|----------|------|
 | RT-01 | High | Dual `case_memory` writers + void adaptation save |
-| RT-03 | High | ElevenLabs fetch without timeout/AbortSignal |
+| RT-03 | High | ~~ElevenLabs fetch without timeout/AbortSignal~~ **Closed (Stage 12)** — `AbortSignal.timeout` / `ELEVENLABS_TIMEOUT_MS` |
 | RT-04 | Medium | Message god-route (no `lib/session-turn` yet) |
 | RT-05 | High | Unbounded prompt token growth |
 | RT-06 | Medium | `therapistInterrupted` not sent by clients |
-| RT-12 | Medium | No APM / trace correlation across STT→message→TTS |
+| RT-12 | Medium | APM / trace correlation across STT→message→TTS — **Partial (Stage 12)** `X-Request-Id` shipped; vendor APM still open |
 
 ## Code residue
 
@@ -70,14 +71,14 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 
 ## Operational / security debt
 
-| Item | Severity |
-|------|----------|
-| Leaked-password protection disabled | Medium |
-| In-memory rate limit without Upstash (multi-instance) | Medium |
-| No Sentry/APM baseline | Medium |
-| DR drill not certified | Medium |
-| Audit credential vault churn | High for certification velocity |
-| Open PR sprawl (33) | Medium hygiene |
+| Item | Severity | Stage 12 notes |
+|------|----------|----------------|
+| Leaked-password protection disabled | Medium | Ops residual (SEC-S12-01) |
+| In-memory rate limit without Upstash (multi-instance) | Medium | Confirm Upstash in prod |
+| No Sentry/APM baseline | Medium | In-app `/api/admin/ops/metrics` shipped; vendor APM still open |
+| DR drill not certified | Medium | Procedures in `DISASTER_RECOVERY.md`; drill evidence open |
+| Audit credential vault churn | High for certification velocity | Credential Verification Gate still binding |
+| Open PR sprawl | Medium hygiene | Do not merge experimental engines during RC |
 
 ## Product / clinical debt
 
