@@ -58,18 +58,20 @@
 | `GET /api/admin/ops/cidp/weekly` | Admin | Weekly executive / clinical / security / research / educational / operations reports |
 | `GET /api/admin/ops/phase14` | Admin | Phase 14 GA gates · risk · lessons · evidence |
 | `GET /api/admin/ops/phase15` | Admin | Phase 15 final GA authorization package |
+| `GET /api/admin/ops/phase16` | Admin | Phase 16 execution evidence (Evidence Pending when missing) |
 | `GET /api/admin/ops/metrics` | Admin | Stage 12 ops snapshot |
 
 ## Status
 
-**CIDP:** GO · **GA:** NO-GO (see `GA_READINESS_REPORT.md` · `../stage15/GA_AUTHORIZATION.md` · RDL-032)
+**CIDP:** GO · **GA:** NO-GO (see `../stage16/GA_READINESS_DASHBOARD.md` · RDL-033)
 
-## Phase 14 / 15
+## Phase 14 / 15 / 16
 
 - Phase 14 pilot evidence: [`../stage14/README.md`](../stage14/README.md)  
-- Phase 15 Board GA review: [`../stage15/README.md`](../stage15/README.md) — **refused GA** pending DR/PITR/security/pilot/validation closures  
-- Living risk / lessons / clinical / education logs under `evidence/`
+- Phase 15 Board GA review: [`../stage15/README.md`](../stage15/README.md)  
+- Phase 16 execution: [`../stage16/README.md`](../stage16/README.md) — **never fabricates** missing evidence  
+- Living logs under `evidence/`
 
 ## Related decisions
 
-Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028…RDL-032).
+Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028…RDL-033).

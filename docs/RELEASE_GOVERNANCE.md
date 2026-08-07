@@ -30,8 +30,9 @@ Before auth-gated production certification: therapist and admin audit logins mus
 
 - **CIDP** may be authorized at `1.0.0-rc.1` with published residuals.  
 - **Phase 14** runs the Global Institutional Pilot evidence program on CIDP (`docs/stage14/`, `evaluateGaReadiness()`).  
-- **Phase 15** is the final Board GA authorization review (`docs/stage15/`, `evaluatePhase15Authorization()`).  
-- **GA (`v1.0.0`)** requires all Phase 15 Board gates PASS plus an authorizing RDL row. RDL-032 records the first Phase 15 review as **NO-GO**.
+- **Phase 15** is the Board GA authorization review (`docs/stage15/`, `evaluatePhase15Authorization()`).  
+- **Phase 16** executes CIDP evidence collection (`docs/stage16/`, `evaluatePhase16GaGates()`). Missing evidence ⇒ **Evidence Pending** — never fabricated.  
+- **GA (`v1.0.0`)** requires all Phase 16 gates PASS with verified evidence plus an authorizing RDL row. RDL-032/033 record **NO-GO**.
 
 ## Related
 

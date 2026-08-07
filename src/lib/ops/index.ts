@@ -133,4 +133,63 @@ export type {
   Phase15ReadinessPackage,
 } from "./phase15-readiness";
 
-export { PHASE15_PROGRAM_ID } from "./versions";
+export {
+  EVIDENCE_PENDING,
+  observed,
+  pending,
+  observedNumberOrPending,
+  displayEvidence,
+} from "./phase16-evidence-state";
+export type { EvidenceState, EvidenceValue } from "./phase16-evidence-state";
+
+export {
+  buildInstitutionPilotDashboard,
+  INSTITUTION_TYPES,
+} from "./phase16-institutions";
+export type {
+  InstitutionPilotDashboard,
+  InstitutionPilotProfile,
+  InstitutionType,
+} from "./phase16-institutions";
+
+export {
+  buildPhase16Dashboards,
+  buildClinicalEvidenceDashboard,
+  buildEducationEvidenceDashboard,
+  buildResearchEvidenceDashboard,
+  buildSecurityEvidenceDashboard,
+  buildOperationsEvidenceDashboard,
+  buildExecutiveEvidenceDashboard,
+} from "./phase16-dashboards";
+export type {
+  DomainDashboard,
+  Phase16DashboardBundle,
+  Phase16DashboardInput,
+} from "./phase16-dashboards";
+
+export {
+  evaluatePhase16GaGates,
+  PHASE16_CERT_ID,
+  PHASE16_GA_GATES,
+} from "./phase16-ga-gates";
+export type {
+  Phase16GaEvaluation,
+  Phase16GaGate,
+  Phase16GaGateId,
+  Phase16GaGateInput,
+} from "./phase16-ga-gates";
+
+export { buildPhase16ExecutiveReport } from "./phase16-reports";
+export type {
+  Phase16ExecutiveReport,
+  Phase16ReportInput,
+  Phase16ReportKind,
+} from "./phase16-reports";
+
+export { buildPhase16Execution } from "./phase16-execution";
+export type {
+  Phase16ExecutionInput,
+  Phase16ExecutionPackage,
+} from "./phase16-execution";
+
+export { PHASE15_PROGRAM_ID, PHASE16_PROGRAM_ID } from "./versions";
