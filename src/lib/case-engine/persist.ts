@@ -763,6 +763,10 @@ export async function createCaseForSession(
     legacyClinicalCore: opts.avatar.clinical_core as ClinicalCore | null,
     voiceProfileId: opts.avatar.voice_profile_id,
     createdBy: opts.therapistId,
+    avatarHumanPersonality: opts.avatar.human_personality ?? null,
+    avatarSlug: opts.avatar.slug ?? null,
+    avatarName: opts.avatar.name,
+    avatarDisorder: opts.avatar.disorder,
   });
 
   if (!generated.ok) {

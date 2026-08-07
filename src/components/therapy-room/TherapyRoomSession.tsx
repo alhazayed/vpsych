@@ -19,7 +19,6 @@ import {
   createConversationTelemetry,
   createImmersionTracker,
   DEFAULT_THERAPY_ROOM_THEME,
-  derivePatientBehavior,
   HANDS_FREE_PERF_BUDGETS,
   shouldPatientInterruptTherapist,
   startBargeInMonitor,
@@ -37,6 +36,12 @@ import {
   type TherapyRoomSettings,
   type VadController,
 } from "@/lib/therapy-room";
+import {
+  applyAnimationState,
+  createAnimationScheduler,
+  deriveNonverbalBehavior,
+  type AnimationScheduler,
+} from "@/lib/nbe";
 import {
   playPatientSpeech,
   resolvePipelineLocale,
@@ -105,15 +110,19 @@ export function TherapyRoomSession({
     ambienceVolume: 0.02,
   }));
 
-  const [behavior, setBehavior] = useState<PatientBehaviorState>(() =>
-    derivePatientBehavior({
+  const [behavior, setBehavior] = useState<PatientBehaviorState>(() => {
+    const packet = deriveNonverbalBehavior({
       disorderSlug,
       phase: "idle",
       seed: `${session.id}:0`,
-    }),
-  );
+    });
+    return packet.behavior;
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const nbeSchedulerRef = useRef<AnimationScheduler | null>(null);
+  const nbeStartedAtRef = useRef<number>(0);
+  const behaviorBaseRef = useRef<PatientBehaviorState>(behavior);
   const vadRef = useRef<VadController | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
   const ambienceRef = useRef<AmbienceController | null>(null);
@@ -165,16 +174,66 @@ export function TherapyRoomSession({
 
   const setPresence = useCallback(
     (presencePhase: PatientBehaviorState["phase"], seedExtra = "") => {
-      const next = derivePatientBehavior({
+      const packet = deriveNonverbalBehavior({
         disorderSlug,
         phase: presencePhase,
         seed: `${session.id}:${turnIndexRef.current}:${seedExtra}`,
       });
-      setBehavior(next);
-      return next;
+      behaviorBaseRef.current = packet.behavior;
+      nbeSchedulerRef.current = createAnimationScheduler(packet.timeline);
+      nbeStartedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      const framed = applyAnimationState(
+        packet.behavior,
+        nbeSchedulerRef.current.tick(0),
+      );
+      setBehavior(framed);
+      return framed;
     },
     [disorderSlug, session.id],
   );
+
+  // Drive Nonverbal Behaviour Engine pulses — emotion timeline, anti-repetition.
+  useEffect(() => {
+    if (!nbeSchedulerRef.current) {
+      const packet = deriveNonverbalBehavior({
+        disorderSlug,
+        phase: behaviorBaseRef.current.phase,
+        seed: `${session.id}:boot`,
+      });
+      behaviorBaseRef.current = packet.behavior;
+      nbeSchedulerRef.current = createAnimationScheduler(packet.timeline);
+      nbeStartedAtRef.current = performance.now();
+    }
+
+    let raf = 0;
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+    const loop = () => {
+      const scheduler = nbeSchedulerRef.current;
+      if (scheduler && !reduced) {
+        const elapsed = performance.now() - nbeStartedAtRef.current;
+        const state = scheduler.tick(elapsed);
+        setBehavior((prev) => {
+          const base = behaviorBaseRef.current;
+          const next = applyAnimationState(base, state);
+          if (
+            prev.animationClasses?.join(" ") ===
+              next.animationClasses?.join(" ") &&
+            prev.activeCues.join() === next.activeCues.join()
+          ) {
+            return prev;
+          }
+          return { ...next, phase: base.phase, affect: base.affect };
+        });
+      }
+      raf = window.requestAnimationFrame(loop);
+    };
+    raf = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(raf);
+  }, [disorderSlug, session.id]);
 
   const cancelTurnWork = useCallback(() => {
     turnAbortRef.current?.abort();

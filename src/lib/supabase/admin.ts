@@ -12,6 +12,8 @@ import {
  * - `session_reports` privileged insert/update in `POST /api/sessions/[id]/end`
  * - Optional writer for `insert_system_message` / `insert_assistant_message`
  *   (ownership checks still run in the SECURITY DEFINER RPCs)
+ * - Optional writer for Mission 4 `patient_long_term_memory` upsert on session end
+ *   (falls back to the authenticated client; RLS enforces therapist ownership)
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

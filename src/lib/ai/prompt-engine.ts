@@ -2,6 +2,11 @@ import type {
   AvatarPersonality,
   ClinicalCore,
 } from "@/lib/types";
+import type { HumanPersonalityProfile } from "@/lib/personality-engine";
+import {
+  formatHumanPersonalityForPrompt,
+  formatHumanPersonalityPerTurnCue,
+} from "@/lib/personality-engine";
 
 export type PromptSessionContext = {
   /** BCP-47 locale for this session (e.g. en-US, ar-JO). */
@@ -19,6 +24,16 @@ export type PromptFidelityHints = {
    * assembling Module 1; never leave the model with speech-pace alone.
    */
   therapy_process_cue?: string;
+  /**
+   * Mission 8 — Patient Adaptation Engine expression block (rapport / trust /
+   * withdrawal / anger / disclosure readiness for THIS therapist turn).
+   */
+  adaptation_block?: string;
+  /**
+   * Mission 10 Humanization Layer — per-turn micro-behaviours (hesitation,
+   * false starts, silence, etc.). Optional; injected when the engine runs.
+   */
+  humanization_cue?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -27,6 +42,11 @@ export type PromptAssemblyInput = {
   session: PromptSessionContext;
   /** Optional Wave 3 HCF cues from case snapshot (never invent if absent). */
   fidelity?: PromptFidelityHints;
+  /**
+   * Human Personality Engine profile — structured traits injected every turn.
+   * Independent of GPT; when absent, Module 2b is omitted (legacy avatars).
+   */
+  human_personality?: HumanPersonalityProfile | null;
 };
 
 type TemplateScope = Record<string, unknown>;
@@ -149,6 +169,10 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 
 {{fidelity.therapy_process_cue}}
 
+{{fidelity.adaptation_block}}
+
+{{fidelity.humanization_cue}}
+
 Conversational naturalness (mandatory):
 - Sound like a real person in a psychiatric interview — not a chatbot, textbook,
   or case vignette. Prefer short, uneven turns over polished paragraphs.
@@ -216,6 +240,11 @@ Turn length: {{personality.speech.turn_length}}
 This identity is authored natively for this language. It is NOT a translated
 version of any other personality. Do not import names, places, institutions,
 or references from another locale.
+
+──────────────────────────────────────────────
+MODULE 2b — HUMAN PERSONALITY  (trait engine; independent of GPT authorship)
+──────────────────────────────────────────────
+{{human_personality_block}}
 
 ──────────────────────────────────────────────
 MODULE 3 — LANGUAGE  ({{session.locale}} · {{personality.dialect}})
@@ -310,10 +339,14 @@ when a real patient would. One disclosure layer per turn.)
  * Assemble Claude's multilingual patient-avatar system prompt (Modules 1–4).
  */
 export function assembleSystemPrompt(input: PromptAssemblyInput): string {
+  const humanBlock = input.human_personality
+    ? formatHumanPersonalityForPrompt(input.human_personality)
+    : "HUMAN PERSONALITY PROFILE: not authored for this avatar — stay consistent with Module 2 identity and speech only.";
   const scope: TemplateScope = {
     clinical_core: input.clinical_core,
     personality: input.personality,
     session: input.session,
+    human_personality_block: humanBlock,
     fidelity: {
       speech_behavior_cue:
         input.fidelity?.speech_behavior_cue?.trim() ||
@@ -330,6 +363,8 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- No symptom lists, no DSM self-lecture, no chatbot empathy.",
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
+      adaptation_block: input.fidelity?.adaptation_block?.trim() || "",
+      humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };
   return renderPromptTemplate(SYSTEM_PROMPT_TEMPLATE, scope);
@@ -348,10 +383,13 @@ export function assemblePerTurnReinforcement(
     session: input.session,
   };
   const fromTemplate = renderPromptTemplate(PER_TURN_TEMPLATE, scope);
-  if (custom && fromTemplate) {
-    return `${fromTemplate}\n(${custom})`;
-  }
-  return custom || fromTemplate;
+  const traitCue = input.human_personality
+    ? formatHumanPersonalityPerTurnCue(input.human_personality)
+    : "";
+  const parts = [fromTemplate];
+  if (custom) parts.push(`(${custom})`);
+  if (traitCue) parts.push(`(${traitCue})`);
+  return parts.filter(Boolean).join("\n");
 }
 
 /**

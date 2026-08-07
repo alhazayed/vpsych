@@ -27,6 +27,16 @@ export type PipelineTurnResult = {
   assistantMessage: SessionMessage;
   remainingSeconds?: number;
   locale: SessionSpeechLocale;
+  /** Mission 10 — additive Humanization / Voice Engine hints. */
+  voiceHints?: {
+    pause_before_ms?: number;
+    speech_rate?: number;
+    stability?: number;
+    style?: number;
+    speech_pace?: string;
+    speech_energy?: string;
+  } | null;
+  humanizationEnabled?: boolean;
 };
 
 export type SpeakHandlers = {
@@ -102,6 +112,8 @@ export async function submitConversationTurn(params: {
     assistantMessage?: SessionMessage;
     remainingSeconds?: number;
     locale?: string;
+    voiceHints?: PipelineTurnResult["voiceHints"];
+    humanizationEnabled?: boolean;
   };
 
   if (!res.ok) {
@@ -128,6 +140,8 @@ export async function submitConversationTurn(params: {
       assistantMessage: data.assistantMessage,
       remainingSeconds: data.remainingSeconds,
       locale: resolvePipelineLocale(data.locale),
+      voiceHints: data.voiceHints ?? null,
+      humanizationEnabled: Boolean(data.humanizationEnabled),
     },
   };
 }
@@ -146,6 +160,11 @@ export async function playPatientSpeech(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  emotion?: string | null;
+  stability?: number | null;
+  style?: number | null;
+  /** Mission 10 — thinking pause before first audio. */
+  pauseBeforeMs?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
   /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
@@ -155,6 +174,25 @@ export async function playPatientSpeech(params: {
   if (params.signal?.aborted) {
     handlers.onerror?.();
     return "interrupted";
+  }
+
+  const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
+  if (pauseMs > 0) {
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, pauseMs);
+      params.signal?.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+    if (params.signal?.aborted) {
+      handlers.onerror?.();
+      return "interrupted";
+    }
   }
 
   handlers.onstart?.();
@@ -169,6 +207,9 @@ export async function playPatientSpeech(params: {
     speechPace: params.speechPace,
     speechEnergy: params.speechEnergy,
     disorderSlug: params.disorderSlug,
+    emotion: params.emotion,
+    stability: params.stability,
+    style: params.style,
   });
 
   if (params.signal?.aborted) {
@@ -310,6 +351,7 @@ export async function runVoiceConversationTurn(params: {
   speechPace?: string | null;
   speechEnergy?: string | null;
   disorderSlug?: string | null;
+  emotion?: string | null;
   audioRef?: { current: HTMLAudioElement | null };
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
@@ -366,6 +408,7 @@ export async function runVoiceConversationTurn(params: {
   params.onMessages?.(turn.data.userMessage, turn.data.assistantMessage);
 
   if (params.voiceEnabled) {
+    const hints = turn.data.voiceHints;
     void playPatientSpeech({
       text: turn.data.assistantMessage.content,
       locale: params.locale,
@@ -373,9 +416,13 @@ export async function runVoiceConversationTurn(params: {
       voiceIdAr: params.voiceIdAr,
       voiceProfileId: params.voiceProfileId,
       avatarId: params.avatarId,
-      speechPace: params.speechPace,
-      speechEnergy: params.speechEnergy,
+      speechPace: hints?.speech_pace ?? params.speechPace,
+      speechEnergy: hints?.speech_energy ?? params.speechEnergy,
       disorderSlug: params.disorderSlug,
+      emotion: params.emotion,
+      stability: hints?.stability ?? null,
+      style: hints?.style ?? null,
+      pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
     });
