@@ -40,13 +40,14 @@ Request { message, therapistInterrupted? }
   → Load history / turnIndex
   → ★ Emotion (process → append expression block)
   → ★ Behaviour CBE (plan; may set directReply)
+  → ★ Clinical Intelligence DecisionPlan (façade; soft-fail)
   → ★ Humanization (prompt cues + voiceHints)   ← always before reply
   → Reply:
        ├─ cbe_direct → text + aiSource=cbe_direct
        └─ LLM Patient Agent → text + aiSource
   → Persistence: insert_assistant_message RPC (Hard)
-  → Telemetry: console.info + X-AI-* / X-CBE-* / X-Humanization headers
-  → Response JSON (reply, emotion?, cbe?, humanization?, voiceHints?)
+  → Telemetry: console.info + X-AI-* / X-CBE-* / X-CI-* / X-Humanization headers
+  → Response JSON (reply, emotion?, cbe?, decision*, humanization?, voiceHints?)
 ```
 
 ```mermaid

@@ -82,6 +82,9 @@ export function cfiInputFromSnapshot(
       teaching?.teaching_points?.some((t) => /culture|religion/i.test(t)),
     ),
     has_voice_profile: Boolean(opts?.has_voice_profile),
+    protective_factors_count: core.protective_factors?.length ?? 0,
+    has_mse: Boolean(core.mse),
+    has_formulation: Boolean(core.formulation),
     prompt_version:
       (meta.prompt_engine_version as string) ?? PROMPT_ENGINE_VERSION,
     model_version: opts?.model_version ?? null,

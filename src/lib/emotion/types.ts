@@ -62,6 +62,7 @@ export type TherapistIntervention =
   | "rupture_repair"
   | "safety_check"
   | "silence"
+  | "homework_review"
   | "other";
 
 export type EmotionMode =

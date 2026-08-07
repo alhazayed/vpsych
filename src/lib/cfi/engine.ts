@@ -368,6 +368,26 @@ function scoreRisk(input: CfiComputeInput): CfiDimensionScore {
 }
 
 function scoreProtective(input: CfiComputeInput): CfiDimensionScore {
+  const count = input.protective_factors_count ?? 0;
+  if (count >= 3) {
+    return dim(
+      "protective_factors",
+      92,
+      88,
+      ["protective_factors_modeled", `count=${count}`],
+      "Explicit protective factors present on clinical package/snapshot.",
+    );
+  }
+  if (count >= 1) {
+    return dim(
+      "protective_factors",
+      82,
+      75,
+      ["protective_factors_partial", `count=${count}`],
+      "Some protective factors modeled.",
+      ["Enrich protective_factors coverage on packages"],
+    );
+  }
   // Protective factors often live in randomized_context / social cues
   if (input.has_culture_cue || input.teaching_points_count > 0) {
     return dim(

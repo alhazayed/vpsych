@@ -39,6 +39,7 @@ This package is the **single source of truth** for future clinical-intelligence 
 | 08 | [`THERAPIST_SCORING_FRAMEWORK.md`](./THERAPIST_SCORING_FRAMEWORK.md) | Excellent / poor / unsafe interviewing |
 | 09 | [`CLINICAL_REALISM.md`](./CLINICAL_REALISM.md) | Measurable consistency & realism metrics |
 | 10 | [`PATIENT_EVOLUTION_MODEL.md`](./PATIENT_EVOLUTION_MODEL.md) | 10 / 25 / 50 / 100 session arcs |
+| 11 | [`STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](./STAGE_6_IMPLEMENTATION_BLUEPRINT.md) | Stage 6 implementation blueprint (architecture-first) |
 
 ---
 
@@ -73,17 +74,19 @@ Therapist scoring (08) + Realism metrics (09)  ← assess the TRAINEE / platform
 | Layer | Live today? | Primary owners |
 |-------|-------------|----------------|
 | Affect (dimensional) | Yes | Emotion Engine |
-| Alliance (rapport/trust/stance) | Yes (case-scoped) | Adaptation Engine |
+| Alliance (rapport/trust/stance) | Yes (+ dyad carry) | Adaptation Engine |
 | Turn behaviour / disclosure | Yes | CBE |
 | Traits / coping / attachment | Yes | Personality Engine |
 | Symptoms / diagnosis / risk | Yes | Case Engine |
 | Longitudinal facts | Yes (dyad LTM) | Patient Memory |
-| Structured beliefs / schemas / AT | **No** | Gap |
-| Modality-specific therapy state machines | **Thin strings only** | Gap |
-| Cross-session recovery arc enforcement | **No** | Gap |
+| Structured beliefs / schemas / AT | **Yes (Stage 6)** | Case Engine formulation |
+| Protective factors / runtime MSE | **Yes (Stage 6)** | Case Engine ClinicalCore |
+| TherapyResponseProfile | **Yes (Stage 6)** · FSMs still thin | Case Engine |
+| DecisionPlan façade | **Yes (Stage 6)** | CI + CBE/Emotion/Adaptation |
+| Cross-session recovery arc | **Partial (Stage 6)** | CI recovery helpers |
 | Patient instrument trajectories | **No** | Gap |
 
-See each document’s **Existing implementation** then **Gaps** then **Canonical design (future)**.
+See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for Stage 6 code map. Each document’s **Existing implementation** then **Gaps** then **Canonical design** remain the design SoT.
 
 ---
 
@@ -100,8 +103,8 @@ See each document’s **Existing implementation** then **Gaps** then **Canonical
 | One DSM mapping framework | Yes — 06 (extends Stage 3 coding map) |
 | One realism framework | Yes — 09 |
 | All gaps documented | Yes — every doc + roadmap update |
-| No implementation yet | Yes — docs only |
-| Implementation first, recommendations second | Yes |
+| No implementation yet | **Superseded by Stage 6** — see IMPLEMENTATION.md |
+| Implementation first, recommendations second | Yes (Stage 5); Stage 6 implements |
 
-**Release status:** Phase Complete · Needs Human Review  
-**Rollback:** docs-only.
+**Release status:** Stage 5 docs Complete · Stage 6 Implemented · Needs Human Review  
+**Rollback:** Stage 5 docs-only; Stage 6 additive code revert.

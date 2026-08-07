@@ -34,6 +34,11 @@ export type PromptFidelityHints = {
    * false starts, silence, etc.). Optional; injected when the engine runs.
    */
   humanization_cue?: string;
+  /**
+   * Stage 6 Clinical Intelligence — protectives / MSE / formulation /
+   * therapy-response fidelity (patient-language; never DSM dumps).
+   */
+  clinical_intelligence_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -170,6 +175,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.therapy_process_cue}}
 
 {{fidelity.adaptation_block}}
+
+{{fidelity.clinical_intelligence_block}}
 
 {{fidelity.humanization_cue}}
 
@@ -364,6 +371,8 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
           "- Imperfect memory; never invent real hospitals, records, or people.",
         ].join("\n"),
       adaptation_block: input.fidelity?.adaptation_block?.trim() || "",
+      clinical_intelligence_block:
+        input.fidelity?.clinical_intelligence_block?.trim() || "",
       humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };

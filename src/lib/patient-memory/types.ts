@@ -20,6 +20,16 @@ export const MEMORY_CATEGORIES = [
   "occupation",
   "future_plan",
   "other",
+  // Stage 6 Clinical Intelligence extensions (additive — do not replace above)
+  "episodic",
+  "semantic",
+  "therapy",
+  "belief",
+  "emotional",
+  "behavioral",
+  "goal",
+  "protective",
+  "risk",
 ] as const;
 
 export type MemoryCategory = (typeof MEMORY_CATEGORIES)[number];

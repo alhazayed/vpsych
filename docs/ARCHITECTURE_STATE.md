@@ -1,12 +1,13 @@
 # Architecture State — Mission Omega
 
-**As of:** 2026-08-07 · Stage 5 clinical intelligence docs on branch; production snapshot still Mission Omega era
+**As of:** 2026-08-07 · Stage 6 Clinical Intelligence runtime on branch; production snapshot still Mission Omega era
 
 > **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
 > for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
 > **Canonical clinical model (Stage 3):** see [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md).  
 > **Canonical runtime orchestration (Stage 4):** see [`runtime/COGNITIVE_ARCHITECTURE.md`](./runtime/COGNITIVE_ARCHITECTURE.md).  
-> **Canonical clinical intelligence (Stage 5):** see [`clinical-intelligence/README.md`](./clinical-intelligence/README.md) — how fictional patients think, feel, act, decide, and evolve (docs only; no implementation in Stage 5).  
+> **Canonical clinical intelligence (Stage 5):** see [`clinical-intelligence/README.md`](./clinical-intelligence/README.md) — SP mind design (docs).  
+> **Stage 6 implementation:** [`clinical-intelligence/IMPLEMENTATION.md`](./clinical-intelligence/IMPLEMENTATION.md) · code `src/lib/clinical-intelligence/` · blueprint [`STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](./clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).  
 > This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology
@@ -25,16 +26,17 @@ Browser (EN/AR, cookie locale)
 
 | Layer | Module | Coupling rule |
 |-------|--------|---------------|
-| 1 | Dynamic Clinical Case Engine | Fresh CaseInstance per session |
+| 1 | Dynamic Clinical Case Engine | Fresh CaseInstance per session; Stage 6 promotes formulation/MSE/protectives onto ClinicalCore |
 | 2 | Clinical Scenario Template Engine | Templates → diagnoses → cases |
 | 3 | Instructor Preset Engine | Presets constrain templates/cases |
 | 4 | ACE | Best-effort after assessment |
 | 5 | CGE | Best-effort; no ace-bridge barrel export |
 | 6 | Quality Ledger + scientific indices | Admin/research; seal on end |
+| CI | Clinical Intelligence (`lib/clinical-intelligence`) | Composition layer — DecisionPlan façade; does not own Emotion/Adaptation/CBE stores |
 
 ## Session lifecycle (canonical)
 
-`POST /api/sessions` → case mint → messages via ownership RPC → `POST …/end` → assess → signed report → ACE best-effort.
+`POST /api/sessions` → case mint (+ CI promotion) → dyad Adaptation/CI carry seed → messages via ownership RPC (Adaptation → resolve → LTM → Emotion → CBE → DecisionPlan → Humanization → reply) → `POST …/end` → assess → signed report → ACE best-effort.
 
 Voice: STT → message API → TTS. Text skips STT/TTS.
 
@@ -67,7 +69,7 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Reviewer / clinician | `REVIEWER_GUIDE.md`, `KNOWN_LIMITATIONS.md`, `/validation` |
 | Architect | `SOFTWARE_ARCHITECTURE.md` (Stage 2) + this snapshot + engine docs in `docs/*_ENGINE.md` |
 | Clinical data / ontology | `clinical/CLINICAL_DATA_MODEL.md`, `clinical/PATIENT_ONTOLOGY.md` |
-| Clinical intelligence (SP mind) | `clinical-intelligence/README.md` (Stage 5) |
+| Clinical intelligence (SP mind) | `clinical-intelligence/README.md` (Stage 5) + `IMPLEMENTATION.md` (Stage 6) |
 | Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
 | Security | `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` |
@@ -83,3 +85,4 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | 3 Clinical Data Model | Complete | `clinical/` |
 | 4 Runtime Architecture | Complete | `runtime/` |
 | 5 Clinical Intelligence Framework | Complete (docs) · Needs Human Review | `clinical-intelligence/` |
+| 6 Clinical Intelligence Implementation | Implemented · Needs Human Review | `src/lib/clinical-intelligence/` + `clinical-intelligence/IMPLEMENTATION.md` |

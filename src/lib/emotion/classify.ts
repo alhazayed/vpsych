@@ -50,6 +50,14 @@ const RULES: Rule[] = [
     weight: 95,
   },
   {
+    intervention: "homework_review",
+    patterns: [
+      /\b(homework|between.?session|thought record|worksheet|practice (this|that|the))\b/i,
+      /\b(did you (try|practice|complete)|how did the (practice|homework))\b/i,
+    ],
+    weight: 80,
+  },
+  {
     intervention: "validation",
     patterns: [
       /\b(that makes sense|understandable|of course you('d| would)|valid)\b/i,

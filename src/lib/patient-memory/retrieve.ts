@@ -24,6 +24,16 @@ const CATEGORY_BOOST: Record<MemoryCategory, number> = {
   occupation: 0.9,
   future_plan: 0.9,
   other: 0.7,
+  // Stage 6 Clinical Intelligence extensions
+  episodic: 1.0,
+  semantic: 0.95,
+  therapy: 1.05,
+  belief: 1.1,
+  emotional: 1.0,
+  behavioral: 0.95,
+  goal: 1.0,
+  protective: 1.1,
+  risk: 1.2,
 };
 
 function tokenize(text: string): Set<string> {
