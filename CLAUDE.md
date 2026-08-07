@@ -281,7 +281,9 @@ update public.profiles set role = 'admin' where id = '<user-uuid>';
 
 ## Docs worth reading before large changes
 
-`docs/ARCHITECTURE_CERTIFICATION.md`, `docs/PRODUCTION_SECURITY_CERTIFICATION.md`,
-and `docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
+`docs/SOFTWARE_ARCHITECTURE.md` (Stage 2 — ownership, dependencies, runtime,
+API/DB maps), `docs/ARCHITECTURE_CERTIFICATION.md`,
+`docs/PRODUCTION_SECURITY_CERTIFICATION.md`, and
+`docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
 constraints above, including the specific regressions that motivated the
 guardrail tests.

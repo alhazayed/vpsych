@@ -261,4 +261,22 @@ describe("architecture invariants", () => {
     );
     expect(gates).toMatch(/blocked during active risk/);
   });
+
+  it("keeps Stage 2 canonical architecture documentation present", () => {
+    const doc = readFileSync(
+      join(process.cwd(), "docs/SOFTWARE_ARCHITECTURE.md"),
+      "utf8",
+    );
+    expect(doc).toMatch(/Ownership matrix/);
+    expect(doc).toMatch(/Dependency graph/);
+    expect(doc).toMatch(/Runtime pipelines/);
+    expect(doc).toMatch(/Prompt architecture/);
+    expect(doc).toMatch(/Database architecture/);
+    expect(doc).toMatch(/API map/);
+    expect(doc).toMatch(/Extension points/);
+    // Message-path order must stay aligned with the documented pipeline.
+    expect(doc).toMatch(
+      /Adaptation[\s\S]*resolveAvatar[\s\S]*Patient Memory[\s\S]*Emotion[\s\S]*CBE[\s\S]*Humanization/,
+    );
+  });
 });

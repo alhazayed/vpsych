@@ -8,9 +8,22 @@
 | Item | Severity | Notes |
 |------|----------|-------|
 | `CLAUDE.md` references `weightedOverallScore` / `reliability.ts` / `test:reliability` / `calibration/` | High | Files/scripts absent; canonical score is private `weightedOverall` in `assessment.ts` |
-| `CLAUDE.md` migration/test/table counts stale | Medium | Now 61 migrations; 55 test files / 317 tests |
+| `CLAUDE.md` migration/test/table counts stale | Medium | Git has **66** migrations (was documented as 61); refresh with Stage 2 baseline |
+| `docs/CANONICAL_MIGRATION_LEDGER.md` frozen at 54 files | Medium | Post-ledger migrations (QL, CQG, TRM, personality, LTM, CVP) not in ledger |
 | `docs/V1_RELEASE_CERTIFICATION.md` says scientific ledgers absent | High | Stale — Wave 3 shipped QL + indices on main |
 | `docs/V1_1_BACKLOG.md` still lists #62–#68 as deferred scientific | Medium | Engines largely on main; PRs are historical forks |
+
+## Architecture hardening (Stage 2 findings)
+
+| ID | Severity | Item | Suggested remediation |
+|----|----------|------|------------------------|
+| ARCH-S2-01 | High | `scientific` ↔ metric/case/ACE import cycles | Split `versions` + psychometrics into cycle-free `scientific-core` |
+| ARCH-S2-02 | Medium | Emotion + Adaptation both upsert `case_memory` | Atomic namespaced patch helper |
+| ARCH-S2-03 | Medium | Dual TRM flags (`THERAPY_ROOM_MODE` vs `FEATURE_THERAPY_ROOM`) | Single flag matrix in `features.ts` |
+| ARCH-S2-04 | Medium | Case ↔ Template ↔ Preset mutual imports | Extract `lib/case-contracts` |
+| ARCH-S2-05 | Low | Some admin scientific routes lack rate limits | Align to 30–60/h |
+| ARCH-S2-06 | Low | Message route is composition root inline | Optional `lib/session-turn` orchestrator (no behaviour change) |
+| ARCH-S2-07 | Medium | Migration ledger / CLAUDE counts vs 66 files | Refresh ledger after next DB parity run |
 
 ## Code residue
 

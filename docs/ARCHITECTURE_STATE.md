@@ -2,6 +2,10 @@
 
 **As of:** 2026-08-06 · production `7dc9a35`
 
+> **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
+> for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
+> This file remains a short ops/topology snapshot; prefer `SOFTWARE_ARCHITECTURE.md` for system boundaries.
+
 ## Runtime topology
 
 ```
@@ -58,7 +62,7 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 |----------|------------|
 | Executive | `FINAL_EXECUTIVE_SUMMARY.md` |
 | Reviewer / clinician | `REVIEWER_GUIDE.md`, `KNOWN_LIMITATIONS.md`, `/validation` |
-| Architect | This file + engine docs in `docs/*_ENGINE.md` |
+| Architect | `SOFTWARE_ARCHITECTURE.md` (Stage 2) + this snapshot + engine docs in `docs/*_ENGINE.md` |
 | Security | `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` |
 | Developer | `CLAUDE.md` (note: some reliability sections are stale — see TECHNICAL_DEBT) |
