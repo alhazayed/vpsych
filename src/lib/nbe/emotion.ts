@@ -125,7 +125,10 @@ export function emotionFromAffect(
   const key = (overrides?.affect ?? affect).toLowerCase();
   const base = AFFECT_BASE[key] ?? AFFECT_BASE.neutral!;
   const i = clamp01(overrides?.intensity ?? intensity);
-  const { affect: _a, intensity: _i, ...dimOverrides } = overrides ?? {};
+  const { affect: _omitAffect, intensity: _omitIntensity, ...dimOverrides } =
+    overrides ?? {};
+  void _omitAffect;
+  void _omitIntensity;
   return {
     affect: key,
     intensity: i,

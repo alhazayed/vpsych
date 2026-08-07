@@ -121,9 +121,7 @@ export function TherapyRoomSession({
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nbeSchedulerRef = useRef<AnimationScheduler | null>(null);
-  const nbeStartedAtRef = useRef<number>(
-    typeof performance !== "undefined" ? performance.now() : 0,
-  );
+  const nbeStartedAtRef = useRef<number>(0);
   const behaviorBaseRef = useRef<PatientBehaviorState>(behavior);
   const vadRef = useRef<VadController | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
