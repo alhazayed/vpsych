@@ -57,6 +57,7 @@ src/
     case-engine/          Dynamic Clinical Case Engine
     scenario-templates/   Clinical Scenario Template Engine
     instructor-presets/   Instructor Preset Engine
+    personality-engine/   Human Personality Engine (traits independent of GPT)
     ace/                  Adaptive Curriculum Engine
     cge/                  Competency Graph Engine
     avatars/resolve.ts    Avatar row + locale + case snapshot → ResolvedAvatar
@@ -69,6 +70,7 @@ supabase/migrations/      SQL migrations — mirror of the deployed schema (61 a
 supabase/functions/       Deno edge functions (send-email-hook)
 personas/                 authoritative clinical case library (JSON)
 schemas/avatar.v2.json    avatar schema
+schemas/human-personality.v1.json  personality trait schema
 docs/                     engine specs + certification reports (see FINAL_EXECUTIVE_SUMMARY.md)
 scripts/                  migration parity check, production validation
 ```
@@ -76,7 +78,7 @@ scripts/                  migration parity check, production validation
 Path alias: `@/*` → `./src/*` (configured in both `tsconfig.json` and
 `vitest.config.ts`).
 
-## The five engines
+## The engines
 
 They stack; each builds on the one before it and none replaced an earlier API.
 Read the matching file in `docs/` before changing any of them.
@@ -88,6 +90,7 @@ Read the matching file in `docs/` before changing any of them.
 | Instructor Preset Engine | `lib/instructor-presets/` | `docs/INSTRUCTOR_PRESET_ENGINE.md` |
 | Adaptive Curriculum Engine (ACE) | `lib/ace/` | `docs/ADAPTIVE_CURRICULUM_ENGINE.md` |
 | Competency Graph Engine (CGE) | `lib/cge/` | `docs/COMPETENCY_GRAPH_ENGINE.md` |
+| Human Personality Engine | `lib/personality-engine/` | `docs/HUMAN_PERSONALITY_ENGINE.md` |
 
 Therapy Room Mode (optional immersive session UI) lives in `lib/therapy-room/` +
 `components/therapy-room/` — see `docs/THERAPY_ROOM_MODE.md`. Enabled only when
@@ -98,6 +101,10 @@ Core invariants:
 - **A persona never permanently owns a disorder.** Every session mints a fresh
   immutable `CaseInstance`; the diagnosis lives in `sessions.clinical_snapshot`,
   not on the avatar. Locale affects speech and culture only — never diagnosis.
+- **Human personality is independent of GPT and of diagnosis.** Structured
+  traits (`lib/personality-engine`) are authored/persisted and injected every
+  turn as prompt Module 2b. Two patients with the same disorder must still feel
+  like different people. Traits freeze onto `clinical_snapshot.human_personality`.
 - ACE and CGE are **best-effort and non-blocking**. `runAceAfterAssessment`
   never throws and must never prevent a report from persisting. If ACE/CGE
   tables are missing, the session still completes.

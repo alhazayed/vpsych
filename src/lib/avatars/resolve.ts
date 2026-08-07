@@ -16,6 +16,7 @@ import {
   formatTherapyReactionForPrompt,
 } from "@/lib/case-engine/therapy-process";
 import { formatAuthoredTherapyCuesForPrompt } from "@/lib/case-engine/authored-therapy-cues";
+import { resolveHumanPersonality } from "@/lib/personality-engine";
 import type {
   Avatar,
   AvatarPersonality,
@@ -410,6 +411,12 @@ export function resolveAvatar(
           ? isCaseDiagnosisOverride(avatar, snapshot)
           : false,
       }),
+      human_personality: resolveHumanPersonality({
+        avatar,
+        locale,
+        personality,
+        snapshotProfile: snapshot?.human_personality ?? null,
+      }),
     };
 
     // Registry (voice_profile) wins; personality.voice.voice_id / flat columns fall back.
@@ -455,6 +462,7 @@ export function resolveAvatar(
         personality.language_module.fallback_replies?.filter(Boolean) ?? [],
       per_turn_reinforcement: assemblePerTurnReinforcement(assembly),
       personality,
+      human_personality: assembly.human_personality,
       clinical_core: mergedCore,
     };
   }
@@ -492,6 +500,12 @@ export function resolveAvatar(
       ? isCaseDiagnosisOverride(avatar, snapshot)
       : false,
   });
+  assembly.human_personality = resolveHumanPersonality({
+    avatar,
+    locale,
+    personality: assembly.personality,
+    snapshotProfile: snapshot?.human_personality ?? null,
+  });
 
   const registryVoice = projectAvatarVoiceFields(avatar);
 
@@ -525,6 +539,7 @@ export function resolveAvatar(
     clinical_core:
       snapshot?.clinical_core ?? avatar.clinical_core ?? assembly.clinical_core,
     personality: assembly.personality,
+    human_personality: assembly.human_personality,
   };
 }
 

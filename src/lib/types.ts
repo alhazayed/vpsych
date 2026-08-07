@@ -236,6 +236,12 @@ export type Avatar = {
   available_locales?: string[] | null;
   clinical_core?: ClinicalCore | null;
   personalities?: Partial<Record<string, AvatarPersonality>> | null;
+  /**
+   * Human Personality Engine — locale → structured trait profile.
+   * Independent of GPT; injected every patient turn. See
+   * `lib/personality-engine` and `docs/HUMAN_PERSONALITY_ENGINE.md`.
+   */
+  human_personality?: import("@/lib/personality-engine").HumanPersonalityMap | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -273,6 +279,8 @@ export type ResolvedAvatar = {
   fallback_replies: string[];
   per_turn_reinforcement?: string;
   personality?: AvatarPersonality;
+  /** Resolved Human Personality Engine profile for this locale/session. */
+  human_personality?: import("@/lib/personality-engine").HumanPersonalityProfile | null;
   clinical_core?: ClinicalCore | null;
 };
 

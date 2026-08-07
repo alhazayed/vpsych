@@ -163,6 +163,11 @@ export type CaseGenerationRequest = {
   legacyClinicalCore?: ClinicalCore | null;
   voiceProfileId?: string | null;
   createdBy?: string | null;
+  /** Optional avatar human_personality map for freezing into the snapshot. */
+  avatarHumanPersonality?: import("@/lib/personality-engine").HumanPersonalityMap | null;
+  avatarSlug?: string | null;
+  avatarName?: string | null;
+  avatarDisorder?: string | null;
 };
 
 /** Immutable CaseInstance snapshot stored on sessions.clinical_snapshot. */
@@ -252,6 +257,11 @@ export type CaseInstanceSnapshot = {
     pacing?: Record<string, string>;
     rationale?: string;
   };
+  /**
+   * Frozen Human Personality Engine profile for this assessment.
+   * Identity-stable under diagnosis override; does not drift mid-session.
+   */
+  human_personality?: import("@/lib/personality-engine").HumanPersonalityProfile;
 };
 
 export type CaseValidationIssue = {
