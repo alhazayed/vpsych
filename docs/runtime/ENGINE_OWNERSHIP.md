@@ -35,6 +35,7 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Competency graph | CGE | cge_* (writes via ACE hook/admin) | — |
 | Trainee education / milestones / portfolio | Education (`lib/education`) | ephemeral (+ ACE reads) | Observe only |
 | Scientific validation / realism / inter-rater / research export | Validation (`lib/validation`) | validation_* + memory | Observe only — never patient writers |
+| Therapist supervision / skill review / portfolio | Supervisor (`lib/supervisor`) | ephemeral memory (+ ACE/education/validation reads) | Observe only — never patient writers |
 | Quality seal | Quality Ledger | `quality_ledgers` | — |
 | Authz role | profiles.role | profiles | — |
 | Rate limit counters | rate-limit | Redis/memory | — |
@@ -65,4 +66,5 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 - Education must not write clinical_snapshot, patient case_memory, LTM, or DecisionPlan.  
 - Assessment must not invent patient diagnosis.  
 - Validation must not write patient clinical state or assign diagnoses.  
+- Supervisor must not write patient clinical state, change cognition, or invent diagnoses.  
 - No engine may define a second Patient type (Stage 3).

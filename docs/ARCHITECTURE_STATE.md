@@ -1,6 +1,6 @@
 # Architecture State — Mission Omega
 
-**As of:** 2026-08-07 · Stage 7 Education engine on branch; Stage 6 Clinical Intelligence runtime merged
+**As of:** 2026-08-07 · Stage 9 Supervisor AI on branch; Stages 1–8 canonical on main
 
 > **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
 > for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
@@ -9,6 +9,8 @@
 > **Canonical clinical intelligence (Stage 5):** see [`clinical-intelligence/README.md`](./clinical-intelligence/README.md) — SP mind design (docs).  
 > **Stage 6 implementation:** [`clinical-intelligence/IMPLEMENTATION.md`](./clinical-intelligence/IMPLEMENTATION.md) · code `src/lib/clinical-intelligence/` · blueprint [`STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](./clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).  
 > **Stage 7 education:** [`education/README.md`](./education/README.md) · code `src/lib/education/` · [`education/IMPLEMENTATION.md`](./education/IMPLEMENTATION.md).  
+> **Stage 8 validation:** [`RESEARCH_ARCHITECTURE.md`](./RESEARCH_ARCHITECTURE.md) · [`VALIDATION_PIPELINE.md`](./VALIDATION_PIPELINE.md) · code `src/lib/validation/`.  
+> **Stage 9 supervisor:** [`SUPERVISOR_ARCHITECTURE.md`](./SUPERVISOR_ARCHITECTURE.md) · code `src/lib/supervisor/`.  
 > This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology
@@ -35,10 +37,12 @@ Browser (EN/AR, cookie locale)
 | 6 | Quality Ledger + scientific indices | Admin/research; seal on end |
 | CI | Clinical Intelligence (`lib/clinical-intelligence`) | Composition layer — DecisionPlan façade; does not own Emotion/Adaptation/CBE stores |
 | EDU | Education (`lib/education`) | Trainee observe/evaluate/teach; never writes patient mind |
+| VAL | Validation (`lib/validation`) | Observational realism / research; never writes patient mind |
+| SUP | Supervisor (`lib/supervisor`) | Therapist supervision only; never writes patient mind |
 
 ## Session lifecycle (canonical)
 
-`POST /api/sessions` → case mint (+ CI promotion) → dyad Adaptation/CI carry seed → messages via ownership RPC (Adaptation → resolve → LTM → Emotion → CBE → DecisionPlan → Humanization → reply) → `POST …/end` → assess → signed report → Education (`runEducationAfterAssessment` wraps ACE) best-effort.
+`POST /api/sessions` → case mint (+ CI promotion) → dyad Adaptation/CI carry seed → messages via ownership RPC (Adaptation → resolve → LTM → Emotion → CBE → DecisionPlan → Humanization → reply) → `POST …/end` → assess → signed report → Education (wraps ACE) → Validation → Supervisor — all best-effort soft-fail.
 
 Voice: STT → message API → TTS. Text skips STT/TTS.
 
@@ -74,6 +78,7 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Clinical intelligence (SP mind) | `clinical-intelligence/README.md` (Stage 5) + `IMPLEMENTATION.md` (Stage 6) |
 | Education / trainee training | `education/README.md` (Stage 7) |
 | Scientific validation / research | `RESEARCH_ARCHITECTURE.md` · `VALIDATION_PIPELINE.md` (Stage 8) |
+| Supervisor AI | `SUPERVISOR_ARCHITECTURE.md` · `COMPETENCY_FRAMEWORK.md` (Stage 9) |
 | Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
 | Security | `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` |
@@ -92,3 +97,4 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | 6 Clinical Intelligence Implementation | Implemented · Needs Human Review | `src/lib/clinical-intelligence/` + `clinical-intelligence/IMPLEMENTATION.md` |
 | 7 Curriculum & Expert Training Engine | Implemented · Needs Human Review | `src/lib/education/` + `docs/education/` |
 | 8 Scientific Validation Platform | Implemented · Needs Human Review | `src/lib/validation/` + `docs/RESEARCH_ARCHITECTURE.md` |
+| 9 Supervisor AI · Expert Review · Competency | Implemented · Needs Human Review | `src/lib/supervisor/` + `docs/SUPERVISOR_ARCHITECTURE.md` |

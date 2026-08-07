@@ -41,6 +41,7 @@
       "adaptiveCurriculum": "Adaptive Curriculum",
       "adaptiveLearning": "My Learning",
       "competencyGraph": "Competency Graph",
+      "supervisorAi": "Supervisor AI",
       "researchValidation": "Research Validation",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys"
@@ -52,6 +53,7 @@
     "mySessions": "My Sessions",
     "adaptiveLearning": "My Learning",
     "competencyGraph": "Competency Graph",
+    "supervisorAi": "Supervisor AI",
     "reportsLibrary": "Reports Library",
     "avatarPresets": "Avatar Presets",
     "humanPersonality": "Human Personality",
@@ -70,6 +72,10 @@
     "graph": {
       "title": "Competency Graph",
       "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways."
+    },
+    "supervisor": {
+      "title": "Supervisor AI",
+      "subtitle": "Structured educational supervision — skills, modalities, portfolio, and reflective practice. Observes sessions only; never changes the patient."
     }
   },
   "landing": {

@@ -510,4 +510,71 @@ describe("architecture invariants", () => {
       readFileSync(join(valDocs, "PUBLICATION_GUIDE.md"), "utf8"),
     ).not.toThrow();
   });
+
+  it("Stage 9 Supervisor AI observes therapists only and never owns patient mind", () => {
+    const barrel = readFileSync(join(root, "lib/supervisor/index.ts"), "utf8");
+    const bridge = readFileSync(
+      join(root, "lib/supervisor/session-bridge.ts"),
+      "utf8",
+    );
+    const versions = readFileSync(
+      join(root, "lib/supervisor/versions.ts"),
+      "utf8",
+    );
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const summary = readFileSync(
+      join(root, "app/api/supervisor/summary/route.ts"),
+      "utf8",
+    );
+    const admin = readFileSync(
+      join(root, "app/api/admin/supervisor/route.ts"),
+      "utf8",
+    );
+
+    expect(barrel).toMatch(/runSupervisorAfterAssessment/);
+    expect(barrel).toMatch(/runSupervisorEngine/);
+    expect(bridge).toMatch(/Never writes clinical_snapshot/);
+    expect(bridge).toMatch(/Never owns Emotion|observes only/i);
+    expect(versions).toMatch(/SUPERVISOR_OWNERSHIP_RULE/);
+    expect(versions).toMatch(/clinical_snapshot/);
+    expect(end).toMatch(/runSupervisorAfterAssessment/);
+    expect(end).toMatch(/supervisor soft-fail|Stage 9 Supervisor/);
+    expect(summary).toMatch(/rateLimit/);
+    expect(admin).toMatch(/requireApiAdmin/);
+    expect(admin).toMatch(/rateLimit/);
+
+    // Must not re-export patient cognition owners
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/adaptation["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/clinical-intelligence["']/);
+    expect(barrel).not.toMatch(/export \* from ["']@\/lib\/case-engine["']/);
+
+    // Must not fork weightedOverall
+    const evalSrc = readFileSync(
+      join(root, "lib/supervisor/therapist-evaluation.ts"),
+      "utf8",
+    );
+    expect(evalSrc).not.toMatch(/function weightedOverall\s*\(/);
+    expect(evalSrc).toMatch(/weightedTherapistOverall/);
+
+    const docs = join(process.cwd(), "docs");
+    expect(() =>
+      readFileSync(join(docs, "SUPERVISOR_ARCHITECTURE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "COMPETENCY_FRAMEWORK.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "EDUCATIONAL_MODEL.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "SUPERVISION_PIPELINE.md"), "utf8"),
+    ).not.toThrow();
+    expect(() =>
+      readFileSync(join(docs, "PORTFOLIO_MODEL.md"), "utf8"),
+    ).not.toThrow();
+  });
 });
