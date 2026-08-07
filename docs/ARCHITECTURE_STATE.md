@@ -1,12 +1,13 @@
 # Architecture State — Mission Omega
 
-**As of:** 2026-08-06 · production `7dc9a35`
+**As of:** 2026-08-07 · Stage 5 clinical intelligence docs on branch; production snapshot still Mission Omega era
 
 > **Canonical architecture (Stage 2):** see [`SOFTWARE_ARCHITECTURE.md`](./SOFTWARE_ARCHITECTURE.md)  
 > for ownership matrix, dependency graph, runtime pipeline, API map, DB map, and engine contracts.  
 > **Canonical clinical model (Stage 3):** see [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md).  
 > **Canonical runtime orchestration (Stage 4):** see [`runtime/COGNITIVE_ARCHITECTURE.md`](./runtime/COGNITIVE_ARCHITECTURE.md).  
-> This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime boundaries.
+> **Canonical clinical intelligence (Stage 5):** see [`clinical-intelligence/README.md`](./clinical-intelligence/README.md) — how fictional patients think, feel, act, decide, and evolve (docs only; no implementation in Stage 5).  
+> This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology
 
@@ -65,7 +66,20 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | Executive | `FINAL_EXECUTIVE_SUMMARY.md` |
 | Reviewer / clinician | `REVIEWER_GUIDE.md`, `KNOWN_LIMITATIONS.md`, `/validation` |
 | Architect | `SOFTWARE_ARCHITECTURE.md` (Stage 2) + this snapshot + engine docs in `docs/*_ENGINE.md` |
+| Clinical data / ontology | `clinical/CLINICAL_DATA_MODEL.md`, `clinical/PATIENT_ONTOLOGY.md` |
+| Clinical intelligence (SP mind) | `clinical-intelligence/README.md` (Stage 5) |
+| Runtime mind composition | `runtime/COGNITIVE_ARCHITECTURE.md` (Stage 4) |
 | Security | `SECURITY_CERTIFICATION.md` |
 | Ops | `OPERATIONS_RUNBOOK.md` |
 | Developer | `CLAUDE.md` (note: some reliability sections are stale — see TECHNICAL_DEBT) |
 | Release governance | `RELEASE_DECISION_LOG.md`, `RELEASE_GOVERNANCE.md` (if present) |
+
+## Stage map (canonical — do not redesign closed stages)
+
+| Stage | Status | Home |
+|-------|--------|------|
+| 1 Governance | Complete | Release / security certification package |
+| 2 Software Architecture | Complete | `SOFTWARE_ARCHITECTURE.md` |
+| 3 Clinical Data Model | Complete | `clinical/` |
+| 4 Runtime Architecture | Complete | `runtime/` |
+| 5 Clinical Intelligence Framework | Complete (docs) · Needs Human Review | `clinical-intelligence/` |
