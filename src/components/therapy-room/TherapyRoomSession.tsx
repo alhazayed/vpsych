@@ -301,25 +301,63 @@ export function TherapyRoomSession({
       playbackAbortRef.current = abort;
       const playbackStarted = telemetryRef.current.mark();
       let bargeInFired = false;
+      let bargeInArmScheduled = false;
+      let bargeInArmTimer: number | null = null;
 
-      bargeInStopRef.current = await startBargeInMonitor({
-        onBargeIn: () => {
-          if (bargeInFired || endingRef.current) return;
+      const clearBargeInArm = () => {
+        bargeInArmScheduled = false;
+        if (bargeInArmTimer != null) {
+          window.clearTimeout(bargeInArmTimer);
+          bargeInArmTimer = null;
+        }
+        bargeInStopRef.current?.();
+        bargeInStopRef.current = null;
+      };
+
+      const onBargeIn = () => {
+        if (bargeInFired || endingRef.current) return;
+        if (!fsmRef.current.isCurrent(generation)) return;
+        bargeInFired = true;
+        immersionRef.current.track("therapist_interrupt");
+        telemetryRef.current.record("barge_in");
+        abort.abort();
+        stopPlayback();
+        const transitioned = dispatch("BARGE_IN");
+        if (transitioned.ok) {
+          setPresence("interrupted", "barge");
+          setStatusKey("listening");
+          // Mic reopens immediately — no click required.
+          listenLoopRef.current();
+        }
+      };
+
+      /**
+       * Arm barge-in only after HTMLAudioElement is playing.
+       * Starting the monitor during TTS fetch / before play() aborted
+       * playback (mic residual energy → AbortSignal → no Audio element).
+       */
+      const armBargeInAfterPlayback = () => {
+        if (bargeInArmScheduled || bargeInFired || endingRef.current) return;
+        if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) return;
+        bargeInArmScheduled = true;
+        // Short grace so speaker bleed / AGC does not false-trigger.
+        bargeInArmTimer = window.setTimeout(() => {
+          bargeInArmTimer = null;
+          if (bargeInFired || endingRef.current || abort.signal.aborted) return;
           if (!fsmRef.current.isCurrent(generation)) return;
-          bargeInFired = true;
-          immersionRef.current.track("therapist_interrupt");
-          telemetryRef.current.record("barge_in");
-          abort.abort();
-          stopPlayback();
-          const transitioned = dispatch("BARGE_IN");
-          if (transitioned.ok) {
-            setPresence("interrupted", "barge");
-            setStatusKey("listening");
-            // Mic reopens immediately — no click required.
-            listenLoopRef.current();
-          }
-        },
-      });
+          void startBargeInMonitor({ onBargeIn }).then((stop) => {
+            if (bargeInFired || abort.signal.aborted || endingRef.current) {
+              stop();
+              return;
+            }
+            if (fsmRef.current.getState() !== "AVATAR_SPEAKING") {
+              stop();
+              return;
+            }
+            bargeInStopRef.current = stop;
+          });
+        }, 550);
+      };
 
       const mode = await playPatientSpeech({
         text,
@@ -335,23 +373,23 @@ export function TherapyRoomSession({
         signal: abort.signal,
         handlers: {
           onstart: () => {
-            if (audioRef.current) {
-              applyHtmlAudioModulation(audioRef.current, mod);
+            const el = audioRef.current;
+            if (el) {
+              el.muted = false;
+              applyHtmlAudioModulation(el, mod);
+              // play() already resolved — arm after grace (no pre-TTS barge-in).
+              armBargeInAfterPlayback();
+            } else {
+              // Browser speechSynthesis path — no HTMLAudioElement.
+              armBargeInAfterPlayback();
             }
           },
-          onend: () => {
-            bargeInStopRef.current?.();
-            bargeInStopRef.current = null;
-          },
-          onerror: () => {
-            bargeInStopRef.current?.();
-            bargeInStopRef.current = null;
-          },
+          onend: clearBargeInArm,
+          onerror: clearBargeInArm,
         },
       });
 
-      bargeInStopRef.current?.();
-      bargeInStopRef.current = null;
+      clearBargeInArm();
       playbackAbortRef.current = null;
 
       telemetryRef.current.record("playback_duration_ms", {
