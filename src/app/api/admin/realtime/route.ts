@@ -63,7 +63,10 @@ export async function GET(request: Request) {
   } catch (e) {
     return NextResponse.json(
       {
-        error: clientSafeError("Admin realtime dashboard failed", e),
+        error: clientSafeError(
+          "Admin realtime dashboard failed",
+          e instanceof Error ? e.message : null,
+        ),
       },
       { status: 500 },
     );

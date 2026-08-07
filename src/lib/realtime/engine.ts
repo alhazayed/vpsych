@@ -14,7 +14,10 @@ import {
   createMultilingualSession,
   detectSpeechLocale,
 } from "@/lib/realtime/multilingual";
-import { buildNonverbalPresentation } from "@/lib/realtime/nonverbal-sync";
+import {
+  buildNonverbalPresentation,
+  type NonverbalSyncInput,
+} from "@/lib/realtime/nonverbal-sync";
 import {
   createRealtimeMetricsStore,
   realtimeMetrics,
@@ -43,7 +46,7 @@ export type RunRealtimeEngineInput = {
   remainingSec?: number;
   rttMs?: number;
   personality?: Partial<Parameters<typeof buildVoicePersonality>[0]>;
-  voiceHints?: Parameters<typeof buildNonverbalPresentation>[0]["voiceHints"];
+  voiceHints?: NonverbalSyncInput["voiceHints"];
   emotionHint?: string | null;
   waitingRoom?: boolean;
 };

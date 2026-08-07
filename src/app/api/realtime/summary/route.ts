@@ -63,7 +63,10 @@ export async function GET(request: Request) {
   } catch (e) {
     return NextResponse.json(
       {
-        error: clientSafeError("Realtime summary failed", e),
+        error: clientSafeError(
+          "Realtime summary failed",
+          e instanceof Error ? e.message : null,
+        ),
       },
       { status: 500 },
     );
