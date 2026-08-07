@@ -463,14 +463,21 @@
       "classic": "Classic",
       "therapyRoom": "Therapy Room",
       "cta": "Enter Therapy Room",
-      "hint": "Fullscreen consultation room — hands-free, patient-focused. Transcript hidden by default."
+      "hint": "Fullscreen consultation room — true hands-free voice, patient-focused. Transcript hidden by default."
     },
     "status": {
       "entering": "Entering the consultation room…",
       "ready": "The patient is ready. Speak naturally.",
+      "listening": "Listening…",
+      "processingStt": "Hearing you…",
+      "thinking": "Thinking…",
+      "avatarSpeaking": "Avatar speaking…",
+      "paused": "Paused",
+      "reconnecting": "Reconnecting…",
+      "error": "Something went wrong. You can retry without losing the transcript.",
+      "retry": "Retry",
       "ending": "Ending the session…",
       "endFailed": "Could not end the session. Try again.",
-      "paused": "Session paused",
       "interrupted": "Patient paused",
       "tryAgain": "Please try speaking again.",
       "micDenied": "Microphone access is needed for hands-free conversation."
