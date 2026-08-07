@@ -7,6 +7,7 @@
 > **Canonical clinical model (Stage 3):** see [`clinical/CLINICAL_DATA_MODEL.md`](./clinical/CLINICAL_DATA_MODEL.md).  
 > **Canonical runtime orchestration (Stage 4):** see [`runtime/COGNITIVE_ARCHITECTURE.md`](./runtime/COGNITIVE_ARCHITECTURE.md).  
 > **Canonical clinical intelligence (Stage 5):** see [`clinical-intelligence/README.md`](./clinical-intelligence/README.md) — how fictional patients think, feel, act, decide, and evolve (docs only; no implementation in Stage 5).  
+> **Stage 6 implementation blueprint:** see [`clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](./clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).  
 > This file remains a short ops/topology snapshot; prefer those docs for system / clinical / runtime / intelligence boundaries.
 
 ## Runtime topology
@@ -83,3 +84,4 @@ Therapy Room Mode: code present, **flag-gated off** by default; classic VoiceSes
 | 3 Clinical Data Model | Complete | `clinical/` |
 | 4 Runtime Architecture | Complete | `runtime/` |
 | 5 Clinical Intelligence Framework | Complete (docs) · Needs Human Review | `clinical-intelligence/` |
+| 6 Clinical Intelligence Implementation | Blueprint · Needs Human Review | `clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md` |

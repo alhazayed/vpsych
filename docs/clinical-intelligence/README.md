@@ -39,6 +39,7 @@ This package is the **single source of truth** for future clinical-intelligence 
 | 08 | [`THERAPIST_SCORING_FRAMEWORK.md`](./THERAPIST_SCORING_FRAMEWORK.md) | Excellent / poor / unsafe interviewing |
 | 09 | [`CLINICAL_REALISM.md`](./CLINICAL_REALISM.md) | Measurable consistency & realism metrics |
 | 10 | [`PATIENT_EVOLUTION_MODEL.md`](./PATIENT_EVOLUTION_MODEL.md) | 10 / 25 / 50 / 100 session arcs |
+| 11 | [`STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](./STAGE_6_IMPLEMENTATION_BLUEPRINT.md) | Stage 6 implementation blueprint (architecture-first) |
 
 ---
 

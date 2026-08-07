@@ -116,6 +116,8 @@ flowchart TD
 
 Canonical designs live in [`../clinical-intelligence/`](../clinical-intelligence/). **Do not implement in doc stages.** Sequence after Critical Stage 3 promotions where noted.
 
+**Stage 6 blueprint:** ordered phases, module layout, types, migrations, and anti-duplication rules are in [`../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md`](../clinical-intelligence/STAGE_6_IMPLEMENTATION_BLUEPRINT.md).
+
 ### Critical (intelligence)
 
 | ID | Concept | Owner | Impact | Design doc / gap |
