@@ -55,13 +55,18 @@
 | `/admin/feedback` | Admin | Triage queue (owner · resolution · audit) |
 | `/admin/cidp` | Admin | CIDP operational dashboards |
 | `GET /api/admin/ops/cidp` | Admin | Dashboard + success metrics + pilot summary |
-| `GET /api/admin/ops/cidp/weekly` | Admin | Weekly executive / clinical / security reports |
+| `GET /api/admin/ops/cidp/weekly` | Admin | Weekly executive / clinical / security / research / educational / operations reports |
+| `GET /api/admin/ops/phase14` | Admin | Phase 14 GA gates · risk · lessons · evidence |
 | `GET /api/admin/ops/metrics` | Admin | Stage 12 ops snapshot |
 
 ## Status
 
-**CIDP:** GO · **GA:** NO-GO (see `GA_READINESS_REPORT.md`)
+**CIDP:** GO · **GA:** NO-GO (see `GA_READINESS_REPORT.md` · `../stage14/GA_DECISION_FRAMEWORK.md`)
+
+## Phase 14
+
+Global Institutional Pilot evidence program: [`../stage14/README.md`](../stage14/README.md). Living risk / lessons / clinical / education logs under `evidence/`.
 
 ## Related decisions
 
-Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028 Stage 12 RC; RDL-029 CIDP authorize; RDL-030 CIDP execution).
+Append-only log: `../RELEASE_DECISION_LOG.md` (RDL-028 Stage 12 RC; RDL-029 CIDP authorize; RDL-030 CIDP execution; RDL-031 Phase 14).

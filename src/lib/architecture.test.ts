@@ -867,4 +867,62 @@ describe("architecture invariants", () => {
     expect(cidpRoute).toMatch(/requireApiAdmin/);
     expect(cidpRoute).toMatch(/buildCidpDashboards/);
   });
+
+  it("Phase 14 GA readiness program never owns Clinical Core", () => {
+    const stage14 = join(process.cwd(), "docs/stage14");
+    for (const name of [
+      "README.md",
+      "EXECUTIVE_SUMMARY.md",
+      "GA_DECISION_FRAMEWORK.md",
+      "RISK_REGISTER.md",
+      "LESSONS_LEARNED_REGISTER.md",
+      "RELEASE_BOARD_PACKAGE.md",
+      "FINAL_V1_AUTHORIZATION_PACKAGE.md",
+      "GLOBAL_INSTITUTIONAL_PILOT.md",
+      "CLINICAL_EVIDENCE_FRAMEWORK.md",
+    ]) {
+      expect(() => readFileSync(join(stage14, name), "utf8")).not.toThrow();
+    }
+
+    const exec = readFileSync(join(stage14, "EXECUTIVE_SUMMARY.md"), "utf8");
+    expect(exec).toMatch(/NO-GO for General Availability/);
+    expect(exec).toMatch(/GO for CIDP/);
+
+    const gates = readFileSync(
+      join(root, "lib/ops/phase14-ga-gates.ts"),
+      "utf8",
+    );
+    expect(gates).toMatch(/evaluateGaReadiness/);
+    expect(gates).toMatch(/dr_drill_completed/);
+    expect(gates).toMatch(/executive_release_board_authorization/);
+    expect(gates).not.toMatch(/clinical_snapshot/);
+
+    const readiness = readFileSync(
+      join(root, "lib/ops/phase14-readiness.ts"),
+      "utf8",
+    );
+    expect(readiness).toMatch(/Never writes Clinical Core/);
+
+    const route = readFileSync(
+      join(root, "app/api/admin/ops/phase14/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/buildPhase14Readiness/);
+    expect(route).not.toMatch(/clinical_snapshot/);
+
+    const ownership = readFileSync(
+      join(process.cwd(), "docs/runtime/ENGINE_OWNERSHIP.md"),
+      "utf8",
+    );
+    expect(ownership).toMatch(/Phase 14 ownership note/);
+    expect(ownership).toMatch(/never patient-state writers/);
+
+    const riskLog = readFileSync(
+      join(process.cwd(), "docs/cidp/evidence/risk/RISK_REGISTER.md"),
+      "utf8",
+    );
+    expect(riskLog).toMatch(/RISK-P14-01/);
+  });
 });

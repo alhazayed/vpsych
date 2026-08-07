@@ -10,17 +10,20 @@
 
 ## Success criteria matrix
 
-| # | Criterion | Status at CIDP packaging | Evidence required |
-|---|-----------|--------------------------|-------------------|
-| 1 | Disaster Recovery drill successfully completed and documented | **OPEN** | Signed `DISASTER_RECOVERY_REPORT.md` evidence pack |
-| 2 | Backup and PITR verified | **OPEN** | Staging PITR drill record |
-| 3 | Production infrastructure validated (cache, queues, external services) | **PARTIAL** | Upstash confirmed; provider smokes; CDN rules |
-| 4 | Security audit: no unresolved Critical or High findings | **PASS (app)** / ops residuals | `SECURITY_REPORT.md` + close SEC-S12-* |
-| 5 | Institutional pilot: zero unresolved Critical clinical or operational issues | **PENDING pilot** | `PILOT_REPORT_TEMPLATE.md` |
-| 6 | Platform stability across agreed pilot observation period | **PENDING pilot** | CIDP metrics + incident log |
-| 7 | Governance documentation finalized and approved | **PASS (CIDP pack)** | This package + Board sign-off |
-| 8 | Clinical, educational, validation, research workflows verified in production | **PARTIAL** | Credential Gate production smokes |
-| 9 | Release Board formally authorizes `v1.0.0` | **NOT YET** | Future RDL row |
+Aligned with Phase 14 ten-gate framework (`../stage14/GA_DECISION_FRAMEWORK.md` · `evaluateGaReadiness()`).
+
+| # | Criterion | Gate ID | Status at Phase 14 packaging | Evidence required |
+|---|-----------|---------|------------------------------|-------------------|
+| 1 | Disaster Recovery drill successfully completed and documented | `dr_drill_completed` | **OPEN** | Signed `evidence/dr/DR_EVIDENCE_LOG.md` |
+| 2 | Backup and PITR verified | `pitr_validated` | **OPEN** | Staging PITR drill record |
+| 3 | Production infrastructure validated (cache, queues, external services) | `production_infrastructure_verified` | **PARTIAL** | Upstash confirmed; provider smokes; CDN rules |
+| 4 | Security residuals closed (no unresolved Critical/High ops findings) | `security_residuals_closed` | **PARTIAL** | `SECURITY_REPORT.md` + `evidence/security/` |
+| 5 | No unresolved Critical findings (feedback + critical-tier risks) | `no_unresolved_critical_findings` | **PENDING / OPEN** | Feedback queue + `evidence/risk/RISK_REGISTER.md` |
+| 6 | Stable pilot metrics | `stable_pilot_metrics` | **PENDING pilot** | CIDP success metrics + trends |
+| 7 | Acceptable educational outcomes | `acceptable_educational_outcomes` | **PENDING pilot** | `evidence/education/` |
+| 8 | Clinical validation completed (Board-defined scope) | `clinical_validation_completed` | **PENDING** | `evidence/clinical/` · Stage 8 observational |
+| 9 | Governance package approved | `governance_package_approved` | **PASS (CIDP/P14 pack)** | Governance attestations + Board sign-off |
+| 10 | Release Board formally authorizes `v1.0.0` | `executive_release_board_authorization` | **NOT YET** | Future RDL row |
 
 ## Explicit non-claims until GA
 
@@ -41,10 +44,13 @@
 | Source | What it shows |
 |--------|----------------|
 | `GET /api/admin/ops/cidp` | `ga_status: NO-GO`, `cidp_status: GO`, success metrics |
-| `GET /api/admin/ops/cidp/weekly` | Weekly executive / clinical / security packs |
+| `GET /api/admin/ops/phase14` | Ten-gate evaluation · risk · lessons · evidence domains |
+| `GET /api/admin/ops/cidp/weekly` | Weekly executive / clinical / security / research / educational / operations packs |
 | `evidence/dr/DR_EVIDENCE_LOG.md` | Drill rows (empty → GA blocked) |
 | `evidence/security/SECURITY_EVIDENCE_LOG.md` | Per-deploy security evidence |
 | `evidence/governance/GOVERNANCE_ATTESTATIONS.md` | Domain attestations |
+| `evidence/risk/RISK_REGISTER.md` | Living risk register |
+| `../stage14/` | Phase 14 program package |
 
 ## Current recommendation
 

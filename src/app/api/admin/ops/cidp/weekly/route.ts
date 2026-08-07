@@ -142,8 +142,10 @@ export async function GET(request: Request) {
       pilots,
       open_critical_feedback: feedbackCritical.count ?? 0,
       open_high_feedback: feedbackHigh.count ?? 0,
+      open_critical_risks: 0,
       notes: [
         "Pilot registry empty until institutions are onboarded via checklist.",
+        "Phase 14 weekly kinds include research, educational, and operations.",
       ],
     });
 
