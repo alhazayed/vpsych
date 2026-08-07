@@ -94,6 +94,8 @@ export async function transcribeTherapistSpeech(params: {
 export async function submitConversationTurn(params: {
   sessionId: string;
   message: string;
+  /** Stage 11 / RT-06 — therapist barge-in cut off the prior patient turn. */
+  therapistInterrupted?: boolean;
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
@@ -102,7 +104,12 @@ export async function submitConversationTurn(params: {
   const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: params.message }),
+    body: JSON.stringify({
+      message: params.message,
+      ...(params.therapistInterrupted
+        ? { therapistInterrupted: true }
+        : {}),
+    }),
     signal: params.signal,
   });
   const data = (await res.json().catch(() => ({}))) as {

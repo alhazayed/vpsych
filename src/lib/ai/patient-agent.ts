@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText, streamText } from "ai";
 import { openAIService } from "@/lib/ai/openai";
 import {
   isOpenAIServiceError,
@@ -30,6 +30,15 @@ export type PatientReplyResult = {
   model?: string;
   /** Present when a model path failed before the returned source. */
   errorKind?: OpenAIErrorKind;
+};
+
+export type PatientReplyStreamHandlers = {
+  onToken?: (token: string, fullText: string) => void;
+  signal?: AbortSignal;
+};
+
+export type PatientReplyStreamResult = PatientReplyResult & {
+  interrupted: boolean;
 };
 
 function logPatientAgent(
@@ -261,5 +270,168 @@ export async function generatePatientReplyDetailed(params: {
       next: "persona_fallback",
     });
     return pickFallback(kind);
+  }
+}
+
+/**
+ * Stage 11 — streaming patient reply. Same prompt construction as
+ * `generatePatientReplyDetailed`; tokens are presentation-only.
+ * Cognition owners upstream are unchanged.
+ */
+export async function generatePatientReplyStream(params: {
+  avatar: Pick<
+    ResolvedAvatar,
+    | "name"
+    | "disorder"
+    | "system_prompt"
+    | "fallback_replies"
+    | "per_turn_reinforcement"
+  >;
+  history: Pick<SessionMessage, "role" | "content">[];
+  userMessage: string;
+  behaviourReinforcement?: string | null;
+  onToken?: PatientReplyStreamHandlers["onToken"];
+  signal?: AbortSignal;
+}): Promise<PatientReplyStreamResult> {
+  const { avatar, history, userMessage, behaviourReinforcement } = params;
+  const fallbacks =
+    avatar.fallback_replies?.length > 0
+      ? avatar.fallback_replies
+      : DEFAULT_FALLBACK_REPLIES;
+
+  const pickFallback = (
+    errorKind?: OpenAIErrorKind,
+  ): PatientReplyStreamResult => {
+    const idx =
+      Math.abs(
+        userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+      ) % fallbacks.length;
+    const text = fallbacks[idx]!;
+    params.onToken?.(text, text);
+    return {
+      text,
+      aiSource: "persona_fallback",
+      errorKind,
+      interrupted: Boolean(params.signal?.aborted),
+    };
+  };
+
+  if (!hasAnyAiKey()) {
+    return pickFallback();
+  }
+
+  const prior = history
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .slice(-20)
+    .map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+
+  const reinforcementParts = [
+    avatar.per_turn_reinforcement?.trim(),
+    behaviourReinforcement?.trim(),
+  ].filter(Boolean);
+  const reinforced =
+    reinforcementParts.length > 0
+      ? `${userMessage}\n\n${reinforcementParts.join("\n\n")}`
+      : userMessage;
+
+  const viaGatewayStream = async (
+    priorErrorKind?: OpenAIErrorKind,
+  ): Promise<PatientReplyStreamResult> => {
+    const messages = [...prior, { role: "user" as const, content: reinforced }];
+    const model = gatewayModelId();
+    const result = streamText({
+      model,
+      system: avatar.system_prompt,
+      messages,
+      temperature: 0.85,
+      maxOutputTokens: 220,
+      abortSignal: params.signal,
+    });
+    let text = "";
+    for await (const delta of result.textStream) {
+      if (params.signal?.aborted) {
+        return {
+          text: text.trim() || (await result.text).trim(),
+          aiSource: "gateway",
+          model,
+          errorKind: priorErrorKind,
+          interrupted: true,
+        };
+      }
+      text += delta;
+      params.onToken?.(delta, text);
+    }
+    const trimmed = text.trim() || (await result.text).trim();
+    if (!trimmed) return pickFallback(priorErrorKind);
+    return {
+      text: trimmed,
+      aiSource: "gateway",
+      model,
+      errorKind: priorErrorKind,
+      interrupted: Boolean(params.signal?.aborted),
+    };
+  };
+
+  const viaOpenAiStream = async (
+    model?: string,
+    priorErrorKind?: OpenAIErrorKind,
+  ): Promise<PatientReplyStreamResult> => {
+    const result = await openAIService.chatStream(
+      {
+        messages: [
+          { role: "system", content: avatar.system_prompt },
+          ...prior,
+          { role: "user", content: reinforced },
+        ],
+        temperature: 0.85,
+        maxCompletionTokens: 512,
+        model,
+      },
+      {
+        onToken: params.onToken,
+        signal: params.signal,
+      },
+    );
+    const text = result.text.trim();
+    if (!text) return pickFallback(priorErrorKind);
+    return {
+      text,
+      aiSource: "gpt",
+      model: result.model,
+      errorKind: priorErrorKind,
+      interrupted: result.interrupted,
+    };
+  };
+
+  if (preferOpenAiSdk()) {
+    try {
+      return await viaOpenAiStream();
+    } catch (err) {
+      const kind = openaiErrorKind(err);
+      if (isRateLimitedOrQuota(err)) {
+        try {
+          return await viaOpenAiStream(openAiFallbackChatModel(), kind);
+        } catch {
+          // fall through
+        }
+      }
+      if (hasGatewayKey()) {
+        try {
+          return await viaGatewayStream(kind);
+        } catch {
+          return pickFallback(kind);
+        }
+      }
+      return pickFallback(kind);
+    }
+  }
+
+  try {
+    return await viaGatewayStream();
+  } catch (err) {
+    return pickFallback(openaiErrorKind(err));
   }
 }

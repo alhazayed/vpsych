@@ -10,6 +10,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { signSessionReport, getReportWriteKey } from "@/lib/report-sign";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { runEnterpriseAfterAssessment } from "@/lib/enterprise";
+import { runRealtimeAfterAssessment } from "@/lib/realtime";
 import { runSupervisorAfterAssessment } from "@/lib/supervisor";
 import { runValidationAfterAssessment } from "@/lib/validation";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
@@ -252,6 +253,16 @@ export async function POST(_request: Request, { params }: Params) {
     console.warn("[sessions/end] enterprise soft-fail:", enterprise.error);
   }
 
+  // Stage 11 Realtime — presentation metrics only; soft-fail; never touches patient mind.
+  const realtime = await runRealtimeAfterAssessment(supabase, {
+    userId: user.id,
+    sessionId,
+    locale: assessment.language ?? resolved.locale,
+  });
+  if (!realtime.ok) {
+    console.warn("[sessions/end] realtime soft-fail:", realtime.error);
+  }
+
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
   const memoryWriter = createServiceClient() ?? supabase;
   const patientMemory = await runPatientMemoryAfterSession(memoryWriter, {
@@ -327,6 +338,7 @@ export async function POST(_request: Request, { params }: Params) {
         education,
         supervisor,
         enterprise,
+        realtime,
       }),
       {
         headers: educationEndHeaders(
@@ -335,6 +347,7 @@ export async function POST(_request: Request, { params }: Params) {
           validation.run?.id ?? null,
           supervisor.bundle?.session_id ?? null,
           enterprise.bundle?.context.organization_id ?? null,
+          realtime.bundle?.version.realtime_version ?? null,
         ),
       },
     );
@@ -407,6 +420,7 @@ export async function POST(_request: Request, { params }: Params) {
       education,
       supervisor,
       enterprise,
+      realtime,
     }),
     {
       headers: educationEndHeaders(
@@ -415,12 +429,13 @@ export async function POST(_request: Request, { params }: Params) {
         validation.run?.id ?? null,
         supervisor.bundle?.session_id ?? null,
         enterprise.bundle?.context.organization_id ?? null,
+        realtime.bundle?.version.realtime_version ?? null,
       ),
     },
   );
 }
 
-/** Additive education + ACE + supervisor + enterprise summary — never includes admin-only report body. */
+/** Additive education + ACE + supervisor + enterprise + realtime summary — never includes admin-only report body. */
 function educationEndPayload(opts: {
   reportId: string | null | undefined;
   ledgerId: string | null;
@@ -428,13 +443,22 @@ function educationEndPayload(opts: {
   education: Awaited<ReturnType<typeof runEducationAfterAssessment>>;
   supervisor: Awaited<ReturnType<typeof runSupervisorAfterAssessment>>;
   enterprise: Awaited<ReturnType<typeof runEnterpriseAfterAssessment>>;
+  realtime: Awaited<ReturnType<typeof runRealtimeAfterAssessment>>;
 }) {
-  const { assessment, education, supervisor, enterprise, reportId, ledgerId } =
-    opts;
+  const {
+    assessment,
+    education,
+    supervisor,
+    enterprise,
+    realtime,
+    reportId,
+    ledgerId,
+  } = opts;
   const ace = education.ace;
   const bundle = education.bundle;
   const sup = supervisor.bundle;
   const ent = enterprise.bundle;
+  const rt = realtime.bundle;
   return {
     ok: true as const,
     reportId,
@@ -490,6 +514,15 @@ function educationEndPayload(opts: {
           health: ent.observability?.health ?? null,
         }
       : null,
+    realtime: rt
+      ? {
+          version: rt.version.realtime_version,
+          connection: rt.session.connection,
+          network: rt.session.network,
+          latencyMs: rt.session.latencyMs,
+          captionsEnabled: rt.accessibility.captions,
+        }
+      : null,
   };
 }
 
@@ -499,6 +532,7 @@ function educationEndHeaders(
   validationRunId: string | null = null,
   supervisorSessionId: string | null = null,
   enterpriseOrganizationId: string | null = null,
+  realtimeVersion: string | null = null,
 ): Record<string, string> {
   return {
     "X-AI-Source": assessment.aiSource,
@@ -515,5 +549,6 @@ function educationEndHeaders(
     ...(enterpriseOrganizationId
       ? { "X-Enterprise-Org-Id": enterpriseOrganizationId }
       : {}),
+    ...(realtimeVersion ? { "X-Realtime-Version": realtimeVersion } : {}),
   };
 }

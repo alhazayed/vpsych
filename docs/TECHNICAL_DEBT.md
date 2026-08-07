@@ -153,6 +153,17 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | ENT-07 | Medium | Stamp `sessions.institution_id` on create | Bridge reads; create path optional |
 | ENT-08 | Medium | Multi-instance enterprise store | Same pattern as Stage 8/9 |
 
+## Realtime debt (Stage 11)
+
+| ID | Severity | Item | Notes |
+|----|----------|------|-------|
+| RT-S11-01 | Medium | Mid-generation token streaming in shared session-turn | SSE adapter progressive-reveals after classic cognition; see `docs/stage11/TECHNICAL_DEBT.md` |
+| RT-S11-02 | Medium | In-memory realtime metrics not multi-instance | Pair with Upstash/APM |
+| RT-S11-03 | Low | Amplitude lip-sync vs phoneme visemes | CSS avatar approximation |
+| RT-S11-05 | Low | Waiting-room chrome not default-mounted | Flag-gated component shipped |
+| RT-S11-06 | Medium | No WebRTC/SFU media plane | Intentional HTTPS v1 path |
+| RT-06 | Medium | therapistInterrupted client wiring | Partially closed — conversation pipeline now sends flag |
+
 ## Duplicate logic
 
 | Item | Notes |
@@ -161,8 +172,9 @@ Full catalogue: `docs/runtime/RUNTIME_DEBT.md`.
 | Education domain scores vs ACE CompetencyId EMAs | Education aggregates ACE — ACE remains SSOT for persistence |
 | Supervisor therapist skills vs Education domains | Supervisor evaluates process skills; Education owns curriculum domains — do not merge |
 | Enterprise org certificates vs Education/Supervisor milestones | Enterprise issues org credentials; Stages 7/9 own formative milestones — do not merge |
+| Realtime gateway vs Therapy Room VAD | Complementary; do not merge ownership |
 | Historical cert docs vs Omega package | Prefer Omega + RC1 for current truth |
 
 ## v1.1 roadmap pointer
 
-Excellence/HCE/SEO deferred work remains in open `[v1.1]` / experimental PRs. Stage 10 enterprise foundation ships on this branch — remaining ENT-* items stay non-blocking. Do not claim validated competency instruments during Professional Preview.
+Excellence/HCE/SEO deferred work remains in open `[v1.1]` / experimental PRs. Stage 11 realtime foundation ships on this branch — remaining RT-S11-* items stay non-blocking. Do not claim validated competency instruments during Professional Preview.

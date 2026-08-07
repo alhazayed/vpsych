@@ -37,6 +37,7 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Scientific validation / realism / inter-rater / research export | Validation (`lib/validation`) | validation_* + memory | Observe only — never patient writers |
 | Therapist supervision / skill review / portfolio | Supervisor (`lib/supervisor`) | ephemeral memory (+ ACE/education/validation reads) | Observe only — never patient writers |
 | Tenancy / RBAC / courses / org certificates / analytics / research metadata / webhooks | Enterprise (`lib/enterprise`) | institutions* + enterprise_* (+ memory façades) | Observe only — never patient writers |
+| Realtime voice gateway / streaming audio / avatar presentation / session chrome / media metrics | Realtime (`lib/realtime`) | client + ephemeral metrics | Presentation only — never patient writers |
 | Quality seal | Quality Ledger | `quality_ledgers` | — |
 | Authz role | profiles.role | profiles | — |
 | Rate limit counters | rate-limit | Redis/memory | — |
@@ -51,7 +52,7 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | OWN-02 | Trust/rapport in Emotion **and** Adaptation | Parallel variables | Medium | Contract: Emotion=affect, Adaptation=alliance |
 | OWN-03 | CBE vs Humanization silence/hesitation | Both inject cues; CBE may short-circuit | Medium | Precedence: CBE gate > Humanization micro |
 | OWN-04 | Message route is god-orchestrator | Inline composition | Low (intentional v1) | Optional `lib/session-turn` extract |
-| OWN-05 | `therapistInterrupted` API without client senders | Route accepts; UI never sends | Medium | Wire TRM barge-in or remove dead input |
+| OWN-05 | `therapistInterrupted` API without client senders | Route accepts; classic UI rarely sends | Medium | Stage 11 pipeline accepts flag; wire TRM barge-in callers |
 | OWN-06 | Dual TRM flags | Stage 2 ARCH-S2-03 | Medium | Unify flag matrix |
 | OWN-07 | ACE↔CGE import cycle | Managed by barrel exclusion | Medium | Extract bridge package |
 
@@ -69,4 +70,6 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 - Validation must not write patient clinical state or assign diagnoses.  
 - Supervisor must not write patient clinical state, change cognition, or invent diagnoses.  
 - Enterprise must not write clinical_snapshot, patient case_memory, LTM, or DecisionPlan.  
+- Realtime must not write clinical_snapshot, patient case_memory, LTM, or DecisionPlan.  
+- Voice/avatar/realtime must not mutate ClinicalCore or fork Patient Agent cognition.  
 - No engine may define a second Patient type (Stage 3).

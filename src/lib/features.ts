@@ -11,3 +11,11 @@ export function isTherapyRoomEnabled(): boolean {
   const pub = process.env.NEXT_PUBLIC_FEATURE_THERAPY_ROOM?.trim().toLowerCase();
   return server === "true" || pub === "true";
 }
+
+/** Stage 11 realtime simulation (voice gateway / streaming / avatar sync). */
+export function isRealtimeSimulationEnabled(): boolean {
+  const server = process.env.FEATURE_REALTIME_SIMULATION?.trim().toLowerCase();
+  const pub =
+    process.env.NEXT_PUBLIC_FEATURE_REALTIME_SIMULATION?.trim().toLowerCase();
+  return server === "true" || pub === "true";
+}
