@@ -119,6 +119,21 @@ export async function POST(_request: Request, { params }: Params) {
     typed.ended_at = now.toISOString();
   }
 
+  // Admin Virtual Patient test sessions must not create learner assessments/reports.
+  const snapshotMeta = typed.clinical_snapshot as
+    | (NonNullable<TherapySession["clinical_snapshot"]> & {
+        admin_test?: boolean;
+      })
+    | null
+    | undefined;
+  if (snapshotMeta?.admin_test === true) {
+    return NextResponse.json({
+      ok: true,
+      adminTest: true,
+      skippedAssessment: true,
+    });
+  }
+
   const { data: alreadyHasReport, error: hasErr } = await supabase.rpc(
     "session_has_report",
     { p_session_id: sessionId },

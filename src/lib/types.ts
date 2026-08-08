@@ -273,6 +273,11 @@ export type Avatar = {
    * `lib/personality-engine` and `docs/HUMAN_PERSONALITY_ENGINE.md`.
    */
   human_personality?: import("@/lib/personality-engine").HumanPersonalityMap | null;
+  /**
+   * Admin Virtual Patient lifecycle. Synced with `is_active`
+   * (published → true; otherwise false).
+   */
+  lifecycle_status?: "draft" | "testing" | "published" | "archived";
   is_active: boolean;
   created_at: string;
   updated_at: string;

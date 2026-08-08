@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  useCallback,
-  useEffect,
   useMemo,
   useState,
   useTransition,
@@ -79,66 +77,47 @@ function cloneDraft(source: VirtualPatientDraft): VirtualPatientDraft {
   };
 }
 
-export function EditVirtualPatient({ id }: { id: string }) {
+export function EditVirtualPatient({
+  id,
+  initialItem,
+  initialDraft,
+  initialSlug = null,
+}: {
+  id: string;
+  initialItem: VirtualPatientListItem;
+  initialDraft: VirtualPatientDraft;
+  initialSlug?: string | null;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("Overview");
-  const [item, setItem] = useState<VirtualPatientListItem | null>(null);
-  const [draft, setDraft] = useState<VirtualPatientDraft | null>(null);
-  const [slug, setSlug] = useState<string | null>(null);
-  const [comorbidityText, setComorbidityText] = useState("");
+  const [item, setItem] = useState<VirtualPatientListItem>(initialItem);
+  const [draft, setDraft] = useState<VirtualPatientDraft>(() =>
+    cloneDraft(initialDraft),
+  );
+  const [slug] = useState<string | null>(initialSlug);
+  const [comorbidityText, setComorbidityText] = useState(
+    initialDraft.comorbidities.join(", "),
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [dupOpen, setDupOpen] = useState(false);
-  const [dupName, setDupName] = useState("");
+  const [dupName, setDupName] = useState(`${initialItem.displayName} (copy)`);
 
-  const readOnly = item?.status === "published";
+  const readOnly = item.status === "published";
 
   const validation = useMemo(
-    () => (draft ? validateVirtualPatientDraft(draft) : null),
+    () => validateVirtualPatientDraft(draft),
     [draft],
   );
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/admin/virtual-patients/${id}`);
-      const data = (await res.json()) as {
-        item?: VirtualPatientListItem;
-        draft?: VirtualPatientDraft;
-        slug?: string | null;
-        error?: string;
-      };
-      if (!res.ok || !data.item || !data.draft) {
-        setError(data.error ?? "Virtual patient not found.");
-        return;
-      }
-      const next = cloneDraft(data.draft);
-      setItem(data.item);
-      setDraft(next);
-      setSlug(data.slug ?? null);
-      setComorbidityText(next.comorbidities.join(", "));
-      setDupName(`${data.item.displayName} (copy)`);
-    } catch {
-      setError("Could not load virtual patient.");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   function update<K extends keyof VirtualPatientDraft>(
     key: K,
     value: VirtualPatientDraft[K],
   ) {
     if (readOnly) return;
-    setDraft((d) => (d ? { ...d, [key]: value } : d));
+    setDraft((d) => ({ ...d, [key]: value }));
   }
 
   function setTrait(key: TraitKey, value: number) {
@@ -149,15 +128,12 @@ export function EditVirtualPatient({ id }: { id: string }) {
       | 3
       | 4
       | 5;
-    setDraft((d) =>
-      d ? { ...d, traits: { ...d.traits, [key]: clamped } } : d,
-    );
+    setDraft((d) => ({ ...d, traits: { ...d.traits, [key]: clamped } }));
   }
 
   function toggleStyle(style: InteractionStyle) {
     if (readOnly) return;
     setDraft((d) => {
-      if (!d) return d;
       const has = d.interactionStyles.includes(style);
       const next = has
         ? d.interactionStyles.filter((s) => s !== style)
@@ -172,7 +148,6 @@ export function EditVirtualPatient({ id }: { id: string }) {
   function toggleCompetency(c: TrainingCompetency) {
     if (readOnly) return;
     setDraft((d) => {
-      if (!d) return d;
       const has = d.targetCompetencies.includes(c);
       return {
         ...d,
@@ -184,7 +159,7 @@ export function EditVirtualPatient({ id }: { id: string }) {
   }
 
   function save() {
-    if (!draft || readOnly) return;
+    if (readOnly) return;
     startTransition(async () => {
       setError(null);
       setMessage(null);
@@ -298,22 +273,6 @@ export function EditVirtualPatient({ id }: { id: string }) {
         setError("Duplicate failed.");
       }
     });
-  }
-
-  if (loading) {
-    return (
-      <p className="text-sm text-[var(--on-surface-variant)]">
-        Loading virtual patient…
-      </p>
-    );
-  }
-
-  if (!item || !draft) {
-    return (
-      <p className="text-sm text-[var(--secondary)]">
-        {error ?? "Virtual patient not found."}
-      </p>
-    );
   }
 
   const disabled = readOnly || pending;
@@ -636,18 +595,12 @@ export function EditVirtualPatient({ id }: { id: string }) {
                   onChange={(e) => {
                     if (readOnly) return;
                     const response = e.target.value as BehaviorResponse;
-                    setDraft((d) =>
-                      d
-                        ? {
-                            ...d,
-                            behaviorRules: d.behaviorRules.map((r) =>
-                              r.trigger === rule.trigger
-                                ? { ...r, response }
-                                : r,
-                            ),
-                          }
-                        : d,
-                    );
+                    setDraft((d) => ({
+                      ...d,
+                      behaviorRules: d.behaviorRules.map((r) =>
+                        r.trigger === rule.trigger ? { ...r, response } : r,
+                      ),
+                    }));
                   }}
                 >
                   {BEHAVIOR_RESPONSES.map((r) => (
@@ -981,17 +934,12 @@ export function EditVirtualPatient({ id }: { id: string }) {
           type="button"
           className="btn-secondary text-xs"
           onClick={() =>
-            setDraft((d) =>
-              d
-                ? {
-                    ...d,
-                    behaviorRules:
-                      DEFAULT_VIRTUAL_PATIENT_DRAFT.behaviorRules.map((r) => ({
-                        ...r,
-                      })),
-                  }
-                : d,
-            )
+            setDraft((d) => ({
+              ...d,
+              behaviorRules: DEFAULT_VIRTUAL_PATIENT_DRAFT.behaviorRules.map(
+                (r) => ({ ...r }),
+              ),
+            }))
           }
         >
           Restore default behavior rules

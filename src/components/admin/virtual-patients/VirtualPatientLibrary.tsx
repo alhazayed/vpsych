@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
@@ -43,10 +43,14 @@ const EMPTY_DUP: DupForm = {
   dialect: "",
 };
 
-export function VirtualPatientLibrary() {
+export function VirtualPatientLibrary({
+  initialItems = [],
+}: {
+  initialItems?: VirtualPatientListItem[];
+}) {
   const router = useRouter();
-  const [items, setItems] = useState<VirtualPatientListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<VirtualPatientListItem[]>(initialItems);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -70,21 +74,15 @@ export function VirtualPatientLibrary() {
       };
       if (!res.ok) {
         setError(data.error ?? "Could not load virtual patients.");
-        setItems([]);
         return;
       }
       setItems(data.items ?? []);
     } catch {
       setError("Could not load virtual patients.");
-      setItems([]);
     } finally {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
