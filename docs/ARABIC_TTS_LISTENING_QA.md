@@ -1,73 +1,88 @@
-# Arabic TTS Listening QA — ASPE (follow-up to PR #184)
+# Arabic TTS Listening QA — ASPE (follow-up to PR #184 / #185)
 
 **Date:** 2026-08-08  
 **Branch:** `cursor/arabic-tts-listening-qa-49e0`  
-**Decision:** **EVIDENCE PENDING**
+**Spoken decision:** **EVIDENCE PENDING**
 
-## What was executed
+## PR #185 merge readiness (engineering)
 
-1. Expanded `ASPE_PRONUNCIATION_CORPUS` to cover all requested listening categories
-   (general, psychiatric terms, abbreviations, numbers, patient dialogues including
-   bipolar, Levantine/Jordanian, names/safety).
-2. Generated **50/50** Original vs ASPE-prepared ElevenLabs MP3 pairs via authenticated
-   TTS on a pre-ASPE host (so local `prepareArabicSpeechText` is what ElevenLabs hears
-   for B).
-3. Attempted actual listening via computer-use agent on `listen.html` — **agent cannot
-   perceive audio** in this environment (`COULD_NOT_HEAR`).
-4. No fabricated pronunciation judgments.
+**Technically ready to merge** for code/docs/tests (corpus expansion, listening harness, partial-tashkeel match fix).  
+**Not** a spoken-audio GO. Do not treat merge as pronunciation validation.
 
-## Artifact locations
+## Audio corpus location
 
-- `/opt/cursor/artifacts/aspe-listening-qa/manifest.json`
-- `/opt/cursor/artifacts/aspe-listening-qa/QA_TABLE.md`
-- `/opt/cursor/artifacts/aspe-listening-qa/listen.html`
-- `/opt/cursor/artifacts/aspe-listening-qa/audio/*__orig.mp3` / `*__aspe.mp3`
-- Harness: `scripts/aspe-listening-qa-dump.ts`, `scripts/aspe-listening-qa.mjs`
+On the cloud agent / review machine:
 
-## Engineering defect found (text-level) and fixed
+| Path | Contents |
+|------|----------|
+| `/opt/cursor/artifacts/aspe-listening-qa/` | Full QA pack |
+| `/opt/cursor/artifacts/aspe-listening-qa/listen.html` | Human listening UI |
+| `/opt/cursor/artifacts/aspe-listening-qa/audio/` | 100 MP3s (`{id}__orig.mp3`, `{id}__aspe.mp3`) |
+| `/opt/cursor/artifacts/aspe-listening-qa/manifest.json` | Generation metadata |
+| `/opt/cursor/artifacts/aspe-listening-qa/human-reviews.template.json` | Empty review sheet |
+| `/opt/cursor/artifacts/aspe-listening-qa.zip` | Downloadable zip of the pack |
+| `/opt/cursor/artifacts/aspe-listening-qa/README.md` | Operator instructions |
 
-| ID | Layer | Defect | Severity | Fix |
-|----|-------|--------|----------|-----|
-| psy-bpd-shadda | tashkeel / lexicon match | Partial tashkeel (shadda-only `الحدّية`) prevented dictionary match; speech form `الحَدِّيَّة` was not applied | High (medical term orthography for TTS) | `arabicFlexiblePattern` + only skip when surface already equals guided form (`detect.ts`, `analyze.ts`, `medical-terms.ts`) + regression test |
+This pack is **synthetic speech-validation audio only** — separate from clinical patient data / transcripts.
 
-This fix is **text/orthography**; spoken confirmation still requires human listening of the generated `psy-bpd-shadda` pair.
+## How to open / listen
 
-## QA table (audio)
+```bash
+cd /opt/cursor/artifacts/aspe-listening-qa
+python3 -m http.server 8765
+# open http://127.0.0.1:8765/listen.html
+```
 
-All rows: **Audio Result = GENERATED_NOT_LISTENED** (see artifact `QA_TABLE.md`).
+Or unzip `aspe-listening-qa.zip` locally and open `listen.html` in a browser.
 
-| Metric | Value |
-|--------|-------|
-| Total test cases (listening corpus) | 50 |
-| Audio samples generated | 100 (50 orig + 50 aspe) |
-| Samples actually listened to | **0** |
-| Defects found (spoken) | 0 (cannot assess) |
-| Defects found (text/engine) | 1 (partial-tashkeel match) |
-| Defects fixed | 1 |
-| Remaining defects (spoken) | Unknown — evidence pending |
+Each card shows: case ID, clinical category, original Arabic, ASPE-prepared Arabic, Original ▶, ASPE ▶.
 
-## Final decision
+## How to record defects
 
-### EVIDENCE PENDING
+In `listen.html` (defaults are **NOT REVIEWED**; nothing auto-PASSes):
 
-Arabic TTS spoken validation could not be completed because this environment cannot
-hear ElevenLabs playback. Audio pairs are generated and ready for human review.
+1. Play **Original ▶** then **ASPE ▶**
+2. **Defect:** Yes / No
+3. **Severity:** Critical / High / Medium / Low (if Yes)
+4. **Human QA status:** NOT REVIEWED · PASS · MINOR ISSUE · CLINICALLY SIGNIFICANT ISSUE
+5. **Comment**
+6. **Export reviews JSON** → save `aspe-human-reviews.json`
 
-## Answers
+## Recommended minimum personal review
 
-1. **Total test cases:** 50 listening cases (corpus also drives unit tests; ASPE suite now 79 tests in `prepare.test.ts`)
-2. **Audio samples generated:** 100
-3. **Samples listened to:** 0
-4. **Defects found:** 1 engine/text defect (partial tashkeel); 0 spoken defects assessed
-5. **Defects fixed:** 1 (flexible Arabic lexicon match)
-6. **Remaining defects:** Spoken pronunciation unknown until human listen
-7. **Should PR #184 be merged:** Yes for engineering/architecture (GO WITH CONDITIONS from prior audit), **after or with** this listening-QA follow-up that includes the partial-tashkeel fix — still **not** a spoken GO
-8. **Additional code PR required:** This branch / PR (corpus + harness + tashkeel match fix). Separate human listening pass still required before production spoken GO
-9. **Exact remaining evidence:** Human (or audio-capable) review of the 50 A/B pairs in `/opt/cursor/artifacts/aspe-listening-qa/listen.html` (or equivalent), filling Severity/Action in the QA table; re-check especially medical terms, numbers, abbreviations, Levantine preservation, and `psy-bpd-shadda`
+Listen to **at least 20 pairs**, including all of:
 
-## How to re-run generation
+- All psychiatric terms + abbreviations: `psy-*`, `abbr-*` (~17)
+- Number/dose/clock/age: `gen-percent`, `gen-dose`, `gen-half-dose`, `gen-clock`, `gen-age`
+- One of each patient type: `pat-anxious`, `pat-depressed`, `pat-ocd`, `pat-trauma`, `pat-bipolar`, `pat-psychotic`, `pat-adolescent`
+- Levantine: `lev-amman`, `lev-irbid`, `lev-natural-chat`
+- Partial-tashkeel regression: `psy-bpd-shadda`
+
+Prefer **all 50** before production spoken GO.
+
+## Decision after human listening
+
+| Human findings | Decision |
+|----------------|----------|
+| No clinically significant issues; minors acceptable or fixed | **GO** (spoken validated) or **GO WITH CONDITIONS** if minors remain documented |
+| Any clinically significant pronunciation defect remains | **NO-GO** until smallest-layer fix + re-listen of affected cases |
+| Review not completed | Keep **EVIDENCE PENDING** |
+
+## Access note
+
+Audio was generated in this environment and is on disk under `/opt/cursor/artifacts/`.  
+This agent **cannot hear** the files; only a human (or audio-capable reviewer) can complete spoken QA.
+
+## Rebuild UI only (no new TTS)
+
+```bash
+node scripts/aspe-listening-qa-build-ui.mjs
+```
+
+## Regenerate audio (optional)
 
 ```bash
 npx tsx scripts/aspe-listening-qa-dump.ts
 ASPE_QA_EMAIL=… ASPE_QA_PASSWORD=… node scripts/aspe-listening-qa.mjs
+node scripts/aspe-listening-qa-build-ui.mjs
 ```

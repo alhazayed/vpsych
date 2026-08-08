@@ -250,39 +250,13 @@ async function main() {
   ].join("\n");
   writeFileSync(join(OUT_DIR, "QA_TABLE.md"), md);
 
-  const html = `<!doctype html>
-<html lang="ar" dir="rtl">
-<meta charset="utf-8"/>
-<title>ASPE Listening QA</title>
-<style>
-  body{font-family:system-ui,sans-serif;margin:1.5rem;background:#0f1419;color:#e7ecf1}
-  h1{font-size:1.25rem}
-  .card{border:1px solid #2a3440;border-radius:8px;padding:1rem;margin:1rem 0}
-  .meta{opacity:.75;font-size:.85rem;white-space:pre-wrap}
-  audio{width:100%;margin:.4rem 0}
-  .label{font-size:.8rem;opacity:.8}
-</style>
-<h1>ASPE Arabic TTS — Original vs Prepared</h1>
-<p class="meta">A = original · B = ASPE-prepared (local engine). Do not mark GO without playback.</p>
-${rows
-  .map(
-    (r) => `<div class="card" id="${r.id}">
-  <strong>${r.id}</strong> · ${r.category}
-  <div class="meta">Input: ${(r.input || "").replace(/</g, "&lt;")}</div>
-  <div class="meta">ASPE: ${(r.aspeText || "").replace(/</g, "&lt;")}</div>
-  <div class="label">A — Original</div>
-  ${r.orig?.path ? `<audio controls src="audio/${r.id}__orig.mp3"></audio>` : "<div>FAILED</div>"}
-  <div class="label">B — ASPE prepared</div>
-  ${r.aspe?.path ? `<audio controls src="audio/${r.id}__aspe.mp3"></audio>` : "<div>FAILED</div>"}
-</div>`,
-  )
-  .join("\n")}
-</html>`;
-  writeFileSync(join(OUT_DIR, "listen.html"), html);
-
+  // Human listening UI is built separately — never auto-marks PASS.
   console.log(`\nWrote ${join(OUT_DIR, "manifest.json")}`);
   console.log(
     `Pairs generated: ${manifest.generatedPairs}/${manifest.totalCases}`,
+  );
+  console.log(
+    "Next: node scripts/aspe-listening-qa-build-ui.mjs  (human UI; EVIDENCE PENDING)",
   );
 }
 
