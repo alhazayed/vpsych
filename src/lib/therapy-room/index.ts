@@ -91,6 +91,14 @@ export {
 } from "./vad";
 
 export {
+  resolveTurnTakingConfig,
+  TURN_TAKING_DEFAULTS,
+  endpointCommitSilenceMs,
+  resolveEndpointInitialMs,
+  type TurnTakingConfig,
+} from "./turn-taking-config";
+
+export {
   HANDS_FREE_AUDIO_CONSTRAINTS,
   BARGE_IN_AUDIO_CONSTRAINTS,
 } from "./audio-constraints";
@@ -115,6 +123,7 @@ export {
 export {
   createConversationTelemetry,
   HANDS_FREE_PERF_BUDGETS,
+  getHandsFreePerfBudgets,
   type ConversationTelemetry,
   type ConversationTelemetryKind,
   type ConversationTelemetryEvent,
