@@ -18,6 +18,7 @@ import {
   resolveLiveEmotion,
   toClinicalVoiceProfile,
 } from "@/lib/clinical-voice";
+import { prepareArabicSpeech } from "@/lib/arabic-speech";
 
 type TtsBody = {
   text?: string;
@@ -40,6 +41,11 @@ type TtsBody = {
   /** Mission 10 — Humanization Engine prosody overrides. */
   stability?: number;
   style?: number;
+  /**
+   * TTS-only display_name → speech_name map (ASPE).
+   * Never persisted; does not change stored avatar identity.
+   */
+  speechNameOverrides?: Record<string, string>;
 };
 
 /**
@@ -76,7 +82,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as TtsBody;
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
-  const text = (body.text?.trim() ||
+  const rawText = (body.text?.trim() ||
     (body.preview ? previewSampleText(locale) : "")) as string;
 
   try {
@@ -88,6 +94,19 @@ export async function POST(request: Request) {
       voiceId: body.voiceId,
       voiceIdAr: body.voiceIdAr,
     });
+
+    // ASPE — Arabic orthography for TTS only; never mutates stored transcript.
+    const dialectHint =
+      resolved.clinicalProfile?.dialect ??
+      (locale === "ar" ? "jordanian" : null);
+    const arabicPrep =
+      locale === "ar"
+        ? prepareArabicSpeech(rawText, {
+            dialect: dialectHint,
+            speechNameOverrides: body.speechNameOverrides ?? null,
+          })
+        : null;
+    const text = arabicPrep?.text ?? rawText;
 
     // Mission 3 — live clinical emotion switching when a registry profile exists.
     let clinicalVoiceSettings = undefined as
@@ -147,6 +166,14 @@ export async function POST(request: Request) {
         ...(resolved.voiceProfileId
           ? { "X-Voice-Profile-Id": resolved.voiceProfileId }
           : {}),
+        ...(arabicPrep?.changed
+          ? {
+              "X-Voice-Arabic-Prep": "1",
+              "X-Voice-Arabic-Prep-Stages": arabicPrep.applied.join(","),
+            }
+          : locale === "ar"
+            ? { "X-Voice-Arabic-Prep": "0" }
+            : {}),
       },
     });
   } catch (error) {
