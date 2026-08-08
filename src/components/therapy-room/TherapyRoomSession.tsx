@@ -19,7 +19,7 @@ import {
   createConversationTelemetry,
   createImmersionTracker,
   DEFAULT_THERAPY_ROOM_THEME,
-  HANDS_FREE_PERF_BUDGETS,
+  resolveTurnTakingConfig,
   shouldPatientInterruptTherapist,
   startBargeInMonitor,
   startHandsFreeVad,
@@ -332,6 +332,11 @@ export function TherapyRoomSession({
   const speakPatient = useCallback(
     async (text: string, generation: number) => {
       if (endingRef.current || !fsmRef.current.isCurrent(generation)) {
+        telemetryRef.current.record("stale_response_blocked", {
+          turnId: turnIndexRef.current,
+          code: "speak_stale_generation",
+          fsmState: fsmRef.current.getState(),
+        });
         return;
       }
 
@@ -367,7 +372,15 @@ export function TherapyRoomSession({
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
           immersionRef.current.track("therapist_interrupt");
-          telemetryRef.current.record("barge_in");
+          telemetryRef.current.record("barge_in", {
+            turnId: turnIndexRef.current,
+            fsmState: "AVATAR_SPEAKING",
+          });
+          telemetryRef.current.record("tts_cancelled", {
+            turnId: turnIndexRef.current,
+            code: "therapist_barge_in",
+            fsmState: "AVATAR_SPEAKING",
+          });
           abort.abort();
           stopPlayback();
           const transitioned = dispatch("BARGE_IN");
@@ -456,6 +469,7 @@ export function TherapyRoomSession({
       if (!speechEnd.ok) return;
 
       turnIndexRef.current += 1;
+      const turnId = turnIndexRef.current;
       setTherapistSpeaking(false);
 
       if (source === "hands_free") {
@@ -473,6 +487,45 @@ export function TherapyRoomSession({
       const abort = new AbortController();
       turnAbortRef.current = abort;
 
+      // Therapist can reclaim the turn while STT/GPT are in flight.
+      const resumeMonitorStopRef: { current: (() => void) | null } = {
+        current: null,
+      };
+      let resumed = false;
+      const stopResumeMonitor = () => {
+        resumeMonitorStopRef.current?.();
+        resumeMonitorStopRef.current = null;
+      };
+      const onTherapistResume = () => {
+        if (resumed || endingRef.current) return;
+        if (!fsmRef.current.isCurrent(generation)) return;
+        const state = fsmRef.current.getState();
+        if (state !== "PROCESSING_STT" && state !== "WAITING_GPT") return;
+        resumed = true;
+        stopResumeMonitor();
+        telemetryRef.current.record("therapist_resumed", {
+          turnId,
+          fsmState: state,
+          code: "cancel_pending_response",
+        });
+        abort.abort();
+        const transitioned = dispatch("BARGE_IN");
+        if (transitioned.ok) {
+          setPresence("listening", "therapist-resumed");
+          setStatusKey("listening");
+          listenLoopRef.current();
+        }
+      };
+      void startBargeInMonitor({ onBargeIn: onTherapistResume }).then(
+        (stop) => {
+          if (resumed || abort.signal.aborted || endingRef.current) {
+            stop();
+            return;
+          }
+          resumeMonitorStopRef.current = stop;
+        },
+      );
+
       const sttStarted = telemetryRef.current.mark();
       setStatusKey("processingStt");
 
@@ -484,6 +537,7 @@ export function TherapyRoomSession({
           signal: abort.signal,
         });
       } catch {
+        stopResumeMonitor();
         if (abort.signal.aborted) return;
         telemetryRef.current.record("error", { code: "stt_network" });
         dispatch("STT_FAIL");
@@ -491,13 +545,23 @@ export function TherapyRoomSession({
         return;
       }
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+        stopResumeMonitor();
+        telemetryRef.current.record("stale_response_blocked", {
+          turnId,
+          code: "stale_after_stt",
+          fsmState: fsmRef.current.getState(),
+        });
+        return;
+      }
 
       telemetryRef.current.record("stt_latency_ms", {
         valueMs: telemetryRef.current.elapsed(sttStarted),
+        turnId,
       });
 
       if (!stt.ok) {
+        stopResumeMonitor();
         telemetryRef.current.record("error", {
           code: stt.code ?? "stt_fail",
         });
@@ -517,13 +581,17 @@ export function TherapyRoomSession({
 
       const transcript = stt.transcript.trim();
       if (!transcript) {
+        stopResumeMonitor();
         dispatch("STT_EMPTY");
         setPresence("listening", "empty");
         listenLoopRef.current();
         return;
       }
 
-      if (!dispatch("STT_OK").ok) return;
+      if (!dispatch("STT_OK").ok) {
+        stopResumeMonitor();
+        return;
+      }
 
       // Clinical thinking latency overlaps GPT request.
       const thinkPromise = new Promise<void>((resolve) => {
@@ -545,6 +613,7 @@ export function TherapyRoomSession({
         ]);
         turn = result;
       } catch {
+        stopResumeMonitor();
         if (abort.signal.aborted) return;
         telemetryRef.current.record("error", { code: "gpt_network" });
         dispatch("GPT_FAIL");
@@ -552,10 +621,20 @@ export function TherapyRoomSession({
         return;
       }
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      stopResumeMonitor();
+
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+        telemetryRef.current.record("stale_response_blocked", {
+          turnId,
+          code: "stale_after_gpt",
+          fsmState: fsmRef.current.getState(),
+        });
+        return;
+      }
 
       telemetryRef.current.record("gpt_latency_ms", {
         valueMs: telemetryRef.current.elapsed(gptStarted),
+        turnId,
       });
 
       if (!turn.ok) {
@@ -577,14 +656,30 @@ export function TherapyRoomSession({
       setLastPatientText(turn.data.assistantMessage.content);
 
       // Transition into AVATAR_SPEAKING before TTS.
-      if (!dispatch("GPT_OK").ok) return;
+      if (!dispatch("GPT_OK").ok) {
+        telemetryRef.current.record("stale_response_blocked", {
+          turnId,
+          code: "gpt_ok_rejected",
+          fsmState: fsmRef.current.getState(),
+        });
+        return;
+      }
 
       const ttsStarted = telemetryRef.current.mark();
       await speakPatient(turn.data.assistantMessage.content, generation);
+      if (!fsmRef.current.isCurrent(generation)) {
+        telemetryRef.current.record("stale_response_blocked", {
+          turnId,
+          code: "stale_after_tts",
+          fsmState: fsmRef.current.getState(),
+        });
+        return;
+      }
       telemetryRef.current.record("tts_latency_ms", {
         valueMs: telemetryRef.current.elapsed(ttsStarted),
+        turnId,
       });
-      telemetryRef.current.record("turn_complete");
+      telemetryRef.current.record("turn_complete", { turnId });
 
       if (
         fsmRef.current.isCurrent(generation) &&
@@ -627,22 +722,54 @@ export function TherapyRoomSession({
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
       const speechStartedAt = { current: null as number | null };
+      const turnCfg = resolveTurnTakingConfig();
 
       const vad = await startHandsFreeVad({
-        silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
-        maxMs: 28000,
+        silenceMs: turnCfg.endpointInitialMs,
+        confirmMs: turnCfg.endpointConfirmMs,
+        minSpeechMs: turnCfg.minSpeechMs,
+        maxMs: turnCfg.maxCaptureMs,
         onSpeechStart: () => {
           speechStartedAt.current = telemetryRef.current.mark();
           setTherapistSpeaking(true);
           setPresence("listening", "therapist-speaking");
+          setStatusKey("listening");
         },
         onSpeechEnd: () => {
           setTherapistSpeaking(false);
           if (speechStartedAt.current != null) {
             telemetryRef.current.record("speech_duration_ms", {
               valueMs: telemetryRef.current.elapsed(speechStartedAt.current),
+              turnId: turnIndexRef.current,
             });
           }
+        },
+        onEndpointCandidate: (quietMs) => {
+          telemetryRef.current.record("endpoint_candidate", {
+            valueMs: quietMs,
+            turnId: turnIndexRef.current,
+            fsmState: "LISTENING",
+            code: `initial_${turnCfg.endpointInitialMs}`,
+          });
+          setStatusKey("confirmingEndpoint");
+        },
+        onEndpointCancelled: (quietMs) => {
+          telemetryRef.current.record("endpoint_cancelled", {
+            valueMs: quietMs,
+            turnId: turnIndexRef.current,
+            fsmState: "LISTENING",
+            code: "therapist_resumed",
+          });
+          setTherapistSpeaking(true);
+          setStatusKey("listening");
+        },
+        onEndpointConfirmed: (quietMs) => {
+          telemetryRef.current.record("endpoint_confirmed", {
+            valueMs: quietMs,
+            turnId: turnIndexRef.current,
+            fsmState: "LISTENING",
+            code: `commit_${turnCfg.endpointInitialMs + turnCfg.endpointConfirmMs}`,
+          });
         },
         onInterruptCheck: (speechMs) => {
           const hit = shouldPatientInterruptTherapist({

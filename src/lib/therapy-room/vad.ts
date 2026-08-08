@@ -1,23 +1,30 @@
 /**
  * Lightweight energy-based Voice Activity Detection for hands-free turns.
  *
- * Production notes:
- * - Uses Web Audio + getUserMedia with echoCancellation / noiseSuppression / AGC
- * - Silence after speech ends the turn (default 850 ms — in the 700–1000 budget)
- * - Short intra-sentence pauses below silenceMs are ignored
- * - Mic graph is muted (gain 0) so ScriptProcessor never feeds speakers
- * - No audio is stored — samples discarded after RMS / WAV encode for STT upload
+ * Two-stage endpoint (clinical wait bias):
+ *   Stage 1 — quiet ≥ endpointInitialMs → endpoint *candidate* (keep listening)
+ *   Stage 2 — quiet ≥ initial + confirm → *commit* turn (finish capture → STT)
+ * Therapist speech during confirmation cancels the candidate and continues
+ * the same capture turn.
+ *
+ * - Web Audio + getUserMedia with echoCancellation / noiseSuppression / AGC
+ * - Mic graph muted (gain 0) so ScriptProcessor never feeds speakers
+ * - No audio retained beyond the in-memory WAV for the current STT upload
  */
 
 import {
   BARGE_IN_AUDIO_CONSTRAINTS,
   HANDS_FREE_AUDIO_CONSTRAINTS,
 } from "./audio-constraints";
-import { HANDS_FREE_PERF_BUDGETS } from "./conversation-telemetry";
+import {
+  endpointCommitSilenceMs,
+  resolveTurnTakingConfig,
+  type TurnTakingConfig,
+} from "./turn-taking-config";
 
 export type VadController = {
   /**
-   * Resolves when the turn ends naturally (silence after speech, max duration,
+   * Resolves when the turn ends naturally (confirmed silence, max duration,
    * or patient-interrupt check) — or when stop()/cancel() is invoked.
    */
   done: Promise<Blob | null>;
@@ -29,11 +36,15 @@ export type VadController = {
   isSpeaking: () => boolean;
   /** Milliseconds of continuous speech detected so far. */
   speechMs: () => number;
+  /** True while Stage-1 candidate is pending Stage-2 confirmation. */
+  isEndpointPending: () => boolean;
 };
 
 export type HandsFreeVadOptions = {
-  /** Silence duration (ms) after speech that ends the turn. */
+  /** Stage-1 silence (ms) after speech → endpoint candidate. */
   silenceMs?: number;
+  /** Stage-2 additional silence (ms) to confirm end-of-turn. */
+  confirmMs?: number;
   /** Absolute max recording length. */
   maxMs?: number;
   /** RMS threshold (0–1) to count as speech. */
@@ -49,6 +60,12 @@ export type HandsFreeVadOptions = {
   prerollMs?: number;
   onSpeechStart?: () => void;
   onSpeechEnd?: () => void;
+  /** Stage-1: silence candidate raised (still listening / recording). */
+  onEndpointCandidate?: (quietMs: number) => void;
+  /** Therapist resumed during Stage-2 — candidate cleared. */
+  onEndpointCancelled?: (quietMs: number) => void;
+  /** Stage-2 confirmed — about to finish capture. */
+  onEndpointConfirmed?: (quietMs: number) => void;
   onInterruptCheck?: (speechMs: number) => boolean;
   /** Optional pre-acquired stream (shared mic for barge-in → listen). */
   stream?: MediaStream;
@@ -111,25 +128,38 @@ export function rms(input: Float32Array): number {
 }
 
 /**
- * Clamp silence timeout into the production budget (700–1000 ms).
+ * Clamp Stage-1 silence into the clinical initial window.
+ * @deprecated Prefer resolveTurnTakingConfig(); kept for barrel / test compat.
  */
 export function resolveSilenceMs(requested?: number): number {
-  const fallback = HANDS_FREE_PERF_BUDGETS.defaultSilenceMs;
-  if (requested == null || !Number.isFinite(requested)) return fallback;
-  return Math.min(
-    HANDS_FREE_PERF_BUDGETS.silenceDetectMsMax,
-    Math.max(HANDS_FREE_PERF_BUDGETS.silenceDetectMsMin, requested),
+  const cfg = resolveTurnTakingConfig(
+    requested != null && Number.isFinite(requested)
+      ? { endpointInitialMs: requested }
+      : undefined,
   );
+  return cfg.endpointInitialMs;
 }
 
+export type VadFrameDecision = {
+  nowSpeaking: boolean;
+  speechStarted: boolean;
+  speechEnded: boolean;
+  shouldFinish: boolean;
+  keepAudio: boolean;
+  /** Stage-1 candidate active after this frame. */
+  endpointCandidate: boolean;
+  /** Candidate was cleared because speech resumed. */
+  endpointCancelled: boolean;
+  /** Stage-2 confirmed — commit the turn. */
+  endpointConfirmed: boolean;
+};
+
 /**
- * Pure VAD frame decision — unit-tested without Web Audio.
- * Returns whether the turn should end after this frame.
+ * Pure two-stage VAD frame decision — unit-tested without Web Audio.
  *
- * Speech start uses speechThreshold. End-of-turn silence uses the same
- * speechThreshold (level below it accumulates quiet time) so hysteresis
- * never traps the turn in a mid-band forever. silenceThreshold is reserved
- * for callers that want a stricter "definitely quiet" check.
+ * Stage 1 (candidate): quietForMs ≥ silenceMs (initial)
+ * Stage 2 (commit):    quietForMs ≥ silenceMs + confirmMs
+ * Speech during candidate → cancel and continue the same turn.
  */
 export function evaluateVadFrame(input: {
   level: number;
@@ -139,39 +169,77 @@ export function evaluateVadFrame(input: {
   totalSpeechMs: number;
   minSpeechMs: number;
   quietForMs: number;
+  /** Stage-1 silence (ms). */
   silenceMs: number;
+  /** Stage-2 additional silence (ms). Default 0 = legacy single-stage. */
+  confirmMs?: number;
+  /** Whether Stage-1 candidate is already pending. */
+  endpointCandidate?: boolean;
   elapsedMs: number;
   maxMs: number;
-}): {
-  nowSpeaking: boolean;
-  speechStarted: boolean;
-  speechEnded: boolean;
-  shouldFinish: boolean;
-  keepAudio: boolean;
-} {
+  /** Optional absolute max quiet (initial+confirm). */
+  maxQuietMs?: number;
+}): VadFrameDecision {
   let nowSpeaking = input.speaking;
   let speechStarted = false;
   let speechEnded = false;
   let shouldFinish = false;
   let keepAudio = false;
+  let endpointCandidate = Boolean(input.endpointCandidate);
+  let endpointCancelled = false;
+  let endpointConfirmed = false;
+
+  const confirmMs = Math.max(0, input.confirmMs ?? 0);
+  const commitQuiet = Math.min(
+    input.maxQuietMs ?? input.silenceMs + confirmMs,
+    input.silenceMs + confirmMs,
+  );
 
   if (input.level >= input.speechThreshold) {
+    if (endpointCandidate) {
+      endpointCandidate = false;
+      endpointCancelled = true;
+    }
     if (!nowSpeaking) {
       nowSpeaking = true;
       speechStarted = true;
     }
-  } else if (nowSpeaking) {
-    // Quiet relative to speechThreshold. silenceThreshold remains available for
-    // future stricter hysteresis; short pauses are gated by quietForMs.
-    if (
+  } else if (nowSpeaking || endpointCandidate) {
+    // Quiet relative to speechThreshold. Short pauses gated by quietForMs.
+    const quietEnoughForCandidate =
       input.totalSpeechMs >= input.minSpeechMs &&
       input.quietForMs >= input.silenceMs &&
-      input.level < Math.max(input.silenceThreshold, input.speechThreshold)
-    ) {
+      input.level < Math.max(input.silenceThreshold, input.speechThreshold);
+
+    const quietEnoughToCommit =
+      input.totalSpeechMs >= input.minSpeechMs &&
+      input.quietForMs >= commitQuiet &&
+      input.level < Math.max(input.silenceThreshold, input.speechThreshold);
+
+    if (quietEnoughToCommit) {
       nowSpeaking = false;
       speechEnded = true;
       shouldFinish = true;
       keepAudio = true;
+      endpointCandidate = true;
+      endpointConfirmed = true;
+    } else if (quietEnoughForCandidate) {
+      // Stage-1: raise / hold candidate — do NOT finish yet when confirmMs > 0.
+      if (confirmMs <= 0) {
+        // Legacy single-stage: candidate == commit.
+        nowSpeaking = false;
+        speechEnded = true;
+        shouldFinish = true;
+        keepAudio = true;
+        endpointCandidate = true;
+        endpointConfirmed = true;
+      } else {
+        if (!endpointCandidate) {
+          endpointCandidate = true;
+          speechEnded = true; // energy speech ended; turn not committed
+        }
+        nowSpeaking = false;
+      }
     }
   }
 
@@ -180,23 +248,47 @@ export function evaluateVadFrame(input: {
     shouldFinish = true;
     keepAudio = input.totalSpeechMs >= input.minSpeechMs;
     nowSpeaking = false;
+    if (keepAudio) {
+      endpointConfirmed = true;
+      endpointCandidate = true;
+    }
   }
 
-  return { nowSpeaking, speechStarted, speechEnded, shouldFinish, keepAudio };
+  return {
+    nowSpeaking,
+    speechStarted,
+    speechEnded,
+    shouldFinish,
+    keepAudio,
+    endpointCandidate,
+    endpointCancelled,
+    endpointConfirmed,
+  };
 }
 
 /**
- * Start hands-free listening. Resolves the turn when silence follows speech,
- * max duration hits, or onInterruptCheck returns true (patient interruption).
+ * Start hands-free listening. Resolves only after Stage-2 confirmation
+ * (or max duration / patient-interrupt), never on a short mid-sentence pause.
  */
 export async function startHandsFreeVad(
   options: HandsFreeVadOptions = {},
 ): Promise<VadController> {
-  const silenceMs = resolveSilenceMs(options.silenceMs);
-  const maxMs = options.maxMs ?? 30000;
-  const speechThreshold = options.speechThreshold ?? 0.015;
-  const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
-  const minSpeechMs = options.minSpeechMs ?? 400;
+  const baseCfg: Partial<TurnTakingConfig> = {};
+  if (options.silenceMs != null) baseCfg.endpointInitialMs = options.silenceMs;
+  if (options.confirmMs != null) baseCfg.endpointConfirmMs = options.confirmMs;
+  if (options.minSpeechMs != null) baseCfg.minSpeechMs = options.minSpeechMs;
+  if (options.maxMs != null) baseCfg.maxCaptureMs = options.maxMs;
+
+  const cfg = resolveTurnTakingConfig(baseCfg);
+  const silenceMs = cfg.endpointInitialMs;
+  const confirmMs = cfg.endpointConfirmMs;
+  const commitQuiet = endpointCommitSilenceMs(cfg);
+  const maxMs = options.maxMs ?? cfg.maxCaptureMs;
+  const speechThreshold =
+    options.speechThreshold ?? cfg.speechRmsThreshold;
+  const silenceThreshold =
+    options.silenceThreshold ?? speechThreshold * 0.55;
+  const minSpeechMs = options.minSpeechMs ?? cfg.minSpeechMs;
 
   const ownsStream = !options.stream;
   const stream =
@@ -224,6 +316,7 @@ export async function startHandsFreeVad(
 
   let stopped = false;
   let speaking = false;
+  let endpointCandidate = false;
   let speechStartedAt: number | null = null;
   let lastSpeechAt: number | null = null;
   let totalSpeechMs = 0;
@@ -240,7 +333,6 @@ export async function startHandsFreeVad(
     } catch {
       /* ignore */
     }
-    // Only stop tracks we acquired. Shared streams stay open for the caller.
     if (ownsStream) {
       stream.getTracks().forEach((t) => t.stop());
     }
@@ -272,9 +364,15 @@ export async function startHandsFreeVad(
     const level = rms(input);
     const now = Date.now();
     const quietFor =
-      speaking && lastSpeechAt != null ? now - lastSpeechAt : 0;
+      lastSpeechAt != null && (speaking || endpointCandidate)
+        ? now - lastSpeechAt
+        : 0;
 
     if (level >= speechThreshold) {
+      if (endpointCandidate) {
+        options.onEndpointCancelled?.(quietFor);
+        endpointCandidate = false;
+      }
       if (!speaking) {
         speaking = true;
         speechStartedAt = now;
@@ -289,22 +387,49 @@ export async function startHandsFreeVad(
         void finish(true);
         return;
       }
-    } else if (speaking && lastSpeechAt != null) {
+    } else if (speaking || endpointCandidate) {
       const decision = evaluateVadFrame({
         level,
-        speaking: true,
+        speaking,
         speechThreshold,
         silenceThreshold,
         totalSpeechMs,
         minSpeechMs,
         quietForMs: quietFor,
         silenceMs,
+        confirmMs,
+        endpointCandidate,
         elapsedMs: now - startedAt,
         maxMs,
+        maxQuietMs: commitQuiet,
       });
-      if (decision.shouldFinish) {
-        speaking = false;
+
+      if (decision.endpointCancelled) {
+        options.onEndpointCancelled?.(quietFor);
+      }
+      if (
+        decision.endpointCandidate &&
+        !endpointCandidate &&
+        !decision.shouldFinish
+      ) {
+        options.onEndpointCandidate?.(quietFor);
+      }
+      if (decision.endpointConfirmed) {
+        options.onEndpointConfirmed?.(quietFor);
+      }
+
+      speaking = decision.nowSpeaking;
+      endpointCandidate = decision.endpointCandidate;
+
+      if (decision.speechEnded && !decision.shouldFinish) {
+        // Energy speech ended at Stage-1; turn still open.
         options.onSpeechEnd?.();
+      }
+
+      if (decision.shouldFinish) {
+        if (!decision.speechEnded) {
+          options.onSpeechEnd?.();
+        }
         void finish(decision.keepAudio);
         return;
       }
@@ -335,12 +460,13 @@ export async function startHandsFreeVad(
     },
     isSpeaking: () => speaking,
     speechMs: () => totalSpeechMs,
+    isEndpointPending: () => endpointCandidate,
   };
 }
 
 /**
- * Monitor mic for barge-in while the patient is speaking.
- * Returns a stop function. No audio is retained.
+ * Monitor mic for barge-in while the patient is speaking (or while STT/GPT
+ * is in flight). Returns a stop function. No audio is retained.
  */
 export async function startBargeInMonitor(opts: {
   onBargeIn: () => void;
@@ -348,8 +474,9 @@ export async function startBargeInMonitor(opts: {
   /** Require this much continuous speech before firing. */
   minSpeechMs?: number;
 }): Promise<() => void> {
-  const threshold = opts.threshold ?? 0.02;
-  const minSpeechMs = opts.minSpeechMs ?? 280;
+  const cfg = resolveTurnTakingConfig();
+  const threshold = opts.threshold ?? cfg.bargeInRmsThreshold;
+  const minSpeechMs = opts.minSpeechMs ?? cfg.bargeInMinSpeechMs;
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
