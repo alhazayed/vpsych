@@ -86,6 +86,16 @@ describe("Arabic Speech Preparation Engine", () => {
     );
   });
 
+  it("upgrades partial tashkeel (shadda-only) to full speech form", () => {
+    // Regression: الحدّية must not block matching of BPD speech form.
+    expect(prepareArabicSpeechText("عندي اضطراب الشخصية الحدّية")).toContain(
+      "الحَدِّيَّة",
+    );
+    expect(applyClinicalTashkeel("اضطراب الشخصية الحدّية")).toContain(
+      "الحَدِّيَّة",
+    );
+  });
+
   it("maps medication Latin names to Arabic speech forms", () => {
     expect(prepareArabicSpeechText("باخذ Sertraline")).toContain("سيرترالين");
     expect(prepareArabicSpeechText("Prozac ساعدني")).toContain("بروزاك");
@@ -227,10 +237,14 @@ describe("ASPE pronunciation corpus", () => {
       "numbers",
       "names",
       "safety",
+      "abbreviations",
     ] as const) {
       expect(groups.has(g)).toBe(true);
     }
-    expect(ASPE_PRONUNCIATION_CORPUS.length).toBeGreaterThanOrEqual(30);
+    expect(ASPE_PRONUNCIATION_CORPUS.length).toBeGreaterThanOrEqual(40);
+    expect(
+      ASPE_PRONUNCIATION_CORPUS.some((c) => c.id === "pat-bipolar"),
+    ).toBe(true);
   });
 
   for (const c of ASPE_PRONUNCIATION_CORPUS) {

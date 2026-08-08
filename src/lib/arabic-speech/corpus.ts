@@ -1,7 +1,8 @@
 /**
  * Deterministic Arabic pronunciation regression corpus for ASPE.
- * Text-level expectations only — spoken audio QA is EVIDENCE PENDING
- * until ElevenLabs playback is validated in a configured environment.
+ * Text-level expectations are asserted in unit tests.
+ * Spoken audio QA uses the same cases via scripts/aspe-listening-qa.mjs
+ * (Original ElevenLabs vs ASPE-prepared ElevenLabs).
  */
 
 export type CorpusCase = {
@@ -13,7 +14,8 @@ export type CorpusCase = {
     | "levantine"
     | "numbers"
     | "names"
-    | "safety";
+    | "safety"
+    | "abbreviations";
   input: string;
   /** Substrings that MUST appear after prepare (speech surface). */
   mustInclude?: string[];
@@ -23,10 +25,12 @@ export type CorpusCase = {
   exact?: string;
   /** Expect unchanged (English / no-op). */
   unchanged?: boolean;
+  /** Include in live ElevenLabs listening batches (default true for speech cases). */
+  listen?: boolean;
 };
 
 export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
-  // A. General
+  // A. General Arabic — conversational, ambiguous, common phrases
   {
     id: "gen-hello",
     group: "general",
@@ -40,6 +44,25 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustInclude: ["القَلَق"],
   },
   {
+    id: "gen-ambiguous-waswas",
+    group: "general",
+    input: "الوسواس بخلّيني أشك بكل إشي",
+    mustInclude: ["الوَسْوَاس"],
+  },
+  {
+    id: "gen-verb-qala",
+    group: "general",
+    input: "قالت لي إنه الوضع صعب، وما بقدر أنام",
+    mustInclude: ["قالت لي", "ما بقدر أنام"],
+    mustNotInclude: ["قالتْ لِيْ إِنَّهُ"],
+  },
+  {
+    id: "gen-common-phrase",
+    group: "general",
+    input: "والله ما بقدر أكمل هيك، تعبانة كتير",
+    mustInclude: ["والله ما بقدر أكمل", "تعبانة كتير"],
+  },
+  {
     id: "gen-percent",
     group: "numbers",
     input: "نزل دخلي حوالي 10%",
@@ -50,6 +73,12 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     group: "numbers",
     input: "بستيقظ الساعة 3",
     mustInclude: ["الساعة الثالثة"],
+  },
+  {
+    id: "gen-clock-morning",
+    group: "numbers",
+    input: "بصحى الساعة 7 وبخاف",
+    mustInclude: ["الساعة السابعة"],
   },
   {
     id: "gen-dose",
@@ -88,13 +117,25 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustInclude: ["مئة ملغ"],
   },
   {
+    id: "gen-age",
+    group: "numbers",
+    input: "عمري 28 سنة وهيك من زمان",
+    mustInclude: ["ثماني وعشرون سنة"],
+  },
+  {
+    id: "gen-duration-weeks",
+    group: "numbers",
+    input: "صار لي 6 أسابيع على الدوا",
+    mustInclude: ["ستة أسابيع"],
+  },
+  {
     id: "gen-year-bare",
     group: "numbers",
     input: "من ٢٠٢٥ وأنا هيك",
     exact: "من ٢٠٢٥ وأنا هيك",
   },
 
-  // B. Psychiatric terminology
+  // B. Psychiatric terminology (canonical list)
   {
     id: "psy-depression",
     group: "psychiatric",
@@ -150,22 +191,10 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustInclude: ["الحَدِّيَّة"],
   },
   {
-    id: "psy-adhd",
+    id: "psy-bpd-shadda",
     group: "psychiatric",
-    input: "عندي ADHD من زمان",
-    mustInclude: ["اضطراب فرط الحركة وتشتت الانتباه"],
-  },
-  {
-    id: "psy-ocd-en",
-    group: "psychiatric",
-    input: "الـ OCD بسيطر عليّ",
-    mustInclude: ["الوَسْوَاس القَهْرِي"],
-  },
-  {
-    id: "psy-ptsd-en",
-    group: "psychiatric",
-    input: "بعد الحادث صار PTSD",
-    mustInclude: ["اضطراب ما بعد الصدمة"],
+    input: "عندي اضطراب الشخصية الحدّية",
+    mustInclude: ["الحَدِّيَّة"],
   },
   {
     id: "psy-med-sertraline",
@@ -174,7 +203,51 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustInclude: ["سيرترالين"],
   },
 
-  // C. Patient dialogue (affect preserved — no cheerful rewrite)
+  // C. Abbreviations (Latin → spoken Arabic)
+  {
+    id: "abbr-adhd",
+    group: "abbreviations",
+    input: "عندي ADHD من زمان",
+    mustInclude: ["اضطراب فرط الحركة وتشتت الانتباه"],
+  },
+  {
+    id: "abbr-ocd",
+    group: "abbreviations",
+    input: "الـ OCD بسيطر عليّ",
+    mustInclude: ["الوَسْوَاس القَهْرِي"],
+  },
+  {
+    id: "abbr-ptsd",
+    group: "abbreviations",
+    input: "بعد الحادث صار PTSD",
+    mustInclude: ["اضطراب ما بعد الصدمة"],
+  },
+  {
+    id: "abbr-bpd",
+    group: "abbreviations",
+    input: "حكوا إنه BPD",
+    mustInclude: ["اضطراب الشخصية الحَدِّيَّة"],
+  },
+  {
+    id: "abbr-gad",
+    group: "abbreviations",
+    input: "عندي GAD من سنين",
+    mustInclude: ["اضطراب القلق العام"],
+  },
+  {
+    id: "abbr-mdd",
+    group: "abbreviations",
+    input: "التشخيص كان MDD",
+    mustInclude: ["اضطراب الاكتئاب الجسيم"],
+  },
+  {
+    id: "abbr-cbt-dbt",
+    group: "abbreviations",
+    input: "جربت CBT و DBT",
+    mustInclude: ["العلاج المعرفي السلوكي", "العلاج الجدلي السلوكي"],
+  },
+
+  // D. Patient dialogue (affect preserved — no cheerful rewrite)
   {
     id: "pat-anxious",
     group: "patient",
@@ -207,6 +280,13 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustInclude: ["ما بَعْد الصَّدْمَة"],
   },
   {
+    id: "pat-bipolar",
+    group: "patient",
+    input: "أيام بكون طاير، وأيام بانهار، قالوا اضطراب ثنائي القطب",
+    mustInclude: ["بكون طاير", "ثُنَائِيِّ القُطْب"],
+    mustNotInclude: ["أشعر بالسعادة دائما"],
+  },
+  {
     id: "pat-adolescent",
     group: "patient",
     input: "مش عارفة شو صار فيّي، القلق بالمدرسة كتير",
@@ -214,7 +294,7 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     mustNotInclude: ["لا أعرف ما الذي حدث"],
   },
 
-  // D. Levantine / Jordanian
+  // E. Levantine / Jordanian — must not MSA-rewrite colloquial speech
   {
     id: "lev-amman",
     group: "levantine",
@@ -233,6 +313,13 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     group: "levantine",
     input: "عندي ديدلاين بكرة والقلق مش طبيعي",
     mustInclude: ["ديدلاين", "القَلَق"],
+  },
+  {
+    id: "lev-natural-chat",
+    group: "levantine",
+    input: "شو بدي أعمل؟ ما بتحمل الضغط، وبصير أرجف",
+    mustInclude: ["شو بدي أعمل", "ما بتحمل", "وبصير أرجف"],
+    mustNotInclude: ["ماذا يجب أن أفعل", "لا أتحمل"],
   },
 
   // Names / safety
@@ -254,6 +341,7 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     input: "اسمي سامي",
     // exercised in tests with speechNameOverrides
     mustInclude: ["اسمي"],
+    listen: false,
   },
   {
     id: "safe-no-invent",
@@ -266,12 +354,14 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     group: "safety",
     input: "I feel anxious today.",
     unchanged: true,
+    listen: false,
   },
   {
     id: "safe-empty",
     group: "safety",
     input: "",
     unchanged: true,
+    listen: false,
   },
   {
     id: "safe-already-diacritized",
@@ -280,3 +370,13 @@ export const ASPE_PRONUNCIATION_CORPUS: readonly CorpusCase[] = [
     exact: "القَلَق موجود",
   },
 ] as const;
+
+/** Cases intended for live ElevenLabs A/B listening (skips empty/English-only). */
+export function aspeListeningCorpus(): readonly CorpusCase[] {
+  return ASPE_PRONUNCIATION_CORPUS.filter((c) => {
+    if (c.listen === false) return false;
+    if (!c.input.trim()) return false;
+    if (c.unchanged && !/[\u0600-\u06FF]/.test(c.input)) return false;
+    return true;
+  });
+}

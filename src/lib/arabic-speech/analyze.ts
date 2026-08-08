@@ -5,7 +5,11 @@
  */
 
 import { CLINICAL_ABBREVIATION_EXPANSIONS } from "./abbreviations";
-import { hasTashkeel, stripTashkeel } from "./detect";
+import {
+  arabicFlexiblePattern,
+  isExactSpeechForm,
+  stripTashkeel,
+} from "./detect";
 import { medicalDictionaryLexicon } from "./dictionary";
 import { resolveSpeechNameLexicon } from "./names";
 import { findExpandableNumberMatches } from "./numbers";
@@ -48,7 +52,7 @@ function findLexiconFindings(
     const re = ascii
       ? new RegExp(`\\b(${escapeRegExp(key)})\\b`, "gi")
       : new RegExp(
-          `(?<![\\u0600-\\u06FF])([وفبكل]?)(${escapeRegExp(key)})(?![\\u0600-\\u06FF])`,
+          `(?<![\\u0600-\\u06FF])([وفبكل]?)(${arabicFlexiblePattern(key)})(?![\\u0600-\\u06FF])`,
           "g",
         );
     let m: RegExpExecArray | null;
@@ -66,11 +70,12 @@ function findLexiconFindings(
       const span = { start, end };
       if (claimed.some((c) => overlaps(c, span))) continue;
 
-      const alreadyGuided = !ascii && hasTashkeel(word);
-      const suggested = alreadyGuided
-        ? undefined
-        : ascii
-          ? guided
+      // Partial tashkeel (e.g. shadda-only الحدّية) is NOT fully guided —
+      // still suggest the dictionary speech form unless already exact.
+      const suggested = ascii
+        ? guided
+        : isExactSpeechForm(word, guided)
+          ? undefined
           : `${clitic}${guided}`;
       const surface = m[0];
 
