@@ -1,24 +1,13 @@
 /**
  * Identify pronunciation-sensitive spans in Arabic (or mixed) dialogue.
  *
- * Steps 1–6 of ASPE:
- *   1. pronunciation ambiguity
- *   2. medical terms
- *   3. names
- *   4. abbreviations
- *   5. numbers
- *   6. TTS mispronunciation risks
- *
- * Corrections are suggested only when orthography must change for speech;
- * clinical meaning is never altered.
+ * Steps 1–6 of ASPE — corrections suggested only when orthography must change.
  */
 
 import { CLINICAL_ABBREVIATION_EXPANSIONS } from "./abbreviations";
 import { hasTashkeel, stripTashkeel } from "./detect";
-import {
-  CLINICAL_TASHKEEL_LEXICON,
-  NAME_TASHKEEL_LEXICON,
-} from "./medical-terms";
+import { medicalDictionaryLexicon } from "./dictionary";
+import { resolveSpeechNameLexicon } from "./names";
 import { findExpandableNumberMatches } from "./numbers";
 import type {
   ArabicSpeechAnalysis,
@@ -37,9 +26,13 @@ function overlaps(
   return a.start < b.end && b.start < a.end;
 }
 
+function isAsciiKey(key: string): boolean {
+  return /^[A-Za-z][A-Za-z0-9'-]*$/.test(key);
+}
+
 /**
- * Scan lexicon phrases (longest first). Optional clitics و/ف/ب/ك/ل are kept
- * on the surface but the guided form replaces only the lexicon key.
+ * Scan lexicon phrases (longest first). Optional clitics و/ف/ب/ك/ل preserved.
+ * ASCII keys (e.g. drug names) match case-insensitively.
  */
 function findLexiconFindings(
   text: string,
@@ -51,23 +44,34 @@ function findLexiconFindings(
 
   for (const [raw, guided] of lexicon) {
     const key = stripTashkeel(raw);
-    const re = new RegExp(
-      `(?<![\\u0600-\\u06FF])([وفبكل]?)(${escapeRegExp(key)})(?![\\u0600-\\u06FF])`,
-      "g",
-    );
+    const ascii = isAsciiKey(key);
+    const re = ascii
+      ? new RegExp(`\\b(${escapeRegExp(key)})\\b`, "gi")
+      : new RegExp(
+          `(?<![\\u0600-\\u06FF])([وفبكل]?)(${escapeRegExp(key)})(?![\\u0600-\\u06FF])`,
+          "g",
+        );
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
-      const clitic = m[1] ?? "";
-      const word = m[2] ?? "";
+      let clitic = "";
+      let word: string;
       const start = m.index;
       const end = start + m[0].length;
+      if (ascii) {
+        word = m[1] ?? m[0];
+      } else {
+        clitic = m[1] ?? "";
+        word = m[2] ?? "";
+      }
       const span = { start, end };
       if (claimed.some((c) => overlaps(c, span))) continue;
 
-      const alreadyGuided = hasTashkeel(word);
+      const alreadyGuided = !ascii && hasTashkeel(word);
       const suggested = alreadyGuided
         ? undefined
-        : `${clitic}${guided}`;
+        : ascii
+          ? guided
+          : `${clitic}${guided}`;
       const surface = m[0];
 
       found.push({
@@ -80,7 +84,7 @@ function findLexiconFindings(
           kind === "medical"
             ? "clinical term — selective professional pronunciation"
             : kind === "name"
-              ? "name — preserve intended pronunciation"
+              ? "explicit speech_name override (TTS only)"
               : "lexicon match",
       });
       claimed.push(span);
@@ -119,15 +123,22 @@ function findNumberFindings(text: string): ArabicSpeechFinding[] {
     start: hit.start,
     end: hit.end,
     suggested: hit.spoken,
-    reason: "digit + unit — speak as Arabic words",
+    reason: "numeric pattern — speak as Arabic words",
   }));
 }
 
+export type AnalyzeArabicSpeechOptions = {
+  /** TTS-only display→speech name map; never guesses unknown names. */
+  speechNameOverrides?: Readonly<Record<string, string>> | null;
+};
+
 /**
  * Build the six identification buckets, then a non-overlapping correction list.
- * Ambiguity ∪ TTS-risk are derived from medical/name spans that still need guidance.
  */
-export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
+export function analyzeArabicSpeech(
+  input: string,
+  options: AnalyzeArabicSpeechOptions = {},
+): ArabicSpeechAnalysis {
   const text = typeof input === "string" ? input : "";
   if (!text) {
     return {
@@ -143,10 +154,14 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
 
   const medicalTerms = findLexiconFindings(
     text,
-    CLINICAL_TASHKEEL_LEXICON,
+    medicalDictionaryLexicon(),
     "medical",
   );
-  const names = findLexiconFindings(text, NAME_TASHKEEL_LEXICON, "name");
+  const names = findLexiconFindings(
+    text,
+    resolveSpeechNameLexicon(options.speechNameOverrides),
+    "name",
+  );
   const abbreviations = findAbbreviationFindings(text);
   const numbers = findNumberFindings(text);
 
@@ -163,7 +178,7 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
       .map((f) => ({
         ...f,
         kind: "ambiguity" as const,
-        reason: "name vowelization ambiguity",
+        reason: "name requires explicit speech override",
       })),
   ];
 
@@ -185,7 +200,6 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
     })),
   ];
 
-  // Minimal corrections: actionable suggestions, longest spans first, no overlap.
   const candidates = [
     ...medicalTerms,
     ...names,
@@ -194,8 +208,7 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
   ]
     .filter((f) => f.suggested && f.suggested !== f.surface)
     .sort(
-      (a, b) =>
-        b.end - b.start - (a.end - a.start) || a.start - b.start,
+      (a, b) => b.end - b.start - (a.end - a.start) || a.start - b.start,
     );
 
   const corrections: ArabicSpeechFinding[] = [];
@@ -203,7 +216,7 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
     if (corrections.some((x) => overlaps(x, c))) continue;
     corrections.push(c);
   }
-  corrections.sort((a, b) => b.start - a.start); // apply from end
+  corrections.sort((a, b) => b.start - a.start);
 
   return {
     ambiguities,
@@ -216,10 +229,6 @@ export function analyzeArabicSpeech(input: string): ArabicSpeechAnalysis {
   };
 }
 
-/**
- * Apply non-overlapping suggested corrections (already sorted end→start).
- * Meaning-preserving orthography only.
- */
 export function applyFindings(
   text: string,
   corrections: readonly ArabicSpeechFinding[],
@@ -228,7 +237,7 @@ export function applyFindings(
   const ordered = [...corrections].sort((a, b) => b.start - a.start);
   for (const c of ordered) {
     if (!c.suggested) continue;
-    if (out.slice(c.start, c.end) !== c.surface) continue; // stale span
+    if (out.slice(c.start, c.end) !== c.surface) continue;
     out = out.slice(0, c.start) + c.suggested + out.slice(c.end);
   }
   return out;

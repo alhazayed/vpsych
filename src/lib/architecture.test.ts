@@ -59,6 +59,14 @@ describe("architecture invariants", () => {
     expect(tts).toMatch(/never mutates stored transcript/);
   });
 
+  it("does not import ASPE into the patient message route (transcript ownership)", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).not.toMatch(/arabic-speech|prepareArabicSpeech/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),

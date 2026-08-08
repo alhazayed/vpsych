@@ -119,7 +119,12 @@ export function prepareArabicSpeech(
   }
 
   // Steps 1–6: identify.
-  const analysis = filterCorrections(analyzeArabicSpeech(text), opts);
+  const analysis = filterCorrections(
+    analyzeArabicSpeech(text, {
+      speechNameOverrides: opts.speechNameOverrides,
+    }),
+    opts,
+  );
   applied.push("identify");
 
   // Steps 7–8: minimal pronunciation corrections; meaning preserved.

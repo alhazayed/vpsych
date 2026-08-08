@@ -1,27 +1,26 @@
 /**
- * Expand digit + Arabic unit patterns for unambiguous TTS pronunciation.
- * Examples:
- *   "3 أيام" → "ثلاثة أيام"
- *   "2 مرات" → "مرتين"
- *   "10 دقائق" → "عشر دقائق"
+ * Expand digit patterns for unambiguous Arabic TTS pronunciation.
+ *
+ * Supported:
+ *   digit + unit   → "3 أيام" → "ثلاثة أيام"
+ *   percentage     → "10%" → "عشرة بالمئة"
+ *   decimal + unit → "1.5 ملغ" → "واحد ونصف ملغ"
+ *   clock          → "الساعة 3" → "الساعة الثالثة"
+ *   large doses    → "25 ملغ" → "خمسة وعشرون ملغ" / "100 ملغ" → "مئة ملغ"
+ *
+ * Bare years / phone-like digits without units are left unchanged.
  */
 
-import { parseDigitRun } from "./detect";
+import { normalizeIndicDigitChar, parseDigitRun } from "./detect";
 
 type UnitGender = "m" | "f";
 
 type UnitEntry = {
-  /** Canonical unit form kept after the spoken number (or dual alone). */
   keep: string;
   gender: UnitGender;
-  /** Spoken dual form when n === 2 (replaces number + unit). */
   dual: string;
 };
 
-/**
- * Unit stems → gender + dual. Matching is case-sensitive Arabic.
- * Prefer longer surface forms first via Map insertion + sort at build.
- */
 const UNIT_TABLE: ReadonlyArray<readonly [string, UnitEntry]> = [
   ["دقائق", { keep: "دقائق", gender: "f", dual: "دقيقتين" }],
   ["دقيقة", { keep: "دقيقة", gender: "f", dual: "دقيقتين" }],
@@ -52,11 +51,11 @@ const UNIT_TABLE: ReadonlyArray<readonly [string, UnitEntry]> = [
   ["ميلليغرام", { keep: "ميلليغرام", gender: "m", dual: "ميلليغرامين" }],
   ["مليغرام", { keep: "مليغرام", gender: "m", dual: "مليغرامين" }],
   ["ملغ", { keep: "ملغ", gender: "m", dual: "ملغين" }],
+  ["بالمئة", { keep: "بالمئة", gender: "m", dual: "بالمئة" }],
 ];
 
 const UNITS_SORTED = [...UNIT_TABLE].sort((a, b) => b[0].length - a[0].length);
 
-/** 1–19 cardinal forms. Index = value. Gender = form agreeing with counted noun rules for 3–10. */
 const MASC_1_19 = [
   "",
   "واحد",
@@ -116,14 +115,28 @@ const TENS_M = [
   "تسعون",
 ] as const;
 
+/** Feminine ordinals 1–12 for clock hours. */
+const HOUR_ORDINAL: Record<number, string> = {
+  1: "الواحدة",
+  2: "الثانية",
+  3: "الثالثة",
+  4: "الرابعة",
+  5: "الخامسة",
+  6: "السادسة",
+  7: "السابعة",
+  8: "الثامنة",
+  9: "التاسعة",
+  10: "العاشرة",
+  11: "الحادية عشرة",
+  12: "الثانية عشرة",
+};
+
 function cardBelow100(n: number, gender: UnitGender): string {
   if (n <= 0 || n > 99) return String(n);
   if (n < 20) {
-    // 3–10: number takes opposite gender of the counted noun.
     if (n >= 3 && n <= 10) {
       return gender === "m" ? MASC_1_19[n]! : FEM_1_19[n]!;
     }
-    // 1, 2, 11–19: same gender as noun (simplified clinical TTS).
     return gender === "m" ? MASC_1_19[n]! : FEM_1_19[n]!;
   }
   const ones = n % 10;
@@ -144,18 +157,30 @@ function cardBelow100(n: number, gender: UnitGender): string {
   return `${oneWord} و${TENS_M[tens]}`;
 }
 
+function cardUpTo999(n: number, gender: UnitGender): string | null {
+  if (n <= 0 || n > 999) return null;
+  if (n < 100) return cardBelow100(n, gender);
+  if (n === 100) return "مئة";
+  if (n < 200) return `مئة و${cardBelow100(n - 100, gender)}`;
+  const hundreds = Math.floor(n / 100);
+  const rest = n % 100;
+  const hundWord =
+    hundreds === 2 ? "مئتان" : `${MASC_1_19[hundreds]} مئة`;
+  if (rest === 0) return hundWord;
+  return `${hundWord} و${cardBelow100(rest, gender)}`;
+}
+
 function spokenForUnit(n: number, unit: UnitEntry): string | null {
   if (n === 0) return `صفر ${unit.keep}`;
   if (n === 1) {
-    // Noun + "واحد/واحدة" — clear for TTS without inventing content.
     const one = unit.gender === "m" ? "واحد" : "واحدة";
     return `${unit.keep} ${one}`;
   }
   if (n === 2) return unit.dual;
-  if (n >= 3 && n <= 99) {
-    return `${cardBelow100(n, unit.gender)} ${unit.keep}`;
+  if (n >= 3 && n <= 999) {
+    const card = cardUpTo999(n, unit.gender);
+    return card ? `${card} ${unit.keep}` : null;
   }
-  // 100+ — leave digits (years / large doses often intentional as numerals).
   return null;
 }
 
@@ -165,7 +190,6 @@ function findUnit(rest: string): { entry: UnitEntry; length: number } | null {
   for (const [surface, entry] of UNITS_SORTED) {
     if (trimmed.startsWith(surface)) {
       const after = trimmed.slice(surface.length);
-      // Unit must end or be followed by non-Arabic-letter (punctuation/space).
       if (after === "" || !/^[\u0600-\u06FF]/.test(after)) {
         return { entry, length: leadWs + surface.length };
       }
@@ -174,10 +198,22 @@ function findUnit(rest: string): { entry: UnitEntry; length: number } | null {
   return null;
 }
 
-/**
- * Expand patterns like `3 أيام`, `٢ مرات`, `10دقائق` when a known unit follows.
- * Leaves bare numbers (years, doses without units, phone fragments) unchanged.
- */
+function parseDecimalRun(run: string): number | null {
+  const western = [...run].map(normalizeIndicDigitChar).join("");
+  if (!/^\d+(\.\d+)?$/.test(western)) return null;
+  const n = Number(western);
+  return Number.isFinite(n) ? n : null;
+}
+
+function spokenHalf(integer: number, gender: UnitGender): string {
+  if (integer === 0) return "نصف";
+  if (integer === 1) {
+    return gender === "m" ? "واحد ونصف" : "واحدة ونصف";
+  }
+  const card = cardUpTo999(integer, gender);
+  return card ? `${card} ونصف` : `${integer} ونصف`;
+}
+
 export type ExpandableNumberMatch = {
   surface: string;
   start: number;
@@ -185,32 +221,90 @@ export type ExpandableNumberMatch = {
   spoken: string;
 };
 
-/** Identify digit+unit spans that should be spoken as words. */
+function pushMatch(
+  matches: ExpandableNumberMatch[],
+  text: string,
+  start: number,
+  end: number,
+  spoken: string,
+) {
+  if (start < 0 || end <= start || end > text.length) return;
+  if (matches.some((m) => !(end <= m.start || start >= m.end))) return;
+  matches.push({ surface: text.slice(start, end), start, end, spoken });
+}
+
+/** Identify number spans that should be spoken as words. */
 export function findExpandableNumberMatches(
   text: string,
 ): ExpandableNumberMatch[] {
-  const digitRun = /([0-9\u0660-\u0669]+)/g;
   const matches: ExpandableNumberMatch[] = [];
+
+  // الساعة N → الساعة <ordinal>
+  const clockRe = /الساعة\s*([0-9\u0660-\u0669]{1,2})/g;
+  let cm: RegExpExecArray | null;
+  while ((cm = clockRe.exec(text)) !== null) {
+    const n = parseDigitRun(cm[1]!);
+    if (n === null || n < 1 || n > 12) continue;
+    const ordinal = HOUR_ORDINAL[n];
+    if (!ordinal) continue;
+    pushMatch(matches, text, cm.index, cm.index + cm[0].length, `الساعة ${ordinal}`);
+  }
+
+  // N% / N٪
+  const pctRe = /([0-9\u0660-\u0669]+)\s*[%٪]/g;
+  let pm: RegExpExecArray | null;
+  while ((pm = pctRe.exec(text)) !== null) {
+    const n = parseDigitRun(pm[1]!);
+    if (n === null || n > 100) continue;
+    const card = cardUpTo999(n, "m");
+    if (!card) continue;
+    pushMatch(
+      matches,
+      text,
+      pm.index,
+      pm.index + pm[0].length,
+      `${card} بالمئة`,
+    );
+  }
+
+  // Decimal or integer + unit (including ملغ doses)
+  const numRe = /([0-9\u0660-\u0669]+(?:[.][0-9\u0660-\u0669]+)?)/g;
   let m: RegExpExecArray | null;
-  while ((m = digitRun.exec(text)) !== null) {
+  while ((m = numRe.exec(text)) !== null) {
     const run = m[1]!;
     const start = m.index;
-    const n = parseDigitRun(run);
     const afterIdx = start + run.length;
-    const unitHit = n !== null ? findUnit(text.slice(afterIdx)) : null;
-    if (n === null || !unitHit) continue;
+    // Skip if already claimed (clock / percent)
+    if (matches.some((x) => start >= x.start && start < x.end)) continue;
+
+    const unitHit = findUnit(text.slice(afterIdx));
+    if (!unitHit) continue;
+
+    const end = afterIdx + unitHit.length;
+    if (matches.some((x) => !(end <= x.start || start >= x.end))) continue;
+
+    if (run.includes(".") || /[٠-٩]\.[٠-٩]/.test(run) || run.includes("٫")) {
+      const n = parseDecimalRun(run.replace("٫", "."));
+      if (n === null) continue;
+      const int = Math.floor(n);
+      const frac = n - int;
+      if (Math.abs(frac - 0.5) < 1e-9) {
+        const spoken = `${spokenHalf(int, unitHit.entry.gender)} ${unitHit.entry.keep}`;
+        pushMatch(matches, text, start, end, spoken);
+      }
+      // other decimals: leave unchanged (avoid inventing awkward speech)
+      continue;
+    }
+
+    const n = parseDigitRun(run);
+    if (n === null) continue;
     const spoken = spokenForUnit(n, unitHit.entry);
     if (!spoken) continue;
-    const end = afterIdx + unitHit.length;
-    matches.push({
-      surface: text.slice(start, end),
-      start,
-      end,
-      spoken,
-    });
-    digitRun.lastIndex = end;
+    pushMatch(matches, text, start, end, spoken);
+    numRe.lastIndex = end;
   }
-  return matches;
+
+  return matches.sort((a, b) => a.start - b.start);
 }
 
 export function expandArabicNumbers(text: string): string {

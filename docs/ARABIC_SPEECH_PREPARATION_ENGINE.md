@@ -24,40 +24,49 @@ Stored transcripts and UI copy are never mutated — only the bytes sent to TTS.
 |------|--------|
 | 1 | Identify pronunciation ambiguities |
 | 2 | Identify medical / psychiatric terms |
-| 3 | Identify names |
+| 3 | Identify names (explicit overrides only) |
 | 4 | Identify abbreviations |
-| 5 | Identify numbers (digit + unit) |
+| 5 | Identify numbers (digit + unit, %, clock, doses) |
 | 6 | Identify words likely mispronounced by TTS |
 | 7 | Apply **minimal** pronunciation corrections |
 | 8 | Preserve original clinical meaning |
 | 9 | Output final speech-ready Arabic text |
 
-`analyzeArabicSpeech()` performs steps 1–6. `prepareArabicSpeech()` sanitizes,
-analyzes, applies non-overlapping corrections, and returns the speech string
-(plus optional `analysis` metadata for tests / telemetry).
+## Dictionaries (versioned)
+
+| Dictionary | Module | Version export |
+|------------|--------|----------------|
+| Medical / psychiatric speech | `dictionary.ts` | `MEDICAL_SPEECH_DICTIONARY_VERSION` |
+| Explicit speech names | `names.ts` | `SPEECH_NAME_DICTIONARY_VERSION` |
+| Latin abbreviations | `abbreviations.ts` | catalog constant |
+
+`canonical → speech` entries are deterministic, testable, and isolated from
+clinical case JSON. Names are **never guessed** — unknown names pass through;
+runtime `speechNameOverrides` may supply TTS-only `display_name → speech_name`.
 
 ## Transforms (deterministic)
 
 | Stage | Behavior |
 |-------|----------|
 | Sanitize | Strip emoji, markdown emphasis, English stage directions |
-| Abbreviations | `ADHD` → اضطراب فرط الحركة وتشتت الانتباه; `OCD` → الوَسْوَاس القَهْرِي; … |
-| Numbers | `3 أيام` → `ثلاثة أيام`; `2 مرات` → `مرتين`; `10 دقائق` → `عشر دقائق` |
-| Clinical tashkeel | Selective diacritics on psych terms (قلق، فصام، ذهان، هلوسة، انتحار، ثنائي القطب، …) |
-| Names | Light guidance for frequent SP names (ليان، رامي، …) |
+| Abbreviations | `ADHD` / `OCD` / `PTSD` / … → Arabic clinical names |
+| Numbers | units, `%`, `الساعة N`, `N.5 ملغ`, doses up to 999 |
+| Clinical tashkeel | Selective diacritics from medical dictionary |
+| Names | Explicit catalog + optional runtime overrides only |
+| Medications | Latin brand/generic → Arabic TTS spelling |
 
 Dialect / personality speech is **preserved**. A `dialect` option is accepted
-(from CVP `voice_profiles.dialect` when present) but never used to MSA-ize
-Levantine patient turns.
+(from CVP) but never used to MSA-ize Levantine patient turns.
 
 ## Code
 
 | Module | Path |
 |--------|------|
 | Barrel | `src/lib/arabic-speech/` |
-| Analyze | `analyze.ts` → `analyzeArabicSpeech` / `applyFindings` |
-| Prepare | `prepare.ts` → `prepareArabicSpeech` / `prepareArabicSpeechText` |
-| Lexicons | `abbreviations.ts`, `medical-terms.ts`, `numbers.ts` |
+| Analyze | `analyze.ts` |
+| Prepare | `prepare.ts` |
+| Dictionary | `dictionary.ts`, `names.ts`, `abbreviations.ts`, `numbers.ts` |
+| Corpus | `corpus.ts` |
 | Tests | `prepare.test.ts` |
 
 ## Integration
@@ -65,7 +74,9 @@ Levantine patient turns.
 `src/app/api/voice/tts/route.ts` runs ASPE when `locale === "ar"` after voice
 resolution and before `elevenLabsService.synthesize`.
 
-Response headers (telemetry only):
+Optional body field: `speechNameOverrides` (TTS-only; not persisted).
+
+Response headers (telemetry only — no dialogue content):
 
 | Header | Meaning |
 |--------|---------|
@@ -77,9 +88,17 @@ Response headers (telemetry only):
 1. Never change clinical meaning or invent diagnoses / symptoms.
 2. Never remove clinically meaningful content.
 3. Selective tashkeel only — not mechanical full vocalization.
-4. Numbers expanded only when a known Arabic unit follows (bare years stay digits).
+4. Numbers expanded only for known patterns (bare years stay digits).
 5. Pure English strings pass through unchanged.
-6. TTS output path uses speech text only — no transliteration, IPA, markdown, or commentary in the spoken string.
+6. No LLM in the live TTS path (deterministic preferred).
+7. Prepared text is ephemeral — never the canonical transcript.
+8. Unknown personal names are not rewritten by guesswork.
+
+## CI note
+
+`npm run audit:deps` failure on `nanoid < 3.3.17` is **pre-existing and
+unrelated to PR #184**. Do not bump lockfile in this PR; track a separate
+dependency/security PR if required.
 
 ## Compatibility
 
@@ -87,3 +106,7 @@ Response headers (telemetry only):
 - CVP emotion / prosody settings unchanged.
 - Humanization stability/style overlays unchanged.
 - Patient Agent reply ownership unchanged (Voice owns TTS surface only).
+
+## Validation
+
+See `docs/ARABIC_SPEECH_PRODUCTION_VALIDATION.md`.

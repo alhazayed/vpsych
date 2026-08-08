@@ -32,6 +32,12 @@ export type ArabicSpeechPrepOptions = {
    * accepted so callers can pass CVP / personality dialect through.
    */
   dialect?: ArabicSpeechDialectHint | null;
+  /**
+   * TTS-only display_name → speech_name overrides.
+   * Never guessed; unknown names are left unchanged.
+   * Does not mutate stored avatar / transcript identity.
+   */
+  speechNameOverrides?: Readonly<Record<string, string>> | null;
 };
 
 /** Identification categories (steps 1–6). */

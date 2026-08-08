@@ -1,81 +1,17 @@
 /**
- * Selective clinical / ambiguous-word tashkeel for Arabic TTS.
- * Longest phrases first. Only applied when the surface form lacks tashkeel.
+ * Selective clinical / name tashkeel application helpers.
+ * Lexicon data lives in dictionary.ts / names.ts.
  */
 
 import { hasTashkeel, stripTashkeel } from "./detect";
+import { medicalDictionaryLexicon } from "./dictionary";
+import { resolveSpeechNameLexicon } from "./names";
 
-/**
- * Professional Arabic clinical pronunciations (selective diacritics).
- * Keys are undiacritized surface forms; values are TTS-preferred forms.
- */
-export const CLINICAL_TASHKEEL_LEXICON: ReadonlyArray<
-  readonly [string, string]
-> = [
-  // Multi-word phrases (longest first)
-  ["اضطراب ثنائي القطب", "اضطراب ثُنَائِيِّ القُطْب"],
-  ["الاضطراب ثنائي القطب", "الاضطراب ثُنَائِيِّ القُطْب"],
-  ["ثنائي القطب", "ثُنَائِيِّ القُطْب"],
-  ["الوسواس القهري", "الوَسْوَاس القَهْرِي"],
-  ["وسواس قهري", "وَسْوَاس قَهْرِي"],
-  ["ما بعد الصدمة", "ما بَعْد الصَّدْمَة"],
-  ["فرط الحركة", "فَرْط الحَرَكَة"],
-  ["تشتت الانتباه", "تَشَتُّت الانتباه"],
-  ["نوبات الهلع", "نَوَبات الهَلَع"],
-  ["نوبة هلع", "نَوْبة هَلَع"],
-  ["إيذاء النفس", "إيذاء النَّفْس"],
-  ["الأفكار الانتحارية", "الأفكار الانْتِحارِيَّة"],
-  ["أفكار انتحارية", "أفكار انْتِحارِيَّة"],
+/** @deprecated Prefer medicalDictionaryLexicon(); kept for barrel compatibility. */
+export const CLINICAL_TASHKEEL_LEXICON = medicalDictionaryLexicon();
 
-  // Single clinical terms
-  ["الفصام", "الفُصَام"],
-  ["فصام", "فُصَام"],
-  ["الذهان", "الذُّهَان"],
-  ["ذهان", "ذُهَان"],
-  ["الهلوسة", "الهَلْوَسَة"],
-  ["هلوسة", "هَلْوَسَة"],
-  ["الهلوسات", "الهَلْوَسات"],
-  ["هلوسات", "هَلْوَسات"],
-  ["الانتحار", "الانْتِحار"],
-  ["انتحار", "انْتِحار"],
-  ["الوسواس", "الوَسْوَاس"],
-  ["وسواس", "وَسْوَاس"],
-  ["القلق", "القَلَق"],
-  ["قلق", "قَلَق"],
-  ["الاكتئاب", "الاكتِئاب"],
-  ["اكتئاب", "اكتِئاب"],
-  ["الهوس", "الهَوَس"],
-  ["هوس", "هَوَس"],
-  ["الذهاني", "الذُّهانِي"],
-  ["ذهاني", "ذُهانِي"],
-  ["البارانويا", "البارانُويا"],
-  ["بارانويا", "بارانُويا"],
-  ["الضلالات", "الضَّلالات"],
-  ["ضلالات", "ضَلالات"],
-  ["الهذيان", "الهَذَيان"],
-  ["هذيان", "هَذَيان"],
-  ["الأرق", "الأَرَق"],
-  ["أرق", "أَرَق"],
-  ["الانهيار", "الانْهِيار"],
-  ["انهيار", "انْهِيار"],
-  ["التعاطي", "التَّعاطي"],
-  ["تعاطي", "تَعاطي"],
-  ["الانسحاب", "الانْسِحاب"],
-  ["انسحاب", "انْسِحاب"],
-];
-
-/** Common given names that TTS often mis-vowelizes. */
-export const NAME_TASHKEEL_LEXICON: ReadonlyArray<readonly [string, string]> = [
-  ["ليان", "لِيان"],
-  ["رامي", "رامِي"],
-  ["نصار", "نَصّار"],
-  ["خوري", "خُورِي"],
-  ["فادي", "فادِي"],
-  ["نبيل", "نَبِيل"],
-  ["هيام", "هِيام"],
-  ["نتالي", "نَتالِي"],
-  ["وديعة", "وَدِيعة"],
-];
+/** @deprecated Prefer resolveSpeechNameLexicon(); catalog default only. */
+export const NAME_TASHKEEL_LEXICON = resolveSpeechNameLexicon();
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -106,9 +42,12 @@ export function applyLexicon(
 }
 
 export function applyClinicalTashkeel(text: string): string {
-  return applyLexicon(text, CLINICAL_TASHKEEL_LEXICON);
+  return applyLexicon(text, medicalDictionaryLexicon());
 }
 
-export function applyNameTashkeel(text: string): string {
-  return applyLexicon(text, NAME_TASHKEEL_LEXICON);
+export function applyNameTashkeel(
+  text: string,
+  speechNameOverrides?: Readonly<Record<string, string>> | null,
+): string {
+  return applyLexicon(text, resolveSpeechNameLexicon(speechNameOverrides));
 }

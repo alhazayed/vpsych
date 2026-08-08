@@ -41,6 +41,11 @@ type TtsBody = {
   /** Mission 10 — Humanization Engine prosody overrides. */
   stability?: number;
   style?: number;
+  /**
+   * TTS-only display_name → speech_name map (ASPE).
+   * Never persisted; does not change stored avatar identity.
+   */
+  speechNameOverrides?: Record<string, string>;
 };
 
 /**
@@ -96,7 +101,10 @@ export async function POST(request: Request) {
       (locale === "ar" ? "jordanian" : null);
     const arabicPrep =
       locale === "ar"
-        ? prepareArabicSpeech(rawText, { dialect: dialectHint })
+        ? prepareArabicSpeech(rawText, {
+            dialect: dialectHint,
+            speechNameOverrides: body.speechNameOverrides ?? null,
+          })
         : null;
     const text = arabicPrep?.text ?? rawText;
 
