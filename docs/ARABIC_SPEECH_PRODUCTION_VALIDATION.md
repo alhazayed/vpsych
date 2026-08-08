@@ -1,8 +1,8 @@
 # Arabic Speech Preparation — Production Validation (PR #184)
 
 **Date:** 2026-08-08  
-**Head:** ASPE branch (`cursor/arabic-speech-preparation-4d3f`)  
-**Decision:** **GO WITH CONDITIONS**
+**Head:** ASPE branch + listening-QA follow-up  
+**Decision:** **EVIDENCE PENDING** (spoken) / engineering **GO WITH CONDITIONS**
 
 ## Phase 1 — Architecture audit
 
@@ -26,7 +26,8 @@
 | Prepared text actually passed to `elevenLabsService.synthesize({ text })` | **PASS** (code path) |
 | `locale=ar` selects Arabic voice path | **PASS** (existing voice config) |
 | `X-Voice-Arabic-Prep*` diagnostic only (no dialogue in headers) | **PASS** |
-| Side-by-side original vs prepared **audio** listening | **EVIDENCE PENDING** — `ELEVENLABS_API_KEY` not available in this environment; **do not claim spoken success** |
+| Side-by-side original vs prepared **audio** generation | **PASS** — 50/50 pairs generated (see `docs/ARABIC_TTS_LISTENING_QA.md`) |
+| Side-by-side original vs prepared **listening** | **EVIDENCE PENDING** — environment cannot hear playback (`COULD_NOT_HEAR`); do not claim spoken success |
 
 ## Phase 10 — LLM
 
@@ -34,7 +35,7 @@ No LLM in live TTS path. Deterministic ASPE only. Any future LLM assist must be 
 
 ## Phase 11 — Tests
 
-- ASPE unit + corpus tests: **≥40** meaningful cases (see `prepare.test.ts` + `corpus.ts`)
+- ASPE unit + corpus tests in `prepare.test.ts` (expanded listening corpus + partial-tashkeel regression)
 - Architecture guards for TTS wiring + message-route isolation
 
 ## Phase 12 — Privacy
@@ -49,27 +50,18 @@ No LLM in live TTS path. Deterministic ASPE only. Any future LLM assist must be 
 ## Phase 13 — CI
 
 **CI audit failure is pre-existing and unrelated to PR #184.**  
-`npm run audit:deps` fails on `nanoid@3.3.16` (GHSA-2v37-7h3g-55p8) already pinned on base `a75bade`. This PR does **not** modify `package.json` / `package-lock.json`. Fix in a separate dependency/security PR.
+`npm run audit:deps` fails on `nanoid@3.3.16` (GHSA-2v37-7h3g-55p8) already pinned on base. Fix in a separate dependency/security PR.
 
 ## Phase 14 — Decision
 
-### GO WITH CONDITIONS
+### EVIDENCE PENDING (spoken) · GO WITH CONDITIONS (engineering)
 
-ASPE is architecturally safe to merge for TTS orthography preparation. Merge is appropriate for code/docs/tests, with mandatory follow-ups:
+ASPE remains architecturally safe to merge for TTS orthography preparation. Spoken pronunciation quality is **not** validated until a human listens to the generated A/B corpus.
 
-1. **Spoken pronunciation QA (EVIDENCE PENDING):** run the corpus through ElevenLabs (original vs prepared) with Arabic voice; listen for vowel/stress/medical/number errors and over-tashkeel unnaturalness.
-2. **Separate deps PR:** bump `nanoid` ≥ 3.3.17 to clear `audit:deps` on CI.
-3. **Optional:** wire avatar `speech_name` from profile metadata into `speechNameOverrides` when productized (TTS-only).
+Follow-ups:
 
-### Answers
+1. **Human listening** of `/opt/cursor/artifacts/aspe-listening-qa/` (or regenerate via `scripts/aspe-listening-qa.mjs`).
+2. **Separate deps PR:** bump `nanoid` ≥ 3.3.17.
+3. Optional: wire avatar `speech_name` overrides when productized (TTS-only).
 
-1. **Files changed:** `src/lib/arabic-speech/*`, TTS route, architecture tests, ASPE docs + this validation doc, CLAUDE/CHANGELOG/ownership/pipeline docs as applicable.
-2. **Tests added:** expanded unit suite + deterministic pronunciation corpus.
-3. **Test count:** see vitest run on `prepare.test.ts` (target ≥40; corpus + units).
-4. **Known limitations:** no live audio validation here; clock hours only 1–12; non-0.5 decimals left as digits; name overrides are explicit-only; Levantine preserved but not dialect-optimized beyond that.
-5. **ElevenLabs uses prepared text:** **yes** (code path); **audio quality unproven** (EVIDENCE PENDING).
-6. **Clinical meaning preserved:** **yes** (text-level evidence).
-7. **English unchanged:** **yes**.
-8. **Privacy boundaries preserved:** **yes**.
-9. **Should PR #184 be merged:** **yes, with conditions above**.
-10. **Follow-up PRs:** (a) nanoid audit fix; (b) ElevenLabs listening QA report with recordings or structured listener checklist.
+See `docs/ARABIC_TTS_LISTENING_QA.md` for generation counts and the partial-tashkeel fix.

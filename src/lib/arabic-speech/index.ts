@@ -58,5 +58,6 @@ export { prepareArabicSpeech, prepareArabicSpeechText } from "./prepare";
 
 export {
   ASPE_PRONUNCIATION_CORPUS,
+  aspeListeningCorpus,
   type CorpusCase,
 } from "./corpus";
