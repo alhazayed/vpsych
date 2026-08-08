@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  analyzeArabicSpeech,
   containsArabicScript,
   expandArabicNumbers,
   expandClinicalAbbreviations,
@@ -38,7 +39,9 @@ describe("Arabic Speech Preparation Engine", () => {
     expect(expandClinicalAbbreviations("عندي ADHD من زمان")).toBe(
       "عندي اضطراب فرط الحركة وتشتت الانتباه من زمان",
     );
-    expect(expandClinicalAbbreviations("يشبه OCD")).toContain("الوَسْوَاس القَهْرِي");
+    expect(expandClinicalAbbreviations("يشبه OCD")).toContain(
+      "الوَسْوَاس القَهْرِي",
+    );
     expect(expandClinicalAbbreviations("بعد PTSD")).toContain(
       "اضطراب ما بعد الصدمة",
     );
@@ -53,7 +56,6 @@ describe("Arabic Speech Preparation Engine", () => {
     expect(applyClinicalTashkeel("اضطراب ثنائي القطب")).toBe(
       "اضطراب ثُنَائِيِّ القُطْب",
     );
-    // Already guided — leave alone
     expect(applyClinicalTashkeel("القَلَق")).toBe("القَلَق");
   });
 
@@ -64,19 +66,39 @@ describe("Arabic Speech Preparation Engine", () => {
     expect(out).toContain("والله تعبانة");
     expect(out).toContain("ما بعرف شو بدي أحكي");
     expect(out).toMatch(/عشر ساعات|عشرة ساعات/);
-    // Must not MSA-ize Levantine markers
     expect(out).not.toMatch(/لا أعرف ماذا أريد/);
   });
 
-  it("runs the full pipeline for mixed clinical Arabic", () => {
+  it("runs identify → correct pipeline for mixed clinical Arabic", () => {
     const result = prepareArabicSpeech(
       "صار عندي OCD من 3 سنوات وفي قلق كل يوم.",
     );
     expect(result.changed).toBe(true);
+    expect(result.applied).toContain("identify");
+    expect(result.applied).toContain("correct");
     expect(result.text).toContain("الوَسْوَاس القَهْرِي");
     expect(result.text).toContain("ثلاث سنوات");
     expect(result.text).toContain("قَلَق");
-    expect(result.applied.length).toBeGreaterThan(0);
+    expect(result.analysis).toBeDefined();
+    expect(result.analysis!.abbreviations.length).toBeGreaterThan(0);
+    expect(result.analysis!.numbers.length).toBeGreaterThan(0);
+    expect(result.analysis!.medicalTerms.length).toBeGreaterThan(0);
+    expect(result.analysis!.ttsRisks.length).toBeGreaterThan(0);
+  });
+
+  it("identifies all six finding categories before correcting", () => {
+    const analysis = analyzeArabicSpeech(
+      "ليان عندها OCD وقلق من 2 سنوات",
+    );
+    expect(analysis.names.some((f) => f.surface.includes("ليان"))).toBe(true);
+    expect(analysis.abbreviations.some((f) => f.surface === "OCD")).toBe(true);
+    expect(analysis.medicalTerms.some((f) => f.surface.includes("قلق"))).toBe(
+      true,
+    );
+    expect(analysis.numbers.length).toBeGreaterThan(0);
+    expect(analysis.ambiguities.length).toBeGreaterThan(0);
+    expect(analysis.ttsRisks.length).toBeGreaterThan(0);
+    expect(analysis.corrections.every((c) => c.suggested)).toBe(true);
   });
 
   it("strips emoji and markdown without touching clinical words", () => {
@@ -108,5 +130,15 @@ describe("Arabic Speech Preparation Engine", () => {
     const out = prepareArabicSpeechText(raw);
     expect(out).not.toMatch(/اكتئاب|تشخيص|اضطراب/);
     expect(out.length).toBeLessThanOrEqual(raw.length + 20);
+  });
+
+  it("outputs only speech-ready text from prepareArabicSpeechText", () => {
+    const out = prepareArabicSpeechText(
+      "القلق بخوفني وفي OCD من 3 أيام",
+    );
+    expect(out).not.toMatch(/ambiguity|medical|Finding|IPA|transliterat/i);
+    expect(out).toContain("القَلَق");
+    expect(out).toContain("الوَسْوَاس القَهْرِي");
+    expect(out).toContain("ثلاثة أيام");
   });
 });

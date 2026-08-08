@@ -178,30 +178,48 @@ function findUnit(rest: string): { entry: UnitEntry; length: number } | null {
  * Expand patterns like `3 أيام`, `٢ مرات`, `10دقائق` when a known unit follows.
  * Leaves bare numbers (years, doses without units, phone fragments) unchanged.
  */
-export function expandArabicNumbers(text: string): string {
+export type ExpandableNumberMatch = {
+  surface: string;
+  start: number;
+  end: number;
+  spoken: string;
+};
+
+/** Identify digit+unit spans that should be spoken as words. */
+export function findExpandableNumberMatches(
+  text: string,
+): ExpandableNumberMatch[] {
   const digitRun = /([0-9\u0660-\u0669]+)/g;
-  let out = "";
-  let last = 0;
+  const matches: ExpandableNumberMatch[] = [];
   let m: RegExpExecArray | null;
   while ((m = digitRun.exec(text)) !== null) {
     const run = m[1]!;
     const start = m.index;
-    out += text.slice(last, start);
     const n = parseDigitRun(run);
     const afterIdx = start + run.length;
     const unitHit = n !== null ? findUnit(text.slice(afterIdx)) : null;
-    if (n !== null && unitHit) {
-      const spoken = spokenForUnit(n, unitHit.entry);
-      if (spoken) {
-        out += spoken;
-        last = afterIdx + unitHit.length;
-        digitRun.lastIndex = last;
-        continue;
-      }
-    }
-    out += run;
-    last = afterIdx;
+    if (n === null || !unitHit) continue;
+    const spoken = spokenForUnit(n, unitHit.entry);
+    if (!spoken) continue;
+    const end = afterIdx + unitHit.length;
+    matches.push({
+      surface: text.slice(start, end),
+      start,
+      end,
+      spoken,
+    });
+    digitRun.lastIndex = end;
   }
-  out += text.slice(last);
+  return matches;
+}
+
+export function expandArabicNumbers(text: string): string {
+  const hits = findExpandableNumberMatches(text);
+  if (hits.length === 0) return text;
+  let out = text;
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const h = hits[i]!;
+    out = out.slice(0, h.start) + h.spoken + out.slice(h.end);
+  }
   return out;
 }

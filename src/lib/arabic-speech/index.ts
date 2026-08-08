@@ -1,12 +1,15 @@
 /**
  * Arabic Speech Preparation Engine (ASPE).
  *
- * Deterministic orthography prep for Arabic TTS — selective tashkeel,
- * number/abbreviation expansion. Never rewrites clinical meaning or dialect.
+ * Deterministic orthography prep for Arabic TTS — identify then minimal
+ * correct. Never rewrites clinical meaning or dialect.
  */
 
 export type {
+  ArabicSpeechAnalysis,
   ArabicSpeechDialectHint,
+  ArabicSpeechFinding,
+  ArabicSpeechFindingKind,
   ArabicSpeechPrepOptions,
   ArabicSpeechPrepResult,
   ArabicSpeechPrepTransform,
@@ -30,8 +33,13 @@ export {
   applyNameTashkeel,
 } from "./medical-terms";
 
-export { expandArabicNumbers } from "./numbers";
+export {
+  expandArabicNumbers,
+  findExpandableNumberMatches,
+} from "./numbers";
 
 export { sanitizeForTts } from "./sanitize";
+
+export { analyzeArabicSpeech, applyFindings } from "./analyze";
 
 export { prepareArabicSpeech, prepareArabicSpeechText } from "./prepare";

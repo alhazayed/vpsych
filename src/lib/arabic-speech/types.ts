@@ -22,6 +22,11 @@ export type ArabicSpeechPrepOptions = {
   /** Strip markdown / emoji noise that TTS would read aloud. Default true. */
   sanitizeMarkup?: boolean;
   /**
+   * When true, attach full identification analysis on the result.
+   * Default true — cheap and useful for tests / telemetry.
+   */
+  includeAnalysis?: boolean;
+  /**
    * Dialect / register hint. ASPE never rewrites dialect into MSA or vice
    * versa — the hint is reserved for future pronunciation lexicons and is
    * accepted so callers can pass CVP / personality dialect through.
@@ -29,18 +34,54 @@ export type ArabicSpeechPrepOptions = {
   dialect?: ArabicSpeechDialectHint | null;
 };
 
+/** Identification categories (steps 1–6). */
+export type ArabicSpeechFindingKind =
+  | "ambiguity"
+  | "medical"
+  | "name"
+  | "abbreviation"
+  | "number"
+  | "tts_risk";
+
+export type ArabicSpeechFinding = {
+  kind: ArabicSpeechFindingKind;
+  /** Exact surface span in the analyzed string. */
+  surface: string;
+  start: number;
+  end: number;
+  /** Minimal speech-ready replacement, when needed. */
+  suggested?: string;
+  reason?: string;
+};
+
+/** Steps 1–6 identification report. */
+export type ArabicSpeechAnalysis = {
+  ambiguities: ArabicSpeechFinding[];
+  medicalTerms: ArabicSpeechFinding[];
+  names: ArabicSpeechFinding[];
+  abbreviations: ArabicSpeechFinding[];
+  numbers: ArabicSpeechFinding[];
+  ttsRisks: ArabicSpeechFinding[];
+  /** Non-overlapping actionable corrections (apply end→start). */
+  corrections: ArabicSpeechFinding[];
+};
+
 export type ArabicSpeechPrepTransform =
   | "sanitize"
   | "abbreviations"
   | "numbers"
   | "tashkeel"
-  | "names";
+  | "names"
+  | "identify"
+  | "correct";
 
 export type ArabicSpeechPrepResult = {
   /** Speech-ready Arabic (or original when no Arabic / no changes). */
   text: string;
   /** True when orthography changed. */
   changed: boolean;
-  /** Which transform stages produced a diff. */
+  /** Which transform stages produced a diff / ran. */
   applied: ArabicSpeechPrepTransform[];
+  /** Identification report (steps 1–6), when includeAnalysis !== false. */
+  analysis?: ArabicSpeechAnalysis;
 };

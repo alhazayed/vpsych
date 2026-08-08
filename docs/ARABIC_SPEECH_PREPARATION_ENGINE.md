@@ -12,10 +12,29 @@ Priority: **pronunciation accuracy > literary elegance**.
 Patient reply text (stored / displayed unchanged)
   → POST /api/voice/tts (locale=ar)
     → prepareArabicSpeech()
+      → identify (1–6) → minimal correct (7–8) → speech text (9)
       → ElevenLabs synthesize(speech-ready text)
 ```
 
 Stored transcripts and UI copy are never mutated — only the bytes sent to TTS.
+
+## Pipeline (every Arabic dialogue)
+
+| Step | Action |
+|------|--------|
+| 1 | Identify pronunciation ambiguities |
+| 2 | Identify medical / psychiatric terms |
+| 3 | Identify names |
+| 4 | Identify abbreviations |
+| 5 | Identify numbers (digit + unit) |
+| 6 | Identify words likely mispronounced by TTS |
+| 7 | Apply **minimal** pronunciation corrections |
+| 8 | Preserve original clinical meaning |
+| 9 | Output final speech-ready Arabic text |
+
+`analyzeArabicSpeech()` performs steps 1–6. `prepareArabicSpeech()` sanitizes,
+analyzes, applies non-overlapping corrections, and returns the speech string
+(plus optional `analysis` metadata for tests / telemetry).
 
 ## Transforms (deterministic)
 
@@ -36,6 +55,7 @@ Levantine patient turns.
 | Module | Path |
 |--------|------|
 | Barrel | `src/lib/arabic-speech/` |
+| Analyze | `analyze.ts` → `analyzeArabicSpeech` / `applyFindings` |
 | Prepare | `prepare.ts` → `prepareArabicSpeech` / `prepareArabicSpeechText` |
 | Lexicons | `abbreviations.ts`, `medical-terms.ts`, `numbers.ts` |
 | Tests | `prepare.test.ts` |
@@ -59,7 +79,7 @@ Response headers (telemetry only):
 3. Selective tashkeel only — not mechanical full vocalization.
 4. Numbers expanded only when a known Arabic unit follows (bare years stay digits).
 5. Pure English strings pass through unchanged.
-6. Output is speech text only — no transliteration, IPA, markdown, or commentary.
+6. TTS output path uses speech text only — no transliteration, IPA, markdown, or commentary in the spoken string.
 
 ## Compatibility
 
