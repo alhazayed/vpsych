@@ -73,8 +73,20 @@ export default async function AdminDashboardPage() {
       .filter((id): id is string => Boolean(id)),
   );
   const activeClinicians = therapistIds.size;
-  const publishedVp = publishedVpRes.count ?? 0;
-  const pendingVp = pendingVpRes.count ?? 0;
+  let publishedVp = publishedVpRes.count ?? 0;
+  let pendingVp = pendingVpRes.count ?? 0;
+  if (publishedVpRes.error || pendingVpRes.error) {
+    const activeFallback = await supabase
+      .from("avatars")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true);
+    const inactiveFallback = await supabase
+      .from("avatars")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", false);
+    publishedVp = activeFallback.count ?? 0;
+    pendingVp = inactiveFallback.count ?? 0;
+  }
   const recentReports = recentReportsRes.data ?? [];
   const recentSessions = recentSessionsRes.data ?? [];
 

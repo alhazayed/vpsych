@@ -72,88 +72,65 @@ function therapistNav(
 function adminNav(t: (key: string) => string): NavItem[] {
   return [
     {
-      href: "/admin/reports",
-      label: t("reportsLibrary"),
-      icon: "folder_shared",
-      match: (p) => p.startsWith("/admin/reports"),
+      href: "/admin",
+      label: t("adminDashboard"),
+      icon: "dashboard",
+      match: (p) => p === "/admin" || p === "/admin/",
     },
     {
-      href: "/admin/avatars",
-      label: t("avatarPresets"),
-      icon: "psychology",
-      match: (p) => p.startsWith("/admin/avatars"),
-    },
-    {
-      href: "/admin/personality",
-      label: t("humanPersonality"),
+      href: "/admin/virtual-patients",
+      label: t("virtualPatients"),
       icon: "face",
-      match: (p) => p.startsWith("/admin/personality"),
+      match: (p) =>
+        p.startsWith("/admin/virtual-patients") ||
+        p.startsWith("/admin/avatars") ||
+        p.startsWith("/admin/personality") ||
+        p.startsWith("/admin/voices"),
     },
     {
-      href: "/admin/voices",
-      label: t("voiceManagement"),
-      icon: "record_voice_over",
-      match: (p) => p.startsWith("/admin/voices"),
-    },
-    {
-      href: "/admin/cases",
-      label: t("caseEngine"),
+      href: "/admin/cases-scenarios",
+      label: t("casesScenarios"),
       icon: "biotech",
-      match: (p) => p.startsWith("/admin/cases"),
+      match: (p) =>
+        p.startsWith("/admin/cases-scenarios") ||
+        p.startsWith("/admin/cases") ||
+        p.startsWith("/admin/templates") ||
+        p.startsWith("/admin/presets"),
     },
     {
-      href: "/admin/templates",
-      label: t("scenarioTemplates"),
-      icon: "schema",
-      match: (p) => p.startsWith("/admin/templates"),
-    },
-    {
-      href: "/admin/presets",
-      label: t("instructorPresets"),
+      href: "/admin/learners",
+      label: t("learners"),
       icon: "school",
-      match: (p) => p.startsWith("/admin/presets"),
+      match: (p) =>
+        p.startsWith("/admin/learners") ||
+        p.startsWith("/admin/curriculum") ||
+        p.startsWith("/admin/graph") ||
+        p.startsWith("/admin/feedback"),
     },
     {
-      href: "/admin/curriculum",
-      label: t("adaptiveCurriculum"),
-      icon: "timeline",
-      match: (p) => p.startsWith("/admin/curriculum"),
+      href: "/admin/assessments",
+      label: t("assessments"),
+      icon: "assignment",
+      match: (p) =>
+        p.startsWith("/admin/assessments") ||
+        p.startsWith("/admin/reports") ||
+        p.startsWith("/admin/research") ||
+        p.startsWith("/admin/supervisor"),
     },
     {
-      href: "/admin/graph",
-      label: t("competencyGraph"),
-      icon: "account_tree",
-      match: (p) => p.startsWith("/admin/graph"),
+      href: "/admin/governance",
+      label: t("governance"),
+      icon: "gavel",
+      match: (p) =>
+        p.startsWith("/admin/governance") ||
+        p.startsWith("/admin/enterprise") ||
+        p.startsWith("/admin/cidp"),
     },
     {
-      href: "/admin/research",
-      label: t("researchValidation"),
-      icon: "science",
-      match: (p) => p.startsWith("/admin/research"),
-    },
-    {
-      href: "/admin/supervisor",
-      label: t("supervisorAi"),
-      icon: "supervisor_account",
-      match: (p) => p.startsWith("/admin/supervisor"),
-    },
-    {
-      href: "/admin/enterprise",
-      label: t("enterprisePlatform"),
-      icon: "domain",
-      match: (p) => p.startsWith("/admin/enterprise"),
-    },
-    {
-      href: "/admin/cidp",
-      label: t("cidpOperations"),
-      icon: "monitoring",
-      match: (p) => p.startsWith("/admin/cidp"),
-    },
-    {
-      href: "/admin/feedback",
-      label: t("feedbackQueue"),
-      icon: "inbox",
-      match: (p) => p.startsWith("/admin/feedback"),
+      href: "/admin/settings",
+      label: t("adminSettings"),
+      icon: "settings",
+      match: (p) => p.startsWith("/admin/settings"),
     },
   ];
 }
@@ -220,6 +197,20 @@ export function AppShell({
   }
 
   function pageTitle() {
+    if (pathname === "/admin" || pathname === "/admin/")
+      return tShell("pageTitle.adminDashboard");
+    if (pathname.startsWith("/admin/virtual-patients"))
+      return tShell("pageTitle.virtualPatients");
+    if (pathname.startsWith("/admin/cases-scenarios"))
+      return tShell("pageTitle.casesScenarios");
+    if (pathname.startsWith("/admin/learners"))
+      return tShell("pageTitle.learners");
+    if (pathname.startsWith("/admin/assessments"))
+      return tShell("pageTitle.assessments");
+    if (pathname.startsWith("/admin/governance"))
+      return tShell("pageTitle.governance");
+    if (pathname.startsWith("/admin/settings"))
+      return tShell("pageTitle.adminSettings");
     if (pathname.startsWith("/admin/reports"))
       return tShell("pageTitle.reportsLibrary");
     if (pathname.startsWith("/admin/avatars"))
