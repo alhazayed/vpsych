@@ -1045,4 +1045,66 @@ describe("architecture invariants", () => {
     );
     expect(rdl).toMatch(/RDL-033/);
   });
+
+  it("Phase 3B Virtual Patient authoring routes use admin auth, rate limits, and audit", () => {
+    const routes = [
+      "app/api/admin/avatars/route.ts",
+      "app/api/admin/avatars/[id]/route.ts",
+      "app/api/admin/avatars/[id]/publish/route.ts",
+      "app/api/admin/avatars/[id]/deactivate/route.ts",
+      "app/api/admin/avatars/[id]/duplicate/route.ts",
+      "app/api/admin/avatars/[id]/preview/route.ts",
+      "app/api/admin/avatars/validate/route.ts",
+    ];
+    for (const rel of routes) {
+      const src = readFileSync(join(root, rel), "utf8");
+      expect(src, rel).toMatch(/requireApiAdmin/);
+      expect(src, rel).toMatch(/rateLimit/);
+    }
+
+    const create = readFileSync(join(root, "app/api/admin/avatars/route.ts"), "utf8");
+    expect(create).toMatch(/admin\.avatar\.create/);
+    expect(create).toMatch(/admin_create_virtual_patient|createVirtualPatientDraft/);
+    expect(create).toMatch(/is_active:\s*false|Draft saved/);
+
+    const publish = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/publish/route.ts"),
+      "utf8",
+    );
+    expect(publish).toMatch(/admin\.avatar\.publish/);
+    expect(publish).toMatch(/logSecurityEvent/);
+
+    const deactivate = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/deactivate/route.ts"),
+      "utf8",
+    );
+    expect(deactivate).toMatch(/admin\.avatar\.deactivate/);
+    expect(deactivate).toMatch(/not archive/);
+    expect(deactivate).not.toMatch(/archived_at|draft_status/);
+
+    const duplicate = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/duplicate/route.ts"),
+      "utf8",
+    );
+    expect(duplicate).toMatch(/admin\.avatar\.duplicate/);
+
+    const preview = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/preview/route.ts"),
+      "utf8",
+    );
+    expect(preview).toMatch(/resolveAvatar/);
+    expect(preview).toMatch(/Phase 3C/);
+
+    const migration = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20260809155313_admin_virtual_patient_atomic.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toMatch(/admin_create_virtual_patient/);
+    expect(migration).toMatch(/SECURITY INVOKER/);
+    expect(migration).toMatch(/is_active,\s*false|false, -- drafts/);
+    expect(migration).not.toMatch(/draft_status|archived_at|published_at/);
+  });
 });
