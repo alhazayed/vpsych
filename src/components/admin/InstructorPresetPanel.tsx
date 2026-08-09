@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ClinicalPreviewSummary } from "@/components/admin/ClinicalPreviewSummary";
 
 type PresetOption = {
   id: string;
@@ -22,6 +23,7 @@ export function InstructorPresetPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [json, setJson] = useState("");
+  const [payload, setPayload] = useState<unknown>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function preview() {
@@ -46,6 +48,7 @@ export function InstructorPresetPanel({
         );
         return;
       }
+      setPayload(data);
       setJson(JSON.stringify(data, null, 2));
     } catch {
       setError("Network error");
@@ -203,11 +206,12 @@ export function InstructorPresetPanel({
         </p>
       )}
       {msg && <p className="text-sm text-[var(--primary)]">{msg}</p>}
-      {json && (
-        <pre className="max-h-[480px] overflow-auto rounded-lg bg-[var(--surface-container-low)] p-3 text-xs">
-          {json}
-        </pre>
-      )}
+      {payload ? (
+        <ClinicalPreviewSummary
+          payload={payload}
+          title="Preset case summary"
+        />
+      ) : null}
     </div>
   );
 }

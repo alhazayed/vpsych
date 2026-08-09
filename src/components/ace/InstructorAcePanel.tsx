@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdvancedJson } from "@/components/admin/AdvancedDetails";
 
 type LearnerRow = {
   id: string;
@@ -23,7 +24,7 @@ export function InstructorAcePanel() {
   const [selected, setSelected] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [analytics, setAnalytics] = useState("");
+  const [analytics, setAnalytics] = useState<unknown>(null);
   const [threshold, setThreshold] = useState(70);
   const [adaptiveMode, setAdaptiveMode] = useState(true);
   const [maxDifficulty, setMaxDifficulty] = useState("expert");
@@ -79,7 +80,7 @@ export function InstructorAcePanel() {
       setError(data.error ?? "Analytics failed");
       return;
     }
-    setAnalytics(JSON.stringify(data, null, 2));
+    setAnalytics(data);
   }
 
   return (
@@ -183,12 +184,65 @@ export function InstructorAcePanel() {
             {error}
           </p>
         )}
-        {analytics && (
-          <pre className="max-h-96 overflow-auto rounded-lg bg-[var(--surface-container-low)] p-3 text-xs">
-            {analytics}
-          </pre>
-        )}
+        {analytics ? (
+          <div className="space-y-3">
+            <LearnerAnalyticsSummary data={analytics} />
+            <AdvancedJson
+              value={analytics}
+              title="Advanced details (analytics JSON)"
+            />
+          </div>
+        ) : null}
       </section>
+    </div>
+  );
+}
+
+function LearnerAnalyticsSummary({ data }: { data: unknown }) {
+  if (!data || typeof data !== "object") {
+    return (
+      <p className="text-sm text-[var(--on-surface-variant)]">No analytics.</p>
+    );
+  }
+  const rec = data as Record<string, unknown>;
+  const confidence =
+    typeof rec.confidence_score === "number" ? rec.confidence_score : null;
+  const velocity =
+    typeof rec.learning_velocity === "number" ? rec.learning_velocity : null;
+  const strengths = Array.isArray(rec.strengths) ? rec.strengths : [];
+  const weaknesses = Array.isArray(rec.weaknesses) ? rec.weaknesses : [];
+
+  return (
+    <div className="rounded-lg border border-[var(--outline-variant)] p-4 text-sm">
+      <p className="text-xs text-[var(--on-surface-variant)]">
+        Formative training estimates — not validated clinical measurements.
+      </p>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div>
+          <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
+            Confidence
+          </dt>
+          <dd>{confidence ?? "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
+            Learning velocity
+          </dt>
+          <dd>{velocity ?? "—"}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-xs text-[var(--on-surface-variant)]">
+        Strengths:{" "}
+        {strengths.length
+          ? strengths.map((s) => String(s).replace(/_/g, " ")).join(", ")
+          : "Insufficient evidence"}
+      </p>
+      <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
+        Focus areas:{" "}
+        {weaknesses.length
+          ? weaknesses.map((s) => String(s).replace(/_/g, " ")).join(", ")
+          : "Insufficient evidence"}
+      </p>
     </div>
   );
 }

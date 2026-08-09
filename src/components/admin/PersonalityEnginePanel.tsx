@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { AdvancedDetails } from "@/components/admin/AdvancedDetails";
 
 type AvatarRow = {
   id: string;
@@ -658,9 +659,17 @@ export function PersonalityEnginePanel({
       ) : null}
 
       {preview ? (
-        <pre className="max-h-[420px] overflow-auto rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-xs whitespace-pre-wrap text-[var(--on-surface)]">
-          {preview}
-        </pre>
+        <div className="space-y-3">
+          <div className="rounded-lg border border-[var(--outline-variant)] p-4 text-sm text-[var(--on-surface-variant)]">
+            Personality prompt preview is ready. Open advanced details to read
+            the full injection text used during sessions.
+          </div>
+          <AdvancedDetails title="Advanced details (prompt injection)">
+            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap text-xs text-[var(--on-surface)]">
+              {preview}
+            </pre>
+          </AdvancedDetails>
+        </div>
       ) : null}
     </div>
   );

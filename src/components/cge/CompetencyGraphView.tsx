@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdvancedJson } from "@/components/admin/AdvancedDetails";
 
 type Node = {
   id: string;
@@ -186,7 +187,9 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
                 <p className="mt-1 text-[11px] text-[var(--on-surface-variant)]">
                   {n.domain}
                   {st
-                    ? ` · ${st.stage} · score ${st.score} · conf ${st.confidence}`
+                    ? st.samples === 0
+                      ? " · Baseline — not yet assessed · Insufficient evidence"
+                      : ` · ${st.stage} · formative ${st.score} · conf ${st.confidence} · samples ${st.samples}`
                     : " · not attempted"}
                 </p>
                 {expanded === n.id && prereqs.length > 0 && (
@@ -210,11 +213,9 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
           {error}
         </p>
       )}
-      {rca && (
-        <pre className="max-h-96 overflow-auto rounded-lg bg-[var(--surface-container-low)] p-3 text-xs">
-          {rca}
-        </pre>
-      )}
+      {rca ? (
+        <AdvancedJson value={rca} title="Advanced details (root-cause report)" />
+      ) : null}
     </div>
   );
 }
