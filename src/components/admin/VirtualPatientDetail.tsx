@@ -6,6 +6,7 @@ import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetail
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PersonalityEnginePanel } from "@/components/admin/PersonalityEnginePanel";
+import { VirtualPatientLifecycleActions } from "@/components/admin/VirtualPatientLifecycleActions";
 import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 import {
   assessVirtualPatientCompleteness,
@@ -83,10 +84,17 @@ export function VirtualPatientDetail({
           { label: avatar.name },
         ]}
         actions={
-          <StatusBadge
-            label={avatar.is_active ? labels.active : labels.inactive}
-            tone={avatar.is_active ? "active" : "inactive"}
-          />
+          <div className="flex flex-col items-end gap-3">
+            <StatusBadge
+              label={avatar.is_active ? labels.active : labels.inactive}
+              tone={avatar.is_active ? "active" : "inactive"}
+            />
+            <VirtualPatientLifecycleActions
+              avatarId={avatar.id}
+              slug={avatar.slug ?? null}
+              isActive={avatar.is_active}
+            />
+          </div>
         }
       />
 
