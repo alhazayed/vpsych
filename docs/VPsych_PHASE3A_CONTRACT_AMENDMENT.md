@@ -136,6 +136,8 @@ Forbidden messaging:
 | JSON schemas / personas / engines | **No** |
 | Documentation (`docs/VPsych_VIRTUAL_PATIENT_CREATION_CONTRACT.md`, this file) | **Yes** |
 
+**Follow-up cosmetic fix (same docs-only amendment):** Exec summary §1 human_personality cell updated to name synthesis + authored-quality framing so it matches §§6.3 / 9.2.
+
 **Migrations:** NONE  
 
 **Application code changed:** NO  

@@ -24,7 +24,7 @@ A future Save must treat the Virtual Patient as a **single-row `public.avatars` 
 | Flat NOT NULL columns (`name`, `disorder`, `persona_prompt`) | **Yes** (Postgres) | Yes |
 | `clinical_core` + `personalities` (v2) | No (nullable) | **Yes** for bilingual clinical fidelity |
 | Both `en-US` and `ar-JO` personalities | No at DB; **yes** in `avatar.v2.json` authoring schema | **Yes** for product bilingual contract |
-| `human_personality` map | Defaults `{}` | Strongly recommended; builtins only for known slugs |
+| `human_personality` map | Defaults `{}` | **Authored quality** strongly recommended for publish (both locales). Runtime always has Module 2b via snapshot → DB → builtins (known slugs) → `synthesizeHumanPersonalityFromAvatar()` |
 | `voice_profile_id` | No (nullable FK) | Recommended; TTS falls back to env defaults |
 | `personas` row | No | Recommended for Case Engine default disorder linkage |
 | Case / template / preset / competencies | No at avatar create | Optional at **session** start |
