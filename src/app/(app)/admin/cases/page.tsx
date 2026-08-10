@@ -2,10 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { getBuiltinCatalog } from "@/lib/case-engine/catalog";
 import { CaseEnginePanel } from "@/components/admin/CaseEnginePanel";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdvancedDetails } from "@/components/admin/AdvancedDetails";
 
 export default async function AdminCasesPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.cases");
+  const tHome = await getTranslations("admin.home");
 
   const { data: avatars } = await supabase
     .from("avatars")
@@ -42,14 +45,14 @@ export default async function AdminCasesPage() {
 
   return (
     <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
-      <section className="mb-8 fade-in-up">
-        <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-          {t("title")}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
-          {t("subtitle")}
-        </p>
-      </section>
+      <AdminPageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        breadcrumbs={[
+          { label: tHome("title"), href: "/admin" },
+          { label: t("title") },
+        ]}
+      />
 
       <section className="mb-10 clinical-card p-5">
         <h2 className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
@@ -107,8 +110,22 @@ export default async function AdminCasesPage() {
                     {snap?.primary_diagnosis?.name ?? "Diagnosis"}
                   </div>
                   <div className="mt-1 text-[var(--on-surface-variant)]">
-                    {c.assessment_id} · {c.locale} · {c.difficulty} ·{" "}
-                    {c.therapy_modality} · {c.severity}
+                    {c.locale} · {c.difficulty} · {c.therapy_modality} ·{" "}
+                    {c.severity}
+                  </div>
+                  <div className="mt-2">
+                    <AdvancedDetails title="Advanced details">
+                      <pre className="overflow-auto text-xs">
+                        {JSON.stringify(
+                          {
+                            assessment_id: c.assessment_id,
+                            clinical_snapshot: c.clinical_snapshot,
+                          },
+                          null,
+                          2,
+                        )}
+                      </pre>
+                    </AdvancedDetails>
                   </div>
                 </li>
               );

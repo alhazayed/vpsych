@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ClinicalPreviewSummary } from "@/components/admin/ClinicalPreviewSummary";
 
 type TemplateOption = {
   id: string;
@@ -21,6 +22,7 @@ export function TemplateEnginePanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [json, setJson] = useState("");
+  const [payload, setPayload] = useState<unknown>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function preview() {
@@ -42,7 +44,8 @@ export function TemplateEnginePanel({
         );
         return;
       }
-      setJson(JSON.stringify(data.patient, null, 2));
+      setPayload(data.patient ?? data);
+      setJson(JSON.stringify(data.patient ?? data, null, 2));
     } catch {
       setError("Network error");
     } finally {
@@ -132,11 +135,12 @@ export function TemplateEnginePanel({
       {error && <p className="text-sm text-[var(--error)]">{error}</p>}
       {msg && <p className="text-sm text-[var(--primary)]">{msg}</p>}
 
-      {json && (
-        <pre className="max-h-[480px] overflow-auto rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-xs leading-relaxed">
-          {json}
-        </pre>
-      )}
+      {payload ? (
+        <ClinicalPreviewSummary
+          payload={payload}
+          title="Sample patient summary"
+        />
+      ) : null}
     </div>
   );
 }

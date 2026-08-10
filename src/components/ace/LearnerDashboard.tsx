@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdvancedJson } from "@/components/admin/AdvancedDetails";
+import { ClinicalPreviewSummary } from "@/components/admin/ClinicalPreviewSummary";
 
-type RadarItem = { competency_id: string; score: number };
+type RadarItem = { competency_id: string; score: number; samples?: number };
+
+type Competency = {
+  competency_id: string;
+  score: number;
+  samples: number;
+};
 
 export function LearnerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -39,9 +47,10 @@ export function LearnerDashboard() {
       completed_case_count: number;
       profession: string;
       training_level: string;
+      competencies?: Competency[];
     };
   } | null>(null);
-  const [nextCase, setNextCase] = useState<string>("");
+  const [nextCase, setNextCase] = useState<unknown>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +87,7 @@ export function LearnerDashboard() {
         setError(json.error ?? "Failed to generate case");
         return;
       }
-      setNextCase(JSON.stringify(json.case, null, 2));
+      setNextCase(json.case ?? json);
     } catch {
       setError("Network error");
     }
@@ -91,22 +100,39 @@ export function LearnerDashboard() {
     return <p className="text-sm text-[var(--error)]">{error}</p>;
   }
 
-  const radar = data?.analytics?.radar ?? [];
-  const top = [...radar].sort((a, b) => b.score - a.score).slice(0, 8);
-  const weak = [...radar].sort((a, b) => a.score - b.score).slice(0, 8);
+  const sampleById = new Map(
+    (data?.profile?.competencies ?? []).map((c) => [c.competency_id, c.samples]),
+  );
+  const radar = (data?.analytics?.radar ?? []).map((r) => ({
+    ...r,
+    samples: sampleById.get(r.competency_id) ?? 0,
+  }));
+  const assessed = radar.filter((r) => (r.samples ?? 0) > 0);
+  const hasEvidence = assessed.length > 0;
+  const top = [...(hasEvidence ? assessed : [])]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+  const weak = [...(hasEvidence ? assessed : [])]
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 8);
+
+  const primaryFocus = data?.plan?.primary_focus;
+  const eta = data?.plan?.estimated_sessions_to_threshold;
+  const showEta =
+    hasEvidence && primaryFocus && typeof eta === "number" && eta > 0;
 
   return (
     <div className="space-y-8">
       <section className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--on-surface-variant)]">
-          Competency graph shows prerequisites, blocked skills, and root-cause
-          remediation.
+          Formative training estimates based on your practice sessions. These
+          scores are not validated clinical measurements.
         </p>
         <Link
           href="/learning/graph"
           className="rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[var(--surface-container-low)]"
         >
-          Open competency graph
+          Open competency pathway
         </Link>
       </section>
 
@@ -127,12 +153,19 @@ export function LearnerDashboard() {
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Competency radar (top / gaps)
+          Competency progress
         </h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <CompetencyBars title="Strengths" items={top} />
-          <CompetencyBars title="Focus areas" items={weak} accent />
-        </div>
+        {!hasEvidence ? (
+          <p className="text-sm text-[var(--on-surface-variant)]">
+            Baseline — not yet assessed. Insufficient evidence until you
+            complete scored practice sessions.
+          </p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            <CompetencyBars title="Relative strengths" items={top} />
+            <CompetencyBars title="Focus areas" items={weak} accent />
+          </div>
+        )}
       </section>
 
       <section className="clinical-card p-5">
@@ -142,11 +175,15 @@ export function LearnerDashboard() {
         <p className="text-sm text-[var(--on-surface-variant)]">
           Primary focus:{" "}
           <span className="text-[var(--on-surface)]">
-            {(data?.plan?.primary_focus ?? "—").replace(/_/g, " ")}
+            {primaryFocus
+              ? primaryFocus.replace(/_/g, " ")
+              : hasEvidence
+                ? "Maintain practice across domains"
+                : "Complete a session to generate a focus"}
           </span>
-          {" · "}
-          ~{data?.plan?.estimated_sessions_to_threshold ?? "—"} sessions to
-          threshold
+          {showEta
+            ? ` · ~${eta} sessions toward threshold (estimate)`
+            : null}
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {(data?.plan?.goals ?? []).map((g) => (
@@ -158,18 +195,21 @@ export function LearnerDashboard() {
           onClick={generateNext}
           className="mt-4 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
         >
-          Generate adaptive next case
+          Suggest next practice case
         </button>
         {error && (
           <p className="mt-2 text-sm text-[var(--error)]" role="alert">
             {error}
           </p>
         )}
-        {nextCase && (
-          <pre className="mt-3 max-h-72 overflow-auto rounded-lg bg-[var(--surface-container-low)] p-3 text-xs">
-            {nextCase}
-          </pre>
-        )}
+        {nextCase ? (
+          <div className="mt-3 space-y-3">
+            <ClinicalPreviewSummary
+              payload={nextCase}
+              title="Suggested next case"
+            />
+          </div>
+        ) : null}
       </section>
 
       <section className="clinical-card p-5">
@@ -189,6 +229,12 @@ export function LearnerDashboard() {
             </li>
           ))}
         </ul>
+        <div className="mt-4">
+          <AdvancedJson
+            value={data}
+            title="Advanced details (profile payload)"
+          />
+        </div>
       </section>
     </div>
   );
@@ -221,27 +267,40 @@ function CompetencyBars({
       <p className="mb-2 text-xs font-medium text-[var(--on-surface-variant)]">
         {title}
       </p>
-      <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item.competency_id}>
-            <div className="mb-1 flex justify-between text-[11px]">
-              <span>{item.competency_id.replace(/_/g, " ")}</span>
-              <span>{item.score}</span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded bg-[var(--surface-container)]">
-              <div
-                className="h-full rounded"
-                style={{
-                  width: `${item.score}%`,
-                  background: accent
-                    ? "var(--tertiary, var(--primary))"
-                    : "var(--primary)",
-                }}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="text-sm text-[var(--on-surface-variant)]">
+          Insufficient evidence
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((item) => {
+            const samples = item.samples ?? 0;
+            const label =
+              samples === 0
+                ? "Baseline — not yet assessed"
+                : `Formative ${item.score} · ${samples} sample${samples === 1 ? "" : "s"}`;
+            return (
+              <li key={item.competency_id}>
+                <div className="mb-1 flex justify-between text-[11px]">
+                  <span>{item.competency_id.replace(/_/g, " ")}</span>
+                  <span>{label}</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded bg-[var(--surface-container)]">
+                  <div
+                    className="h-full rounded"
+                    style={{
+                      width: `${samples === 0 ? 0 : item.score}%`,
+                      background: accent
+                        ? "var(--tertiary, var(--primary))"
+                        : "var(--primary)",
+                    }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

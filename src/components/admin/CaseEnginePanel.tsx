@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ClinicalPreviewSummary } from "@/components/admin/ClinicalPreviewSummary";
 
 type AvatarOption = { id: string; name: string; slug: string | null };
 type DisorderOption = {
@@ -42,6 +43,7 @@ export function CaseEnginePanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [json, setJson] = useState<string>("");
+  const [snapshot, setSnapshot] = useState<unknown>(null);
 
   const comorbidOptions = useMemo(
     () => disorders.filter((d) => d.slug !== disorderSlug),
@@ -72,9 +74,11 @@ export function CaseEnginePanel({
             : JSON.stringify(data.error ?? "Preview failed"),
         );
         setJson("");
+        setSnapshot(null);
         return;
       }
-      setJson(JSON.stringify(data.snapshot, null, 2));
+      setSnapshot(data.snapshot ?? data);
+      setJson(JSON.stringify(data.snapshot ?? data, null, 2));
     } catch {
       setError("Network error");
     } finally {
@@ -222,11 +226,12 @@ export function CaseEnginePanel({
 
       {error && <p className="text-sm text-[var(--error)]">{error}</p>}
 
-      {json && (
-        <pre className="max-h-[480px] overflow-auto rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-xs leading-relaxed">
-          {json}
-        </pre>
-      )}
+      {snapshot ? (
+        <ClinicalPreviewSummary
+          payload={snapshot}
+          title="Clinical case summary"
+        />
+      ) : null}
     </div>
   );
 }

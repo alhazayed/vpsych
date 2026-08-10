@@ -15,6 +15,12 @@ type NavItem = {
   match?: (pathname: string) => boolean;
 };
 
+type NavSection = {
+  id: string;
+  label: string;
+  items: NavItem[];
+};
+
 function therapistNav(
   t: (key: string) => string,
   therapyRoomEnabled: boolean,
@@ -69,93 +75,137 @@ function therapistNav(
   ];
 }
 
-function adminNav(t: (key: string) => string): NavItem[] {
+/** Task-oriented admin IA (Phase 2). Old routes remain valid. */
+function adminNavSections(t: (key: string) => string): NavSection[] {
   return [
     {
-      href: "/admin/reports",
-      label: t("reportsLibrary"),
-      icon: "folder_shared",
-      match: (p) => p.startsWith("/admin/reports"),
+      id: "home",
+      label: "",
+      items: [
+        {
+          href: "/admin",
+          label: t("adminHome"),
+          icon: "dashboard",
+          match: (p) => p === "/admin",
+        },
+      ],
     },
     {
-      href: "/admin/avatars",
-      label: t("avatarPresets"),
-      icon: "psychology",
-      match: (p) => p.startsWith("/admin/avatars"),
+      id: "content",
+      label: t("sectionContent"),
+      items: [
+        {
+          href: "/admin/avatars",
+          label: t("virtualPatients"),
+          icon: "psychology",
+          match: (p) => p.startsWith("/admin/avatars"),
+        },
+        {
+          href: "/admin/voices",
+          label: t("voices"),
+          icon: "record_voice_over",
+          match: (p) => p.startsWith("/admin/voices"),
+        },
+        {
+          href: "/admin/cases",
+          label: t("cases"),
+          icon: "biotech",
+          match: (p) => p.startsWith("/admin/cases"),
+        },
+        {
+          href: "/admin/templates",
+          label: t("templates"),
+          icon: "schema",
+          match: (p) => p.startsWith("/admin/templates"),
+        },
+        {
+          href: "/admin/presets",
+          label: t("presets"),
+          icon: "school",
+          match: (p) => p.startsWith("/admin/presets"),
+        },
+      ],
     },
     {
-      href: "/admin/personality",
-      label: t("humanPersonality"),
-      icon: "face",
-      match: (p) => p.startsWith("/admin/personality"),
+      id: "learners",
+      label: t("sectionLearners"),
+      items: [
+        {
+          href: "/admin/reports",
+          label: t("reports"),
+          icon: "folder_shared",
+          match: (p) => p.startsWith("/admin/reports"),
+        },
+        {
+          href: "/admin/curriculum",
+          label: t("learnersProgress"),
+          icon: "timeline",
+          match: (p) => p.startsWith("/admin/curriculum"),
+        },
+        {
+          href: "/admin/graph",
+          label: t("competencies"),
+          icon: "account_tree",
+          match: (p) => p.startsWith("/admin/graph"),
+        },
+      ],
     },
     {
-      href: "/admin/voices",
-      label: t("voiceManagement"),
-      icon: "record_voice_over",
-      match: (p) => p.startsWith("/admin/voices"),
+      id: "research",
+      label: t("sectionResearch"),
+      items: [
+        {
+          href: "/admin/research",
+          label: t("validation"),
+          icon: "science",
+          match: (p) => p.startsWith("/admin/research"),
+        },
+      ],
     },
     {
-      href: "/admin/cases",
-      label: t("caseEngine"),
-      icon: "biotech",
-      match: (p) => p.startsWith("/admin/cases"),
+      id: "organization",
+      label: t("sectionOrganization"),
+      items: [
+        {
+          href: "/admin/enterprise",
+          label: t("enterprise"),
+          icon: "domain",
+          match: (p) => p.startsWith("/admin/enterprise"),
+        },
+        {
+          href: "/admin/feedback",
+          label: t("feedback"),
+          icon: "inbox",
+          match: (p) => p.startsWith("/admin/feedback"),
+        },
+      ],
     },
     {
-      href: "/admin/templates",
-      label: t("scenarioTemplates"),
-      icon: "schema",
-      match: (p) => p.startsWith("/admin/templates"),
-    },
-    {
-      href: "/admin/presets",
-      label: t("instructorPresets"),
-      icon: "school",
-      match: (p) => p.startsWith("/admin/presets"),
-    },
-    {
-      href: "/admin/curriculum",
-      label: t("adaptiveCurriculum"),
-      icon: "timeline",
-      match: (p) => p.startsWith("/admin/curriculum"),
-    },
-    {
-      href: "/admin/graph",
-      label: t("competencyGraph"),
-      icon: "account_tree",
-      match: (p) => p.startsWith("/admin/graph"),
-    },
-    {
-      href: "/admin/research",
-      label: t("researchValidation"),
-      icon: "science",
-      match: (p) => p.startsWith("/admin/research"),
-    },
-    {
-      href: "/admin/supervisor",
-      label: t("supervisorAi"),
-      icon: "supervisor_account",
-      match: (p) => p.startsWith("/admin/supervisor"),
-    },
-    {
-      href: "/admin/enterprise",
-      label: t("enterprisePlatform"),
-      icon: "domain",
-      match: (p) => p.startsWith("/admin/enterprise"),
-    },
-    {
-      href: "/admin/cidp",
-      label: t("cidpOperations"),
-      icon: "monitoring",
-      match: (p) => p.startsWith("/admin/cidp"),
-    },
-    {
-      href: "/admin/feedback",
-      label: t("feedbackQueue"),
-      icon: "inbox",
-      match: (p) => p.startsWith("/admin/feedback"),
+      id: "system",
+      label: t("sectionSystem"),
+      items: [
+        {
+          href: "/admin/cidp",
+          label: t("operations"),
+          icon: "monitoring",
+          match: (p) => p.startsWith("/admin/cidp"),
+        },
+        {
+          href: "/admin/diagnostics",
+          label: t("diagnostics"),
+          icon: "settings_suggest",
+          match: (p) =>
+            p.startsWith("/admin/diagnostics") ||
+            p.startsWith("/admin/supervisor") ||
+            p.startsWith("/admin/personality"),
+        },
+      ],
     },
   ];
+}
+
+function flattenAdminNav(sections: NavSection[]): NavItem[] {
+  return sections.flatMap((s) => s.items);
 }
 
 function NavLink({
@@ -207,10 +257,36 @@ export function AppShell({
     (/^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete")) ||
     /^\/clinic\/room\/[^/]+$/.test(pathname);
 
-  const nav = [
+  const isAdminArea =
+    profile.role === "admin" && pathname.startsWith("/admin");
+
+  const adminSections =
+    profile.role === "admin" ? adminNavSections(tNav) : [];
+  const adminFlat = flattenAdminNav(adminSections);
+
+  const therapistItems = [
     ...therapistNav(tNav, therapyRoomEnabled),
-    ...(profile.role === "admin" ? adminNav(tNav) : []),
+    ...(profile.role === "admin"
+      ? [
+          {
+            href: "/admin",
+            label: tNav("adminHome"),
+            icon: "admin_panel_settings",
+            match: (p: string) => p.startsWith("/admin"),
+          } satisfies NavItem,
+        ]
+      : []),
   ];
+
+  const mobileNav = isAdminArea
+    ? [
+        adminFlat.find((i) => i.href === "/admin")!,
+        adminFlat.find((i) => i.href === "/admin/avatars")!,
+        adminFlat.find((i) => i.href === "/admin/reports")!,
+        adminFlat.find((i) => i.href === "/admin/feedback")!,
+        adminFlat.find((i) => i.href === "/admin/diagnostics")!,
+      ].filter(Boolean)
+    : therapistItems;
 
   async function signOut() {
     const supabase = createClient();
@@ -220,24 +296,27 @@ export function AppShell({
   }
 
   function pageTitle() {
+    if (pathname === "/admin") return tShell("pageTitle.adminHome");
+    if (pathname.startsWith("/admin/diagnostics"))
+      return tShell("pageTitle.diagnostics");
     if (pathname.startsWith("/admin/reports"))
       return tShell("pageTitle.reportsLibrary");
     if (pathname.startsWith("/admin/avatars"))
-      return tShell("pageTitle.avatarPresets");
+      return tShell("pageTitle.virtualPatients");
     if (pathname.startsWith("/admin/personality"))
       return tShell("pageTitle.humanPersonality");
     if (pathname.startsWith("/admin/voices"))
-      return tShell("pageTitle.voiceManagement");
+      return tShell("pageTitle.voices");
     if (pathname.startsWith("/admin/cases"))
-      return tShell("pageTitle.caseEngine");
+      return tShell("pageTitle.cases");
     if (pathname.startsWith("/admin/templates"))
-      return tShell("pageTitle.scenarioTemplates");
+      return tShell("pageTitle.templates");
     if (pathname.startsWith("/admin/presets"))
-      return tShell("pageTitle.instructorPresets");
+      return tShell("pageTitle.presets");
     if (pathname.startsWith("/admin/curriculum"))
-      return tShell("pageTitle.adaptiveCurriculum");
+      return tShell("pageTitle.learnersProgress");
     if (pathname.startsWith("/admin/graph"))
-      return tShell("pageTitle.competencyGraph");
+      return tShell("pageTitle.competencies");
     if (pathname.startsWith("/learning/supervisor"))
       return tShell("pageTitle.supervisorAi");
     if (pathname.startsWith("/learning/graph"))
@@ -247,13 +326,15 @@ export function AppShell({
     if (pathname.startsWith("/admin/supervisor"))
       return tShell("pageTitle.supervisorAi");
     if (pathname.startsWith("/admin/enterprise"))
-      return tShell("pageTitle.enterprisePlatform");
+      return tShell("pageTitle.enterprise");
     if (pathname.startsWith("/admin/cidp"))
-      return tShell("pageTitle.cidpOperations");
+      return tShell("pageTitle.operations");
     if (pathname.startsWith("/admin/feedback"))
       return tShell("pageTitle.feedbackQueue");
     if (pathname.startsWith("/feedback"))
       return tShell("pageTitle.institutionalFeedback");
+    if (pathname.startsWith("/admin/research"))
+      return tShell("pageTitle.validation");
     if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
     if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
     return tShell("pageTitle.patientLibrary");
@@ -265,10 +346,12 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--on-surface)]">
-      {/* Desktop sidebar */}
       <aside className="fixed start-0 top-0 z-50 hidden h-screen w-64 flex-col border-e border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-6 md:flex">
         <div className="mb-8 px-6">
-          <Link href="/avatars" className="flex items-center gap-3">
+          <Link
+            href={isAdminArea ? "/admin" : "/avatars"}
+            className="flex items-center gap-3"
+          >
             <Image
               src="/vpsych-logo.png"
               alt="VPsych"
@@ -282,16 +365,33 @@ export function AppShell({
                 VPsych
               </p>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)] opacity-70">
-                {tShell("tagline")}
+                {isAdminArea ? tShell("adminTagline") : tShell("tagline")}
               </p>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 px-2">
-          {nav.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} />
-          ))}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-2">
+          {isAdminArea ? (
+            adminSections.map((section) => (
+              <div key={section.id}>
+                {section.label ? (
+                  <p className="mb-1 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+                    {section.label}
+                  </p>
+                ) : null}
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <NavLink key={item.href} item={item} pathname={pathname} />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            therapistItems.map((item) => (
+              <NavLink key={item.href} item={item} pathname={pathname} />
+            ))
+          )}
         </nav>
 
         <div className="space-y-3 border-t border-[var(--outline-variant)] px-4 pt-4">
@@ -305,10 +405,19 @@ export function AppShell({
                 : tShell("role.therapist")}
             </p>
           </div>
-          <Link href="/avatars" className="btn-primary w-full">
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            {tShell("newAssessment")}
-          </Link>
+          {isAdminArea ? (
+            <Link href="/avatars" className="btn-secondary w-full">
+              <span className="material-symbols-outlined text-[20px]">
+                school
+              </span>
+              {tShell("therapistWorkspace")}
+            </Link>
+          ) : (
+            <Link href="/avatars" className="btn-primary w-full">
+              <span className="material-symbols-outlined text-[20px]">add</span>
+              {tShell("newAssessment")}
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => void signOut()}
@@ -320,9 +429,11 @@ export function AppShell({
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
-        <Link href="/avatars" className="flex items-center gap-2">
+        <Link
+          href={isAdminArea ? "/admin" : "/avatars"}
+          className="flex items-center gap-2"
+        >
           <Image
             src="/vpsych-logo.png"
             alt="VPsych"
@@ -372,9 +483,8 @@ export function AppShell({
         <div className="pb-24 pt-16 md:pb-0 md:pt-0">{children}</div>
       </div>
 
-      {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
-        {nav.map((item) => (
+        {mobileNav.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} compact />
         ))}
       </nav>
