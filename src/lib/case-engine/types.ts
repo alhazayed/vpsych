@@ -207,6 +207,9 @@ export type CaseInstanceSnapshot = {
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
+  /** Admin Virtual Patient test — skip learner assessment on end. */
+  admin_test?: boolean;
+  admin_test_label?: string;
   /** Scientific reproducibility locks. */
   scientific_meta?: Record<string, unknown>;
   /** Educational clinical teaching cues (optional; improves CFI MSE dimensions). */
