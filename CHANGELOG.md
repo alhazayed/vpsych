@@ -6,6 +6,8 @@ All notable changes to VPsych are documented here. Format follows [Keep a Change
 
 ### Added
 
+- **Wave-1 Simulated Patient Library** — 10 new bilingual (en-US / ar-JO) standardized patients covering trauma, OCD, psychosis, personality, substance, eating, ADHD, bipolar, perinatal, and adolescent pathways (`personas/*.case.json`, seed migration, therapy cues, personality catalog, scenario templates). Library grows from 2 → 12 examination-ready SPs without changing clinical cognition engines.
+- **Wave-2 Simulated Patient Library** — 38 additional bilingual SPs with faculty/debrief/scoring packs, difficulty lanes (beginner→expert/OSCE/emergency/longitudinal), and broader diagnostic/demographic coverage. Library total **50** examination-ready patients. Catalog packages added for PDD, ASD, and schizoaffective.
 - Stage 12 Production Release Certification package (`docs/PRODUCTION_READINESS.md`, `SECURITY_AUDIT.md`, `DEPLOYMENT_GUIDE.md`, `DISASTER_RECOVERY.md`, `INCIDENT_RESPONSE.md`, `PERFORMANCE_REPORT.md`, `RELEASE_CERTIFICATION.md`, `VERSION_1_0_RELEASE_REPORT.md`).
 - Production ops metrics admin API: `GET /api/admin/ops/metrics`.
 - Environment presence validation (`src/lib/env.ts`).
