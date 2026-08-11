@@ -225,7 +225,7 @@ export async function updateVirtualPatientDraft(
     return { ok: false, status: 404, error: "Avatar not found" };
   }
 
-  const status = readLifecycleStatus(existing as Avatar);
+  const status = readLifecycleStatus(existing as unknown as Avatar);
   if (status === "published") {
     return {
       ok: false,
@@ -332,7 +332,7 @@ async function loadAvatarForPublishGate(
 
   return {
     ok: true,
-    avatar: avatar as Avatar,
+    avatar: avatar as unknown as Avatar,
     persona: (persona as { id: string; default_disorder_id: string | null } | null) ?? null,
   };
 }
