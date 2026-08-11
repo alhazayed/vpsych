@@ -83,3 +83,41 @@ export const LIFECYCLE_PROJECTION_TABLE: ReadonlyArray<{
   { status: "published", is_active: true, therapistVisible: true },
   { status: "archived", is_active: false, therapistVisible: false },
 ];
+
+export type LifecycleBadgeTone =
+  | "active"
+  | "inactive"
+  | "warning"
+  | "info"
+  | "neutral";
+
+export function lifecycleBadgeTone(
+  status: VirtualPatientLifecycleStatus,
+): LifecycleBadgeTone {
+  switch (status) {
+    case "published":
+      return "active";
+    case "testing":
+      return "info";
+    case "draft":
+      return "warning";
+    case "archived":
+      return "inactive";
+  }
+}
+
+export function readLifecycleFromRow(row: {
+  lifecycle_status?: string | null;
+  is_active?: boolean;
+}): VirtualPatientLifecycleStatus {
+  const raw = row.lifecycle_status;
+  if (
+    raw === "draft" ||
+    raw === "testing" ||
+    raw === "published" ||
+    raw === "archived"
+  ) {
+    return raw;
+  }
+  return row.is_active ? "published" : "draft";
+}

@@ -7,8 +7,10 @@ import {
   duplicateLifecycleStatus,
   isActiveFromLifecycle,
   isTherapistVisible,
+  lifecycleBadgeTone,
   lifecycleMutatesClinicalSnapshots,
   lifecycleMutatesHistoricalSessions,
+  readLifecycleFromRow,
   type VirtualPatientLifecycleStatus,
 } from "./virtual-patient-lifecycle";
 
@@ -76,5 +78,22 @@ describe("VP lifecycle historical safety invariants", () => {
     expect(statuses).toContain("archived");
     // Archive is a retained status, not a delete tombstone column.
     expect(archiveFromPublished()).toBe("archived");
+  });
+});
+
+describe("VP lifecycle helpers", () => {
+  it("badge tones distinguish four states", () => {
+    expect(lifecycleBadgeTone("draft")).toBe("warning");
+    expect(lifecycleBadgeTone("testing")).toBe("info");
+    expect(lifecycleBadgeTone("published")).toBe("active");
+    expect(lifecycleBadgeTone("archived")).toBe("inactive");
+  });
+
+  it("readLifecycleFromRow prefers lifecycle_status over is_active", () => {
+    expect(
+      readLifecycleFromRow({ lifecycle_status: "testing", is_active: false }),
+    ).toBe("testing");
+    expect(readLifecycleFromRow({ is_active: true })).toBe("published");
+    expect(readLifecycleFromRow({ is_active: false })).toBe("draft");
   });
 });
