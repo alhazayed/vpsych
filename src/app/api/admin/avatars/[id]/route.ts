@@ -103,7 +103,6 @@ export async function PATCH(request: Request, { params }: Params) {
   delete body.available_locales;
   delete body.is_active;
   delete (body as { lifecycle_status?: unknown }).lifecycle_status;
-  delete body.is_active;
 
   const result = await updateVirtualPatientDraft(supabase, id, body);
   if (!result.ok) {
@@ -121,7 +120,10 @@ export async function PATCH(request: Request, { params }: Params) {
     outcome: "success",
     resourceType: "avatar",
     resourceId: result.avatarId,
-    metadata: { slug: result.slug },
+    metadata: {
+      slug: result.slug,
+      lifecycle_status: result.lifecycleStatus,
+    },
     request,
   });
 
@@ -129,6 +131,7 @@ export async function PATCH(request: Request, { params }: Params) {
     avatar: {
       id: result.avatarId,
       slug: result.slug,
+      lifecycle_status: result.lifecycleStatus,
       is_active: result.isActive,
       persona_id: result.personaId,
     },
