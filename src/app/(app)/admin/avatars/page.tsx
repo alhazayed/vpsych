@@ -1,172 +1,80 @@
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
-import type { Avatar, VoiceProfile } from "@/lib/types";
-import { VoicePreviewButton } from "@/components/VoicePreviewButton";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import {
+  VirtualPatientLibrary,
+  type VirtualPatientListItem,
+} from "@/components/admin/VirtualPatientLibrary";
 import { coerceVoiceProfile } from "@/lib/voice/registry";
+import type { VoiceProfile } from "@/lib/types";
 
-type AvatarAdminRow = Pick<
-  Avatar,
-  | "id"
-  | "name"
-  | "disorder"
-  | "age"
-  | "gender"
-  | "is_active"
-  | "ideal_guidelines"
-  | "rubric"
-  | "language"
-  | "dialect"
-  | "voice_id"
-  | "voice_id_ar"
-  | "voice_profile_id"
-> & {
+type AvatarAdminRow = VirtualPatientListItem & {
   voice_profile?: VoiceProfile | VoiceProfile[] | null;
 };
 
 export default async function AdminAvatarsPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.avatars");
-  const tCommon = await getTranslations("common");
+  const tHome = await getTranslations("admin.home");
+
   const { data: avatars } = await supabase
     .from("avatars")
     .select(
-      "id, name, disorder, age, gender, is_active, ideal_guidelines, rubric, language, dialect, voice_id, voice_id_ar, voice_profile_id, voice_profile:voice_profiles(*)",
+      "id, name, slug, disorder, age, gender, is_active, lifecycle_status, language, dialect, voice_id, voice_id_ar, voice_profile_id, human_personality, personalities, clinical_core, persona_prompt, available_locales, portrait_url, voice_profile:voice_profiles(*)",
     )
     .order("name");
 
-  const list = (avatars as AvatarAdminRow[] | null) ?? [];
+  const patients: VirtualPatientListItem[] = (
+    (avatars as AvatarAdminRow[] | null) ?? []
+  ).map((row) => {
+    const profile = coerceVoiceProfile(row.voice_profile);
+    return {
+      ...row,
+      voice_profile_name: profile?.voice_name ?? null,
+    };
+  });
 
   return (
-    <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
-      <section className="mb-8 fade-in-up">
-        <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-          {t("title")}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
-          {t("subtitle")}
-        </p>
-      </section>
-
-      <ul className="space-y-4">
-        {list.map((avatar) => {
-          const profile = coerceVoiceProfile(avatar.voice_profile);
-          return (
-            <li key={avatar.id} className="clinical-card p-5">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-                  {avatar.name}
-                </h2>
-                <span
-                  className={`status-chip ${
-                    avatar.is_active ? "status-chip-active" : "status-chip-warn"
-                  }`}
-                >
-                  {avatar.is_active ? tCommon("active") : tCommon("inactive")}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                {avatar.disorder}
-                {avatar.age ? ` · ${avatar.age}` : ""}
-                {avatar.gender ? ` · ${avatar.gender}` : ""}
-              </p>
-
-              <div className="mt-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                    {t("voiceProfile")}
-                  </h3>
-                  <p className="text-[11px] text-[var(--on-surface-variant)]">
-                    {t("voiceLegacyNote")}
-                  </p>
-                </div>
-                <dl className="mt-2 grid gap-2 text-sm text-[var(--on-surface-variant)] sm:grid-cols-2">
-                  <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-wider">
-                      Registry
-                    </dt>
-                    <dd className="font-medium text-[var(--on-surface)]">
-                      {profile
-                        ? `${profile.voice_name} (${profile.language})`
-                        : "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-wider">
-                      Language
-                    </dt>
-                    <dd className="font-medium text-[var(--on-surface)]">
-                      {avatar.language ?? "en"}
-                      {avatar.dialect ? ` · ${avatar.dialect}` : ""}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-wider">
-                      English voice_id
-                    </dt>
-                    <dd className="break-all font-mono text-xs text-[var(--on-surface)]">
-                      {avatar.voice_id ?? "— (env default)"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-wider">
-                      Arabic voice_id
-                    </dt>
-                    <dd className="break-all font-mono text-xs text-[var(--on-surface)]">
-                      {avatar.voice_id_ar ?? "— (env default)"}
-                    </dd>
-                  </div>
-                </dl>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <VoicePreviewButton
-                    locale="en"
-                    voiceId={avatar.voice_id}
-                    voiceIdAr={avatar.voice_id_ar}
-                    voiceProfileId={avatar.voice_profile_id}
-                    avatarId={avatar.id}
-                    label="Preview English"
-                  />
-                  <VoicePreviewButton
-                    locale="ar"
-                    voiceId={avatar.voice_id}
-                    voiceIdAr={avatar.voice_id_ar}
-                    voiceProfileId={avatar.voice_profile_id}
-                    avatarId={avatar.id}
-                    label="Preview Arabic"
-                  />
-                </div>
-              </div>
-
-              <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                {t("goals")}
-              </h3>
-              <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
-                {(avatar.ideal_guidelines?.session_goals ?? []).map((g) => (
-                  <li key={g} className="flex gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-[var(--primary)]">
-                      check_circle
-                    </span>
-                    {g}
-                  </li>
-                ))}
-              </ul>
-              <h3 className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                {t("rubric")}
-              </h3>
-              <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface-variant)]">
-                {(avatar.rubric ?? []).map((r) => (
-                  <li key={r.id}>
-                    {t("rubricItem", {
-                      label: r.label,
-                      max: r.max,
-                      weight: r.weight,
-                    })}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          );
-        })}
-      </ul>
+    <main className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">
+      <AdminPageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        breadcrumbs={[
+          { label: tHome("title"), href: "/admin" },
+          { label: t("title") },
+        ]}
+      />
+      <VirtualPatientLibrary
+        patients={patients}
+        labels={{
+          search: t("search"),
+          filterAll: t("filterAll"),
+          filterDraft: t("filterDraft"),
+          filterTesting: t("filterTesting"),
+          filterPublished: t("filterPublished"),
+          filterArchived: t("filterArchived"),
+          filterIncomplete: t("filterIncomplete"),
+          sortName: t("sortName"),
+          sortDiagnosis: t("sortDiagnosis"),
+          sortStatus: t("sortStatus"),
+          sortCompleteness: t("sortCompleteness"),
+          empty: t("empty"),
+          view: t("view"),
+          create: t("create"),
+          createHint: t("createHint"),
+          statusDraft: t("statusDraft"),
+          statusTesting: t("statusTesting"),
+          statusPublished: t("statusPublished"),
+          statusArchived: t("statusArchived"),
+          complete: t("complete"),
+          incomplete: t("incomplete"),
+          voiceOk: t("voiceOk"),
+          voiceMissing: t("voiceMissing"),
+          personalityOk: t("personalityOk"),
+          personalityPartial: t("personalityPartial"),
+          personalityMissing: t("personalityMissing"),
+        }}
+      />
     </main>
   );
 }
