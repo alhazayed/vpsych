@@ -207,6 +207,13 @@ export type CaseInstanceSnapshot = {
   rubric?: RubricItem[];
   memory_scope: "case_instance";
   generated_at: string;
+  /**
+   * Phase 3C — Admin Test Conversation marker.
+   * Set only by POST /api/admin/avatars/[id]/test-session.
+   * When true, session end must skip learner assessment/report/ACE/CGE.
+   */
+  admin_test?: boolean;
+  admin_test_label?: string;
   /** Scientific reproducibility locks. */
   scientific_meta?: Record<string, unknown>;
   /** Educational clinical teaching cues (optional; improves CFI MSE dimensions). */

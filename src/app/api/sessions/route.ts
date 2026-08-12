@@ -21,6 +21,7 @@ import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import { shouldUseTherapyRoom } from "@/lib/therapy-room";
+import { stripAdminTestMarker } from "@/lib/admin/admin-test-session";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -133,16 +134,19 @@ export async function POST(request: Request) {
     ? "therapy_room"
     : "classic";
 
+  // Phase 3C — learner create path must never persist admin_test markers.
+  const learnerSnapshot = stripAdminTestMarker(caseResult.snapshot);
+
   const insertPayload: Record<string, unknown> = {
     therapist_id: user.id,
     avatar_id: body.avatarId,
     status: "active",
     max_duration_sec: maxDurationSec,
-    language: caseResult.snapshot.locale || effectiveLocale,
+    language: learnerSnapshot.locale || effectiveLocale,
     case_instance_id: caseResult.caseInstanceId.startsWith("VPSY-")
       ? null
       : caseResult.caseInstanceId,
-    clinical_snapshot: caseResult.snapshot,
+    clinical_snapshot: learnerSnapshot,
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
     instructor_preset_id: caseResult.preset?.id ?? null,

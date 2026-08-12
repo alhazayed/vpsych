@@ -13,6 +13,11 @@ import { runEnterpriseAfterAssessment } from "@/lib/enterprise";
 import { runRealtimeAfterAssessment } from "@/lib/realtime";
 import { runSupervisorAfterAssessment } from "@/lib/supervisor";
 import { runValidationAfterAssessment } from "@/lib/validation";
+import { logSecurityEvent } from "@/lib/security-audit";
+import {
+  assertAdminTestSkipAllowed,
+  isAdminTestSnapshot,
+} from "@/lib/admin/admin-test-session";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 async function sealLedgerBestEffort(opts: {
@@ -117,6 +122,53 @@ export async function POST(_request: Request, { params }: Params) {
     }
     typed.status = expired ? "expired" : "completed";
     typed.ended_at = now.toISOString();
+  }
+
+  // Phase 3C — Admin Test Conversation: central learner-pipeline exclusion.
+  // Authoritative gate: marker + admin role + ownership. Forged markers → 403.
+  if (isAdminTestSnapshot(typed.clinical_snapshot)) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const callerIsAdmin = profile?.role === "admin";
+    const skip = assertAdminTestSkipAllowed({
+      snapshot: typed.clinical_snapshot,
+      callerIsAdmin,
+      therapistId: typed.therapist_id,
+      callerId: user.id,
+    });
+    if (!skip.ok) {
+      await logSecurityEvent({
+        action: "admin.avatar.test_session.forged_skip_denied",
+        outcome: "denied",
+        resourceType: "session",
+        resourceId: sessionId,
+        metadata: {
+          avatarId: typed.avatar_id,
+          reason: skip.reason,
+        },
+        request: _request,
+      });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await logSecurityEvent({
+      action: "admin.avatar.test_session.end",
+      outcome: "success",
+      resourceType: "session",
+      resourceId: sessionId,
+      metadata: {
+        avatarId: typed.avatar_id,
+        skippedAssessment: true,
+      },
+      request: _request,
+    });
+    return NextResponse.json({
+      ok: true,
+      adminTest: true,
+      skippedAssessment: true,
+    });
   }
 
   const { data: alreadyHasReport, error: hasErr } = await supabase.rpc(
