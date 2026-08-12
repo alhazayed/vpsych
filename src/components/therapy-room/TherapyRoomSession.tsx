@@ -13,7 +13,6 @@ import { RoomSettingsPanel } from "@/components/therapy-room/RoomSettingsPanel";
 import { RoomTimer } from "@/components/therapy-room/RoomTimer";
 import { TherapyRoomScene } from "@/components/therapy-room/TherapyRoomScene";
 import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
-import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
   applyHtmlAudioModulation,
