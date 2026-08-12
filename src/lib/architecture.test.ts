@@ -1045,4 +1045,37 @@ describe("architecture invariants", () => {
     );
     expect(rdl).toMatch(/RDL-033/);
   });
+
+  it("Phase 3C — admin-test end gate precedes assessSession", () => {
+    const end = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const skipIdx = end.indexOf("assertAdminTestSkipAllowed");
+    const assessIdx = end.indexOf("assessSession({");
+    expect(skipIdx).toBeGreaterThan(-1);
+    expect(assessIdx).toBeGreaterThan(-1);
+    expect(skipIdx).toBeLessThan(assessIdx);
+    expect(end).toMatch(/admin\.avatar\.test_session\.forged_skip_denied/);
+    expect(end).toMatch(/skippedAssessment:\s*true/);
+  });
+
+  it("Phase 3C — learner session create strips admin_test markers", () => {
+    const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    expect(start).toMatch(/stripAdminTestMarker/);
+    expect(start).not.toMatch(/withAdminTestMarker/);
+    expect(start).not.toMatch(/adminTest/);
+  });
+
+  it("Phase 3C — admin test-session API is the sole marker writer", () => {
+    const route = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/test-session/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/withAdminTestMarker/);
+    expect(route).toMatch(/assertAvatarEligibleForAdminTest/);
+    expect(route).toMatch(/admin\.avatar\.test_session/);
+    expect(route).toMatch(/createCaseForSession/);
+  });
 });
