@@ -12,6 +12,8 @@ import { PrivateNotesPanel } from "@/components/therapy-room/PrivateNotesPanel";
 import { RoomSettingsPanel } from "@/components/therapy-room/RoomSettingsPanel";
 import { RoomTimer } from "@/components/therapy-room/RoomTimer";
 import { TherapyRoomScene } from "@/components/therapy-room/TherapyRoomScene";
+import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
+import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
   applyHtmlAudioModulation,
@@ -312,7 +314,15 @@ export function TherapyRoomSession({
         );
         return;
       }
-      router.push(`/sessions/${session.id}/complete`);
+      const data = (await res.json().catch(() => ({}))) as {
+        adminTest?: boolean;
+        skippedAssessment?: boolean;
+      };
+      if (data.adminTest && data.skippedAssessment) {
+        router.push(`/admin/avatars/${session.avatar_id}`);
+      } else {
+        router.push(`/sessions/${session.id}/complete`);
+      }
       router.refresh();
     } catch {
       endingRef.current = false;
@@ -325,6 +335,7 @@ export function TherapyRoomSession({
     dispatch,
     persistSessionMeta,
     router,
+    session.avatar_id,
     session.id,
     stopPlayback,
   ]);
@@ -1001,6 +1012,7 @@ export function TherapyRoomSession({
       data-trm-hands-free="true"
       data-conversation-state={fsmState}
     >
+      <AdminTestBanner clinicalSnapshot={session.clinical_snapshot} />
       <TherapyRoomScene themeId={settings.themeId}>
         <RoomTimer
           remaining={remaining}

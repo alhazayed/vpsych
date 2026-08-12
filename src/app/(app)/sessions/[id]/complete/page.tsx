@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -25,6 +26,11 @@ export default async function SessionCompletePage({ params }: Props) {
   };
   if (typed.therapist_id !== user.id && profile.role !== "admin") {
     redirect("/avatars");
+  }
+
+  // Phase 3C — admin tests must not land on learner complete/report UX.
+  if (isAdminTestSnapshot(typed.clinical_snapshot)) {
+    redirect(`/admin/avatars/${typed.avatar_id}`);
   }
 
   const immersionOverall =

@@ -437,6 +437,8 @@
       "completed": "completed",
       "expired": "expired"
     },
+    "adminTestBadge": "Admin test",
+    "adminTestHint": "Not a learner assessment",
     "complete": {
       "badge": "Simulation completed",
       "title": "Session complete",
@@ -472,6 +474,12 @@
       "ttsBrowserFallback": "Avatar voice unavailable — using your browser’s speech instead.",
       "textOnly": "Text-only mode — type your turns below.",
       "textReady": "Ready for your next typed turn."
+    },
+    "adminTest": {
+      "banner": "ADMIN TEST — NOT A LEARNER SESSION",
+      "hint": "This conversation verifies the virtual patient. Ending does not create a learner assessment or report.",
+      "end": "End test",
+      "ending": "Ending test…"
     },
     "end": "End",
     "ending": "Ending…",
@@ -708,6 +716,12 @@
         "testingFailed": "Could not move to testing",
         "draftFailed": "Could not return to draft",
         "networkError": "Network error"
+      },
+      "testConversation": {
+        "start": "Start Test Conversation",
+        "starting": "Starting test…",
+        "failed": "Could not start test conversation.",
+        "hint": "Uses the real patient runtime. Not a learner assessment. Retention policy remains a product decision."
       },
       "wizard": {
         "intro": "Author identity, clinical profile, human traits, English and Arabic patients, voice, and default disorder — then validate and publish. Arabic is authored independently (never a silent copy of English).",

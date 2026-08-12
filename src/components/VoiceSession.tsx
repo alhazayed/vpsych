@@ -9,6 +9,8 @@ import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { AvatarPortrait } from "@/components/AvatarPortrait";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionTimer } from "@/components/SessionTimer";
+import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
+import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
   playPatientSpeech,
@@ -82,6 +84,7 @@ export function VoiceSession({
 }) {
   const router = useRouter();
   const t = useTranslations("session");
+  const adminTest = isAdminTestSnapshot(session.clinical_snapshot);
   const locale = resolvePipelineLocale(session.language, avatar.language);
   const disorderSlug =
     session.clinical_snapshot?.primary_diagnosis?.slug ?? null;
@@ -134,14 +137,22 @@ export function VoiceSession({
         setEnding(false);
         return;
       }
-      router.push(`/sessions/${session.id}/complete`);
+      const data = (await res.json().catch(() => ({}))) as {
+        adminTest?: boolean;
+        skippedAssessment?: boolean;
+      };
+      if (data.adminTest && data.skippedAssessment) {
+        router.push(`/admin/avatars/${session.avatar_id}`);
+      } else {
+        router.push(`/sessions/${session.id}/complete`);
+      }
       router.refresh();
     } catch {
       setStatus(t("status.endFailed"));
       endingRef.current = false;
       setEnding(false);
     }
-  }, [router, session.id, t, stopPlayback]);
+  }, [router, session.avatar_id, session.id, t, stopPlayback]);
 
   useEffect(() => {
     const tick = () => {
@@ -440,7 +451,7 @@ export function VoiceSession({
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       {ending && <AiAnalysisOverlay />}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
-        <Link href="/avatars" className="flex items-center gap-3">
+        <Link href={adminTest ? `/admin/avatars/${session.avatar_id}` : "/avatars"} className="flex items-center gap-3">
           <Image
             src="/vpsych-logo.png"
             alt="VPsych"
@@ -478,12 +489,22 @@ export function VoiceSession({
             disabled={ending}
             className="btn-secondary h-9 px-3 text-xs"
           >
-            {ending ? t("ending") : t("end")}
+            {ending
+              ? adminTest
+                ? t("adminTest.ending")
+                : t("ending")
+              : adminTest
+                ? t("adminTest.end")
+                : t("end")}
           </button>
         </div>
       </header>
 
-      <main className="relative flex flex-1 flex-col pt-16 lg:flex-row">
+      <div className="pt-16">
+        <AdminTestBanner clinicalSnapshot={session.clinical_snapshot} />
+      </div>
+
+      <main className="relative flex flex-1 flex-col lg:flex-row">
         <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6 lg:pb-12">
           <div className="pointer-events-none absolute inset-x-4 top-4 flex justify-between gap-3 md:inset-x-6">
             <div className="flex flex-col gap-2">
@@ -589,7 +610,13 @@ export function VoiceSession({
               disabled={ending}
               className="btn-secondary"
             >
-              {ending ? t("ending") : t("endSession")}
+              {ending
+                ? adminTest
+                  ? t("adminTest.ending")
+                  : t("ending")
+                : adminTest
+                  ? t("adminTest.end")
+                  : t("endSession")}
             </button>
           </div>
         </section>

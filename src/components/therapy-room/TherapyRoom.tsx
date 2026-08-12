@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SessionTimer } from "@/components/SessionTimer";
 import { PrivateNotebook } from "@/components/therapy-room/PrivateNotebook";
+import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
+import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
   ARRIVAL_BEATS,
@@ -181,9 +183,13 @@ export function TherapyRoom({
       }).catch(() => undefined);
     }
 
-    router.push(`/clinic/room/${session.id}/debrief`);
+    if (isAdminTestSnapshot(session.clinical_snapshot)) {
+      router.push(`/admin/avatars/${session.avatar_id}`);
+    } else {
+      router.push(`/clinic/room/${session.id}/debrief`);
+    }
     router.refresh();
-  }, [appointmentId, router, session.id, setRoomPhase, t]);
+  }, [appointmentId, router, session.avatar_id, session.clinical_snapshot, session.id, setRoomPhase, t]);
 
   const endSession = useCallback(async () => {
     if (endingRef.current) return;
@@ -205,13 +211,22 @@ export function TherapyRoom({
         setEnding(false);
         return;
       }
+      const data = (await res.json().catch(() => ({}))) as {
+        adminTest?: boolean;
+        skippedAssessment?: boolean;
+      };
+      if (data.adminTest && data.skippedAssessment) {
+        router.push(`/admin/avatars/${session.avatar_id}`);
+        router.refresh();
+        return;
+      }
       await runDepartureThenDebrief();
     } catch {
       setStatus(t("endFailed"));
       endingRef.current = false;
       setEnding(false);
     }
-  }, [runDepartureThenDebrief, session.id, stopPlayback, t]);
+  }, [runDepartureThenDebrief, router, session.avatar_id, session.id, stopPlayback, t]);
 
   useEffect(() => {
     const tick = () => {
@@ -407,6 +422,7 @@ export function TherapyRoom({
 
   return (
     <div className="therapy-room relative flex min-h-screen flex-col overflow-hidden bg-[var(--background)] text-[var(--on-surface)]">
+      <AdminTestBanner clinicalSnapshot={session.clinical_snapshot} />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_55%),linear-gradient(180deg,color-mix(in_srgb,var(--surface-container)_80%,transparent),var(--background))]"

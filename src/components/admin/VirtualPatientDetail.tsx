@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PersonalityEnginePanel } from "@/components/admin/PersonalityEnginePanel";
 import { VirtualPatientLifecycleActions } from "@/components/admin/VirtualPatientLifecycleActions";
+import { StartAdminTestConversationButton } from "@/components/admin/StartAdminTestConversationButton";
 import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 import {
   assessVirtualPatientCompleteness,
@@ -113,6 +114,10 @@ export function VirtualPatientDetail({
             <VirtualPatientLifecycleActions
               avatarId={avatar.id}
               slug={avatar.slug ?? null}
+              lifecycleStatus={lifecycleStatus}
+            />
+            <StartAdminTestConversationButton
+              avatarId={avatar.id}
               lifecycleStatus={lifecycleStatus}
             />
           </div>
