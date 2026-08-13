@@ -69,4 +69,17 @@ describe("Phase 3C admin-test architecture", () => {
     );
     expect(helpers).toMatch(/Retention policy remains a product decision/);
   });
+
+  it("only admin test-session may allow inactive persona for case mint", () => {
+    const testSession = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/test-session/route.ts"),
+      "utf8",
+    );
+    const learnerCreate = readFileSync(
+      join(root, "app/api/sessions/route.ts"),
+      "utf8",
+    );
+    expect(testSession).toMatch(/allowInactivePersona:\s*true/);
+    expect(learnerCreate).not.toMatch(/allowInactivePersona/);
+  });
 });

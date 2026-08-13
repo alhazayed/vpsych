@@ -46,6 +46,12 @@ export type StartCaseOptions = {
   presetSlug?: string;
   /** Advanced Mode only (requires preset.advanced_mode). */
   disorderSlugOverride?: string;
+  /**
+   * Phase 3C admin-test only: treat persona as active for case mint validation
+   * without writing personas.is_active or avatars.is_active. Learner create must
+   * never set this.
+   */
+  allowInactivePersona?: boolean;
 };
 
 function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): PersonaRow {
@@ -325,7 +331,16 @@ export async function createCaseForSession(
     .eq("avatar_id", opts.avatar.id)
     .maybeSingle();
 
-  const persona = personaFromAvatar(opts.avatar, dbPersona as PersonaRow | null);
+  const personaBase = personaFromAvatar(
+    opts.avatar,
+    dbPersona as PersonaRow | null,
+  );
+  // Admin-test conversations run on lifecycle=testing (avatars.is_active=false,
+  // persona typically inactive). Case validation requires an active persona for
+  // learner sessions; admin-test may opt in to an in-memory override only.
+  const persona: PersonaRow = opts.allowInactivePersona
+    ? { ...personaBase, is_active: true }
+    : personaBase;
 
   // -------------------------------------------------------------------------
   // Instructor Preset path — objectives → diagnosis + template → patient

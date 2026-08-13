@@ -106,6 +106,9 @@ export async function POST(request: Request, ctx: Ctx) {
     avatar: typedAvatar,
     locale: effectiveLocale,
     therapistId: user.id,
+    // testing lifecycle keeps avatar/persona inactive for learners; mint still
+    // needs an in-memory active persona for case-engine validation.
+    allowInactivePersona: true,
   });
   if (!caseResult.ok) {
     await logSecurityEvent({
