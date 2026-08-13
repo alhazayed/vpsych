@@ -19,9 +19,9 @@
 | Item | Value |
 |---|---|
 | Current branch | `cursor/phase3c-admin-test-impl-3b59` |
-| Branch HEAD (full) | `5efd4bd7f839daaee9fd496ccac46f90d658db57` |
-| Branch HEAD (short) | `5efd4bd` |
-| Impl tip before prep doc | `ac2e7c78dd1103870bdaeb5130b39f912fc2e871` |
+| Branch HEAD (full) | `63a13197579e1bb41c13658e86a5d529366c71be` |
+| Branch HEAD (short) | `63a1319` |
+| Impl tip before prep docs | `ac2e7c78dd1103870bdaeb5130b39f912fc2e871` |
 | `origin/main` (full) | `cebb75d4f0294fa415a7e609e09b45b068b706e1` |
 | `origin/main` (short) | `cebb75d` |
 | Merge-base with main | `cebb75d4f0294fa415a7e609e09b45b068b706e1` |
@@ -318,7 +318,8 @@ Immediately **STOP** Phase 3C-6 execution (no improvisation) if any of:
 
 ```text
 SOURCE HEAD:
-5efd4bd7f839daaee9fd496ccac46f90d658db57
+63a13197579e1bb41c13658e86a5d529366c71be
+(re-confirm with `git rev-parse HEAD` on the impl branch before deploy)
 
 MAIN:
 cebb75d4f0294fa415a7e609e09b45b068b706e1
