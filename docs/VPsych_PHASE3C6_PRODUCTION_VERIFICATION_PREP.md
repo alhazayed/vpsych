@@ -19,19 +19,19 @@
 | Item | Value |
 |---|---|
 | Current branch | `cursor/phase3c-admin-test-impl-3b59` |
-| Branch HEAD (full) | `ac2e7c78dd1103870bdaeb5130b39f912fc2e871` |
-| Branch HEAD (short) | `ac2e7c7` |
+| Branch HEAD (full) | `5efd4bd7f839daaee9fd496ccac46f90d658db57` |
+| Branch HEAD (short) | `5efd4bd` |
+| Impl tip before prep doc | `ac2e7c78dd1103870bdaeb5130b39f912fc2e871` |
 | `origin/main` (full) | `cebb75d4f0294fa415a7e609e09b45b068b706e1` |
 | `origin/main` (short) | `cebb75d` |
 | Merge-base with main | `cebb75d4f0294fa415a7e609e09b45b068b706e1` |
 | Working tree | **CLEAN** (no uncommitted changes) |
 | Migrations added vs main | **NONE** (`git diff origin/main...HEAD -- supabase/migrations` empty) |
 | Phase 3B acceptance on main | Present (`docs/VPsych_PHASE3B_PRODUCTION_ACCEPTANCE.md`) |
-| Open PR for impl branch | **None** (`gh pr list --head …` empty) |
 | Production data changed by this prep | **NO** |
-| Application code changed by this prep | **NO** (docs only if this file is committed) |
+| Application code changed by this prep | **NO** (this file is documentation only) |
 
-Branch tip contents relative to main: Phase 3C-1…5 implementation + security readiness review doc. No schema files.
+Branch tip contents relative to main: Phase 3C-1…5 implementation + security readiness review + this 3C-6 prep doc. No schema files.
 
 ---
 
@@ -76,7 +76,7 @@ Contracted end behavior (unchanged; **do not modify**):
 | GitHub Production environment latest | SHA `cebb75d` — deployment id `5872534574` |
 | Phase 3B acceptance-era Production SHA | `48320d1` (superseded on Production by later `main` including acceptance docs) |
 | Phase 3C code on **Production** today | **NO** — Production tracks `main` @ `cebb75d` |
-| Feature-branch preview (not Production) | Vercel preview for `cursor/phase3c-admin-test-impl-3b59` @ `ac2e7c7` exists (`target: null`) — **must not be treated as Production verification** |
+| Feature-branch preview (not Production) | Vercel preview for `cursor/phase3c-admin-test-impl-3b59` may exist (`target: null`) — **must not be treated as Production verification** |
 | CI | `.github/workflows/ci.yml` on push/PR to `main`: audit → lint → typecheck → test → migrations → build |
 | **DATABASE MIGRATION** | **NONE** required for Phase 3C |
 
@@ -318,7 +318,7 @@ Immediately **STOP** Phase 3C-6 execution (no improvisation) if any of:
 
 ```text
 SOURCE HEAD:
-ac2e7c78dd1103870bdaeb5130b39f912fc2e871
+5efd4bd7f839daaee9fd496ccac46f90d658db57
 
 MAIN:
 cebb75d4f0294fa415a7e609e09b45b068b706e1
