@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { VirtualPatientDetail } from "@/components/admin/VirtualPatientDetail";
+import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import {
   getBuiltinPersonality,
   listBuiltinPersonalitySlugs,
@@ -19,6 +20,7 @@ export default async function AdminAvatarDetailPage({
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.avatars");
   const tHome = await getTranslations("admin.home");
+  const tTranscript = await getTranslations("admin.testTranscript");
 
   const { data: avatar } = await supabase
     .from("avatars")
@@ -48,6 +50,34 @@ export default async function AdminAvatarDetailPage({
         )
       : [locale];
 
+  // Phase 4 P0-1 — admin-test sessions for this virtual patient, so a
+  // completed test conversation is reachable for transcript review. The
+  // admin-test determination comes from the persisted clinical_snapshot via
+  // the shared helper, never from client state.
+  const { data: sessionRows } = await supabase
+    .from("sessions")
+    .select("id, status, started_at, ended_at, created_at, clinical_snapshot")
+    .eq("avatar_id", id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const testSessions = ((sessionRows ?? []) as {
+    id: string;
+    status: string;
+    started_at: string;
+    ended_at: string | null;
+    created_at: string;
+    clinical_snapshot: unknown;
+  }[])
+    .filter((s) => isAdminTestSnapshot(s.clinical_snapshot))
+    .map((s) => ({
+      id: s.id,
+      status: s.status,
+      startedAt: s.started_at,
+      endedAt: s.ended_at,
+      createdAt: s.created_at,
+    }));
+
   const personalityAvatars = [
     {
       id: row.id,
@@ -65,6 +95,7 @@ export default async function AdminAvatarDetailPage({
       avatar={row}
       voiceProfile={voiceProfile}
       personalityAvatars={personalityAvatars}
+      testSessions={testSessions}
       labels={{
         home: tHome("title"),
         library: t("title"),
@@ -72,6 +103,13 @@ export default async function AdminAvatarDetailPage({
         statusTesting: t("statusTesting"),
         statusPublished: t("statusPublished"),
         statusArchived: t("statusArchived"),
+        testSessionsHeading: tTranscript("listHeading"),
+        testSessionsEmpty: tTranscript("listEmpty"),
+        testSessionsView: tTranscript("listView"),
+        testSessionsNotice: tTranscript("listNotice"),
+        statusActive: tTranscript("statusActive"),
+        statusCompleted: tTranscript("statusCompleted"),
+        statusExpired: tTranscript("statusExpired"),
       }}
     />
   );
