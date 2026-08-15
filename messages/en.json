@@ -473,7 +473,9 @@
       "micTranscribeError": "Mic/transcription error — type your turn below.",
       "ttsBrowserFallback": "Avatar voice unavailable — using your browser’s speech instead.",
       "textOnly": "Text-only mode — type your turns below.",
-      "textReady": "Ready for your next typed turn."
+      "textReady": "Ready for your next typed turn.",
+      "draftCaptured": "Captured — review it and press send when you have finished speaking.",
+      "maxRecordingReached": "Maximum turn length reached — sending what was captured."
     },
     "adminTest": {
       "banner": "ADMIN TEST — NOT A LEARNER SESSION",

@@ -54,6 +54,9 @@ declare global {
   }
 }
 
+/** Hard ceiling on one therapist push-to-talk turn. */
+const MAX_TURN_RECORDING_MS = 20000;
+
 function formatMessageTime(iso: string) {
   try {
     return new Date(iso).toLocaleTimeString([], {
@@ -317,7 +320,8 @@ export function VoiceSession({
       if (!result.ok) {
         if (result.stage === "stt" && result.unavailable) {
           setStatus(t("status.sttUnavailable"));
-          startBrowserListen({ autoSend: true });
+          // Draft-only fallback — the therapist submits explicitly.
+          startBrowserListen();
           return;
         }
         if (result.expired) {
@@ -343,20 +347,30 @@ export function VoiceSession({
     }
   }
 
-  function startBrowserListen(options?: {
-    autoSend?: boolean;
-    interimOnly?: boolean;
-  }) {
-    const autoSend = options?.autoSend ?? true;
-    const interimOnly = options?.interimOnly ?? false;
+  /**
+   * Browser SpeechRecognition — DRAFT ONLY.
+   *
+   * This never dispatches a turn. Web Speech emits `isFinal` on its own
+   * short-pause endpointing, so auto-sending on a final result made the patient
+   * answer a half-finished sentence whenever the therapist paused mid-thought.
+   * The only paths that can generate a patient turn are an explicit user
+   * submission or a CONFIRMED_END from the shared TurnController.
+   *
+   * @param options.silent suppresses status/listening UI when this is running
+   *   alongside the OpenAI WAV recorder purely to show a live draft.
+   */
+  function startBrowserListen(options?: { silent?: boolean }) {
+    const silent = options?.silent ?? false;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+      if (!silent) setStatus(t("status.speechUnavailable"));
       return;
     }
 
     const recognition = new SR();
-    recognition.continuous = interimOnly;
+    // Keep capturing across the therapist's natural pauses instead of ending
+    // the recognition session at the first internal endpoint.
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang =
       avatar.stt_lang || (locale === "ar" ? "ar-SA" : "en-US");
@@ -371,34 +385,32 @@ export function VoiceSession({
         if (result.isFinal) finalText += piece;
         else interim += piece;
       }
-      const live = (finalText || interim).trim();
+      // Final and interim are treated identically: both only update the draft.
+      const live = `${finalText}${interim}`.trim();
       if (live) {
         setDraft(live);
-        setStatus(t("status.listening"));
-      }
-      if (finalText && autoSend && !interimOnly) {
-        setDraft(finalText);
-        setStatus(t("status.captured"));
-        void sendMessage(finalText);
+        if (!silent) setStatus(t("status.listening"));
       }
     };
     recognition.onerror = (event) => {
-      if (interimOnly) return;
+      if (silent) return;
       setListening(false);
       setStatus(t("status.micError", { error: event.error }));
     };
     recognition.onend = () => {
-      if (!interimOnly) setListening(false);
+      if (silent) return;
+      setListening(false);
+      setStatus(t("status.draftCaptured"));
     };
 
     try {
       recognition.start();
-      if (!interimOnly) {
+      if (!silent) {
         setListening(true);
         setStatus(t("status.speakNow"));
       }
     } catch {
-      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+      if (!silent) setStatus(t("status.speechUnavailable"));
     }
   }
 
@@ -416,7 +428,15 @@ export function VoiceSession({
     }
 
     try {
-      const recorder = await startMicWavRecording(20000);
+      const recorder = await startMicWavRecording(MAX_TURN_RECORDING_MS, {
+        onMaxDuration: () => {
+          // Capture genuinely stops at the cap now, so finish the turn rather
+          // than leaving a recorder that will never produce more audio.
+          if (micRecorderRef.current !== recorder) return;
+          setStatus(t("status.maxRecordingReached"));
+          void stopOpenAIListen();
+        },
+      });
       micRecorderRef.current = recorder;
       setListening(true);
       setDraft("");
@@ -425,9 +445,9 @@ export function VoiceSession({
           language: locale === "ar" ? "العربية" : "English",
         }),
       );
-      startBrowserListen({ autoSend: false, interimOnly: true });
+      startBrowserListen({ silent: true });
     } catch {
-      startBrowserListen({ autoSend: true });
+      startBrowserListen();
     }
   }
 

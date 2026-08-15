@@ -52,14 +52,28 @@ function downsample(
 export type MicRecorder = {
   stop: () => Promise<Blob>;
   cancel: () => void;
+  /** True once capture has stopped — by stop(), cancel(), or maxMs. */
+  isStopped: () => boolean;
+  /** True when capture ended because maxMs elapsed. */
+  reachedMaxDuration: () => boolean;
+};
+
+export type MicRecorderOptions = {
+  /** Fired when maxMs terminates capture, so the UI can finish the turn. */
+  onMaxDuration?: () => void;
 };
 
 /**
  * Start recording from the default mic. Call stop() to get a WAV blob.
  * Uses ScriptProcessor for broad browser support.
+ *
+ * `maxMs` genuinely terminates capture. It previously scheduled an empty
+ * callback, so a long turn buffered without bound until the STT upload cap
+ * rejected it.
  */
 export async function startMicWavRecording(
   maxMs = 15000,
+  options: MicRecorderOptions = {},
 ): Promise<MicRecorder> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -73,7 +87,12 @@ export async function startMicWavRecording(
   const source = audioContext.createMediaStreamSource(stream);
   const processor = audioContext.createScriptProcessor(4096, 1, 1);
   const chunks: Float32Array[] = [];
+  // Captured up front: `sampleRate` must stay readable after the context is
+  // closed by the max-duration timer.
+  const sampleRate = audioContext.sampleRate;
   let stopped = false;
+  let maxDurationReached = false;
+  let cleanedUp = false;
 
   processor.onaudioprocess = (event) => {
     if (stopped) return;
@@ -84,11 +103,9 @@ export async function startMicWavRecording(
   source.connect(processor);
   processor.connect(audioContext.destination);
 
-  const timer = window.setTimeout(() => {
-    // Soft-stop after max duration; caller should still invoke stop().
-  }, maxMs);
-
   function cleanup() {
+    if (cleanedUp) return;
+    cleanedUp = true;
     window.clearTimeout(timer);
     try {
       processor.disconnect();
@@ -100,27 +117,38 @@ export async function startMicWavRecording(
     void audioContext.close();
   }
 
+  const timer = window.setTimeout(() => {
+    if (stopped) return;
+    stopped = true;
+    maxDurationReached = true;
+    cleanup();
+    options.onMaxDuration?.();
+  }, maxMs);
+
+  function encodeCaptured(): Blob {
+    let length = 0;
+    for (const c of chunks) length += c.length;
+    const merged = new Float32Array(length);
+    let offset = 0;
+    for (const c of chunks) {
+      merged.set(c, offset);
+      offset += c.length;
+    }
+    const down = downsample(merged, sampleRate, 16000);
+    return encodeWav(down, 16000);
+  }
+
   return {
+    isStopped: () => stopped,
+    reachedMaxDuration: () => maxDurationReached,
     cancel() {
       stopped = true;
       cleanup();
     },
     async stop() {
       stopped = true;
-      const sampleRate = audioContext.sampleRate;
       cleanup();
-
-      let length = 0;
-      for (const c of chunks) length += c.length;
-      const merged = new Float32Array(length);
-      let offset = 0;
-      for (const c of chunks) {
-        merged.set(c, offset);
-        offset += c.length;
-      }
-
-      const down = downsample(merged, sampleRate, 16000);
-      return encodeWav(down, 16000);
+      return encodeCaptured();
     },
   };
 }
