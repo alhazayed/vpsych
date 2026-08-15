@@ -51,15 +51,26 @@ type PersonalityAvatar = {
   profile: Record<string, unknown>;
 };
 
+/** Phase 4 P0-1 — admin-test session row for the transcript review entry point. */
+export type AdminTestSessionRef = {
+  id: string;
+  status: string;
+  startedAt: string;
+  endedAt: string | null;
+  createdAt: string;
+};
+
 export function VirtualPatientDetail({
   avatar,
   voiceProfile,
   personalityAvatars,
+  testSessions = [],
   labels,
 }: {
   avatar: Avatar;
   voiceProfile: VoiceProfile | null;
   personalityAvatars: PersonalityAvatar[];
+  testSessions?: AdminTestSessionRef[];
   labels: {
     home: string;
     library: string;
@@ -67,6 +78,13 @@ export function VirtualPatientDetail({
     statusTesting: string;
     statusPublished: string;
     statusArchived: string;
+    testSessionsHeading: string;
+    testSessionsEmpty: string;
+    testSessionsView: string;
+    testSessionsNotice: string;
+    statusActive: string;
+    statusCompleted: string;
+    statusExpired: string;
   };
 }) {
   const [tab, setTab] = useState<TabId>("overview");
@@ -193,6 +211,59 @@ export function VirtualPatientDetail({
                 Open personality editor
               </Link>
             </div>
+          </div>
+
+          {/* Phase 4 P0-1 — Admin Test Conversation transcript entry point. */}
+          <div className="clinical-card space-y-3 p-5 md:col-span-2">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+              {labels.testSessionsHeading}
+            </h2>
+            <p className="text-xs text-[var(--on-surface-variant)]">
+              {labels.testSessionsNotice}
+            </p>
+            {testSessions.length === 0 ? (
+              <p className="text-sm text-[var(--on-surface-variant)]">
+                {labels.testSessionsEmpty}
+              </p>
+            ) : (
+              <ul className="divide-y divide-[var(--outline-variant)]">
+                {testSessions.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex flex-wrap items-center justify-between gap-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--on-surface)]">
+                        {new Date(s.startedAt).toLocaleString()}
+                      </p>
+                      <p className="truncate font-mono text-[11px] text-[var(--on-surface-variant)]">
+                        {s.id}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge
+                        label={
+                          s.status === "active"
+                            ? labels.statusActive
+                            : s.status === "completed"
+                              ? labels.statusCompleted
+                              : s.status === "expired"
+                                ? labels.statusExpired
+                                : s.status
+                        }
+                        tone={s.status === "active" ? "warning" : "neutral"}
+                      />
+                      <Link
+                        href={`/admin/test-sessions/${s.id}`}
+                        className="btn-secondary"
+                      >
+                        {labels.testSessionsView}
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
       ) : null}
