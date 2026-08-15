@@ -3,10 +3,13 @@
 
 **Date:** 2026-08-15 (UTC)
 **Branch:** `claude/phase4-p0-1-admin-test-transcript`
-**Base:** `claude/vpsych-cursor-handoff-h1qovr` @ `ead49c1` (≡ `origin/main` `09cec18` + Phase 4 docs)
+**Base:** `origin/main` @ `09cec18` (PR branch `claude/phase4-p0-1-admin-test-transcript-clean`)
 **Production SHA at time of work:** `7222e6c` — confirmed ancestor of `origin/main`; **unchanged**
-**Authorization:** `docs/VPsych_PHASE4_READINESS_ASSESSMENT.md` (finding C-2) ·
-`docs/VPsych_PHASE4_OPEN_DECISIONS_REGISTER.md` (§9, item P0-1)
+**Authorization:** `docs/VPsych_PHASE4_READINESS_ASSESSMENT.md` (finding C-2) and
+`docs/VPsych_PHASE4_OPEN_DECISIONS_REGISTER.md` (§9, item P0-1) — Phase 4 governance
+documents delivered separately and subject to independent review. **They are not part of
+this branch**, so those paths do not resolve here; they resolve only once that separate
+review lands.
 
 **Database migration:** NONE · **Schema:** UNCHANGED · **RLS:** UNCHANGED ·
 **Production:** UNCHANGED · **Phase 3 behaviour:** UNCHANGED
