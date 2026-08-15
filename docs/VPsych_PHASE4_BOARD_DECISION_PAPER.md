@@ -3,8 +3,8 @@
 **Document type:** Decision paper for human governance. Documentation only.
 **Date:** 2026-08-15 (UTC)
 **Repository state:** `main` @ `1a83424`
-**Purpose:** to allow the applicable governance authority to make four unresolved decisions
-explicitly.
+**Purpose:** to allow the applicable governance authority to act explicitly on four unresolved
+matters — **three Board decisions and one Board commission.**
 
 **Sources (all present on `main`):**
 `docs/VPsych_PHASE4_READINESS_ASSESSMENT.md` ·
@@ -23,7 +23,8 @@ explicitly.
 > This paper is **not** protocol adoption.
 > This paper is **not** authorization for P0-2 or P1-2 implementation.
 >
-> It resolves nothing. It presents four decisions for an authority to make.
+> It resolves nothing. It presents three decisions for an authority to make, and one matter
+> the Board may only **commission** — not decide.
 
 ---
 
@@ -47,8 +48,8 @@ A terminology collision was identified and traced. It is recorded here so it doe
 |---|---|---|
 | **P0-1** | Admin Test transcript review surface | Protocol §17.3 |
 | **P0-2** | **Avatar content version identifier** | Protocol §17.3 |
-| **P1-2** | **Clinical sign-off gate** (`testing → published` precondition) | Protocol §17.4 |
-| **C-3** | Avatar clinical review + sign-off gate — **the same underlying object as P1-2** | Readiness assessment |
+| **P1-2** | **Clinical sign-off gate** — the `testing → published` precondition | Protocol §17.4 |
+| **C-3** | Avatar clinical review + sign-off gate — **broader than P1-2; see below** | Readiness assessment |
 
 > ### ⚠ **P0-2 is NOT the clinical sign-off gate.**
 > **P0-2 = avatar content version identifier.**
@@ -57,13 +58,42 @@ A terminology collision was identified and traced. It is recorded here so it doe
 Note also that `P0`/`P1` serve separately as **priority classes** on the 27 `OD-` decisions.
 `P0-2` (an implementation item ID) and `P0` (a priority class) are different namespaces.
 
+> ### ⚠ **C-3 and P1-2 are not identical. Do not treat them as interchangeable.**
+>
+> **C-3** (readiness assessment, verbatim): *"Record clinical review as first-class state
+> **and** require it to publish."* — **two components:**
+> **(a)** first-class / persisted clinical review state, and
+> **(b)** the publication / sign-off gate.
+>
+> **P1-2** (protocol §17.4, verbatim): *"Clinical sign-off gate (the `testing → published`
+> precondition, §10.2)."* — **primarily component (b).**
+>
+> **C-3 is the broader item.** Component (a) is a persisted-state change that P1-2 does not
+> describe; the protocol's nearest counterpart is the separate item **P1-1 · Validation
+> evidence storage** (§17.4). Ratifying "C-3" therefore carries scope that ratifying "P1-2"
+> does not — including, per the readiness assessment's own note on C-3, a *"migration +
+> lifecycle + UI"* change. Any decision under DECISION 2 must state **which scope** it governs.
+
 ---
 
 # DECISION 1 — OD-13 · Appointment of a Clinical Governance Lead
 
+**Type: Board decision.** Register OD-13 owner: `Joint Governance` (Board-level).
+
 ### Current state
 
 **The Clinical Governance Lead is NOT IDENTIFIED.**
+
+> ### ⚠ Appointment authority and mechanism are NOT ESTABLISHED IN REPOSITORY.
+>
+> Protocol §18.1, on the CGL: the protocol *"proposes no appointment mechanism."*
+> The repository names **no appointing body** and **no appointment procedure**.
+>
+> The Board must therefore record **by what authority** the appointment is made, alongside
+> **whom** it appoints. An appointment recorded without its authority inherits the same
+> "no owner" defect it is intended to cure.
+>
+> **This paper proposes no person and names no appointing body.**
 
 ### Decision statement (verbatim from the register)
 
@@ -152,14 +182,27 @@ establishes none.**
 
 # DECISION 2 — C-3 vs P1-2 priority conflict
 
-### The conflict
+**Type: Board-level governance conflict.** Two documents now on `main` classify overlapping —
+**but not identical** — objects at different priorities.
 
-Two documents, both now on `main`, classify the **same underlying object** differently.
+### The conflict
 
 | Document | ID | Object | Priority |
 |---|---|---|---|
 | `VPsych_PHASE4_READINESS_ASSESSMENT.md` | **C-3** | Avatar clinical review + sign-off gate | **P0** |
 | `VPsych_PHASE4_VALIDATION_GOVERNANCE_AND_PROTOCOL.md` §17.4 | **P1-2** | Clinical sign-off gate | **P1** |
+
+### Scope distinction — the two items are not interchangeable
+
+| | **C-3** (readiness assessment) | **P1-2** (protocol §17.4) |
+|---|---|---|
+| (a) First-class / persisted clinical review state | **In scope** | Not described |
+| (b) Publication / sign-off gate (`testing → published`) | **In scope** | **In scope — primarily this** |
+| Stated implementation shape | *"migration + lifecycle + UI"* | Gate only; *"enforced by process discipline"* until built |
+
+**C-3 ⊃ P1-2.** Component (a) has no counterpart in P1-2; the protocol's nearest separate item
+is **P1-1 · Validation evidence storage**. A decision that says only "C-3" or only "P1-2"
+without naming the scope leaves component (a) undetermined.
 
 **Readiness assessment**, verbatim: *"C-3 · Avatar clinical review + sign-off gate"*, listed
 among *"the five P0 items"*.
@@ -181,32 +224,57 @@ differs from the assumed one — twice"*) but does not address this item.
 
 | | Option | Implementation consequence |
 |---|---|---|
-| **A** | **C-3 governs → P0** | The sign-off gate is built early, alongside P0-2. **OD-24 becomes near-term**, since OD-24 gates P1-2 |
+| **A** | **C-3 governs → P0** | The sign-off gate is classified as an early blocker, alongside P0-2. **OD-24 becomes near-term**, since OD-24 gates P1-2. **See the qualification below.** |
 | **B** | **P1-2 governs → P1** | The gate follows protocol exercise; enforced meanwhile by process discipline. **OD-24 is deferred** |
-| **C** | **Amend / reconcile the source documents** | One classification stands; the other document is amended so a single priority is authoritative. Requires deciding which document is amended |
+| **C** | **Amend / reconcile the source documents** | One classification stands; the other document is amended so a single priority is authoritative. Requires deciding which document is amended, and at which scope (component (a), (b), or both) |
+
+> ### ⚠ Qualification on Option A — priority is not delivery
+>
+> **Classifying C-3 as P0 changes priority. It does not by itself allow implementation to
+> begin.**
+>
+> Under Option A, OD-24 becomes near-term. But **OD-24 itself depends on OD-13 and OD-1** —
+> register OD-24, verbatim: *"**Dependencies:** OD-13, OD-1. Interacts with OD-4."*
+>
+> Therefore, under Option A, the sign-off gate still cannot be specified until a CGL is
+> appointed (OD-13) **and** the protocol's status is settled (OD-1). Option A raises the
+> item's priority; it does not shorten the dependency chain in front of it.
+>
+> Register OD-24 also records the countervailing cost of *not* resolving it: *"no one has
+> clear authority to withdraw an unsafe one, which is the more dangerous half."*
 
 ### Dependencies
 
-None. Resolvable without an appointed CGL — though the register marks clinical input as
-preferable.
+The **conflict itself** has no prerequisite — it is resolvable without an appointed CGL, though
+the register marks clinical input as preferable. The **consequences** of Option A do have
+prerequisites, as stated immediately above.
+
+One constraint the readiness assessment recorded against C-3 has since cleared: C-3's stated
+dependency was *"**C-2** — reviewers need transcripts."* C-2 corresponds to P0-1, which is
+merged and in production.
 
 ### What remains unresolved after this decision
 
-- OD-24's urgency (near-term under A; deferred under B).
+- OD-24's urgency (near-term under A; deferred under B) — and, under A, OD-24 remains blocked
+  on OD-13 and OD-1 regardless.
 - Whether OD-4 (conditional approval state, currently P1, unresolved) must precede P1-2.
 - Under option C, which document is amended and by whom.
+- Under any option, the disposition of **component (a)** — persisted clinical review state —
+  if the decision names only the gate.
 
 ### Required evidence
 
-The two source passages above. No further evidence is required to make this decision.
+The source passages above. No further evidence is required to make this decision.
 
 ### Decision record fields
 
 ```
 C-3 / P1-2 priority conflict
 Governing classification:  [ ] C-3 (P0)   [ ] P1-2 (P1)   [ ] AMEND
+Scope governed:            [ ] gate only (b)   [ ] gate + review state (a)+(b)
 Document to amend:         ______________________________
 Effect on OD-24:           [ ] near-term  [ ] deferred
+Acknowledged: under A, OD-24 still depends on OD-13 and OD-1   [ ]
 ```
 
 **This paper does not select between C-3 and P1-2.**
@@ -214,6 +282,8 @@ Effect on OD-24:           [ ] near-term  [ ] deferred
 ---
 
 # DECISION 3 — OD-1 · Adoption of `VP-CLIN-PROTOCOL v1.0`
+
+**Type: Board decision.** Register OD-1 owner: `Joint Governance`.
 
 > ### The protocol is currently **PROPOSED — NOT ADOPTED**
 > Protocol line 5, verbatim: *"**Status:** **PROPOSED — not adopted.** Requires a Release
@@ -304,18 +374,50 @@ RDL row:        ______________________________   (number unresolved — see belo
 
 ---
 
-# DECISION 4 — OD-14 · Avatar content-version identifier
+# BOARD COMMISSION / AUTHORIZATION — OD-14 · Avatar content-version identifier
 
-### Why this decision gates P0-2
+> ### ⚠ This is NOT a Board decision. Its status differs from the three above.
+>
+> Register OD-14 owner, verbatim: *"`CGL` (materiality) **+** `Engineering` (determinism and
+> implementation)."* The Board is **not** the owner of this decision.
+>
+> Register OD-14, verbatim: *"it is a clinical decision wearing an engineering costume:
+> 'which fields are clinically material' cannot be answered by engineering without silently
+> setting clinical policy."*
+>
+> ### **The Board must not silently decide clinical materiality.**
+>
+> The action available to the Board is to **commission or authorize the appointed CGL to
+> resolve OD-14** — not to ratify a material field set. Clinical materiality must be
+> determined by the CGL.
+>
+> **This commission cannot take effect until OD-13 is resolved by appointment**, because there
+> is no CGL to commission until then.
+
+### Why OD-14 gates P0-2
 
 **P0-2 cannot begin until the clinical materiality scope is determined.**
 
 Register OD-14, verbatim: *"This is the only decision that directly gates the design of a P0
-software item… and it is a clinical decision wearing an engineering costume: 'which fields are
-clinically material' cannot be answered by engineering without silently setting clinical
-policy."*
+software item."*
 
-### Decision statement (verbatim from the register)
+### Board commission record fields
+
+```
+OD-14 · Commission to resolve
+Board action:   [ ] Commission the appointed CGL to resolve OD-14
+                [ ] Defer commissioning
+                [ ] Other — documented governance instruction: ____________________
+Instruction:    ______________________________
+Due date:       ______________________________
+```
+
+**Effective only once a CGL exists (OD-13).** The Board records the commission; the CGL
+records the resolution.
+
+---
+
+### The decision statement the CGL would then resolve (verbatim from the register)
 
 > *"Define which avatar fields are clinically material and therefore in scope for the content
 > version hash; and specify the hash's determinism guarantees (field ordering, normalization,
@@ -345,13 +447,18 @@ The two source passages point in different directions. **Neither resolves it.**
 
 The register describes the §12.2 enumeration as *"a starting proposal, not a resolved scope."*
 
-### Options
+### The CGL's eventual decision — options
 
-| | Option |
-|---|---|
-| **A** | **Avatar-level single hash** |
-| **B** | **Component-level hashes** |
-| **C** | **Adopt the material field set first and defer granularity** |
+**These are options for the appointed CGL, not for the Board.**
+
+| | Option | Note |
+|---|---|---|
+| **A** | **Avatar-level single hash** | Any material edit invalidates the whole approval |
+| **B** | **Component-level hashes** | Presupposes OD-23 — ratification of the §12.2 classification table — otherwise the components themselves are unratified |
+| **C** | **Ratify the material field scope first and defer granularity** | Unblocks P0-2 scoping without committing the design |
+
+**Engineering determinism remains downstream of all three.** It is specified only after
+materiality is resolved, and it is not a clinical decision.
 
 ### Candidate material fields (Protocol §12.2, as identified in the source — proposal only)
 
@@ -379,7 +486,7 @@ The register describes the §12.2 enumeration as *"a starting proposal, not a re
 
 **Explicitly excluded as ADMINISTRATIVE:** `slug`, `portrait_url`, non-clinical metadata.
 
-### Out of scope for this decision
+### Out of scope — for the Board and for this paper
 
 The following are **engineering tasks that follow governance resolution of materiality**, and
 are deliberately absent from this paper:
@@ -394,8 +501,10 @@ are deliberately absent from this paper:
 
 **OD-13** (requires a CGL to rule on materiality). Informs OD-23.
 
-### What remains unresolved after this decision
+### What remains unresolved after the Board commissions
 
+- **The whole of OD-14.** Commissioning is not resolution. Materiality remains undetermined
+  until the CGL rules.
 - The determinism specification (engineering, after materiality is set).
 - Storage. No version or review table exists in the current schema; a migration would be
   required. **Not designed in this paper.**
@@ -411,15 +520,17 @@ are deliberately absent from this paper:
 Protocol §12.2 field list · CGL ruling on materiality · a subsequent engineering determinism
 specification.
 
-### Decision record fields
+### CGL resolution record fields — **completed by the CGL, not by the Board**
 
 ```
-OD-14 · Content version identifier
+OD-14 · Content version identifier      (resolved by: CGL)
 Granularity:       [ ] AVATAR-LEVEL   [ ] COMPONENT-LEVEL   [ ] DEFER GRANULARITY
-Material fields:   ______________________________   (ratified set)
-Excluded fields:   ______________________________
-Determinism spec:  ______________________________   (owner + due date; engineering, after this)
+Material fields:   ______________________________   (ratified set — CGL)
+Excluded fields:   ______________________________   (CGL)
+Determinism spec:  ______________________________   (owner + due date; engineering, downstream)
 ```
+
+**The Board must not complete this block.** Its own record is the commission block above.
 
 ---
 
@@ -456,41 +567,100 @@ merged P0-1 work — despite P0-1 being deployed to production.
 
 ---
 
-## Dependency map
+## C-9 — Phase 3 Governance Reconciliation
+
+**The sources identify C-9 as the mechanism for restoring the intended RDL sequence.**
+
+`VPsych_PHASE4_READINESS_ASSESSMENT.md`, item **C-9 · Governance reconciliation**, verbatim:
+
+> *"Append the Phase 3 RDL row; record the production/`main` docs-only delta; refresh stale
+> counts in `CLAUDE.md` and `TECHNICAL_DEBT.md`. … **Complexity: trivial. Risk: none (docs
+> only).**"*
+
+The same document, in its Phase 4 entry criteria: *"RDL row appended recording Phase 3
+acceptance (**C-9 may run first as a standalone docs change**)."*
+And in its recommendations: *"**Run C-9 immediately** — governance reconciliation is a docs-only
+change with no risk and removes a live process inconsistency."*
+
+### How this bears on the numbering collision
+
+| | |
+|---|---|
+| The log's allocation rule | *"Allocate the next `RDL-00N` ID (monotonic)."* |
+| Last existing entry | **RDL-033** |
+| §16.3's intended next entry | Phase 3A/3B/3C acceptance |
+| If Phase 3 acceptance is recorded first | The monotonic rule and §16.3's intended sequence agree |
+| If protocol adoption is recorded first | The monotonic rule and §16.3's intended sequence diverge |
+
+C-9 is the documentation-only reconciliation the sources describe. **Whether and when to
+perform it is a governance decision that this paper does not make.**
+
+> ### C-9 is NOT performed by this paper.
+> `RELEASE_DECISION_LOG.md` is **unchanged**.
+> **No RDL number is allocated** — not RDL-034, not RDL-035, not RDL-036.
+> The numbers above appear only as citations of protocol §16.3's *proposal* and as statements
+> of what does and does not currently exist in the log.
+
+---
+
+## Dependency-derived sequencing
+
+**This is not a recommendation.** It is the ordering forced by dependencies stated in the
+sources. It selects no option and resolves no decision.
 
 ```
-OD-13  Appoint Clinical Governance Lead        (root — no dependencies)
- │
- ├──→ OD-1   Adopt / reject / amend protocol
- │
- └──→ OD-14  Content version identifier scope
-          │
-          └──→ P0-2  Avatar content version identifier   (may then be specified)
+C-9  Phase 3 governance reconciliation        (docs-only; no prerequisite)
+  ↓
+OD-13  Appoint Clinical Governance Lead       (root — "This is the root of the
+  │                                            dependency graph")
+  │
+  ├──→ OD-1   Adopt / reject / amend protocol
+  │            ("OD-13 should precede it")
+  │
+  └──→ commission OD-14 to the CGL
+            │    (Board commissions; CGL resolves materiality)
+            ↓
+        OD-14 resolved by CGL
+            ↓
+        P0-2  Avatar content version identifier   (may then be specified)
 
-C-3 / P1-2 priority conflict
- └── independent governance decision — no prerequisite
+C-3 / P1-2 conflict
+  └── independent / parallel — no prerequisite
 
 OD-24  Publication approval authority
- └── relevant to P1-2 (clinical sign-off gate), NOT to P0-2
+  └── becomes actionable only after OD-13 + OD-1,
+      and only near-term if C-3 is classified P0
+      (register OD-24: "Dependencies: OD-13, OD-1")
 
 Track B  (OD-21 psychometrician · OD-25 corpus authorization · OD-27 forged admin_test)
- └── independent of all of the above
+  └── independent of all of the above
 ```
 
 > ### **OD-24 is NOT a blocker for P0-2.**
 > Register OD-24, verbatim: *"Blocks implementation: **Partial** — the sign-off gate (P1-2)
 > cannot be specified, but no P0 software item depends on it."*
 
+> ### **Classifying C-3 as P0 does not shorten the chain in front of OD-24.**
+> Priority and delivery are different things. See the qualification under DECISION 2.
+
 ---
 
 ## Board decision page
 
-| Decision | Board Decision | Conditions / Amendments | Effective Date |
-|----------|----------------|-------------------------|----------------|
-| **OD-13** — Appoint Clinical Governance Lead | | | |
-| **C-3 / P1-2** — Priority conflict | | | |
-| **OD-1** — Adopt `VP-CLIN-PROTOCOL v1.0` | | | |
-| **OD-14** — Content version identifier scope | | | |
+**Three decisions and one commission.**
+
+| Matter | Type | Board Action | Conditions / Amendments | Effective Date |
+|--------|------|--------------|-------------------------|----------------|
+| **OD-13** — Appoint Clinical Governance Lead | Decision | | | |
+| **C-3 / P1-2** — Priority conflict | Decision | | | |
+| **OD-1** — Adopt `VP-CLIN-PROTOCOL v1.0` | Decision | | | |
+| **OD-14** — Content version identifier | **Commission** | | | |
+
+**OD-14 row records only whether the CGL is commissioned.** It does not record a materiality
+determination — that is the CGL's, and the Board must not decide it here.
+
+**C-9** is not on this page. It is a documentation-only reconciliation described in the
+sources, not one of the four matters presented for action.
 
 **BOARD OUTCOME:**
 
@@ -510,14 +680,16 @@ Track B  (OD-21 psychometrician · OD-25 corpus authorization · OD-27 forged ad
 **No engineering implementation begins from this paper until the applicable governance
 decisions have been formally recorded.**
 
-This paper is not an RDL entry, is not protocol adoption, and is not authorization for P0-2 or
-P1-2 implementation. At the time of writing:
+This paper is not an RDL entry, is not protocol adoption, is not a C-9 reconciliation, and is
+not authorization for P0-2 or P1-2 implementation. At the time of writing:
 
 ```
 OD-13:      UNRESOLVED
 C-3/P1-2:   UNRESOLVED
 OD-1:       UNRESOLVED
-OD-14:      UNRESOLVED
+OD-14:      UNRESOLVED   (commission not granted; materiality undetermined)
+C-9:        NOT PERFORMED
+RDL:        UNCHANGED — last entry RDL-033; no number allocated
 PROTOCOL:   PROPOSED — NOT ADOPTED
 CGL:        NOT IDENTIFIED
 P0-2:       NOT STARTED
