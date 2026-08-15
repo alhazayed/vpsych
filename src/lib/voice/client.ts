@@ -28,6 +28,11 @@ export async function synthesizeSpeech(params: {
   /** Mission 10 — optional Humanization / HCE prosody overrides. */
   stability?: number | null;
   style?: number | null;
+  /** Segment continuity so a multi-segment turn sounds like one utterance. */
+  previousText?: string | null;
+  nextText?: string | null;
+  seed?: number | null;
+  signal?: AbortSignal;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
@@ -46,8 +51,12 @@ export async function synthesizeSpeech(params: {
         emotion: params.emotion ?? undefined,
         stability: params.stability ?? undefined,
         style: params.style ?? undefined,
+        previousText: params.previousText ?? undefined,
+        nextText: params.nextText ?? undefined,
+        seed: params.seed ?? undefined,
         stream: true,
       }),
+      signal: params.signal,
     });
 
     if (res.ok && res.body) {
@@ -65,6 +74,47 @@ export async function synthesizeSpeech(params: {
   }
 
   return { mode: "browser" };
+}
+
+/**
+ * Stop patient audio with a short volume ramp instead of a hard cut.
+ * Used for barge-in: an abrupt `pause()` produces an audible click, which reads
+ * as a glitch rather than as the patient yielding the floor.
+ */
+export function fadeOutAudio(audio: HTMLAudioElement, fadeMs = 120): void {
+  const steps = 6;
+  const stepMs = Math.max(1, Math.round(fadeMs / steps));
+  const startVolume = audio.volume;
+  let step = 0;
+
+  const hardStop = () => {
+    try {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (fadeMs <= 0) {
+    hardStop();
+    return;
+  }
+
+  const timer = setInterval(() => {
+    step += 1;
+    const next = startVolume * (1 - step / steps);
+    try {
+      audio.volume = Math.max(0, next);
+    } catch {
+      /* ignore */
+    }
+    if (step >= steps) {
+      clearInterval(timer);
+      hardStop();
+    }
+  }, stepMs);
 }
 
 export function speakWithBrowser(

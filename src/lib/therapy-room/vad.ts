@@ -14,6 +14,11 @@ import {
   HANDS_FREE_AUDIO_CONSTRAINTS,
 } from "./audio-constraints";
 import { HANDS_FREE_PERF_BUDGETS } from "./conversation-telemetry";
+import {
+  createTurnController,
+  DEFAULT_TURN_CONFIG,
+  type TurnState,
+} from "@/lib/voice/turn-controller";
 
 export type VadController = {
   /**
@@ -29,11 +34,25 @@ export type VadController = {
   isSpeaking: () => boolean;
   /** Milliseconds of continuous speech detected so far. */
   speechMs: () => number;
+  /** Current turn-taking state (LISTENING → … → CONFIRMED_END). */
+  turnState: () => TurnState;
 };
 
 export type HandsFreeVadOptions = {
-  /** Silence duration (ms) after speech that ends the turn. */
+  /**
+   * Silence duration (ms) after speech that moves the turn into POSSIBLE_END.
+   * This no longer ends the turn on its own — see `confirmEndSilenceMs`.
+   */
   silenceMs?: number;
+  /**
+   * Additional continuous silence required to confirm the therapist actually
+   * finished. Speech arriving inside this window returns the floor to them.
+   */
+  confirmEndSilenceMs?: number;
+  /** Fired when the turn enters POSSIBLE_END (not yet committed). */
+  onPossibleEnd?: () => void;
+  /** Fired when speech resumes and cancels a pending POSSIBLE_END. */
+  onSpeechResumed?: () => void;
   /** Absolute max recording length. */
   maxMs?: number;
   /** RMS threshold (0–1) to count as speech. */
@@ -195,7 +214,6 @@ export async function startHandsFreeVad(
   const silenceMs = resolveSilenceMs(options.silenceMs);
   const maxMs = options.maxMs ?? 30000;
   const speechThreshold = options.speechThreshold ?? 0.015;
-  const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
   const minSpeechMs = options.minSpeechMs ?? 400;
 
   const ownsStream = !options.stream;
@@ -222,11 +240,17 @@ export async function startHandsFreeVad(
 
   const chunks: Float32Array[] = [];
 
+  // Two-stage end-of-turn: the energy detector proposes POSSIBLE_END, the
+  // controller decides whether the therapist actually finished.
+  const controller = createTurnController({
+    possibleEndSilenceMs: silenceMs,
+    confirmEndSilenceMs:
+      options.confirmEndSilenceMs ?? DEFAULT_TURN_CONFIG.confirmEndSilenceMs,
+    minSpeechMs,
+    maxTurnMs: maxMs,
+  });
+
   let stopped = false;
-  let speaking = false;
-  let speechStartedAt: number | null = null;
-  let lastSpeechAt: number | null = null;
-  let totalSpeechMs = 0;
   let settle: ((blob: Blob | null) => void) | null = null;
   const startedAt = Date.now();
 
@@ -271,48 +295,36 @@ export async function startHandsFreeVad(
 
     const level = rms(input);
     const now = Date.now();
-    const quietFor =
-      speaking && lastSpeechAt != null ? now - lastSpeechAt : 0;
+    const isSpeech = level >= speechThreshold;
 
-    if (level >= speechThreshold) {
-      if (!speaking) {
-        speaking = true;
-        speechStartedAt = now;
-        options.onSpeechStart?.();
+    const transition = controller.observe({ speaking: isSpeech, nowMs: now });
+
+    if (transition.changed) {
+      if (transition.to === "USER_SPEAKING") {
+        if (transition.reason === "speech_started") options.onSpeechStart?.();
+        else if (transition.reason === "speech_resumed") {
+          options.onSpeechResumed?.();
+        }
+      } else if (transition.to === "POSSIBLE_END") {
+        options.onPossibleEnd?.();
       }
-      lastSpeechAt = now;
-      if (speechStartedAt != null) {
-        totalSpeechMs = now - speechStartedAt;
-      }
-      if (options.onInterruptCheck?.(totalSpeechMs)) {
-        options.onSpeechEnd?.();
-        void finish(true);
-        return;
-      }
-    } else if (speaking && lastSpeechAt != null) {
-      const decision = evaluateVadFrame({
-        level,
-        speaking: true,
-        speechThreshold,
-        silenceThreshold,
-        totalSpeechMs,
-        minSpeechMs,
-        quietForMs: quietFor,
-        silenceMs,
-        elapsedMs: now - startedAt,
-        maxMs,
-      });
-      if (decision.shouldFinish) {
-        speaking = false;
-        options.onSpeechEnd?.();
-        void finish(decision.keepAudio);
-        return;
-      }
+    }
+
+    if (isSpeech && options.onInterruptCheck?.(controller.getSpeechMs())) {
+      options.onSpeechEnd?.();
+      void finish(true);
+      return;
+    }
+
+    if (controller.getState() === "CONFIRMED_END") {
+      options.onSpeechEnd?.();
+      void finish(true);
+      return;
     }
 
     if (now - startedAt >= maxMs) {
       options.onSpeechEnd?.();
-      void finish(totalSpeechMs >= minSpeechMs);
+      void finish(controller.getSpeechMs() >= minSpeechMs);
     }
   };
 
@@ -333,8 +345,9 @@ export async function startHandsFreeVad(
     cancel() {
       void finish(false);
     },
-    isSpeaking: () => speaking,
-    speechMs: () => totalSpeechMs,
+    isSpeaking: () => controller.getState() === "USER_SPEAKING",
+    speechMs: () => controller.getSpeechMs(),
+    turnState: () => controller.getState(),
   };
 }
 
@@ -347,9 +360,23 @@ export async function startBargeInMonitor(opts: {
   threshold?: number;
   /** Require this much continuous speech before firing. */
   minSpeechMs?: number;
+  /**
+   * Refractory period after a fire before the monitor re-arms. Without this the
+   * monitor latched permanently after one detection, so a false positive
+   * disabled barge-in for the rest of the patient turn.
+   */
+  rearmAfterMs?: number;
+  /**
+   * Ignore the first moments after start. Patient audio is ramping up and the
+   * browser's echo canceller has not converged yet, which is when speaker
+   * bleed is most likely to be misread as therapist speech.
+   */
+  graceMs?: number;
 }): Promise<() => void> {
   const threshold = opts.threshold ?? 0.02;
   const minSpeechMs = opts.minSpeechMs ?? 280;
+  const rearmAfterMs = opts.rearmAfterMs ?? 1200;
+  const graceMs = opts.graceMs ?? 250;
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -373,16 +400,26 @@ export async function startBargeInMonitor(opts: {
   mute.gain.value = 0;
   let stopped = false;
   let speechStart: number | null = null;
-  let fired = false;
+  let lastFiredAt: number | null = null;
+  const monitorStartedAt = Date.now();
 
   processor.onaudioprocess = (event) => {
-    if (stopped || fired) return;
-    const level = rms(event.inputBuffer.getChannelData(0));
+    if (stopped) return;
     const now = Date.now();
+
+    if (now - monitorStartedAt < graceMs) return;
+    // Refractory: armed again once rearmAfterMs has elapsed since the last fire.
+    if (lastFiredAt != null && now - lastFiredAt < rearmAfterMs) {
+      speechStart = null;
+      return;
+    }
+
+    const level = rms(event.inputBuffer.getChannelData(0));
     if (level >= threshold) {
       if (speechStart == null) speechStart = now;
       else if (now - speechStart >= minSpeechMs) {
-        fired = true;
+        lastFiredAt = now;
+        speechStart = null;
         opts.onBargeIn();
       }
     } else {
