@@ -4,8 +4,8 @@ import { useRef, useState } from "react";
 import type { SessionSpeechLocale } from "@/lib/voice/config";
 
 /**
- * Admin voice preview — streams ElevenLabs audio when available,
- * falls back to a clear error (does not affect therapy text mode).
+ * Admin voice preview — plays synthesized audio from the configured TTS
+ * provider, falling back to a clear error (does not affect therapy text mode).
  */
 export function VoicePreviewButton({
   locale,
@@ -60,7 +60,7 @@ export function VoicePreviewButton({
         };
         setError(
           data.code === "TTS_UNAVAILABLE"
-            ? "ElevenLabs not configured"
+            ? "Text-to-speech not configured"
             : data.error ?? "Preview failed",
         );
         return;

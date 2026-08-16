@@ -13,7 +13,7 @@ export function clientSafeError(
   if (
     message &&
     message.length <= 120 &&
-    !/exception|stack|postgres|supabase|openai|elevenlabs|api[_ ]?key|secret|token|vault|hmac|REPORT_WRITE|SERVICE_ROLE/i.test(
+    !/exception|stack|postgres|supabase|openai|elevenlabs|google\s?cloud|googleapis|service\s?account|gcp|credential|api[_ ]?key|secret|token|vault|hmac|REPORT_WRITE|SERVICE_ROLE/i.test(
       message,
     )
   ) {

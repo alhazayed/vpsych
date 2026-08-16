@@ -1,10 +1,15 @@
 /**
- * ElevenLabs Voice Registry helpers.
+ * Voice Registry helpers.
  *
  * Resolution path:
- *   Avatar → voice_profile → voice_id → ElevenLabs API
+ *   Avatar → voice_profile → voice_id → TTS provider
  *
  * Legacy avatars.voice_id / voice_id_ar remain as fallbacks.
+ *
+ * Provider isolation: resolution is scoped to the active TTS provider. A
+ * profile or legacy column belonging to another provider is skipped rather
+ * than forwarded, so an ElevenLabs voice id can never be sent to Google and a
+ * Google voice name can never be sent to ElevenLabs.
  */
 
 import {
@@ -12,6 +17,9 @@ import {
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import { resolveGoogleVoiceName } from "@/lib/voice/google/config";
+import { isVoiceIdForProvider } from "@/lib/voice/tts/voice-format";
+import type { TtsProviderId } from "@/lib/voice/tts/types";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 
 export type VoiceResolution = {
@@ -23,6 +31,20 @@ export type VoiceResolution = {
   /** Mission 3 — full registry row for clinical live-switching (when loaded). */
   clinicalProfile?: VoiceProfile | null;
 };
+
+/** Provider default voice for a locale, honoring valid per-provider overrides. */
+function providerDefaultVoiceId(
+  provider: TtsProviderId,
+  params: {
+    locale: SessionSpeechLocale;
+    voiceId?: string | null;
+    voiceIdAr?: string | null;
+  },
+): string {
+  return provider === "google"
+    ? resolveGoogleVoiceName(params)
+    : resolveElevenLabsVoiceId(params);
+}
 
 /** Normalize PostgREST embed shapes (object | array | null). */
 export function coerceVoiceProfile(
@@ -40,10 +62,12 @@ export function isActiveVoiceProfile(
 }
 
 /**
- * Resolve the ElevenLabs voice_id for a speaking avatar.
+ * Resolve the provider voice identifier for a speaking avatar.
  * Prefer an active assigned voice_profile when its language matches the locale
  * (or when no language-specific legacy column is needed). Otherwise fall back
  * to flat voice_id / voice_id_ar / env defaults for backward compatibility.
+ *
+ * `provider` defaults to `elevenlabs` so existing callers keep their behavior.
  */
 export function resolveAvatarSpeechVoice(params: {
   locale: SessionSpeechLocale | string;
@@ -51,8 +75,10 @@ export function resolveAvatarSpeechVoice(params: {
   voiceProfileId?: string | null;
   voiceId?: string | null;
   voiceIdAr?: string | null;
+  provider?: TtsProviderId;
 }): VoiceResolution {
   const locale = normalizeSpeechLocale(params.locale);
+  const provider: TtsProviderId = params.provider ?? "elevenlabs";
   const profile = coerceVoiceProfile(params.voiceProfile);
 
   if (isActiveVoiceProfile(profile)) {
@@ -60,7 +86,14 @@ export function resolveAvatarSpeechVoice(params: {
     // Only use a registry profile when its language matches the session locale.
     // Cross-locale profiles (e.g. Arabic Amira on an English turn) must not win —
     // that routed EN sessions onto Voice Library ids that free API keys reject.
-    if (profileLocale === locale) {
+    //
+    // The profile must also belong to the active provider and carry a voice id
+    // in that provider's format; otherwise it is skipped, never forwarded.
+    const providerMatches =
+      profile.provider === provider &&
+      isVoiceIdForProvider(provider, profile.voice_id);
+
+    if (profileLocale === locale && providerMatches) {
       return {
         voiceId: profile.voice_id,
         source: "voice_profile",
@@ -72,21 +105,30 @@ export function resolveAvatarSpeechVoice(params: {
     }
   }
 
-  const resolved = resolveElevenLabsVoiceId({
+  // Legacy columns carry no provider column, so trust them only when the value
+  // is shaped for the active provider.
+  const legacyVoiceId = isVoiceIdForProvider(provider, params.voiceId)
+    ? params.voiceId
+    : null;
+  const legacyVoiceIdAr = isVoiceIdForProvider(provider, params.voiceIdAr)
+    ? params.voiceIdAr
+    : null;
+
+  const resolved = providerDefaultVoiceId(provider, {
     locale,
-    voiceId: params.voiceId,
-    voiceIdAr: params.voiceIdAr,
+    voiceId: legacyVoiceId,
+    voiceIdAr: legacyVoiceIdAr,
   });
 
   const usedLegacy =
-    (locale === "ar" && Boolean(params.voiceIdAr)) ||
-    (locale === "en" && Boolean(params.voiceId));
+    (locale === "ar" && Boolean(legacyVoiceIdAr)) ||
+    (locale === "en" && Boolean(legacyVoiceId));
 
   return {
     voiceId: resolved,
     source: usedLegacy ? "legacy_column" : "env_default",
     voiceProfileId: params.voiceProfileId ?? profile?.id ?? null,
-    provider: "elevenlabs",
+    provider,
     locale,
     clinicalProfile: profile,
   };

@@ -30,6 +30,10 @@ export function buildContentSecurityPolicy(options?: {
     "https://*.supabase.co",
     "wss://*.supabase.co",
     "https://api.openai.com",
+    // TTS providers are called server-side only — the browser talks to
+    // /api/voice/tts and receives audio/mpeg, so no Google host belongs here.
+    // This ElevenLabs entry is legacy/defensive and is not required by the
+    // client either.
     "https://api.elevenlabs.io",
     "https://*.vercel-insights.com",
     "https://vitals.vercel-insights.com",

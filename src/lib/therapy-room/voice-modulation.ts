@@ -14,8 +14,8 @@ export function voiceModulationForDisorder(
 }
 
 /**
- * Apply modulation to the Web Speech API utterance when ElevenLabs
- * is unavailable. ElevenLabs path currently uses default voice settings;
+ * Apply modulation to the Web Speech API utterance when provider TTS
+ * is unavailable. The provider path uses its own voice settings;
  * rate/volume are applied client-side via playbackRate / volume on Audio.
  */
 export function applyBrowserVoiceModulation(

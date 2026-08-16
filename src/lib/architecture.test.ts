@@ -745,14 +745,48 @@ describe("architecture invariants", () => {
     }
   });
 
-  it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
-    const service = readFileSync(
-      join(root, "lib/voice/elevenlabs/service.ts"),
+  it("Stage 12 every TTS provider bounds its upstream call with a timeout", () => {
+    // Provider-neutral form of the original ElevenLabs assertion: a hung
+    // provider must never stall a session, whichever vendor is selected.
+    const providers = [
+      { path: "lib/voice/elevenlabs/service.ts", timeoutFn: /elevenLabsTimeoutMs/ },
+      { path: "lib/voice/google/service.ts", timeoutFn: /googleTtsTimeoutMs/ },
+    ];
+    for (const { path, timeoutFn } of providers) {
+      const service = readFileSync(join(root, path), "utf8");
+      expect(service, path).toMatch(/AbortSignal\.timeout/);
+      expect(service, path).toMatch(timeoutFn);
+      expect(service, path).toMatch(/TTS_TIMEOUT/);
+    }
+  });
+
+  it("TTS provider selection happens in exactly one module", () => {
+    // The route must depend on the provider-neutral interface, never on a
+    // concrete vendor — otherwise a rollback means editing call sites.
+    const route = readFileSync(
+      join(root, "app/api/voice/tts/route.ts"),
       "utf8",
     );
-    expect(service).toMatch(/AbortSignal\.timeout/);
-    expect(service).toMatch(/elevenLabsTimeoutMs/);
-    expect(service).toMatch(/TTS_TIMEOUT/);
+    expect(route).toMatch(/getTtsProvider/);
+    expect(route).not.toMatch(/elevenLabsService|googleTtsService/);
+
+    const provider = readFileSync(join(root, "lib/voice/tts/provider.ts"), "utf8");
+    expect(provider).toMatch(/TTS_PROVIDER/);
+    // No silent cross-provider failover: benchmarking needs real failures.
+    expect(provider).not.toMatch(/catch[\s\S]{0,120}googleTtsService/);
+  });
+
+  it("TTS voice resolution stays provider-isolated", () => {
+    const resolve = readFileSync(
+      join(root, "lib/voice/resolve-tts-voice.ts"),
+      "utf8",
+    );
+    // The allowlist security control must remain, and must be provider-scoped.
+    expect(resolve).toMatch(/loadAllowedVoiceIds/);
+    expect(resolve).toMatch(/isVoiceIdForProvider/);
+
+    const registry = readFileSync(join(root, "lib/voice/registry.ts"), "utf8");
+    expect(registry).toMatch(/isVoiceIdForProvider/);
   });
 
   it("Stage 12 correlates STT → message → TTS with X-Request-Id", () => {

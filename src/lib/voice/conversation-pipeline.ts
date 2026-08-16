@@ -4,7 +4,7 @@
  * Therapist Speech
  *   → OpenAI Speech-to-Text
  *   → GPT-5 Patient (/api/sessions/:id/message)
- *   → ElevenLabs Speech
+ *   → Text-to-Speech (provider-neutral; see lib/voice/tts/provider.ts)
  *   → Browser Audio
  *
  * Text-only sessions skip STT + TTS and call the same message API.
@@ -154,7 +154,7 @@ export async function submitConversationTurn(params: {
 }
 
 /**
- * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
+ * Stages 3–4 — provider speech → browser audio, with browser TTS fallback.
  * No-op safe when voice is disabled by the caller.
  */
 export async function playPatientSpeech(params: {
@@ -174,9 +174,9 @@ export async function playPatientSpeech(params: {
   pauseBeforeMs?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
-  /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
+  /** Abort cancels provider / browser playback (barge-in / pause / end). */
   signal?: AbortSignal;
-}): Promise<"elevenlabs" | "browser" | "interrupted"> {
+}): Promise<"tts" | "browser" | "interrupted"> {
   const handlers = params.handlers ?? {};
   if (params.signal?.aborted) {
     handlers.onerror?.();
@@ -220,7 +220,7 @@ export async function playPatientSpeech(params: {
   });
 
   if (params.signal?.aborted) {
-    if (result.mode === "elevenlabs" && result.objectUrl) {
+    if (result.mode === "tts" && result.objectUrl) {
       URL.revokeObjectURL(result.objectUrl);
     }
     handlers.onerror?.();
@@ -250,20 +250,20 @@ export async function playPatientSpeech(params: {
     );
   };
 
-  if (result.mode === "elevenlabs" && result.objectUrl) {
+  if (result.mode === "tts" && result.objectUrl) {
     const audio = new Audio(result.objectUrl);
     if (params.audioRef) params.audioRef.current = audio;
 
-    return await new Promise<"elevenlabs" | "browser" | "interrupted">(
+    return await new Promise<"tts" | "browser" | "interrupted">(
       (resolve) => {
         let settled = false;
-        const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
+        const finish = (mode: "tts" | "browser" | "interrupted") => {
           if (settled) return;
           settled = true;
           params.signal?.removeEventListener("abort", onAbort);
           URL.revokeObjectURL(result.objectUrl!);
           if (params.audioRef) params.audioRef.current = null;
-          if (mode === "elevenlabs") handlers.onend?.();
+          if (mode === "tts") handlers.onend?.();
           else if (mode === "interrupted") handlers.onerror?.();
           resolve(mode);
         };
@@ -280,7 +280,7 @@ export async function playPatientSpeech(params: {
           finish("interrupted");
         };
 
-        audio.onended = () => finish("elevenlabs");
+        audio.onended = () => finish("tts");
         audio.onerror = () => {
           if (params.signal?.aborted) {
             finish("interrupted");

@@ -25,11 +25,17 @@ function mustInclude(path, patterns) {
 mustInclude("docs/runtime/LATENCY_BUDGET.md", ["p50", "p95"]);
 mustInclude("src/lib/ops/metrics.ts", [
   "voice_e2e_p50_target_ms",
+  "tts_timeout_ms",
   "elevenlabs_timeout_ms",
 ]);
+// Every TTS provider must bound its upstream call, whichever is selected.
 mustInclude("src/lib/voice/elevenlabs/service.ts", [
   "AbortSignal.timeout",
   "elevenLabsTimeoutMs",
+]);
+mustInclude("src/lib/voice/google/service.ts", [
+  "AbortSignal.timeout",
+  "googleTtsTimeoutMs",
 ]);
 mustInclude("package.json", ["1.0.0-rc.1"]);
 

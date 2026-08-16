@@ -1,5 +1,7 @@
 /** Shared voice locale + provider defaults for STT/TTS. */
 
+import { isElevenLabsVoiceId } from "@/lib/voice/tts/voice-format";
+
 export type SessionSpeechLocale = "en" | "ar";
 
 // Premade voices verified to work on the current ElevenLabs API key.
@@ -32,11 +34,14 @@ export function browserSpeechLocale(locale: SessionSpeechLocale): string {
  * (`/v1/text-to-speech/${voiceId}/stream`) so a client-supplied id cannot
  * inject path segments (`/`, `..`) and reach other ElevenLabs endpoints, or
  * select an arbitrary off-catalogue voice.
+ *
+ * Delegates to the provider-aware validator so a Google voice name
+ * (`ar-XA-Chirp3-HD-Kore`) can never be resolved as an ElevenLabs id.
  */
 export function isValidElevenLabsVoiceId(
   value: string | null | undefined,
 ): value is string {
-  return typeof value === "string" && /^[A-Za-z0-9_-]{3,64}$/.test(value);
+  return isElevenLabsVoiceId(value);
 }
 
 export function resolveElevenLabsVoiceId(params: {

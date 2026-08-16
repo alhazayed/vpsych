@@ -1,9 +1,7 @@
-import { createHash } from "crypto";
 import {
   DEFAULT_ELEVENLABS_VOICE_AR,
   DEFAULT_ELEVENLABS_VOICE_EN,
   hasElevenLabs,
-  isValidElevenLabsVoiceId,
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
@@ -11,85 +9,50 @@ import {
   resolveVoiceSettings,
   type ElevenLabsVoiceSettings,
 } from "@/lib/voice/prosody";
+import {
+  cachedResultBody,
+  collectStream,
+  readTtsCache,
+  ttsCacheKey,
+  writeTtsCache,
+} from "@/lib/voice/tts/cache";
+import {
+  TtsError,
+  type TtsProvider,
+  type TtsSynthesizeParams,
+  type TtsSynthesizeResult,
+} from "@/lib/voice/tts/types";
+import { isElevenLabsVoiceId } from "@/lib/voice/tts/voice-format";
 
-export type ElevenLabsSynthesizeParams = {
-  text: string;
-  locale: SessionSpeechLocale;
-  voiceId?: string | null;
-  voiceIdAr?: string | null;
-  /** Prefer streaming endpoint (default true). */
-  stream?: boolean;
-  /** CB-HCF-007 — optional clinical speech phenotype hints. */
-  speechPace?: string | null;
-  speechEnergy?: string | null;
-  disorderSlug?: string | null;
-  /**
-   * Mission 3 — clinical emotion for live voice switching.
-   * When set (or inferred from disorderSlug) with a clinical profile,
-   * overrides pace/energy defaults via Clinical Voice Profile Manager.
-   */
-  emotion?: string | null;
-  /** Pre-resolved ElevenLabs settings (e.g. from liveSwitchVoice). */
-  clinicalVoiceSettings?: ElevenLabsVoiceSettings | null;
-  /** Mission 10 — optional Humanization Engine prosody overrides. */
-  stability?: number | null;
-  style?: number | null;
-};
+/**
+ * @deprecated Use `TtsSynthesizeParams` / `TtsSynthesizeResult` from
+ * `@/lib/voice/tts/types`. Retained so existing call sites keep compiling
+ * while ElevenLabs remains the rollback provider.
+ */
+export type ElevenLabsSynthesizeParams = TtsSynthesizeParams;
+export type ElevenLabsSynthesizeResult = TtsSynthesizeResult;
 
-export type ElevenLabsSynthesizeResult = {
-  body: ReadableStream<Uint8Array>;
-  contentType: string;
-  voiceId: string;
-  locale: SessionSpeechLocale;
-  modelId: string;
-  cached: boolean;
-  streamed: boolean;
-};
-
-export class ElevenLabsError extends Error {
-  readonly code: string;
-  readonly status: number;
-  readonly detail?: string;
-
+/**
+ * ElevenLabs-flavoured `TtsError`. Subclassing keeps `instanceof TtsError`
+ * true in the route while preserving the existing named export.
+ */
+export class ElevenLabsError extends TtsError {
   constructor(
     message: string,
     options: { code: string; status: number; detail?: string },
   ) {
-    super(message);
+    super(message, options);
     this.name = "ElevenLabsError";
-    this.code = options.code;
-    this.status = options.status;
-    this.detail = options.detail;
   }
 }
 
-type CacheEntry = {
-  buffer: ArrayBuffer;
-  contentType: string;
-  voiceId: string;
-  modelId: string;
-  locale: SessionSpeechLocale;
-  createdAt: number;
-};
-
-const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
-const DEFAULT_CACHE_MAX_ENTRIES = 64;
 /** Upstream TTS hard timeout (Stage 12 / RT-03). */
 const DEFAULT_TTS_TIMEOUT_MS = 30_000;
 
-function cacheTtlMs() {
-  return Number(process.env.ELEVENLABS_CACHE_TTL_MS ?? DEFAULT_CACHE_TTL_MS);
-}
-
 export function elevenLabsTimeoutMs(): number {
-  const n = Number(process.env.ELEVENLABS_TIMEOUT_MS ?? DEFAULT_TTS_TIMEOUT_MS);
+  const raw = process.env.ELEVENLABS_TIMEOUT_MS ?? process.env.TTS_TIMEOUT_MS;
+  const n = Number(raw ?? DEFAULT_TTS_TIMEOUT_MS);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_TTS_TIMEOUT_MS;
-}
-
-function cacheMaxEntries() {
-  return Number(
-    process.env.ELEVENLABS_CACHE_MAX_ENTRIES ?? DEFAULT_CACHE_MAX_ENTRIES,
-  );
 }
 
 function modelId() {
@@ -107,95 +70,58 @@ export function isValidElevenLabsApiKey(key: string = apiKey()): boolean {
   return /^sk_[A-Za-z0-9]+/.test(key);
 }
 
-/** In-memory LRU-ish TTS cache for repeated phrases (preview + short turns). */
-const ttsCache = new Map<string, CacheEntry>();
+/**
+ * @deprecated Use `resetTtsCache` / `ttsCacheSize` from
+ * `@/lib/voice/tts/cache`. The cache is now shared across providers.
+ */
+export { resetTtsCache as resetElevenLabsCache } from "@/lib/voice/tts/cache";
+export { ttsCacheSize as elevenLabsCacheSize } from "@/lib/voice/tts/cache";
 
-export function resetElevenLabsCache() {
-  ttsCache.clear();
-}
+/**
+ * Resolve the ElevenLabs `voice_settings` payload.
+ * Clinical Voice Profile settings (when the route resolved one) win over the
+ * pace/energy defaults; Humanization stability/style overlay on top.
+ */
+function resolveElevenLabsSettings(
+  params: TtsSynthesizeParams,
+): ElevenLabsVoiceSettings {
+  const clinical = params.clinicalVoice;
+  const base: ElevenLabsVoiceSettings =
+    typeof clinical?.stability === "number" &&
+    typeof clinical?.similarity_boost === "number"
+      ? {
+          stability: clinical.stability,
+          similarity_boost: clinical.similarity_boost,
+          ...(typeof clinical.style === "number"
+            ? { style: clinical.style }
+            : {}),
+        }
+      : resolveVoiceSettings({
+          speechPace: params.speechPace,
+          speechEnergy: params.speechEnergy,
+          disorderSlug: params.disorderSlug,
+        });
 
-export function elevenLabsCacheSize() {
-  return ttsCache.size;
-}
-
-function cacheKey(params: {
-  text: string;
-  voiceId: string;
-  modelId: string;
-  locale: SessionSpeechLocale;
-  voiceSettings: ElevenLabsVoiceSettings;
-}) {
-  return createHash("sha256")
-    .update(params.text)
-    .update("\0")
-    .update(params.voiceId)
-    .update("\0")
-    .update(params.modelId)
-    .update("\0")
-    .update(params.locale)
-    .update("\0")
-    .update(JSON.stringify(params.voiceSettings))
-    .digest("hex");
-}
-
-function readCache(key: string): CacheEntry | null {
-  const entry = ttsCache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.createdAt > cacheTtlMs()) {
-    ttsCache.delete(key);
-    return null;
+  const settings: ElevenLabsVoiceSettings = { ...base };
+  if (
+    typeof params.stability === "number" &&
+    Number.isFinite(params.stability)
+  ) {
+    settings.stability = Math.max(0, Math.min(1, params.stability));
   }
-  ttsCache.delete(key);
-  ttsCache.set(key, entry);
-  return entry;
-}
-
-function writeCache(key: string, entry: CacheEntry) {
-  ttsCache.set(key, entry);
-  while (ttsCache.size > cacheMaxEntries()) {
-    const oldest = ttsCache.keys().next().value;
-    if (oldest === undefined) break;
-    ttsCache.delete(oldest);
+  if (typeof params.style === "number" && Number.isFinite(params.style)) {
+    settings.style = Math.max(0, Math.min(1, params.style));
   }
-}
-
-function arrayBufferToStream(buffer: ArrayBuffer): ReadableStream<Uint8Array> {
-  const bytes = new Uint8Array(buffer);
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(bytes);
-      controller.close();
-    },
-  });
-}
-
-async function collectStream(
-  stream: ReadableStream<Uint8Array>,
-): Promise<ArrayBuffer> {
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      total += value.byteLength;
-    }
-  }
-  const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return merged.buffer;
+  return settings;
 }
 
 /**
- * Reusable ElevenLabs TTS service — streaming synthesis + repeated-request cache.
+ * Reusable ElevenLabs TTS provider — streaming synthesis + repeated-request
+ * cache. Retained as the rollback provider during the Google migration.
  */
-export const elevenLabsService = {
+export const elevenLabsService: TtsProvider = {
+  id: "elevenlabs",
+
   isConfigured: hasElevenLabs,
 
   resolveVoiceId(params: {
@@ -208,12 +134,12 @@ export const elevenLabsService = {
 
   /**
    * Synthesize speech via ElevenLabs `/stream` when possible.
-   * Identical (text, voice, model, locale) requests are served from an
-   * in-memory cache. The response body is always a ReadableStream.
+   * Identical (text, voice, model, locale, settings) requests are served from
+   * the shared in-memory cache. The response body is always a ReadableStream.
    */
   async synthesize(
-    params: ElevenLabsSynthesizeParams,
-  ): Promise<ElevenLabsSynthesizeResult> {
+    params: TtsSynthesizeParams,
+  ): Promise<TtsSynthesizeResult> {
     if (!hasElevenLabs()) {
       throw new ElevenLabsError(
         "ElevenLabs not configured. Set ELEVENLABS_API_KEY.",
@@ -257,32 +183,15 @@ export const elevenLabsService = {
         : process.env.ELEVENLABS_VOICE_ID_EN || DEFAULT_ELEVENLABS_VOICE_EN;
 
     // Prefer the resolved avatar voice; on Voice Library / plan errors, retry
-    // once with the account default premade voice (Rachel / Charlotte).
+    // once with the account default premade voice.
     const voiceCandidates = [primaryVoiceId];
     if (fallbackVoiceId && fallbackVoiceId !== primaryVoiceId) {
       voiceCandidates.push(fallbackVoiceId);
     }
 
     const model = modelId();
-    // CVP clinical settings (or pace/energy defaults), then Humanization
-    // stability/style overlays for hesitation / fatigue / emotional cues.
-    const voiceSettings: ElevenLabsVoiceSettings = {
-      ...(params.clinicalVoiceSettings ??
-        resolveVoiceSettings({
-          speechPace: params.speechPace,
-          speechEnergy: params.speechEnergy,
-          disorderSlug: params.disorderSlug,
-        })),
-    };
-    if (
-      typeof params.stability === "number" &&
-      Number.isFinite(params.stability)
-    ) {
-      voiceSettings.stability = Math.max(0, Math.min(1, params.stability));
-    }
-    if (typeof params.style === "number" && Number.isFinite(params.style)) {
-      voiceSettings.style = Math.max(0, Math.min(1, params.style));
-    }
+    const voiceSettings = resolveElevenLabsSettings(params);
+
     let lastDetail = "";
     let lastVoiceId = primaryVoiceId;
 
@@ -291,30 +200,32 @@ export const elevenLabsService = {
       lastVoiceId = voiceId;
 
       // Defense-in-depth: never interpolate a malformed id into the upstream
-      // request path (guards env/DB-derived candidates too).
-      if (!isValidElevenLabsVoiceId(voiceId)) {
+      // request path, and never send a Google voice name to ElevenLabs.
+      if (!isElevenLabsVoiceId(voiceId)) {
         lastDetail = `invalid voice id: ${voiceId}`;
         continue;
       }
 
-      const key = cacheKey({
+      const cacheKey = ttsCacheKey({
+        provider: "elevenlabs",
         text,
         voiceId,
         modelId: model,
         locale: params.locale,
-        voiceSettings,
+        speechParams: voiceSettings,
       });
 
-      const cached = readCache(key);
+      const cached = readTtsCache(cacheKey);
       if (cached) {
         return {
-          body: arrayBufferToStream(cached.buffer),
+          body: cachedResultBody(cached),
           contentType: cached.contentType,
           voiceId: cached.voiceId,
           locale: cached.locale,
           modelId: cached.modelId,
           cached: true,
           streamed: false,
+          provider: "elevenlabs",
         };
       }
 
@@ -343,7 +254,11 @@ export const elevenLabsService = {
       } catch (err) {
         const name = err instanceof Error ? err.name : "";
         const msg = err instanceof Error ? err.message : String(err);
-        if (name === "TimeoutError" || name === "AbortError" || /aborted|timeout/i.test(msg)) {
+        if (
+          name === "TimeoutError" ||
+          name === "AbortError" ||
+          /aborted|timeout/i.test(msg)
+        ) {
           throw new ElevenLabsError("ElevenLabs TTS timed out", {
             code: "TTS_TIMEOUT",
             status: 504,
@@ -364,12 +279,13 @@ export const elevenLabsService = {
         const [toClient, toCache] = res.body.tee();
         void collectStream(toCache)
           .then((buffer) => {
-            writeCache(key, {
+            writeTtsCache(cacheKey, {
               buffer,
               contentType: "audio/mpeg",
               voiceId,
               modelId: model,
               locale: params.locale,
+              provider: "elevenlabs",
               createdAt: Date.now(),
             });
           })
@@ -385,6 +301,7 @@ export const elevenLabsService = {
           modelId: model,
           cached: false,
           streamed: wantStream,
+          provider: "elevenlabs",
         };
       }
 

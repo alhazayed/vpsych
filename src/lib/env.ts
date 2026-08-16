@@ -29,6 +29,11 @@ function aiConfigured(): boolean {
   return present("OPENAI_API_KEY") || present("AI_GATEWAY_API_KEY");
 }
 
+/** Google Cloud TTS credential presence — never reads or returns the value. */
+export function googleTtsConfigured(): boolean {
+  return present("GOOGLE_TTS_API_KEY") || present("GOOGLE_TTS_ACCESS_TOKEN");
+}
+
 /**
  * Evaluate production-critical and recommended environment variables.
  * Never returns secret values — only presence flags.
@@ -65,10 +70,22 @@ export function validateProductionEnv(): {
       purpose: "Patient replies + assessment (falls back to persona)",
     },
     {
+      key: "TTS_PROVIDER",
+      present: present("TTS_PROVIDER"),
+      requirement: "optional",
+      purpose: "TTS provider selection (google|elevenlabs; defaults to elevenlabs)",
+    },
+    {
       key: "ELEVENLABS_API_KEY",
       present: present("ELEVENLABS_API_KEY"),
       requirement: "recommended",
-      purpose: "Voice TTS",
+      purpose: "Voice TTS (ElevenLabs provider)",
+    },
+    {
+      key: "GOOGLE_TTS_API_KEY|GOOGLE_TTS_ACCESS_TOKEN",
+      present: googleTtsConfigured(),
+      requirement: "optional",
+      purpose: "Voice TTS (Google Cloud provider)",
     },
     {
       key: "UPSTASH_REDIS_REST_URL",

@@ -5,15 +5,15 @@ import {
   previewSampleText,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
-import {
-  elevenLabsService,
-  ElevenLabsError,
-} from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
+import {
+  getTtsProvider,
+  resolveTtsProviderId,
+} from "@/lib/voice/tts/provider";
+import { TtsError, type TtsClinicalVoice } from "@/lib/voice/tts/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
-  elevenLabsSettingsFromEffective,
   liveSwitchVoice,
   resolveLiveEmotion,
   toClinicalVoiceProfile,
@@ -22,7 +22,7 @@ import {
 type TtsBody = {
   text?: string;
   locale?: string;
-  /** Legacy direct ElevenLabs ids (still supported). */
+  /** Legacy direct provider voice ids (still supported). */
   voiceId?: string;
   voiceIdAr?: string;
   /** Preferred: resolve Avatar → voice_profile → voice_id */
@@ -43,8 +43,11 @@ type TtsBody = {
 };
 
 /**
- * ElevenLabs TTS — streams audio/mpeg when available.
- * Contract preserved: JSON body in, audio/mpeg (or JSON error) out.
+ * Text-to-speech — provider-neutral.
+ *
+ * The concrete vendor is chosen in exactly one place
+ * (`lib/voice/tts/provider.ts`, via `TTS_PROVIDER`). This handler never names
+ * one. Contract preserved: JSON body in, audio/mpeg (or JSON error) out.
  * Clients that cannot stream still receive a complete MPEG response body.
  */
 export async function POST(request: Request) {
@@ -80,19 +83,23 @@ export async function POST(request: Request) {
     (body.preview ? previewSampleText(locale) : "")) as string;
 
   try {
-    // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
+    const providerId = resolveTtsProviderId();
+
+    // Avatar → voice_profile → voice_id (legacy voiceId* still honored),
+    // scoped to the active provider.
     const resolved = await resolveTtsVoice({
       locale,
       voiceProfileId: body.voiceProfileId,
       avatarId: body.avatarId,
       voiceId: body.voiceId,
       voiceIdAr: body.voiceIdAr,
+      provider: providerId,
     });
 
-    // Mission 3 — live clinical emotion switching when a registry profile exists.
-    let clinicalVoiceSettings = undefined as
-      | ReturnType<typeof elevenLabsSettingsFromEffective>
-      | undefined;
+    // Mission 3 — live clinical emotion switching when a registry profile
+    // exists. Classification is unchanged; each adapter decides which of these
+    // signals its provider can actually honor.
+    let clinicalVoice: TtsClinicalVoice | undefined;
     let liveEmotion: string | undefined;
     if (resolved.clinicalProfile) {
       const clinical = toClinicalVoiceProfile(resolved.clinicalProfile);
@@ -101,7 +108,14 @@ export async function POST(request: Request) {
         emotion: body.emotion,
         disorderSlug: body.disorderSlug,
       });
-      clinicalVoiceSettings = elevenLabsSettingsFromEffective(effective);
+      clinicalVoice = {
+        speech_rate: effective.speech_rate,
+        pitch: effective.pitch,
+        pause_scale: effective.pause_scale,
+        stability: effective.elevenlabs.stability,
+        similarity_boost: effective.elevenlabs.similarity_boost,
+        style: effective.elevenlabs.style,
+      };
       liveEmotion = effective.emotion;
     } else if (body.emotion || body.disorderSlug) {
       liveEmotion = resolveLiveEmotion({
@@ -111,7 +125,7 @@ export async function POST(request: Request) {
     }
 
     // Resolved id already accounts for profile + legacy + env defaults.
-    const result = await elevenLabsService.synthesize({
+    const result = await getTtsProvider().synthesize({
       text,
       locale,
       voiceId: resolved.voiceId,
@@ -121,7 +135,7 @@ export async function POST(request: Request) {
       speechEnergy: body.speechEnergy,
       disorderSlug: body.disorderSlug,
       emotion: body.emotion ?? liveEmotion,
-      clinicalVoiceSettings,
+      clinicalVoice,
       stability: body.stability,
       style: body.style,
     });
@@ -139,6 +153,7 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        "X-Voice-Provider": result.provider,
         ...requestIdHeaders(requestId),
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }
@@ -150,7 +165,8 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    if (error instanceof ElevenLabsError) {
+    // Covers every provider: ElevenLabsError extends TtsError.
+    if (error instanceof TtsError) {
       console.warn("[tts]", error.code, error.detail ?? error.message);
       return NextResponse.json(
         {

@@ -11,7 +11,8 @@ import {
 
 /**
  * Request TTS from /api/voice/tts with graceful browser fallback.
- * Does not break text mode — callers may ignore audio entirely.
+ * Provider-agnostic: the server decides the vendor, the client only sees
+ * audio/mpeg. Does not break text mode — callers may ignore audio entirely.
  */
 export async function synthesizeSpeech(params: {
   text: string;
@@ -28,7 +29,7 @@ export async function synthesizeSpeech(params: {
   /** Mission 10 — optional Humanization / HCE prosody overrides. */
   stability?: number | null;
   style?: number | null;
-}): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
+}): Promise<{ mode: "tts" | "browser"; objectUrl?: string }> {
   try {
     const res = await fetch("/api/voice/tts", {
       method: "POST",
@@ -54,14 +55,14 @@ export async function synthesizeSpeech(params: {
       // Consume the (possibly streamed) body into a playable blob.
       // MediaSource progressive playback is optional; blob keeps broad support.
       const blob = await new Response(res.body).blob();
-      return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
+      return { mode: "tts", objectUrl: URL.createObjectURL(blob) };
     }
 
     if (res.status !== 501) {
-      console.warn("ElevenLabs TTS failed; falling back to browser.", res.status);
+      console.warn("TTS failed; falling back to browser speech.", res.status);
     }
   } catch (err) {
-    console.warn("ElevenLabs TTS unavailable; falling back to browser.", err);
+    console.warn("TTS unavailable; falling back to browser speech.", err);
   }
 
   return { mode: "browser" };
