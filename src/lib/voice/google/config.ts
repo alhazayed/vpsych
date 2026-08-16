@@ -133,12 +133,34 @@ export function googleModelIdFromVoice(voiceName: string): string {
   return "google-tts";
 }
 
+function envFlag(key: string): boolean {
+  return envValue(key).toLowerCase() === "true";
+}
+
 /**
- * Chirp 3 HD is documented as not accepting the `speakingRate` / `pitch`
- * audioConfig parameters; sending them returns a hard 400. This escape hatch
- * lets benchmarking re-enable speaking rate without a code change if Google
- * turns it on for Chirp voices.
+ * Pace control. Google documents Chirp 3 HD `speaking_rate` [0.25, 2.0] across
+ * all locales, so this flag is a ROLLOUT control, not a compatibility
+ * workaround: production stays conservative until the benchmark signs it off,
+ * while `GOOGLE_TTS_ENABLE_SPEAKING_RATE=true` exercises the real feature.
  */
 export function googleSpeakingRateEnabled(): boolean {
-  return envValue("GOOGLE_TTS_ENABLE_SPEAKING_RATE").toLowerCase() === "true";
+  return envFlag("GOOGLE_TTS_ENABLE_SPEAKING_RATE");
+}
+
+/**
+ * Pause control via the Chirp 3 HD `markup` input field.
+ * Off by default: field reports contradict the documented locale coverage and
+ * describe garbled output when markup is used, so this must be benchmarked
+ * per voice before it is trusted with clinical dialogue.
+ */
+export function googlePauseControlEnabled(): boolean {
+  return envFlag("GOOGLE_TTS_ENABLE_PAUSE_CONTROL");
+}
+
+/**
+ * Custom pronunciations (IPA / X-SAMPA). Off by default: the shipped
+ * dictionary is an unreviewed benchmark placeholder, not clinical content.
+ */
+export function googleCustomPronunciationEnabled(): boolean {
+  return envFlag("GOOGLE_TTS_ENABLE_CUSTOM_PRONUNCIATION");
 }

@@ -106,6 +106,26 @@ export type TtsSynthesizeParams = {
   style?: number | null;
 };
 
+/**
+ * Non-PHI synthesis metadata for benchmarking and ops.
+ * Records which clinical signals a provider actually honored, so a benchmark
+ * can never mistake "sent" for "applied". Contains no dialogue and no
+ * identifiers.
+ */
+export type TtsDiagnostics = {
+  speakingRateApplied: boolean;
+  /** Value sent upstream, when any. */
+  speakingRate?: number;
+  pitchApplied: boolean;
+  pauseControlApplied: boolean;
+  pauseTagCount: number;
+  customPronunciationsApplied: number;
+  /** Signal names the provider could not honor, with reasons. */
+  unsupportedSignals: string[];
+  /** True when markup-significant characters were neutralized in the text. */
+  textSanitized: boolean;
+};
+
 export type TtsSynthesizeResult = {
   body: ReadableStream<Uint8Array>;
   contentType: string;
@@ -115,6 +135,7 @@ export type TtsSynthesizeResult = {
   cached: boolean;
   streamed: boolean;
   provider: TtsProviderId;
+  diagnostics?: TtsDiagnostics;
 };
 
 export interface TtsProvider {

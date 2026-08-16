@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = join(process.cwd(), "src");
@@ -774,6 +774,39 @@ describe("architecture invariants", () => {
     expect(provider).toMatch(/TTS_PROVIDER/);
     // No silent cross-provider failover: benchmarking needs real failures.
     expect(provider).not.toMatch(/catch[\s\S]{0,120}googleTtsService/);
+  });
+
+  it("the TTS benchmark harness stays out of the app runtime", () => {
+    // Benchmarking makes real, billable provider calls and must never be
+    // reachable from a route, a page, or a client component.
+    const appDir = join(root, "app");
+    const componentsDir = join(root, "components");
+    const offenders: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.(ts|tsx)$/.test(entry.name)) {
+          const src = readFileSync(full, "utf8");
+          if (/@\/lib\/voice\/benchmark/.test(src)) offenders.push(full);
+        }
+      }
+    };
+    walk(appDir);
+    walk(componentsDir);
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("the benchmark harness records no dialogue or identifiers", () => {
+    const harness = readFileSync(
+      join(root, "lib/voice/benchmark/harness.ts"),
+      "utf8",
+    );
+    // The record type is keyed by corpus id, never by the utterance itself.
+    expect(harness).toMatch(/textId/);
+    expect(harness).toMatch(/FORBIDDEN_RECORD_KEYS/);
   });
 
   it("TTS voice resolution stays provider-isolated", () => {

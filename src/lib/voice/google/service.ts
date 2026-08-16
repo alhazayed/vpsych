@@ -19,13 +19,18 @@ import {
   GOOGLE_TTS_ENDPOINT,
   GOOGLE_TTS_MAX_INPUT_BYTES,
   googleAuthHeaders,
+  googleCustomPronunciationEnabled,
   googleLanguageCode,
   googleModelIdFromVoice,
+  googlePauseControlEnabled,
   googleSpeakingRateEnabled,
   googleTtsTimeoutMs,
   hasGoogleTts,
   resolveGoogleVoiceName,
 } from "@/lib/voice/google/config";
+import { googleSupports } from "@/lib/voice/google/capabilities";
+import { buildPauseMarkup } from "@/lib/voice/google/markup";
+import { customPronunciationsFor } from "@/lib/voice/google/pronunciation";
 import { googleProsodyFromClinicalVoice } from "@/lib/voice/google/prosody";
 import {
   cachedResultBody,
@@ -37,6 +42,7 @@ import { normalizeTtsText } from "@/lib/voice/tts/normalize";
 import {
   bufferToStream,
   TtsError,
+  type TtsDiagnostics,
   type TtsProvider,
   type TtsSynthesizeParams,
   type TtsSynthesizeResult,
@@ -158,8 +164,13 @@ export const googleTtsService: TtsProvider = {
     const modelId = googleModelIdFromVoice(voiceName);
 
     const clinical = params.clinicalVoice ?? null;
+    const pauseEnabled =
+      googlePauseControlEnabled() &&
+      googleSupports("pause_control", voiceName, languageCode);
+
     const prosody = googleProsodyFromClinicalVoice({
       voiceName,
+      languageCode,
       speechRate: clinical?.speech_rate,
       pitch: clinical?.pitch,
       pauseScale: clinical?.pause_scale,
@@ -168,7 +179,8 @@ export const googleTtsService: TtsProvider = {
       stability: params.stability ?? clinical?.stability,
       similarityBoost: clinical?.similarity_boost,
       style: params.style ?? clinical?.style,
-      allowSpeakingRate: googleSpeakingRateEnabled(),
+      enableSpeakingRate: googleSpeakingRateEnabled(),
+      enablePauseControl: pauseEnabled,
     });
 
     const audioConfig = {
@@ -176,13 +188,61 @@ export const googleTtsService: TtsProvider = {
       ...prosody.audioConfig,
     };
 
+    // Pause markup. `buildPauseMarkup` always neutralizes brackets, so the
+    // returned text is injection-safe whether or not tags were added.
+    const markup = buildPauseMarkup({
+      text,
+      pauseScale: clinical?.pause_scale,
+      enabled: pauseEnabled,
+    });
+
+    // Custom pronunciations, matched against the text actually being spoken.
+    const pronunciationEnabled =
+      googleCustomPronunciationEnabled() &&
+      googleSupports("custom_pronunciation", voiceName, languageCode);
+    const resolvedPronunciations = pronunciationEnabled
+      ? customPronunciationsFor({ text: markup.text, languageCode })
+      : { pronunciations: [], invalidCount: 0, truncated: false };
+
+    // `markup` is a Chirp-3-HD-only input field; everything else uses `text`.
+    const input: Record<string, unknown> = markup.applied
+      ? { markup: markup.text }
+      : { text: markup.text };
+    if (resolvedPronunciations.pronunciations.length > 0) {
+      input.customPronunciations = {
+        pronunciations: resolvedPronunciations.pronunciations,
+      };
+    }
+
+    const diagnostics: TtsDiagnostics = {
+      speakingRateApplied: prosody.applied.includes("speech_rate"),
+      ...(audioConfig.speakingRate !== undefined
+        ? { speakingRate: audioConfig.speakingRate }
+        : {}),
+      pitchApplied: prosody.applied.includes("pitch"),
+      pauseControlApplied: markup.applied,
+      pauseTagCount: markup.tagCount,
+      customPronunciationsApplied:
+        resolvedPronunciations.pronunciations.length,
+      unsupportedSignals: prosody.unsupported.map(
+        (u) => `${u.signal}:${u.reason}`,
+      ),
+      textSanitized: markup.sanitized,
+    };
+
     const key = ttsCacheKey({
       provider: "google",
-      text,
+      text: markup.text,
       voiceId: voiceName,
       modelId,
       locale,
-      speechParams: { languageCode, audioConfig },
+      // Every knob that changes the rendered audio belongs in the key.
+      speechParams: {
+        languageCode,
+        audioConfig,
+        inputField: markup.applied ? "markup" : "text",
+        pronunciations: resolvedPronunciations.pronunciations,
+      },
     });
 
     const cached = readTtsCache(key);
@@ -196,6 +256,7 @@ export const googleTtsService: TtsProvider = {
         cached: true,
         streamed: false,
         provider: "google",
+        diagnostics,
       };
     }
 
@@ -208,7 +269,7 @@ export const googleTtsService: TtsProvider = {
           ...googleAuthHeaders(),
         },
         body: JSON.stringify({
-          input: { text },
+          input,
           voice: { languageCode, name: voiceName },
           audioConfig,
         }),
@@ -294,6 +355,7 @@ export const googleTtsService: TtsProvider = {
       // REST text:synthesize returns a complete clip, not a stream.
       streamed: false,
       provider: "google",
+      diagnostics,
     };
   },
 };
