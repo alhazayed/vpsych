@@ -22,6 +22,7 @@ import {
   startMicWavRecording,
   type MicRecorder,
 } from "@/lib/voice/record-wav";
+import { createTurnGuard } from "@/lib/voice/turn-guard";
 import type {
   ResolvedAvatar,
   SessionMessage,
@@ -104,6 +105,14 @@ export function VoiceSession({
   const micRecorderRef = useRef<MicRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
+  /**
+   * Single-response invariant: one completed therapist turn === one patient
+   * response. Held in a ref because SpeechRecognition handlers are installed
+   * once and would otherwise close over a stale `pending` value.
+   */
+  const turnGuardRef = useRef(createTurnGuard());
+  /** Final text accumulated by the browser-STT fallback path. */
+  const browserFinalRef = useRef("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const stopPlayback = useCallback(() => {
@@ -240,7 +249,14 @@ export function VoiceSession({
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || pending || endingRef.current) return;
+      if (!trimmed || endingRef.current) return;
+
+      // Synchronous admission control. `pending` alone cannot stop a second
+      // recognition final that fires before React re-renders.
+      const admitted = turnGuardRef.current.beginTurn(trimmed);
+      if (!admitted.accepted) return;
+      const { turnId } = admitted;
+
       setPending(true);
       setStatus(t("status.patientResponding"));
       setDraft("");
@@ -249,6 +265,9 @@ export function VoiceSession({
           sessionId: session.id,
           message: trimmed,
         });
+        // A barge-in or newer turn superseded this one — discard it entirely:
+        // no message append, no playback.
+        if (!turnGuardRef.current.completeTurn(turnId)) return;
         if (!turn.ok) {
           if (turn.expired) {
             await endSession();
@@ -271,10 +290,15 @@ export function VoiceSession({
       } catch {
         setStatus(t("status.networkError"));
       } finally {
+        // Release the guard if this turn threw before completing, otherwise the
+        // invariant would deadlock and block every later turn.
+        if (turnGuardRef.current.isCurrent(turnId)) {
+          turnGuardRef.current.completeTurn(turnId);
+        }
         setPending(false);
       }
     },
-    [endSession, pending, session.id, speak, t, voiceEnabled],
+    [endSession, session.id, speak, t, voiceEnabled],
   );
 
   async function stopOpenAIListen() {
@@ -284,6 +308,15 @@ export function VoiceSession({
     recognitionRef.current = null;
     setListening(false);
     if (!recorder) return;
+
+    // The recorder path submits through runVoiceConversationTurn, not
+    // sendMessage, so it needs its own admission against the same guard.
+    // Keyed synthetically: the transcript is not known until after STT.
+    const admitted = turnGuardRef.current.beginTurn(
+      `recorder-turn-${Date.now()}`,
+    );
+    if (!admitted.accepted) return;
+    const { turnId } = admitted;
 
     setStatus(t("status.transcribing"));
     setPending(true);
@@ -339,6 +372,9 @@ export function VoiceSession({
     } catch {
       setStatus(t("status.micTranscribeError"));
     } finally {
+      if (turnGuardRef.current.isCurrent(turnId)) {
+        turnGuardRef.current.completeTurn(turnId);
+      }
       setPending(false);
     }
   }
@@ -377,9 +413,13 @@ export function VoiceSession({
         setStatus(t("status.listening"));
       }
       if (finalText && autoSend && !interimOnly) {
+        // Accumulate only. Browser SpeechRecognition finalises on a natural
+        // pause, so sending here made a mid-sentence breath end the turn.
+        // The therapist ends the turn explicitly, exactly as in the primary
+        // recorder path — endpointing stays manual in both paths.
+        browserFinalRef.current = finalText;
         setDraft(finalText);
         setStatus(t("status.captured"));
-        void sendMessage(finalText);
       }
     };
     recognition.onerror = (event) => {
@@ -412,8 +452,21 @@ export function VoiceSession({
       }
       recognitionRef.current?.stop();
       setListening(false);
+      // Fallback path has no recorder: submit what the browser captured, once.
+      const captured = browserFinalRef.current.trim();
+      browserFinalRef.current = "";
+      if (captured) void sendMessage(captured);
       return;
     }
+
+    // Barge-in: the therapist taking the floor stops the patient immediately
+    // and abandons any in-flight patient turn, so a stale reply cannot land
+    // after the therapist has started a new one.
+    stopPlayback();
+    setSpeaking(false);
+    turnGuardRef.current.cancelActive();
+    turnGuardRef.current.beginListening();
+    browserFinalRef.current = "";
 
     try {
       const recorder = await startMicWavRecording(20000);
