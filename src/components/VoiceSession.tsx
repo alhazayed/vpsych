@@ -490,8 +490,18 @@ export function VoiceSession({
     }
   }
 
+  /**
+   * `pending` deliberately does NOT block this.
+   *
+   * It used to, which meant that for the whole STT + model window — seconds,
+   * and up to the OpenAI timeout in the worst case — pressing the mic did
+   * nothing at all: no recording, no visual change, no way out. Taking the
+   * floor back is exactly what a therapist needs during that window, and it is
+   * safe now that the turn carries an abort controller: `stopPlayback()` below
+   * abandons the in-flight turn rather than leaving it to land later.
+   */
   async function toggleListen() {
-    if (pending || ending || !voiceEnabled) return;
+    if (ending || !voiceEnabled) return;
 
     if (listening) {
       if (micRecorderRef.current) {
@@ -695,7 +705,11 @@ export function VoiceSession({
               <button
                 type="button"
                 onClick={() => void toggleListen()}
-                disabled={pending || ending}
+                // Not disabled on `pending`: the mic IS the barge-in control,
+                // and the window where the therapist most needs it is exactly
+                // the one where a turn is in flight. Greying it out there left
+                // them with no way to take the floor back.
+                disabled={ending}
                 className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
                   listening
                     ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"
