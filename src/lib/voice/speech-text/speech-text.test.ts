@@ -107,9 +107,18 @@ describe("English speech normalization (regression guard)", () => {
     expect(normalizeEnglishSpeech(source).text).toBe(source);
   });
 
-  it("still removes stage directions", () => {
+  it("removes asterisk markers without deleting the enclosed words", () => {
+    // Previously asserted whole-span deletion ("I'm tired."). That behaviour was
+    // a reproduced clinical-semantic defect: the layer cannot distinguish a
+    // stage direction from emphasis, so `I am *not* okay.` lost its negation.
+    // Markers must not reach TTS; content must never be deleted.
+    // See clinical-integrity.test.ts.
     expect(normalizeEnglishSpeech("*sighs* I'm tired.").text).toBe(
-      "I'm tired.",
+      "sighs I'm tired.",
+    );
+    expect(normalizeEnglishSpeech("*sighs* I'm tired.").text).not.toContain("*");
+    expect(normalizeEnglishSpeech("I am *not* okay.").text).toBe(
+      "I am not okay.",
     );
   });
 

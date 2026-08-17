@@ -23,8 +23,19 @@ const TATWEEL = /ـ/g;
 const INVISIBLES = /[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g;
 /** Arabic-Indic and extended Arabic-Indic digits. */
 const AR_DIGITS = /[٠-٩۰-۹]/g;
-/** Stage directions the prompt forbids — defence in depth, not a rewrite. */
-const ASTERISK_SPANS = /\*[^*\n]{1,80}\*/g;
+/**
+ * Asterisk markers the prompt forbids — defence in depth, not a rewrite.
+ *
+ * ONLY the marker characters are removed; the enclosed text is always kept.
+ * Deleting the span was a clinical-semantic defect: this layer cannot tell a
+ * stage direction from emphasis, so `أنا *مش* مبسوط` ("I am NOT happy") lost
+ * its negation and became "I am happy", and `بحس *بضيق*` lost the symptom.
+ *
+ * The asymmetry is deliberate. A leaked stage direction is voiced as one extra
+ * word — audible, obvious, clinically harmless. A deleted negation or symptom
+ * is silent and inverts clinical meaning. Never delete.
+ */
+const ASTERISK_MARKERS = /\*/g;
 
 function arabicDigitToWestern(ch: string): string {
   const code = ch.codePointAt(0) ?? 0;
@@ -126,7 +137,7 @@ export function tidySpeechWhitespace(input: string): string {
 export function normalizeArabicSpeech(input: string): NormalizeResult {
   const original = input;
 
-  let text = input.replace(INVISIBLES, "").replace(ASTERISK_SPANS, " ");
+  let text = input.replace(INVISIBLES, "").replace(ASTERISK_MARKERS, "");
 
   text = text.replace(AR_DIGITS, arabicDigitToWestern);
   // Transliterate BEFORE stripping tatweel: "الـ PTSD" must still expose PTSD
