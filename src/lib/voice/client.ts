@@ -33,7 +33,19 @@ export async function synthesizeSpeech(params: {
   nextText?: string | null;
   seed?: number | null;
   signal?: AbortSignal;
-}): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
+  /**
+   * Voice QA only. Also returns the decoded blob and the response headers so
+   * QA can play back the exact audio the app played and read the voice/model
+   * the route actually resolved. Off by default — production keeps only the
+   * object URL, so nothing extra is retained.
+   */
+  captureBlob?: boolean;
+}): Promise<{
+  mode: "elevenlabs" | "browser";
+  objectUrl?: string;
+  blob?: Blob;
+  headers?: Headers;
+}> {
   try {
     const res = await fetch("/api/voice/tts", {
       method: "POST",
@@ -63,7 +75,11 @@ export async function synthesizeSpeech(params: {
       // Consume the (possibly streamed) body into a playable blob.
       // MediaSource progressive playback is optional; blob keeps broad support.
       const blob = await new Response(res.body).blob();
-      return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
+      return {
+        mode: "elevenlabs",
+        objectUrl: URL.createObjectURL(blob),
+        ...(params.captureBlob ? { blob, headers: res.headers } : {}),
+      };
     }
 
     if (res.status !== 501) {

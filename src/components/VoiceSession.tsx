@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,11 +24,24 @@ import {
   type MicRecorder,
 } from "@/lib/voice/record-wav";
 import { createTurnGuard } from "@/lib/voice/turn-guard";
+import { isVoiceQaEnabled } from "@/lib/voice/qa/enabled";
+import { voiceQaStore } from "@/lib/voice/qa/store";
 import type {
   ResolvedAvatar,
   SessionMessage,
   TherapySession,
 } from "@/lib/types";
+
+/**
+ * Lazily loaded so the QA panel, its exporter, and the phrase tracer live in a
+ * chunk production never requests. The gate is a build-time value but compiles
+ * to a runtime lookup, so dead-code elimination will not drop the panel on its
+ * own — this import boundary is what keeps it off the critical path.
+ */
+const VoiceQaPanel = dynamic(
+  () => import("@/components/voice-qa/VoiceQaPanel").then((m) => m.VoiceQaPanel),
+  { ssr: false },
+);
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -127,6 +141,15 @@ export function VoiceSession({
    */
   const playbackAbortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  /**
+   * Voice QA capture, dev-only. `undefined` in production removes the feature
+   * from the pipeline rather than disabling it, so there is no path where an
+   * ordinary session retains clinical audio.
+   */
+  const beginQaTurn = useCallback(
+    () => (isVoiceQaEnabled() ? voiceQaStore.beginTurn(locale) : undefined),
+    [locale],
+  );
 
   const stopPlayback = useCallback(() => {
     // Abort first: this stops the segment loop from starting the next clip.
@@ -211,6 +234,7 @@ export function VoiceSession({
   const speak = useCallback(
     async (
       text: string,
+      qa?: ReturnType<typeof beginQaTurn>,
       voiceHints?: {
         pause_before_ms?: number;
         speech_rate?: number;
@@ -229,6 +253,7 @@ export function VoiceSession({
         text,
         locale,
         signal: abort.signal,
+        qa: qa ?? beginQaTurn(),
         voiceId: avatar.voice_id,
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
@@ -260,6 +285,7 @@ export function VoiceSession({
     },
     [
       avatar.id,
+      beginQaTurn,
       avatar.personality?.speech?.pace,
       avatar.voice_id,
       avatar.voice_id_ar,
@@ -284,14 +310,19 @@ export function VoiceSession({
       if (!admitted.accepted) return;
       const { turnId } = admitted;
 
+      const qa = beginQaTurn();
+      qa?.setTherapistText(trimmed);
+
       setPending(true);
       setStatus(t("status.patientResponding"));
       setDraft("");
       try {
+        qa?.mark("llm_request");
         const turn = await submitConversationTurn({
           sessionId: session.id,
           message: trimmed,
         });
+        qa?.mark("llm_response");
         // A barge-in or newer turn superseded this one — discard it entirely:
         // no message append, no playback.
         if (!turnGuardRef.current.completeTurn(turnId)) return;
@@ -309,7 +340,13 @@ export function VoiceSession({
           turn.data.assistantMessage,
         ]);
         if (voiceEnabled) {
-          void speak(turn.data.assistantMessage.content, turn.data.voiceHints);
+          void speak(
+            turn.data.assistantMessage.content,
+            qa,
+            turn.data.voiceHints,
+          );
+        } else {
+          qa?.finish("spoken");
         }
         setStatus(
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
@@ -325,7 +362,7 @@ export function VoiceSession({
         setPending(false);
       }
     },
-    [endSession, session.id, speak, t, voiceEnabled],
+    [beginQaTurn, endSession, session.id, speak, t, voiceEnabled],
   );
 
   async function stopOpenAIListen() {
@@ -355,6 +392,7 @@ export function VoiceSession({
     stopPlayback();
     const abort = new AbortController();
     playbackAbortRef.current = abort;
+    const qa = beginQaTurn();
 
     try {
       const wav = await recorder.stop();
@@ -362,6 +400,7 @@ export function VoiceSession({
         sessionId: session.id,
         audio: wav,
         signal: abort.signal,
+        qa,
         sessionLanguage: session.language ?? locale,
         locale,
         voiceEnabled,
@@ -564,6 +603,8 @@ export function VoiceSession({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       {ending && <AiAnalysisOverlay />}
+      {/* Dev-only; the chunk is never fetched unless NEXT_PUBLIC_VOICE_QA=true. */}
+      {isVoiceQaEnabled() && <VoiceQaPanel />}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href={adminTest ? `/admin/avatars/${session.avatar_id}` : "/avatars"} className="flex items-center gap-3">
           <Image
