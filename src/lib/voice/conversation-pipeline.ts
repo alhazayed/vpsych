@@ -423,6 +423,12 @@ export async function playPatientSpeech(params: {
 /**
  * Full voice turn: STT → message API (GPT-5 + persistence) → optional TTS.
  * Text-only callers should use `submitConversationTurn` directly.
+ *
+ * `signal` abandons the WHOLE turn, not just its audio. A therapist barging in
+ * mid-turn must not get the superseded transcript in the draft box, must not
+ * get the superseded exchange appended to the visible transcript, and must not
+ * hear the superseded reply. Each stage is re-checked after its await because
+ * an abort that lands while a fetch is in flight cannot unmake the response.
  */
 export async function runVoiceConversationTurn(params: {
   sessionId: string;
@@ -430,6 +436,8 @@ export async function runVoiceConversationTurn(params: {
   sessionLanguage?: string | null;
   locale: SessionSpeechLocale;
   voiceEnabled: boolean;
+  /** Abort abandons STT, the message request, and playback. */
+  signal?: AbortSignal;
   voiceId?: string | null;
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
@@ -446,16 +454,27 @@ export async function runVoiceConversationTurn(params: {
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
       ok: false;
-      stage: "stt" | "message";
+      stage: "stt" | "message" | "interrupted";
       error: string;
       unavailable?: boolean;
       expired?: boolean;
     }
 > {
+  const interrupted = {
+    ok: false,
+    stage: "interrupted",
+    error: "Turn superseded",
+  } as const;
+
+  if (params.signal?.aborted) return interrupted;
+
   const stt = await transcribeTherapistSpeech({
     audio: params.audio,
     locale: params.sessionLanguage ?? params.locale,
+    signal: params.signal,
   });
+
+  if (params.signal?.aborted) return interrupted;
 
   if (!stt.ok) {
     return {
@@ -477,10 +496,20 @@ export async function runVoiceConversationTurn(params: {
 
   params.onTranscript?.(transcript);
 
+  // An aborted fetch rejects; that is a deliberate barge-in, not a failure to
+  // report, so it must not surface as a network error in the status line.
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
-  });
+    signal: params.signal,
+  }).catch(() => null);
+
+  // The reply is persisted server-side either way, but a superseded turn must
+  // not append to the visible transcript or speak over the therapist.
+  if (params.signal?.aborted) return interrupted;
+  if (!turn) {
+    return { ok: false, stage: "message", error: "Network error" };
+  }
 
   if (!turn.ok) {
     return {
@@ -511,6 +540,7 @@ export async function runVoiceConversationTurn(params: {
       pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      signal: params.signal,
     });
   }
 

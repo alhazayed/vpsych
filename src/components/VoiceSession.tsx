@@ -114,9 +114,25 @@ export function VoiceSession({
    * once and would otherwise close over a stale `pending` value.
    */
   const turnGuardRef = useRef(createTurnGuard());
+  /**
+   * Cancellation token for the in-flight patient turn.
+   *
+   * `playPatientSpeech` gates EVERY cancellation path on `signal` — the entry
+   * check, the thinking pause, the per-segment loop, `playClip`, and the
+   * browser fallback. Without one, `stopPlayback()` only pauses the segment
+   * currently playing: the loop keeps synthesizing and starts a NEW Audio
+   * element for the next segment, so the avatar talks over the therapist and
+   * `speaking` never clears. A ref, not state — the abort must be visible to
+   * an async loop that is already running.
+   */
+  const playbackAbortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const stopPlayback = useCallback(() => {
+    // Abort first: this stops the segment loop from starting the next clip.
+    // Idempotent — aborting an already-aborted controller is a no-op.
+    playbackAbortRef.current?.abort();
+    playbackAbortRef.current = null;
     window.speechSynthesis?.cancel();
     if (audioRef.current) {
       audioRef.current.pause();
@@ -206,10 +222,13 @@ export function VoiceSession({
     ) => {
       if (!voiceEnabled) return;
       stopPlayback();
+      const abort = new AbortController();
+      playbackAbortRef.current = abort;
       setSpeaking(true);
       const mode = await playPatientSpeech({
         text,
         locale,
+        signal: abort.signal,
         voiceId: avatar.voice_id,
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
@@ -228,6 +247,13 @@ export function VoiceSession({
           onerror: () => setSpeaking(false),
         },
       });
+      if (playbackAbortRef.current === abort) playbackAbortRef.current = null;
+      // A superseded turn has no authority over UI state beyond clearing its
+      // own speaking flag; a newer turn owns the status line.
+      if (mode === "interrupted") {
+        setSpeaking(false);
+        return;
+      }
       if (mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
       }
@@ -322,11 +348,20 @@ export function VoiceSession({
     setStatus(t("status.transcribing"));
     setPending(true);
 
+    // This path never goes through `speak()`, so it owns the turn's abort
+    // controller itself. Without it the whole recorder turn — STT, the message
+    // request, and every TTS segment — was uncancellable, which is what made
+    // barge-in appear to do nothing.
+    stopPlayback();
+    const abort = new AbortController();
+    playbackAbortRef.current = abort;
+
     try {
       const wav = await recorder.stop();
       const result = await runVoiceConversationTurn({
         sessionId: session.id,
         audio: wav,
+        signal: abort.signal,
         sessionLanguage: session.language ?? locale,
         locale,
         voiceEnabled,
@@ -349,6 +384,8 @@ export function VoiceSession({
       });
 
       if (!result.ok) {
+        // Superseded by a barge-in: the newer turn owns the status line.
+        if (result.stage === "interrupted") return;
         if (result.stage === "stt" && result.unavailable) {
           setStatus(t("status.sttUnavailable"));
           // Draft-only fallback — the therapist submits explicitly.
@@ -372,11 +409,16 @@ export function VoiceSession({
         voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
       );
     } catch {
-      setStatus(t("status.micTranscribeError"));
+      if (!abort.signal.aborted) setStatus(t("status.micTranscribeError"));
     } finally {
       if (turnGuardRef.current.isCurrent(turnId)) {
         turnGuardRef.current.completeTurn(turnId);
       }
+      // Deliberately NOT clearing `playbackAbortRef` here: this path starts
+      // playback detached (`void playPatientSpeech`), so the turn's audio is
+      // still running when this function returns. The controller stays
+      // installed until `stopPlayback()` or the next turn replaces it —
+      // clearing it now would make the next barge-in abort nothing.
       setPending(false);
     }
   }
