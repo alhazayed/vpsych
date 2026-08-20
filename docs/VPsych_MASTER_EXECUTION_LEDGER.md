@@ -517,6 +517,70 @@ Production affected:  NO
 
 ---
 
+## F-FIND-1 · Simulated inter-rater agreement is emitted unflagged
+
+```
+Milestone:            F-FIND-1 (finding raised during F1 scoping)
+Program:              F
+Status:               PASSED (finding characterised; NOT remediated)
+Source SHA:           97cf879
+Changes:              none
+
+WHAT IT DOES
+  src/lib/eri/from-assessment.ts:52
+    const irr = simulateInterRaterAgreement(scores01to5, 0.45, opts.seed ?? 42)
+  ...:87
+    inter_rater_r: irr.r,
+    inter_rater_pct_agree: irr.pct_agree,
+
+  A second rater is SIMULATED by adding gaussian noise (sd 0.45, fixed seed 42) to the
+  single AI rating, then correlating the result with itself. There is one rater. The
+  "agreement" is manufactured from the same scores.
+
+  src/lib/eri/weights.ts weights `inter_rater_agreement` at 0.06 of the composite
+  Educational Reliability Index, which is attached to every report at
+  scores.educational_reliability.
+
+WHAT IS DISCLOSED
+  - engine.ts docstring: "Simulate a second rater with controlled noise"
+  - weights.ts rationale: "Simulated dual-rater agreement approximates scoring stability"
+  So this is labelled in source. It is not concealed by its authors.
+
+WHAT IS NOT DISCLOSED
+  - The emitted field is named `inter_rater_r` with no simulated/synthetic flag.
+  - It sits beside test_retest_r, cronbach_alpha and inter_session_r, ALL of which are
+    honestly null when unmeasured. A consumer reading the JSON sees one populated
+    "reliability" number among nulls with nothing marking it synthetic.
+  - scientific_limitations does not mention it. It says only "LLM examiner scores
+    require human OSCE co-validation before high-stakes claims".
+
+BLAST RADIUS (traced, VERIFIED)
+  - /api/admin/ops/cidp passes inter_rater_agreement: 0 — hardcoded, does NOT consume it.
+  - phase14-evidence / phase16-dashboards accept inter_rater_reliability as an input, but
+    NO CALLER SUPPLIES IT — it is undefined, so the GA gates do not consume it either.
+  => The simulated value does not currently reach any dashboard or GA gate.
+
+WHY IT STILL MATTERS
+  Program F draws its evidence from exactly where this value lives: session_reports.scores.
+  A Tier 1 analysis that naively reads inter_rater_r would report a manufactured number as
+  measured reliability. That is the single most consequential misreading available in this
+  corpus.
+
+REMEDIATION (proposed, NOT implemented)
+  1. Flag it in the payload (e.g. inter_rater_simulated: true) and/or add an explicit
+     scientific_limitations line naming it.
+  2. Binding on F1 regardless: the harness MUST exclude inter_rater_r from any reliability
+     computation and compute Cronbach's alpha from the item scores directly.
+  Not implemented here: changing emitted report content is outside the RDL-035 scope
+  (C-9, C-2/P0-1, C-3, C-1, C-5, P0-2) and touches the HMAC-signed payload.
+
+Production affected:  NO
+Human decision:       Added to DP-04
+Next allowed:         F1 (with the exclusion constraint above)
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
@@ -592,3 +656,22 @@ native-speaker clinical judgement reserved to OD-7 / OD-18.
 
 **What continues regardless:** Program F0 (instrument inventory, read-only). Program A9 remains
 pending DP-01.
+
+
+---
+
+## DP-04 · Simulated inter-rater agreement (finding F-FIND-1)
+
+**Decision required:** whether to flag the simulated inter-rater figure in the emitted report
+payload, and whether it should remain a weighted component of the Educational Reliability Index.
+
+**Why it needs you:** it changes emitted report content, which is part of the HMAC-signed
+`create_session_report` payload, and it is outside the scope RDL-035 closed. Whether a simulated
+figure may legitimately contribute 6% of a published "reliability" index is also a measurement
+policy question, not an engineering one — it belongs with the psychometric authority (OD-21).
+
+**Not urgent in production:** traced and confirmed that the value reaches no dashboard and no GA
+gate today.
+
+**Urgent for Program F:** F2 would read this field. F1 will exclude it by construction, and that
+constraint is recorded so it cannot be quietly lost.
