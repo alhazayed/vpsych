@@ -8,7 +8,7 @@
 ## ⚠ Provenance and limits of this document — read first
 
 **What was consolidated.** The complete repository record: 60 commits (2026-08-02 → 2026-08-15),
-231 documents under `docs/`, the append-only Release Decision Log (RDL-001 … RDL-033), the
+231 documents under `docs/`, the append-only Release Decision Log (RDL-001 … RDL-035), the
 Phase 3 and Phase 4 governance corpus, source code, migrations, personas, and i18n message trees.
 Every factual claim below was verified against source, git, or a locally executed command, and
 counts were re-measured rather than copied from documentation.
@@ -669,7 +669,7 @@ Preserved because each was paid for once.
 | 4 | **F-5 contract ambiguity.** Phase 3C contract §5.2 says "do not skip"; the implemented rule is 403 | Medium | Must be resolved **in writing before** the C-1 fix is designed |
 | 5 | **Backups never proven restorable; PITR never verified; no DR drill** | **Critical (ops)** | 583 sessions / 466 reports of institutional data |
 | 6 | **Publish gate enforces structure only.** An avatar can pass every gate while being diagnostically impossible (e.g. "recurrent MDD" with three weeks of symptoms and no prior episode) | **Critical (clinical)** | C-3 + C-4 |
-| 7 | **Governance ledger gap.** RDL ends at RDL-033; **Phases 3 and 4 have no RDL rows** despite `RELEASE_GOVERNANCE.md` naming the RDL binding | High (process) | Now larger than when first found — P0-1 code shipped without an RDL authorization row |
+| 7 | ~~**Governance ledger gap** — no RDL row for Phase 3 or Phase 4~~ | **Closed 2026-08-20** | RDL-034 (Phase 3 acceptance) and RDL-035 (Phase 4 authorization, scope closed) appended. Residual: `VP-CLIN-PROTOCOL` still unadopted (OD-1, blocked on OD-13), and the P0-1 executive brief still exists only in a conversation |
 | 8 | **6 of 17 disorders have no clinical package** (`pdd`, `socialAnxiety`, `ocd`, `asd`, `schizoaffective`, `eating`) | High | Verified: 17 IDs, 11 packages |
 | 9 | **Landing-page claims unsupported by data** (10,000+ sessions, 500+ cases, 95% satisfaction, three named testimonials) | **High (integrity)** | See C-1 — directly at odds with the no-fabrication discipline |
 | 10 | ~~**Doc/code drift** in `CLAUDE.md` counts~~ | **Closed 2026-08-20** | Corrected to 724 tests / 88 files · 75 migrations · ~100 tables · 7 CI steps. Remaining drift is `CANONICAL_MIGRATION_LEDGER.md` (frozen at 54) |
@@ -739,8 +739,10 @@ cannot be bound to what was approved and the entire change-control policy is une
 
 **Recommended decision sequence (from the register, unchanged and still correct):**
 1. **OD-13 — appoint the CGL.** Nothing substitutes.
-2. **RDL-034** — record Phase 3 acceptance (trivial, zero risk, removes a live inconsistency).
-3. **OD-1** — adopt the protocol as RDL-035, incorporating DEF-1.
+2. ~~**RDL-034** — record Phase 3 acceptance.~~ **Done 2026-08-20**, together with **RDL-035**
+   (Phase 4 authorization, scope closed to the five P0 items + P0-2).
+3. **OD-1** — adopt the protocol, incorporating DEF-1. **Still open**: it needs a CGL first, so it
+   takes a later RDL row rather than the RDL-035 slot protocol §16.3 had planned for it.
 4. **OD-14** — CGL + Engineering define version-identifier scope.
 5. **Code may begin** on P0-2 (P0-1 is done).
 6. **In parallel from step 1:** OD-21 + OD-25 to start **Track B**, which needs neither the CGL nor
@@ -843,15 +845,15 @@ TECHNICAL READINESS  PASS
 SECURITY             PASS (residuals: HIBP · Upstash · APM · pen test · DR drill)
 CLINICAL READINESS   FAIL — no evidence
 EDUCATIONAL READINESS FAIL — no evidence
-GOVERNANCE           FAIL — no RDL row for Phase 3 or Phase 4
+GOVERNANCE           PARTIAL — RDL-034/035 appended 2026-08-20; protocol still unadopted (OD-1)
 
-PHASE 3              COMPLETE and independently re-verified (accepted; no RDL row)
+PHASE 3              COMPLETE and independently re-verified · ACCEPTED by RDL-034
 PHASE 4              IN PROGRESS — P0-1 shipped (#200, 2026-08-15); governance corpus landed (#201)
                      P0-2 not started · C-1/C-3/C-5/C-9 not started
 PROTOCOL             VP-CLIN-PROTOCOL v1.0-draft — PROPOSED, NOT ADOPTED
 REVIEWERS            NONE IDENTIFIED (all 10 roles)
 OPEN DECISIONS       27 (13 P0)
-LAST RDL ROW         RDL-033 (2026-08-07)
+LAST RDL ROW         RDL-035 (2026-08-20)
 ```
 
 ---
@@ -862,10 +864,10 @@ Ordered by leverage. Steps 1–4 are not engineering, and that is the point.
 
 1. **Appoint the Clinical Governance Lead (OD-13).** Root of the dependency graph; converts 15 of
    27 decisions from unownable to actionable. No other party can make this decision.
-2. **Append RDL-034 (Phase 3 acceptance) and RDL-035 (Phase 4 authorization, scope explicitly
-   closed to the five P0 items + P0-2).** Trivial, zero-risk, and it removes a governance
-   inconsistency that is now larger than when it was found — P0-1 shipped under an authorization
-   brief that exists only in a conversation.
+2. ~~**Append RDL-034 and RDL-035.**~~ **Done 2026-08-20.** RDL-035 retroactively ratifies P0-1,
+   records that it shipped ahead of its ledger row, and states that no further Phase 4 code may.
+   Still outstanding from this thread: **commit the P0-1 executive decision brief** if it survives
+   in a conversation — it remains the only authorization artifact that is not in version control.
 3. **Start Track B in parallel** — it needs no CGL: appoint a psychometrician (OD-21) and authorize
    the corpus analysis (OD-25, aggregate-only/PHI-free/admin-boundary/no narrative export). Two
    decisions and one appointment stand between the project and its first real evidence.
@@ -878,8 +880,8 @@ Ordered by leverage. Steps 1–4 are not engineering, and that is the point.
    the `is_active` and rate-limit bypass on direct INSERT).
 6. ~~**Land C-9 doc refresh**~~ — **done 2026-08-20**: `CLAUDE.md` now reads 724 tests / 88 files
    · 75 migrations · ~100 tables · seven CI steps, and the two `TECHNICAL_DEBT.md` drift rows are
-   closed. The remaining C-9 work is governance, not counts: append **RDL-034** and **RDL-035**
-   (item 2 above), and mark `CANONICAL_MIGRATION_LEDGER.md` superseded.
+   closed, and **RDL-034/035 are appended**. The only C-9 remainder is to mark
+   `CANONICAL_MIGRATION_LEDGER.md` superseded.
 7. **Schedule the DR drill + PITR restore (C-12) and close security residuals (C-13)** on the ops
    track. Independent of the Phase 4 chain — must neither block it nor be starved by it.
 8. **Then, and only then, build P0-2** (version identifier) once OD-14 defines materiality.
@@ -954,9 +956,9 @@ classification vocabulary from the top of this file.
 | Governance | Phase 14 ten-gate GA framework adopted; **GA NO-GO** | CONFIRMED | Gates unmet | — | RDL-031 |
 | Governance | **Refuse `v1.0.0` GA** | CONFIRMED | DR/PITR drills, HIBP/APM/pen-test, empty pilot portfolio, incomplete validation packs | GA tagging | RDL-032 |
 | Governance | Phase 16 = Evidence-Pending-first; **no fabrication** of pilots/drills/outcomes | CONFIRMED | Empty registry ≠ fabricated registry | Fabricated placeholders | RDL-033 |
-| Governance | Phase 3 acceptance row | **MISSING — OPEN** | RDL ends at RDL-033 though `RELEASE_GOVERNANCE.md` names the RDL binding | — | Readiness §9.3 |
-| Governance | Phase 4 authorization row | **MISSING — OPEN**, and P0-1 already shipped | Authorization cited a brief that was never written to the repo | — | P0-1 record, scope note |
-| Governance | Protocol §19.4 under-specifies entry criteria (OD-1…OD-8 vs §20's OD-1…OD-12) | Recorded as defect **DEF-1**, not corrected | A register that silently edits its source is not a register | — | Register §1.3 |
+| Governance | Phase 3 acceptance recorded in the ledger | **CONFIRMED** (RDL-034, 2026-08-20) | Phase 3 had shipped to production and been called accepted with no row in the binding ledger | The unrecorded-acceptance state | RDL-034 · Readiness §9.3 |
+| Governance | Phase 4 authorized, scope closed to five P0 items + P0-2 | **CONFIRMED** (RDL-035, 2026-08-20) | Retroactively ratifies P0-1, which shipped ahead of its ledger row; bars any further Phase 4 code from doing so; entry criteria §18.5–7 (reviewers) remain unmet, so mechanisms may be built but clinical validation may not be executed | The unauthorized-shipping state | RDL-035 |
+| Governance | Protocol §19.4 under-specifies entry criteria (OD-1…OD-8 vs §20's OD-1…OD-12) | Recorded as defect **DEF-1**, not corrected | A register that silently edits its source is not a register | — | Register §1.3 · to be carried by the adoption row (OD-1) |
 | Claims | Competency scores are **not validated** and must never be described as validated | CONFIRMED — standing, no exceptions | No derivation, no IRR, no criterion validity, no bias analysis | Any validation claim | `CLAUDE.md`, `KNOWN_LIMITATIONS.md`, every certification |
 | Claims | Landing statistics + testimonials | **UNCERTAIN / flagged** | Unsupported by production data; contradicts the no-fabrication discipline | — | See CONTRADICTIONS C-1 |
 | Business | Pricing tiers Free / $29 Professional / Custom Institution | **UNCERTAIN** | Present in shipped UI; **no billing, entitlement, or plan enforcement exists anywhere** | — | `messages/*.json`, `src/app/page.tsx` |
@@ -1117,14 +1119,16 @@ against an ambiguous contract reproduces the ambiguity."* **Confidence: high tha
 - **Version B:** the implementation record states plainly that its authorization message cited
   `docs/VPsych_PHASE4_EXECUTIVE_DECISION_BRIEF.md`, that this brief *"was delivered in conversation
   and was never written to the repository, so it does not exist as a file"*, and that the two
-  Phase 4 governance documents were used instead. Meanwhile the RDL — named as binding by
-  `RELEASE_GOVERNANCE.md` — has **no row for Phase 3 or Phase 4**.
+  Phase 4 governance documents were used instead. At the time, the RDL — named as binding by
+  `RELEASE_GOVERNANCE.md` — had **no row for Phase 3 or Phase 4**.
 - **My reading:** this is the exact failure mode this consolidation exists to prevent. Code shipped
   under an authorizing document that lives only in a chat transcript. The governance gap is
   therefore **larger** than the readiness assessment described, because at that time no Phase 4
   code had shipped yet.
-- **Confidence:** Very high (self-documented). **Fix: append RDL-034 and RDL-035, and if the
-  executive decision brief still exists in a conversation, write it into the repo.**
+- **Status:** **Partly resolved 2026-08-20.** RDL-034 and RDL-035 are appended; RDL-035 records
+  the out-of-order shipping explicitly and bars its repetition. **Still open:** the executive
+  decision brief itself is not in version control. If it survives in a conversation, commit it.
+- **Confidence:** Very high (self-documented).
 
 ---
 
@@ -1349,7 +1353,7 @@ after assess is best-effort soft-fail. Voice: STT → message → TTS; transcrip
 
 **Current state.**
 Technical PASS · Security PASS (residuals) · Clinical FAIL (no evidence) · Educational FAIL (no
-evidence) · Governance FAIL (no RDL row for Phase 3 or 4). GA refused ×3 (RDL-032/033) — do **not**
+evidence) · Governance PARTIAL (RDL-034/035 appended; protocol unadopted). GA refused ×3 — do **not**
 tag `v1.0.0`. Live data ≈ 5 avatars · 11 profiles · 584 sessions · 466 reports · 17 disorders
 (11 packaged) · 0 institution memberships · 0 pilots.
 
@@ -1391,9 +1395,9 @@ retention policy PD-3 · published-avatar testing PD-1/PD-2 · `[LEGAL-UNKNOWN]`
 vendor APM · **backups never proven restorable, PITR never verified, DR drill never run** ·
 no pen test.
 
-**Next 5 actions.** 1) Appoint CGL (OD-13). 2) Append RDL-034 (Phase 3 acceptance) + RDL-035
-(Phase 4 authorization, scope closed). 3) Start Track B: OD-21 + OD-25. 4) Fix landing-page
-integrity. 5) Land C-9 doc refresh.
+**Next 4 actions.** 1) Appoint CGL (OD-13). 2) Start Track B: OD-21 + OD-25. 3) Fix landing-page
+integrity (C-1 above). 4) Commit the P0-1 executive decision brief if it survives in a chat.
+*(Done 2026-08-20: RDL-034 + RDL-035 appended; `CLAUDE.md` counts corrected.)*
 
 ---
 
@@ -1452,7 +1456,8 @@ INVARIANTS — NEVER BREAK
 
 CURRENT STATE
 Technical PASS · Security PASS (residuals) · Clinical FAIL (no evidence) · Educational
-FAIL (no evidence) · Governance FAIL (no Release Decision Log row for Phase 3 or Phase 4).
+FAIL (no evidence) · Governance PARTIAL (RDL-034/035 appended 2026-08-20; the validation
+protocol is still unadopted because it needs a Clinical Governance Lead first).
 Live: ~5 avatars, 584 sessions, 466 reports, 17 disorders (11 packaged), 0 institution
 memberships, 0 registered pilots.
 
