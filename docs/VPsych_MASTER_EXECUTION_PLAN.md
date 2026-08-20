@@ -306,37 +306,46 @@ Only against **predefined, approved** thresholds. No post-hoc thresholds. No ave
 |---|---|---|---|
 | **F0-1** | **No behavioural anchors.** The rating model receives only `id — label` per dimension (`rubricLines = rubric.map(r => \`${r.id} — ${r.label}\`)`). Nothing defines what a 0, 3, or 5 looks like. | `assessment.ts` prompt assembly | Unanchored 0–5 scales are a classic source of rater drift and low inter-rater agreement. Any IRR result will be hard to attribute between instrument and rater. |
 | **F0-2** | **Scoring is non-deterministic.** `temperature: 0.3` on the examiner call. | `openAIService.chat({ temperature: 0.3 })` | The same transcript can score differently between runs. Test–retest on stored data measures *nothing* about this; it needs deliberate re-runs. |
-| **F0-3** | **Score provenance is effectively absent.** Of **480** reports (2026-07-30 → 2026-08-20): **46 (9.6%)** carry a `scientific_provenance` block, and **0 (zero)** carry a `model_version`. `session_reports` has no model, provider, or prompt-version column. | aggregate SQL over `session_reports` | **The corpus cannot be stratified by model, provider, or prompt version.** |
+| **F0-3** *(corrected — see F0-C1)* | **Provenance is partial, not absent.** Of **480** reports, **46 (9.6%)** carry a complete `scientific_provenance` block — `ai_model`, `ai_source`, `prompt_engine_version` all populated — starting **2026-08-06**. The remaining **434** pre-date provenance and record nothing. Within the 46: **1 distinct model, 1 distinct prompt version.** | aggregate SQL over `session_reports` | **A clean, configuration-homogeneous sub-corpus of 46 reports exists.** The 434 older reports are unusable for configuration-controlled analysis. |
 
-**Why F0-3 is the binding one.** The default model, the provider path
-(`OPENAI_API_KEY` vs `AI_GATEWAY_API_KEY` vs `OPENAI_CHAT_PROVIDER`), and the prompt engine all
-changed across the collection window — Stages 6 through 12 shipped inside it. Nothing ties a score
-to the configuration that produced it. Consequences:
-- Any Tier 1 reliability estimate over this corpus carries an **unmeasured confound that cannot be
-  removed retrospectively**.
-- Protocol **Rule 12.7.2** (a model or prompt change invalidates behavioural approvals) is
-  **retrospectively unevaluable** — you cannot identify which approvals a given change touched.
-- Partial recovery is possible but coarse: `created_at` → Vercel deployment history → app SHA →
-  prompt-engine version in git. **The provider and model are env-driven and env history is not in
-  git, so those are not recoverable from the repository at all.**
+**What F0-3 means for Program F.** Provenance capture is **already implemented and working** —
+`buildAssessmentProvenance({ aiSource, model })` and both index wrappers receive the real model on
+the LLM path, and every report written since 2026-08-06 carries it. The constraint is therefore
+about *history*, not about missing machinery:
 
-**Effect on the plan:** F1 must add forward provenance capture (model, provider, prompt version,
-`aiSource`) or the same defect keeps accruing on every new report. Recorded as PLAN CHANGE 002.
+- **Usable for configuration-controlled analysis: 46 reports**, homogeneous in model and prompt
+  version. Small, but enough for internal consistency (11 items × 46 subjects) — a legitimate
+  Tier 1 analysis rather than nothing.
+- **Not usable: the 434 reports before 2026-08-06.** Model, provider, and prompt version are
+  unrecorded, and coarse recovery via `created_at` → deployment history → SHA cannot recover the
+  provider or model, which are env-driven and not in git.
+- Protocol **Rule 12.7.2** stays retrospectively unevaluable for the pre-2026-08-06 majority, but
+  **is evaluable going forward**.
+
+**Effect on the plan:** F1 needs only the *runner*, not new provenance capture — see PLAN CHANGE 003.
 
 ### F1 · Reliability harness (C-5 / CI-S05) — `NOT STARTED` (authorized by RDL-035; build is engineering, interpretation is not)
-- **Scope revised by F0** (PLAN CHANGE 002): the harness must also write model / provider /
-  prompt-version / `aiSource` provenance onto new reports. Note this changes `scoresJson`, which is
-  part of the HMAC-signed `create_session_report` payload — additive, but the signing contract must
-  be re-verified, not assumed.
+- **Scope fixed by PLAN CHANGE 003 — build the runner only.** The statistical primitives already
+  exist and are tested on `main`: `src/lib/scientific/psychometrics.ts` exports `cronbachAlpha`,
+  `pearson`, `itemTotalDiscrimination`, `summarizePsychometrics`, covered by
+  `scientific-validation.test.ts`. Provenance capture also already exists.
+- **What is genuinely missing:** the runner (`test:reliability`), a stored-report → item-matrix
+  adapter, and `docs/ASSESSMENT_RELIABILITY.md`.
+- **Constraints:** must **not** fork `weightedOverall` (guardrail-enforced for the Education and
+  Supervisor layers; the same discipline applies here). Must run against **synthetic fixtures** —
+  executing it against the production corpus is F2 and stays blocked on OD-21 + OD-25.
+- **Flag for review:** `src/lib/eri/engine.ts` exports `simulateInterRaterAgreement(...)`. A
+  *simulated* agreement figure must never be presented as reliability evidence. Whether it surfaces
+  in any admin view should be checked before F2.
 ### F2 · Retrospective corpus analysis (Tier 1) — `BLOCKED` (needs C7 psychometrician + C8 authorization)
 ### F3 · Blinded expert re-rating → inter-rater reliability — `BLOCKED`
 ### F4 · Fairness / EN-vs-AR bias analysis — `BLOCKED`
 ### F5 · Claim-ladder determination — `BLOCKED`
 
 **Claim ladder.** L0 formative AI feedback · L1 repeatable internal educational signal · L2 reproducible performance measure · L3 externally validated competence measure.
-**Current supportable claim: L0.** Nothing on `main` supports L1 or above. **F0 shows L1 is not
-merely unevidenced but currently unreachable from the stored corpus**: L1 ("repeatable internal
-signal") requires knowing what produced each score, and 0 of 480 reports record it.
+**Current supportable claim: L0.** Nothing on `main` supports L1 or above. F0 shows L1 is
+**reachable in principle** — 46 configuration-homogeneous reports exist — but not yet evidenced,
+and 46 subjects is a thin basis that a psychometrician, not engineering, must judge.
 
 ## PROGRAM F GATE
 Passes only when evidence suffices for the *specific* intended claim; otherwise report the highest supportable lower claim. Never tune scoring to produce attractive statistics.
@@ -347,7 +356,20 @@ Passes only when evidence suffices for the *specific* intended claim; otherwise 
 
 *(Append every material change as: PLAN CHANGE / Original / New / Reason / Evidence / Effect on downstream programs.)*
 
-**PLAN CHANGE 002** — 2026-08-20
+**PLAN CHANGE 003** — 2026-08-20 · **supersedes PLAN CHANGE 002**
+- **Original (002):** F1 must add forward provenance capture.
+- **New:** F1 builds the runner only. Provenance capture already exists and has worked since
+  2026-08-06; the statistical primitives already exist and are tested.
+- **Reason:** PLAN CHANGE 002 rested on a measurement error (F0-C1) and would have duplicated
+  working code — the exact failure §19 exists to prevent.
+- **Evidence:** `buildAssessmentProvenance` call sites pass the real `model`; 46/46 reports since
+  2026-08-06 carry `ai_model`, `ai_source`, `prompt_engine_version`.
+- **Effect downstream:** F1 shrinks substantially and touches no runtime path — in particular it no
+  longer touches the HMAC-signed report payload.
+
+**PLAN CHANGE 002 — WITHDRAWN** (superseded by 003; retained for traceability)
+
+**PLAN CHANGE 001** — 2026-08-20
 - **Original:** F1 = build the reliability harness.
 - **New:** F1 = build the harness **and** add forward provenance capture to the report write path.
 - **Reason:** F0-3 — 0 of 480 reports record the model that produced them, so every additional

@@ -440,6 +440,83 @@ Next allowed:         F1 (scope revised by PLAN CHANGE 002)
 
 ---
 
+## F0-C1 · CORRECTION to F0-3
+
+```
+Milestone:            F0-C1 (correction; references F0)
+Program:              F
+Status:               PASSED
+Source SHA:           97cf879
+Changes:              none — correction of a recorded finding
+
+WHAT WAS RECORDED (WRONG):
+  "0 of 480 reports carry a model_version" → concluded that the model producing every
+  score is unrecorded and the corpus cannot be stratified at all.
+
+WHY IT WAS WRONG:
+  The query probed scores#>>'{scientific_provenance,model_version}'. That key does not
+  exist. The actual key is 'ai_model'. The query returned a true zero for a key nobody
+  writes, and I read it as absence of provenance.
+
+WHAT IS ACTUALLY TRUE (re-measured):
+  reports_total              480
+  has_provenance              46   (9.6%)
+  has ai_model                46   (all of them)
+  has ai_source               46
+  has prompt_engine_version   46
+  provenance begins    2026-08-06
+  distinct models              1
+  distinct prompt versions     1
+
+  Provenance keys actually written: ace_engine_version · ai_model · ai_source ·
+  assessed_at · assessment_mode · assessment_schema_version · case_snapshot_version ·
+  cge_engine_version · prompt_engine_version · rubric_schema_version ·
+  scientific_limitations
+
+CORRECTED CONCLUSION:
+  Provenance capture is implemented and working. buildAssessmentProvenance({aiSource,
+  model}) receives the real model on the LLM path. The constraint is historical: the
+  434 reports written before 2026-08-06 have no provenance; the 46 written since have
+  complete provenance and are homogeneous in model and prompt version.
+  => A clean, configuration-controlled sub-corpus of 46 reports EXISTS. That is a
+  materially better position than F0-3 originally stated, and it makes an internal
+  consistency analysis (11 items x 46 subjects) a legitimate Tier 1 target.
+
+KNOCK-ON:
+  PLAN CHANGE 002 (add forward provenance capture to F1) rested on this error and is
+  WITHDRAWN, superseded by PLAN CHANGE 003. Acting on it would have duplicated working
+  code and touched the HMAC-signed report payload for no reason.
+
+Production affected:  NO
+Next allowed:         F1 (runner only)
+```
+
+## F1 · Reliability harness — scope determined
+
+```
+Milestone:            F1
+Status:               NOT STARTED (scope fixed, work not begun)
+Evidence — ALREADY ON MAIN, must be reused not rebuilt:
+                      src/lib/scientific/psychometrics.ts exports mean, variance, stddev,
+                      cronbachAlpha, pearson, itemTotalDiscrimination,
+                      summarizePsychometrics; covered by scientific-validation.test.ts.
+                      src/lib/eri/ provides ERI aggregation and confidenceInterval.
+                      Version constants exist in src/lib/scientific/versions.ts.
+Genuinely missing:    the runner (test:reliability), a stored-report → item-matrix adapter,
+                      and docs/ASSESSMENT_RELIABILITY.md.
+Constraints:          must NOT fork weightedOverall (architecture.test.ts enforces this for
+                      the Education and Supervisor layers; same discipline applies).
+                      Must run against synthetic fixtures — running it against the
+                      production corpus is F2, blocked on OD-21 + OD-25.
+Flag raised:          src/lib/eri/engine.ts exports simulateInterRaterAgreement(). A
+                      SIMULATED agreement figure must never be presented as reliability
+                      evidence. Whether it surfaces in any admin view should be checked
+                      before F2.
+Production affected:  NO
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
