@@ -672,7 +672,7 @@ Preserved because each was paid for once.
 | 7 | ~~**Governance ledger gap** — no RDL row for Phase 3 or Phase 4~~ | **Closed 2026-08-20** | RDL-034 (Phase 3 acceptance) and RDL-035 (Phase 4 authorization, scope closed) appended. Residual: `VP-CLIN-PROTOCOL` still unadopted (OD-1, blocked on OD-13), and the P0-1 executive brief still exists only in a conversation |
 | 8 | **6 of 17 disorders have no clinical package** (`pdd`, `socialAnxiety`, `ocd`, `asd`, `schizoaffective`, `eating`) | High | Verified: 17 IDs, 11 packages |
 | 9 | **Landing-page claims unsupported by data** (10,000+ sessions, 500+ cases, 95% satisfaction, three named testimonials) | **High (integrity)** | See C-1 — directly at odds with the no-fabrication discipline |
-| 10 | ~~**Doc/code drift** in `CLAUDE.md` counts~~ | **Closed 2026-08-20** | Corrected to 724 tests / 88 files · 75 migrations · ~100 tables · 7 CI steps. Remaining drift is `CANONICAL_MIGRATION_LEDGER.md` (frozen at 54) |
+| 10 | ~~**Doc/code drift** in `CLAUDE.md` counts and the migration ledger~~ | **Closed 2026-08-20** | `CLAUDE.md` corrected to 724 tests / 88 files · 75 migrations · ~100 tables · 7 CI steps; `CANONICAL_MIGRATION_LEDGER.md` marked SUPERSEDED with its 21-migration gap documented. Regenerating the ledger remains open (ARCH-S2-07) |
 | 11 | **Security residuals:** HIBP disabled · Upstash unconfirmed in prod · no vendor APM · no pen test | Medium | Cheap, named GA blockers |
 | 12 | **Ops counts include admin-test sessions** (F-2) | Low | `phase14`/`phase16`/`cidp` run unfiltered `count` queries |
 | 13 | **Dyad carry may select a prior admin-test session** (F-3); admin home badge (F-4) | Low | P2/P3 cleanups |
@@ -880,8 +880,9 @@ Ordered by leverage. Steps 1–4 are not engineering, and that is the point.
    the `is_active` and rate-limit bypass on direct INSERT).
 6. ~~**Land C-9 doc refresh**~~ — **done 2026-08-20**: `CLAUDE.md` now reads 724 tests / 88 files
    · 75 migrations · ~100 tables · seven CI steps, and the two `TECHNICAL_DEBT.md` drift rows are
-   closed, and **RDL-034/035 are appended**. The only C-9 remainder is to mark
-   `CANONICAL_MIGRATION_LEDGER.md` superseded.
+   closed, **RDL-034/035 are appended**, and `CANONICAL_MIGRATION_LEDGER.md` is marked
+   SUPERSEDED. **C-9 is complete.** Regenerating the ledger itself stays open as ARCH-S2-07,
+   to be done after a remote parity run rather than by hand.
 7. **Schedule the DR drill + PITR restore (C-12) and close security residuals (C-13)** on the ops
    track. Independent of the Phase 4 chain — must neither block it nor be starved by it.
 8. **Then, and only then, build P0-2** (version identifier) once OD-14 defines materiality.
@@ -1042,8 +1043,12 @@ and whether you must resolve it manually.
 ### C-4 · Migration count, three different answers — **resolve with C-9**
 
 `CANONICAL_MIGRATION_LEDGER.md` = 54 (frozen) · `CLAUDE.md` = 61 · `TECHNICAL_DEBT.md` = 66 ·
-Phase 4 assessment = 75 · **measured today = 75**. Newest and measured agree. The ledger and the
-two docs are stale snapshots, not disagreements about fact. **Confidence: very high.**
+Phase 4 assessment = 75 · **measured = 75**. Newest and measured agree; the others were stale
+snapshots, not disagreements about fact. **Resolved 2026-08-20:** `CLAUDE.md` corrected to 75, and
+the ledger banner-marked SUPERSEDED with all 21 post-ledger migrations listed. Verified that every
+one of its 54 entries still has a matching file, so it is a valid frozen prefix rather than a
+diverged record — which is why it stays as RDL-003 evidence rather than being rewritten.
+**Confidence: very high.**
 
 ---
 
@@ -1380,7 +1385,8 @@ writing first** (3C contract §5.2 "do not skip" vs shipped 403).
 
 **Counts (`CLAUDE.md` corrected 2026-08-20, trust it again).** 724 tests / 88 files ·
 75 migrations · ~100 tables · 668 TS files · 71 API routes · 7 CI steps · i18n 1085/1085.
-Still stale elsewhere: `CANONICAL_MIGRATION_LEDGER.md` frozen at 54. Canonical score is the private
+`CANONICAL_MIGRATION_LEDGER.md` is frozen at 54 and banner-marked SUPERSEDED — historical
+evidence for RDL-003, never a current inventory. Canonical score is the private
 `weightedOverall()` in `lib/ai/assessment.ts` (11 dims, weights sum 100, hand-assigned, **no
 documented derivation**); the shared `reliability.ts` / `calibration/` harness is correctly
 documented as **not on main**.
@@ -1487,7 +1493,8 @@ ambiguity F-5 in writing before designing the fix.
 COUNTS
 724 tests / 88 files · 75 migrations · ~100 tables · 668 TS files · 71 API routes ·
 seven CI steps · i18n 1085/1085. CLAUDE.md was corrected to these on 2026-08-20.
-docs/CANONICAL_MIGRATION_LEDGER.md is still frozen at 54 and should not be trusted.
+docs/CANONICAL_MIGRATION_LEDGER.md is frozen at 54 and marked SUPERSEDED — read it as
+historical evidence only, never as a current migration inventory.
 The canonical score is the private weightedOverall() in lib/ai/assessment.ts:
 11 dimensions, weights summing to 100, hand-assigned with no documented derivation.
 The shared reliability.ts / calibration/ harness is not on main — that absence is
@@ -1565,7 +1572,7 @@ them `HISTORICAL — EVIDENCE` so no future session reads them as current state.
 
 | Document | Problem |
 |---|---|
-| `docs/CANONICAL_MIGRATION_LEDGER.md` | Frozen at 54 migrations; actual is 75. **Most misleading file in the repo** |
+| `docs/CANONICAL_MIGRATION_LEDGER.md` | Frozen at 54 migrations; actual is 75. **Banner-marked SUPERSEDED 2026-08-20** — keep in place as RDL-003 evidence; regenerate under ARCH-S2-07 |
 | `docs/V1_RELEASE_CERTIFICATION.md` | States scientific ledgers are absent — stale; Wave 3 shipped the Quality Ledger and indices |
 | `docs/FINAL_EXECUTIVE_SUMMARY.md` · `FINAL_RELEASE_CERTIFICATION.md` · `FINAL_PREVIEW_QA.md` · `RELEASE_NOTES_RC1.md` · `PRODUCTION_READINESS_REPORT.md` | Mission Omega (2026-08-06) baseline `7dc9a35`, superseded by Stage 12 → CIDP → Phase 14–16 → Phase 4 |
 | `docs/FEATURE_INVENTORY.md` (Realtime row; "61 migrations"; "2 avatars") | Point-in-time; see C-6, C-7 |

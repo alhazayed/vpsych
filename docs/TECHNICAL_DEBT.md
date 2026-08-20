@@ -16,7 +16,7 @@
 |------|----------|-------|
 | ~~`CLAUDE.md` references `weightedOverallScore` / `reliability.ts` / `test:reliability` / `calibration/`~~ | — | **Not a defect** — `CLAUDE.md` names them explicitly as *not shipped on main*. Canonical score remains the private `weightedOverall` in `assessment.ts`. Row retained for traceability |
 | ~~`CLAUDE.md` migration/test/table counts stale~~ | — | **Closed 2026-08-20** — refreshed to measured values: **724 tests / 88 files · 75 migrations · ~100 tables**, and the CI step list corrected from five to seven |
-| `docs/CANONICAL_MIGRATION_LEDGER.md` frozen at 54 files | Medium | Post-ledger migrations (QL, CQG, TRM, personality, LTM, CVP) not in ledger |
+| `docs/CANONICAL_MIGRATION_LEDGER.md` frozen at 54 files | Low (was Medium) | **Marked SUPERSEDED 2026-08-20** with a banner naming all **21** post-ledger migrations (QL, CQG, TRM, personality, LTM, CVP, scientific, enterprise, feedback, VP lifecycle). Verified a valid frozen prefix — all 54 entries still have files. Regeneration remains open under ARCH-S2-07 |
 | `docs/V1_RELEASE_CERTIFICATION.md` says scientific ledgers absent | High | Stale — Wave 3 shipped QL + indices on main |
 | `docs/V1_1_BACKLOG.md` still lists #62–#68 as deferred scientific | Medium | Engines largely on main; PRs are historical forks |
 
@@ -30,7 +30,7 @@
 | ARCH-S2-04 | Medium | Case ↔ Template ↔ Preset mutual imports | Extract `lib/case-contracts` |
 | ARCH-S2-05 | Low | Some admin scientific routes lack rate limits | **Closed (Stage 12)** — 60/h on ALE/AVI/CFI/CGE/ERI/RRS/VQI/QL/ACE learners; 30/h OpenAI health |
 | ARCH-S2-06 | Low | Message route is composition root inline | Optional `lib/session-turn` orchestrator (no behaviour change) |
-| ARCH-S2-07 | Medium | Migration ledger (frozen at 54) vs **75** files — `CLAUDE.md` half closed 2026-08-20 | Refresh ledger after next DB parity run |
+| ARCH-S2-07 | Medium | Migration ledger (frozen at 54) vs **75** files — `CLAUDE.md` counts closed and the ledger marked superseded 2026-08-20; **regeneration still open** | Regenerate the ledger after the next remote parity run (`SUPABASE_DB_URL` set); do not hand-patch |
 
 ## Clinical model gaps (Stage 3)
 
