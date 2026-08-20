@@ -23,6 +23,7 @@ import type {
 import type { PreferredLanguage } from "@/lib/types";
 import type { ElevenLabsVoiceSettings } from "@/lib/voice/prosody";
 import {
+  clampSpeed,
   voiceSettingsForPaceEnergy,
   type SpeechEnergy,
   type SpeechPace,
@@ -208,6 +209,11 @@ export function elevenLabsSettingsFromEffective(
     stability: effective.elevenlabs.stability,
     similarity_boost: effective.elevenlabs.similarity_boost,
     style: effective.elevenlabs.style,
+    // `speech_rate` used to stop here: it was clamped, emotion-modulated, and
+    // then dropped because the settings object had no field to carry it. The
+    // provider's `speed` field is the carrier.
+    speed: clampSpeed(effective.speech_rate),
+    use_speaker_boost: effective.speaker_boost >= 0.7,
   };
 }
 

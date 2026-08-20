@@ -10,6 +10,7 @@ import {
   ElevenLabsError,
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
+import { normalizeSpeechText } from "@/lib/voice/speech-text";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
@@ -40,7 +41,19 @@ type TtsBody = {
   /** Mission 10 — Humanization Engine prosody overrides. */
   stability?: number;
   style?: number;
+  /** Segment continuity for multi-segment patient turns. */
+  previousText?: string;
+  nextText?: string;
+  /** Best-effort deterministic sampling. */
+  seed?: number;
 };
+
+/** Bound continuity context so a client cannot inflate the upstream payload. */
+function boundedContext(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim()
+    ? value.trim().slice(0, 500)
+    : undefined;
+}
 
 /**
  * ElevenLabs TTS — streams audio/mpeg when available.
@@ -76,8 +89,14 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as TtsBody;
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
-  const text = (body.text?.trim() ||
+  const displayText = (body.text?.trim() ||
     (body.preview ? previewSampleText(locale) : "")) as string;
+
+  // Derive the speech representation. This never leaves the request: the
+  // transcript, session_messages, and every downstream clinical artefact keep
+  // the original text. Normalization is idempotent, so callers that already
+  // segmented client-side are unaffected.
+  const text = normalizeSpeechText(displayText, locale).text;
 
   try {
     // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
@@ -124,6 +143,12 @@ export async function POST(request: Request) {
       clinicalVoiceSettings,
       stability: body.stability,
       style: body.style,
+      previousText: boundedContext(body.previousText),
+      nextText: boundedContext(body.nextText),
+      seed:
+        typeof body.seed === "number" && Number.isFinite(body.seed)
+          ? body.seed
+          : undefined,
     });
 
     return new NextResponse(result.body, {

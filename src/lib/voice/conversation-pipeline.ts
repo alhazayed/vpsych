@@ -12,12 +12,26 @@
  */
 
 import {
+  fadeOutAudio,
   sessionLocaleFrom,
   synthesizeSpeech,
   speakWithBrowser,
 } from "@/lib/voice/client";
+import { prepareSpeech } from "@/lib/voice/speech-text";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
+import type { VoiceQaSink } from "@/lib/voice/qa/types";
+
+/**
+ * Monotonic clock for QA spans only. Not used for any product behaviour, so a
+ * runtime without `performance` degrades to wall time rather than failing.
+ */
+function qaClock(): number {
+  return typeof performance !== "undefined" &&
+    typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
 
 export type { SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 export type { SessionMessage };
@@ -153,9 +167,118 @@ export async function submitConversationTurn(params: {
   };
 }
 
+/** Result of speaking one patient turn. */
+export type PatientSpeechMode = "elevenlabs" | "browser" | "interrupted";
+
+/** Await `ms`, resolving false if the signal aborts first. */
+function sleepAbortable(ms: number, signal?: AbortSignal): Promise<boolean> {
+  if (ms <= 0) return Promise.resolve(!signal?.aborted);
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve(true);
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+/** Play one synthesized clip to completion. Always revokes its object URL. */
+function playClip(params: {
+  objectUrl: string;
+  audioRef?: { current: HTMLAudioElement | null };
+  signal?: AbortSignal;
+}): Promise<"played" | "failed" | "interrupted"> {
+  return new Promise((resolve) => {
+    const audio = new Audio(params.objectUrl);
+    if (params.audioRef) params.audioRef.current = audio;
+
+    let settled = false;
+    const finish = (result: "played" | "failed" | "interrupted") => {
+      if (settled) return;
+      settled = true;
+      params.signal?.removeEventListener("abort", onAbort);
+      URL.revokeObjectURL(params.objectUrl);
+      if (params.audioRef && params.audioRef.current === audio) {
+        params.audioRef.current = null;
+      }
+      resolve(result);
+    };
+
+    const onAbort = () => {
+      fadeOutAudio(audio);
+      window.speechSynthesis?.cancel();
+      finish("interrupted");
+    };
+
+    audio.onended = () => finish("played");
+    audio.onerror = () =>
+      finish(params.signal?.aborted ? "interrupted" : "failed");
+
+    params.signal?.addEventListener("abort", onAbort, { once: true });
+
+    void audio.play().catch(() => {
+      finish(params.signal?.aborted ? "interrupted" : "failed");
+    });
+  });
+}
+
+/** Browser SpeechSynthesis fallback for whatever is left of the turn. */
+function playViaBrowser(params: {
+  text: string;
+  locale: SessionSpeechLocale;
+  speechPace?: string | null;
+  signal?: AbortSignal;
+  handlers: SpeakHandlers;
+}): Promise<"browser" | "interrupted"> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (mode: "browser" | "interrupted") => {
+      if (settled) return;
+      settled = true;
+      params.signal?.removeEventListener("abort", onAbort);
+      if (mode === "interrupted") params.handlers.onerror?.();
+      else params.handlers.onend?.();
+      resolve(mode);
+    };
+    const onAbort = () => {
+      window.speechSynthesis?.cancel();
+      finish("interrupted");
+    };
+    params.signal?.addEventListener("abort", onAbort, { once: true });
+
+    if (params.signal?.aborted) {
+      finish("interrupted");
+      return;
+    }
+
+    speakWithBrowser(
+      params.text,
+      params.locale,
+      {
+        onend: () => finish("browser"),
+        onerror: () => finish(params.signal?.aborted ? "interrupted" : "browser"),
+      },
+      params.speechPace,
+    );
+  });
+}
+
 /**
- * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
- * No-op safe when voice is disabled by the caller.
+ * Stages 3–4 — speech-text preparation → segmented ElevenLabs synthesis →
+ * sequential playback, with browser TTS fallback.
+ *
+ * The turn is split into conversational segments, each synthesized with the
+ * neighbouring segments as `previous_text` / `next_text` so the provider keeps
+ * one prosodic contour across the whole turn. Segment N+1 is requested while
+ * segment N is still playing, so the inter-segment gap is the intended pause
+ * budget rather than network latency.
+ *
+ * `params.text` is the authoritative display text and is never mutated — only a
+ * derived speech representation reaches the provider.
  */
 export async function playPatientSpeech(params: {
   text: string;
@@ -172,178 +295,195 @@ export async function playPatientSpeech(params: {
   style?: number | null;
   /** Mission 10 — thinking pause before first audio. */
   pauseBeforeMs?: number | null;
+  /** Scales every inter-segment pause (clinical pacing). */
+  pauseScale?: number | null;
+  /** Best-effort deterministic sampling; omitted by default. */
+  seed?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
   /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
   signal?: AbortSignal;
-}): Promise<"elevenlabs" | "browser" | "interrupted"> {
+  /** Voice QA instrumentation. Absent in production — see `lib/voice/qa`. */
+  qa?: VoiceQaSink;
+}): Promise<PatientSpeechMode> {
   const handlers = params.handlers ?? {};
+  const qa = params.qa;
   if (params.signal?.aborted) {
     handlers.onerror?.();
+    qa?.finish("interrupted");
     return "interrupted";
   }
 
-  const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
-  if (pauseMs > 0) {
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(resolve, pauseMs);
-      params.signal?.addEventListener(
-        "abort",
-        () => {
-          clearTimeout(timer);
-          resolve();
+  const prepared = prepareSpeech(params.text, params.locale, {
+    pauseScale: params.pauseScale ?? 1,
+  });
+  const segments = prepared.segments.length
+    ? prepared.segments
+    : [
+        {
+          text: prepared.speechText,
+          pauseAfterMs: 0,
+          boundary: "final" as const,
         },
-        { once: true },
-      );
-    });
-    if (params.signal?.aborted) {
-      handlers.onerror?.();
-      return "interrupted";
-    }
+      ];
+
+  qa?.mark("speech_text_ready");
+  qa?.setSpeech({
+    displayText: params.text,
+    speechText: prepared.speechText,
+    changed: prepared.normalized,
+    locale: params.locale,
+    segments: segments.map((segment, index) => ({
+      index,
+      text: segment.text,
+      boundary: segment.boundary,
+      pauseAfterMs: segment.pauseAfterMs,
+    })),
+  });
+
+  const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
+  qa?.setThinkingPauseMs(pauseMs);
+  if (!(await sleepAbortable(pauseMs, params.signal))) {
+    handlers.onerror?.();
+    qa?.finish("interrupted");
+    return "interrupted";
   }
 
   handlers.onstart?.();
 
-  const result = await synthesizeSpeech({
-    text: params.text,
-    locale: params.locale,
-    voiceId: params.voiceId,
-    voiceIdAr: params.voiceIdAr,
-    voiceProfileId: params.voiceProfileId,
-    avatarId: params.avatarId,
-    speechPace: params.speechPace,
-    speechEnergy: params.speechEnergy,
-    disorderSlug: params.disorderSlug,
-    emotion: params.emotion,
-    stability: params.stability,
-    style: params.style,
-  });
-
-  if (params.signal?.aborted) {
-    if (result.mode === "elevenlabs" && result.objectUrl) {
-      URL.revokeObjectURL(result.objectUrl);
+  const synthesizeSegment = async (index: number) => {
+    const startedAt = qaClock();
+    qa?.mark("tts_request");
+    const result = await synthesizeSpeech({
+      text: segments[index]!.text,
+      locale: params.locale,
+      voiceId: params.voiceId,
+      voiceIdAr: params.voiceIdAr,
+      voiceProfileId: params.voiceProfileId,
+      avatarId: params.avatarId,
+      speechPace: params.speechPace,
+      speechEnergy: params.speechEnergy,
+      disorderSlug: params.disorderSlug,
+      emotion: params.emotion,
+      stability: params.stability,
+      style: params.style,
+      previousText: index > 0 ? segments[index - 1]!.text : null,
+      nextText:
+        index < segments.length - 1 ? segments[index + 1]!.text : null,
+      seed: params.seed,
+      captureBlob: Boolean(qa),
+    });
+    if (qa) {
+      qa.mark("tts_first_audio");
+      qa.captureSegmentAudio({
+        index,
+        blob: result.blob ?? null,
+        headers: result.headers ?? null,
+        synthesisMs: qaClock() - startedAt,
+      });
     }
-    handlers.onerror?.();
-    return "interrupted";
-  }
-
-  const browserFallback = (onDone: () => void) => {
-    if (params.signal?.aborted) {
-      onDone();
-      return;
-    }
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => {
-          handlers.onend?.();
-          onDone();
-        },
-        onerror: () => {
-          handlers.onerror?.();
-          onDone();
-        },
-      },
-      params.speechPace,
-    );
+    return result;
   };
 
-  if (result.mode === "elevenlabs" && result.objectUrl) {
-    const audio = new Audio(result.objectUrl);
-    if (params.audioRef) params.audioRef.current = audio;
+  type Synthesis = Awaited<ReturnType<typeof synthesizeSpeech>> | null;
+  let pending: Promise<Synthesis> = synthesizeSegment(0);
 
-    return await new Promise<"elevenlabs" | "browser" | "interrupted">(
-      (resolve) => {
-        let settled = false;
-        const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
-          if (settled) return;
-          settled = true;
-          params.signal?.removeEventListener("abort", onAbort);
-          URL.revokeObjectURL(result.objectUrl!);
-          if (params.audioRef) params.audioRef.current = null;
-          if (mode === "elevenlabs") handlers.onend?.();
-          else if (mode === "interrupted") handlers.onerror?.();
-          resolve(mode);
-        };
+  /** Drop a prefetched clip we are never going to play. */
+  const discardPending = () => {
+    void pending
+      .then((result) => {
+        if (result?.objectUrl) URL.revokeObjectURL(result.objectUrl);
+      })
+      .catch(() => {
+        /* prefetch failures are not actionable */
+      });
+  };
 
-        const onAbort = () => {
-          try {
-            audio.pause();
-            audio.removeAttribute("src");
-            audio.load();
-          } catch {
-            /* ignore */
-          }
-          window.speechSynthesis?.cancel();
-          finish("interrupted");
-        };
+  for (let i = 0; i < segments.length; i++) {
+    const result = await pending;
 
-        audio.onended = () => finish("elevenlabs");
-        audio.onerror = () => {
-          if (params.signal?.aborted) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
-        };
+    // Prefetch the next segment while this one plays.
+    pending =
+      i + 1 < segments.length
+        ? synthesizeSegment(i + 1)
+        : Promise.resolve(null);
 
-        params.signal?.addEventListener("abort", onAbort, { once: true });
+    if (params.signal?.aborted) {
+      if (result?.objectUrl) URL.revokeObjectURL(result.objectUrl);
+      discardPending();
+      handlers.onerror?.();
+      qa?.finish("interrupted");
+      return "interrupted";
+    }
 
-        void audio.play().catch(() => {
-          if (params.signal?.aborted) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
-        });
-      },
-    );
+    const remainingText = segments
+      .slice(i)
+      .map((s) => s.text)
+      .join(" ");
+
+    if (result?.mode !== "elevenlabs" || !result.objectUrl) {
+      discardPending();
+      const mode = await playViaBrowser({
+        text: remainingText,
+        locale: params.locale,
+        speechPace: params.speechPace,
+        signal: params.signal,
+        handlers,
+      });
+      qa?.finish(mode === "browser" ? "browser_fallback" : "interrupted");
+      return mode;
+    }
+
+    qa?.mark("playback_start");
+    const played = await playClip({
+      objectUrl: result.objectUrl,
+      audioRef: params.audioRef,
+      signal: params.signal,
+    });
+
+    if (played === "interrupted") {
+      discardPending();
+      handlers.onerror?.();
+      qa?.finish("interrupted");
+      return "interrupted";
+    }
+
+    if (played === "failed") {
+      discardPending();
+      const mode = await playViaBrowser({
+        text: remainingText,
+        locale: params.locale,
+        speechPace: params.speechPace,
+        signal: params.signal,
+        handlers,
+      });
+      qa?.finish(mode === "browser" ? "browser_fallback" : "interrupted");
+      return mode;
+    }
+
+    const pause = segments[i]!.pauseAfterMs;
+    if (pause > 0 && !(await sleepAbortable(pause, params.signal))) {
+      discardPending();
+      handlers.onerror?.();
+      qa?.finish("interrupted");
+      return "interrupted";
+    }
   }
 
-  if (params.signal?.aborted) {
-    handlers.onerror?.();
-    return "interrupted";
-  }
-
-  return await new Promise<"browser" | "interrupted">((resolve) => {
-    let settled = false;
-    const finish = (mode: "browser" | "interrupted") => {
-      if (settled) return;
-      settled = true;
-      params.signal?.removeEventListener("abort", onAbort);
-      if (mode === "interrupted") handlers.onerror?.();
-      else handlers.onend?.();
-      resolve(mode);
-    };
-    const onAbort = () => {
-      window.speechSynthesis?.cancel();
-      finish("interrupted");
-    };
-    params.signal?.addEventListener("abort", onAbort, { once: true });
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => finish("browser"),
-        onerror: () => {
-          if (params.signal?.aborted) finish("interrupted");
-          else {
-            handlers.onerror?.();
-            finish("browser");
-          }
-        },
-      },
-      params.speechPace,
-    );
-  });
+  handlers.onend?.();
+  qa?.finish("spoken");
+  return "elevenlabs";
 }
 
 /**
  * Full voice turn: STT → message API (GPT-5 + persistence) → optional TTS.
  * Text-only callers should use `submitConversationTurn` directly.
+ *
+ * `signal` abandons the WHOLE turn, not just its audio. A therapist barging in
+ * mid-turn must not get the superseded transcript in the draft box, must not
+ * get the superseded exchange appended to the visible transcript, and must not
+ * hear the superseded reply. Each stage is re-checked after its await because
+ * an abort that lands while a fetch is in flight cannot unmake the response.
  */
 export async function runVoiceConversationTurn(params: {
   sessionId: string;
@@ -351,6 +491,10 @@ export async function runVoiceConversationTurn(params: {
   sessionLanguage?: string | null;
   locale: SessionSpeechLocale;
   voiceEnabled: boolean;
+  /** Abort abandons STT, the message request, and playback. */
+  signal?: AbortSignal;
+  /** Voice QA instrumentation. Absent in production — see `lib/voice/qa`. */
+  qa?: VoiceQaSink;
   voiceId?: string | null;
   voiceIdAr?: string | null;
   voiceProfileId?: string | null;
@@ -367,18 +511,33 @@ export async function runVoiceConversationTurn(params: {
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
       ok: false;
-      stage: "stt" | "message";
+      stage: "stt" | "message" | "interrupted";
       error: string;
       unavailable?: boolean;
       expired?: boolean;
     }
 > {
+  const interrupted = {
+    ok: false,
+    stage: "interrupted",
+    error: "Turn superseded",
+  } as const;
+
+  if (params.signal?.aborted) return interrupted;
+
+  // T0 — the recorder has stopped, so the therapist has finished speaking.
+  params.qa?.mark("speech_ended");
+
   const stt = await transcribeTherapistSpeech({
     audio: params.audio,
     locale: params.sessionLanguage ?? params.locale,
+    signal: params.signal,
   });
 
+  if (params.signal?.aborted) return interrupted;
+
   if (!stt.ok) {
+    params.qa?.finish("failed");
     return {
       ok: false,
       stage: "stt",
@@ -387,8 +546,12 @@ export async function runVoiceConversationTurn(params: {
     };
   }
 
+  // T1 — a usable final transcript exists.
+  params.qa?.mark("stt_final");
+
   const transcript = stt.transcript.trim();
   if (!transcript) {
+    params.qa?.finish("failed");
     return {
       ok: false,
       stage: "stt",
@@ -397,13 +560,30 @@ export async function runVoiceConversationTurn(params: {
   }
 
   params.onTranscript?.(transcript);
+  params.qa?.setTherapistText(transcript);
 
+  // An aborted fetch rejects; that is a deliberate barge-in, not a failure to
+  // report, so it must not surface as a network error in the status line.
+  // T2 — conversation request started.
+  params.qa?.mark("llm_request");
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
-  });
+    signal: params.signal,
+  }).catch(() => null);
+  // T3 — model response received (success or not; the wait is the same).
+  params.qa?.mark("llm_response");
+
+  // The reply is persisted server-side either way, but a superseded turn must
+  // not append to the visible transcript or speak over the therapist.
+  if (params.signal?.aborted) return interrupted;
+  if (!turn) {
+    params.qa?.finish("failed");
+    return { ok: false, stage: "message", error: "Network error" };
+  }
 
   if (!turn.ok) {
+    params.qa?.finish("failed");
     return {
       ok: false,
       stage: "message",
@@ -432,7 +612,11 @@ export async function runVoiceConversationTurn(params: {
       pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      signal: params.signal,
+      qa: params.qa,
     });
+  } else {
+    params.qa?.finish("spoken");
   }
 
   return { ok: true, turn: turn.data, transcript };

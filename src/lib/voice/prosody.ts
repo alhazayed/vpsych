@@ -12,7 +12,26 @@ export type ElevenLabsVoiceSettings = {
   stability: number;
   similarity_boost: number;
   style?: number;
+  /**
+   * Confirmed field of the ElevenLabs `VoiceSettings` object (no model
+   * restriction documented). Boosts similarity to the source speaker.
+   */
+  use_speaker_boost?: boolean;
+  /**
+   * Confirmed field of the ElevenLabs `VoiceSettings` object: 1.0 is default,
+   * <1 slower, >1 faster. This is how the Clinical Voice Profile `speech_rate`
+   * finally reaches the provider — previously it was computed and discarded.
+   */
+  speed?: number;
 };
+
+/** ElevenLabs rejects values outside this band; clamp before sending. */
+export const SPEED_BOUNDS = { min: 0.7, max: 1.2 } as const;
+
+export function clampSpeed(value: number | null | undefined): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.max(SPEED_BOUNDS.min, Math.min(SPEED_BOUNDS.max, value));
+}
 
 export type SpeechPace =
   | "slow"
@@ -64,17 +83,18 @@ export function voiceSettingsForPaceEnergy(
 
   // Stability: lower = more expressive/variable delivery; higher = flatter/steadier.
   // similarity_boost stays mostly stable so casting identity holds.
+  // speed carries the clinical pace that used to be dropped at the API edge.
   if (p === "slow" || e === "low") {
-    return { stability: 0.62, similarity_boost: 0.72, style: 0.15 };
+    return { stability: 0.62, similarity_boost: 0.72, style: 0.15, speed: 0.9 };
   }
   if (p === "pressured" || (p === "fast" && e === "high")) {
-    return { stability: 0.28, similarity_boost: 0.7, style: 0.45 };
+    return { stability: 0.28, similarity_boost: 0.7, style: 0.45, speed: 1.12 };
   }
   if (p === "fast" || e === "high") {
-    return { stability: 0.32, similarity_boost: 0.72, style: 0.35 };
+    return { stability: 0.32, similarity_boost: 0.72, style: 0.35, speed: 1.06 };
   }
   if (p === "variable" || e === "labile") {
-    return { stability: 0.3, similarity_boost: 0.7, style: 0.4 };
+    return { stability: 0.3, similarity_boost: 0.7, style: 0.4, speed: 1.02 };
   }
   return { ...DEFAULT_SETTINGS, style: 0.25 };
 }

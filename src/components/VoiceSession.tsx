@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,11 +23,25 @@ import {
   startMicWavRecording,
   type MicRecorder,
 } from "@/lib/voice/record-wav";
+import { createTurnGuard } from "@/lib/voice/turn-guard";
+import { isVoiceQaEnabled } from "@/lib/voice/qa/enabled";
+import { voiceQaStore } from "@/lib/voice/qa/store";
 import type {
   ResolvedAvatar,
   SessionMessage,
   TherapySession,
 } from "@/lib/types";
+
+/**
+ * Lazily loaded so the QA panel, its exporter, and the phrase tracer live in a
+ * chunk production never requests. The gate is a build-time value but compiles
+ * to a runtime lookup, so dead-code elimination will not drop the panel on its
+ * own — this import boundary is what keeps it off the critical path.
+ */
+const VoiceQaPanel = dynamic(
+  () => import("@/components/voice-qa/VoiceQaPanel").then((m) => m.VoiceQaPanel),
+  { ssr: false },
+);
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -53,6 +68,9 @@ declare global {
     webkitSpeechRecognition?: new () => SpeechRecognitionLike;
   }
 }
+
+/** Hard ceiling on one therapist push-to-talk turn. */
+const MAX_TURN_RECORDING_MS = 20000;
 
 function formatMessageTime(iso: string) {
   try {
@@ -104,9 +122,40 @@ export function VoiceSession({
   const micRecorderRef = useRef<MicRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
+  /**
+   * Single-response invariant: one completed therapist turn === one patient
+   * response. Held in a ref because SpeechRecognition handlers are installed
+   * once and would otherwise close over a stale `pending` value.
+   */
+  const turnGuardRef = useRef(createTurnGuard());
+  /**
+   * Cancellation token for the in-flight patient turn.
+   *
+   * `playPatientSpeech` gates EVERY cancellation path on `signal` — the entry
+   * check, the thinking pause, the per-segment loop, `playClip`, and the
+   * browser fallback. Without one, `stopPlayback()` only pauses the segment
+   * currently playing: the loop keeps synthesizing and starts a NEW Audio
+   * element for the next segment, so the avatar talks over the therapist and
+   * `speaking` never clears. A ref, not state — the abort must be visible to
+   * an async loop that is already running.
+   */
+  const playbackAbortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  /**
+   * Voice QA capture, dev-only. `undefined` in production removes the feature
+   * from the pipeline rather than disabling it, so there is no path where an
+   * ordinary session retains clinical audio.
+   */
+  const beginQaTurn = useCallback(
+    () => (isVoiceQaEnabled() ? voiceQaStore.beginTurn(locale) : undefined),
+    [locale],
+  );
 
   const stopPlayback = useCallback(() => {
+    // Abort first: this stops the segment loop from starting the next clip.
+    // Idempotent — aborting an already-aborted controller is a no-op.
+    playbackAbortRef.current?.abort();
+    playbackAbortRef.current = null;
     window.speechSynthesis?.cancel();
     if (audioRef.current) {
       audioRef.current.pause();
@@ -185,6 +234,7 @@ export function VoiceSession({
   const speak = useCallback(
     async (
       text: string,
+      qa?: ReturnType<typeof beginQaTurn>,
       voiceHints?: {
         pause_before_ms?: number;
         speech_rate?: number;
@@ -196,10 +246,14 @@ export function VoiceSession({
     ) => {
       if (!voiceEnabled) return;
       stopPlayback();
+      const abort = new AbortController();
+      playbackAbortRef.current = abort;
       setSpeaking(true);
       const mode = await playPatientSpeech({
         text,
         locale,
+        signal: abort.signal,
+        qa: qa ?? beginQaTurn(),
         voiceId: avatar.voice_id,
         voiceIdAr: avatar.voice_id_ar,
         voiceProfileId: avatar.voice_profile_id,
@@ -218,12 +272,20 @@ export function VoiceSession({
           onerror: () => setSpeaking(false),
         },
       });
+      if (playbackAbortRef.current === abort) playbackAbortRef.current = null;
+      // A superseded turn has no authority over UI state beyond clearing its
+      // own speaking flag; a newer turn owns the status line.
+      if (mode === "interrupted") {
+        setSpeaking(false);
+        return;
+      }
       if (mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
       }
     },
     [
       avatar.id,
+      beginQaTurn,
       avatar.personality?.speech?.pace,
       avatar.voice_id,
       avatar.voice_id_ar,
@@ -240,15 +302,30 @@ export function VoiceSession({
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || pending || endingRef.current) return;
+      if (!trimmed || endingRef.current) return;
+
+      // Synchronous admission control. `pending` alone cannot stop a second
+      // recognition final that fires before React re-renders.
+      const admitted = turnGuardRef.current.beginTurn(trimmed);
+      if (!admitted.accepted) return;
+      const { turnId } = admitted;
+
+      const qa = beginQaTurn();
+      qa?.setTherapistText(trimmed);
+
       setPending(true);
       setStatus(t("status.patientResponding"));
       setDraft("");
       try {
+        qa?.mark("llm_request");
         const turn = await submitConversationTurn({
           sessionId: session.id,
           message: trimmed,
         });
+        qa?.mark("llm_response");
+        // A barge-in or newer turn superseded this one — discard it entirely:
+        // no message append, no playback.
+        if (!turnGuardRef.current.completeTurn(turnId)) return;
         if (!turn.ok) {
           if (turn.expired) {
             await endSession();
@@ -263,7 +340,13 @@ export function VoiceSession({
           turn.data.assistantMessage,
         ]);
         if (voiceEnabled) {
-          void speak(turn.data.assistantMessage.content, turn.data.voiceHints);
+          void speak(
+            turn.data.assistantMessage.content,
+            qa,
+            turn.data.voiceHints,
+          );
+        } else {
+          qa?.finish("spoken");
         }
         setStatus(
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
@@ -271,10 +354,15 @@ export function VoiceSession({
       } catch {
         setStatus(t("status.networkError"));
       } finally {
+        // Release the guard if this turn threw before completing, otherwise the
+        // invariant would deadlock and block every later turn.
+        if (turnGuardRef.current.isCurrent(turnId)) {
+          turnGuardRef.current.completeTurn(turnId);
+        }
         setPending(false);
       }
     },
-    [endSession, pending, session.id, speak, t, voiceEnabled],
+    [beginQaTurn, endSession, session.id, speak, t, voiceEnabled],
   );
 
   async function stopOpenAIListen() {
@@ -285,14 +373,34 @@ export function VoiceSession({
     setListening(false);
     if (!recorder) return;
 
+    // The recorder path submits through runVoiceConversationTurn, not
+    // sendMessage, so it needs its own admission against the same guard.
+    // Keyed synthetically: the transcript is not known until after STT.
+    const admitted = turnGuardRef.current.beginTurn(
+      `recorder-turn-${Date.now()}`,
+    );
+    if (!admitted.accepted) return;
+    const { turnId } = admitted;
+
     setStatus(t("status.transcribing"));
     setPending(true);
+
+    // This path never goes through `speak()`, so it owns the turn's abort
+    // controller itself. Without it the whole recorder turn — STT, the message
+    // request, and every TTS segment — was uncancellable, which is what made
+    // barge-in appear to do nothing.
+    stopPlayback();
+    const abort = new AbortController();
+    playbackAbortRef.current = abort;
+    const qa = beginQaTurn();
 
     try {
       const wav = await recorder.stop();
       const result = await runVoiceConversationTurn({
         sessionId: session.id,
         audio: wav,
+        signal: abort.signal,
+        qa,
         sessionLanguage: session.language ?? locale,
         locale,
         voiceEnabled,
@@ -315,9 +423,12 @@ export function VoiceSession({
       });
 
       if (!result.ok) {
+        // Superseded by a barge-in: the newer turn owns the status line.
+        if (result.stage === "interrupted") return;
         if (result.stage === "stt" && result.unavailable) {
           setStatus(t("status.sttUnavailable"));
-          startBrowserListen({ autoSend: true });
+          // Draft-only fallback — the therapist submits explicitly.
+          startBrowserListen();
           return;
         }
         if (result.expired) {
@@ -337,26 +448,44 @@ export function VoiceSession({
         voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
       );
     } catch {
-      setStatus(t("status.micTranscribeError"));
+      if (!abort.signal.aborted) setStatus(t("status.micTranscribeError"));
     } finally {
+      if (turnGuardRef.current.isCurrent(turnId)) {
+        turnGuardRef.current.completeTurn(turnId);
+      }
+      // Deliberately NOT clearing `playbackAbortRef` here: this path starts
+      // playback detached (`void playPatientSpeech`), so the turn's audio is
+      // still running when this function returns. The controller stays
+      // installed until `stopPlayback()` or the next turn replaces it —
+      // clearing it now would make the next barge-in abort nothing.
       setPending(false);
     }
   }
 
-  function startBrowserListen(options?: {
-    autoSend?: boolean;
-    interimOnly?: boolean;
-  }) {
-    const autoSend = options?.autoSend ?? true;
-    const interimOnly = options?.interimOnly ?? false;
+  /**
+   * Browser SpeechRecognition — DRAFT ONLY.
+   *
+   * This never dispatches a turn. Web Speech emits `isFinal` on its own
+   * short-pause endpointing, so auto-sending on a final result made the patient
+   * answer a half-finished sentence whenever the therapist paused mid-thought.
+   * The only paths that can generate a patient turn are an explicit user
+   * submission or a CONFIRMED_END from the shared TurnController.
+   *
+   * @param options.silent suppresses status/listening UI when this is running
+   *   alongside the OpenAI WAV recorder purely to show a live draft.
+   */
+  function startBrowserListen(options?: { silent?: boolean }) {
+    const silent = options?.silent ?? false;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+      if (!silent) setStatus(t("status.speechUnavailable"));
       return;
     }
 
     const recognition = new SR();
-    recognition.continuous = interimOnly;
+    // Keep capturing across the therapist's natural pauses instead of ending
+    // the recognition session at the first internal endpoint.
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang =
       avatar.stt_lang || (locale === "ar" ? "ar-SA" : "en-US");
@@ -371,39 +500,47 @@ export function VoiceSession({
         if (result.isFinal) finalText += piece;
         else interim += piece;
       }
-      const live = (finalText || interim).trim();
+      // Final and interim are treated identically: both only update the draft.
+      const live = `${finalText}${interim}`.trim();
       if (live) {
         setDraft(live);
-        setStatus(t("status.listening"));
-      }
-      if (finalText && autoSend && !interimOnly) {
-        setDraft(finalText);
-        setStatus(t("status.captured"));
-        void sendMessage(finalText);
+        if (!silent) setStatus(t("status.listening"));
       }
     };
     recognition.onerror = (event) => {
-      if (interimOnly) return;
+      if (silent) return;
       setListening(false);
       setStatus(t("status.micError", { error: event.error }));
     };
     recognition.onend = () => {
-      if (!interimOnly) setListening(false);
+      if (silent) return;
+      setListening(false);
+      setStatus(t("status.draftCaptured"));
     };
 
     try {
       recognition.start();
-      if (!interimOnly) {
+      if (!silent) {
         setListening(true);
         setStatus(t("status.speakNow"));
       }
     } catch {
-      if (!interimOnly) setStatus(t("status.speechUnavailable"));
+      if (!silent) setStatus(t("status.speechUnavailable"));
     }
   }
 
+  /**
+   * `pending` deliberately does NOT block this.
+   *
+   * It used to, which meant that for the whole STT + model window — seconds,
+   * and up to the OpenAI timeout in the worst case — pressing the mic did
+   * nothing at all: no recording, no visual change, no way out. Taking the
+   * floor back is exactly what a therapist needs during that window, and it is
+   * safe now that the turn carries an abort controller: `stopPlayback()` below
+   * abandons the in-flight turn rather than leaving it to land later.
+   */
   async function toggleListen() {
-    if (pending || ending || !voiceEnabled) return;
+    if (ending || !voiceEnabled) return;
 
     if (listening) {
       if (micRecorderRef.current) {
@@ -415,8 +552,24 @@ export function VoiceSession({
       return;
     }
 
+    // Barge-in: the therapist taking the floor stops the patient immediately
+    // and abandons any in-flight patient turn, so a stale reply cannot land
+    // after the therapist has started a new one.
+    stopPlayback();
+    setSpeaking(false);
+    turnGuardRef.current.cancelActive();
+    turnGuardRef.current.beginListening();
+
     try {
-      const recorder = await startMicWavRecording(20000);
+      const recorder = await startMicWavRecording(MAX_TURN_RECORDING_MS, {
+        onMaxDuration: () => {
+          // Capture genuinely stops at the cap now, so finish the turn rather
+          // than leaving a recorder that will never produce more audio.
+          if (micRecorderRef.current !== recorder) return;
+          setStatus(t("status.maxRecordingReached"));
+          void stopOpenAIListen();
+        },
+      });
       micRecorderRef.current = recorder;
       setListening(true);
       setDraft("");
@@ -425,9 +578,9 @@ export function VoiceSession({
           language: locale === "ar" ? "العربية" : "English",
         }),
       );
-      startBrowserListen({ autoSend: false, interimOnly: true });
+      startBrowserListen({ silent: true });
     } catch {
-      startBrowserListen({ autoSend: true });
+      startBrowserListen();
     }
   }
 
@@ -450,6 +603,8 @@ export function VoiceSession({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       {ending && <AiAnalysisOverlay />}
+      {/* Dev-only; the chunk is never fetched unless NEXT_PUBLIC_VOICE_QA=true. */}
+      {isVoiceQaEnabled() && <VoiceQaPanel />}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:px-6">
         <Link href={adminTest ? `/admin/avatars/${session.avatar_id}` : "/avatars"} className="flex items-center gap-3">
           <Image
@@ -591,7 +746,11 @@ export function VoiceSession({
               <button
                 type="button"
                 onClick={() => void toggleListen()}
-                disabled={pending || ending}
+                // Not disabled on `pending`: the mic IS the barge-in control,
+                // and the window where the therapist most needs it is exactly
+                // the one where a turn is in flight. Greying it out there left
+                // them with no way to take the floor back.
+                disabled={ending}
                 className={`flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition ${
                   listening
                     ? "mic-pulse bg-[var(--secondary-container)] text-[var(--on-secondary-container)]"

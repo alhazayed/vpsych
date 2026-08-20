@@ -1067,6 +1067,67 @@ describe("architecture invariants", () => {
     expect(start).not.toMatch(/adminTest/);
   });
 
+  it("speech-text layer never writes display text or clinical records", () => {
+    const files = [
+      "lib/voice/speech-text/index.ts",
+      "lib/voice/speech-text/router.ts",
+      "lib/voice/speech-text/segment.ts",
+      "lib/voice/speech-text/ar/normalize.ts",
+      "lib/voice/speech-text/en/normalize.ts",
+      "lib/voice/speech-text/lexicon-ar.ts",
+    ];
+    // Match executable code only — these table names legitimately appear in the
+    // doc comments that explain the display/speech split.
+    const stripComments = (source: string) =>
+      source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+
+    for (const file of files) {
+      const code = stripComments(readFileSync(join(root, file), "utf8"));
+      // The speech representation is derived and discarded — it must never
+      // touch persistence, the assessment path, or the clinical snapshot.
+      expect(code, file).not.toMatch(/insert_assistant_message/);
+      expect(code, file).not.toMatch(/session_messages/);
+      expect(code, file).not.toMatch(/clinical_snapshot/);
+      expect(code, file).not.toMatch(/from\s*\(\s*["']sessions["']\s*\)/);
+      expect(code, file).not.toMatch(/@\/lib\/supabase/);
+    }
+  });
+
+  it("the message route persists model output, never a speech representation", () => {
+    const route = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/p_content:\s*replyMeta\.text/);
+    // Speech preparation must not leak into the persistence path.
+    expect(route).not.toMatch(/prepareSpeech/);
+    expect(route).not.toMatch(/speech-text/);
+  });
+
+  it("browser SpeechRecognition cannot dispatch a patient turn", () => {
+    const session = readFileSync(join(root, "components/VoiceSession.tsx"), "utf8");
+    // Regression lock: a Web Speech `isFinal` result once auto-sent a turn, so
+    // a mid-sentence pause made the patient answer incomplete speech.
+    expect(session).not.toMatch(/autoSend/);
+    const onResult = session.slice(
+      session.indexOf("recognition.onresult"),
+      session.indexOf("recognition.onerror"),
+    );
+    expect(onResult.length).toBeGreaterThan(0);
+    expect(onResult).not.toMatch(/sendMessage/);
+    expect(onResult).toMatch(/setDraft/);
+  });
+
+  it("does not send language_code to an ElevenLabs model that rejects it", () => {
+    const service = readFileSync(
+      join(root, "lib/voice/elevenlabs/service.ts"),
+      "utf8",
+    );
+    expect(service).toMatch(/eleven_multilingual_v2/);
+    expect(service).not.toMatch(/language_code:/);
+    expect(service).toMatch(/LANGUAGE_CODE_UNSUPPORTED_NOTE/);
+  });
+
   it("Phase 3C — admin test-session API is the sole marker writer", () => {
     const route = readFileSync(
       join(root, "app/api/admin/avatars/[id]/test-session/route.ts"),

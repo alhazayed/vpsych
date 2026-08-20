@@ -34,7 +34,30 @@ export type ElevenLabsSynthesizeParams = {
   /** Mission 10 — optional Humanization Engine prosody overrides. */
   stability?: number | null;
   style?: number | null;
+  /**
+   * Segment continuity. Confirmed fields of the ElevenLabs text-to-speech
+   * stream request: they let the model condition prosody on the surrounding
+   * text so a segmented turn sounds like one utterance rather than a sequence
+   * of separate audio files.
+   */
+  previousText?: string | null;
+  nextText?: string | null;
+  /**
+   * Confirmed `seed` field — best-effort deterministic sampling. Participates
+   * in the cache key. Left unset by default so cache behaviour is unchanged.
+   */
+  seed?: number | null;
 };
+
+/**
+ * NOT SENT — verified against the ElevenLabs SDK request type for this exact
+ * endpoint: "This parameter is not supported for multilingual_v2 models."
+ * `ELEVENLABS_MODEL_ID` defaults to eleven_multilingual_v2, so sending a
+ * language_code here would at best be ignored and at worst rejected. Revisit
+ * only alongside a model change (Stage 4).
+ */
+export const LANGUAGE_CODE_UNSUPPORTED_NOTE =
+  "language_code is not supported for eleven_multilingual_v2; not sent.";
 
 export type ElevenLabsSynthesizeResult = {
   body: ReadableStream<Uint8Array>;
@@ -124,6 +147,9 @@ function cacheKey(params: {
   modelId: string;
   locale: SessionSpeechLocale;
   voiceSettings: ElevenLabsVoiceSettings;
+  previousText?: string | null;
+  nextText?: string | null;
+  seed?: number | null;
 }) {
   return createHash("sha256")
     .update(params.text)
@@ -135,6 +161,15 @@ function cacheKey(params: {
     .update(params.locale)
     .update("\0")
     .update(JSON.stringify(params.voiceSettings))
+    .update("\0")
+    // Continuity context changes the audio, so it must change the cache key —
+    // otherwise the same filler would replay a clip generated in a different
+    // prosodic context.
+    .update(params.previousText ?? "")
+    .update("\0")
+    .update(params.nextText ?? "")
+    .update("\0")
+    .update(params.seed == null ? "" : String(params.seed))
     .digest("hex");
 }
 
@@ -303,6 +338,9 @@ export const elevenLabsService = {
         modelId: model,
         locale: params.locale,
         voiceSettings,
+        previousText: params.previousText,
+        nextText: params.nextText,
+        seed: params.seed,
       });
 
       const cached = readCache(key);
@@ -336,6 +374,18 @@ export const elevenLabsService = {
             text,
             model_id: model,
             voice_settings: voiceSettings,
+            // Continuity across segments of one patient turn.
+            ...(params.previousText?.trim()
+              ? { previous_text: params.previousText.trim().slice(0, 500) }
+              : {}),
+            ...(params.nextText?.trim()
+              ? { next_text: params.nextText.trim().slice(0, 500) }
+              : {}),
+            ...(typeof params.seed === "number" && Number.isFinite(params.seed)
+              ? { seed: Math.max(0, Math.floor(params.seed)) }
+              : {}),
+            // See LANGUAGE_CODE_UNSUPPORTED_NOTE — language_code is
+            // deliberately omitted for eleven_multilingual_v2.
           }),
           // Abort hung upstream TTS (RT-03 / RT-S11-04).
           signal: AbortSignal.timeout(elevenLabsTimeoutMs()),
