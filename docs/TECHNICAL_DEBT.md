@@ -14,8 +14,8 @@
 
 | Item | Severity | Notes |
 |------|----------|-------|
-| `CLAUDE.md` references `weightedOverallScore` / `reliability.ts` / `test:reliability` / `calibration/` | High | Files/scripts absent; canonical score is private `weightedOverall` in `assessment.ts` |
-| `CLAUDE.md` migration/test/table counts stale | Medium | Git has **66** migrations (was documented as 61); refresh with Stage 2 baseline |
+| ~~`CLAUDE.md` references `weightedOverallScore` / `reliability.ts` / `test:reliability` / `calibration/`~~ | — | **Not a defect** — `CLAUDE.md` names them explicitly as *not shipped on main*. Canonical score remains the private `weightedOverall` in `assessment.ts`. Row retained for traceability |
+| ~~`CLAUDE.md` migration/test/table counts stale~~ | — | **Closed 2026-08-20** — refreshed to measured values: **724 tests / 88 files · 75 migrations · ~100 tables**, and the CI step list corrected from five to seven |
 | `docs/CANONICAL_MIGRATION_LEDGER.md` frozen at 54 files | Medium | Post-ledger migrations (QL, CQG, TRM, personality, LTM, CVP) not in ledger |
 | `docs/V1_RELEASE_CERTIFICATION.md` says scientific ledgers absent | High | Stale — Wave 3 shipped QL + indices on main |
 | `docs/V1_1_BACKLOG.md` still lists #62–#68 as deferred scientific | Medium | Engines largely on main; PRs are historical forks |
@@ -30,7 +30,7 @@
 | ARCH-S2-04 | Medium | Case ↔ Template ↔ Preset mutual imports | Extract `lib/case-contracts` |
 | ARCH-S2-05 | Low | Some admin scientific routes lack rate limits | **Closed (Stage 12)** — 60/h on ALE/AVI/CFI/CGE/ERI/RRS/VQI/QL/ACE learners; 30/h OpenAI health |
 | ARCH-S2-06 | Low | Message route is composition root inline | Optional `lib/session-turn` orchestrator (no behaviour change) |
-| ARCH-S2-07 | Medium | Migration ledger / CLAUDE counts vs 66 files | Refresh ledger after next DB parity run |
+| ARCH-S2-07 | Medium | Migration ledger (frozen at 54) vs **75** files — `CLAUDE.md` half closed 2026-08-20 | Refresh ledger after next DB parity run |
 
 ## Clinical model gaps (Stage 3)
 

@@ -22,14 +22,17 @@ npm run dev            # local dev server
 npm run build          # production build
 npm run lint           # ESLint (flat config; warnings tolerated, errors are not)
 npm run typecheck      # tsc --noEmit
-npm test               # vitest run  (~317 tests / 55 files)
+npm test               # vitest run  (724 tests / 88 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
+npm run audit:deps     # npm audit --omit=dev --audit-level=high
+npm run test:perf-smoke # performance smoke check
 ```
 
-CI (`.github/workflows/ci.yml`, Node 22) runs, in order: **lint → typecheck →
-test → migration parity → build**. Run all five locally before pushing — the
-build step is the one most likely to catch what the others miss.
+CI (`.github/workflows/ci.yml`, Node 22) runs, in order: **audit:deps → lint →
+typecheck → test → migration parity → perf smoke → build**. Run all seven
+locally before pushing — the build step is the one most likely to catch what the
+others miss.
 
 `npm run test:migrations` also compares `supabase_migrations.schema_migrations`
 against git when `SUPABASE_DB_URL` is set; without it, only local structure is
@@ -66,7 +69,7 @@ src/
   i18n/                   next-intl config (cookie-driven locale)
   middleware.ts           auth gate + admin gate + locale cookie
 messages/{en,ar}.json     UI strings
-supabase/migrations/      SQL migrations — mirror of the deployed schema (61 as of Mission Omega)
+supabase/migrations/      SQL migrations — mirror of the deployed schema (75)
 supabase/functions/       Deno edge functions (send-email-hook)
 personas/                 authoritative clinical case library (JSON)
 schemas/avatar.v2.json    avatar schema
@@ -142,7 +145,7 @@ live project. Filenames must match `YYYYMMDDHHMMSS_snake_case_name.sql` with a
 unique version — `npm run test:migrations` fails otherwise. Never edit a
 migration that has already been applied; add a new one.
 
-~80 tables (engines + quality ledger + institutional seeds). The ones you will
+~100 tables (engines + quality ledger + institutional seeds). The ones you will
 touch most: `profiles`, `avatars`, `sessions`, `session_messages`,
 `session_reports`, `voice_profiles`, `case_instances`, `disorders`,
 `learner_profiles`, `learner_competencies`, `cge_nodes`/`cge_edges`,

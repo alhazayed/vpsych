@@ -672,7 +672,7 @@ Preserved because each was paid for once.
 | 7 | **Governance ledger gap.** RDL ends at RDL-033; **Phases 3 and 4 have no RDL rows** despite `RELEASE_GOVERNANCE.md` naming the RDL binding | High (process) | Now larger than when first found — P0-1 code shipped without an RDL authorization row |
 | 8 | **6 of 17 disorders have no clinical package** (`pdd`, `socialAnxiety`, `ocd`, `asd`, `schizoaffective`, `eating`) | High | Verified: 17 IDs, 11 packages |
 | 9 | **Landing-page claims unsupported by data** (10,000+ sessions, 500+ cases, 95% satisfaction, three named testimonials) | **High (integrity)** | See C-1 — directly at odds with the no-fabrication discipline |
-| 10 | **Doc/code drift.** `CLAUDE.md` counts stale and it references a harness that does not exist | Medium | 88 files/724 tests/75 migrations vs 55/317/61 documented |
+| 10 | ~~**Doc/code drift** in `CLAUDE.md` counts~~ | **Closed 2026-08-20** | Corrected to 724 tests / 88 files · 75 migrations · ~100 tables · 7 CI steps. Remaining drift is `CANONICAL_MIGRATION_LEDGER.md` (frozen at 54) |
 | 11 | **Security residuals:** HIBP disabled · Upstash unconfirmed in prod · no vendor APM · no pen test | Medium | Cheap, named GA blockers |
 | 12 | **Ops counts include admin-test sessions** (F-2) | Low | `phase14`/`phase16`/`cidp` run unfiltered `count` queries |
 | 13 | **Dyad carry may select a prior admin-test session** (F-3); admin home badge (F-4) | Low | P2/P3 cleanups |
@@ -876,9 +876,10 @@ Ordered by leverage. Steps 1–4 are not engineering, and that is the point.
 5. **Resolve F-5 in writing**, then choose the OD-27 remediation shape (the snapshot-constraining
    trigger/RPC is the only one that closes the vector rather than the symptom, and it also covers
    the `is_active` and rate-limit bypass on direct INSERT).
-6. **Land C-9 now** (docs-only): refresh `CLAUDE.md` counts to 88 files / 724 tests / 75
-   migrations, correct the CI step list to seven, and either remove or explicitly mark as absent
-   the `weightedOverallScore` / `reliability.ts` / `test:reliability` / `calibration/` references.
+6. ~~**Land C-9 doc refresh**~~ — **done 2026-08-20**: `CLAUDE.md` now reads 724 tests / 88 files
+   · 75 migrations · ~100 tables · seven CI steps, and the two `TECHNICAL_DEBT.md` drift rows are
+   closed. The remaining C-9 work is governance, not counts: append **RDL-034** and **RDL-035**
+   (item 2 above), and mark `CANONICAL_MIGRATION_LEDGER.md` superseded.
 7. **Schedule the DR drill + PITR restore (C-12) and close security residuals (C-13)** on the ops
    track. Independent of the Phase 4 chain — must neither block it nor be starved by it.
 8. **Then, and only then, build P0-2** (version identifier) once OD-14 defines materiality.
@@ -1018,17 +1019,20 @@ and whether you must resolve it manually.
 
 ---
 
-### C-3 · `CLAUDE.md` counts and references vs reality — **safe to resolve automatically**
+### C-3 · `CLAUDE.md` counts vs reality — **RESOLVED 2026-08-20**
 
-- **Version A (`CLAUDE.md`):** "~317 tests / 55 files", "61 migrations", "~80 tables", CI runs
-  **five** steps, and it references `weightedOverallScore`, `reliability.ts`, `test:reliability`,
-  and `calibration/`.
-- **Version B (measured today):** **724 tests / 88 files · 75 migrations**; CI runs **seven** steps
-  (`audit:deps` and `test:perf-smoke` added at Stage 12); the reliability harness **does not exist
-  on `main`** — the canonical score is the private `weightedOverall()` in `assessment.ts`.
-- **Newer:** Version B, decisively.
-- **My reading:** documentation drift, already logged as High debt. `CLAUDE.md` is the first thing
-  every new session reads, so this drift multiplies. Fix as part of C-9.
+- **Version A (`CLAUDE.md`, until 2026-08-20):** "~317 tests / 55 files", "61 migrations",
+  "~80 tables", CI runs **five** steps.
+- **Version B (measured):** **724 tests / 88 files** (suite run, all passing) · **75 migrations** ·
+  **~100 tables** created across migrations · CI runs **seven** steps (`audit:deps` and
+  `test:perf-smoke` were added at Stage 12).
+- **Resolution:** `CLAUDE.md` was corrected to Version B, and the two `TECHNICAL_DEBT.md`
+  documentation-drift rows were closed. No further action.
+- **Correction to an earlier reading in this document:** `TECHNICAL_DEBT.md` records that
+  `CLAUDE.md` "references `weightedOverallScore` / `reliability.ts` / `test:reliability` /
+  `calibration/`" as though they were presented as available. It does not — it names them
+  explicitly as **not shipped on main**, which is accurate. That debt row was itself stale and has
+  been marked not-a-defect.
 - **Confidence:** Very high — re-measured directly.
 
 ---
@@ -1370,11 +1374,12 @@ time; cannot forge a success response. **Non-blocking for Phase 4 entry; P0 for 
 = OD-27 (only the INSERT-trigger/RPC snapshot constraint closes the vector). **Resolve F-5 in
 writing first** (3C contract §5.2 "do not skip" vs shipped 403).
 
-**Known doc drift — do not trust `CLAUDE.md` on these.** It says 317 tests/55 files/61 migrations
-and 5 CI steps (actual: 724/88/75, 7 steps), and references `weightedOverallScore`,
-`reliability.ts`, `test:reliability`, `calibration/` — **none exist**. Canonical score is the private
-`weightedOverall()` in `lib/ai/assessment.ts` (11 dims, weights sum 100, hand-assigned, no
-derivation).
+**Counts (`CLAUDE.md` corrected 2026-08-20, trust it again).** 724 tests / 88 files ·
+75 migrations · ~100 tables · 668 TS files · 71 API routes · 7 CI steps · i18n 1085/1085.
+Still stale elsewhere: `CANONICAL_MIGRATION_LEDGER.md` frozen at 54. Canonical score is the private
+`weightedOverall()` in `lib/ai/assessment.ts` (11 dims, weights sum 100, hand-assigned, **no
+documented derivation**); the shared `reliability.ts` / `calibration/` harness is correctly
+documented as **not on main**.
 
 **Needs your decision, not mine.** Landing page ships unsupported stats (10,000+ sessions, 500+
 cases, 95% satisfaction) and three named testimonials · pricing tiers ($0/$29/Custom) with no
@@ -1474,12 +1479,14 @@ status has already closed, and permanently evade assessment. Audited every time;
 forge a success response. Non-blocking for Phase 4 entry; P0 for Track B. Resolve contract
 ambiguity F-5 in writing before designing the fix.
 
-DO NOT TRUST CLAUDE.md ON COUNTS
-It says 317 tests / 55 files / 61 migrations and five CI steps (actual: 724 / 88 / 75,
-seven steps) and references weightedOverallScore, reliability.ts, test:reliability and
-calibration/ — none of which exist. The canonical score is the private weightedOverall()
-in lib/ai/assessment.ts: 11 dimensions, weights summing to 100, hand-assigned with no
-documented derivation.
+COUNTS
+724 tests / 88 files · 75 migrations · ~100 tables · 668 TS files · 71 API routes ·
+seven CI steps · i18n 1085/1085. CLAUDE.md was corrected to these on 2026-08-20.
+docs/CANONICAL_MIGRATION_LEDGER.md is still frozen at 54 and should not be trusted.
+The canonical score is the private weightedOverall() in lib/ai/assessment.ts:
+11 dimensions, weights summing to 100, hand-assigned with no documented derivation.
+The shared reliability.ts / calibration/ harness is not on main — that absence is
+correctly documented, not hidden.
 
 OPEN — MINE TO DECIDE, NOT YOURS TO ASSUME
 Landing-page statistics and testimonials are unsupported by real data; pricing tiers exist
@@ -1523,7 +1530,7 @@ group and leave a stub at each original path.
 | Document | Why |
 |---|---|
 | `docs/VPSYCH_MASTER_CONTEXT.md` | This file |
-| `CLAUDE.md` | First thing every session reads — **but fix its counts first (C-9)** |
+| `CLAUDE.md` | First thing every session reads — counts corrected 2026-08-20 |
 | `docs/RELEASE_DECISION_LOG.md` | Authoritative append-only governance ledger; RDL-001…033 |
 | `docs/RELEASE_GOVERNANCE.md` · `RELEASE_OPERATIONS_CHECKLIST.md` | Binding policy + runbook, incl. the Credential Verification Gate |
 | `docs/VPsych_PHASE4_READINESS_ASSESSMENT.md` | The most accurate single description of the current state |
