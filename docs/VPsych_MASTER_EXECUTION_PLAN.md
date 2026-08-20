@@ -291,17 +291,52 @@ Only against **predefined, approved** thresholds. No post-hoc thresholds. No ave
 
 # PROGRAM F — ASSESSMENT RELIABILITY AND VALIDITY
 
-### F0 · Inventory the instrument as built — `NOT STARTED` (executable now, read-only)
-- 11 dimensions, weights summing to 100, **hand-assigned with no documented derivation**; provider/model/prompt dependence; language, case, and difficulty effects; data provenance.
+### F0 · Inventory the instrument as built — `PASSED`
+
+**Instrument (VERIFIED from source):** 11 dimensions, each `max: 5`, weights summing to 100 —
+`risk_formulation` 12 · `dsm_reasoning` 11 · `icd_reasoning` 11 · `alliance` 10 ·
+`clinical_formulation` 10 · `differential_diagnosis` 10 · `assessment` 8 ·
+`educational_competency` 8 · `interventions` 8 · `safety` 8 · `structure` 4.
+`weightedOverall()` = Σ (score/max × 100 × weight/Σweight), rounded. Weights are
+**hand-assigned with no documented derivation.**
+
+**Three measurement constraints found, each material to F1–F5:**
+
+| # | Finding | Evidence | Consequence |
+|---|---|---|---|
+| **F0-1** | **No behavioural anchors.** The rating model receives only `id — label` per dimension (`rubricLines = rubric.map(r => \`${r.id} — ${r.label}\`)`). Nothing defines what a 0, 3, or 5 looks like. | `assessment.ts` prompt assembly | Unanchored 0–5 scales are a classic source of rater drift and low inter-rater agreement. Any IRR result will be hard to attribute between instrument and rater. |
+| **F0-2** | **Scoring is non-deterministic.** `temperature: 0.3` on the examiner call. | `openAIService.chat({ temperature: 0.3 })` | The same transcript can score differently between runs. Test–retest on stored data measures *nothing* about this; it needs deliberate re-runs. |
+| **F0-3** | **Score provenance is effectively absent.** Of **480** reports (2026-07-30 → 2026-08-20): **46 (9.6%)** carry a `scientific_provenance` block, and **0 (zero)** carry a `model_version`. `session_reports` has no model, provider, or prompt-version column. | aggregate SQL over `session_reports` | **The corpus cannot be stratified by model, provider, or prompt version.** |
+
+**Why F0-3 is the binding one.** The default model, the provider path
+(`OPENAI_API_KEY` vs `AI_GATEWAY_API_KEY` vs `OPENAI_CHAT_PROVIDER`), and the prompt engine all
+changed across the collection window — Stages 6 through 12 shipped inside it. Nothing ties a score
+to the configuration that produced it. Consequences:
+- Any Tier 1 reliability estimate over this corpus carries an **unmeasured confound that cannot be
+  removed retrospectively**.
+- Protocol **Rule 12.7.2** (a model or prompt change invalidates behavioural approvals) is
+  **retrospectively unevaluable** — you cannot identify which approvals a given change touched.
+- Partial recovery is possible but coarse: `created_at` → Vercel deployment history → app SHA →
+  prompt-engine version in git. **The provider and model are env-driven and env history is not in
+  git, so those are not recoverable from the repository at all.**
+
+**Effect on the plan:** F1 must add forward provenance capture (model, provider, prompt version,
+`aiSource`) or the same defect keeps accruing on every new report. Recorded as PLAN CHANGE 002.
 
 ### F1 · Reliability harness (C-5 / CI-S05) — `NOT STARTED` (authorized by RDL-035; build is engineering, interpretation is not)
+- **Scope revised by F0** (PLAN CHANGE 002): the harness must also write model / provider /
+  prompt-version / `aiSource` provenance onto new reports. Note this changes `scoresJson`, which is
+  part of the HMAC-signed `create_session_report` payload — additive, but the signing contract must
+  be re-verified, not assumed.
 ### F2 · Retrospective corpus analysis (Tier 1) — `BLOCKED` (needs C7 psychometrician + C8 authorization)
 ### F3 · Blinded expert re-rating → inter-rater reliability — `BLOCKED`
 ### F4 · Fairness / EN-vs-AR bias analysis — `BLOCKED`
 ### F5 · Claim-ladder determination — `BLOCKED`
 
 **Claim ladder.** L0 formative AI feedback · L1 repeatable internal educational signal · L2 reproducible performance measure · L3 externally validated competence measure.
-**Current supportable claim: L0.** Nothing on `main` supports L1 or above.
+**Current supportable claim: L0.** Nothing on `main` supports L1 or above. **F0 shows L1 is not
+merely unevidenced but currently unreachable from the stored corpus**: L1 ("repeatable internal
+signal") requires knowing what produced each score, and 0 of 480 reports record it.
 
 ## PROGRAM F GATE
 Passes only when evidence suffices for the *specific* intended claim; otherwise report the highest supportable lower claim. Never tune scoring to produce attractive statistics.
@@ -311,6 +346,15 @@ Passes only when evidence suffices for the *specific* intended claim; otherwise 
 ## Plan change log
 
 *(Append every material change as: PLAN CHANGE / Original / New / Reason / Evidence / Effect on downstream programs.)*
+
+**PLAN CHANGE 002** — 2026-08-20
+- **Original:** F1 = build the reliability harness.
+- **New:** F1 = build the harness **and** add forward provenance capture to the report write path.
+- **Reason:** F0-3 — 0 of 480 reports record the model that produced them, so every additional
+  report deepens a confound that cannot be fixed retrospectively.
+- **Evidence:** aggregate SQL: 480 reports, 46 with provenance, 0 with `model_version`.
+- **Effect downstream:** F2's design must caveat all pre-fix data; F5's claim ladder cannot reach
+  L1 on the existing corpus alone.
 
 **PLAN CHANGE 001** — 2026-08-20
 - **Original:** the mission brief implies merge decisions are ordinary engineering steps.

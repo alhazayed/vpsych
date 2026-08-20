@@ -385,6 +385,61 @@ Program B decision: REWORK REQUIRED
 
 ---
 
+## F0 · Instrument inventory
+
+```
+Milestone:            F0
+Program:              F — Assessment reliability and validity
+Status:               PASSED
+Source SHA:           97cf879
+Changes:              none — read-only source inspection + aggregate/structural SQL.
+                      NO Tier 1 analysis performed: OD-25 corpus authorization does not exist.
+                      No narrative, transcript, or per-learner score was read or exported.
+Evidence:             INSTRUMENT
+                        11 dimensions, max 5 each, weights summing to 100:
+                        risk_formulation 12 · dsm_reasoning 11 · icd_reasoning 11 ·
+                        alliance 10 · clinical_formulation 10 · differential_diagnosis 10 ·
+                        assessment 8 · educational_competency 8 · interventions 8 ·
+                        safety 8 · structure 4
+                        weightedOverall = Σ (score/max × 100 × weight/Σweight), rounded
+                        Weights hand-assigned, no documented derivation.
+
+                      F0-1 NO BEHAVIOURAL ANCHORS
+                        The examiner model receives only "id — label" per dimension.
+                        Nothing defines what 0 / 3 / 5 means.
+
+                      F0-2 NON-DETERMINISTIC SCORING
+                        temperature: 0.3 on the examiner call. Same transcript may score
+                        differently between runs.
+
+                      F0-3 SCORE PROVENANCE EFFECTIVELY ABSENT
+                        session_reports columns: id, session_id, scores, narrative,
+                        excerpts, created_at, language — no model/provider/prompt column.
+                        Of 480 reports (2026-07-30 → 2026-08-20):
+                          scientific_provenance present   46  (9.6%)
+                          assessment_schema_version       46  (9.6%)
+                          model_version non-null           0  (0.0%)
+
+Correction recorded: An initial reading of the table columns suggested no provenance existed
+                      at all. Structural inspection of the scores jsonb showed a
+                      scientific_provenance block does exist for a minority of reports. The
+                      finding was corrected before being recorded: provenance exists but is
+                      sparse, and model_version is null in every single report.
+
+Consequence:          The corpus cannot be stratified by model, provider, or prompt version.
+                      Default model, provider path and prompt engine all changed inside the
+                      collection window (Stages 6-12). Tier 1 estimates would carry an
+                      unmeasured confound that cannot be removed retrospectively. Protocol
+                      Rule 12.7.2 is retrospectively unevaluable. Partial recovery via
+                      created_at → deployment history → SHA is coarse; provider/model are
+                      env-driven and env history is not in git.
+Production affected:  NO
+Human review required: no for F0; yes for F2 (OD-21 + OD-25)
+Next allowed:         F1 (scope revised by PLAN CHANGE 002)
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
