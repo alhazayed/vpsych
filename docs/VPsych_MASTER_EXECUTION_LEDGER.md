@@ -581,6 +581,121 @@ Next allowed:         F1 (with the exclusion constraint above)
 
 ---
 
+## F-FIND-2 · itemTotalDiscrimination is degenerate and inflates AVI
+
+```
+Milestone:            F-FIND-2 (finding raised during F1 construction)
+Program:              F
+Status:               PASSED (characterised; shared helper NOT modified)
+Source SHA:           97cf879
+Changes:              none to the shared helper; the F1 harness avoids it by construction
+
+WHAT IT DOES
+  src/lib/scientific/psychometrics.ts
+    itemTotalDiscrimination(itemsMatrix, totals)
+      = pearson(itemsMatrix.map(row => mean(row)), totals)
+
+  cronbachAlpha documents the matrix as rows = subjects, cols = items. In that
+  orientation itemsMatrix.map(row => mean(row)) is the per-subject MEAN, and totals
+  are the per-subject TOTALS. total = k x mean, so the correlation is 1 by
+  construction. It is not an item statistic under any orientation — it never varies
+  by item.
+
+VERIFIED EMPIRICALLY (probe, removed after use):
+  6 subjects x 4 items, varied scores
+    cronbachAlpha        = 0.925      (correct, behaves sensibly)
+    discrimination_index = 1          (exactly 1)
+    vs unrelated totals  = -0.637     (only differs when totals are unrelated to the items)
+
+BLAST RADIUS (traced)
+  src/lib/avi/corpus.ts:193  summarizePsychometrics({overalls, itemMatrix, retest})
+  src/lib/avi/corpus.ts:244  discrimination_index: psy.discrimination_index
+  src/lib/avi/engine.ts:106-109
+      if (input.discrimination_index >= 0.3) score += 20;
+      else if (>= 0.15) score += 10;
+      else recs.push("Low item-total discrimination — revise weak items")
+
+  => The Assessment Validity Index awards its FULL +20 discrimination band on a metric
+     that cannot fail. The "revise weak items" recommendation is unreachable.
+     Same family as F-FIND-1: a psychometric output that reads as evidence and is not.
+
+  Exposure today is limited — the AVI corpus path is a simulation/corpus path and the
+  scientific score tables are largely empty — but the defect is in the scoring logic,
+  not in the data.
+
+WHY THE SHARED HELPER WAS NOT FIXED HERE
+  psychometrics.ts is consumed by avi/, eri/, validation/psychometric-engine and
+  scientific/outcomes-simulate. Changing it changes those outputs. That is a
+  behaviour change outside the RDL-035 scope and outside milestone F1, and §15
+  forbids bundling unrelated fixes. Raised as DP-04 instead.
+
+WHAT F1 DID INSTEAD
+  src/lib/assessment-reliability/reliability.ts computes a CORRECTED item-total
+  correlation — each item against the sum of the OTHER items — and does not import
+  itemTotalDiscrimination. A test asserts |r| < 1 for every item, which the degenerate
+  form could never satisfy.
+
+Production affected:  NO
+Human decision:       DP-04
+```
+
+## F1 · Assessment reliability harness
+
+```
+Milestone:            F1
+Program:              F
+Status:               PASSED
+Source SHA:           97cf879 (branch base)
+Changes:              src/lib/assessment-reliability/{types,reliability,extract,index}.ts
+                      src/lib/assessment-reliability/{reliability,calibration}.test.ts
+                      calibration/synthetic-corpus.json · calibration/README.md
+                      docs/ASSESSMENT_RELIABILITY.md
+                      package.json  + "test:reliability": "vitest run src/lib/assessment-reliability"
+                      CLAUDE.md     harness section updated (was "not shipped on main yet")
+Migration:            NONE   Schema: UNCHANGED   RLS: UNCHANGED   Runtime paths: UNCHANGED
+
+Tests executed:       lint · typecheck · vitest (full) · test:migrations · test:perf-smoke ·
+                      audit:deps · build · test:reliability
+Test results:         lint             PASS  0 errors / 13 warnings (unchanged set)
+                      typecheck        PASS
+                      vitest           PASS  743 tests / 90 files  (was 724 / 88; +19, +2)
+                      test:migrations  PASS  local structure
+                      perf-smoke       PASS
+                      audit:deps       PASS  0 vulnerabilities
+                      build            PASS
+                      test:reliability PASS  19 tests
+
+Calibration run (SYNTHETIC, 60 subjects, homogeneous configuration):
+                      cronbach alpha 0.95 · overall mean 45.15 (sd 17.48)
+                      weakest item: structure  corrected r 0.468, alpha-if-dropped 0.955
+                      => the harness recovered the dimension the fixture was built to
+                         make noisy. That is a test of the harness, not a finding about
+                         VPsych.
+
+Design decisions, each defensive:
+  - overall is READ from the stored report, never recomputed; weightedOverall is not forked
+  - corrected item-total correlation, not the degenerate shared helper (F-FIND-2)
+  - inter_rater_r never read (F-FIND-1); asserted absent from extracted subjects by test
+  - missing dimensions excluded, never zero-filled
+  - extraction reads ONLY numeric structure + provenance — no narrative, no excerpts, so
+    no transcript content can leave the admin boundary through this path (risk R-5)
+  - blocking[] returns null alpha instead of a number when the sample cannot support one
+  - limitations[] is ALWAYS non-empty; three entries are unconditional
+
+CI:                   deliberately NOT added as a separate CI step. `npm test` already runs
+                      these files, so a separate step would duplicate work for no coverage.
+                      test:reliability is the focused entry point.
+
+Scope NOT taken:      no run against the production corpus (that is F2, blocked on OD-21 +
+                      OD-25); no change to psychometrics.ts, eri/, or avi/; no change to the
+                      report write path or the HMAC-signed payload.
+Production affected:  NO
+Human review required: no for F1; yes for F2
+Next allowed:         F2 (BLOCKED on OD-21 + OD-25)
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
@@ -672,6 +787,13 @@ policy question, not an engineering one — it belongs with the psychometric aut
 
 **Not urgent in production:** traced and confirmed that the value reaches no dashboard and no GA
 gate today.
+
+**Second item now folded into this packet (F-FIND-2):** `itemTotalDiscrimination()` in
+`lib/scientific/psychometrics.ts` returns ≈1 by construction and awards the Assessment Validity
+Index its full +20 discrimination band on a metric that cannot fail. Fixing it changes the output
+of `avi/`, `eri/`, `validation/psychometric-engine` and `scientific/outcomes-simulate`, so it is a
+behaviour change outside RDL-035 scope. The F1 harness sidesteps it; the shared helper is
+untouched and still wrong.
 
 **Urgent for Program F:** F2 would read this field. F1 will exclude it by construction, and that
 constraint is recorded so it cannot be quietly lost.

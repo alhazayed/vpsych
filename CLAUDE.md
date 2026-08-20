@@ -25,6 +25,7 @@ npm run typecheck      # tsc --noEmit
 npm test               # vitest run  (724 tests / 88 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
+npm run test:reliability # assessment reliability harness (synthetic fixture)
 npm run audit:deps     # npm audit --omit=dev --audit-level=high
 npm run test:perf-smoke # performance smoke check
 ```
@@ -38,9 +39,11 @@ others miss.
 against git when `SUPABASE_DB_URL` is set; without it, only local structure is
 checked.
 
-Assessment reliability/calibration harness (`test:reliability`, `calibration/`,
-`docs/ASSESSMENT_RELIABILITY.md`) is **not shipped on main yet** — tracked as
-technical debt / `[v1.1]` (see `docs/TECHNICAL_DEBT.md`).
+Assessment reliability harness (`npm run test:reliability`, `src/lib/assessment-reliability/`,
+`calibration/`, `docs/ASSESSMENT_RELIABILITY.md`) **is shipped** (Phase 4 F1). It runs against a
+**synthetic** fixture only — pointing it at the production corpus is Program F2 and requires
+OD-21 + OD-25. It measures internal consistency and item structure; it does **not** validate
+anything, and its output must always be quoted with the `limitations` it returns.
 
 ## Layout
 

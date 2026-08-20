@@ -324,7 +324,12 @@ about *history*, not about missing machinery:
 
 **Effect on the plan:** F1 needs only the *runner*, not new provenance capture — see PLAN CHANGE 003.
 
-### F1 · Reliability harness (C-5 / CI-S05) — `NOT STARTED` (authorized by RDL-035; build is engineering, interpretation is not)
+### F1 · Reliability harness (C-5 / CI-S05) — `PASSED`
+- Shipped: `src/lib/assessment-reliability/` + `calibration/` + `docs/ASSESSMENT_RELIABILITY.md`
+  + `npm run test:reliability`. All gates green; **743 tests / 90 files** (was 724 / 88).
+- Synthetic calibration run recovers the deliberately noisy dimension — a test of the harness,
+  not a finding about VPsych.
+- No migration, no schema change, no runtime path touched, no production corpus access.
 - **Scope fixed by PLAN CHANGE 003 — build the runner only.** The statistical primitives already
   exist and are tested on `main`: `src/lib/scientific/psychometrics.ts` exports `cronbachAlpha`,
   `pearson`, `itemTotalDiscrimination`, `summarizePsychometrics`, covered by
@@ -337,7 +342,9 @@ about *history*, not about missing machinery:
 - **Flag for review:** `src/lib/eri/engine.ts` exports `simulateInterRaterAgreement(...)`. A
   *simulated* agreement figure must never be presented as reliability evidence. Whether it surfaces
   in any admin view should be checked before F2.
-### F2 · Retrospective corpus analysis (Tier 1) — `BLOCKED` (needs C7 psychometrician + C8 authorization)
+### F2 · Retrospective corpus analysis (Tier 1) — `BLOCKED` (needs OD-21 psychometrician + OD-25 authorization)
+- The harness is ready and the extraction layer already enforces aggregate-only, PHI-free access.
+- Usable configuration-controlled sub-sample: **46 reports** (F0-3).
 ### F3 · Blinded expert re-rating → inter-rater reliability — `BLOCKED`
 ### F4 · Fairness / EN-vs-AR bias analysis — `BLOCKED`
 ### F5 · Claim-ladder determination — `BLOCKED`
