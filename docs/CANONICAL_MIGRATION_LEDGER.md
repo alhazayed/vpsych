@@ -1,5 +1,55 @@
 # Canonical Migration Ledger
 
+> ## ⚠ SUPERSEDED — historical record, not a current inventory
+>
+> **Superseded:** 2026-08-20 · **Frozen at:** 2026-08-04 (54 migration files)
+> · **Actual today:** **75** migration files
+>
+> This ledger was accurate when generated and remains **valid evidence for RDL-003**
+> (the 54≡54 git↔production reconciliation). It is *not* a current list of migrations and
+> must not be used as one.
+>
+> **Do not use this file to answer "how many migrations are there" or "what is applied."**
+> The canonical sources are `supabase/migrations/` in git and
+> `supabase_migrations.schema_migrations` in the live project; `npm run test:migrations`
+> compares them when `SUPABASE_DB_URL` is set.
+>
+> Verified 2026-08-20: every one of the 54 ledger entries still has a matching file — nothing
+> was deleted or renamed — so this is a valid frozen **prefix**, not a diverged record. The
+> 21 migrations below were added after the ledger was frozen and appear nowhere in it.
+>
+> Regenerating the ledger is tracked as **ARCH-S2-07** in `docs/TECHNICAL_DEBT.md` and remains
+> open; it should be regenerated after the next remote parity run rather than patched by hand.
+>
+> <details>
+> <summary><strong>21 migrations added after this ledger was frozen</strong></summary>
+>
+> | Version | Name |
+> |---|---|
+> | `20260805130453` | `restore_session_message_rpc_owner_auth` |
+> | `20260805214500` | `quality_ledger_and_scientific_indices` |
+> | `20260806130513` | `cqg_harden_privileged_rpcs_ql_rls` |
+> | `20260806130749` | `cqg_append_ledger_body_gate` |
+> | `20260806131452` | `cqg_freeze_snapshot_signed_messages` |
+> | `20260806131604` | `cqg_freeze_snapshot_signed_messages_body` |
+> | `20260806135528` | `therapy_room_mode` |
+> | `20260806140000` | `therapy_room_vmhc` |
+> | `20260806143023` | `restore_session_message_rpc_owner_auth_qa` |
+> | `20260807093000` | `human_personality_engine` |
+> | `20260807094500` | `long_term_patient_memory` |
+> | `20260807112000` | `patient_ltm_rls_initplan` |
+> | `20260807120000` | `clinical_voice_profiles` |
+> | `20260807160000` | `scientific_validation_platform` |
+> | `20260807180000` | `enterprise_platform_stage10` |
+> | `20260807184117` | `institutional_feedback_ga` |
+> | `20260807184247` | `scientific_validation_platform` |
+> | `20260807184355` | `enterprise_platform_stage10` |
+> | `20260807185919` | `institutional_feedback_cidp` |
+> | `20260807191209` | `institutional_feedback_cidp_ops` |
+> | `20260811084442` | `admin_virtual_patient_lifecycle_rpcs` |
+>
+> </details>
+
 **Generated:** 2026-08-04 08:53 UTC
 **Canonical source:** git `supabase/migrations/`
 **Production project:** rrzudbkxigeavfdnidnm
