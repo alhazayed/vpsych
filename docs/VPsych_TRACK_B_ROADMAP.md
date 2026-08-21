@@ -33,7 +33,18 @@
 
 No appointment, no clinical judgement, no new authority. Ordered by value.
 
-### T1 · Close the forged `admin_test` vector — **highest value**
+### T1 · Close the forged `admin_test` vector — **DONE 2026-08-21 · vector CLOSED in production**
+
+**Completed.** PR #208 → `main` @ `30fd38a`; migration applied as `20260821084315` (RDL-038 chose
+the shape, RDL-039 records the application; ledger `T1` and `APPLY-01`). Verified by execution
+against the live database, both controls, transaction aborted so nothing was written: forged
+therapist INSERT **rejected `42501`**, legitimate admin INSERT **allowed**. **R-A4 closed.**
+**F-5 is moot for all future sessions.** The precondition this roadmap placed ahead of **OD-25** is
+therefore met.
+
+*Original entry retained below.*
+
+### T1 (original) · Close the forged `admin_test` vector — **highest value**
 **What:** A trainee can insert a session marked as an admin test, and their session is then never
 assessed — permanently, and invisibly to them. Re-verified live under C0: the sessions INSERT
 policy is `WITH CHECK (therapist_id = (SELECT auth.uid()))`; **nothing constrains the snapshot.**

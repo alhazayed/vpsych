@@ -1359,3 +1359,87 @@ Next allowed:         Apply the migration to production (separate authorization)
                       T2 provenance completeness. OD-25 is best authorized only after
                       this is applied.
 ```
+
+---
+
+## APPLY-01 · OD-27 guard applied to production — **the vector is CLOSED**
+
+```
+Milestone:            APPLY-01 (release event)
+Status:               PASSED
+Authorization:        RDL-039. Product owner: "merge 208 and apply the migration."
+                      Merge and apply treated as two separate authorized acts.
+Production affected:  YES — schema change (one trigger, one function). No data change.
+Applied version:      20260821084315 · schema_migrations 74 → 75
+```
+
+### Verified by execution, not by inspection
+
+The previous milestone (T1) could only claim the SQL existed. This one ran it. Both controls were
+executed **against the live database** inside a block that always ends in a deliberate `RAISE`, so
+the transaction aborts and nothing is committed:
+
+| Control | Setup | Result |
+|---|---|---|
+| **NEGATIVE** | therapist `sub` impersonated, INSERT with `{"admin_test": true}` | **rejected `42501`** |
+| **POSITIVE** | admin `sub`, identical INSERT | **allowed** |
+
+The positive control matters as much as the negative: it proves the legitimate Admin Test
+Conversation path still works and was not collaterally broken.
+
+**Nothing was written** — confirmed after the fact: 598 sessions, 1 admin-test session, newest row
+still `2026-08-20 12:35:03`.
+
+### Objects live in production
+
+```
+trigger  session_insert_guard  ON public.sessions   present (1)
+function enforce_session_insert_guard               present (1)
+```
+
+### A new divergence created by tooling — caught and corrected in the same milestone
+
+The apply tool stamped its **own** version, `20260821084315`, instead of the git filename
+`20260821083700`. **That is precisely the defect class A9 had just finished repairing** — an
+applied migration whose version does not exist in git.
+
+Corrected immediately by renaming the git file to `20260821084315_session_admin_test_insert_guard.sql`
+and re-measuring:
+
+| Direction | Result |
+|---|---|
+| **Remote-only (applied, absent from git)** | **∅ empty** — 75 applied, all present in git |
+| Local-only | `20260807160000`, `20260807180000` — the known annotated parity copies |
+
+The guardrail test matches on filename **suffix**, so the rename did not weaken it; re-run after
+rename: 44 passed.
+
+**Operational lesson worth carrying:** `apply_migration` does not honour a caller-supplied version.
+Any future use must be followed by re-measuring parity and renaming the git file to match, or the
+gap A9 closed reopens silently on every apply.
+
+### What is now true, and what is not
+
+**Closed:** a therapist can no longer mint a session carrying `clinical_snapshot.admin_test`.
+Scoring evasion by that route is not possible. **R-A4 is closed.**
+
+**Also resolved:** **F-5 is moot for every future session** — the contract ambiguity it named is
+unreachable when the marker cannot be forged. The 403 branch remains as defence in depth.
+
+**Unblocked downstream:** the Track B roadmap placed this ahead of **OD-25** precisely so corpus
+authorization would not be granted over a corpus exposed to selective non-assessment. That
+precondition is now met.
+
+**Not changed by this:** the two residuals recorded in RDL-038 stand — `auth.uid() IS NULL` inserts
+are permitted, and a blocked attempt cannot be audited from inside the aborted transaction.
+Out of scope and still open: direct INSERT also bypasses the `is_active` avatar check and the
+`start` rate limit.
+
+**No validity claim created.** Scores remain **not validated**; GA remains **NO-GO**; version
+`1.0.0-rc.1`; claim ladder **L0**.
+
+```
+Next allowed:         T2 provenance completeness. OD-25 may now be authorized without the
+                      selective-non-assessment caveat. OD-21 remains the gating appointment
+                      for F2–F5. OD-13 remains UNFILLED.
+```
