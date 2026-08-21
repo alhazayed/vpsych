@@ -92,7 +92,21 @@ the configuration that produced them was never recorded, and inventing it would 
 At ~3.3 reports/day, n=100 is reachable in ~16 days and n=200 in ~47 days **with no decision from
 anyone** — provided the writer never drops the block.
 
-### T3 · R-A3 — wire `SUPABASE_DB_URL` into CI — **NO ENGINEERING WORK REQUIRED**
+### T3 · R-A3 — wire `SUPABASE_DB_URL` into CI — **ONE ENGINEERING CHANGE, THEN A USER ACTION**
+
+**Corrected again 2026-08-21 (RDL-042).** The claim immediately below — that no engineering work was
+required — was checked but incomplete. The workflow wiring was verified; the **dependency** was not.
+`scripts/verify-migration-parity.mjs` imports `pg` lazily and `pg` was not installed, so adding the
+secret would have turned CI **red** rather than enabling the check. `pg` is now a devDependency,
+verified in both directions.
+
+**Remaining action is yours:** add the `SUPABASE_DB_URL` repository secret, using the **Session
+pooler** string (port 5432) — *not* the Direct connection, which is IPv6-only and unreachable from
+GitHub-hosted runners.
+
+*Superseded text retained below.*
+
+### T3 (superseded) · R-A3 — "NO ENGINEERING WORK REQUIRED"
 
 **Corrected 2026-08-21.** This roadmap implied a code change. There isn't one:
 `.github/workflows/ci.yml` **already** passes `SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}` to
