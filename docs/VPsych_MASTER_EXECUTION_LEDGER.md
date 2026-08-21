@@ -868,8 +868,8 @@ pending DP-01.
 ## DP-04 · Simulated inter-rater agreement + degenerate discrimination — **RESOLVED 2026-08-21**
 
 **Decision taken by the product owner:** fix both. Implemented and verified — see
-F-FIND-1-FIX / F-FIND-2-FIX above. **Recommended follow-up: an RDL row** recording that
-RDL-035's closed scope was extended to cover these two scoring corrections.
+F-FIND-1-FIX / F-FIND-2-FIX above. **Scope extension recorded as RDL-036** (2026-08-21), so the
+governance ledger now carries the authorization rather than the commit message alone.
 
 *Original packet retained below for traceability.*
 
