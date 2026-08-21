@@ -59,9 +59,29 @@ export type SampleProvenance = {
   distinct_models: string[];
   distinct_prompt_versions: string[];
   distinct_ai_sources: string[];
-  /** True only when the sample is homogeneous on model AND prompt version. */
+  /**
+   * Assessment modes present — `llm_examiner` and/or `heuristic_fallback`.
+   *
+   * These are NOT the same instrument. `buildAssessmentProvenance` labels
+   * heuristic scoring "not a validated OSCE instrument"; pooling it with
+   * examiner scores measures the mixture, not either one (F-FIND-3).
+   */
+  distinct_assessment_modes: string[];
+  /** Subjects scored by the heuristic keyword fallback rather than the examiner. */
+  subjects_heuristic_fallback: number;
+  /**
+   * True only when the sample is homogeneous on model AND prompt version AND
+   * assessment mode, and every subject carries a model. A heuristic-fallback
+   * subject has a null model, which used to leave this `true` because null was
+   * dropped before the distinctness check — fixed under F-FIND-3.
+   */
   configuration_homogeneous: boolean;
-  /** Subjects whose provenance was absent entirely. */
+  /**
+   * Subjects whose provenance is incomplete — missing a model OR a prompt
+   * version. Counts partial records, not only wholly absent ones: a
+   * heuristic-fallback report carries a prompt version but no model, and
+   * counting only the both-missing case hid it entirely (F-FIND-3).
+   */
   subjects_missing_provenance: number;
 };
 

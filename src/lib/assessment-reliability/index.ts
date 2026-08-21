@@ -21,6 +21,7 @@ export type {
 } from "@/lib/assessment-reliability/types";
 
 export {
+  HEURISTIC_FALLBACK_MODE,
   MIN_SUBJECTS_FOR_ALPHA,
   RELIABILITY_HARNESS_VERSION,
   SMALL_SAMPLE_THRESHOLD,
@@ -29,6 +30,7 @@ export {
 
 export type { StoredReportLike } from "@/lib/assessment-reliability/extract";
 export {
+  excludeHeuristicFallback,
   filterToConfiguration,
   subjectFromStoredReport,
   subjectsFromStoredReports,

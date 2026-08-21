@@ -1443,3 +1443,98 @@ Next allowed:         T2 provenance completeness. OD-25 may now be authorized wi
                       selective-non-assessment caveat. OD-21 remains the gating appointment
                       for F2–F5. OD-13 remains UNFILLED.
 ```
+
+---
+
+## T2 · Provenance completeness — and **F-FIND-3**, found while verifying it
+
+```
+Milestone:            T2 (Track B roadmap §1)
+Status:               PASSED — with a finding the roadmap did not predict
+Source SHA:           30fd38a (main)
+Authorization:        RDL-040. Track B §1 item, cleared without a CGL by RDL-037;
+                      within the C-5 scope RDL-035 closed.
+Production affected:  NO — no migration, no schema, no stored report altered.
+```
+
+### T2 as scoped: there was nothing to fix
+
+The roadmap assumed reports were still being written without provenance. **They are not.**
+`assessment.ts` attaches `scientific_provenance` on **both** return paths — the examiner path via
+`buildAssessmentProvenance(...)`, and the heuristic-fallback path via the same builder with
+`model: null`. So the 434 reports lacking it are purely historical: the block landed 2026-08-06,
+and the configuration that produced the earlier ones was never recorded, so they **cannot be
+backfilled without fabricating it**.
+
+What *was* worth doing is protecting the forward path. A guardrail now asserts that every persisted
+scores blob pairs with a provenance write **inside the same object literal** — not merely that the
+string appears somewhere in the file, which a new blob could satisfy without carrying provenance.
+
+**Verified able to fail.** My first version of this test asserted provenance on the immediately
+preceding line; that was wrong — the examiner blob's `buildAssessmentProvenance({ … })` spans
+several lines — and the test correctly failed against correct code. Corrected to a bounded upward
+window, then negative-controlled by deleting the examiner blob's provenance:
+`scores blob at line 579 has no scientific_provenance above it`. Restored: 45 passed.
+
+### F-FIND-3 — the harness could not see a degraded instrument
+
+Found while checking whether fallback-scored reports could contaminate a sample.
+
+**Demonstrated before being fixed**, on a 3-examiner + 1-fallback sample:
+
+| Property | Before | Should be |
+|---|---|---|
+| `configuration_homogeneous` | **`true`** | `false` |
+| `subjects_missing_provenance` | **`0`** | `1` |
+| limitations naming the fallback | **`0`** | ≥1 |
+
+**Two independent causes, both silent:**
+
+1. `uniqueDefined()` **drops nulls** before the distinctness check. A fallback subject's `ai_model`
+   is null, so `distinct_models` stayed `["gpt-5-…"]` — length 1 — and homogeneity held.
+2. `subjects_missing_provenance` required **both** model and prompt version to be absent. A fallback
+   row carries `prompt_engine_version: "2.0.0"`, so it was not counted as missing either.
+
+The result: a sample pooling keyword-scored reports — which the source module itself calls *"not a
+validated OSCE instrument"* — with examiner scores was reported as **one clean configuration, with
+no warning of any kind**.
+
+### The fix
+
+- `configuration_homogeneous` now additionally requires a single `assessment_mode` and zero
+  incomplete provenance records.
+- `subjects_missing_provenance` counts **incomplete** records (missing *either* field), not only
+  wholly absent ones.
+- `distinct_assessment_modes` and `subjects_heuristic_fallback` added to `SampleProvenance`.
+- A named limitation fires whenever fallback subjects are present, telling the reader to exclude them.
+- `excludeHeuristicFallback()` added to `extract.ts` and exported from the barrel.
+
+**Five regression tests, all verified against the pre-fix module:** `5 failed | 13 passed` before,
+`24 passed` after.
+
+### Gates
+
+```
+audit:deps 0 vulns · lint 0 errors/13 warnings · typecheck clean
+vitest 760 passed / 91 files · test:reliability · migrations · perf smoke · build
+```
+
+### Scope and honesty
+
+**Nothing stored changed.** This touches only the harness's own in-memory output, which is never
+persisted and reaches no user-facing surface. The fallback path itself is unchanged — it was already
+labelling itself correctly at write time; the defect was that the harness **ignored the label**.
+
+**Consequence for F2:** a corpus analysis run before this would have been able to pool two different
+instruments and call the sample homogeneous. **F2 has not run** — OD-21 and OD-25 are both
+unresolved — so no analysis was affected. The defect is closed before the first real run rather
+than after it.
+
+**Still true:** competency scores remain **not validated** · GA **NO-GO** · `1.0.0-rc.1` · claim
+**L0** · **OD-13 UNFILLED**.
+
+```
+Next allowed:         T3 (CI parity secret) · T5 (HIBP) · T7 (stale premises) · T8 (test–retest
+                      harness) · T6 (voice numeric fix) · T4 (restore test). All Track B §1,
+                      none requiring a new appointment.
+```

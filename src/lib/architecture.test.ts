@@ -1067,6 +1067,32 @@ describe("architecture invariants", () => {
     expect(start).not.toMatch(/adminTest/);
   });
 
+  it("T2 — every persisted scores blob carries scientific_provenance", () => {
+    // Only 46 of 480 production reports carry provenance, because the block was
+    // introduced 2026-08-06. Those 434 cannot be backfilled — the configuration
+    // that produced them was never recorded. What CAN be protected is the
+    // forward path: a new scores blob that forgets provenance would silently
+    // shrink the analysable corpus again, and nothing else would notice.
+    const src = readFileSync(join(root, "lib/ai/assessment.ts"), "utf8");
+    const lines = src.split("\n");
+    const blobs = lines
+      .map((line, i) => ({ line, i }))
+      .filter(({ line }) => /assessment_schema_version:\s*ASSESSMENT_SCHEMA_VERSION/.test(line));
+
+    expect(blobs.length).toBeGreaterThanOrEqual(2);
+    for (const { i } of blobs) {
+      // Assert the pairing within the same object literal — not merely that the
+      // string appears somewhere in the file, which a new blob could satisfy
+      // without carrying provenance itself. The window spans the multi-line
+      // buildAssessmentProvenance({ ... }) call in the examiner path.
+      const window = lines.slice(Math.max(0, i - 12), i);
+      expect(
+        window.some((l) => /scientific_provenance:/.test(l)),
+        `scores blob at line ${i + 1} has no scientific_provenance above it`,
+      ).toBe(true);
+    }
+  });
+
   it("OD-27 — a database INSERT guard closes the forged admin_test vector", () => {
     // The application strips the marker on the learner path, but a direct table
     // INSERT bypasses that route. The database-layer guard is what actually closes

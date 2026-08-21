@@ -64,7 +64,22 @@ skip" in §5.2 while the implemented rule is 403). That is a product-owner call.
 
 **Deliverable:** migration (trigger or RPC) + guardrail test + RDL row.
 
-### T2 · Provenance completeness — makes the corpus analysable
+### T2 · Provenance completeness — **DONE 2026-08-21**
+
+**Completed, and the finding was not what the roadmap predicted.** Investigation showed the writer
+already attaches `scientific_provenance` on **both** paths — examiner and heuristic fallback — so the
+434 missing records are purely historical (the block landed 2026-08-06) and there is no ongoing leak
+to plug. A guardrail now asserts every persisted scores blob carries provenance, so the forward path
+cannot regress.
+
+**The real defect was downstream, in the harness (F-FIND-3):** a sample mixing keyword-scored rows
+with examiner-scored rows reported `configuration_homogeneous: true`,
+`subjects_missing_provenance: 0`, and no warning. Fixed, with `excludeHeuristicFallback()` added.
+See ledger `T2 / F-FIND-3` and **RDL-040**.
+
+*Original entry retained below.*
+
+### T2 (original) · Provenance completeness — makes the corpus analysable
 **Measured today:** 480 reports · **46** carry `scores.scientific_provenance.ai_model` +
 `prompt_engine_version` · 1 model (`gpt-5-2025-08-07`) · 1 prompt version (`2.0.0`) · earliest
 complete 2026-08-06.

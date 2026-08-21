@@ -44,17 +44,43 @@ function uniqueDefined(values: (string | null | undefined)[]): string[] {
   return [...new Set(values.filter((v): v is string => typeof v === "string" && v.length > 0))].sort();
 }
 
+/** Assessment mode label used for heuristic keyword scoring, not the examiner. */
+export const HEURISTIC_FALLBACK_MODE = "heuristic_fallback";
+
 function summarizeProvenance(subjects: ReliabilitySubject[]): SampleProvenance {
   const models = uniqueDefined(subjects.map((s) => s.ai_model));
   const prompts = uniqueDefined(subjects.map((s) => s.prompt_engine_version));
   const sources = uniqueDefined(subjects.map((s) => s.ai_source));
-  const missing = subjects.filter((s) => !s.ai_model && !s.prompt_engine_version).length;
+  const modes = uniqueDefined(subjects.map((s) => s.assessment_mode));
+  const fallback = subjects.filter(
+    (s) => s.assessment_mode === HEURISTIC_FALLBACK_MODE,
+  ).length;
+
+  // Incomplete means missing EITHER field. Counting only the both-missing case
+  // silently passed heuristic-fallback rows, which carry a prompt version but a
+  // null model (F-FIND-3).
+  const missing = subjects.filter(
+    (s) => !s.ai_model || !s.prompt_engine_version,
+  ).length;
+
+  // `uniqueDefined` drops nulls, so a null model cannot be relied on to widen
+  // `distinct_models`. Homogeneity therefore also requires that no subject is
+  // missing provenance and that only one assessment mode is present.
+  const homogeneous =
+    subjects.length > 0 &&
+    models.length === 1 &&
+    prompts.length === 1 &&
+    modes.length <= 1 &&
+    missing === 0;
+
   return {
     n_subjects: subjects.length,
     distinct_models: models,
     distinct_prompt_versions: prompts,
     distinct_ai_sources: sources,
-    configuration_homogeneous: models.length === 1 && prompts.length === 1,
+    distinct_assessment_modes: modes,
+    subjects_heuristic_fallback: fallback,
+    configuration_homogeneous: homogeneous,
     subjects_missing_provenance: missing,
   };
 }
@@ -146,7 +172,15 @@ export function computeReliabilityReport(
   }
   if (provenance.subjects_missing_provenance > 0) {
     limitations.push(
-      `${provenance.subjects_missing_provenance} of ${subjects.length} subjects carry no model/prompt provenance.`,
+      `${provenance.subjects_missing_provenance} of ${subjects.length} subjects carry incomplete model/prompt provenance.`,
+    );
+  }
+  if (provenance.subjects_heuristic_fallback > 0) {
+    limitations.push(
+      `${provenance.subjects_heuristic_fallback} of ${subjects.length} subjects were scored by the HEURISTIC KEYWORD FALLBACK, not the LLM examiner. ` +
+        "The source module labels that path \"not a validated OSCE instrument\". Pooling it with examiner scores " +
+        "measures the mixture rather than either instrument — exclude it with excludeHeuristicFallback() before " +
+        "quoting any statistic here.",
     );
   }
   if (subjects.length > 0 && subjects.length < SMALL_SAMPLE_THRESHOLD) {

@@ -116,6 +116,20 @@ export function filterToConfiguration(
   });
 }
 
+/**
+ * Drop subjects scored by the heuristic keyword fallback.
+ *
+ * That path is a degradation route, not the examiner. `buildAssessmentProvenance`
+ * attaches the limitation "Heuristic keyword scoring is a degradation path, not a
+ * validated OSCE instrument" to exactly these rows, so pooling them with examiner
+ * scores measures the mixture rather than either instrument (F-FIND-3).
+ */
+export function excludeHeuristicFallback(
+  subjects: ReliabilitySubject[],
+): ReliabilitySubject[] {
+  return subjects.filter((s) => s.assessment_mode !== "heuristic_fallback");
+}
+
 /** Subjects that carry a complete model + prompt-version provenance record. */
 export function withCompleteProvenance(
   subjects: ReliabilitySubject[],

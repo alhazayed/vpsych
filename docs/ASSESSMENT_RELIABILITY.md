@@ -25,7 +25,7 @@
 The overall score is **read from the stored report, never recomputed**. `weightedOverall()` in
 `lib/ai/assessment.ts` remains the single owner of that formula and must not be forked.
 
-## 2. Three deliberate design decisions
+## 2. Four deliberate design decisions
 
 **2.1 Corrected item–total correlation, per item.** Each item is correlated against the sum of the
 *other* items, not against a total that contains it. The shared
@@ -44,16 +44,35 @@ reports is permanent, not transitional. Asserted by test.
 **2.3 Missing dimensions are excluded, not zero-filled.** A dimension absent from any subject is
 dropped from the whole analysis. Zero-filling silently deflates both that item and α.
 
+**2.4 Heuristic-fallback scores are not the same instrument** (**fixed under F-FIND-3**). When no AI
+key is configured, or the examiner call fails, assessment degrades to keyword scoring —
+`buildAssessmentProvenance` labels that path *"not a validated OSCE instrument"*. Pooling those rows
+with examiner rows measures the mixture, not either one.
+
+The harness previously could not see them. `uniqueDefined()` dropped the fallback row's **null**
+`ai_model` before the distinctness check, so `distinct_models` stayed length 1 and
+`configuration_homogeneous` reported **true**; and `subjects_missing_provenance` required *both*
+model and prompt version to be absent, while a fallback row carries a prompt version. A sample of
+examiner scores plus keyword scores was therefore reported as one clean configuration with **no
+warning at all**.
+
+Now: `configuration_homogeneous` also requires a single `assessment_mode` and that no subject is
+missing provenance; `subjects_missing_provenance` counts incomplete records, not only wholly absent
+ones; `distinct_assessment_modes` and `subjects_heuristic_fallback` are reported; and a named
+limitation fires. Use `excludeHeuristicFallback()` before quoting any statistic.
+
 ## 3. Output contract
 
 `computeReliabilityReport(subjects)` returns a `ReliabilityReport` carrying `cronbach_alpha`,
-per-item `ItemStatistics`, sample `provenance`, and two string arrays:
+per-item `ItemStatistics`, sample `provenance` (including `distinct_assessment_modes` and
+`subjects_heuristic_fallback`), and two string arrays:
 
 - **`blocking`** — the report is not interpretable (fewer than 2 subjects, or fewer than 2 common
   dimensions). α is `null`, not a number.
 - **`limitations`** — non-fatal conditions that bound interpretation. **Always non-empty.**
   Three are unconditional: non-deterministic scoring, absent behavioural anchors, and the excluded
-  simulated inter-rater value.
+  simulated inter-rater value. A fourth fires whenever the sample contains heuristic-fallback
+  subjects (§2.4).
 
 A statistic from this harness should never be quoted without its `limitations`.
 
