@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   MIN_SUBJECTS_FOR_ALPHA,
   computeReliabilityReport,
+  excludeHeuristicFallback,
   filterToConfiguration,
   subjectFromStoredReport,
   subjectsFromStoredReports,
@@ -205,5 +206,81 @@ describe("extraction from stored reports", () => {
     expect(
       filterToConfiguration(mixed, { model: "gpt-5", promptVersion: "9.9.9" }),
     ).toHaveLength(0);
+  });
+});
+
+describe("F-FIND-3 — heuristic-fallback subjects cannot masquerade as one configuration", () => {
+  function subject(
+    mode: string,
+    model: string | null,
+    seed: number,
+  ): ReliabilitySubject {
+    return {
+      overall: 60 + seed,
+      items: [
+        { id: "alliance", score: 3, max: 5, weight: 1 },
+        { id: "empathy", score: 4, max: 5, weight: 1 },
+        { id: "risk", score: 2, max: 5, weight: 1 },
+      ],
+      ai_model: model,
+      ai_source: model ? "gpt" : "persona_fallback",
+      prompt_engine_version: "2.0.0",
+      assessment_mode: mode,
+    };
+  }
+
+  const mixed = [
+    subject("llm_examiner", "gpt-5-2025-08-07", 1),
+    subject("llm_examiner", "gpt-5-2025-08-07", 2),
+    subject("llm_examiner", "gpt-5-2025-08-07", 3),
+    subject("heuristic_fallback", null, 4),
+  ];
+
+  it("does not call a mixed-instrument sample configuration-homogeneous", () => {
+    const report = computeReliabilityReport(mixed);
+    // Before the fix this was `true`: uniqueDefined() dropped the null model, so
+    // distinct_models stayed length 1 and the keyword-scored row was invisible.
+    expect(report.provenance.configuration_homogeneous).toBe(false);
+  });
+
+  it("counts a partial provenance record as incomplete", () => {
+    const report = computeReliabilityReport(mixed);
+    // Before the fix this was 0: the fallback row carries a prompt version, and
+    // the old test required BOTH fields to be absent.
+    expect(report.provenance.subjects_missing_provenance).toBe(1);
+  });
+
+  it("names the fallback subjects in an explicit limitation", () => {
+    const report = computeReliabilityReport(mixed);
+    expect(report.provenance.subjects_heuristic_fallback).toBe(1);
+    expect(report.provenance.distinct_assessment_modes).toEqual([
+      "heuristic_fallback",
+      "llm_examiner",
+    ]);
+    expect(
+      report.limitations.some((l) => /HEURISTIC KEYWORD FALLBACK/.test(l)),
+    ).toBe(true);
+  });
+
+  it("excludeHeuristicFallback restores a clean, homogeneous sample", () => {
+    const clean = excludeHeuristicFallback(mixed);
+    expect(clean).toHaveLength(3);
+    const report = computeReliabilityReport(clean);
+    expect(report.provenance.configuration_homogeneous).toBe(true);
+    expect(report.provenance.subjects_missing_provenance).toBe(0);
+    expect(report.provenance.subjects_heuristic_fallback).toBe(0);
+    expect(
+      report.limitations.some((l) => /HEURISTIC KEYWORD FALLBACK/.test(l)),
+    ).toBe(false);
+  });
+
+  it("an all-fallback sample is still flagged, not silently accepted", () => {
+    const allFallback = [
+      subject("heuristic_fallback", null, 1),
+      subject("heuristic_fallback", null, 2),
+    ];
+    const report = computeReliabilityReport(allFallback);
+    expect(report.provenance.configuration_homogeneous).toBe(false);
+    expect(report.provenance.subjects_heuristic_fallback).toBe(2);
   });
 });
