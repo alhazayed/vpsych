@@ -1089,3 +1089,80 @@ Next allowed:         PROGRAM A GATE re-review → Program C0 (re-derive live op
                       Merge of this work requires explicit authorization: under OF-2, merging to
                       main deploys production.
 ```
+
+---
+
+## C0 · Re-derive the live open-decision set — **EXECUTED 2026-08-21**
+
+```
+Milestone:            C0
+Program:              C — Governance activation
+Status:               PASSED
+Source SHA:           c62921a
+Changes:              none — read-only re-measurement
+Production affected:  NO — aggregate counts and schema/policy introspection only.
+                      No narrative, transcript, or learner-identifying field was read.
+```
+
+**Method:** every open decision whose entry rests on a *checkable factual premise* was re-measured
+against production and the current tree. Decisions resting on judgement alone (OD-1, OD-9, OD-10,
+OD-14…) have no premise to re-derive and are unchanged.
+
+### Premises re-measured
+
+| Premise as registered | Measured 2026-08-21 | Verdict |
+|---|---|---|
+| **OD-11** — "the **five** currently published avatars" | **5 avatars total**: 2 `published`, 2 `draft`, 1 `testing`, 0 `archived` | **STALE — and the error is a conflation.** The register counted *all* avatars as published. The grandfathering deadline governs **2** avatars, not 5. |
+| **OD-25** — corpus of "583 sessions / 466 reports / 130 competency rows" | **598** sessions · **480** reports · **130** competency rows | **STALE in two of three.** Competency rows are exact. The corpus grew ~2.6% during Phase 4; still small. |
+| **OD-8** — "17 disorder IDs are declared, 11 have packages" | **17** rows in `public.disorders`; **11** disorder slugs in `src/lib/case-engine/catalog.ts` | **CURRENT — reproduces exactly.** The six: `asd`, `eating-disorders`, `ocd`, `pdd`, `schizoaffective`, `social-anxiety`. The register's "`asd` and `eating` especially" both fall in that set. |
+| **OD-27** — a therapist can direct-INSERT `clinical_snapshot.admin_test = true`; sessions INSERT RLS constrains only `therapist_id` | Live policy `Therapists can create own sessions`, `WITH CHECK (therapist_id = (SELECT auth.uid()))` — **nothing constrains `clinical_snapshot`** | **CURRENT — defect live, unremediated.** |
+| **OD-13 / OD-20 / OD-21 / OD-25** appointments | RDL ends at **RDL-036**; **no appointment row of any kind exists** | **CURRENT — all UNFILLED.** Program C's root blocker stands. |
+
+### A near-miss worth recording
+
+The first `disorders` probe returned **17 of 17 with a non-null `package`**, which reads as
+"OD-8 is stale, all disorders are packaged." That would have been the F0-3 failure repeated —
+a conclusion drawn from the wrong field. Inspecting the package *contents* instead shows two
+distinct schemas:
+
+- **Full teaching package (9 keys)** — `common_therapist_mistakes · differentials · ideal_approach ·
+  risk_defaults · rule_outs · session_goals · severity_default · symptom_domains · teaching_points`
+  → **5 disorders** (`adult-adhd`, `alcohol-use-disorder`, `gad-with-panic`,
+  `mdd-recurrent-moderate`, `ptsd`).
+- **Stub (6 keys)** — `symptom_profile` in place of `symptom_domains`, and **no** `differentials`,
+  `rule_outs`, `teaching_points`, or `common_therapist_mistakes` → **12 disorders**.
+
+**New gap, not previously registered:** OD-8 tracks the **6** disorders absent from the code
+catalog. It does **not** track that **12 of 17** DB rows carry no differentials, rule-outs, or
+teaching points. Those are different sets on different axes, and the second is unowned. Flagged for
+the CGL rather than resolved here — what a disorder package must contain is a clinical-content
+judgement (**OD-26** territory), not an engineering one.
+
+### OD-27 — refinement, not downgrade
+
+The vector is **detected and audited**, which the register did not record. On end, a forged marker
+is caught by `assertAdminTestSkipAllowed` (`reason: "not_admin"`), written to
+`security_audit_events` as `admin.avatar.test_session.forged_skip_denied`, and answered **403**.
+
+That does not close it. **The 403 returns before the assessment pipeline**, so the outcome is
+exactly what the register describes: the session is permanently unassessed. The learner-facing
+create path *does* strip the marker (`stripAdminTestMarker`, `src/app/api/sessions/route.ts:137`) —
+but the vector bypasses that route entirely by writing to the table. **The application-layer guard
+exists; the database-layer one does not.** Of the three remediation shapes, only the third —
+constrain the snapshot at INSERT — addresses it, and it remains untaken.
+
+**Not re-verified:** the register's further claim that a forged session is hidden from the
+therapist's own history. Out of scope for a read-only pass; left as registered.
+
+### Register status after C0
+
+**27 decisions remain open. None was closed by this pass** — re-deriving premises does not decide
+anything. Three entries need a factual correction before they are acted on (OD-11, OD-25, and the
+OD-8 scope note above); the rest reproduce as written.
+
+```
+Next allowed:         C1–C9 remain HUMAN DECISION REQUIRED, rooted at OD-13.
+                      Programs D and E stay BLOCKED behind C.
+                      F2–F5 stay BLOCKED on OD-21 + OD-25.
+                      No unblocked engineering milestone remains in this plan.
+```

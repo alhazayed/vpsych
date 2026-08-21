@@ -255,8 +255,24 @@ satisfied by inspection at all. Human listening results have not been invented.
 
 **Objective:** establish the minimum authority required before Program D may legitimately build.
 
-### C0 · Re-derive the live open-decision set — `NOT STARTED`
-- Re-check the 27-decision register against current state (at least one entry, OD-11's "five published avatars", is already **STALE** — production has 2).
+### C0 · Re-derive the live open-decision set — `PASSED 2026-08-21`
+Every decision resting on a checkable factual premise was re-measured against production. Full
+evidence in ledger entry **C0**. **27 decisions remain open; none was closed** — re-deriving a
+premise decides nothing.
+
+| Premise | Verdict |
+|---|---|
+| OD-11 "five currently published avatars" | **STALE** — 5 avatars *total*: 2 published, 2 draft, 1 testing. The register conflated total with published; the deadline governs **2**. |
+| OD-25 corpus "583 sessions / 466 reports / 130 competency rows" | **STALE in two of three** — now **598 / 480 / 130**. |
+| OD-8 "17 declared, 11 have packages" | **CURRENT, exact** — 17 DB rows vs 11 slugs in `case-engine/catalog.ts`. The six: `asd`, `eating-disorders`, `ocd`, `pdd`, `schizoaffective`, `social-anxiety`. |
+| OD-27 forged `admin_test` | **CURRENT — live and unremediated.** Live sessions INSERT policy is `WITH CHECK (therapist_id = (SELECT auth.uid()))`; nothing constrains `clinical_snapshot`. Detected and audited at end, then **403 before the assessment pipeline** — so the session stays permanently unassessed. |
+| OD-13 / OD-20 / OD-21 / OD-25 appointments | **CURRENT — all UNFILLED.** RDL ends at RDL-036 with no appointment row. |
+
+**New gap surfaced, unowned:** OD-8 tracks the 6 disorders missing from the code catalog. It does
+not track that **12 of 17** DB rows carry only a 6-key stub package — no `differentials`,
+`rule_outs`, `teaching_points`, or `common_therapist_mistakes`; only **5** carry the full 9-key
+teaching schema. Different sets, different axes. Referred to the CGL (OD-26 territory);
+**engineering must not decide what a disorder package must contain.**
 
 ### C1 · Appoint the Clinical Governance Lead (OD-13) — `HUMAN DECISION REQUIRED` — **root blocker**
 ### C2 · Adopt / reject / amend `VP-CLIN-PROTOCOL v1.0-draft` (OD-1, incl. DEF-1) — `HUMAN DECISION REQUIRED`
