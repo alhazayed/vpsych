@@ -102,7 +102,26 @@ async function main() {
 
   const dbUrl = process.env.SUPABASE_DB_URL?.trim();
   if (!dbUrl) {
-    console.log("\nSkipping remote parity (SUPABASE_DB_URL unset). Local structure OK.");
+    // Do not let a skipped check read as a passed one. Program A found a real
+    // git-vs-production divergence that this gate had been reporting green
+    // through, because the remote half never ran. State both facts separately.
+    console.log("\nLocal structure OK (filenames, versions, uniqueness).");
+    console.log(
+      "REMOTE PARITY NOT CHECKED — SUPABASE_DB_URL is unset, so git was never " +
+        "compared against supabase_migrations.schema_migrations.",
+    );
+    console.log(
+      "  This does NOT establish that git can rebuild the deployed schema. " +
+        "Set SUPABASE_DB_URL to check, or run VPSYCH_REQUIRE_REMOTE_PARITY=1 to " +
+        "make the omission a hard failure.",
+    );
+    if (process.env.VPSYCH_REQUIRE_REMOTE_PARITY === "1") {
+      console.error(
+        "\nVPSYCH_REQUIRE_REMOTE_PARITY=1 but SUPABASE_DB_URL is unset — refusing to " +
+          "report parity that was not verified.",
+      );
+      process.exit(1);
+    }
     process.exit(0);
   }
 
