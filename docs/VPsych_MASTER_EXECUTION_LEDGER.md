@@ -1166,3 +1166,86 @@ Next allowed:         C1–C9 remain HUMAN DECISION REQUIRED, rooted at OD-13.
                       F2–F5 stay BLOCKED on OD-21 + OD-25.
                       No unblocked engineering milestone remains in this plan.
 ```
+
+---
+
+## MERGE-02 · PR #205 merged to main and auto-deployed to production
+
+```
+Milestone:            MERGE-02 (release event, not a program milestone)
+Status:               PASSED
+Authorization:        Product owner instruction "merge 205", 2026-08-21, given after the
+                      merge-means-deploy consequence (OF-2) had been restated in-session
+                      and in the PR body. Informed authorization for BOTH the merge and
+                      the production deployment it necessarily causes.
+
+PRE-MERGE VERIFICATION (per governing mission §16)
+  CI on head 36e9dc9   verify = success (run 32461460687), completed 08:05:55Z
+  Review threads       none
+  mergeable_state      clean
+  Base                 696575e = main at merge time (no drift, no conflict)
+  Diff scope           4 files, +442/-11
+                         docs/VPsych_MASTER_EXECUTION_LEDGER.md
+                         docs/VPsych_MASTER_EXECUTION_PLAN.md
+                         scripts/verify-migration-parity.mjs
+                         supabase/migrations/20260808172816_avatar_lifecycle_status.sql (new)
+                       NO src/ file of any kind
+                       => the deployed application bundle is unchanged; scripts/ is not
+                          part of the Next build, and Vercel does not run migrations.
+
+MERGE
+  Method               squash (repo convention — #200, #201, #203, #204)
+  Resulting SHA        f76a07a  on main
+  PR state             merged; branch restarted from main for follow-up work
+
+PRODUCTION DEPLOYMENT (automatic, per OF-2)
+  Deployment           dpl_CwRMrTYMTsDuDdzY8rpsN2da8nYe
+  Target               production · region iad1 · commit f76a07a (verified signature)
+  State                READY, build 48.5s; aliasError: null
+  Aliased to           vpsych.vercel.app (production domain)
+                       + vpsych-alhazayed-1540s-projects.vercel.app
+                       + vpsych-git-main-alhazayed-1540s-projects.vercel.app
+
+POST-DEPLOY VERIFICATION (live site, not inferred from deploy state)
+  GET /api/health      200 OK
+                       {"ok":true,"service":"vpsych","version":"1.0.0-rc.1",
+                        "certId":"VPSYCH-1.0-RC1-STAGE12"}
+  Version on prod      1.0.0-rc.1 — UNCHANGED
+  Security headers     intact on the live response: CSP with the documented connect-src
+                       allow-list, HSTS max-age 63072000 preload, COOP same-origin,
+                       CORP same-site, Permissions-Policy (microphone=(self)),
+                       X-Frame-Options DENY, X-Content-Type-Options nosniff
+  API cache posture    cache-control: no-store on /api/*
+
+DATABASE VERIFIED UNAFFECTED (the point of the change — it must NOT have applied anything)
+  applied_migrations   74 — UNCHANGED. The new .sql file was added to git only; the merge
+                       did not apply, re-apply, or repair any migration remotely.
+  lifecycle_status     column present · both sync triggers present (2)
+  Data                 598 sessions · 480 reports · 2 published avatars — all unchanged
+
+WHAT REACHED PRODUCTION
+  No behavioural change whatsoever. The diff touches no file that ships in the runtime
+  bundle. This merge exists to make git canonical, not to alter the running system.
+
+CLAIMS UNCHANGED
+  Competency scores remain NOT validated. GA remains NO-GO (RDL-032/033). Version remains
+  1.0.0-rc.1. Highest supportable assessment claim remains L0.
+
+Production affected:  YES (deployment created) — but with NO runtime or data change.
+Rollback              `696575e` precedes it and remains a Vercel rollback candidate. No
+                      migration was applied, so rollback is deploy-only, needs no data
+                      action, and would merely restore the parity gap in git.
+Next allowed:         No unblocked engineering milestone remains. Program C is the path
+                      forward and is rooted at OD-13 (appoint a Clinical Governance Lead).
+```
+
+### What the cycle closed, and what it did not
+
+**Closed:** Program A end to end (A0–A9), Program F0 and F1, decision packets DP-01 and DP-04,
+and the git↔production restore-integrity gap.
+
+**Not closed, and not closeable by engineering:** **R-A1's restore half** — backups have still
+never been restore-tested and no greenfield rebuild has been run, so "git can rebuild production"
+remains **INFERENCE** · **R-A3** — CI still compares git to production on no run, pending the
+`SUPABASE_DB_URL` secret · **R-A4** — the forged `admin_test` vector is live in production,
+re-verified against the live RLS policy under C0 · and every decision in **DP-02** and **DP-03**.
