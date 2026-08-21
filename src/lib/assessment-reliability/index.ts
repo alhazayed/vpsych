@@ -36,3 +36,14 @@ export {
   subjectsFromStoredReports,
   withCompleteProvenance,
 } from "@/lib/assessment-reliability/extract";
+
+export type {
+  ItemStability,
+  ScoringOccasion,
+  TestRetestReport,
+} from "@/lib/assessment-reliability/test-retest";
+export {
+  MIN_OCCASIONS,
+  TEST_RETEST_HARNESS_VERSION,
+  computeTestRetestReport,
+} from "@/lib/assessment-reliability/test-retest";

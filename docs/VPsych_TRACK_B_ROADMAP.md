@@ -92,7 +92,17 @@ the configuration that produced them was never recorded, and inventing it would 
 At ~3.3 reports/day, n=100 is reachable in ~16 days and n=200 in ~47 days **with no decision from
 anyone** — provided the writer never drops the block.
 
-### T3 · R-A3 — wire `SUPABASE_DB_URL` into CI
+### T3 · R-A3 — wire `SUPABASE_DB_URL` into CI — **NO ENGINEERING WORK REQUIRED**
+
+**Corrected 2026-08-21.** This roadmap implied a code change. There isn't one:
+`.github/workflows/ci.yml` **already** passes `SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}` to
+the Migration parity step. The gate is wired and waiting. **The only outstanding action is adding
+the repository secret**, which is repository administration and cannot be done from a session.
+Until then the script correctly prints `REMOTE PARITY NOT CHECKED` rather than a false pass.
+
+*Original entry retained below.*
+
+### T3 (original) · R-A3 — wire `SUPABASE_DB_URL` into CI
 Repository administration. Makes the migration-parity gate actually compare git to production
 instead of skipping the comparison. The strict mode already exists
 (`VPSYCH_REQUIRE_REMOTE_PARITY=1`, verified to exit 1). **Never paste the value into a chat.**
@@ -112,12 +122,35 @@ Fixing the corruption needs no language authority.
 **Explicitly NOT included:** what the *ideal* Levantine spoken form should be. That needs a native
 speaker (OD-7 / OD-18) — a far easier hire than a CGL, and **not** a CGL.
 
-### T7 · Correct the stale premises C0 found
+### T7 · Correct the stale premises C0 found — **DONE 2026-08-21**
+
+Corrected **by annotation, not rewriting**: the register is a dated analysis and silently changing
+its numbers would destroy the provenance that makes it evidence. A new **§0 MEASUREMENT
+CORRECTIONS** section records OD-11 (5 avatars total, **2** published — the premise conflated the
+two), the corpus counts (**598 / 480 / 130**), and the constraint the register never recorded at
+all: **only 46 of 480 reports are configuration-analysable**. Inline pointers added at the three
+stale lines.
+
+*Original entry retained below.*
+
+### T7 (original) · Correct the stale premises C0 found
 OD-11 says "five currently published avatars" — there are **2** (5 exist in total).
 OD-25 says "583 sessions / 466 reports" — now **598 / 480**. Stale premises corrupt decisions
 made from them.
 
-### T8 · Test–retest harness on synthetic data
+### T8 · Test–retest harness — **DONE 2026-08-21**
+
+Shipped as `src/lib/assessment-reliability/test-retest.ts` — Pearson *r* across occasions, per-item
+exact-agreement and drift localisation, SEM, blocking and always-non-empty limitations. Read-only:
+no model call, no database access, no writes. Eight tests; **two mutation controls confirmed they
+fail** when the SEM-null rule and the incomplete-session exclusion are broken.
+
+**It computes the statistic; it does not produce the data.** Re-runs remain to be performed, which
+is a deliberate operational act, not a code path.
+
+*Original entry retained below.*
+
+### T8 (original) · Test–retest harness on synthetic data
 F0-2 established scoring is non-deterministic (examiner `temperature: 0.3`), so test–retest
 **cannot be inferred from stored data** — it needs deliberate re-runs. Build the re-run machinery
 and exercise it on synthetic fixtures only.
