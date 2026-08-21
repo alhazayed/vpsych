@@ -66,15 +66,35 @@ export type PsychometricSummary = {
 };
 
 /**
- * Discrimination: correlation of item mean with total overall (simple).
+ * Mean CORRECTED item–total discrimination across items.
+ *
+ * For each item, correlate that item against the sum of the OTHER items
+ * (rest-score), then average across items. Rows = subjects, cols = items —
+ * the same orientation `cronbachAlpha` documents.
+ *
+ * The corrected (rest-score) form is required. A previous implementation
+ * correlated each subject's item MEAN against that subject's TOTAL; since
+ * total = k x mean, that returns exactly 1 for any input and never varies by
+ * item. It read as perfect discrimination and awarded the Assessment Validity
+ * Index its full discrimination band unconditionally. See F-FIND-2 in
+ * `docs/VPsych_MASTER_EXECUTION_LEDGER.md`.
  */
-export function itemTotalDiscrimination(
-  itemsMatrix: number[][],
-  totals: number[],
-): number | null {
-  if (!itemsMatrix.length) return null;
-  const itemMeans = itemsMatrix.map((row) => mean(row));
-  return pearson(itemMeans, totals);
+export function itemTotalDiscrimination(itemsMatrix: number[][]): number | null {
+  const n = itemsMatrix.length;
+  if (n < 2) return null;
+  const k = itemsMatrix[0]?.length ?? 0;
+  if (k < 2) return null;
+
+  const perItem: number[] = [];
+  for (let j = 0; j < k; j++) {
+    const column = itemsMatrix.map((row) => row[j] ?? 0);
+    const restScores = itemsMatrix.map((row) =>
+      row.reduce((acc, value, i) => (i === j ? acc : acc + value), 0),
+    );
+    const r = pearson(column, restScores);
+    if (r != null) perItem.push(r);
+  }
+  return perItem.length ? mean(perItem) : null;
 }
 
 export function summarizePsychometrics(input: {
@@ -88,7 +108,7 @@ export function summarizePsychometrics(input: {
     input.retestOveralls && input.retestOveralls.length === overalls.length
       ? pearson(overalls, input.retestOveralls)
       : null;
-  const disc = itemTotalDiscrimination(input.itemMatrix, overalls);
+  const disc = itemTotalDiscrimination(input.itemMatrix);
   return {
     n_scores: overalls.length,
     mean: Math.round(mean(overalls) * 10) / 10,

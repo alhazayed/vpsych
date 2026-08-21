@@ -5,7 +5,6 @@
 import type { ScoreEntry } from "@/lib/types";
 import type { CoachFeedback } from "@/lib/ace/types";
 import type { EriComputeInput } from "@/lib/eri/types";
-import { simulateInterRaterAgreement } from "@/lib/eri/engine";
 import {
   ACE_ENGINE_VERSION,
   ASSESSMENT_SCHEMA_VERSION,
@@ -27,6 +26,12 @@ export function eriInputFromAssessment(opts: {
   learning_objectives_count?: number;
   difficulty_matches_learner?: boolean | null;
   inter_session_r?: number | null;
+  /**
+   * Real measured inter-rater agreement, when a second HUMAN rater exists.
+   * Left null otherwise — never simulated. See F-FIND-1.
+   */
+  inter_rater_r?: number | null;
+  inter_rater_pct_agree?: number | null;
   test_retest_r?: number | null;
   cronbach_alpha?: number | null;
   fairness_pass?: boolean | null;
@@ -35,7 +40,6 @@ export function eriInputFromAssessment(opts: {
   learner_id?: string | null;
   session_id?: string | null;
   model_version?: string | null;
-  seed?: number;
 }): EriComputeInput {
   const items = opts.items ?? [];
   const feedbacks = items.map((i) => (i.feedback ?? "").trim());
@@ -43,14 +47,6 @@ export function eriInputFromAssessment(opts: {
   const meanChars = withFb.length
     ? withFb.reduce((a, f) => a + f.length, 0) / withFb.length
     : 0;
-
-  const scores01to5 = items.map((i) => {
-    const max = i.max || 5;
-    return (i.score / max) * 5;
-  });
-  const irr = scores01to5.length
-    ? simulateInterRaterAgreement(scores01to5, 0.45, opts.seed ?? 42)
-    : { r: null, pct_agree: 0 };
 
   const mapped = new Set<string>();
   for (const item of items) {
@@ -84,8 +80,11 @@ export function eriInputFromAssessment(opts: {
     suggested_reading_count: coach?.suggested_reading?.length ?? 0,
     difficulty_matches_learner: opts.difficulty_matches_learner ?? null,
     inter_session_r: opts.inter_session_r ?? null,
-    inter_rater_r: irr.r,
-    inter_rater_pct_agree: irr.pct_agree,
+    // Never simulated. A simulated second rater is not inter-rater agreement,
+    // and emitting one beside honestly-null psychometrics misreads as measured
+    // evidence. Null unless a real second rater supplied a value. (F-FIND-1)
+    inter_rater_r: opts.inter_rater_r ?? null,
+    inter_rater_pct_agree: opts.inter_rater_pct_agree ?? null,
     test_retest_r: opts.test_retest_r ?? null,
     cronbach_alpha: opts.cronbach_alpha ?? null,
     fairness_pass: opts.fairness_pass ?? null,

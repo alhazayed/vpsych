@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:migrations": "node scripts/verify-migration-parity.mjs",
+    "test:reliability": "vitest run src/lib/assessment-reliability",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "test:perf-smoke": "node scripts/perf-smoke.mjs"
   },

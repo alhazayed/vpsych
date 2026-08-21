@@ -1079,3 +1079,34 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/createCaseForSession/);
   });
 });
+
+describe("F-FIND-1 — simulated inter-rater agreement never reaches a report", () => {
+  it("eri/from-assessment does not import or call simulateInterRaterAgreement", () => {
+    const src = readFileSync(
+      join(process.cwd(), "src/lib/eri/from-assessment.ts"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/simulateInterRaterAgreement/);
+    // Inter-rater values must pass through from a real rater or stay null,
+    // exactly like the other psychometric fields in this module.
+    expect(src).toMatch(/inter_rater_r:\s*opts\.inter_rater_r\s*\?\?\s*null/);
+    expect(src).toMatch(/inter_rater_pct_agree:\s*opts\.inter_rater_pct_agree\s*\?\?\s*null/);
+  });
+
+  it("assessment.ts does not supply a simulated inter-rater value", () => {
+    const src = readFileSync(join(process.cwd(), "src/lib/ai/assessment.ts"), "utf8");
+    expect(src).not.toMatch(/simulateInterRaterAgreement/);
+  });
+});
+
+describe("F-FIND-2 — item discrimination is a corrected item-total correlation", () => {
+  it("itemTotalDiscrimination uses rest-scores, not per-subject means vs totals", () => {
+    const src = readFileSync(
+      join(process.cwd(), "src/lib/scientific/psychometrics.ts"),
+      "utf8",
+    );
+    // The degenerate form correlated row means against totals and returned 1.
+    expect(src).not.toMatch(/pearson\(itemMeans,\s*totals\)/);
+    expect(src).toMatch(/restScores/);
+  });
+});

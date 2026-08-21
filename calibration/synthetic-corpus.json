@@ -1,0 +1,6252 @@
+{
+ "_meta": {
+  "document": "VPsych assessment reliability \u2014 SYNTHETIC calibration corpus",
+  "warning": "SYNTHETIC DATA. Not real learners, not real sessions, not evidence.",
+  "purpose": "Exercise the reliability harness deterministically in CI without touching the production corpus.",
+  "generated_with": "deterministic seed 20260820; latent-ability model with one deliberately noisy dimension (structure)",
+  "authorization_note": "Running the harness against the PRODUCTION corpus is Program F2 and requires OD-21 and OD-25. This fixture exists so F1 can be verified without that authorization.",
+  "n_subjects": 60
+ },
+ "reports": [
+  {
+   "session_id": "synthetic-000",
+   "language": "ar",
+   "scores": {
+    "overall": 64,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-001",
+   "language": "en",
+   "scores": {
+    "overall": 54,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-002",
+   "language": "en",
+   "scores": {
+    "overall": 27,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-003",
+   "language": "ar",
+   "scores": {
+    "overall": 62,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-004",
+   "language": "en",
+   "scores": {
+    "overall": 37,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-005",
+   "language": "en",
+   "scores": {
+    "overall": 10,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-006",
+   "language": "ar",
+   "scores": {
+    "overall": 32,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-007",
+   "language": "en",
+   "scores": {
+    "overall": 44,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-008",
+   "language": "en",
+   "scores": {
+    "overall": 55,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-009",
+   "language": "ar",
+   "scores": {
+    "overall": 52,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-010",
+   "language": "en",
+   "scores": {
+    "overall": 48,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-011",
+   "language": "en",
+   "scores": {
+    "overall": 34,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-012",
+   "language": "ar",
+   "scores": {
+    "overall": 62,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 4,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-013",
+   "language": "en",
+   "scores": {
+    "overall": 67,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 4,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-014",
+   "language": "en",
+   "scores": {
+    "overall": 66,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-015",
+   "language": "ar",
+   "scores": {
+    "overall": 41,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-016",
+   "language": "en",
+   "scores": {
+    "overall": 16,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-017",
+   "language": "en",
+   "scores": {
+    "overall": 43,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-018",
+   "language": "ar",
+   "scores": {
+    "overall": 60,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-019",
+   "language": "en",
+   "scores": {
+    "overall": 33,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-020",
+   "language": "en",
+   "scores": {
+    "overall": 18,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-021",
+   "language": "ar",
+   "scores": {
+    "overall": 53,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-022",
+   "language": "en",
+   "scores": {
+    "overall": 31,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-023",
+   "language": "en",
+   "scores": {
+    "overall": 40,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-024",
+   "language": "ar",
+   "scores": {
+    "overall": 39,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-025",
+   "language": "en",
+   "scores": {
+    "overall": 41,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 1,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-026",
+   "language": "en",
+   "scores": {
+    "overall": 52,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-027",
+   "language": "ar",
+   "scores": {
+    "overall": 35,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-028",
+   "language": "en",
+   "scores": {
+    "overall": 53,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-029",
+   "language": "en",
+   "scores": {
+    "overall": 59,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-030",
+   "language": "ar",
+   "scores": {
+    "overall": 58,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-031",
+   "language": "en",
+   "scores": {
+    "overall": 38,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-032",
+   "language": "en",
+   "scores": {
+    "overall": 75,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 5,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-033",
+   "language": "ar",
+   "scores": {
+    "overall": 31,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-034",
+   "language": "en",
+   "scores": {
+    "overall": 19,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-035",
+   "language": "en",
+   "scores": {
+    "overall": 62,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-036",
+   "language": "ar",
+   "scores": {
+    "overall": 22,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-037",
+   "language": "en",
+   "scores": {
+    "overall": 51,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-038",
+   "language": "en",
+   "scores": {
+    "overall": 2,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-039",
+   "language": "ar",
+   "scores": {
+    "overall": 42,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-040",
+   "language": "en",
+   "scores": {
+    "overall": 26,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-041",
+   "language": "en",
+   "scores": {
+    "overall": 55,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-042",
+   "language": "ar",
+   "scores": {
+    "overall": 71,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-043",
+   "language": "en",
+   "scores": {
+    "overall": 41,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-044",
+   "language": "en",
+   "scores": {
+    "overall": 69,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-045",
+   "language": "ar",
+   "scores": {
+    "overall": 66,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 4,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-046",
+   "language": "en",
+   "scores": {
+    "overall": 26,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-047",
+   "language": "en",
+   "scores": {
+    "overall": 69,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 4,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 4,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-048",
+   "language": "ar",
+   "scores": {
+    "overall": 32,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-049",
+   "language": "en",
+   "scores": {
+    "overall": 19,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 0,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-050",
+   "language": "en",
+   "scores": {
+    "overall": 55,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-051",
+   "language": "ar",
+   "scores": {
+    "overall": 61,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-052",
+   "language": "en",
+   "scores": {
+    "overall": 38,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-053",
+   "language": "en",
+   "scores": {
+    "overall": 59,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-054",
+   "language": "ar",
+   "scores": {
+    "overall": 58,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-055",
+   "language": "en",
+   "scores": {
+    "overall": 42,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 2,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-056",
+   "language": "en",
+   "scores": {
+    "overall": 46,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 3,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-057",
+   "language": "ar",
+   "scores": {
+    "overall": 75,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 5,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 4,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 4,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 5,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 4,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-058",
+   "language": "en",
+   "scores": {
+    "overall": 57,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 2,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 3,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 2,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 3,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 3,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 3,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 4,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  },
+  {
+   "session_id": "synthetic-059",
+   "language": "en",
+   "scores": {
+    "overall": 16,
+    "items": [
+     {
+      "id": "alliance",
+      "label": "alliance",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "assessment",
+      "label": "assessment",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "dsm_reasoning",
+      "label": "dsm_reasoning",
+      "score": 1,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "icd_reasoning",
+      "label": "icd_reasoning",
+      "score": 0,
+      "max": 5,
+      "weight": 11,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "clinical_formulation",
+      "label": "clinical_formulation",
+      "score": 1,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "differential_diagnosis",
+      "label": "differential_diagnosis",
+      "score": 0,
+      "max": 5,
+      "weight": 10,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "risk_formulation",
+      "label": "risk_formulation",
+      "score": 0,
+      "max": 5,
+      "weight": 12,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "educational_competency",
+      "label": "educational_competency",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "interventions",
+      "label": "interventions",
+      "score": 1,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "safety",
+      "label": "safety",
+      "score": 2,
+      "max": 5,
+      "weight": 8,
+      "feedback": "synthetic"
+     },
+     {
+      "id": "structure",
+      "label": "structure",
+      "score": 2,
+      "max": 5,
+      "weight": 4,
+      "feedback": "synthetic"
+     }
+    ],
+    "assessment_schema_version": "1.0.0",
+    "scientific_provenance": {
+     "ai_model": "synthetic-model-a",
+     "ai_source": "gpt",
+     "prompt_engine_version": "1.0.0",
+     "assessment_mode": "llm_examiner"
+    }
+   }
+  }
+ ]
+}
