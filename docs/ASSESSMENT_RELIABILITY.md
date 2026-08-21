@@ -27,18 +27,19 @@ The overall score is **read from the stored report, never recomputed**. `weighte
 
 ## 2. Three deliberate design decisions
 
-**2.1 Corrected item–total correlation.** Each item is correlated against the sum of the *other*
-items, not against a total that contains it. The shared helper
-`itemTotalDiscrimination()` in `lib/scientific/psychometrics.ts` correlates per-subject means
-against per-subject totals, which is ≈1 by construction because both derive from the same items —
-it is not an item statistic. This harness does not use it. See **F-FIND-2** in
-`VPsych_MASTER_EXECUTION_LEDGER.md`.
+**2.1 Corrected item–total correlation, per item.** Each item is correlated against the sum of the
+*other* items, not against a total that contains it. The shared
+`itemTotalDiscrimination()` in `lib/scientific/psychometrics.ts` previously correlated per-subject
+means against per-subject totals and returned exactly 1 for any input; **that was fixed under
+F-FIND-2** and now uses the same corrected rest-score form, returning the mean across items. This
+harness keeps its own per-item breakdown because a reliability report needs to name *which* item is
+weak, not just the average.
 
-**2.2 `inter_rater_r` is never read.** The inter-rater value carried in
-`scores.educational_reliability` is **simulated** from a single rater by
-`simulateInterRaterAgreement()` — gaussian noise added to the one AI rating, then correlated with
-itself. It must never enter a reliability computation. Excluded by construction and asserted by
-test. See **F-FIND-1**.
+**2.2 `inter_rater_r` is never read.** Inter-rater values are no longer simulated
+(**fixed under F-FIND-1** — `eri/from-assessment.ts` now passes through a real rater's value or
+null, and a guardrail test asserts the simulator cannot re-enter that path). **Reports written
+before that fix still carry the simulated value**, so excluding the field when reading stored
+reports is permanent, not transitional. Asserted by test.
 
 **2.3 Missing dimensions are excluded, not zero-filled.** A dimension absent from any subject is
 dropped from the whole analysis. Zero-filling silently deflates both that item and α.

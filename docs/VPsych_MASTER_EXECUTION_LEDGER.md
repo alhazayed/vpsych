@@ -696,6 +696,96 @@ Next allowed:         F2 (BLOCKED on OD-21 + OD-25)
 
 ---
 
+## F-FIND-1-FIX / F-FIND-2-FIX · DP-04 resolved by the product owner
+
+```
+Milestone:            F-FIND-1-FIX, F-FIND-2-FIX
+Program:              F
+Status:               PASSED
+Authorization:        Product owner instruction ("fix F-FIND-2 and the simulated IRR"),
+                      2026-08-21. This resolves DP-04. NOTE: it is a change to emitted
+                      scientific-index values and was NOT inside the scope RDL-035 closed
+                      (C-9, C-2/P0-1, C-3, C-1, C-5, P0-2) — an RDL row is RECOMMENDED to
+                      record the scope extension. Not written unilaterally.
+
+FIX 1 — F-FIND-2  src/lib/scientific/psychometrics.ts
+  Before: itemTotalDiscrimination(matrix, totals)
+            = pearson(matrix.map(row => mean(row)), totals)
+          Since total = k x mean, this returned exactly 1 for any input.
+  After:  itemTotalDiscrimination(matrix)
+            per item: pearson(item column, sum of the OTHER items)  [rest-score]
+            then the mean across items.
+          Signature lost the now-meaningless `totals` argument; the only caller
+          (summarizePsychometrics) was updated.
+
+  MEASURED EFFECT (6x4 coherent matrix):
+            OLD 1.0        -> AVI discrimination band +20
+            NEW 0.9045     -> AVI discrimination band +20
+          The band outcome is UNCHANGED on coherent data, and that is correct. The
+          fix is not that AVI scores lower; it is that the metric can now VARY AND
+          FAIL. Previously it was structurally incapable of falling below the 0.3
+          threshold for any input, so the "revise weak items" recommendation was
+          unreachable. A discordant item now measurably lowers it (asserted by test).
+
+FIX 2 — F-FIND-1  src/lib/eri/from-assessment.ts
+  Before: irr = simulateInterRaterAgreement(scores01to5, 0.45, seed ?? 42)
+          emitted as inter_rater_r / inter_rater_pct_agree on every report.
+  After:  inter_rater_r:        opts.inter_rater_r ?? null
+          inter_rater_pct_agree: opts.inter_rater_pct_agree ?? null
+          The simulator import is removed. Inter-rater is now null unless a real
+          second rater supplies a value — identical to how test_retest_r,
+          cronbach_alpha and inter_session_r were already handled in this module.
+
+  ERI needed no weight-matrix change: scoreInterRater() already handles a null
+  input, returning a neutral dimension (score 50, confidence 40, evidence
+  ["simulation_unavailable"]). The 0.06 weight stays; the dimension now reports
+  honestly that no inter-rater data exists.
+
+  src/lib/eri/corpus.ts (an explicitly simulated corpus) also stopped requesting
+  it. A noise-perturbed copy of one rating is not agreement between raters in a
+  simulation any more than in production, so one rule now holds everywhere.
+
+  simulateInterRaterAgreement() itself is KEPT and still tested — it is a legitimate
+  utility for genuine simulation studies. What changed is that it can no longer
+  reach a report.
+
+GUARDRAILS ADDED (src/lib/architecture.test.ts)
+  - eri/from-assessment.ts must not mention simulateInterRaterAgreement, and must
+    pass inter-rater values through from opts.
+  - ai/assessment.ts must not mention it either.
+  - psychometrics.ts must not contain pearson(itemMeans, totals) and must use
+    restScores.
+
+REGRESSION COVER (src/lib/scientific/psychometrics.test.ts, new)
+  discrimination is not 1 · is high-but-sub-1 on coherent items · drops on a
+  discordant item · returns null when the matrix cannot support it · returns null
+  when every item is constant · alpha unchanged.
+
+IMPORTANT LIMIT — THE FIX IS FORWARD-ONLY
+  Stored reports are not rewritten. The 46 reports carrying
+  scores.educational_reliability still contain the simulated inter_rater_r. That is
+  precisely why the F1 harness excludes the field when reading stored reports, and
+  why that exclusion is permanent rather than transitional.
+
+Tests executed:       lint · typecheck · vitest · test:migrations · test:perf-smoke ·
+                      test:reliability · audit:deps · build
+Test results:         lint             PASS  0 errors / 13 warnings (unchanged set)
+                      typecheck        PASS  (caught a stale `seed` call site in
+                                              eri/corpus.ts before it shipped)
+                      vitest           PASS  753 tests / 91 files (was 743 / 90)
+                      test:migrations  PASS
+                      perf-smoke       PASS
+                      test:reliability PASS  19 tests
+                      audit:deps       PASS  0 vulnerabilities
+                      build            PASS
+Migration:            NONE   Schema: UNCHANGED   RLS: UNCHANGED
+Stored data:          UNCHANGED (forward-only)
+Production affected:  NO (not deployed by this change)
+Next allowed:         F2 still BLOCKED on OD-21 + OD-25
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
@@ -775,7 +865,15 @@ pending DP-01.
 
 ---
 
-## DP-04 · Simulated inter-rater agreement (finding F-FIND-1)
+## DP-04 · Simulated inter-rater agreement + degenerate discrimination — **RESOLVED 2026-08-21**
+
+**Decision taken by the product owner:** fix both. Implemented and verified — see
+F-FIND-1-FIX / F-FIND-2-FIX above. **Recommended follow-up: an RDL row** recording that
+RDL-035's closed scope was extended to cover these two scoring corrections.
+
+*Original packet retained below for traceability.*
+
+### DP-04 (original) · Simulated inter-rater agreement (finding F-FIND-1)
 
 **Decision required:** whether to flag the simulated inter-rater figure in the emitted report
 payload, and whether it should remain a weighted component of the Educational Reliability Index.

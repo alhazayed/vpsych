@@ -283,7 +283,9 @@ export function buildEriOfflineCorpus(): StoredEriRecord[] {
         learner_id: t.learner_id,
         session_id: t.session_id,
         model_version: "simulation",
-        seed: t.seed,
+        // No inter-rater value: a noise-perturbed copy of one rating is not
+        // agreement between raters, in a simulation any more than in
+        // production. ERI reports `simulation_unavailable`. (F-FIND-1)
       }),
     );
     return {

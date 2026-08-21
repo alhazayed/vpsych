@@ -339,9 +339,11 @@ about *history*, not about missing machinery:
 - **Constraints:** must **not** fork `weightedOverall` (guardrail-enforced for the Education and
   Supervisor layers; the same discipline applies here). Must run against **synthetic fixtures** —
   executing it against the production corpus is F2 and stays blocked on OD-21 + OD-25.
-- **Flag for review:** `src/lib/eri/engine.ts` exports `simulateInterRaterAgreement(...)`. A
-  *simulated* agreement figure must never be presented as reliability evidence. Whether it surfaces
-  in any admin view should be checked before F2.
+- **Flag resolved 2026-08-21.** Both `F-FIND-1` (simulated inter-rater emitted unflagged) and
+  `F-FIND-2` (degenerate discrimination metric) were **fixed** under product-owner authorization.
+  The simulator is retained for genuine simulation studies but can no longer reach a report, and
+  discrimination now uses a corrected rest-score correlation. Forward-only: stored reports keep
+  their historical simulated values, so the harness's exclusion is permanent.
 ### F2 · Retrospective corpus analysis (Tier 1) — `BLOCKED` (needs OD-21 psychometrician + OD-25 authorization)
 - The harness is ready and the extraction layer already enforces aggregate-only, PHI-free access.
 - Usable configuration-controlled sub-sample: **46 reports** (F0-3).

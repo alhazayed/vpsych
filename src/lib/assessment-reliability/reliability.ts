@@ -4,16 +4,17 @@
  * Reuses the shared primitives in `lib/scientific/psychometrics.ts` rather than
  * reimplementing them. Two deliberate departures from that module:
  *
- *  1. Item discrimination is computed here as a CORRECTED item–total correlation
- *     (item vs the sum of the other items). `itemTotalDiscrimination()` in the
- *     shared module correlates per-subject means against per-subject totals,
- *     which is ~1 by construction because both derive from the same items — it
- *     is not an item statistic. See F-FIND-2 in the execution ledger.
+ *  1. Discrimination is reported PER ITEM here, as a corrected item–total
+ *     correlation. The shared `itemTotalDiscrimination()` returns a single
+ *     mean across items — useful as a summary, but a reliability report needs
+ *     the per-item breakdown to identify which item is weak. (Both now use the
+ *     corrected rest-score form; the degenerate version was fixed under
+ *     F-FIND-2.)
  *
- *  2. `inter_rater_r` is never read. The value carried in
- *     `scores.educational_reliability` is SIMULATED from a single rater
- *     (`simulateInterRaterAgreement`), so it must never enter a reliability
- *     computation. See F-FIND-1.
+ *  2. `inter_rater_r` is never read from stored reports. Reports written before
+ *     the F-FIND-1 fix carry a SIMULATED value produced from a single rater, and
+ *     that historical data is still in the corpus. Excluding the field is
+ *     therefore permanent, not transitional.
  *
  * This module is read-only: no model calls, no database access, no writes.
  */
