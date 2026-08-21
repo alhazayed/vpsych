@@ -189,11 +189,11 @@ Next allowed:         A9 (blocked) → Program B
 
 ```
 Milestone:            A9
-Status:               HUMAN DECISION REQUIRED
+Status:               HUMAN DECISION REQUIRED — superseded by A9-EXEC (2026-08-21), below
 Source SHA:           97cf879
 Changes:              NONE — prepared only
 Production affected:  NO
-Human decision:       PENDING — see decision packet DP-01 below
+Human decision:       RESOLVED — DP-01 option 1 + 3 authorized; executed as A9-EXEC
 Next allowed:         Program B proceeds independently
 ```
 
@@ -861,7 +861,13 @@ Next allowed:         A9 / DP-01 remain open. F2 still BLOCKED on OD-21 + OD-25.
 
 # DECISION PACKETS
 
-## DP-01 · Migration parity remediation (milestone A9)
+## DP-01 · Migration parity remediation (milestone A9) — **RESOLVED 2026-08-21**
+
+**Outcome:** options **1 + 3** authorized and executed — see **A9-EXEC** at the end of this
+ledger. Option 2 was left untaken; the idempotency question that gated it is now answered, and
+the answer makes option 2 unnecessary. *Original packet retained below for traceability.*
+
+### DP-01 (original)
 
 **Decision required:** how to restore git↔production migration parity.
 
@@ -932,8 +938,8 @@ Tier 1, against the existing 598-session / 480-report corpus.
 production-deployment authority; and the *linguistically correct* Arabic spoken form in (1) is a
 native-speaker clinical judgement reserved to OD-7 / OD-18.
 
-**What continues regardless:** Program F0 (instrument inventory, read-only). Program A9 remains
-pending DP-01.
+**What continues regardless:** Program F0 (instrument inventory, read-only). *(A9 was pending DP-01
+at the time this packet was written; DP-01 is now resolved and A9 executed — see A9-EXEC.)*
 
 
 ---
@@ -968,3 +974,118 @@ untouched and still wrong.
 
 **Urgent for Program F:** F2 would read this field. F1 will exclude it by construction, and that
 constraint is recorded so it cannot be quietly lost.
+
+---
+
+## A9-EXEC · Migration parity remediation — **EXECUTED 2026-08-21**
+
+```
+Milestone:            A9-EXEC (executes A9 under DP-01 option 1 + 3)
+Program:              A — Ground truth
+Status:               PASSED
+Source SHA:           1f3ffc2 (branch claude/vpsych-master-consolidation-kpwgk9)
+Authorization:        Product owner, "Follow the remaining of this plan" (2026-08-21).
+                      DP-01 recommended 1 + 3; option 2 NOT taken.
+Production affected:  NO — git-only change. No DDL was executed against production;
+                      no migration was applied, re-applied, or repaired remotely.
+```
+
+### Change 1 — reconstruct the missing migration
+
+`supabase/migrations/20260808172816_avatar_lifecycle_status.sql` **added to git**, reconstructed
+verbatim from the statements recorded in production's `supabase_migrations.schema_migrations`.
+
+**Byte-fidelity VERIFIED, not assumed:**
+
+| Check | Result |
+|---|---|
+| MD5 of git file vs applied statement | `83975ab5d2e053d36749b938c184c7fd` — **match** |
+| Length | **2270 characters** — match (an earlier "MISMATCH" was my own bytes-vs-characters error: the file's three `→` are 3 bytes each, so 2276 bytes = 2270 characters) |
+
+**The migration is materially larger than A4 recorded.** A4 characterised it as the migration that
+creates `avatars.lifecycle_status`. It also carries, and git had none of:
+
+- the `avatars_lifecycle_status_check` CHECK constraint (`draft|testing|published|archived`);
+- `sync_avatar_is_active_from_lifecycle()` + trigger `avatars_lifecycle_is_active_sync`;
+- `sync_avatar_lifecycle_from_is_active()` + trigger `avatars_is_active_lifecycle_sync`.
+
+Those two triggers **are** the `lifecycle_status ↔ is_active` synchronisation that keeps therapists
+from seeing unpublished patients. A greenfield rebuild from git would previously have produced a
+schema in which publication state silently stopped gating learner visibility. Confirmed present in
+production: `lifecycle_triggers = 2`.
+
+### Change 2 — the parity gate can no longer report a pass it did not check
+
+`scripts/verify-migration-parity.mjs`: the single line
+`"Skipping remote parity (SUPABASE_DB_URL unset). Local structure OK."` is replaced by two separate
+statements — local structure OK, **and** `REMOTE PARITY NOT CHECKED` — plus an explicit note that
+this does not establish that git can rebuild the deployed schema. Adds opt-in strict mode
+`VPSYCH_REQUIRE_REMOTE_PARITY=1`, which fails when parity was never verified.
+
+**Strict-mode exit behaviour VERIFIED** (a first attempt was inconclusive because `$?` captured a
+piped `tail` rather than the script):
+
+```
+node scripts/verify-migration-parity.mjs                              → DEFAULT_EXIT=0
+VPSYCH_REQUIRE_REMOTE_PARITY=1 node scripts/verify-migration-parity.mjs → STRICT_EXIT=1
+```
+
+Strict mode is **not** enabled in CI: CI has no `SUPABASE_DB_URL`, so enabling it would fail every
+run. Wiring that secret remains **open as R-A3** and is a repository-administration decision.
+
+### Evidence — parity re-measured against production after the change
+
+Production `supabase_migrations.schema_migrations`: **74** versions. Git: **76** files.
+
+| Direction | Before A9-EXEC | After A9-EXEC |
+|---|---|---|
+| **Remote-only (applied, absent from git)** — the restore-integrity class | `20260808172816` | **∅ (empty)** |
+| Local-only (in git, never applied) | `20260807160000`, `20260807180000` | unchanged — explained below |
+
+### A8 UNKNOWN converted — by measurement, not reasoning
+
+A8 recorded *"idempotency of the two never-applied git migrations (UNKNOWN)"*. **Now VERIFIED**, and
+the two files turn out not to be a divergence at all:
+
+- `diff 20260807160000_scientific_validation_platform.sql 20260807184247_scientific_validation_platform.sql`
+  → identical but for a 3-line header reading *"Parity copy: remote schema_migrations version matches
+  this filename."* Same for `20260807180000` vs applied `20260807184355`. They are **deliberate,
+  already-annotated parity copies**, not orphans.
+- Their content **is** applied: production carries **13** `enterprise_*` tables and **3**
+  `validation_*` tables, matching the tables the files create.
+- Every statement is guarded, checked one class at a time: `CREATE TABLE`/`CREATE INDEX` use
+  `IF NOT EXISTS`; `ALTER TYPE … ADD VALUE` uses `IF NOT EXISTS`; all 4 bare `CREATE TYPE` sit inside
+  `DO $$ … EXCEPTION WHEN duplicate_object THEN NULL; END $$`; `CREATE POLICY` counts match
+  `DROP POLICY IF EXISTS` counts exactly (**6/6** and **25/25**); the one `UPDATE` is
+  `SET tenant_type = COALESCE(tenant_type, …)`, a no-op on re-run.
+
+**Consequence:** DP-01 **option 2 is now evaluable and is judged unnecessary.** Removing the
+duplicates would change what a greenfield run executes in exchange for no correctness gain. Not
+taken.
+
+### Gates executed
+
+```
+audit:deps      PASS  0 vulnerabilities
+lint            PASS  0 errors / 13 warnings (same set as main)
+typecheck       PASS  clean
+vitest          PASS  753 passed / 91 files
+test:migrations PASS  76 local, structure OK, remote-not-checked stated explicitly
+test:perf-smoke PASS  latency budgets + TTS timeout markers intact
+build           PASS
+```
+
+### What this does NOT establish
+
+- **Not a restore test.** Git can now *express* the production schema; **no greenfield rebuild has
+  been performed**, so "git can rebuild production" remains INFERENCE, not VERIFIED. R-A1's second
+  half — backups have never been restore-tested — is **untouched**.
+- CI still does not compare git to production on any run (**R-A3 open**).
+- Reconstruction fidelity is established for the migration *text*. Whether the production schema
+  contains further objects created outside the migration system was not exhaustively enumerated.
+
+```
+Next allowed:         PROGRAM A GATE re-review → Program C0 (re-derive live open-decision set).
+                      Merge of this work requires explicit authorization: under OF-2, merging to
+                      main deploys production.
+```

@@ -82,7 +82,7 @@ performed under this plan without explicit per-merge authorization**, regardless
 - **Material consequence (VERIFIED):** the migration that creates the column on which **Phase 3B lifecycle and Phase 3C admin-test gating both depend** exists only in production. **A greenfield rebuild from git cannot reproduce the production schema.** This is a restore-integrity defect, and it is invisible to CI because the parity check is skipped without `SUPABASE_DB_URL`.
 - **Provenance (VERIFIED):** the Phase 3A contract already recorded this as "version drift" — git PR #188 carries the file at version `20260808171439`; #188 is unmerged, so `main` has no such migration at any version.
 - **Acceptance:** exact divergence enumerated in both directions. **Met.**
-- **Remediation:** A9 (prepared, not applied).
+- **Remediation:** A9 — **executed 2026-08-21** (A9-EXEC); remote-only divergence now empty.
 
 ### A5 · Live data baseline — `PASSED`
 - **Findings:** OF-5. Aggregate-only, PHI-free, no narrative or transcript read.
@@ -112,7 +112,7 @@ performed under this plan without explicit per-merge authorization**, regardless
 
 | ID | Risk | Severity | Evidence |
 |---|---|---|---|
-| R-A1 | **Git cannot rebuild production** (`lifecycle_status` migration missing) and **backups have never been restore-tested** | **Critical** | A4; `docs/cidp/evidence/dr/` shows no drill |
+| R-A1 | ~~Git cannot rebuild production (`lifecycle_status` migration missing)~~ **— closed by A9-EXEC.** Remaining: **backups have never been restore-tested**, and no greenfield rebuild has been run | **High** (was Critical) | A4; A9-EXEC; `docs/cidp/evidence/dr/` shows no drill |
 | R-A2 | **Merge ⇒ production deploy** with no staging gate | **High** | OF-2 |
 | R-A3 | CI's migration gate gives false assurance without `SUPABASE_DB_URL` | High | A3/A4 |
 | R-A4 | Forged `admin_test` scoring-evasion defect live in production | High (P1) | Master Context D-13 |
@@ -122,7 +122,27 @@ performed under this plan without explicit per-merge authorization**, regardless
 
 **Remaining UNKNOWNs (not converted by reasoning):** whether the 2026-08-02 persona clinical examiner was human; whether Upstash is configured in production (env not readable from here); whether the two never-applied git migrations are idempotent under a greenfield run; the intent behind landing-page pricing and statistics.
 
-### A9 · Migration parity remediation — `HUMAN DECISION REQUIRED`
+### A9 · Migration parity remediation — `EXECUTED 2026-08-21` (was `HUMAN DECISION REQUIRED`)
+
+**Resolved.** DP-01 options **1 + 3** were authorized ("Follow the remaining of this plan") and
+executed as ledger entry **A9-EXEC**. Git-only change; **no production DDL was run**.
+
+- `20260808172816_avatar_lifecycle_status.sql` added to git, MD5-verified against the applied
+  statement (`83975ab5…`, 2270 characters). It carries **more than A4 recorded**: the CHECK
+  constraint and **both `lifecycle_status ↔ is_active` trigger functions and triggers** — the
+  mechanism that keeps unpublished patients out of learner view. Git previously had none of it.
+- **Remote-only divergence is now empty**: 74 applied versions, all present in git.
+- The parity gate no longer prints a skipped remote check as a pass; opt-in
+  `VPSYCH_REQUIRE_REMOTE_PARITY=1` exits 1 (verified).
+- **Option 2 judged unnecessary.** The two never-applied files are byte-identical *annotated parity
+  copies* of applied migrations, and every statement in them is idempotency-guarded (verified
+  statement class by statement class). This converts the A8 UNKNOWN by measurement.
+- **Still not established:** no greenfield rebuild has been performed, so "git can rebuild
+  production" remains INFERENCE. **R-A1's restore-test half and R-A3 both stay open.**
+
+*Original decision framing retained below.*
+
+### A9 (original framing) · `HUMAN DECISION REQUIRED`
 - **Objective:** make git canonical with production again, per the precedent of RDL-003.
 - **Why not executed:** migration-history reconciliation is a **governed act** in this repository (RDL-003 exists precisely for it), and the fix has two parts with different risk profiles.
 - **Prepared options** (decision packet in the ledger):
