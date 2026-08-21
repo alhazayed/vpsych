@@ -10,6 +10,34 @@
 > **NO-GO** (RDL-032/033); version stays `1.0.0-rc.1`. Engineering may enforce an adopted clinical
 > rule; it may never author one.
 
+## EXECUTION STATUS — 2026-08-21
+
+**All engineering work this plan authorizes is complete.** Every remaining milestone is
+`HUMAN DECISION REQUIRED` or `BLOCKED` behind one. No further milestone can be advanced without a
+human decision, and none will be advanced by reasoning in place of one.
+
+| Program | State |
+|---|---|
+| **A** — State reconciliation | **COMPLETE.** A0–A8 passed; A9 executed (git↔production parity restored). |
+| **B** — Voice convergence | **STOPPED at B3 (FAILED).** B4/B5 verified. B6–B9 need human hearing, an ownership call, and a deploy authority. → **DP-03** |
+| **C** — Governance activation | **C0 passed. C1–C9 all human.** Root blocker **OD-13**, appoint a Clinical Governance Lead. → **DP-02** |
+| **D** — Validation infrastructure | **BLOCKED behind C.** Nothing may legitimately be built yet. |
+| **E** — Clinical / voice pilot | **BLOCKED behind C and D.** No qualified reviewer exists. |
+| **F** — Assessment reliability | **F0, F1 passed.** F2–F5 blocked on **OD-21** + **OD-25**. |
+
+**Open decision packets:** DP-02 (governance authority) · DP-03 (voice convergence).
+DP-01 and DP-04 are resolved.
+
+**Unmerged and awaiting authorization:** PR [#205](https://github.com/alhazayed/vpsych/pull/205) —
+A9 parity remediation + MERGE-01/A9-EXEC/C0 ledger records. CI green. **Under OF-2, merging it
+deploys production.** Not merged.
+
+**Carried risks that no milestone closed:** **R-A1** — backups have never been restore-tested and
+no greenfield rebuild has been run · **R-A3** — CI compares git to production on no run · **R-A4** —
+the forged `admin_test` vector is live in production (re-verified under C0).
+
+---
+
 ## Epistemic markers
 
 `VERIFIED` — demonstrated by source, DB inspection, deployment inspection, executed test, or governance record.
