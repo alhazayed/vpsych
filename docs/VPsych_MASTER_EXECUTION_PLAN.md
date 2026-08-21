@@ -10,6 +10,34 @@
 > **NO-GO** (RDL-032/033); version stays `1.0.0-rc.1`. Engineering may enforce an adopted clinical
 > rule; it may never author one.
 
+## EXECUTION STATUS — 2026-08-21
+
+**All engineering work this plan authorizes is complete.** Every remaining milestone is
+`HUMAN DECISION REQUIRED` or `BLOCKED` behind one. No further milestone can be advanced without a
+human decision, and none will be advanced by reasoning in place of one.
+
+| Program | State |
+|---|---|
+| **A** — State reconciliation | **COMPLETE.** A0–A8 passed; A9 executed (git↔production parity restored). |
+| **B** — Voice convergence | **STOPPED at B3 (FAILED).** B4/B5 verified. B6–B9 need human hearing, an ownership call, and a deploy authority. → **DP-03** |
+| **C** — Governance activation | **C0 passed. C1–C9 all human.** Root blocker **OD-13**, appoint a Clinical Governance Lead. → **DP-02** |
+| **D** — Validation infrastructure | **BLOCKED behind C.** Nothing may legitimately be built yet. |
+| **E** — Clinical / voice pilot | **BLOCKED behind C and D.** No qualified reviewer exists. |
+| **F** — Assessment reliability | **F0, F1 passed.** F2–F5 blocked on **OD-21** + **OD-25**. |
+
+**Open decision packets:** DP-02 (governance authority) · DP-03 (voice convergence).
+DP-01 and DP-04 are resolved.
+
+**Unmerged and awaiting authorization:** PR [#205](https://github.com/alhazayed/vpsych/pull/205) —
+A9 parity remediation + MERGE-01/A9-EXEC/C0 ledger records. CI green. **Under OF-2, merging it
+deploys production.** Not merged.
+
+**Carried risks that no milestone closed:** **R-A1** — backups have never been restore-tested and
+no greenfield rebuild has been run · **R-A3** — CI compares git to production on no run · **R-A4** —
+the forged `admin_test` vector is live in production (re-verified under C0).
+
+---
+
 ## Epistemic markers
 
 `VERIFIED` — demonstrated by source, DB inspection, deployment inspection, executed test, or governance record.
@@ -82,7 +110,7 @@ performed under this plan without explicit per-merge authorization**, regardless
 - **Material consequence (VERIFIED):** the migration that creates the column on which **Phase 3B lifecycle and Phase 3C admin-test gating both depend** exists only in production. **A greenfield rebuild from git cannot reproduce the production schema.** This is a restore-integrity defect, and it is invisible to CI because the parity check is skipped without `SUPABASE_DB_URL`.
 - **Provenance (VERIFIED):** the Phase 3A contract already recorded this as "version drift" — git PR #188 carries the file at version `20260808171439`; #188 is unmerged, so `main` has no such migration at any version.
 - **Acceptance:** exact divergence enumerated in both directions. **Met.**
-- **Remediation:** A9 (prepared, not applied).
+- **Remediation:** A9 — **executed 2026-08-21** (A9-EXEC); remote-only divergence now empty.
 
 ### A5 · Live data baseline — `PASSED`
 - **Findings:** OF-5. Aggregate-only, PHI-free, no narrative or transcript read.
@@ -112,7 +140,7 @@ performed under this plan without explicit per-merge authorization**, regardless
 
 | ID | Risk | Severity | Evidence |
 |---|---|---|---|
-| R-A1 | **Git cannot rebuild production** (`lifecycle_status` migration missing) and **backups have never been restore-tested** | **Critical** | A4; `docs/cidp/evidence/dr/` shows no drill |
+| R-A1 | ~~Git cannot rebuild production (`lifecycle_status` migration missing)~~ **— closed by A9-EXEC.** Remaining: **backups have never been restore-tested**, and no greenfield rebuild has been run | **High** (was Critical) | A4; A9-EXEC; `docs/cidp/evidence/dr/` shows no drill |
 | R-A2 | **Merge ⇒ production deploy** with no staging gate | **High** | OF-2 |
 | R-A3 | CI's migration gate gives false assurance without `SUPABASE_DB_URL` | High | A3/A4 |
 | R-A4 | Forged `admin_test` scoring-evasion defect live in production | High (P1) | Master Context D-13 |
@@ -122,7 +150,27 @@ performed under this plan without explicit per-merge authorization**, regardless
 
 **Remaining UNKNOWNs (not converted by reasoning):** whether the 2026-08-02 persona clinical examiner was human; whether Upstash is configured in production (env not readable from here); whether the two never-applied git migrations are idempotent under a greenfield run; the intent behind landing-page pricing and statistics.
 
-### A9 · Migration parity remediation — `HUMAN DECISION REQUIRED`
+### A9 · Migration parity remediation — `EXECUTED 2026-08-21` (was `HUMAN DECISION REQUIRED`)
+
+**Resolved.** DP-01 options **1 + 3** were authorized ("Follow the remaining of this plan") and
+executed as ledger entry **A9-EXEC**. Git-only change; **no production DDL was run**.
+
+- `20260808172816_avatar_lifecycle_status.sql` added to git, MD5-verified against the applied
+  statement (`83975ab5…`, 2270 characters). It carries **more than A4 recorded**: the CHECK
+  constraint and **both `lifecycle_status ↔ is_active` trigger functions and triggers** — the
+  mechanism that keeps unpublished patients out of learner view. Git previously had none of it.
+- **Remote-only divergence is now empty**: 74 applied versions, all present in git.
+- The parity gate no longer prints a skipped remote check as a pass; opt-in
+  `VPSYCH_REQUIRE_REMOTE_PARITY=1` exits 1 (verified).
+- **Option 2 judged unnecessary.** The two never-applied files are byte-identical *annotated parity
+  copies* of applied migrations, and every statement in them is idempotency-guarded (verified
+  statement class by statement class). This converts the A8 UNKNOWN by measurement.
+- **Still not established:** no greenfield rebuild has been performed, so "git can rebuild
+  production" remains INFERENCE. **R-A1's restore-test half and R-A3 both stay open.**
+
+*Original decision framing retained below.*
+
+### A9 (original framing) · `HUMAN DECISION REQUIRED`
 - **Objective:** make git canonical with production again, per the precedent of RDL-003.
 - **Why not executed:** migration-history reconciliation is a **governed act** in this repository (RDL-003 exists precisely for it), and the fix has two parts with different risk profiles.
 - **Prepared options** (decision packet in the ledger):
@@ -235,8 +283,24 @@ satisfied by inspection at all. Human listening results have not been invented.
 
 **Objective:** establish the minimum authority required before Program D may legitimately build.
 
-### C0 · Re-derive the live open-decision set — `NOT STARTED`
-- Re-check the 27-decision register against current state (at least one entry, OD-11's "five published avatars", is already **STALE** — production has 2).
+### C0 · Re-derive the live open-decision set — `PASSED 2026-08-21`
+Every decision resting on a checkable factual premise was re-measured against production. Full
+evidence in ledger entry **C0**. **27 decisions remain open; none was closed** — re-deriving a
+premise decides nothing.
+
+| Premise | Verdict |
+|---|---|
+| OD-11 "five currently published avatars" | **STALE** — 5 avatars *total*: 2 published, 2 draft, 1 testing. The register conflated total with published; the deadline governs **2**. |
+| OD-25 corpus "583 sessions / 466 reports / 130 competency rows" | **STALE in two of three** — now **598 / 480 / 130**. |
+| OD-8 "17 declared, 11 have packages" | **CURRENT, exact** — 17 DB rows vs 11 slugs in `case-engine/catalog.ts`. The six: `asd`, `eating-disorders`, `ocd`, `pdd`, `schizoaffective`, `social-anxiety`. |
+| OD-27 forged `admin_test` | **CURRENT — live and unremediated.** Live sessions INSERT policy is `WITH CHECK (therapist_id = (SELECT auth.uid()))`; nothing constrains `clinical_snapshot`. Detected and audited at end, then **403 before the assessment pipeline** — so the session stays permanently unassessed. |
+| OD-13 / OD-20 / OD-21 / OD-25 appointments | **CURRENT — all UNFILLED.** RDL ends at RDL-036 with no appointment row. |
+
+**New gap surfaced, unowned:** OD-8 tracks the 6 disorders missing from the code catalog. It does
+not track that **12 of 17** DB rows carry only a 6-key stub package — no `differentials`,
+`rule_outs`, `teaching_points`, or `common_therapist_mistakes`; only **5** carry the full 9-key
+teaching schema. Different sets, different axes. Referred to the CGL (OD-26 territory);
+**engineering must not decide what a disorder package must contain.**
 
 ### C1 · Appoint the Clinical Governance Lead (OD-13) — `HUMAN DECISION REQUIRED` — **root blocker**
 ### C2 · Adopt / reject / amend `VP-CLIN-PROTOCOL v1.0-draft` (OD-1, incl. DEF-1) — `HUMAN DECISION REQUIRED`

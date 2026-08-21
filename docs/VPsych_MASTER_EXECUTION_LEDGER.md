@@ -189,11 +189,11 @@ Next allowed:         A9 (blocked) → Program B
 
 ```
 Milestone:            A9
-Status:               HUMAN DECISION REQUIRED
+Status:               HUMAN DECISION REQUIRED — superseded by A9-EXEC (2026-08-21), below
 Source SHA:           97cf879
 Changes:              NONE — prepared only
 Production affected:  NO
-Human decision:       PENDING — see decision packet DP-01 below
+Human decision:       RESOLVED — DP-01 option 1 + 3 authorized; executed as A9-EXEC
 Next allowed:         Program B proceeds independently
 ```
 
@@ -786,9 +786,88 @@ Next allowed:         F2 still BLOCKED on OD-21 + OD-25
 
 ---
 
+## MERGE-01 · PR #204 merged to main and auto-deployed to production
+
+```
+Milestone:            MERGE-01 (release event, not a program milestone)
+Status:               PASSED
+Authorization:        Product owner instruction "merge it", 2026-08-21, given after the
+                      merge-means-deploy consequence (OF-2) had been stated in this session
+                      and in the PR body itself. Treated as informed authorization for BOTH
+                      the merge and the production deployment it necessarily causes.
+
+PRE-MERGE VERIFICATION (per governing mission §16)
+  CI on head 385f264   verify = success (run 352); 12/12 runs green on the branch
+  Review threads       none
+  mergeable_state      clean
+  Diff scope           19 files, +8576/-25, confined to
+                         docs/ · src/lib/ · calibration/ · package.json · CLAUDE.md
+                       NO supabase/ or .sql file touched
+                       NO src/app/ route or src/components/ file touched
+                       => no migration, no schema, no RLS, no runtime request path
+
+MERGE
+  Method               squash (repo convention — #200, #201, #203 are squash commits)
+  Resulting SHA        696575e  on main
+  Confirmed on main    src/lib/assessment-reliability/ present; RDL-036 present
+
+PRODUCTION DEPLOYMENT (automatic, per OF-2)
+  Deployment           dpl_CX9X67WUzXtJagjQZavZDpqW76cb
+  Target               production
+  Commit               696575e
+  Aliases              vpsych-alhazayed-1540s-projects.vercel.app
+                       vpsych-git-main-alhazayed-1540s-projects.vercel.app
+  State                READY at 2026-08-21T07:24:36Z (build 48s); aliasError: null
+  Aliased to           vpsych.vercel.app  (production domain)
+
+POST-DEPLOY VERIFICATION (live, via Vercel fetch — the session proxy blocks the host)
+  GET /api/health      200 OK
+                       {"ok":true,"service":"vpsych","version":"1.0.0-rc.1",
+                        "certId":"VPSYCH-1.0-RC1-STAGE12"}
+  Version on prod      1.0.0-rc.1 — UNCHANGED, as intended
+  Security headers     intact on the live response: CSP with the documented connect-src
+                       allow-list, HSTS max-age 63072000 preload, COOP same-origin,
+                       CORP same-site, Permissions-Policy, X-Frame-Options DENY,
+                       X-Content-Type-Options nosniff
+  API cache posture    cache-control: no-store on /api/* — as documented
+
+WHAT REACHED PRODUCTION
+  Behavioural change is confined to two scientific-index computations authorized by
+  RDL-036:
+    - ERI no longer emits a simulated inter_rater_r; the dimension now reports
+      simulation_unavailable and scores neutrally.
+    - itemTotalDiscrimination returns a corrected rest-score correlation instead of
+      exactly 1, so the AVI discrimination band can now vary and fail.
+  Everything else is additive: a new read-only library, a synthetic fixture, an npm
+  script, docs, and governance rows.
+
+WHAT DID NOT CHANGE
+  Stored data (no report rewritten) · schema · RLS · migrations · session lifecycle ·
+  assessment scoring formula (weightedOverall untouched) · report confidentiality ·
+  admin-test isolation · locale separation · auth boundaries.
+
+CLAIMS UNCHANGED
+  Competency scores remain NOT validated. GA remains NO-GO (RDL-032/033). Version
+  remains 1.0.0-rc.1. Highest supportable assessment claim remains L0.
+
+Production affected:  YES — first production-affecting action taken in this programme.
+Rollback             `696575e` is preceded by `97cf879`, which remains a Vercel rollback
+                      candidate; no migration was applied, so rollback is deploy-only and
+                      requires no data action.
+Next allowed:         A9 / DP-01 remain open. F2 still BLOCKED on OD-21 + OD-25.
+```
+
+---
+
 # DECISION PACKETS
 
-## DP-01 · Migration parity remediation (milestone A9)
+## DP-01 · Migration parity remediation (milestone A9) — **RESOLVED 2026-08-21**
+
+**Outcome:** options **1 + 3** authorized and executed — see **A9-EXEC** at the end of this
+ledger. Option 2 was left untaken; the idempotency question that gated it is now answered, and
+the answer makes option 2 unnecessary. *Original packet retained below for traceability.*
+
+### DP-01 (original)
 
 **Decision required:** how to restore git↔production migration parity.
 
@@ -859,8 +938,8 @@ Tier 1, against the existing 598-session / 480-report corpus.
 production-deployment authority; and the *linguistically correct* Arabic spoken form in (1) is a
 native-speaker clinical judgement reserved to OD-7 / OD-18.
 
-**What continues regardless:** Program F0 (instrument inventory, read-only). Program A9 remains
-pending DP-01.
+**What continues regardless:** Program F0 (instrument inventory, read-only). *(A9 was pending DP-01
+at the time this packet was written; DP-01 is now resolved and A9 executed — see A9-EXEC.)*
 
 
 ---
@@ -895,3 +974,195 @@ untouched and still wrong.
 
 **Urgent for Program F:** F2 would read this field. F1 will exclude it by construction, and that
 constraint is recorded so it cannot be quietly lost.
+
+---
+
+## A9-EXEC · Migration parity remediation — **EXECUTED 2026-08-21**
+
+```
+Milestone:            A9-EXEC (executes A9 under DP-01 option 1 + 3)
+Program:              A — Ground truth
+Status:               PASSED
+Source SHA:           1f3ffc2 (branch claude/vpsych-master-consolidation-kpwgk9)
+Authorization:        Product owner, "Follow the remaining of this plan" (2026-08-21).
+                      DP-01 recommended 1 + 3; option 2 NOT taken.
+Production affected:  NO — git-only change. No DDL was executed against production;
+                      no migration was applied, re-applied, or repaired remotely.
+```
+
+### Change 1 — reconstruct the missing migration
+
+`supabase/migrations/20260808172816_avatar_lifecycle_status.sql` **added to git**, reconstructed
+verbatim from the statements recorded in production's `supabase_migrations.schema_migrations`.
+
+**Byte-fidelity VERIFIED, not assumed:**
+
+| Check | Result |
+|---|---|
+| MD5 of git file vs applied statement | `83975ab5d2e053d36749b938c184c7fd` — **match** |
+| Length | **2270 characters** — match (an earlier "MISMATCH" was my own bytes-vs-characters error: the file's three `→` are 3 bytes each, so 2276 bytes = 2270 characters) |
+
+**The migration is materially larger than A4 recorded.** A4 characterised it as the migration that
+creates `avatars.lifecycle_status`. It also carries, and git had none of:
+
+- the `avatars_lifecycle_status_check` CHECK constraint (`draft|testing|published|archived`);
+- `sync_avatar_is_active_from_lifecycle()` + trigger `avatars_lifecycle_is_active_sync`;
+- `sync_avatar_lifecycle_from_is_active()` + trigger `avatars_is_active_lifecycle_sync`.
+
+Those two triggers **are** the `lifecycle_status ↔ is_active` synchronisation that keeps therapists
+from seeing unpublished patients. A greenfield rebuild from git would previously have produced a
+schema in which publication state silently stopped gating learner visibility. Confirmed present in
+production: `lifecycle_triggers = 2`.
+
+### Change 2 — the parity gate can no longer report a pass it did not check
+
+`scripts/verify-migration-parity.mjs`: the single line
+`"Skipping remote parity (SUPABASE_DB_URL unset). Local structure OK."` is replaced by two separate
+statements — local structure OK, **and** `REMOTE PARITY NOT CHECKED` — plus an explicit note that
+this does not establish that git can rebuild the deployed schema. Adds opt-in strict mode
+`VPSYCH_REQUIRE_REMOTE_PARITY=1`, which fails when parity was never verified.
+
+**Strict-mode exit behaviour VERIFIED** (a first attempt was inconclusive because `$?` captured a
+piped `tail` rather than the script):
+
+```
+node scripts/verify-migration-parity.mjs                              → DEFAULT_EXIT=0
+VPSYCH_REQUIRE_REMOTE_PARITY=1 node scripts/verify-migration-parity.mjs → STRICT_EXIT=1
+```
+
+Strict mode is **not** enabled in CI: CI has no `SUPABASE_DB_URL`, so enabling it would fail every
+run. Wiring that secret remains **open as R-A3** and is a repository-administration decision.
+
+### Evidence — parity re-measured against production after the change
+
+Production `supabase_migrations.schema_migrations`: **74** versions. Git: **76** files.
+
+| Direction | Before A9-EXEC | After A9-EXEC |
+|---|---|---|
+| **Remote-only (applied, absent from git)** — the restore-integrity class | `20260808172816` | **∅ (empty)** |
+| Local-only (in git, never applied) | `20260807160000`, `20260807180000` | unchanged — explained below |
+
+### A8 UNKNOWN converted — by measurement, not reasoning
+
+A8 recorded *"idempotency of the two never-applied git migrations (UNKNOWN)"*. **Now VERIFIED**, and
+the two files turn out not to be a divergence at all:
+
+- `diff 20260807160000_scientific_validation_platform.sql 20260807184247_scientific_validation_platform.sql`
+  → identical but for a 3-line header reading *"Parity copy: remote schema_migrations version matches
+  this filename."* Same for `20260807180000` vs applied `20260807184355`. They are **deliberate,
+  already-annotated parity copies**, not orphans.
+- Their content **is** applied: production carries **13** `enterprise_*` tables and **3**
+  `validation_*` tables, matching the tables the files create.
+- Every statement is guarded, checked one class at a time: `CREATE TABLE`/`CREATE INDEX` use
+  `IF NOT EXISTS`; `ALTER TYPE … ADD VALUE` uses `IF NOT EXISTS`; all 4 bare `CREATE TYPE` sit inside
+  `DO $$ … EXCEPTION WHEN duplicate_object THEN NULL; END $$`; `CREATE POLICY` counts match
+  `DROP POLICY IF EXISTS` counts exactly (**6/6** and **25/25**); the one `UPDATE` is
+  `SET tenant_type = COALESCE(tenant_type, …)`, a no-op on re-run.
+
+**Consequence:** DP-01 **option 2 is now evaluable and is judged unnecessary.** Removing the
+duplicates would change what a greenfield run executes in exchange for no correctness gain. Not
+taken.
+
+### Gates executed
+
+```
+audit:deps      PASS  0 vulnerabilities
+lint            PASS  0 errors / 13 warnings (same set as main)
+typecheck       PASS  clean
+vitest          PASS  753 passed / 91 files
+test:migrations PASS  76 local, structure OK, remote-not-checked stated explicitly
+test:perf-smoke PASS  latency budgets + TTS timeout markers intact
+build           PASS
+```
+
+### What this does NOT establish
+
+- **Not a restore test.** Git can now *express* the production schema; **no greenfield rebuild has
+  been performed**, so "git can rebuild production" remains INFERENCE, not VERIFIED. R-A1's second
+  half — backups have never been restore-tested — is **untouched**.
+- CI still does not compare git to production on any run (**R-A3 open**).
+- Reconstruction fidelity is established for the migration *text*. Whether the production schema
+  contains further objects created outside the migration system was not exhaustively enumerated.
+
+```
+Next allowed:         PROGRAM A GATE re-review → Program C0 (re-derive live open-decision set).
+                      Merge of this work requires explicit authorization: under OF-2, merging to
+                      main deploys production.
+```
+
+---
+
+## C0 · Re-derive the live open-decision set — **EXECUTED 2026-08-21**
+
+```
+Milestone:            C0
+Program:              C — Governance activation
+Status:               PASSED
+Source SHA:           c62921a
+Changes:              none — read-only re-measurement
+Production affected:  NO — aggregate counts and schema/policy introspection only.
+                      No narrative, transcript, or learner-identifying field was read.
+```
+
+**Method:** every open decision whose entry rests on a *checkable factual premise* was re-measured
+against production and the current tree. Decisions resting on judgement alone (OD-1, OD-9, OD-10,
+OD-14…) have no premise to re-derive and are unchanged.
+
+### Premises re-measured
+
+| Premise as registered | Measured 2026-08-21 | Verdict |
+|---|---|---|
+| **OD-11** — "the **five** currently published avatars" | **5 avatars total**: 2 `published`, 2 `draft`, 1 `testing`, 0 `archived` | **STALE — and the error is a conflation.** The register counted *all* avatars as published. The grandfathering deadline governs **2** avatars, not 5. |
+| **OD-25** — corpus of "583 sessions / 466 reports / 130 competency rows" | **598** sessions · **480** reports · **130** competency rows | **STALE in two of three.** Competency rows are exact. The corpus grew ~2.6% during Phase 4; still small. |
+| **OD-8** — "17 disorder IDs are declared, 11 have packages" | **17** rows in `public.disorders`; **11** disorder slugs in `src/lib/case-engine/catalog.ts` | **CURRENT — reproduces exactly.** The six: `asd`, `eating-disorders`, `ocd`, `pdd`, `schizoaffective`, `social-anxiety`. The register's "`asd` and `eating` especially" both fall in that set. |
+| **OD-27** — a therapist can direct-INSERT `clinical_snapshot.admin_test = true`; sessions INSERT RLS constrains only `therapist_id` | Live policy `Therapists can create own sessions`, `WITH CHECK (therapist_id = (SELECT auth.uid()))` — **nothing constrains `clinical_snapshot`** | **CURRENT — defect live, unremediated.** |
+| **OD-13 / OD-20 / OD-21 / OD-25** appointments | RDL ends at **RDL-036**; **no appointment row of any kind exists** | **CURRENT — all UNFILLED.** Program C's root blocker stands. |
+
+### A near-miss worth recording
+
+The first `disorders` probe returned **17 of 17 with a non-null `package`**, which reads as
+"OD-8 is stale, all disorders are packaged." That would have been the F0-3 failure repeated —
+a conclusion drawn from the wrong field. Inspecting the package *contents* instead shows two
+distinct schemas:
+
+- **Full teaching package (9 keys)** — `common_therapist_mistakes · differentials · ideal_approach ·
+  risk_defaults · rule_outs · session_goals · severity_default · symptom_domains · teaching_points`
+  → **5 disorders** (`adult-adhd`, `alcohol-use-disorder`, `gad-with-panic`,
+  `mdd-recurrent-moderate`, `ptsd`).
+- **Stub (6 keys)** — `symptom_profile` in place of `symptom_domains`, and **no** `differentials`,
+  `rule_outs`, `teaching_points`, or `common_therapist_mistakes` → **12 disorders**.
+
+**New gap, not previously registered:** OD-8 tracks the **6** disorders absent from the code
+catalog. It does **not** track that **12 of 17** DB rows carry no differentials, rule-outs, or
+teaching points. Those are different sets on different axes, and the second is unowned. Flagged for
+the CGL rather than resolved here — what a disorder package must contain is a clinical-content
+judgement (**OD-26** territory), not an engineering one.
+
+### OD-27 — refinement, not downgrade
+
+The vector is **detected and audited**, which the register did not record. On end, a forged marker
+is caught by `assertAdminTestSkipAllowed` (`reason: "not_admin"`), written to
+`security_audit_events` as `admin.avatar.test_session.forged_skip_denied`, and answered **403**.
+
+That does not close it. **The 403 returns before the assessment pipeline**, so the outcome is
+exactly what the register describes: the session is permanently unassessed. The learner-facing
+create path *does* strip the marker (`stripAdminTestMarker`, `src/app/api/sessions/route.ts:137`) —
+but the vector bypasses that route entirely by writing to the table. **The application-layer guard
+exists; the database-layer one does not.** Of the three remediation shapes, only the third —
+constrain the snapshot at INSERT — addresses it, and it remains untaken.
+
+**Not re-verified:** the register's further claim that a forged session is hidden from the
+therapist's own history. Out of scope for a read-only pass; left as registered.
+
+### Register status after C0
+
+**27 decisions remain open. None was closed by this pass** — re-deriving premises does not decide
+anything. Three entries need a factual correction before they are acted on (OD-11, OD-25, and the
+OD-8 scope note above); the rest reproduce as written.
+
+```
+Next allowed:         C1–C9 remain HUMAN DECISION REQUIRED, rooted at OD-13.
+                      Programs D and E stay BLOCKED behind C.
+                      F2–F5 stay BLOCKED on OD-21 + OD-25.
+                      No unblocked engineering milestone remains in this plan.
+```
