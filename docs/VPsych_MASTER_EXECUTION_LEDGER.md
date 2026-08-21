@@ -786,6 +786,79 @@ Next allowed:         F2 still BLOCKED on OD-21 + OD-25
 
 ---
 
+## MERGE-01 · PR #204 merged to main and auto-deployed to production
+
+```
+Milestone:            MERGE-01 (release event, not a program milestone)
+Status:               PASSED
+Authorization:        Product owner instruction "merge it", 2026-08-21, given after the
+                      merge-means-deploy consequence (OF-2) had been stated in this session
+                      and in the PR body itself. Treated as informed authorization for BOTH
+                      the merge and the production deployment it necessarily causes.
+
+PRE-MERGE VERIFICATION (per governing mission §16)
+  CI on head 385f264   verify = success (run 352); 12/12 runs green on the branch
+  Review threads       none
+  mergeable_state      clean
+  Diff scope           19 files, +8576/-25, confined to
+                         docs/ · src/lib/ · calibration/ · package.json · CLAUDE.md
+                       NO supabase/ or .sql file touched
+                       NO src/app/ route or src/components/ file touched
+                       => no migration, no schema, no RLS, no runtime request path
+
+MERGE
+  Method               squash (repo convention — #200, #201, #203 are squash commits)
+  Resulting SHA        696575e  on main
+  Confirmed on main    src/lib/assessment-reliability/ present; RDL-036 present
+
+PRODUCTION DEPLOYMENT (automatic, per OF-2)
+  Deployment           dpl_CX9X67WUzXtJagjQZavZDpqW76cb
+  Target               production
+  Commit               696575e
+  Aliases              vpsych-alhazayed-1540s-projects.vercel.app
+                       vpsych-git-main-alhazayed-1540s-projects.vercel.app
+  State                READY at 2026-08-21T07:24:36Z (build 48s); aliasError: null
+  Aliased to           vpsych.vercel.app  (production domain)
+
+POST-DEPLOY VERIFICATION (live, via Vercel fetch — the session proxy blocks the host)
+  GET /api/health      200 OK
+                       {"ok":true,"service":"vpsych","version":"1.0.0-rc.1",
+                        "certId":"VPSYCH-1.0-RC1-STAGE12"}
+  Version on prod      1.0.0-rc.1 — UNCHANGED, as intended
+  Security headers     intact on the live response: CSP with the documented connect-src
+                       allow-list, HSTS max-age 63072000 preload, COOP same-origin,
+                       CORP same-site, Permissions-Policy, X-Frame-Options DENY,
+                       X-Content-Type-Options nosniff
+  API cache posture    cache-control: no-store on /api/* — as documented
+
+WHAT REACHED PRODUCTION
+  Behavioural change is confined to two scientific-index computations authorized by
+  RDL-036:
+    - ERI no longer emits a simulated inter_rater_r; the dimension now reports
+      simulation_unavailable and scores neutrally.
+    - itemTotalDiscrimination returns a corrected rest-score correlation instead of
+      exactly 1, so the AVI discrimination band can now vary and fail.
+  Everything else is additive: a new read-only library, a synthetic fixture, an npm
+  script, docs, and governance rows.
+
+WHAT DID NOT CHANGE
+  Stored data (no report rewritten) · schema · RLS · migrations · session lifecycle ·
+  assessment scoring formula (weightedOverall untouched) · report confidentiality ·
+  admin-test isolation · locale separation · auth boundaries.
+
+CLAIMS UNCHANGED
+  Competency scores remain NOT validated. GA remains NO-GO (RDL-032/033). Version
+  remains 1.0.0-rc.1. Highest supportable assessment claim remains L0.
+
+Production affected:  YES — first production-affecting action taken in this programme.
+Rollback             `696575e` is preceded by `97cf879`, which remains a Vercel rollback
+                      candidate; no migration was applied, so rollback is deploy-only and
+                      requires no data action.
+Next allowed:         A9 / DP-01 remain open. F2 still BLOCKED on OD-21 + OD-25.
+```
+
+---
+
 # DECISION PACKETS
 
 ## DP-01 · Migration parity remediation (milestone A9)
