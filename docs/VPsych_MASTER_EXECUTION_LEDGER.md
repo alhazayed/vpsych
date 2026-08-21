@@ -1249,3 +1249,113 @@ never been restore-tested and no greenfield rebuild has been run, so "git can re
 remains **INFERENCE** · **R-A3** — CI still compares git to production on no run, pending the
 `SUPABASE_DB_URL` secret · **R-A4** — the forged `admin_test` vector is live in production,
 re-verified against the live RLS policy under C0 · and every decision in **DP-02** and **DP-03**.
+
+---
+
+## T1 · Forged `admin_test` vector — remediation implemented (OD-27 / C-1 / D7)
+
+```
+Milestone:            T1 (Track B roadmap §1, first item)
+Status:               IMPLEMENTED — NOT APPLIED. The vector is still live in production.
+Source SHA:           9dc3745 (main)
+Authorization:        RDL-038. Product owner: "Now fix the forged admin_test vector."
+                      In scope under RDL-035 (C-1). OD-27 is owned by Engineering +
+                      Security/Governance, not the CGL — decidable with OD-13 unfilled.
+Production affected:  NO. Migration written, not executed. No DDL was run.
+```
+
+### The defect, re-verified rather than inherited
+
+Live policy read from `pg_policy` before writing anything:
+
+```
+Therapists can create own sessions  INSERT  WITH CHECK (therapist_id = (SELECT auth.uid()))
+```
+
+It constrains **who owns the row and nothing about what the row contains.** A therapist writing
+directly to the table could mint a session carrying `clinical_snapshot.admin_test = true`, end it,
+take the 403, and never be assessed. The learner API strips the marker
+(`stripAdminTestMarker`, `src/app/api/sessions/route.ts:137`) — but a direct INSERT never reaches
+that route. **Application-layer guard present; database-layer guard absent.**
+
+### A suspicion I raised and then disproved
+
+The sessions UPDATE policy carries `with_check: NULL`, which looked like a second door — add the
+marker *after* insert. **It is already closed.** `enforce_session_update_guard` contains, verbatim:
+
+```
+-- CQG-010: Case Engine snapshot is immutable after mint.
+IF NEW.clinical_snapshot IS DISTINCT FROM OLD.clinical_snapshot THEN
+  RAISE EXCEPTION 'Cannot change clinical_snapshot';
+```
+
+Read from the live function body, not inferred. **The fix is therefore INSERT-only**, and touches
+no existing policy, column, or function — a materially smaller change than it first appeared.
+
+### Exposure assessment — no evidence of exploitation
+
+| Check | Result |
+|---|---|
+| Sessions carrying the marker | **1** |
+| Owner's `profiles.role` | **admin** — legitimate |
+| Reports attached to it | 0 (expected: admin tests skip assessment) |
+
+Nothing to remediate retrospectively. The corpus is not known to contain selective non-assessment.
+
+### The fix
+
+`supabase/migrations/20260821083700_session_admin_test_insert_guard.sql` — a `BEFORE INSERT`
+trigger, remediation **shape 3** of the three recorded under OD-27, the only one the register says
+*"closes the vector rather than the symptom."*
+
+Detection predicate validated read-only against every shape the marker could take:
+
+| Input | Detected |
+|---|---|
+| `{"admin_test": true}` | yes |
+| `{"admin_test": "true"}` | yes — **stricter than the app's `=== true`** |
+| `{"admin_test": false}` | no |
+| key absent · null snapshot | no |
+
+### Guardrail proven able to fail
+
+The architecture test asserts the trigger, its table, its predicate, the `is_admin()` gate and the
+`RAISE`. **Negative control run:** with the migration moved aside the suite reports
+`1 failed | 43 passed`; restored, `44 passed`. A guardrail that cannot fail was the F-FIND-2 defect
+— this one was checked.
+
+### Gates
+
+```
+audit:deps 0 vulns · lint 0 errors/13 warnings · typecheck clean
+vitest 754 passed / 91 files · test:migrations · perf smoke · build
+```
+
+### What is NOT fixed yet — the honest limit
+
+**The vector is live in production right now.** This milestone produced SQL that has never been
+executed anywhere. **Vercel does not run migrations**, so merging and deploying does *not* close it.
+Applying it is a separate production DDL act requiring its own authorization.
+
+**Residual risks, recorded not buried:**
+- The guard permits `auth.uid() IS NULL` inserts — service role, migrations, seeds. Those callers
+  already bypass RLS entirely, so no new trust is created, but it is a deliberate hole, not an
+  oversight.
+- **A blocked attempt cannot be audited.** The `RAISE` aborts the transaction, taking any audit
+  insert with it. The DB-layer rejection is therefore silent; the API-layer
+  `admin.avatar.test_session.forged_skip_denied` audit remains for the (now unreachable) end path.
+- Unchanged and out of scope: the related surface where a direct INSERT also bypasses the
+  `is_active` avatar check and the `start` rate limit. Noted in OD-27, **not widened into here.**
+
+### Consequence for F-5
+
+The Phase 3C contract ambiguity — §5.2 says "do not skip" while the implemented rule is 403 —
+**becomes unreachable** for any session minted after this is applied, because the marker can no
+longer be forged. The 403 branch remains as defence in depth. **F-5 no longer blocks OD-27**, which
+is why this could be executed with OD-13 unfilled.
+
+```
+Next allowed:         Apply the migration to production (separate authorization), then
+                      T2 provenance completeness. OD-25 is best authorized only after
+                      this is applied.
+```

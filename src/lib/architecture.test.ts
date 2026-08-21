@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = join(process.cwd(), "src");
@@ -1065,6 +1065,26 @@ describe("architecture invariants", () => {
     expect(start).toMatch(/stripAdminTestMarker/);
     expect(start).not.toMatch(/withAdminTestMarker/);
     expect(start).not.toMatch(/adminTest/);
+  });
+
+  it("OD-27 — a database INSERT guard closes the forged admin_test vector", () => {
+    // The application strips the marker on the learner path, but a direct table
+    // INSERT bypasses that route. The database-layer guard is what actually closes
+    // the vector, so its absence must fail the suite rather than pass silently.
+    const dir = join(process.cwd(), "supabase/migrations");
+    const guard = readdirSync(dir).find((f) =>
+      f.endsWith("_session_admin_test_insert_guard.sql"),
+    );
+    expect(guard).toBeTruthy();
+
+    const sql = readFileSync(join(dir, guard!), "utf8");
+    expect(sql).toMatch(/CREATE TRIGGER session_insert_guard/);
+    expect(sql).toMatch(/BEFORE INSERT ON public\.sessions/);
+    expect(sql).toMatch(/enforce_session_insert_guard/);
+    // The guard must key on the marker and gate on admin role, not merely exist.
+    expect(sql).toMatch(/clinical_snapshot ->> 'admin_test'/);
+    expect(sql).toMatch(/NOT public\.is_admin\(\)/);
+    expect(sql).toMatch(/RAISE EXCEPTION/);
   });
 
   it("Phase 3C — admin test-session API is the sole marker writer", () => {
