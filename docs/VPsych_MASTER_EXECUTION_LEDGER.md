@@ -1538,3 +1538,86 @@ Next allowed:         T3 (CI parity secret) · T5 (HIBP) · T7 (stale premises) 
                       harness) · T6 (voice numeric fix) · T4 (restore test). All Track B §1,
                       none requiring a new appointment.
 ```
+
+---
+
+## T3 / T7 / T8 · Track B §1 continued — **2026-08-21**
+
+```
+Milestones:           T3 (corrected) · T7 (done) · T8 (done)
+Status:               PASSED
+Source SHA:           461c933 (main)
+Authorization:        RDL-041. "Proceed with the plan and any required actions."
+Production affected:  NO — docs plus one uncalled computation module.
+```
+
+### T3 — the roadmap was wrong; there is no engineering task
+
+`.github/workflows/ci.yml` **already** passes `SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}` to
+the Migration parity step, with a comment saying exactly that. The gate is wired and waiting.
+
+**The only outstanding action is adding the repository secret** — repository administration, not
+code, and not something a session can do. **R-A3 stays open and reclassifies from engineering task
+to user action.** Recorded rather than manufacturing a change to look productive.
+
+### T7 — corrected by annotation, not rewriting
+
+The open-decisions register is dated **2026-08-15**. Silently restating its numbers would destroy
+the provenance that makes a dated analysis evidence, so the original text is **left unaltered** and
+a **§0 MEASUREMENT CORRECTIONS** section was appended, with inline pointers at the three stale lines.
+
+| Premise | Registered | Measured | Nature of the error |
+|---|---|---|---|
+| OD-11 | "five currently published avatars" | 5 total: **2** published, 2 draft, 1 testing | **A conflation**, not drift — total counted as published. The decision governs 2. |
+| OD-21/25 corpus | 583 / 466 / 130 | **598 / 480 / 130** | Growth. Competency rows exact. |
+
+**And one constraint the register never recorded at all:** only **46 of 480** reports are
+configuration-analysable. Sizing Track B from the headline number over-estimates by an order of
+magnitude — a more consequential correction than either stale count.
+
+### T8 — test–retest harness
+
+`src/lib/assessment-reliability/test-retest.ts`. Answers what α cannot: **scored again, does the
+same session get the same number?**
+
+Reports Pearson *r* across occasions · mean/max absolute difference overall and per item · per-item
+exact-agreement rate, which localises *which* dimension drifts · SEM as `SD·√(1−r)` · blocking
+reasons · always-non-empty limitations. Read-only: no model call, no database access, no writes.
+
+**Three deliberate refusals, each tested:**
+
+- A session **not scored on every occasion is excluded, not filled in** — substituting a value would
+  understate the very instability being measured.
+- SEM is **`null`, not `0`**, when *r* < 0. The formula goes imaginary; zero would read as perfect
+  precision.
+- Heuristic-fallback occasions are **flagged**: keyword scoring is *deterministic*, so including it
+  **inflates** apparent stability. This is the F-FIND-3 trap running the other way — there a
+  degraded instrument hid as homogeneous, here it would masquerade as reliable.
+
+**Mutation-controlled.** Breaking the SEM-null rule fails `returns null SEM rather than 0 when the
+correlation is negative`; breaking the exclusion rule fails `excludes a session missing a run
+instead of filling it in`. Both confirmed by running the mutated module.
+
+### Gates
+
+```
+audit:deps 0 vulns · lint 0 errors/13 warnings · typecheck clean
+vitest 768 passed / 92 files · reliability 32 · migrations · perf smoke · build
+```
+
+### The honest limit on T8
+
+**It computes the statistic; it does not produce the data.** Test–retest requires deliberate
+re-runs of the examiner over the same transcripts (F0-2) — an operational act nobody has authorized
+or performed. **No test–retest figure exists for VPsych and none may be quoted.** What exists is the
+machinery a psychometrician would otherwise wait weeks for.
+
+Reproducibility is also not validity: a perfectly reproducible instrument can be reproducibly wrong.
+
+```
+Remaining Track B §1:  T4 restore test (needs an isolated environment + authorization) ·
+                       T5 HIBP (Supabase dashboard setting, user action) ·
+                       T6 voice numeric fix (lives on the unmerged voice branch, not main).
+                       T3 reclassified to user action. OD-13 UNFILLED; F2–F5 blocked on
+                       OD-21 + OD-25.
+```
