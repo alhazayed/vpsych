@@ -49,6 +49,24 @@ describe("architecture invariants", () => {
     expect(message).toMatch(/CBE plan failed/);
   });
 
+  it("wires Arabic Speech Preparation Engine into Arabic TTS", () => {
+    const tts = readFileSync(join(root, "app/api/voice/tts/route.ts"), "utf8");
+    expect(tts).toMatch(/prepareArabicSpeech/);
+    expect(tts).toMatch(/@\/lib\/arabic-speech/);
+    expect(tts).toMatch(/X-Voice-Arabic-Prep/);
+    // Prep is TTS-surface only — must not rewrite before synthesize via a
+    // client-visible body mutation of the stored transcript.
+    expect(tts).toMatch(/never mutates stored transcript/);
+  });
+
+  it("does not import ASPE into the patient message route (transcript ownership)", () => {
+    const message = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    expect(message).not.toMatch(/arabic-speech|prepareArabicSpeech/);
+  });
+
   it("provides App Router error boundaries", () => {
     expect(() =>
       readFileSync(join(root, "app/error.tsx"), "utf8"),
