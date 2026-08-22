@@ -528,6 +528,7 @@
       "entering": "Entering the consultation room…",
       "ready": "The patient is ready. Speak naturally.",
       "listening": "Listening…",
+      "confirmingEndpoint": "Still listening — finishing your thought…",
       "processingStt": "Hearing you…",
       "thinking": "Thinking…",
       "avatarSpeaking": "Avatar speaking…",

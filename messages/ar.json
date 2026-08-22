@@ -528,6 +528,7 @@
       "entering": "جارٍ دخول غرفة الاستشارة…",
       "ready": "المريض جاهز. تحدث بشكل طبيعي.",
       "listening": "يستمع…",
+      "confirmingEndpoint": "ما زال يستمع — أكمل فكرتك…",
       "processingStt": "يسمعك…",
       "thinking": "يفكر…",
       "avatarSpeaking": "الصورة الرمزية تتحدث…",
