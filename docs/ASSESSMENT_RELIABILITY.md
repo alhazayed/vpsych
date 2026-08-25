@@ -90,6 +90,36 @@ F0-3 is why `filterToConfiguration()` and `withCompleteProvenance()` exist: a de
 needs a configuration-controlled sub-sample, because mixing model or prompt versions confounds the
 instrument with the configuration that produced the scores.
 
+## 4b. Test–retest — a different property, computed separately
+
+`computeTestRetestReport(occasions)` (`test-retest.ts`, Track B item **T8**) answers a question α
+cannot: **scored again, does the same session get the same number?**
+
+**It cannot be computed from the corpus.** F0-2 established the examiner runs at `temperature: 0.3`,
+so every stored report is a single draw and nothing records a second scoring of the same transcript.
+The statistic requires **deliberate re-runs**. This module computes it once they exist; it does not
+perform them — no model call, no database access, no writes.
+
+| Reports | Refuses |
+|---|---|
+| Pearson *r* between the first two occasions' overall scores | To recompute an overall score |
+| Mean / max absolute difference, overall and per item | To fill in a session missing a run |
+| Per-item exact-agreement rate — *which* item drifts | To call reproducibility validity |
+| Standard error of measurement, `SD·√(1−r)` | To report a SEM when *r* < 0 |
+
+Three deliberate choices:
+
+- **A session not scored on every occasion is excluded, not filled in.** Carrying it forward with a
+  substituted value would understate the very instability being measured.
+- **SEM is `null`, not `0`, when *r* is negative.** The usual formula goes imaginary; reporting zero
+  would read as perfect precision.
+- **Fallback and cross-configuration occasions are flagged.** Heuristic keyword scoring is
+  deterministic, so including it *inflates* apparent stability — the opposite of the α case, and the
+  same F-FIND-3 trap in a different direction.
+
+`limitations` is never empty; three fire unconditionally, including that **a perfectly reproducible
+instrument can be reproducibly wrong**.
+
 ## 5. Running it against real data — not yet authorized
 
 `npm run test:reliability` runs against **synthetic data only**

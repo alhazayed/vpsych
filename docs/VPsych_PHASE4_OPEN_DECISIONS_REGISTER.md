@@ -13,6 +13,32 @@ deployment, production, or PR change.
 
 ---
 
+## 0. MEASUREMENT CORRECTIONS — appended 2026-08-21 (Track B item T7)
+
+This register was written **2026-08-15** against the state of that date. Three of its factual
+premises were re-measured against production on **2026-08-21** (milestone **C0**) and no longer
+hold. **The original text below is left unaltered** — a dated analysis is evidence, and silently
+rewriting its numbers would destroy the provenance that makes it useful. Read these corrections
+alongside it.
+
+| Where | As registered | Measured 2026-08-21 | Effect on the decision |
+|---|---|---|---|
+| **OD-11** (§ P1, "the **five** currently published avatars") | five published | **5 avatars in total** — 2 `published`, 2 `draft`, 1 `testing`, 0 `archived` | **The premise conflated total with published.** The grandfathering deadline governs **2** avatars, not 5. The decision is smaller than registered, not different in kind. |
+| **OD-21 / OD-25** ("583 sessions / 466 reports / 130 competency rows") | 583 / 466 / 130 | **598 / 480 / 130** | Corpus grew ~2.6%. **Competency rows are exact.** Conclusion unchanged: still small. |
+| **OD-25** ("The 583-session corpus…") | 583 | **598** | As above. |
+
+**A further constraint the register does not record, and which matters more than either count:**
+of the **480** reports, only **46** carry complete `scores.scientific_provenance` (one model
+`gpt-5-2025-08-07`, one prompt version `2.0.0`, earliest 2026-08-06). The other **434 cannot be
+backfilled** — the configuration that produced them was never recorded. **The analysable corpus for
+a configuration-controlled Tier 1 analysis is therefore 46, not 480**, growing by roughly 3/day.
+Anyone sizing Track B from the headline number will over-estimate by an order of magnitude.
+
+**Unchanged by these corrections:** every decision in this register remains **open**. Re-deriving a
+premise decides nothing. **OD-13 remains UNFILLED** (RDL-037).
+
+---
+
 ## 1. Purpose and method
 
 This register extracts every open decision implied by the Phase 4 validation protocol, assigns
@@ -408,7 +434,8 @@ readiness.
    execute the §8.4 Tier 1 analyses.
 3. **Why it matters:** This is **the gating appointment for Track B**, and Track B is the
    programme's hedge: per protocol §17.6 it needs no clinical reviewer availability and runs
-   against the existing corpus (583 sessions / 466 reports / 130 competency rows). The PR also
+   against the existing corpus (583 sessions / 466 reports / 130 competency rows — **§0: now
+   598 / 480 / 130, of which only 46 reports are configuration-analysable**). The PR also
    owns the §8.5 pre-registration discipline — without which analyses on a corpus this small
    produce findings that will not replicate.
 4. **Default/recommended:** Protocol §18.1 estimates 40–80 hours initial effort; §8.4 scopes
@@ -419,7 +446,7 @@ readiness.
 7. **Dependencies:** **OD-16** (qualification standard). **Independent of OD-13** — this is the
    one clinical-adjacent appointment that does not require a CGL first, which is precisely what
    makes Track B startable in parallel.
-8. **Consequence of delay:** Track B does not start. The 583-session corpus continues to sit
+8. **Consequence of delay:** Track B does not start. The 583-session corpus (**§0: now 598**) continues to sit
    unanalysed, and the platform's standing "scores are not validated" position remains
    unchanged for another cycle with no path to changing it.
 9. **Blocks implementation:** No.
@@ -592,7 +619,8 @@ review consequence; approved avatars drift silently. · **IMPL:** No · **CLIN:*
 
 ### OD-11 · Legacy avatar grandfathering deadline **[§20]**
 
-**Decision:** Set the deadline by which the five currently published avatars, entering as
+**Decision:** Set the deadline by which the five currently published avatars (**§0: 5 avatars
+exist in total; only 2 are published**), entering as
 V-LEGACY, must complete full review. · **Why:** §10.2 grandfathers them rather than retro-failing
 them — retro-invalidating production content would be gratuitous and would guarantee the
 protocol is resisted. But grandfathering without a deadline is permanent exemption, and these
