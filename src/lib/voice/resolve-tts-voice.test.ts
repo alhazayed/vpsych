@@ -41,8 +41,8 @@ describe("resolveTtsVoice", () => {
   it("ignores a client-supplied voiceId that is not in the registry or any avatar", async () => {
     createClientMock.mockResolvedValue(
       makeSupabaseMock({
-        voice_profiles: [{ voice_id: "registered-voice-1" }],
-        avatars: [{ voice_id: "avatar-voice-1", voice_id_ar: null }],
+        voice_profiles: [{ voice_id: "hpp4J3VqNfWAUOO0d1Us" }],
+        avatars: [{ voice_id: "EXAVITQu4vr4xnSDxMaL", voice_id_ar: null }],
       }),
     );
     const { resolveTtsVoice } = await import("./resolve-tts-voice");
@@ -61,7 +61,7 @@ describe("resolveTtsVoice", () => {
   it("honors a client-supplied voiceId that matches a registered voice_profiles row", async () => {
     createClientMock.mockResolvedValue(
       makeSupabaseMock({
-        voice_profiles: [{ voice_id: "registered-voice-1" }],
+        voice_profiles: [{ voice_id: "hpp4J3VqNfWAUOO0d1Us" }],
         avatars: [],
       }),
     );
@@ -69,10 +69,10 @@ describe("resolveTtsVoice", () => {
 
     const result = await resolveTtsVoice({
       locale: "en",
-      voiceId: "registered-voice-1",
+      voiceId: "hpp4J3VqNfWAUOO0d1Us",
     });
 
-    expect(result.voiceId).toBe("registered-voice-1");
+    expect(result.voiceId).toBe("hpp4J3VqNfWAUOO0d1Us");
     expect(result.source).toBe("legacy_column");
   });
 
@@ -80,17 +80,17 @@ describe("resolveTtsVoice", () => {
     createClientMock.mockResolvedValue(
       makeSupabaseMock({
         voice_profiles: [],
-        avatars: [{ voice_id: "avatar-voice-1", voice_id_ar: null }],
+        avatars: [{ voice_id: "EXAVITQu4vr4xnSDxMaL", voice_id_ar: null }],
       }),
     );
     const { resolveTtsVoice } = await import("./resolve-tts-voice");
 
     const result = await resolveTtsVoice({
       locale: "en",
-      voiceId: "avatar-voice-1",
+      voiceId: "EXAVITQu4vr4xnSDxMaL",
     });
 
-    expect(result.voiceId).toBe("avatar-voice-1");
+    expect(result.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
   });
 
   it("still falls back to env defaults when nothing is supplied", async () => {

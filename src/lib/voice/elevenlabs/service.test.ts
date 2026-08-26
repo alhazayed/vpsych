@@ -60,11 +60,11 @@ describe("elevenLabsService", () => {
     const first = await elevenLabsService.synthesize({
       text: "Hello patient",
       locale: "en",
-      voiceId: "voice-en",
+      voiceId: "hpp4J3VqNfWAUOO0d1Us",
     });
     expect(first.cached).toBe(false);
     expect(first.streamed).toBe(true);
-    expect(first.voiceId).toBe("voice-en");
+    expect(first.voiceId).toBe("hpp4J3VqNfWAUOO0d1Us");
     // Drain stream so the tee cache fill can complete.
     await new Response(first.body).arrayBuffer();
     await vi.waitFor(() => expect(elevenLabsCacheSize()).toBe(1));
@@ -72,7 +72,7 @@ describe("elevenLabsService", () => {
     const second = await elevenLabsService.synthesize({
       text: "Hello patient",
       locale: "en",
-      voiceId: "voice-en",
+      voiceId: "hpp4J3VqNfWAUOO0d1Us",
     });
     expect(second.cached).toBe(true);
     expect(fetchCount).toBe(1);
@@ -80,9 +80,9 @@ describe("elevenLabsService", () => {
     const arabic = await elevenLabsService.synthesize({
       text: "مرحبا",
       locale: "ar",
-      voiceIdAr: "voice-ar",
+      voiceIdAr: "HJ8unGw6UFYkApOU0Oea",
     });
-    expect(arabic.voiceId).toBe("voice-ar");
+    expect(arabic.voiceId).toBe("HJ8unGw6UFYkApOU0Oea");
     expect(arabic.cached).toBe(false);
     expect(fetchCount).toBe(2);
   });
@@ -129,7 +129,7 @@ describe("elevenLabsService", () => {
       "fetch",
       vi.fn(async (url: string) => {
         calls.push(String(url));
-        if (url.includes("library-voice")) {
+        if (url.includes("hpp4J3VqNfWAUOO0d1Us")) {
           return new Response(
             JSON.stringify({
               detail: {
@@ -151,11 +151,11 @@ describe("elevenLabsService", () => {
     const result = await elevenLabsService.synthesize({
       text: "Hello",
       locale: "en",
-      voiceId: "library-voice",
+      voiceId: "hpp4J3VqNfWAUOO0d1Us",
     });
     expect(result.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
     expect(calls.length).toBe(2);
-    expect(calls[0]).toContain("library-voice");
+    expect(calls[0]).toContain("hpp4J3VqNfWAUOO0d1Us");
     expect(calls[1]).toContain("EXAVITQu4vr4xnSDxMaL");
   });
 });

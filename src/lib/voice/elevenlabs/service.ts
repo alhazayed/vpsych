@@ -11,6 +11,7 @@ import {
   resolveVoiceSettings,
   type ElevenLabsVoiceSettings,
 } from "@/lib/voice/prosody";
+import { isVoiceApprovedFor } from "@/lib/voice/voice-language";
 
 export type ElevenLabsSynthesizeParams = {
   text: string;
@@ -251,10 +252,18 @@ export const elevenLabsService = {
       voiceId: params.voiceId,
       voiceIdAr: params.voiceIdAr,
     });
-    const fallbackVoiceId =
+    // The plan-error retry candidate is read straight from env/defaults, so it
+    // bypasses resolveElevenLabsVoiceId and needs the same language gate. An
+    // unapproved fallback is dropped rather than substituted: retrying a failed
+    // Arabic turn with an English voice would produce exactly the silent
+    // cross-language speech this guard exists to prevent.
+    const configuredFallback =
       params.locale === "ar"
         ? process.env.ELEVENLABS_VOICE_ID_AR || DEFAULT_ELEVENLABS_VOICE_AR
         : process.env.ELEVENLABS_VOICE_ID_EN || DEFAULT_ELEVENLABS_VOICE_EN;
+    const fallbackVoiceId = isVoiceApprovedFor(configuredFallback, params.locale)
+      ? configuredFallback
+      : null;
 
     // Prefer the resolved avatar voice; on Voice Library / plan errors, retry
     // once with the account default premade voice (Rachel / Charlotte).

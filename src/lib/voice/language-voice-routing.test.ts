@@ -22,9 +22,13 @@ import {
 } from "@/lib/voice/config";
 import { resolveAvatarSpeechVoice } from "@/lib/voice/registry";
 import type { VoiceProfile } from "@/lib/types";
+import {
+  VoiceLanguageError,
+  trustedVoiceLanguage,
+} from "@/lib/voice/voice-language";
 
-const AR_VOICE = "ArabicVoiceIdAAAAAAA";
-const EN_VOICE = "EnglishVoiceIdAAAAAA";
+const AR_VOICE = "HJ8unGw6UFYkApOU0Oea"; // Omars — verified ar
+const EN_VOICE = "hpp4J3VqNfWAUOO0d1Us"; // Bella — verified en
 
 const originalEnv = { ...process.env };
 afterEach(() => {
@@ -138,6 +142,9 @@ describe("language-specific voice routing", () => {
   });
 
   it("keeps the resolution result shape the TTS route depends on (8)", () => {
+    // Needs an approved Arabic voice configured: the built-in Arabic default is
+    // a verified English voice, so without this the resolver correctly refuses.
+    process.env.ELEVENLABS_VOICE_ID_AR = AR_VOICE;
     const resolved = resolveAvatarSpeechVoice({ locale: "ar" });
 
     expect(resolved).toMatchObject({
@@ -155,7 +162,7 @@ describe("language-specific voice routing", () => {
 describe("voice precedence — why an env override can be inert", () => {
   it("an active same-language voice_profile outranks the Arabic env override", () => {
     process.env.ELEVENLABS_VOICE_ID_AR = AR_VOICE;
-    const profileVoice = "ProfileVoiceIdAAAAAA";
+    const profileVoice = "isQLuoVuANx6FjDxyasX"; // Noura — verified ar
 
     const resolved = resolveAvatarSpeechVoice({
       locale: "ar",
@@ -171,7 +178,7 @@ describe("voice precedence — why an env override can be inert", () => {
 
   it("a legacy voice_id_ar column also outranks the Arabic env override", () => {
     process.env.ELEVENLABS_VOICE_ID_AR = AR_VOICE;
-    const legacy = "LegacyArVoiceIdAAAAA";
+    const legacy = "cdxrkuYK4nZwDSkjw5sa"; // Amira — verified ar
 
     const resolved = resolveAvatarSpeechVoice({
       locale: "ar",
@@ -194,15 +201,20 @@ describe("voice precedence — why an env override can be inert", () => {
     expect(resolved.source).toBe("env_default");
   });
 
-  it("with nothing configured at all, Arabic uses the built-in Arabic default", () => {
+  it("with nothing configured, English uses its default and Arabic refuses", () => {
     delete process.env.ELEVENLABS_VOICE_ID_AR;
     delete process.env.ELEVENLABS_VOICE_ID_EN;
 
-    expect(resolveAvatarSpeechVoice({ locale: "ar" }).voiceId).toBe(
-      DEFAULT_ELEVENLABS_VOICE_AR,
-    );
+    // The English default is a verified English voice, so it still resolves.
     expect(resolveAvatarSpeechVoice({ locale: "en" }).voiceId).toBe(
       DEFAULT_ELEVENLABS_VOICE_EN,
+    );
+    // The Arabic default is a verified *English* voice, so there is no approved
+    // Arabic voice to fall back to and resolution raises rather than speaking
+    // Arabic in an English voice.
+    expect(trustedVoiceLanguage(DEFAULT_ELEVENLABS_VOICE_AR)).toBe("en");
+    expect(() => resolveAvatarSpeechVoice({ locale: "ar" })).toThrow(
+      VoiceLanguageError,
     );
   });
 });

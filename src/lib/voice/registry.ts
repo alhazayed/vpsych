@@ -12,6 +12,7 @@ import {
   resolveElevenLabsVoiceId,
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
+import { isVoiceApprovedFor } from "@/lib/voice/voice-language";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 
 export type VoiceResolution = {
@@ -57,10 +58,14 @@ export function resolveAvatarSpeechVoice(params: {
 
   if (isActiveVoiceProfile(profile)) {
     const profileLocale = normalizeSpeechLocale(profile.language);
-    // Only use a registry profile when its language matches the session locale.
-    // Cross-locale profiles (e.g. Arabic Amira on an English turn) must not win —
-    // that routed EN sessions onto Voice Library ids that free API keys reject.
-    if (profileLocale === locale) {
+    // Two conditions, not one. `profile.language` is a free-text column that
+    // describes the *profile*; it is a label an admin typed, and production
+    // proved it can disagree with the voice it points at (the Arabic-labelled
+    // "Amira (Bella)" profile carried an English voice). So the profile only
+    // wins when its label matches the session locale AND the voice id it
+    // carries is verified to speak that language. A mislabelled profile is
+    // skipped and resolution continues down the same-language chain.
+    if (profileLocale === locale && isVoiceApprovedFor(profile.voice_id, locale)) {
       return {
         voiceId: profile.voice_id,
         source: "voice_profile",
