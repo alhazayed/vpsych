@@ -25,7 +25,7 @@ const youssef: VoiceProfile = {
   id: "a1000000-0000-4000-8000-000000000001",
   provider: "elevenlabs",
   voice_name: "Youssef",
-  voice_id: "ZCXYdzd5Evtsll2EdoCi",
+  voice_id: "isQLuoVuANx6FjDxyasX",
   language: "ar",
   dialect: "Levantine Arabic",
   gender: "male",
@@ -54,8 +54,8 @@ describe("resolveAvatarSpeechVoice", () => {
     const result = resolveAvatarSpeechVoice({
       locale: "ar",
       voiceProfile: amira,
-      voiceId: "legacy-en",
-      voiceIdAr: "legacy-ar",
+      voiceId: "hpp4J3VqNfWAUOO0d1Us",
+      voiceIdAr: "HJ8unGw6UFYkApOU0Oea",
     });
     expect(result.source).toBe("voice_profile");
     expect(result.voiceId).toBe("cdxrkuYK4nZwDSkjw5sa");
@@ -66,11 +66,11 @@ describe("resolveAvatarSpeechVoice", () => {
     const result = resolveAvatarSpeechVoice({
       locale: "en",
       voiceProfile: amira,
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      voiceId: "EXAVITQu4vr4xnSDxMaL",
       voiceIdAr: amira.voice_id,
     });
     expect(result.source).toBe("legacy_column");
-    expect(result.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+    expect(result.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
   });
 
   it("does not use a cross-locale profile even when legacy ids are missing", () => {
@@ -92,10 +92,10 @@ describe("resolveAvatarSpeechVoice", () => {
     const result = resolveAvatarSpeechVoice({
       locale: "ar",
       voiceProfile: { ...youssef, is_active: false },
-      voiceIdAr: "legacy-ar",
+      voiceIdAr: "HJ8unGw6UFYkApOU0Oea",
     });
     expect(result.source).toBe("legacy_column");
-    expect(result.voiceId).toBe("legacy-ar");
+    expect(result.voiceId).toBe("HJ8unGw6UFYkApOU0Oea");
   });
 });
 
