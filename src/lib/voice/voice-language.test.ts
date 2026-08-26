@@ -21,6 +21,7 @@ import {
 import { resolveAvatarSpeechVoice } from "@/lib/voice/registry";
 import {
   VoiceLanguageError,
+  PENDING_LANGUAGE_VERIFICATION,
   approvedVoicesFor,
   isVoiceApprovedFor,
   trustedVoiceLanguage,
@@ -233,5 +234,100 @@ describe("cross-language assignment is impossible", () => {
         resolveElevenLabsVoiceId({ locale: "ar", voiceIdAr: bad }),
       ).toBe(AR_OMARS);
     }
+  });
+});
+
+describe("authorized Arabic catalog additions", () => {
+  const ANAS = "R6nda3uM038xEEKi7GFl";
+  const NOURA = "isQLuoVuANx6FjDxyasX";
+  const GAMAL = "JTMaHm6sHVI3NZgPaWDz";
+
+  it("Anas is accepted as Arabic (1)", () => {
+    expect(trustedVoiceLanguage(ANAS)).toBe("ar");
+    expect(isVoiceApprovedFor(ANAS, "ar")).toBe(true);
+    expect(approvedVoicesFor("ar")).toContain(ANAS);
+  });
+
+  it("Noura is accepted as Arabic (2)", () => {
+    expect(trustedVoiceLanguage(NOURA)).toBe("ar");
+    expect(isVoiceApprovedFor(NOURA, "ar")).toBe(true);
+    expect(approvedVoicesFor("ar")).toContain(NOURA);
+  });
+
+  it("Gamal is held out — description is not structured metadata (3)", () => {
+    // The verification rule requires vendor structured `labels.language`.
+    // Gamal's labels object is empty, so it is approved for nothing and the
+    // reason is recorded rather than the gap being silently closed.
+    expect(trustedVoiceLanguage(GAMAL)).toBeNull();
+    expect(isVoiceApprovedFor(GAMAL, "ar")).toBe(false);
+    expect(isVoiceApprovedFor(GAMAL, "en")).toBe(false);
+    expect(approvedVoicesFor("ar")).not.toContain(GAMAL);
+    expect(PENDING_LANGUAGE_VERIFICATION[GAMAL]?.claimedLanguage).toBe("ar");
+    expect(PENDING_LANGUAGE_VERIFICATION[GAMAL]?.reason).toMatch(
+      /structured labels\.language absent/,
+    );
+  });
+
+  it("no authorized Arabic voice can ever be accepted for English (4)", () => {
+    for (const id of [ANAS, NOURA, GAMAL]) {
+      expect(isVoiceApprovedFor(id, "en")).toBe(false);
+      expect(approvedVoicesFor("en")).not.toContain(id);
+    }
+    process.env.ELEVENLABS_VOICE_ID_EN = ANAS; // misconfigured on purpose
+    expect(resolveElevenLabsVoiceId({ locale: "en" })).toBe(
+      DEFAULT_ELEVENLABS_VOICE_EN,
+    );
+  });
+
+  it("cross-language rejection is unchanged by the additions (5)", () => {
+    process.env.ELEVENLABS_VOICE_ID_AR = ANAS;
+    // An English voice in the Arabic slot still loses to the approved Arabic one.
+    expect(
+      resolveElevenLabsVoiceId({ locale: "ar", voiceIdAr: EN_SARAH }),
+    ).toBe(ANAS);
+    expect(
+      resolveAvatarSpeechVoice({
+        locale: "ar",
+        voiceProfile: profile(EN_SARAH, "ar"),
+      }).voiceId,
+    ).toBe(ANAS);
+  });
+
+  it("Maya's current Arabic assignment still fails closed (6)", () => {
+    // Production state: profile "Amira (Bella)" (language 'ar', voice Sarah)
+    // plus voice_id_ar = Sarah, and no Arabic env override configured.
+    delete process.env.ELEVENLABS_VOICE_ID_AR;
+    expect(() =>
+      resolveAvatarSpeechVoice({
+        locale: "ar",
+        voiceProfile: profile(EN_SARAH, "ar"),
+        voiceIdAr: EN_SARAH,
+      }),
+    ).toThrow(VoiceLanguageError);
+  });
+
+  it("Jordan's Arabic Omars route remains valid (7)", () => {
+    // jordan-hale: active profile "Omars", a verified Arabic voice.
+    const resolved = resolveAvatarSpeechVoice({
+      locale: "ar",
+      voiceProfile: profile(AR_OMARS, "ar"),
+      voiceIdAr: AR_OMARS,
+    });
+    expect(resolved.voiceId).toBe(AR_OMARS);
+    expect(resolved.source).toBe("voice_profile");
+  });
+
+  it("English routing is unaffected by the Arabic additions (8)", () => {
+    delete process.env.ELEVENLABS_VOICE_ID_EN;
+    expect(resolveElevenLabsVoiceId({ locale: "en" })).toBe(
+      DEFAULT_ELEVENLABS_VOICE_EN,
+    );
+    expect(trustedVoiceLanguage(DEFAULT_ELEVENLABS_VOICE_EN)).toBe("en");
+    expect(
+      resolveAvatarSpeechVoice({
+        locale: "en",
+        voiceProfile: profile(EN_SARAH, "en"),
+      }).voiceId,
+    ).toBe(EN_SARAH);
   });
 });

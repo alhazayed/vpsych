@@ -17,6 +17,15 @@
  * therefore approved for nothing. A new voice becomes usable by being verified
  * and added here — never by being written into a database column.
  *
+ * EVIDENCE STANDARD. An entry requires the vendor's *structured* language
+ * metadata (`labels.language`). A free-text description asserting a language is
+ * not sufficient on its own: prose is written by the voice's publisher, is not
+ * a controlled field, and accepting it would be exactly the "convert UNKNOWN
+ * into VERIFIED by reasoning" move that VPSYCH_MASTER_CONTEXT §563 forbids
+ * ("Evidence is never fabricated. Missing evidence displays Evidence Pending").
+ * A voice whose structured metadata is empty is held out and recorded below
+ * rather than admitted on the strength of its description.
+ *
  * Classification is not availability. Listing an id here states what language
  * it speaks; it does not add it to any catalogue, activate a profile, or make
  * it selectable. Selection still requires a voice_profile, an avatar column, or
@@ -53,6 +62,31 @@ export const VERIFIED_VOICE_LANGUAGES: Readonly<
   isQLuoVuANx6FjDxyasX: "ar",
   // "Amira - Poised and Graceful" — language ar, accent gulf.
   cdxrkuYK4nZwDSkjw5sa: "ar",
+  // "Anas" — language ar, accent modern standard, male, middle-aged.
+  // Authorized for the Arabic catalogue; structured metadata present.
+  R6nda3uM038xEEKi7GFl: "ar",
+});
+
+/**
+ * Voices that were authorized but are held out of the classifier because their
+ * language is not established to the standard above. They are approved for
+ * nothing until the missing evidence exists — listing them here records *why*,
+ * so the gap is visible rather than silently forgotten.
+ *
+ * Each entry is deliberately NOT in VERIFIED_VOICE_LANGUAGES.
+ */
+export const PENDING_LANGUAGE_VERIFICATION: Readonly<
+  Record<string, { claimedLanguage: string; reason: string }>
+> = Object.freeze({
+  // "Gamal - Authoritative and Resonant". Its ElevenLabs `labels` object is
+  // empty, so there is no structured language field at all; Arabic/Egyptian is
+  // asserted only by the vendor's free-text description. Admitting it would
+  // treat prose as equivalent to structured metadata.
+  JTMaHm6sHVI3NZgPaWDz: {
+    claimedLanguage: "ar",
+    reason:
+      "structured labels.language absent; language claimed only in vendor description",
+  },
 });
 
 /**
