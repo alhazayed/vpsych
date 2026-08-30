@@ -40,11 +40,18 @@ Clients should send `therapistInterrupted: true` on the next message when barge-
 
 `buildVoicePersonality()` maps age, gender presentation, accent/culture hints, education register, prosody (pace/energy/stability/style), confidence, and emotional tone for TTS settings — **without inventing diagnosis**.
 
+## Arabic Speech Preparation (ASPE)
+
+When `locale=ar`, `/api/voice/tts` runs `prepareArabicSpeech()` before ElevenLabs:
+selective clinical tashkeel, number/abbreviation expansion, markup strip.
+Stored transcripts are not rewritten. See `docs/ARABIC_SPEECH_PREPARATION_ENGINE.md`.
+
 ## Provider ownership
 
 | Concern | Owner |
 |---------|-------|
 | Voice ID allowlist / registry | `lib/voice` |
+| Arabic TTS orthography | `lib/arabic-speech` (ASPE) |
 | Clinical live-switch params | CVP |
 | Capture / playback / VAD UX | Realtime gateway |
 | STT/TTS HTTP routes | Existing `/api/voice/*` (rate-limited) |
