@@ -87,6 +87,12 @@ export type ClinicalCore = {
   protective_factors?: import("@/lib/clinical-intelligence").ProtectiveFactor[];
   mse?: import("@/lib/clinical-intelligence").MentalStatusExam;
   formulation?: import("@/lib/clinical-intelligence").PatientFormulation;
+  /**
+   * Authored psychiatric case_file (consistency rules, meds summary, …).
+   * Optional; mergeClinicalCore must preserve it when present on legacy cores.
+   * Readers format via `formatCanonicalFactsForPrompt` — never dump raw JSON.
+   */
+  case_file?: import("@/lib/ai/canonical-facts").ClinicalCaseFile | null;
 };
 
 export type PersonalityIdentity = {

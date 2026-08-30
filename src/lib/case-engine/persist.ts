@@ -27,6 +27,7 @@ import {
   type InstructorPreset,
 } from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
+import { withPreservedCaseFile } from "@/lib/ai/canonical-facts";
 
 export type StartCaseOptions = {
   avatar: Avatar;
@@ -763,6 +764,24 @@ export async function createCaseForSession(
   const therapyModality: TherapyModality =
     opts.therapyModality ?? "supportive";
 
+  // Attach authored case_file (consistency rules) onto the legacy core so
+  // mergeClinicalCore can preserve it onto clinical_snapshot.
+  const legacyCore = withPreservedCaseFile(
+    (opts.avatar.clinical_core as ClinicalCore | null) ??
+      ({
+        disorder: opts.avatar.disorder,
+        age: opts.avatar.age ?? 30,
+        gender:
+          (opts.avatar.gender as ClinicalCore["gender"]) ?? "unspecified",
+        symptom_profile: [],
+        disclosure_rules: [],
+        session_goals: [],
+        ideal_approach: "",
+        risk_profile: { suicidal_ideation: "none" },
+      } satisfies ClinicalCore),
+    opts.avatar.slug,
+  );
+
   const generated = generateCaseInstance({
     persona,
     avatarId: opts.avatar.id,
@@ -775,7 +794,7 @@ export async function createCaseForSession(
     seed: opts.seed,
     difficultyProfile: findDifficulty(difficulty, catalog),
     therapyProfile: findTherapy(therapyModality, catalog),
-    legacyClinicalCore: opts.avatar.clinical_core as ClinicalCore | null,
+    legacyClinicalCore: legacyCore,
     voiceProfileId: opts.avatar.voice_profile_id,
     createdBy: opts.therapistId,
     avatarHumanPersonality: opts.avatar.human_personality ?? null,

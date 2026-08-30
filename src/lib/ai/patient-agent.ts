@@ -174,6 +174,8 @@ export async function generatePatientReplyDetailed(params: {
     });
     const trimmed = text.trim();
     if (!trimmed) return pickFallback(priorErrorKind);
+    // Soft contentless check — hard gate + single regen lives in the message
+    // route so TTS never sees invalid text. Empty string already falls back.
     logPatientAgent("reply_ok", { aiSource: "gateway", model });
     return {
       text: trimmed,
