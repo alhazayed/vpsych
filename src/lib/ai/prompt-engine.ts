@@ -39,6 +39,11 @@ export type PromptFidelityHints = {
    * therapy-response fidelity (patient-language; never DSM dumps).
    */
   clinical_intelligence_block?: string;
+  /**
+   * Canonical clinical facts + numerical consistency + medication instruction
+   * mitigation (Layer A). Injected when case_file / authored facts resolve.
+   */
+  canonical_facts_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -177,6 +182,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.adaptation_block}}
 
 {{fidelity.clinical_intelligence_block}}
+
+{{fidelity.canonical_facts_block}}
 
 {{fidelity.humanization_cue}}
 
@@ -373,6 +380,8 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
       adaptation_block: input.fidelity?.adaptation_block?.trim() || "",
       clinical_intelligence_block:
         input.fidelity?.clinical_intelligence_block?.trim() || "",
+      canonical_facts_block:
+        input.fidelity?.canonical_facts_block?.trim() || "",
       humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };

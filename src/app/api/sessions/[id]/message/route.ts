@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
+import { validatePatientReply } from "@/lib/ai/reply-validation";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import {
   embedAdaptationInMemory,
@@ -501,6 +502,43 @@ export async function POST(request: Request, { params }: Params) {
         userMessage: message,
         behaviourReinforcement: behaviourPlan?.promptBlock ?? null,
       });
+    }
+
+    // D4 — contentless / ellipsis-only gate. At most ONE regeneration.
+    // Never persist or hand to TTS until a valid utterance exists.
+    if (!validatePatientReply(replyMeta.text).ok) {
+      console.warn("[sessions/message] contentless reply rejected", {
+        sessionId,
+        aiSource: replyMeta.aiSource,
+        preview: replyMeta.text.slice(0, 40),
+      });
+      replyMeta = await generatePatientReplyDetailed({
+        avatar: avatarForReply,
+        history: historyRows,
+        userMessage: message,
+        behaviourReinforcement: [
+          behaviourPlan?.promptBlock ?? null,
+          "Your previous draft was empty or punctuation-only. Reply with at least one real spoken word as this patient. Do not answer with ellipsis alone.",
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+      });
+      if (!validatePatientReply(replyMeta.text).ok) {
+        // Second failure → persona fallback (already a lexical string).
+        const fallbacks =
+          avatarForReply.fallback_replies?.length > 0
+            ? avatarForReply.fallback_replies
+            : ["Mm.", "آه."];
+        const idx =
+          Math.abs(
+            message.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+          ) % fallbacks.length;
+        replyMeta = {
+          text: fallbacks[idx]!,
+          aiSource: "persona_fallback",
+          errorKind: replyMeta.errorKind,
+        };
+      }
     }
   } catch (err) {
     console.error("[sessions/message] patient reply generation failed", {

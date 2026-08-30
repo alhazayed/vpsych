@@ -354,6 +354,37 @@ describe("resolveAvatar", () => {
     // Matched localization kept
     expect(resolved.system_prompt).toContain("wired");
   });
+
+  it("injects Layer A canonical facts (age + med instruction) for jordan-hale Arabic", () => {
+    const jordan: Avatar = {
+      ...v2Avatar,
+      slug: "jordan-hale",
+      name: "Jordan Hale",
+      disorder: "Generalized Anxiety Disorder",
+      age: 34,
+      gender: "non-binary",
+      clinical_core: {
+        ...core,
+        disorder: "Generalized Anxiety Disorder",
+        age: 34,
+        gender: "non-binary",
+      },
+      personalities: {
+        "en-US": personality("en-US", "Jordan Hale"),
+        "ar-JO": {
+          ...personality("ar-JO", "رامي نصّار"),
+          persona_prompt:
+            "إنت رامي نصّار، عمرك ٣٤ سنة. إنت اللي حجزت الموعد لحالك.",
+        },
+      },
+    };
+    const resolved = resolveAvatar(jordan, "ar");
+    expect(resolved.system_prompt).toContain("CANONICAL CLINICAL FACTS");
+    expect(resolved.system_prompt).toMatch(/Authored age:\s*34/);
+    expect(resolved.system_prompt).toMatch(/سيرترالين/);
+    expect(resolved.system_prompt).toContain("إنت ذكر");
+    expect(resolved.system_prompt).toContain("حجزتِ");
+  });
 });
 
 describe("listAvailableLocales", () => {

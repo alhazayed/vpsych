@@ -228,6 +228,9 @@ function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
       (pkg.ideal_approach ?? legacy?.ideal_approach ?? "Supportive collaborative interview.") +
       comorbidityNote,
     risk_profile: risk,
+    // Preserve authored case_file when present on the avatar/legacy core so
+    // consistency_rules reach clinical_snapshot → resolveAvatar → Module 1.
+    ...(legacy?.case_file ? { case_file: legacy.case_file } : {}),
   };
 }
 

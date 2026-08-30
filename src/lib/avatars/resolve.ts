@@ -16,6 +16,10 @@ import {
   formatTherapyReactionForPrompt,
 } from "@/lib/case-engine/therapy-process";
 import { formatAuthoredTherapyCuesForPrompt } from "@/lib/case-engine/authored-therapy-cues";
+import {
+  formatCanonicalFactsForPrompt,
+  withPreservedCaseFile,
+} from "@/lib/ai/canonical-facts";
 import { resolveHumanPersonality } from "@/lib/personality-engine";
 import {
   formatFormulationForPrompt,
@@ -165,6 +169,17 @@ function fidelityHintsFromSnapshot(
     .filter((s) => Boolean(s?.trim()))
     .join("\n\n");
 
+  const coreForFacts = core
+    ? withPreservedCaseFile(core, opts?.avatarSlug)
+    : null;
+  const canonical_facts_block = coreForFacts
+    ? formatCanonicalFactsForPrompt({
+        clinical_core: coreForFacts,
+        avatarSlug: opts?.avatarSlug,
+        locale: opts?.locale ?? snapshot?.locale,
+      })
+    : undefined;
+
   return {
     speech_behavior_cue: speech,
     difficulty_behavior: mods
@@ -172,6 +187,7 @@ function fidelityHintsFromSnapshot(
       : undefined,
     therapy_process_cue,
     clinical_intelligence_block: ciBlock || undefined,
+    canonical_facts_block: canonical_facts_block || undefined,
   };
 }
 
@@ -436,12 +452,20 @@ export function resolveAvatar(
         ? isCaseDiagnosisOverride(avatar, snapshot)
         : false,
     });
+    // Always attach Layer A canonical facts from the merged core (preserves
+    // case_file when present; falls back to authored facts for certified SPs).
+    const coreWithFacts = withPreservedCaseFile(mergedCore, avatar.slug);
+    fidelity.canonical_facts_block = formatCanonicalFactsForPrompt({
+      clinical_core: coreWithFacts,
+      avatarSlug: avatar.slug,
+      locale,
+    });
     if (options?.adaptationBlock?.trim()) {
       fidelity.adaptation_block = options.adaptationBlock.trim();
     }
 
     const assembly = {
-      clinical_core: mergedCore,
+      clinical_core: coreWithFacts,
       personality,
       session: { locale },
       // `fidelity` may carry Mission 8 adaptation_block for this therapist turn.
@@ -524,9 +548,13 @@ export function resolveAvatar(
       snapshot?.clinical_core.ideal_approach ??
       avatar.ideal_guidelines?.ideal_approach,
   });
-  if (snapshot?.clinical_core) {
-    assembly.clinical_core = snapshot.clinical_core;
-  }
+  const flatMerged: ClinicalCore = withPreservedCaseFile(
+    snapshot?.clinical_core ??
+      avatar.clinical_core ??
+      assembly.clinical_core,
+    avatar.slug,
+  );
+  assembly.clinical_core = flatMerged;
   assembly.fidelity = fidelityHintsFromSnapshot(snapshot, {
     disorderHint: slugHintFromDisorderName(flatDisorder),
     avatarSlug: avatar.slug,
@@ -534,6 +562,12 @@ export function resolveAvatar(
     diagnosisOverride: snapshot
       ? isCaseDiagnosisOverride(avatar, snapshot)
       : false,
+  });
+  // Ensure Layer A facts attach even when no snapshot (fidelityHints needs core).
+  assembly.fidelity.canonical_facts_block = formatCanonicalFactsForPrompt({
+    clinical_core: flatMerged,
+    avatarSlug: avatar.slug,
+    locale,
   });
   assembly.human_personality = resolveHumanPersonality({
     avatar,
@@ -558,15 +592,12 @@ export function resolveAvatar(
     direction: language === "ar" ? "rtl" : "ltr",
     name: avatar.name,
     disorder: flatDisorder,
-    age: snapshot?.clinical_core.age ?? avatar.age,
-    gender: snapshot?.clinical_core.gender ?? avatar.gender,
+    age: flatMerged.age ?? avatar.age,
+    gender: flatMerged.gender ?? avatar.gender,
     portrait_url: avatar.portrait_url,
     persona_prompt: avatar.persona_prompt,
     system_prompt: assembleSystemPrompt(assembly),
-    ideal_guidelines: guidelinesFromCore(
-      snapshot?.clinical_core ?? avatar.clinical_core,
-      avatar,
-    ),
+    ideal_guidelines: guidelinesFromCore(flatMerged, avatar),
     rubric: snapshot?.rubric ?? avatar.rubric ?? [],
     dialect: avatar.dialect ?? null,
     voice_profile_id: registryVoice.voice_profile_id,
@@ -577,8 +608,7 @@ export function resolveAvatar(
     tts_lang: language === "ar" ? "ar-SA" : "en-US",
     fallback_replies: [],
     per_turn_reinforcement: assemblePerTurnReinforcement(assembly),
-    clinical_core:
-      snapshot?.clinical_core ?? avatar.clinical_core ?? assembly.clinical_core,
+    clinical_core: flatMerged,
     personality: assembly.personality,
     human_personality: assembly.human_personality,
   };
