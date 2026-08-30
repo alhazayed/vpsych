@@ -48,6 +48,17 @@ export type ResolveAvatarOptions = {
 const AVATAR_DEFAULT_DISORDER_SLUG: Record<string, string> = {
   "maya-chen": "mdd-recurrent-moderate",
   "jordan-hale": "gad-with-panic",
+  // Wave-1 Simulated Patient Library
+  "elena-vasquez": "ptsd",
+  "marcus-okonkwo": "ocd",
+  "devon-wright": "schizophrenia",
+  "riley-park": "bpd",
+  "caleb-brooks": "alcohol-use-disorder",
+  "harper-ellis": "eating-disorders",
+  "leo-nguyen": "adult-adhd",
+  "nathan-cole": "bipolar-mania",
+  "sofia-morales": "mdd-recurrent-moderate",
+  "tyler-bennett": "social-anxiety",
 };
 
 /**

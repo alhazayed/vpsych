@@ -1,4 +1,5 @@
 import type { HumanPersonalityProfile } from "./types";
+import { WAVE1_HUMAN_PERSONALITIES } from "./wave1-catalog";
 
 /**
  * Built-in authored human personality profiles.
@@ -9,6 +10,7 @@ export const BUILTIN_HUMAN_PERSONALITIES: Record<
   string,
   Partial<Record<string, HumanPersonalityProfile>>
 > = {
+  ...WAVE1_HUMAN_PERSONALITIES,
   "maya-chen": {
     "en-US": {
       version: 1,
