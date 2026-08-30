@@ -22,7 +22,9 @@ describe("reply-validation D4 contentless gate", () => {
   it("rejects punctuation-only output", () => {
     expect(validatePatientReply("...").ok).toBe(false);
     expect(validatePatientReply("—").ok).toBe(false);
-    expect(validatePatientReply(".").reason).toBe("punctuation_only");
+    const dot = validatePatientReply(".");
+    expect(dot.ok).toBe(false);
+    if (!dot.ok) expect(dot.reason).toBe("punctuation_only");
   });
 
   it("mutation: adding a real word after ellipsis makes it valid", () => {
