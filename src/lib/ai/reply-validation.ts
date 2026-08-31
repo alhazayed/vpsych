@@ -199,22 +199,70 @@ function mentionsAgent(norm: string, fact: MedicationFact): boolean {
   });
 }
 
-/** Numbers stated as a dose ("50 mg", "٥٠ ملغ") anywhere in the reply. */
-function statedDoses(norm: string): number[] {
+/**
+ * Spoken Arabic numerals, bounded to the values that actually occur as clinical
+ * doses and durations in these cases. A closed lookup table, not a number
+ * parser: medication names are spoken in English but the surrounding Arabic
+ * stays Arabic, so "sertraline خمسين مليغرام" is expected speech and its dose
+ * must not slip through unchecked.
+ *
+ * Ordered longest-first so "خمسة وعشرين" is read before "عشرين".
+ */
+const ARABIC_NUMERAL_WORDS: ReadonlyArray<readonly [string, number]> = [
+  ["خمسة وعشرين", 25],
+  ["خمسه وعشرين", 25],
+  ["اثنعش", 12],
+  ["اتنعش", 12],
+  ["اثني عشر", 12],
+  ["خمستعشر", 15],
+  ["خمسة عشر", 15],
+  ["ثلاثين", 30],
+  ["تلاتين", 30],
+  ["أربعين", 40],
+  ["اربعين", 40],
+  ["خمسين", 50],
+  ["ستين", 60],
+  ["سبعين", 70],
+  ["ثمانين", 80],
+  ["تمانين", 80],
+  ["تسعين", 90],
+  ["عشرين", 20],
+  ["عشرة", 10],
+  ["عشر", 10],
+  ["خمسة", 5],
+  ["خمس", 5],
+  ["مئة", 100],
+  ["مية", 100],
+  ["ماية", 100],
+  ["نصف", 0.5],
+  ["نص", 0.5],
+];
+
+const DOSE_UNIT = "(?:mg|milligram|milligrams|ملغ|مليغرام|ملجم|ملليغرام)";
+const DAY_UNIT = "(?:day|days|يوم|أيام|ايام)";
+
+/** Digit and spoken-numeral values attached to a unit. */
+function statedQuantities(norm: string, unit: string): number[] {
   const out: number[] = [];
-  for (const m of norm.matchAll(/(\d+(?:[.,]\d+)?)\s*(?:mg|ملغ|مليغرام|ملجم)/g)) {
+  for (const m of norm.matchAll(
+    new RegExp(String.raw`(\d+(?:[.,]\d+)?)\s*${unit}`, "g"),
+  )) {
     out.push(Number(String(m[1]).replace(",", ".")));
+  }
+  for (const [word, value] of ARABIC_NUMERAL_WORDS) {
+    // The numeral may sit either side of the unit in spoken Arabic.
+    const near = new RegExp(`${word}\\s*${unit}|${unit}\\s*${word}`);
+    if (near.test(norm)) out.push(value);
   }
   return out;
 }
 
-/** Numbers stated as a duration in days. */
+function statedDoses(norm: string): number[] {
+  return statedQuantities(norm, DOSE_UNIT);
+}
+
 function statedDurations(norm: string): number[] {
-  const out: number[] = [];
-  for (const m of norm.matchAll(/(\d{1,4})\s*(?:day|days|يوم|أيام|ايام)/g)) {
-    out.push(Number(m[1]));
-  }
-  return out;
+  return statedQuantities(norm, DAY_UNIT);
 }
 
 /**
@@ -242,7 +290,7 @@ export function detectMedicationContradiction(
   const replyNamesAny = facts.some((f) => mentionsAgent(norm, f));
   const therapistNamed = therapistNorm
     ? facts.filter(
-        (f) => enforceableIn(f, locale) && mentionsAgent(therapistNorm, f),
+        (f) => enforceableIn(f) && mentionsAgent(therapistNorm, f),
       )
     : [];
   const anaphoricTargets =
@@ -251,7 +299,7 @@ export function detectMedicationContradiction(
       : new Set<string>();
 
   for (const fact of facts) {
-    if (!enforceableIn(fact, locale)) continue;
+    if (!enforceableIn(fact)) continue;
     const named = mentionsAgent(norm, fact);
     const anaphoric =
       !named && anaphoricTargets.size === 1 && anaphoricTargets.has(fact.agent_class);

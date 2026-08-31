@@ -1054,6 +1054,7 @@
           "owner": "patient",
           "status": "stopped",
           "agent_class": "ssri",
+          "speech_form": "SSRI",
           "agent_names": [
             "SSRI"
           ],
@@ -1067,6 +1068,7 @@
           "owner": "patient",
           "status": "never_taken",
           "agent_class": "ssri",
+          "speech_form": "sertraline",
           "agent_names": [
             "sertraline",
             "Zoloft",
@@ -1083,6 +1085,7 @@
           "owner_relation": "younger sibling",
           "status": "current",
           "agent_class": "ssri",
+          "speech_form": "sertraline",
           "agent_names": [
             "sertraline",
             "Zoloft",
@@ -1098,6 +1101,7 @@
           "owner": "patient",
           "status": "current",
           "agent_class": "beta_blocker",
+          "speech_form": "propranolol",
           "agent_names": [
             "propranolol",
             "beta-blocker",
@@ -1114,6 +1118,7 @@
           "owner": "patient",
           "status": "stopped",
           "agent_class": "benzodiazepine",
+          "speech_form": "alprazolam",
           "agent_names": [
             "alprazolam",
             "Xanax",
@@ -1129,6 +1134,7 @@
           "owner": "patient",
           "status": "stopped",
           "agent_class": "antihistamine",
+          "speech_form": "hydroxyzine",
           "agent_names": [
             "hydroxyzine"
           ],

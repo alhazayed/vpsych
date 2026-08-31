@@ -17,7 +17,9 @@ import {
 import {
   JORDAN_HALE_MEDICATIONS,
   enforceableIn,
+  recognitionOnlyAliases,
   resolveMedicationFacts,
+  speechFormOf,
 } from "@/lib/ai/medication-facts";
 
 const AGE = 34;
@@ -77,8 +79,15 @@ describe("AGE", () => {
 
 /* ────────────────────────── MEDICATION (6–17) ────────────────────────── */
 
+/**
+ * Arabic sessions speak the medication name in ENGLISH inside an otherwise
+ * Jordanian-Arabic sentence. Recognition is language-independent: English and
+ * verified Arabic aliases resolve to the same canonical entity, so the same
+ * fact is enforced whichever form either party uses.
+ */
 describe("MEDICATION", () => {
   it("6 — correct current medication confirmation passes", () => {
+    expect(ok("آه، باخد propranolol عند الحاجة.")).toBe(true);
     expect(ok("آه، باخد حاصرات بيتا عند الحاجة.")).toBe(true);
   });
 
@@ -90,14 +99,21 @@ describe("MEDICATION", () => {
         therapistMessage: "باخذ سيرترالين خمسين مليغرام بالصبح.",
       }),
     ).toBe("medication_contradiction");
-    expect(reason("باخد سيرترالين هلأ.")).toBe("medication_contradiction");
+    // Same, with the therapist using the English name.
+    expect(
+      reason("آه، باخده.", {
+        ...AR,
+        therapistMessage: "أنت بتاخد sertraline خمسين مليغرام؟",
+      }),
+    ).toBe("medication_contradiction");
+    expect(reason("باخد sertraline هلأ.")).toBe("medication_contradiction");
   });
 
   it("7b — anaphoric affirmation of a drug the patient DOES take passes", () => {
     expect(
       ok("آه، باخده عند الحاجة.", {
         ...AR,
-        therapistMessage: "بتاخد حاصرات بيتا؟",
+        therapistMessage: "بتاخد propranolol؟",
       }),
     ).toBe(true);
   });
@@ -106,68 +122,136 @@ describe("MEDICATION", () => {
     expect(
       ok("لا، ما باخده.", {
         ...AR,
-        therapistMessage: "باخذ سيرترالين خمسين مليغرام.",
+        therapistMessage: "باخذ sertraline خمسين مليغرام.",
       }),
     ).toBe(true);
   });
 
+  it("7d — English and Arabic therapist forms resolve to the SAME entity", () => {
+    for (const therapistMessage of [
+      "أنت بتاخد سيرترالين.",
+      "أنت بتاخد sertraline.",
+      "أنت بتاخد Zoloft.",
+    ]) {
+      expect(
+        reason("آه، باخده.", { ...AR, therapistMessage }),
+        therapistMessage,
+      ).toBe("medication_contradiction");
+    }
+  });
+
   it("8 — family medication adopted as the patient's is rejected", () => {
+    expect(reason("آه، باخد sertraline.")).toBe("medication_contradiction");
     expect(reason("آه، باخد سيرترالين.")).toBe("medication_contradiction");
     expect(reason("I take sertraline.", EN)).toBe("medication_contradiction");
   });
 
-  it("9 — correct family attribution passes", () => {
-    expect(ok("أختي هبة بتاخد سيرترالين، مش أنا.")).toBe(true);
+  it("9 — correct family attribution passes, in either surface form", () => {
+    expect(ok("أختي هبة بتاخد sertraline، مش أنا.")).toBe(true);
     expect(ok("أختي بتاخد سيرترالين.")).toBe(true);
     expect(ok("My sister takes sertraline.", EN)).toBe(true);
   });
 
-  it("10 — wrong dose is rejected", () => {
-    expect(reason("أخدت الدوا خمسين ملغ.", AR)).toBe(null); // spelled-out: out of scope
-    expect(reason("أخدت SSRI 50 ملغ.", EN)).toBe("medication_contradiction");
+  it("10 — wrong dose is rejected, digits or spoken Arabic numerals", () => {
+    expect(reason("أخدت SSRI 50 ملغ.")).toBe("medication_contradiction");
+    // "sertraline خمسين مليغرام" is acceptable SPEECH; the dose is still wrong.
+    expect(reason("أخدت SSRI خمسين مليغرام.")).toBe("medication_contradiction");
+    expect(reason("أخدت SSRI خمسين milligrams.")).toBe(
+      "medication_contradiction",
+    );
   });
 
-  it("11 — correct dose passes", () => {
-    expect(ok("أخدت SSRI 10 ملغ.", EN)).toBe(true);
+  it("11 — correct dose passes, digits or spoken numerals", () => {
+    expect(ok("أخدت SSRI 10 ملغ.")).toBe(true);
+    expect(ok("أخدت SSRI عشرة ملغ.")).toBe(true);
+    expect(ok("أخدته 10 milligrams لمدة ١٢ يوم وبعدين وقفت.")).toBe(true);
   });
 
   it("12 — wrong duration is rejected", () => {
-    expect(reason("أخدت SSRI 30 يوم.", EN)).toBe("medication_contradiction");
+    expect(reason("أخدت SSRI 30 يوم.")).toBe("medication_contradiction");
+    expect(reason("أخدت SSRI ثلاثين يوم.")).toBe("medication_contradiction");
   });
 
   it("13 — correct duration passes", () => {
-    expect(ok("أخدت SSRI 12 يوم وبعدين وقفت.", EN)).toBe(true);
+    expect(ok("أخدت SSRI 12 يوم وبعدين وقفت.")).toBe(true);
+    expect(ok("أخدت SSRI اثنعش يوم وبعدين وقفت.")).toBe(true);
   });
 
   it("14 — a stopped medication presented as current is rejected", () => {
+    expect(reason("باخد alprazolam هلأ.")).toBe("medication_contradiction");
     expect(reason("باخد ألبرازولام هلأ.")).toBe("medication_contradiction");
   });
 
   it("15 — a stopped medication correctly described passes", () => {
-    expect(ok("أخدت ألبرازولام مرتين بس، وبطلت.")).toBe(true);
+    expect(ok("أخدت alprazolam مرتين بس، وبطلت.")).toBe(true);
     expect(ok("كنت باخد الدوا وبعدين وقفت.")).toBe(true);
   });
 
   it("16 — a never-taken medication adopted is rejected", () => {
-    expect(reason("باخده سيرترالين من شهر.")).toBe("medication_contradiction");
+    expect(reason("باخده sertraline من شهر.")).toBe("medication_contradiction");
   });
 
-  it("17 — a never-taken medication denied passes", () => {
+  it("17 — a never-taken medication denied passes (the preferred speech form)", () => {
+    expect(ok("أنا مش باخد sertraline.")).toBe(true);
     expect(ok("لا، أنا مش باخد سيرترالين.")).toBe(true);
-    expect(ok("ما باخد سيرترالين أبداً.")).toBe(true);
+    expect(ok("ما باخد sertraline أبداً.")).toBe(true);
     expect(ok("I don't take sertraline.", EN)).toBe(true);
   });
 
   it("does not fire merely because a drug name appears", () => {
-    expect(ok("سمعت عن سيرترالين بس ما جربته.")).toBe(true);
+    expect(ok("سمعت عن sertraline بس ما جربته.")).toBe(true);
     expect(ok("الدكتور حكالي عن سيرترالين.")).toBe(true);
   });
 
   it("is inert with no facts", () => {
-    expect(detectMedicationContradiction("باخد سيرترالين.", [], "ar")).toBeNull();
+    expect(detectMedicationContradiction("باخد sertraline.", [], "ar")).toBeNull();
     expect(
-      detectMedicationContradiction("باخد سيرترالين.", undefined, "ar"),
+      detectMedicationContradiction("باخد sertraline.", undefined, "ar"),
     ).toBeNull();
+  });
+});
+
+/* ─────────────────── SPEECH FORM vs RECOGNITION ALIASES ─────────────────── */
+
+describe("naming rule — speech form is English, recognition is language-independent", () => {
+  it("every fact speaks an English name", () => {
+    for (const f of MEDS) {
+      expect(/^[\x20-\x7E]+$/.test(speechFormOf(f)), f.id).toBe(true);
+    }
+  });
+
+  it("sertraline speaks English but still recognises the Arabic alias", () => {
+    const f = MEDS.find((m) => m.id === "sertraline-patient-never")!;
+    expect(speechFormOf(f)).toBe("sertraline");
+    expect(recognitionOnlyAliases(f)).toContain("سيرترالين");
+  });
+
+  it("EVERY fact is now enforceable in Arabic sessions", () => {
+    // Previously hydroxyzine and the unnamed SSRI were unenforceable in Arabic
+    // because they had no Arabic alias. Under the English-speech rule the
+    // English form is what is spoken, so the gate no longer depends on it.
+    for (const f of MEDS) {
+      expect(enforceableIn(f), f.id).toBe(true);
+    }
+  });
+
+  it("hydroxyzine — English-only — is enforced inside an Arabic sentence", () => {
+    expect(reason("باخد hydroxyzine كل يوم هلأ.")).toBe(
+      "medication_contradiction",
+    );
+    expect(ok("أخدت hydroxyzine أربع مرات وبطلت.")).toBe(true);
+  });
+
+  it("changing the spoken form changes no clinical field", () => {
+    const never = MEDS.find((m) => m.id === "sertraline-patient-never")!;
+    const sibling = MEDS.find((m) => m.id === "sertraline-sibling")!;
+    expect(never.status).toBe("never_taken");
+    expect(never.owner).toBe("patient");
+    expect(sibling.status).toBe("current");
+    expect(sibling.owner).toBe("family");
+    const trial = MEDS.find((m) => m.id === "ssri-trial-stopped")!;
+    expect(trial.dose_mg).toBe(10);
+    expect(trial.duration_days).toBe(12);
   });
 });
 
@@ -268,15 +352,29 @@ describe("authored medication facts", () => {
     expect(trial.agent_names).not.toContain("sertraline");
   });
 
-  it("only claims Arabic enforceability where an Arabic form is authored", () => {
-    const ar = MEDS.filter((m) => enforceableIn(m, "ar-JO")).map((m) => m.id);
-    expect(ar).toContain("sertraline-patient-never");
-    expect(ar).toContain("sertraline-sibling");
-    expect(ar).toContain("beta-blocker-current");
-    expect(ar).toContain("alprazolam-two-occasions");
-    // No Arabic spelling is authored for these two — not machine-translated.
-    expect(ar).not.toContain("hydroxyzine-abandoned");
-    expect(ar).not.toContain("ssri-trial-stopped");
+  it("Arabic aliases are verified-only — none invented for speech", () => {
+    // Arabic aliases exist ONLY where the form is already present in authored
+    // case content. Recognition no longer depends on them (the English name is
+    // what is spoken), so there is no pressure to machine-translate the rest.
+    const withArabicAlias = MEDS.filter((m) =>
+      m.agent_names.some((n) => /[\u0600-\u06FF]/.test(n)),
+    ).map((m) => m.id);
+    expect(withArabicAlias.sort()).toEqual(
+      [
+        "alprazolam-two-occasions", // ألبرازولام — ar-JO immutable facts
+        "beta-blocker-current", // حاصرات بيتا — ar-JO immutable facts
+        "sertraline-patient-never", // سيرترالين — repo + recorded session
+        "sertraline-sibling",
+      ].sort(),
+    );
+    // hydroxyzine and the unnamed SSRI still have no Arabic alias, and that is
+    // correct: nothing was invented to fill the gap.
+    for (const id of ["hydroxyzine-abandoned", "ssri-trial-stopped"]) {
+      const f = MEDS.find((m) => m.id === id)!;
+      expect(f.agent_names.some((n) => /[\u0600-\u06FF]/.test(n)), id).toBe(
+        false,
+      );
+    }
   });
 
   it("resolves authored data first, slug fallback second", () => {

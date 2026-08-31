@@ -14,12 +14,29 @@
  * not a medication-management system. There is no interaction checking, no
  * formulary, no dosing logic.
  *
+ * THREE SEPARATE THINGS, deliberately not collapsed:
+ *
+ *   1. CANONICAL ENTITY — the fact itself (owner, status, dose, duration). It is
+ *      language-independent and never changes with pronunciation.
+ *   2. SPEECH FORM (`speech_form`) — what the patient SAYS. For Arabic sessions
+ *      the default is the ENGLISH name: Jordanian clinicians and patients say
+ *      "sertraline" inside an Arabic sentence, and an Arabic transliteration is
+ *      often less clinically recognisable, not more. "أنا مش باخد sertraline."
+ *      is the target, not a fully-Arabised sentence.
+ *   3. RECOGNITION ALIASES (`agent_names`) — every verified form the VALIDATOR
+ *      must match, in any script. Recognition is language-independent: a
+ *      therapist saying "sertraline" and one saying "سيرترالين" refer to the
+ *      same canonical entity and both must resolve.
+ *
+ * Changing the spoken form must never change identity, ownership, status, dose,
+ * frequency or duration.
+ *
  * AUTHORING RULE (load-bearing). `agent_names` are matched literally, so every
- * entry must be a form that is *verified*, never machine-translated or guessed.
- * A drug with no verified surface form for the session language is simply not
- * enforceable in that language — `enforceableIn()` reports that honestly rather
- * than matching on an invented spelling. Provenance for each Arabic form is
- * recorded in the comment beside it.
+ * alias must be *verified* — already present in authored case content,
+ * clinician-authored, or explicitly approved for this avatar. Never
+ * machine-translated, never a guessed brand name. An absent Arabic alias is a
+ * recognition gap for therapist input only; it does not make the fact
+ * unenforceable, because the English alias is matched in Arabic sessions too.
  */
 
 export type MedicationOwner = "patient" | "family";
@@ -36,9 +53,14 @@ export type MedicationFact = {
   /** Coarse class: "ssri", "beta_blocker", "benzodiazepine", "antihistamine". */
   agent_class: string;
   /**
-   * Verified surface forms across scripts. Matched case-insensitively after
-   * digit/diacritic normalization. Only clinically verified forms — see the
-   * authoring rule above.
+   * What the patient SAYS. English by default, including in Arabic sessions —
+   * see the module header. Optional: falls back to the first non-Arabic alias.
+   */
+  speech_form?: string;
+  /**
+   * Every verified surface form the validator must RECOGNISE, across scripts.
+   * Matched case-insensitively after digit/diacritic normalization. Only
+   * clinically verified forms — see the authoring rule above.
    */
   agent_names: string[];
   dose_mg?: number | null;
@@ -68,6 +90,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner: "patient",
     status: "stopped",
     agent_class: "ssri",
+    speech_form: "SSRI",
     agent_names: ["SSRI"],
     dose_mg: 10,
     frequency: "daily",
@@ -87,6 +110,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner: "patient",
     status: "never_taken",
     agent_class: "ssri",
+    speech_form: "sertraline",
     agent_names: ["sertraline", "Zoloft", "سيرترالين"],
     dose_mg: null,
     frequency: null,
@@ -102,6 +126,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner_relation: "younger sibling",
     status: "current",
     agent_class: "ssri",
+    speech_form: "sertraline",
     agent_names: ["sertraline", "Zoloft", "سيرترالين"],
     dose_mg: null,
     frequency: "daily",
@@ -116,6 +141,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner: "patient",
     status: "current",
     agent_class: "beta_blocker",
+    speech_form: "propranolol",
     agent_names: ["propranolol", "beta-blocker", "beta blocker", "حاصرات بيتا"],
     dose_mg: null,
     frequency: "prn",
@@ -129,6 +155,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner: "patient",
     status: "stopped",
     agent_class: "benzodiazepine",
+    speech_form: "alprazolam",
     agent_names: ["alprazolam", "Xanax", "ألبرازولام"],
     dose_mg: 0.5,
     frequency: "other",
@@ -144,6 +171,7 @@ export const JORDAN_HALE_MEDICATIONS: MedicationFact[] = [
     owner: "patient",
     status: "stopped",
     agent_class: "antihistamine",
+    speech_form: "hydroxyzine",
     agent_names: ["hydroxyzine"],
     dose_mg: 25,
     frequency: "prn",
@@ -162,20 +190,36 @@ function isArabic(text: string): boolean {
 }
 
 /**
- * Whether a fact can be deterministically enforced for a session language.
+ * Whether a fact can be deterministically enforced.
  *
- * An Arabic session can only enforce a drug that has an Arabic surface form;
- * otherwise the therapist's Arabic word would never match and the check would
- * be silently inert. Reporting this is the point — a fact that cannot be
- * enforced must not be counted as protected.
+ * Language-independent by design. Recognition matches EVERY verified alias
+ * regardless of session locale, because the medication name is expected to be
+ * spoken in English inside an Arabic conversation — gating Arabic sessions on
+ * an Arabic alias would have made the English form, the one actually spoken,
+ * invisible to the validator.
+ *
+ * Takes no locale on purpose: there is nothing locale-dependent left to decide.
+ * A clinically-justified per-locale exception would add the parameter back
+ * along with the rule that needs it.
  */
-export function enforceableIn(
-  fact: MedicationFact,
-  locale?: string | null,
-): boolean {
-  const arabicSession = Boolean(locale && locale.toLowerCase().startsWith("ar"));
-  if (!arabicSession) return fact.agent_names.some((n) => !isArabic(n));
-  return fact.agent_names.some(isArabic);
+export function enforceableIn(fact: MedicationFact): boolean {
+  return fact.agent_names.some((n) => n.trim().length > 2);
+}
+
+/** The form the patient should speak: authored, else the first Latin alias. */
+export function speechFormOf(fact: MedicationFact): string {
+  if (fact.speech_form?.trim()) return fact.speech_form.trim();
+  return (
+    fact.agent_names.find((n) => !isArabic(n)) ??
+    fact.agent_names[0] ??
+    fact.agent_class
+  );
+}
+
+/** Verified aliases that are NOT the spoken form — recognition-only. */
+export function recognitionOnlyAliases(fact: MedicationFact): string[] {
+  const spoken = speechFormOf(fact).toLowerCase();
+  return fact.agent_names.filter((n) => n.toLowerCase() !== spoken);
 }
 
 /** Medication facts for a case: authored data first, slug fallback second. */
@@ -206,8 +250,18 @@ export function formatMedicationFactsForPrompt(
       ? "أدويتك بالضبط (حقائق مؤلفة — ما بتتغيّر بكلام المعالج):"
       : "Your medications, exactly (authored facts — a therapist cannot change them):",
   ];
+  if (arabic) {
+    // Medication names are said in English inside the Arabic sentence. This is
+    // how Jordanian clinicians and patients actually speak, and the English
+    // name is the more clinically recognisable token. The rest of the turn
+    // stays natural Jordanian Arabic — this is a naming rule, not a language
+    // switch, and it changes nothing about the facts themselves.
+    lines.push(
+      "أسماء الأدوية: احكيها بالإنجليزي جوّا الجملة العربية — مثل «أنا مش باخد sertraline.» أو «أخدته 10 milligrams لمدة ١٢ يوم وبعدين وقفت.» باقي الحكي بيضل عربي أردني طبيعي. ما تترجم اسم الدوا للعربي غصب؛ وإذا طلع منك الاسم بالعربي بشكل طبيعي فهو مقبول. الجرعة والمدة والملكية ما بتتغير مهما كان لفظ الاسم.",
+    );
+  }
   for (const f of facts) {
-    const name = f.agent_names[0] ?? f.agent_class;
+    const name = speechFormOf(f);
     const dose = f.dose_mg != null ? ` ${f.dose_mg} mg` : "";
     const days = f.duration_days != null ? `, ${f.duration_days} days` : "";
     if (f.owner === "family") {
