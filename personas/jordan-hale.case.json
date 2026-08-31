@@ -1047,6 +1047,96 @@
           "session": 12,
           "expected_state": "GAD-7 in the mild range. Trait worry persists and always will. Final treatment target is relapse prevention and dismantling the belief that the worry was ever doing a job."
         }
+      ],
+      "medications": [
+        {
+          "id": "ssri-trial-stopped",
+          "owner": "patient",
+          "status": "stopped",
+          "agent_class": "ssri",
+          "agent_names": [
+            "SSRI"
+          ],
+          "dose_mg": 10,
+          "frequency": "daily",
+          "duration_days": 12,
+          "notes": "Starting dose, 12 days, January 2026. Stopped unilaterally during early activation. Never titrated, never followed up."
+        },
+        {
+          "id": "sertraline-patient-never",
+          "owner": "patient",
+          "status": "never_taken",
+          "agent_class": "ssri",
+          "agent_names": [
+            "sertraline",
+            "Zoloft",
+            "سيرترالين"
+          ],
+          "dose_mg": null,
+          "frequency": null,
+          "duration_days": null,
+          "notes": "The patient has never taken sertraline. It belongs to the sibling. Never adopt it."
+        },
+        {
+          "id": "sertraline-sibling",
+          "owner": "family",
+          "owner_relation": "younger sibling",
+          "status": "current",
+          "agent_class": "ssri",
+          "agent_names": [
+            "sertraline",
+            "Zoloft",
+            "سيرترالين"
+          ],
+          "dose_mg": null,
+          "frequency": "daily",
+          "duration_days": null,
+          "notes": "Younger sibling: panic disorder diagnosed at 27, treated with sertraline and CBT, well. Theirs, never the patient's."
+        },
+        {
+          "id": "beta-blocker-current",
+          "owner": "patient",
+          "status": "current",
+          "agent_class": "beta_blocker",
+          "agent_names": [
+            "propranolol",
+            "beta-blocker",
+            "beta blocker",
+            "حاصرات بيتا"
+          ],
+          "dose_mg": null,
+          "frequency": "prn",
+          "duration_days": null,
+          "notes": "Low dose as required since March 2026. Effective; use creeping from presentations to most meetings."
+        },
+        {
+          "id": "alprazolam-two-occasions",
+          "owner": "patient",
+          "status": "stopped",
+          "agent_class": "benzodiazepine",
+          "agent_names": [
+            "alprazolam",
+            "Xanax",
+            "ألبرازولام"
+          ],
+          "dose_mg": 0.5,
+          "frequency": "other",
+          "duration_days": null,
+          "notes": "Non-prescribed, exactly two occasions (February and May 2026). Never a third."
+        },
+        {
+          "id": "hydroxyzine-abandoned",
+          "owner": "patient",
+          "status": "stopped",
+          "agent_class": "antihistamine",
+          "agent_names": [
+            "hydroxyzine"
+          ],
+          "dose_mg": 25,
+          "frequency": "prn",
+          "duration_days": null,
+          "notes": "Prescribed 5 months ago, taken 4 times, abandoned for next-morning sedation. No Arabic surface form is authored, so this fact is not enforceable in Arabic sessions."
+        }
       ]
     }
   },

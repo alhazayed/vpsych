@@ -14,6 +14,12 @@
  */
 
 import type { ClinicalCore } from "@/lib/types";
+import {
+  JORDAN_HALE_MEDICATIONS,
+  formatMedicationFactsForPrompt,
+  resolveMedicationFacts,
+  type MedicationFact,
+} from "@/lib/ai/medication-facts";
 
 export type ClinicalCaseFile = {
   consistency_rules?: {
@@ -27,6 +33,12 @@ export type ClinicalCaseFile = {
     medication_response_summary?: string;
     [key: string]: unknown;
   };
+  /**
+   * Structured, deterministically checkable medication facts. Sits beside the
+   * `psychiatric_history` prose rather than replacing it: the prose carries the
+   * teaching narrative, this carries what a validator can enforce.
+   */
+  medications?: MedicationFact[];
   [key: string]: unknown;
 };
 
@@ -61,6 +73,7 @@ const JORDAN_HALE_FACTS: ClinicalCaseFile = {
     medication_response_summary:
       "No adequate SSRI trial has ever occurred (12 days at a starting dose, stopped during early activation). You currently take a beta-blocker PRN and abandoned hydroxyzine. You do not take sertraline.",
   },
+  medications: JORDAN_HALE_MEDICATIONS,
 };
 
 const MAYA_CHEN_FACTS: ClinicalCaseFile = {
@@ -206,6 +219,14 @@ export function formatCanonicalFactsForPrompt(
     );
   }
 
+  // Structured facts first (enforceable), then the instruction rule. Both:
+  // the table states what is true, the rule states what to do when contradicted.
+  const medications = resolveMedicationFacts(
+    caseFile?.medications,
+    input.avatarSlug,
+  );
+  const medBlock = formatMedicationFactsForPrompt(medications, input.locale);
+  if (medBlock) lines.push(medBlock);
   lines.push(medicationInstructionBlock(input.locale));
 
   // Arabic male SP: identity gender may still be non-binary on the English
