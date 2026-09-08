@@ -11,7 +11,7 @@ const tracked = execFileSync("git", ["ls-files"], { encoding: "utf8" })
 
 const prohibited = tracked.filter(
   (path) =>
-    /(^|\\/)\.env(?:\.[^/]+)?$/i.test(path) &&
+    /(^|\/)\.env(?:\.[^/]+)?$/i.test(path) &&
     path !== ".env.example",
 );
 
