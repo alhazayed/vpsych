@@ -502,6 +502,7 @@ Scores justified by findings above (0 = unacceptable, 100 = exemplary for GA cli
 - API `route.ts` count: **71**  
 - Admin pages: **20**  
 - Artifacts: `/opt/cursor/artifacts/audit-evidence-summary.txt`, `npm-audit-omit-dev.log`, `vitest-summary.log`
+- **CI confirmation (2026-09-08):** GitHub Actions run `34282588095` on branch `cursor/admin-production-audit-a8ef` — job `verify` / step `Dependency audit` **failed** with exit code 1 on `npm audit --omit=dev --audit-level=high` reporting `next 16.0.0–16.3.2` critical GHSA-p293-qw3h-jr36. This is a **pre-existing main dependency gate failure**, not caused by the audit markdown. Confirms **F-08** live in CI.
 
 ### Verification legend used throughout
 
