@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { messageRpcClient } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
-import { validatePatientReply } from "@/lib/ai/reply-validation";
+import {
+  validatePatientReply,
+  type CanonicalReplyFacts,
+} from "@/lib/ai/reply-validation";
+import { resolveMedicationFacts } from "@/lib/ai/medication-facts";
+import { resolveCaseFile } from "@/lib/ai/canonical-facts";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import {
   embedAdaptationInMemory,
@@ -504,13 +509,34 @@ export async function POST(request: Request, { params }: Params) {
       });
     }
 
-    // D4 — contentless / ellipsis-only gate. At most ONE regeneration.
+    // Canonical-fact + contentless gate. At most ONE regeneration.
     // Never persist or hand to TTS until a valid utterance exists.
-    if (!validatePatientReply(replyMeta.text).ok) {
-      console.warn("[sessions/message] contentless reply rejected", {
+    //
+    // Facts come from the resolved core first and the authored slug table
+    // second, so an avatar whose snapshot dropped case_file is still enforced.
+    // The therapist turn is passed because the recorded live failure was
+    // anaphoric ("آه، باخده") — the drug appears only in the therapist's words.
+    const avatarSlug = typed.avatars?.slug ?? null;
+    const canonicalFacts: CanonicalReplyFacts = {
+      age: avatarForReply.age,
+      medications: resolveMedicationFacts(
+        resolveCaseFile(
+          avatarForReply.clinical_core ?? { age: avatarForReply.age } as never,
+          avatarSlug,
+        )?.medications,
+        avatarSlug,
+      ),
+      locale: avatarForReply.locale,
+      therapistMessage: message,
+    };
+    const firstVerdict = validatePatientReply(replyMeta.text, canonicalFacts);
+    if (!firstVerdict.ok) {
+      console.warn("[sessions/message] reply rejected by canonical gate", {
         sessionId,
+        reason: firstVerdict.reason,
+        // PHI-safe: fact id / numeric mismatch only, never transcript content.
+        detail: firstVerdict.detail ?? null,
         aiSource: replyMeta.aiSource,
-        preview: replyMeta.text.slice(0, 40),
       });
       replyMeta = await generatePatientReplyDetailed({
         avatar: avatarForReply,
@@ -518,12 +544,21 @@ export async function POST(request: Request, { params }: Params) {
         userMessage: message,
         behaviourReinforcement: [
           behaviourPlan?.promptBlock ?? null,
-          "Your previous draft was empty or punctuation-only. Reply with at least one real spoken word as this patient. Do not answer with ellipsis alone.",
+          firstVerdict.reason === "age_contradiction" ||
+          firstVerdict.reason === "medication_contradiction"
+            ? "Your previous draft accepted a clinical fact the therapist stated that contradicts your authored history. Correct the therapist plainly, restate YOUR fact, and carry on. Never invent a new fact, and never take on a family member's medication."
+            : "Your previous draft was empty or punctuation-only. Reply with at least one real spoken word as this patient. Do not answer with ellipsis alone.",
         ]
           .filter(Boolean)
           .join("\n\n"),
       });
-      if (!validatePatientReply(replyMeta.text).ok) {
+      const secondVerdict = validatePatientReply(replyMeta.text, canonicalFacts);
+      if (!secondVerdict.ok) {
+        console.error("[sessions/message] reply rejected twice", {
+          sessionId,
+          reason: secondVerdict.reason,
+          detail: secondVerdict.detail ?? null,
+        });
         // Second failure → persona fallback (already a lexical string).
         const fallbacks =
           avatarForReply.fallback_replies?.length > 0
