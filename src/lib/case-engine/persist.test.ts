@@ -245,14 +245,11 @@ describe("createCaseForSession — preset path", () => {
     expect(result.error).toBe("Instructor preset not found");
   });
 
-  it("swallows any insert error whose message contains 'instructor_preset'", async () => {
-    // CHARACTERIZATION OF A DEFECT, NOT AN ENDORSEMENT.
-    // persist.ts:444 matches the bare substring "instructor_preset", so a real
-    // foreign-key violation naming the constraint
-    // case_instances_instructor_preset_id_fkey is reported as success with a
-    // case id that has no row behind it. The template and plain paths match
-    // only "does not exist" / 42P01 — this third clause is unique to the preset
-    // branch. Narrowing it should flip this test to expect ok: false.
+  it("surfaces a foreign-key violation naming the preset constraint as 500", async () => {
+    // Regression guard. This branch used to match the bare substring
+    // "instructor_preset", which reported a genuine foreign-key violation on
+    // case_instances_instructor_preset_id_fkey as success with a case id that
+    // had no row behind it. Only a missing relation (42P01) may fall back.
     const { client } = makeClient({
       reads: {
         instructor_presets: {
@@ -277,10 +274,10 @@ describe("createCaseForSession — preset path", () => {
       presetSlug: "foundation-interview-medstudent-en",
     });
 
-    // A constraint violation — yet reported as success.
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.caseInstanceId).toBe(result.snapshot.assessment_id);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(500);
+    expect(result.error).toContain("foreign key constraint");
   });
 });
 
@@ -297,6 +294,34 @@ describe("createCaseForSession — template path", () => {
     if (result.ok) return;
     expect(result.status).toBe(404);
     expect(result.error).toBe("Clinical template not found");
+  });
+
+  it("surfaces a foreign-key violation naming the template constraint as 500", async () => {
+    // Regression guard, same shape as the preset case. This branch used to
+    // match the bare substring "template_id" — a common column name, so the
+    // clause was broader still. Only a missing relation (42P01) may fall back.
+    const { client } = makeClient({
+      writes: {
+        case_instances: {
+          data: null,
+          error: {
+            code: "23503",
+            message:
+              'insert or update on table "case_instances" violates foreign key constraint "case_instances_template_id_fkey"',
+          },
+        },
+      },
+    });
+
+    const result = await createCaseForSession(client, {
+      ...baseOpts,
+      templateSlug: "adult-mdd-initial-en",
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(500);
+    expect(result.error).toContain("foreign key constraint");
   });
 });
 

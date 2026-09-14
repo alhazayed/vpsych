@@ -440,8 +440,7 @@ export async function createCaseForSession(
     if (insertErr || !inserted) {
       if (
         insertErr?.message?.includes("does not exist") ||
-        insertErr?.code === "42P01" ||
-        insertErr?.message?.includes("instructor_preset")
+        insertErr?.code === "42P01"
       ) {
         return {
           ok: true,
@@ -648,8 +647,7 @@ export async function createCaseForSession(
     if (insertErr || !inserted) {
       if (
         insertErr?.message?.includes("does not exist") ||
-        insertErr?.code === "42P01" ||
-        insertErr?.message?.includes("template_id")
+        insertErr?.code === "42P01"
       ) {
         return {
           ok: true,
