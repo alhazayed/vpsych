@@ -89,6 +89,8 @@ Independent multidisciplinary release certification of VPsych was performed agai
 | Env (prod public) | Supabase URL + anon present | `.env.production` public keys only |
 | Secrets completeness | `SUPABASE_SERVICE_ROLE_KEY` / `REPORT_WRITE_KEY` / Upstash / OpenAI / ElevenLabs not fully inspectable via MCP | Residual ops risk |
 
+> **Superseded 2026-09-09 (`80379d2`):** `.env.production` is no longer tracked. `.gitignore` now excludes every env file except `.env.example`, and CI enforces it via `scripts/check-tracked-env-files.mjs`.
+
 **Post-merge required:** redeploy this branch to production; re-probe `/api/health`, `/robots.txt`, `/privacy`.
 
 ---

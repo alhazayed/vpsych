@@ -213,9 +213,10 @@ These are load-bearing; several were fixed findings (see
   permitted call sites are documented in `lib/supabase/admin.ts` — keep that
   comment accurate if you add one.
 - `/api/health/openai` requires admin. Do not relax it.
-- Never commit secrets. `.env.production` intentionally holds only the public
-  anon key. The `*.vpsych.test` demo accounts are deliberately banned and must
-  not be re-enabled.
+- Never commit secrets. No env file is tracked except `.env.example`;
+  `scripts/check-tracked-env-files.mjs` fails CI if one appears. The
+  `*.vpsych.test` demo accounts are deliberately banned and must not be
+  re-enabled.
 
 ## AI provider selection
 

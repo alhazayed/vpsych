@@ -37,6 +37,8 @@
 | 29 | Rate limiting present on route handlers | **PASS** |
 | 30 | Security headers module present | **PASS** |
 
+> **Superseded 2026-09-09 (`80379d2`):** `.env.production` is no longer tracked. `.gitignore` now excludes every env file except `.env.example`, and CI enforces it via `scripts/check-tracked-env-files.mjs`.
+
 ## Summary counts
 
 | Result | Count |
