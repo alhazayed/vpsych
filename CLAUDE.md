@@ -264,8 +264,9 @@ onto personality locales.
   don't loosen the assertion to make it pass.
 - Engine directories expose a barrel `index.ts`; import from the barrel
   (`@/lib/ace`), not from internal modules, except where a cycle forbids it.
-  `lib/case-engine` is the exception: it has no barrel, and its modules are
-  imported directly (`@/lib/case-engine/types`, `.../catalog`, …).
+  `lib/case-engine` and `lib/scenario-templates` are the exceptions: neither
+  has a barrel, and their modules are imported directly
+  (`@/lib/case-engine/types`, `@/lib/scenario-templates/catalog`, …).
 - Route Handlers follow one shape: auth → rate limit → validate body → work →
   sanitized JSON. Keep it.
 - `supabase/**` is excluded from ESLint and tsconfig — those functions run on
