@@ -309,6 +309,64 @@ function mapDbPreset(
   };
 }
 
+type PersistOutcome =
+  | { kind: "persisted"; id: string }
+  | { kind: "absent" }
+  | { kind: "failed"; message: string };
+
+/**
+ * Insert the case instance, then seed `case_memory` and write the snapshot
+ * back with its own `case_instance_id`.
+ *
+ * `absent` means the engine tables are not present (42P01) — the documented
+ * backward-compatibility path where the session still starts without a
+ * persisted row, see docs/DYNAMIC_CLINICAL_CASE_ENGINE.md. Every other insert
+ * error is `failed`: a genuine persistence failure must never be reported to
+ * the caller as success.
+ */
+async function persistCaseInstance(
+  supabase: SupabaseClient,
+  row: Record<string, unknown>,
+  snapshot: CaseInstanceSnapshot,
+  memoryExtras: Record<string, unknown> = {},
+): Promise<PersistOutcome> {
+  const { data: inserted, error: insertErr } = await supabase
+    .from("case_instances")
+    .insert(row)
+    .select("id")
+    .single();
+
+  if (insertErr || !inserted) {
+    if (
+      insertErr?.message?.includes("does not exist") ||
+      insertErr?.code === "42P01"
+    ) {
+      return { kind: "absent" };
+    }
+    return {
+      kind: "failed",
+      message: insertErr?.message ?? "Failed to persist case instance",
+    };
+  }
+
+  snapshot.case_instance_id = inserted.id;
+
+  const { error: memErr } = await supabase.from("case_memory").insert({
+    case_instance_id: inserted.id,
+    memory: { turns: [], notes: [], scope: "case_instance", ...memoryExtras },
+  });
+  if (memErr) {
+    console.warn("[case-engine] case_memory insert failed:", memErr.message);
+  }
+
+  await supabase
+    .from("case_instances")
+    .update({ clinical_snapshot: snapshot })
+    .eq("id", inserted.id);
+
+  return { kind: "persisted", id: inserted.id };
+}
+
 export async function createCaseForSession(
   supabase: SupabaseClient,
   opts: StartCaseOptions,
@@ -413,9 +471,9 @@ export async function createCaseForSession(
       findDisorderBySlug(selectedSlug, catalog) ??
       (dbDisorder ? { id: dbDisorder.id } : null);
 
-    const { data: inserted, error: insertErr } = await supabase
-      .from("case_instances")
-      .insert({
+    const outcome = await persistCaseInstance(
+      supabase,
+      {
         assessment_id: snapshot.assessment_id,
         persona_id: dbPersona?.id ?? null,
         avatar_id: opts.avatar.id,
@@ -433,51 +491,22 @@ export async function createCaseForSession(
         instructor_preset_id: resolvedPreset.id,
         instructor_preset_version: resolvedPreset.version,
         created_by: opts.therapistId,
-      })
-      .select("id")
-      .single();
-
-    if (insertErr || !inserted) {
-      if (
-        insertErr?.message?.includes("does not exist") ||
-        insertErr?.code === "42P01"
-      ) {
-        return {
-          ok: true,
-          caseInstanceId: snapshot.assessment_id,
-          snapshot,
-          difficulty,
-          therapyModality,
-          preset: resolvedPreset,
-          maxDurationSec: fromPreset.assessment.maxDurationSec,
-        };
-      }
-      return {
-        ok: false,
-        error: insertErr?.message ?? "Failed to persist case instance",
-        status: 500,
-      };
-    }
-
-    snapshot.case_instance_id = inserted.id;
-    await supabase.from("case_memory").insert({
-      case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
+      },
+      snapshot,
+      {
         template_id: snapshot.template?.id,
         instructor_preset_id: resolvedPreset.id,
       },
-    });
-    await supabase
-      .from("case_instances")
-      .update({ clinical_snapshot: snapshot })
-      .eq("id", inserted.id);
+    );
+
+    if (outcome.kind === "failed") {
+      return { ok: false, error: outcome.message, status: 500 };
+    }
 
     return {
       ok: true,
-      caseInstanceId: inserted.id,
+      caseInstanceId:
+        outcome.kind === "persisted" ? outcome.id : snapshot.assessment_id,
       snapshot,
       difficulty,
       therapyModality,
@@ -619,9 +648,9 @@ export async function createCaseForSession(
     const difficulty = resolvedTemplate.difficulty;
     const therapyModality = resolvedTemplate.therapy_modality as TherapyModality;
 
-    const { data: inserted, error: insertErr } = await supabase
-      .from("case_instances")
-      .insert({
+    const outcome = await persistCaseInstance(
+      supabase,
+      {
         assessment_id: snapshot.assessment_id,
         persona_id: dbPersona?.id ?? null,
         avatar_id: opts.avatar.id,
@@ -640,48 +669,19 @@ export async function createCaseForSession(
         template_id: resolvedTemplate.id,
         template_version: resolvedTemplate.version,
         created_by: opts.therapistId,
-      })
-      .select("id")
-      .single();
-
-    if (insertErr || !inserted) {
-      if (
-        insertErr?.message?.includes("does not exist") ||
-        insertErr?.code === "42P01"
-      ) {
-        return {
-          ok: true,
-          caseInstanceId: snapshot.assessment_id,
-          snapshot,
-          difficulty,
-          therapyModality,
-        };
-      }
-      return {
-        ok: false,
-        error: insertErr?.message ?? "Failed to persist case instance",
-        status: 500,
-      };
-    }
-
-    snapshot.case_instance_id = inserted.id;
-    await supabase.from("case_memory").insert({
-      case_instance_id: inserted.id,
-      memory: {
-        turns: [],
-        notes: [],
-        scope: "case_instance",
-        template_id: resolvedTemplate.id,
       },
-    });
-    await supabase
-      .from("case_instances")
-      .update({ clinical_snapshot: snapshot })
-      .eq("id", inserted.id);
+      snapshot,
+      { template_id: resolvedTemplate.id },
+    );
+
+    if (outcome.kind === "failed") {
+      return { ok: false, error: outcome.message, status: 500 };
+    }
 
     return {
       ok: true,
-      caseInstanceId: inserted.id,
+      caseInstanceId:
+        outcome.kind === "persisted" ? outcome.id : snapshot.assessment_id,
       snapshot,
       difficulty,
       therapyModality,
@@ -812,15 +812,14 @@ export async function createCaseForSession(
   const snapshot = generated.snapshot;
 
   // Persist case_instance — if table missing (migration not applied), soft-fail to snapshot-only
-  const { data: inserted, error: insertErr } = await supabase
-    .from("case_instances")
-    .insert({
+  const outcome = await persistCaseInstance(
+    supabase,
+    {
       assessment_id: snapshot.assessment_id,
       persona_id: dbPersona?.id ?? null,
       avatar_id: opts.avatar.id,
       primary_disorder_id: primary.id.startsWith("legacy-")
-        ? (dbPersona?.default_disorder_id ??
-          catalog.disorders[0]!.id)
+        ? (dbPersona?.default_disorder_id ?? catalog.disorders[0]!.id)
         : primary.id,
       comorbidity_disorder_ids: comorbidities.map((c) => c.id),
       difficulty,
@@ -831,60 +830,20 @@ export async function createCaseForSession(
       randomized_context: snapshot.randomized_context,
       voice_profile_id: opts.avatar.voice_profile_id ?? null,
       created_by: opts.therapistId,
-    })
-    .select("id")
-    .single();
+    },
+    snapshot,
+  );
 
-  if (insertErr || !inserted) {
-    // Migration not applied yet — still return snapshot for session.clinical_snapshot
-    if (
-      insertErr?.message?.includes("does not exist") ||
-      insertErr?.code === "42P01"
-    ) {
-      return {
-        ok: true,
-        caseInstanceId: snapshot.assessment_id,
-        snapshot,
-        difficulty,
-        therapyModality,
-      };
-    }
-    // If FK failed because legacy synthetic id — retry with default disorder
-    if (primary.id.startsWith("legacy-")) {
-      return {
-        ok: true,
-        caseInstanceId: snapshot.assessment_id,
-        snapshot,
-        difficulty,
-        therapyModality,
-      };
-    }
-    return {
-      ok: false,
-      error: insertErr?.message ?? "Failed to persist case instance",
-      status: 500,
-    };
+  // A legacy synthetic disorder id has no row to reference, so its FK failure
+  // is expected — fall back to a snapshot-only session rather than 500.
+  if (outcome.kind === "failed" && !primary.id.startsWith("legacy-")) {
+    return { ok: false, error: outcome.message, status: 500 };
   }
-
-  snapshot.case_instance_id = inserted.id;
-
-  const { error: memErr } = await supabase.from("case_memory").insert({
-    case_instance_id: inserted.id,
-    memory: { turns: [], notes: [], scope: "case_instance" },
-  });
-  if (memErr) {
-    console.warn("[case-engine] case_memory insert failed:", memErr.message);
-  }
-
-  // Update snapshot on row with case_instance_id filled
-  await supabase
-    .from("case_instances")
-    .update({ clinical_snapshot: snapshot })
-    .eq("id", inserted.id);
 
   return {
     ok: true,
-    caseInstanceId: inserted.id,
+    caseInstanceId:
+      outcome.kind === "persisted" ? outcome.id : snapshot.assessment_id,
     snapshot,
     difficulty,
     therapyModality,
