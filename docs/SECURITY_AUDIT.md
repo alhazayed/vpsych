@@ -29,6 +29,8 @@ Production security certification for institutional deployment. No new patient c
 | ElevenLabs hung-fetch DoS | **PASS** | AbortSignal timeout (RT-03) |
 | Correlation / forensics | **PASS** | `X-Request-Id` on voice pipeline |
 
+> **Superseded 2026-09-09 (`80379d2`):** `.env.production` is no longer tracked. `.gitignore` now excludes every env file except `.env.example`, and CI enforces it via `scripts/check-tracked-env-files.mjs`.
+
 ## OWASP Top 10 (application mapping)
 
 | Risk | Status |

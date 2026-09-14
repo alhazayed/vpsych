@@ -143,6 +143,8 @@ Unchanged product scope (not treated as defects for this preview):
 | Secrets in repo | PASS (`.env.production` public keys only) |
 | Admin export / quality-ledger | Auth required (401 unauth) |
 
+> **Superseded 2026-09-09 (`80379d2`):** `.env.production` is no longer tracked. `.gitignore` now excludes every env file except `.env.example`, and CI enforces it via `scripts/check-tracked-env-files.mjs`.
+
 ---
 
 ## Gate to flip READY → invitations

@@ -528,9 +528,9 @@ them as load-bearing.**
 5. **Penetration test never performed.**
 6. **P1 — forged `admin_test`** (§25).
 
-**Standing prohibitions:** never commit secrets · `.env.production` intentionally holds only the
-public anon key · the `*.vpsych.test` demo accounts are deliberately banned (`banned_until` set)
-and must not be re-enabled.
+**Standing prohibitions:** never commit secrets · no env file is tracked except `.env.example`
+(CI-enforced by `scripts/check-tracked-env-files.mjs`) · the `*.vpsych.test` demo accounts are
+deliberately banned (`banned_until` set) and must not be re-enabled.
 
 ---
 
