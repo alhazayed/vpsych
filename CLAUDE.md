@@ -22,7 +22,7 @@ npm run dev            # local dev server
 npm run build          # production build
 npm run lint           # ESLint (flat config; warnings tolerated, errors are not)
 npm run typecheck      # tsc --noEmit
-npm test               # vitest run  (724 tests / 88 files)
+npm test               # vitest run  (881 tests / 97 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
 npm run test:reliability # assessment reliability harness (synthetic fixture)
@@ -72,7 +72,7 @@ src/
   i18n/                   next-intl config (cookie-driven locale)
   middleware.ts           auth gate + admin gate + locale cookie
 messages/{en,ar}.json     UI strings
-supabase/migrations/      SQL migrations — mirror of the deployed schema (75)
+supabase/migrations/      SQL migrations — mirror of the deployed schema (79)
 supabase/functions/       Deno edge functions (send-email-hook)
 personas/                 authoritative clinical case library (JSON)
 schemas/avatar.v2.json    avatar schema
