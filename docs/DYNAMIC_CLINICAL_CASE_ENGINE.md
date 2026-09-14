@@ -9,7 +9,7 @@ Every assessment creates a brand-new immutable **CaseInstance**. The same person
 
 | Module | Responsibility | Storage |
 |--------|----------------|---------|
-| 1 Persona | Identity, culture, culture, culture, culture, culture, appearance | `personas` + `avatars.personalities` (locale) |
+| 1 Persona | Identity, culture, appearance | `personas` + `avatars.personalities` (locale) |
 | 2 Disorder package | DSM/ICD, criteria, symptoms, risk, teaching | `disorders.package` |
 | 3 Comorbidities | Compatible combinations only | `comorbidity_rules` |
 | 4 Difficulty | Insight, resistance, disclosure, masking | `difficulty_profiles` |
