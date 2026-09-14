@@ -22,7 +22,7 @@ npm run dev            # local dev server
 npm run build          # production build
 npm run lint           # ESLint (flat config; warnings tolerated, errors are not)
 npm run typecheck      # tsc --noEmit
-npm test               # vitest run  (881 tests / 97 files)
+npm test               # vitest run  (894 tests / 98 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
 npm run test:reliability # assessment reliability harness (synthetic fixture)
