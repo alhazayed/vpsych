@@ -18,17 +18,30 @@ type SidebarSnapshot = {
   expanded: Record<string, boolean>;
 };
 
-let memorySnapshot: SidebarSnapshot = { collapsed: false, expanded: {} };
+const SERVER_SNAPSHOT: SidebarSnapshot = Object.freeze({
+  collapsed: false,
+  expanded: Object.freeze({}) as Record<string, boolean>,
+});
+
+let clientSnapshot: SidebarSnapshot = SERVER_SNAPSHOT;
 const listeners = new Set<() => void>();
 
 function emit() {
   for (const l of listeners) l();
 }
 
-function readSnapshot(): SidebarSnapshot {
-  if (typeof window === "undefined") {
-    return { collapsed: false, expanded: {} };
-  }
+function sameExpanded(
+  a: Record<string, boolean>,
+  b: Record<string, boolean>,
+): boolean {
+  const ak = Object.keys(a);
+  const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  return ak.every((k) => a[k] === b[k]);
+}
+
+function readFromStorage(): SidebarSnapshot {
+  if (typeof window === "undefined") return SERVER_SNAPSHOT;
   try {
     const collapsed = window.localStorage.getItem(COLLAPSED_KEY) === "1";
     let expanded: Record<string, boolean> = {};
@@ -39,31 +52,40 @@ function readSnapshot(): SidebarSnapshot {
         expanded = parsed as Record<string, boolean>;
       }
     }
-    memorySnapshot = { collapsed, expanded };
-    return memorySnapshot;
+    if (
+      clientSnapshot.collapsed === collapsed &&
+      sameExpanded(clientSnapshot.expanded, expanded)
+    ) {
+      return clientSnapshot;
+    }
+    clientSnapshot = { collapsed, expanded };
+    return clientSnapshot;
   } catch {
-    return memorySnapshot;
+    return clientSnapshot;
   }
 }
 
 function subscribe(onStoreChange: () => void) {
   listeners.add(onStoreChange);
   const onStorage = (e: StorageEvent) => {
-    if (e.key === COLLAPSED_KEY || e.key === EXPANDED_KEY) onStoreChange();
+    if (e.key === COLLAPSED_KEY || e.key === EXPANDED_KEY) {
+      readFromStorage();
+      onStoreChange();
+    }
   };
-  if (typeof window !== "undefined") {
-    window.addEventListener("storage", onStorage);
-  }
+  window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(onStoreChange);
-    if (typeof window !== "undefined") {
-      window.removeEventListener("storage", onStorage);
-    }
+    window.removeEventListener("storage", onStorage);
   };
 }
 
+function getSnapshot(): SidebarSnapshot {
+  return readFromStorage();
+}
+
 function getServerSnapshot(): SidebarSnapshot {
-  return { collapsed: false, expanded: {} };
+  return SERVER_SNAPSHOT;
 }
 
 function writeCollapsed(next: boolean) {
@@ -72,7 +94,8 @@ function writeCollapsed(next: boolean) {
   } catch {
     /* ignore */
   }
-  memorySnapshot = { ...memorySnapshot, collapsed: next };
+  if (clientSnapshot.collapsed === next) return;
+  clientSnapshot = { ...clientSnapshot, collapsed: next };
   emit();
 }
 
@@ -82,7 +105,8 @@ function writeExpanded(next: Record<string, boolean>) {
   } catch {
     /* ignore */
   }
-  memorySnapshot = { ...memorySnapshot, expanded: next };
+  if (sameExpanded(clientSnapshot.expanded, next)) return;
+  clientSnapshot = { ...clientSnapshot, expanded: next };
   emit();
 }
 
@@ -100,16 +124,16 @@ function sectionContainsActive(
 export function useAdminSidebarState() {
   const snapshot = useSyncExternalStore(
     subscribe,
-    readSnapshot,
+    getSnapshot,
     getServerSnapshot,
   );
 
   const toggleCollapsed = useCallback(() => {
-    writeCollapsed(!readSnapshot().collapsed);
+    writeCollapsed(!getSnapshot().collapsed);
   }, []);
 
   const toggleSection = useCallback((id: string, fallback: boolean) => {
-    const current = readSnapshot();
+    const current = getSnapshot();
     const open = current.expanded[id] ?? fallback;
     writeExpanded({ ...current.expanded, [id]: !open });
   }, []);
