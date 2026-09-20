@@ -41,7 +41,7 @@ export function SessionsTable({
     actionView: string;
     actionReport: string;
     adminTest: string;
-    showing: (count: number) => string;
+    showing: string;
     unassignedOrg: string;
   };
 }) {
@@ -151,7 +151,7 @@ export function SessionsTable({
       ) : (
         <>
           <p className="px-4 py-2 text-xs text-[var(--on-surface-variant)] md:px-6">
-            {labels.showing(filtered.length)}
+            {labels.showing.replace("#COUNT#", String(filtered.length))}
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-start text-sm">

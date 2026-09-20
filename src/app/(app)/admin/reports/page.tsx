@@ -114,7 +114,7 @@ export default async function AdminReportsPage() {
             colStatus: t("colStatus"),
             colScore: t("colScore"),
             colLanguage: t("colLanguage"),
-            showingLabel: (count) => t("showing", { count }),
+            showingLabel: t("showingLabel"),
             filterLanguage: t("filterLanguage"),
             filterAll: t("filterAll"),
           }}

@@ -698,7 +698,8 @@
       "colLanguage": "اللغة",
       "showing": "عرض {count} تقارير",
       "filterLanguage": "اللغة",
-      "filterAll": "الكل"
+      "filterAll": "الكل",
+      "showingLabel": "عرض #COUNT# تقارير"
     },
     "reportDetail": {
       "back": "كل التقارير",
@@ -1293,7 +1294,8 @@
       "caseInstance": "نسخة الحالة",
       "clinicalSnapshot": "لقطة سريرية (JSON)",
       "immersion": "مقاييس الانغماس",
-      "none": "—"
+      "none": "—",
+      "showingLabel": "عرض #COUNT# جلسات"
     },
     "contentHub": {
       "title": "مكتبة المحتوى",

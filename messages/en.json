@@ -698,7 +698,8 @@
       "colLanguage": "Language",
       "showing": "Showing {count} reports",
       "filterLanguage": "Language",
-      "filterAll": "All"
+      "filterAll": "All",
+      "showingLabel": "Showing #COUNT# reports"
     },
     "reportDetail": {
       "back": "All reports",
@@ -1293,7 +1294,8 @@
       "caseInstance": "Case instance",
       "clinicalSnapshot": "Clinical snapshot (JSON)",
       "immersion": "Immersion metrics",
-      "none": "—"
+      "none": "—",
+      "showingLabel": "Showing #COUNT# sessions"
     },
     "contentHub": {
       "title": "Content library",

@@ -34,7 +34,7 @@ export function ReportsTable({
     colStatus: string;
     colScore: string;
     colLanguage: string;
-    showingLabel: (count: number) => string;
+    showingLabel: string;
     filterLanguage: string;
     filterAll: string;
   };
@@ -125,7 +125,7 @@ export function ReportsTable({
       ) : (
         <>
           <p className="px-4 py-2 text-xs text-[var(--on-surface-variant)] md:px-6">
-            {labels.showingLabel(filtered.length)}
+            {labels.showingLabel.replace("#COUNT#", String(filtered.length))}
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-start text-sm">

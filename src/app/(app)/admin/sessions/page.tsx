@@ -137,7 +137,7 @@ export default async function AdminSessionsPage() {
             actionView: t("actionView"),
             actionReport: t("actionReport"),
             adminTest: t("adminTest"),
-            showing: (count) => t("showing", { count }),
+            showing: t("showingLabel"),
             unassignedOrg: t("unassignedOrg"),
           }}
         />
