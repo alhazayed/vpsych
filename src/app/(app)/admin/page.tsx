@@ -214,6 +214,11 @@ export default async function AdminHomePage() {
               icon: "person_add",
             },
             {
+              href: "/admin/sessions",
+              label: t("actionSessions"),
+              icon: "clinical_notes",
+            },
+            {
               href: "/admin/reports",
               label: t("actionReviewReports"),
               icon: "assignment",

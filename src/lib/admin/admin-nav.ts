@@ -59,6 +59,20 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
     ],
   },
   {
+    id: "simulations",
+    labelKey: "sectionSimulations",
+    defaultOpen: true,
+    items: [
+      {
+        href: "/admin/sessions",
+        labelKey: "sessions",
+        icon: "clinical_notes",
+        keywords: ["sessions", "simulations", "transcript", "active"],
+        match: (p) => p.startsWith("/admin/sessions"),
+      },
+    ],
+  },
+  {
     id: "assessment",
     labelKey: "sectionAssessment",
     defaultOpen: true,
@@ -67,7 +81,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         href: "/admin/reports",
         labelKey: "performanceReports",
         icon: "assignment",
-        keywords: ["reports", "assessment", "scores", "sessions"],
+        keywords: ["reports", "assessment", "scores"],
         match: (p) => p.startsWith("/admin/reports"),
       },
     ],
@@ -77,6 +91,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
     labelKey: "sectionContent",
     defaultOpen: true,
     items: [
+      {
+        href: "/admin/content",
+        labelKey: "contentLibrary",
+        icon: "inventory_2",
+        keywords: ["content", "library", "hub"],
+        match: (p) => p === "/admin/content",
+      },
       {
         href: "/admin/avatars",
         labelKey: "virtualPatients",
@@ -123,7 +144,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         href: "/admin/enterprise",
         labelKey: "enterprise",
         icon: "domain",
-        keywords: ["organization", "tenant", "enterprise"],
+        keywords: ["organization", "tenant", "enterprise", "members"],
         match: (p) => p.startsWith("/admin/enterprise"),
       },
       {
@@ -132,6 +153,20 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         icon: "inbox",
         keywords: ["feedback", "triage", "queue"],
         match: (p) => p.startsWith("/admin/feedback"),
+      },
+    ],
+  },
+  {
+    id: "analytics",
+    labelKey: "sectionAnalytics",
+    defaultOpen: false,
+    items: [
+      {
+        href: "/admin/analytics",
+        labelKey: "analyticsOverview",
+        icon: "insights",
+        keywords: ["analytics", "usage", "trends", "metrics"],
+        match: (p) => p.startsWith("/admin/analytics"),
       },
     ],
   },
@@ -189,7 +224,10 @@ export function findAdminNavItem(
   return (
     flat.find((item) =>
       item.match ? item.match(pathname) : pathname === item.href,
-    ) ?? flat.find((item) => pathname.startsWith(item.href) && item.href !== "/admin")
+    ) ??
+    flat.find(
+      (item) => pathname.startsWith(item.href) && item.href !== "/admin",
+    )
   );
 }
 

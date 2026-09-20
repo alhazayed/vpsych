@@ -300,9 +300,9 @@ export function AdminMobilePrimaryNav() {
     const flat = ADMIN_NAV_SECTIONS.flatMap((s) => s.items);
     const pick = [
       "/admin",
-      "/admin/avatars",
+      "/admin/sessions",
       "/admin/reports",
-      "/admin/curriculum",
+      "/admin/content",
       "/admin/diagnostics",
     ];
     return pick

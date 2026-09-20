@@ -114,7 +114,10 @@ function TherapistNavLink({
 function pageTitleKey(pathname: string): string {
   if (pathname === "/admin") return "overview";
   if (pathname.startsWith("/admin/diagnostics")) return "systemHealth";
+  if (pathname.startsWith("/admin/sessions")) return "sessions";
   if (pathname.startsWith("/admin/reports")) return "reportsLibrary";
+  if (pathname.startsWith("/admin/content")) return "contentLibrary";
+  if (pathname.startsWith("/admin/analytics")) return "analyticsOverview";
   if (pathname.startsWith("/admin/avatars")) return "virtualPatients";
   if (pathname.startsWith("/admin/personality")) return "humanPersonality";
   if (pathname.startsWith("/admin/voices")) return "voices";
@@ -195,6 +198,9 @@ export function AppShell({
       | "pageTitle.patientLibrary"
       | "pageTitle.systemHealth"
       | "pageTitle.reportsLibrary"
+      | "pageTitle.sessions"
+      | "pageTitle.contentLibrary"
+      | "pageTitle.analyticsOverview"
       | "pageTitle.virtualPatients"
       | "pageTitle.humanPersonality"
       | "pageTitle.voices"

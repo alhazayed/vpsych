@@ -737,6 +737,7 @@ describe("architecture invariants", () => {
       "app/api/admin/ace/learners/route.ts",
       "app/api/health/openai/route.ts",
       "app/api/admin/ops/metrics/route.ts",
+      "app/api/admin/analytics/route.ts",
     ];
     for (const rel of routes) {
       const src = readFileSync(join(root, rel), "utf8");
