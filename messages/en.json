@@ -1281,7 +1281,7 @@
       "roleSystem": "System",
       "roleLearner": "Learner",
       "rolePatient": "Virtual patient",
-      "turns": "{count} turns",
+      "turns": "{count} messages",
       "noAssessment": "Assessment unavailable",
       "noAssessmentHint": "This session does not have scored assessment data yet.",
       "overall": "Overall score",

@@ -1281,7 +1281,7 @@
       "roleSystem": "النظام",
       "roleLearner": "المتدرب",
       "rolePatient": "المريض الافتراضي",
-      "turns": "{count} أدوار",
+      "turns": "{count} رسائل",
       "noAssessment": "التقييم غير متاح",
       "noAssessmentHint": "لا توجد بيانات تقييم مسجّلة لهذه الجلسة بعد.",
       "overall": "الدرجة الكلية",
