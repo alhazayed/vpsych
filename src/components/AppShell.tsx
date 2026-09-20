@@ -3,22 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
+import {
+  AdminMobilePrimaryNav,
+  AdminSidebarNav,
+  useAdminSidebarState,
+} from "@/components/admin/AdminSidebarNav";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { flattenAdminNav } from "@/lib/admin/admin-nav";
 
 type NavItem = {
   href: string;
   label: string;
   icon: string;
   match?: (pathname: string) => boolean;
-};
-
-type NavSection = {
-  id: string;
-  label: string;
-  items: NavItem[];
 };
 
 function therapistNav(
@@ -75,140 +77,7 @@ function therapistNav(
   ];
 }
 
-/** Task-oriented admin IA (Phase 2). Old routes remain valid. */
-function adminNavSections(t: (key: string) => string): NavSection[] {
-  return [
-    {
-      id: "home",
-      label: "",
-      items: [
-        {
-          href: "/admin",
-          label: t("adminHome"),
-          icon: "dashboard",
-          match: (p) => p === "/admin",
-        },
-      ],
-    },
-    {
-      id: "content",
-      label: t("sectionContent"),
-      items: [
-        {
-          href: "/admin/avatars",
-          label: t("virtualPatients"),
-          icon: "psychology",
-          match: (p) => p.startsWith("/admin/avatars"),
-        },
-        {
-          href: "/admin/voices",
-          label: t("voices"),
-          icon: "record_voice_over",
-          match: (p) => p.startsWith("/admin/voices"),
-        },
-        {
-          href: "/admin/cases",
-          label: t("cases"),
-          icon: "biotech",
-          match: (p) => p.startsWith("/admin/cases"),
-        },
-        {
-          href: "/admin/templates",
-          label: t("templates"),
-          icon: "schema",
-          match: (p) => p.startsWith("/admin/templates"),
-        },
-        {
-          href: "/admin/presets",
-          label: t("presets"),
-          icon: "school",
-          match: (p) => p.startsWith("/admin/presets"),
-        },
-      ],
-    },
-    {
-      id: "learners",
-      label: t("sectionLearners"),
-      items: [
-        {
-          href: "/admin/reports",
-          label: t("reports"),
-          icon: "folder_shared",
-          match: (p) => p.startsWith("/admin/reports"),
-        },
-        {
-          href: "/admin/curriculum",
-          label: t("learnersProgress"),
-          icon: "timeline",
-          match: (p) => p.startsWith("/admin/curriculum"),
-        },
-        {
-          href: "/admin/graph",
-          label: t("competencies"),
-          icon: "account_tree",
-          match: (p) => p.startsWith("/admin/graph"),
-        },
-      ],
-    },
-    {
-      id: "research",
-      label: t("sectionResearch"),
-      items: [
-        {
-          href: "/admin/research",
-          label: t("validation"),
-          icon: "science",
-          match: (p) => p.startsWith("/admin/research"),
-        },
-      ],
-    },
-    {
-      id: "organization",
-      label: t("sectionOrganization"),
-      items: [
-        {
-          href: "/admin/enterprise",
-          label: t("enterprise"),
-          icon: "domain",
-          match: (p) => p.startsWith("/admin/enterprise"),
-        },
-        {
-          href: "/admin/feedback",
-          label: t("feedback"),
-          icon: "inbox",
-          match: (p) => p.startsWith("/admin/feedback"),
-        },
-      ],
-    },
-    {
-      id: "system",
-      label: t("sectionSystem"),
-      items: [
-        {
-          href: "/admin/cidp",
-          label: t("operations"),
-          icon: "monitoring",
-          match: (p) => p.startsWith("/admin/cidp"),
-        },
-        {
-          href: "/admin/diagnostics",
-          label: t("diagnostics"),
-          icon: "settings_suggest",
-          match: (p) =>
-            p.startsWith("/admin/diagnostics") ||
-            p.startsWith("/admin/supervisor") ||
-            p.startsWith("/admin/personality"),
-        },
-      ],
-    },
-  ];
-}
-
-function flattenAdminNav(sections: NavSection[]): NavItem[] {
-  return sections.flatMap((s) => s.items);
-}
-
-function NavLink({
+function TherapistNavLink({
   item,
   pathname,
   compact,
@@ -221,6 +90,7 @@ function NavLink({
   return (
     <Link
       href={item.href}
+      aria-current={active ? "page" : undefined}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200 ${
         active
           ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
@@ -230,6 +100,7 @@ function NavLink({
       <span
         className="material-symbols-outlined text-[22px]"
         style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        aria-hidden
       >
         {item.icon}
       </span>
@@ -238,6 +109,33 @@ function NavLink({
       </span>
     </Link>
   );
+}
+
+function pageTitleKey(pathname: string): string {
+  if (pathname === "/admin") return "overview";
+  if (pathname.startsWith("/admin/diagnostics")) return "systemHealth";
+  if (pathname.startsWith("/admin/reports")) return "reportsLibrary";
+  if (pathname.startsWith("/admin/avatars")) return "virtualPatients";
+  if (pathname.startsWith("/admin/personality")) return "humanPersonality";
+  if (pathname.startsWith("/admin/voices")) return "voices";
+  if (pathname.startsWith("/admin/cases")) return "cases";
+  if (pathname.startsWith("/admin/templates")) return "templates";
+  if (pathname.startsWith("/admin/presets")) return "presets";
+  if (pathname.startsWith("/admin/curriculum")) return "learnersProgress";
+  if (pathname.startsWith("/admin/graph")) return "competencies";
+  if (pathname.startsWith("/learning/supervisor")) return "supervisorAi";
+  if (pathname.startsWith("/learning/graph")) return "competencyGraph";
+  if (pathname.startsWith("/learning")) return "adaptiveLearning";
+  if (pathname.startsWith("/admin/supervisor")) return "supervisorAi";
+  if (pathname.startsWith("/admin/enterprise")) return "enterprise";
+  if (pathname.startsWith("/admin/cidp")) return "operations";
+  if (pathname.startsWith("/admin/feedback")) return "feedbackQueue";
+  if (pathname.startsWith("/feedback")) return "institutionalFeedback";
+  if (pathname.startsWith("/admin/research")) return "validation";
+  if (pathname.startsWith("/admin/test-sessions")) return "testTranscript";
+  if (pathname.startsWith("/clinic")) return "clinic";
+  if (pathname.startsWith("/sessions")) return "mySessions";
+  return "patientLibrary";
 }
 
 export function AppShell({
@@ -253,6 +151,15 @@ export function AppShell({
   const router = useRouter();
   const tNav = useTranslations("nav");
   const tShell = useTranslations("shell");
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const {
+    collapsed,
+    toggleCollapsed,
+    toggleSection,
+    isSectionOpen,
+  } = useAdminSidebarState();
+
   const isImmersiveSession =
     (/^\/sessions\/[^/]+$/.test(pathname) && !pathname.endsWith("/complete")) ||
     /^\/clinic\/room\/[^/]+$/.test(pathname);
@@ -260,33 +167,19 @@ export function AppShell({
   const isAdminArea =
     profile.role === "admin" && pathname.startsWith("/admin");
 
-  const adminSections =
-    profile.role === "admin" ? adminNavSections(tNav) : [];
-  const adminFlat = flattenAdminNav(adminSections);
-
   const therapistItems = [
     ...therapistNav(tNav, therapyRoomEnabled),
     ...(profile.role === "admin"
       ? [
           {
             href: "/admin",
-            label: tNav("adminHome"),
+            label: tNav("overview"),
             icon: "admin_panel_settings",
             match: (p: string) => p.startsWith("/admin"),
           } satisfies NavItem,
         ]
       : []),
   ];
-
-  const mobileNav = isAdminArea
-    ? [
-        adminFlat.find((i) => i.href === "/admin")!,
-        adminFlat.find((i) => i.href === "/admin/avatars")!,
-        adminFlat.find((i) => i.href === "/admin/reports")!,
-        adminFlat.find((i) => i.href === "/admin/feedback")!,
-        adminFlat.find((i) => i.href === "/admin/diagnostics")!,
-      ].filter(Boolean)
-    : therapistItems;
 
   async function signOut() {
     const supabase = createClient();
@@ -295,50 +188,36 @@ export function AppShell({
     router.refresh();
   }
 
-  function pageTitle() {
-    if (pathname === "/admin") return tShell("pageTitle.adminHome");
-    if (pathname.startsWith("/admin/diagnostics"))
-      return tShell("pageTitle.diagnostics");
-    if (pathname.startsWith("/admin/reports"))
-      return tShell("pageTitle.reportsLibrary");
-    if (pathname.startsWith("/admin/avatars"))
-      return tShell("pageTitle.virtualPatients");
-    if (pathname.startsWith("/admin/personality"))
-      return tShell("pageTitle.humanPersonality");
-    if (pathname.startsWith("/admin/voices"))
-      return tShell("pageTitle.voices");
-    if (pathname.startsWith("/admin/cases"))
-      return tShell("pageTitle.cases");
-    if (pathname.startsWith("/admin/templates"))
-      return tShell("pageTitle.templates");
-    if (pathname.startsWith("/admin/presets"))
-      return tShell("pageTitle.presets");
-    if (pathname.startsWith("/admin/curriculum"))
-      return tShell("pageTitle.learnersProgress");
-    if (pathname.startsWith("/admin/graph"))
-      return tShell("pageTitle.competencies");
-    if (pathname.startsWith("/learning/supervisor"))
-      return tShell("pageTitle.supervisorAi");
-    if (pathname.startsWith("/learning/graph"))
-      return tShell("pageTitle.competencyGraph");
-    if (pathname.startsWith("/learning"))
-      return tShell("pageTitle.adaptiveLearning");
-    if (pathname.startsWith("/admin/supervisor"))
-      return tShell("pageTitle.supervisorAi");
-    if (pathname.startsWith("/admin/enterprise"))
-      return tShell("pageTitle.enterprise");
-    if (pathname.startsWith("/admin/cidp"))
-      return tShell("pageTitle.operations");
-    if (pathname.startsWith("/admin/feedback"))
-      return tShell("pageTitle.feedbackQueue");
-    if (pathname.startsWith("/feedback"))
-      return tShell("pageTitle.institutionalFeedback");
-    if (pathname.startsWith("/admin/research"))
-      return tShell("pageTitle.validation");
-    if (pathname.startsWith("/clinic")) return tShell("pageTitle.clinic");
-    if (pathname.startsWith("/sessions")) return tShell("pageTitle.mySessions");
-    return tShell("pageTitle.patientLibrary");
-  }
+  const titleKey = pageTitleKey(pathname);
+  const pageTitle = tShell(
+    `pageTitle.${titleKey}` as
+      | "pageTitle.overview"
+      | "pageTitle.patientLibrary"
+      | "pageTitle.systemHealth"
+      | "pageTitle.reportsLibrary"
+      | "pageTitle.virtualPatients"
+      | "pageTitle.humanPersonality"
+      | "pageTitle.voices"
+      | "pageTitle.cases"
+      | "pageTitle.templates"
+      | "pageTitle.presets"
+      | "pageTitle.learnersProgress"
+      | "pageTitle.competencies"
+      | "pageTitle.supervisorAi"
+      | "pageTitle.competencyGraph"
+      | "pageTitle.adaptiveLearning"
+      | "pageTitle.enterprise"
+      | "pageTitle.operations"
+      | "pageTitle.feedbackQueue"
+      | "pageTitle.institutionalFeedback"
+      | "pageTitle.validation"
+      | "pageTitle.testTranscript"
+      | "pageTitle.clinic"
+      | "pageTitle.mySessions",
+  );
+
+  const sidebarWidth = collapsed ? "md:w-[4.5rem]" : "md:w-64";
+  const contentOffset = collapsed ? "md:ms-[4.5rem]" : "md:ms-64";
 
   if (isImmersiveSession) {
     return <div className="min-h-screen bg-[var(--background)]">{children}</div>;
@@ -346,106 +225,178 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--on-surface)]">
-      <aside className="fixed start-0 top-0 z-50 hidden h-screen w-64 flex-col border-e border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-6 md:flex">
-        <div className="mb-8 px-6">
-          <Link
-            href={isAdminArea ? "/admin" : "/avatars"}
-            className="flex items-center gap-3"
-          >
-            <Image
-              src="/vpsych-logo.png"
-              alt="VPsych"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-lg object-cover"
-              priority
-            />
-            <div>
-              <p className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
-                VPsych
-              </p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)] opacity-70">
-                {isAdminArea ? tShell("adminTagline") : tShell("tagline")}
-              </p>
-            </div>
-          </Link>
+      {isAdminArea ? (
+        <AdminCommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      ) : null}
+
+      {/* Desktop sidebar */}
+      <aside
+        className={`fixed start-0 top-0 z-50 hidden h-screen flex-col border-e border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-5 transition-[width] duration-200 md:flex ${sidebarWidth}`}
+      >
+        <div className={`mb-6 ${collapsed ? "px-2" : "px-5"}`}>
+          <div className="flex items-center gap-2">
+            <Link
+              href={isAdminArea ? "/admin" : "/avatars"}
+              className={`flex min-w-0 items-center gap-3 ${collapsed ? "justify-center" : ""}`}
+            >
+              <Image
+                src="/vpsych-logo.png"
+                alt="VPsych"
+                width={40}
+                height={40}
+                className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                priority
+              />
+              {!collapsed ? (
+                <div className="min-w-0">
+                  <p className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
+                    VPsych
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)] opacity-70">
+                    {isAdminArea ? tShell("adminTagline") : tShell("tagline")}
+                  </p>
+                </div>
+              ) : null}
+            </Link>
+            {isAdminArea ? (
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className={`rounded-lg p-2 text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${collapsed ? "mx-auto" : "ms-auto"}`}
+                aria-label={
+                  collapsed
+                    ? tShell("sidebar.expand")
+                    : tShell("sidebar.collapse")
+                }
+                title={
+                  collapsed
+                    ? tShell("sidebar.expand")
+                    : tShell("sidebar.collapse")
+                }
+              >
+                <span
+                  className="material-symbols-outlined text-[20px] rtl:scale-x-[-1]"
+                  aria-hidden
+                >
+                  {collapsed
+                    ? "keyboard_double_arrow_right"
+                    : "keyboard_double_arrow_left"}
+                </span>
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto px-2">
-          {isAdminArea ? (
-            adminSections.map((section) => (
-              <div key={section.id}>
-                {section.label ? (
-                  <p className="mb-1 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                    {section.label}
-                  </p>
-                ) : null}
-                <div className="space-y-1">
-                  {section.items.map((item) => (
-                    <NavLink key={item.href} item={item} pathname={pathname} />
-                  ))}
-                </div>
-              </div>
-            ))
-          ) : (
-            therapistItems.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} />
-            ))
-          )}
-        </nav>
+        {isAdminArea ? (
+          <AdminSidebarNav
+            collapsed={collapsed}
+            isSectionOpen={isSectionOpen}
+            toggleSection={toggleSection}
+          />
+        ) : (
+          <nav className="flex-1 space-y-1 overflow-y-auto px-2">
+            {therapistItems.map((item) => (
+              <TherapistNavLink
+                key={item.href}
+                item={item}
+                pathname={pathname}
+              />
+            ))}
+          </nav>
+        )}
 
-        <div className="space-y-3 border-t border-[var(--outline-variant)] px-4 pt-4">
-          <div className="px-2">
-            <p className="truncate text-sm font-semibold text-[var(--on-surface)]">
-              {profile.display_name}
-            </p>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--on-surface-variant)]">
-              {profile.role === "admin"
-                ? tShell("role.admin")
-                : tShell("role.therapist")}
-            </p>
-          </div>
+        <div
+          className={`space-y-3 border-t border-[var(--outline-variant)] pt-4 ${collapsed ? "px-2" : "px-4"}`}
+        >
+          {!collapsed ? (
+            <div className="px-1">
+              <p className="truncate text-sm font-semibold text-[var(--on-surface)]">
+                {profile.display_name}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-[var(--on-surface-variant)]">
+                {profile.role === "admin"
+                  ? tShell("role.admin")
+                  : tShell("role.therapist")}
+              </p>
+            </div>
+          ) : null}
           {isAdminArea ? (
-            <Link href="/avatars" className="btn-secondary w-full">
-              <span className="material-symbols-outlined text-[20px]">
+            <Link
+              href="/avatars"
+              className={collapsed ? "btn-secondary justify-center px-2" : "btn-secondary w-full"}
+              title={tShell("therapistWorkspace")}
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden>
                 school
               </span>
-              {tShell("therapistWorkspace")}
+              {!collapsed ? tShell("therapistWorkspace") : null}
             </Link>
           ) : (
             <Link href="/avatars" className="btn-primary w-full">
-              <span className="material-symbols-outlined text-[20px]">add</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                add
+              </span>
               {tShell("newAssessment")}
             </Link>
           )}
           <button
             type="button"
             onClick={() => void signOut()}
-            className="btn-secondary w-full"
+            className={collapsed ? "btn-secondary w-full justify-center px-2" : "btn-secondary w-full"}
+            title={tShell("signOut")}
           >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            {tShell("signOut")}
+            <span className="material-symbols-outlined text-[20px]" aria-hidden>
+              logout
+            </span>
+            {!collapsed ? tShell("signOut") : null}
           </button>
         </div>
       </aside>
 
+      {/* Mobile top bar */}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
-        <Link
-          href={isAdminArea ? "/admin" : "/avatars"}
-          className="flex items-center gap-2"
-        >
-          <Image
-            src="/vpsych-logo.png"
-            alt="VPsych"
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-md object-cover"
-          />
-          <span className="font-[family-name:var(--font-headline)] text-lg font-bold text-[var(--primary)]">
-            VPsych
-          </span>
-        </Link>
         <div className="flex items-center gap-2">
+          {isAdminArea ? (
+            <button
+              type="button"
+              className="rounded-lg p-2 text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)]"
+              aria-label={tShell("sidebar.openMenu")}
+              onClick={() => setMobileDrawerOpen(true)}
+            >
+              <span className="material-symbols-outlined" aria-hidden>
+                menu
+              </span>
+            </button>
+          ) : null}
+          <Link
+            href={isAdminArea ? "/admin" : "/avatars"}
+            className="flex items-center gap-2"
+          >
+            <Image
+              src="/vpsych-logo.png"
+              alt="VPsych"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-md object-cover"
+            />
+            <span className="font-[family-name:var(--font-headline)] text-lg font-bold text-[var(--primary)]">
+              VPsych
+            </span>
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          {isAdminArea ? (
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--outline-variant)] p-2 text-[var(--on-surface-variant)]"
+              aria-label={tShell("commandPalette.title")}
+              onClick={() => setCommandOpen(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                search
+              </span>
+            </button>
+          ) : null}
           <LanguageSwitcher compact />
           <button
             type="button"
@@ -457,12 +408,74 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="md:ms-64">
-        <header className="sticky top-0 z-40 hidden h-16 items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface)] px-8 md:flex">
-          <p className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-            {pageTitle()}
-          </p>
+      {/* Mobile admin drawer */}
+      {isAdminArea && mobileDrawerOpen ? (
+        <div className="fixed inset-0 z-[70] md:hidden" role="presentation">
+          <button
+            type="button"
+            className="absolute inset-0 bg-[color-mix(in_srgb,var(--on-surface)_40%,transparent)]"
+            aria-label={tShell("sidebar.closeMenu")}
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+          <div className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-[var(--surface-container-lowest)] shadow-lg">
+            <div className="flex items-center justify-between border-b border-[var(--outline-variant)] px-4 py-3">
+              <p className="font-[family-name:var(--font-headline)] font-bold text-[var(--primary)]">
+                VPsych
+              </p>
+              <button
+                type="button"
+                className="rounded-lg p-2"
+                aria-label={tShell("sidebar.closeMenu")}
+                onClick={() => setMobileDrawerOpen(false)}
+              >
+                <span className="material-symbols-outlined" aria-hidden>
+                  close
+                </span>
+              </button>
+            </div>
+            <div
+              className="flex-1 overflow-y-auto py-3"
+              onClick={() => setMobileDrawerOpen(false)}
+            >
+              <AdminSidebarNav
+                collapsed={false}
+                isSectionOpen={isSectionOpen}
+                toggleSection={toggleSection}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className={`transition-[margin] duration-200 ${isAdminArea ? contentOffset : "md:ms-64"}`}>
+        <header className="sticky top-0 z-40 hidden h-16 items-center justify-between gap-4 border-b border-[var(--outline-variant)] bg-[var(--surface)] px-6 lg:px-8 md:flex">
+          <div className="min-w-0">
+            <p className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)] truncate">
+              {pageTitle}
+            </p>
+            {isAdminArea ? (
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--outline)]">
+                {tShell("adminConsole")}
+              </p>
+            ) : null}
+          </div>
           <div className="flex items-center gap-3">
+            {isAdminArea ? (
+              <button
+                type="button"
+                onClick={() => setCommandOpen(true)}
+                className="hidden items-center gap-2 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] lg:inline-flex"
+                aria-label={tShell("commandPalette.title")}
+              >
+                <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                  search
+                </span>
+                <span>{tShell("commandPalette.trigger")}</span>
+                <kbd className="rounded border border-[var(--outline-variant)] px-1.5 py-0.5 text-[10px]">
+                  ⌘K
+                </kbd>
+              </button>
+            ) : null}
             <LanguageSwitcher />
             <div className="text-end">
               <p className="text-sm font-bold text-[var(--on-surface)]">
@@ -484,10 +497,24 @@ export function AppShell({
       </div>
 
       <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
-        {mobileNav.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} compact />
-        ))}
+        {isAdminArea ? (
+          <AdminMobilePrimaryNav />
+        ) : (
+          therapistItems.slice(0, 5).map((item) => (
+            <TherapistNavLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              compact
+            />
+          ))
+        )}
       </nav>
     </div>
   );
+}
+
+/** Kept for tests / tooling that inspect shell nav destinations. */
+export function adminNavHrefSnapshot(): string[] {
+  return flattenAdminNav().map((i) => i.href);
 }

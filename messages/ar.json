@@ -16,7 +16,8 @@
     "safety": {
       "discard": "تجاهل التغييرات",
       "confirmSave": "تأكيد وحفظ"
-    }
+    },
+    "technicalDetails": "تفاصيل تقنية"
   },
   "shell": {
     "tagline": "الذكاء السريري",
@@ -31,7 +32,7 @@
       "patientLibrary": "مكتبة المرضى الافتراضيين",
       "clinic": "مركز الصحة النفسية",
       "mySessions": "جلساتي",
-      "reportsLibrary": "مكتبة التقارير",
+      "reportsLibrary": "تقارير الأداء",
       "avatarPresets": "المرضى الافتراضيون",
       "humanPersonality": "الشخصية الإنسانية",
       "voiceManagement": "الأصوات",
@@ -49,7 +50,7 @@
       "cidpOperations": "العمليات",
       "feedbackQueue": "قائمة الملاحظات",
       "institutionalFeedback": "ملاحظات مؤسسية",
-      "adminHome": "لوحة الإدارة",
+      "adminHome": "نظرة عامة",
       "virtualPatients": "المرضى الافتراضيون",
       "voices": "الأصوات",
       "cases": "الحالات",
@@ -60,10 +61,27 @@
       "validation": "التحقق",
       "enterprise": "المؤسسات",
       "operations": "العمليات",
-      "diagnostics": "متقدم / التشخيص"
+      "diagnostics": "صحة النظام",
+      "overview": "نظرة عامة",
+      "systemHealth": "صحة النظام",
+      "testTranscript": "نص اختبار إداري"
     },
     "adminTagline": "الإدارة",
-    "therapistWorkspace": "مساحة المعالج"
+    "therapistWorkspace": "مساحة المعالج",
+    "adminConsole": "وحدة التحكم الإدارية",
+    "sidebar": {
+      "collapse": "طي الشريط الجانبي",
+      "expand": "توسيع الشريط الجانبي",
+      "openMenu": "فتح التنقل",
+      "closeMenu": "إغلاق التنقل"
+    },
+    "commandPalette": {
+      "title": "بحث في VPsych",
+      "placeholder": "ابحث في الصفحات والتقارير…",
+      "trigger": "بحث",
+      "empty": "لا توجد وجهات مطابقة.",
+      "hint": "التنقل فقط — النتائج وجهات إدارية حقيقية وليست سجلات مختلقة."
+    }
   },
   "nav": {
     "patientLibrary": "مكتبة المرضى",
@@ -87,9 +105,9 @@
     "cidpOperations": "العمليات",
     "feedbackQueue": "الملاحظات",
     "institutionalFeedback": "ملاحظات مؤسسية",
-    "adminHome": "لوحة الإدارة",
+    "adminHome": "نظرة عامة",
     "sectionContent": "المحتوى",
-    "sectionLearners": "المتدربون",
+    "sectionLearners": "التعلم",
     "sectionResearch": "البحث",
     "sectionOrganization": "المؤسسة",
     "sectionSystem": "النظام",
@@ -105,7 +123,12 @@
     "enterprise": "المؤسسات",
     "feedback": "الملاحظات",
     "operations": "العمليات",
-    "diagnostics": "متقدم / التشخيص"
+    "diagnostics": "صحة النظام",
+    "overview": "نظرة عامة",
+    "sectionLearning": "التعلم",
+    "sectionAssessment": "التقييم",
+    "performanceReports": "تقارير الأداء",
+    "systemHealth": "صحة النظام"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -650,11 +673,24 @@
       "statAvgHint": "عبر التقارير المكتملة",
       "adminOnly": "للمسؤولين فقط",
       "rlsNote": "لا يمكن للمعالجين قراءة تقارير الجلسات عبر أمان مستوى الصف.",
-      "title": "مكتبة التقارير",
-      "subtitle": "سري. مرئي للمسؤولين فقط.",
+      "title": "تقارير الأداء",
+      "subtitle": "مكتبة تقييمات للمسؤولين فقط للمحاكاة المكتملة.",
       "fallbackTherapist": "معالج",
       "fallbackAvatar": "شخصية",
-      "empty": "لا توجد تقارير بعد."
+      "empty": "لا توجد تقارير بعد.",
+      "searchPlaceholder": "ابحث عن متدرب أو مريض أو جلسة…",
+      "emptyTitle": "لا توجد تقارير تقييم",
+      "emptyDescription": "لا توجد تقارير تطابق عوامل التصفية المحددة، أو لم يُنشأ أي تقرير بعد.",
+      "clearFilters": "مسح عوامل التصفية",
+      "colLearner": "المتدرب",
+      "colPatient": "السيناريو / المريض",
+      "colDate": "التاريخ",
+      "colStatus": "الحالة",
+      "colScore": "الدرجة",
+      "colLanguage": "اللغة",
+      "showing": "عرض {count} تقارير",
+      "filterLanguage": "اللغة",
+      "filterAll": "الكل"
     },
     "reportDetail": {
       "back": "كل التقارير",
@@ -920,7 +956,9 @@
     },
     "researchValidation": {
       "title": "التحقق العلمي",
-      "subtitle": "لوحة بحث رصدية — الواقعية والموثوقية والقياس النفسي والمعايير. لا تعدّل سلوك المريض. الدرجات ليست أدوات سريرية مُثبتة."
+      "subtitle": "لوحة بحث رصدية — الواقعية والموثوقية والقياس النفسي والمعايير. لا تعدّل سلوك المريض. الدرجات ليست أدوات سريرية مُثبتة.",
+      "workspaceTitle": "مساحة البحث",
+      "workspaceDisclaimer": "البيانات المعروضة هنا بيانات بحثية وتعليمية مجهولة الهوية. سجلات المرضى السريرية الحقيقية ليست جزءاً من هذه المساحة. الدرجات تكوينية وليست أدوات سريرية مُعتمدة."
     },
     "voices": {
       "title": "الأصوات",
@@ -1101,40 +1139,81 @@
       }
     },
     "home": {
-      "title": "لوحة الإدارة",
-      "subtitle": "ما يحتاج انتباهك بخصوص المرضى الافتراضيين والتقارير والعمليات.",
+      "title": "نظرة عامة",
+      "subtitle": "ماذا يحدث في VPsych الآن، وما الذي يحتاج انتباهك؟",
+      "greetingHint": "لمحة تشغيلية من بيانات المنصة الحية.",
+      "kpiRegion": "مؤشرات رئيسية",
       "statActive": "مرضى افتراضيون نشطون",
+      "statActiveHint": "منشورون ومتاحون للتدريب",
       "statIncomplete": "مرضى غير مكتملين",
+      "statIncompleteHint": "ينقصهم الإعداد السريري المطلوب",
       "statTotalPatients": "إجمالي المرضى",
       "statOpenFeedback": "ملاحظات مفتوحة",
-      "needsAttention": "يحتاج انتباهاً",
+      "statOpenFeedbackHint": "بانتظار الفرز",
+      "statActiveLearnersSessions": "جلسات اليوم",
+      "statSessionsTodayHint": "بدأت منذ منتصف ليل UTC",
+      "statCompletion": "الإكمال (7 أيام)",
+      "statCompletionHint": "المكتملة ÷ التي بدأت خلال 7 أيام",
+      "statAvgScore": "متوسط الدرجة الأخيرة",
+      "statAvgScoreHint": "متوسط الدرجة الكلية من أحدث التقارير المعروضة",
+      "needsAttention": "يتطلب انتباهاً",
       "needsAttentionEmpty": "لا يوجد أمر عاجل حالياً.",
       "attentionIncomplete": "{count} مرضى افتراضيون يحتاجون إعداداً",
       "attentionFeedback": "{count} ملاحظات بانتظار المراجعة",
+      "attentionExpired": "{count} جلسات انتهت صلاحيتها خلال 7 أيام",
       "review": "مراجعة",
-      "recentReports": "تقارير حديثة",
-      "recentReportsEmpty": "لا توجد تقارير بعد.",
+      "quickActions": "إجراءات سريعة",
+      "actionNewPatient": "إنشاء مريض",
+      "actionReviewReports": "مراجعة التقييمات",
+      "actionLearners": "عرض المتدربين",
+      "actionFeedback": "فرز الملاحظات",
+      "actionCases": "مكتبة الحالات",
+      "recentReports": "تقييمات حديثة",
+      "recentReportsEmpty": "لا توجد تقارير تقييم بعد.",
       "viewAll": "عرض الكل",
       "unknownPatient": "مريض",
+      "unknownLearner": "متدرب",
       "recentActivity": "نشاط حديث",
       "recentActivityEmpty": "لا توجد جلسات حديثة.",
+      "incompletePatients": "مرضى غير مكتملين",
       "systemStatus": "حالة النظام",
+      "systemApp": "التطبيق",
       "systemAuth": "صلاحية المسؤول",
       "systemAdminAccess": "منطقة إدارة آمنة",
+      "systemVersion": "الإصدار",
       "statusOk": "جيد",
-      "systemHint": "تفاصيل التشخيص التشغيلي تبقى ضمن العمليات والقسم المتقدم.",
+      "statusOperational": "يعمل",
+      "status": {
+        "active": "نشطة",
+        "completed": "مكتملة",
+        "expired": "منتهية"
+      },
+      "systemHint": "فحوصات الخدمات الحية وجاهزية الذكاء الاصطناعي ضمن صحة النظام. العمليات تعرض مقاييس النشر.",
       "openOperations": "العمليات",
-      "openDiagnostics": "متقدم / التشخيص"
+      "openDiagnostics": "صحة النظام"
     },
     "diagnostics": {
-      "title": "متقدم / التشخيص",
-      "subtitle": "روابط تقنية للمسؤولين الذين يحتاجون أدوات على مستوى المحركات.",
-      "intro": "معظم عمل المحتوى السريري يوجد ضمن المحتوى والمتدربين. استخدم هذه المنطقة فقط للتشخيص أو الشاشات القديمة.",
+      "title": "صحة النظام",
+      "subtitle": "جاهزية التطبيق والأدوات التقنية للمسؤولين.",
+      "intro": "معظم عمل المحتوى السريري ضمن المحتوى والتعلم. استخدم هذه المنطقة لفحوصات الصحة وإطار المشرف والشاشات القديمة.",
       "operations": "لوحة العمليات",
-      "supervisorFramework": "نظرة على إطار المشرف",
-      "legacyPersonality": "محرر الشخصية القديم (متاح أيضاً داخل كل مريض)",
+      "supervisorFramework": "نظرة عامة على إطار المشرف",
+      "legacyPersonality": "محرر الشخصية القديم (متاح أيضاً على كل مريض)",
       "health": "نقطة فحص صحة التطبيق",
-      "engineNames": "أسماء المحركات الداخلية"
+      "openaiHealth": "جاهزية OpenAI (مسؤول)",
+      "engineNames": "أسماء المحركات الداخلية",
+      "healthTitle": "حالة الخدمات",
+      "svcApplication": "التطبيق",
+      "svcAuth": "المصادقة وبوابة الإدارة",
+      "svcAi": "مزود الذكاء الاصطناعي",
+      "statusOperational": "يعمل",
+      "statusUnavailable": "غير متاح",
+      "statusUnknown": "غير معروف",
+      "statusCheckViaLink": "تحقق عبر الرابط",
+      "lastChecked": "آخر فحص: {time}",
+      "authDetail": "مؤكد عبر جلسة المسؤول النشطة",
+      "aiDetail": "استخدم رابط صحة OpenAI للفحص الحي. لا تفترض الجاهزية دون تحقق.",
+      "healthDisclaimer": "الحالات المعروضة هنا من فحوصات حقيقية أو حالة غير معروفة صراحة — وليست بيانات مختلقة."
     }
   },
   "validation": {

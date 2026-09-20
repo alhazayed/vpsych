@@ -16,7 +16,8 @@
     "safety": {
       "discard": "Discard Changes",
       "confirmSave": "Confirm & Save"
-    }
+    },
+    "technicalDetails": "Technical details"
   },
   "shell": {
     "tagline": "Clinical Intelligence",
@@ -31,7 +32,7 @@
       "patientLibrary": "Virtual Patient Library",
       "clinic": "Mental Health Center",
       "mySessions": "My Sessions",
-      "reportsLibrary": "Reports Library",
+      "reportsLibrary": "Performance Reports",
       "avatarPresets": "Virtual Patients",
       "humanPersonality": "Human Personality",
       "voiceManagement": "Voices",
@@ -49,7 +50,7 @@
       "researchValidation": "Validation",
       "apiIntegrations": "API Integrations",
       "securityKeys": "Security & Keys",
-      "adminHome": "Admin Home",
+      "adminHome": "Overview",
       "virtualPatients": "Virtual Patients",
       "voices": "Voices",
       "cases": "Cases",
@@ -60,10 +61,27 @@
       "validation": "Validation",
       "enterprise": "Enterprise",
       "operations": "Operations",
-      "diagnostics": "Advanced / Diagnostics"
+      "diagnostics": "System Health",
+      "overview": "Overview",
+      "systemHealth": "System Health",
+      "testTranscript": "Admin test transcript"
     },
     "adminTagline": "Administration",
-    "therapistWorkspace": "Therapist workspace"
+    "therapistWorkspace": "Therapist workspace",
+    "adminConsole": "Admin console",
+    "sidebar": {
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar",
+      "openMenu": "Open navigation",
+      "closeMenu": "Close navigation"
+    },
+    "commandPalette": {
+      "title": "Search VPsych",
+      "placeholder": "Search pages, learners, reports…",
+      "trigger": "Search",
+      "empty": "No matching destinations.",
+      "hint": "Navigate only — results are real admin destinations, not fabricated records."
+    }
   },
   "nav": {
     "patientLibrary": "Patient Library",
@@ -87,9 +105,9 @@
     "researchValidation": "Validation",
     "apiIntegrations": "API Integrations",
     "securityKeys": "Security & Keys",
-    "adminHome": "Admin Home",
+    "adminHome": "Overview",
     "sectionContent": "Content",
-    "sectionLearners": "Learners",
+    "sectionLearners": "Learning",
     "sectionResearch": "Research",
     "sectionOrganization": "Organization",
     "sectionSystem": "System",
@@ -105,7 +123,12 @@
     "enterprise": "Enterprise",
     "feedback": "Feedback",
     "operations": "Operations",
-    "diagnostics": "Advanced / Diagnostics"
+    "diagnostics": "System Health",
+    "overview": "Overview",
+    "sectionLearning": "Learning",
+    "sectionAssessment": "Assessment",
+    "performanceReports": "Performance Reports",
+    "systemHealth": "System Health"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -650,11 +673,24 @@
       "statAvgHint": "Across completed reports",
       "adminOnly": "Admin-only",
       "rlsNote": "Therapists cannot select session reports via row-level security.",
-      "title": "Reports Library",
-      "subtitle": "Confidential. Visible to admins only.",
+      "title": "Performance Reports",
+      "subtitle": "Admin-only assessment library for completed simulations.",
       "fallbackTherapist": "Therapist",
       "fallbackAvatar": "Avatar",
-      "empty": "No reports yet."
+      "empty": "No reports yet.",
+      "searchPlaceholder": "Search learner, patient, or session…",
+      "emptyTitle": "No assessment reports found",
+      "emptyDescription": "There are no reports matching the selected filters, or none have been generated yet.",
+      "clearFilters": "Clear filters",
+      "colLearner": "Learner",
+      "colPatient": "Scenario / patient",
+      "colDate": "Date",
+      "colStatus": "Status",
+      "colScore": "Score",
+      "colLanguage": "Language",
+      "showing": "Showing {count} reports",
+      "filterLanguage": "Language",
+      "filterAll": "All"
     },
     "reportDetail": {
       "back": "All reports",
@@ -920,7 +956,9 @@
     },
     "researchValidation": {
       "title": "Scientific Validation",
-      "subtitle": "Observational research dashboard — realism, reliability, psychometrics, benchmarks. Never modifies patient behaviour. Scores are not clinically validated instruments."
+      "subtitle": "Observational research dashboard — realism, reliability, psychometrics, benchmarks. Never modifies patient behaviour. Scores are not clinically validated instruments.",
+      "workspaceTitle": "Research workspace",
+      "workspaceDisclaimer": "Data shown here is de-identified research and educational validation data. Real clinical or patient records are not part of this workspace. Scores are formative and not clinically validated instruments."
     },
     "voices": {
       "title": "Voices",
@@ -1101,40 +1139,81 @@
       }
     },
     "home": {
-      "title": "Admin Home",
-      "subtitle": "What needs attention across virtual patients, reports, and operations.",
+      "title": "Overview",
+      "subtitle": "What is happening in VPsych right now, and what needs your attention?",
+      "greetingHint": "Operational snapshot from live platform data.",
+      "kpiRegion": "Key metrics",
       "statActive": "Active virtual patients",
+      "statActiveHint": "Published and available for practice",
       "statIncomplete": "Incomplete patients",
+      "statIncompleteHint": "Missing required clinical setup",
       "statTotalPatients": "Total patients",
       "statOpenFeedback": "Open feedback",
-      "needsAttention": "Needs attention",
+      "statOpenFeedbackHint": "Awaiting triage",
+      "statActiveLearnersSessions": "Sessions today",
+      "statSessionsTodayHint": "Started since UTC midnight",
+      "statCompletion": "Completion (7d)",
+      "statCompletionHint": "Completed ÷ started in last 7 days",
+      "statAvgScore": "Recent avg. score",
+      "statAvgScoreHint": "Mean overall from latest reports shown",
+      "needsAttention": "Requires attention",
       "needsAttentionEmpty": "Nothing urgent right now.",
       "attentionIncomplete": "{count} virtual patients need setup",
       "attentionFeedback": "{count} feedback items awaiting review",
+      "attentionExpired": "{count} sessions expired in the last 7 days",
       "review": "Review",
-      "recentReports": "Recent reports",
-      "recentReportsEmpty": "No reports yet.",
+      "quickActions": "Quick actions",
+      "actionNewPatient": "Create patient",
+      "actionReviewReports": "Review assessments",
+      "actionLearners": "View learners",
+      "actionFeedback": "Triage feedback",
+      "actionCases": "Case library",
+      "recentReports": "Recent assessments",
+      "recentReportsEmpty": "No assessment reports yet.",
       "viewAll": "View all",
       "unknownPatient": "Patient",
+      "unknownLearner": "Learner",
       "recentActivity": "Recent activity",
       "recentActivityEmpty": "No recent sessions.",
+      "incompletePatients": "Incomplete patients",
       "systemStatus": "System status",
+      "systemApp": "Application",
       "systemAuth": "Administrator access",
       "systemAdminAccess": "Secure admin area",
+      "systemVersion": "Version",
       "statusOk": "OK",
-      "systemHint": "Detailed deployment diagnostics stay under Operations and Advanced.",
+      "statusOperational": "Operational",
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "expired": "Expired"
+      },
+      "systemHint": "Live service probes and AI readiness are under System Health. Operations holds deployment metrics.",
       "openOperations": "Operations",
-      "openDiagnostics": "Advanced / Diagnostics"
+      "openDiagnostics": "System Health"
     },
     "diagnostics": {
-      "title": "Advanced / Diagnostics",
-      "subtitle": "Technical links for administrators who need engine-level tools.",
-      "intro": "Most clinical content work belongs under Content and Learners. Use this area only when you need diagnostics or legacy engine screens.",
+      "title": "System Health",
+      "subtitle": "Application readiness and technical tools for administrators.",
+      "intro": "Most clinical content work belongs under Content and Learning. Use this area for health checks, supervisor framework overview, and legacy engine screens.",
       "operations": "Operations dashboard",
       "supervisorFramework": "Supervisor framework overview",
       "legacyPersonality": "Legacy personality editor (also available on each patient)",
       "health": "Application health endpoint",
-      "engineNames": "Internal engine names"
+      "openaiHealth": "OpenAI readiness (admin)",
+      "engineNames": "Internal engine names",
+      "healthTitle": "Service status",
+      "svcApplication": "Application",
+      "svcAuth": "Authentication & admin gate",
+      "svcAi": "AI provider",
+      "statusOperational": "Operational",
+      "statusUnavailable": "Unavailable",
+      "statusUnknown": "Unknown",
+      "statusCheckViaLink": "Check via link",
+      "lastChecked": "Last checked: {time}",
+      "authDetail": "Confirmed by your active admin session",
+      "aiDetail": "Use the OpenAI health link for a live probe. Do not assume readiness without checking.",
+      "healthDisclaimer": "Statuses shown here come from real probes or explicit unknowns — never fabricated uptime."
     }
   },
   "validation": {
