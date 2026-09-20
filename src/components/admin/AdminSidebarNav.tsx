@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -13,27 +13,77 @@ import {
 const COLLAPSED_KEY = "vpsych.admin.sidebar.collapsed";
 const EXPANDED_KEY = "vpsych.admin.nav.expanded";
 
-function readCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
+type SidebarSnapshot = {
+  collapsed: boolean;
+  expanded: Record<string, boolean>;
+};
+
+let memorySnapshot: SidebarSnapshot = { collapsed: false, expanded: {} };
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const l of listeners) l();
+}
+
+function readSnapshot(): SidebarSnapshot {
+  if (typeof window === "undefined") {
+    return { collapsed: false, expanded: {} };
+  }
   try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
+    const collapsed = window.localStorage.getItem(COLLAPSED_KEY) === "1";
+    let expanded: Record<string, boolean> = {};
+    const raw = window.localStorage.getItem(EXPANDED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === "object") {
+        expanded = parsed as Record<string, boolean>;
+      }
+    }
+    memorySnapshot = { collapsed, expanded };
+    return memorySnapshot;
   } catch {
-    return false;
+    return memorySnapshot;
   }
 }
 
-function readExpanded(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(EXPANDED_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === "object"
-      ? (parsed as Record<string, boolean>)
-      : {};
-  } catch {
-    return {};
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === COLLAPSED_KEY || e.key === EXPANDED_KEY) onStoreChange();
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", onStorage);
   }
+  return () => {
+    listeners.delete(onStoreChange);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", onStorage);
+    }
+  };
+}
+
+function getServerSnapshot(): SidebarSnapshot {
+  return { collapsed: false, expanded: {} };
+}
+
+function writeCollapsed(next: boolean) {
+  try {
+    window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  memorySnapshot = { ...memorySnapshot, collapsed: next };
+  emit();
+}
+
+function writeExpanded(next: Record<string, boolean>) {
+  try {
+    window.localStorage.setItem(EXPANDED_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+  memorySnapshot = { ...memorySnapshot, expanded: next };
+  emit();
 }
 
 function isItemActive(item: AdminNavItemDef, pathname: string) {
@@ -48,54 +98,36 @@ function sectionContainsActive(
 }
 
 export function useAdminSidebarState() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [hydrated, setHydrated] = useState(false);
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    readSnapshot,
+    getServerSnapshot,
+  );
 
-  useEffect(() => {
-    setCollapsed(readCollapsed());
-    setExpanded(readExpanded());
-    setHydrated(true);
+  const toggleCollapsed = useCallback(() => {
+    writeCollapsed(!readSnapshot().collapsed);
   }, []);
 
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }
+  const toggleSection = useCallback((id: string, fallback: boolean) => {
+    const current = readSnapshot();
+    const open = current.expanded[id] ?? fallback;
+    writeExpanded({ ...current.expanded, [id]: !open });
+  }, []);
 
-  function toggleSection(id: string, fallback: boolean) {
-    setExpanded((prev) => {
-      const current = prev[id] ?? fallback;
-      const next = { ...prev, [id]: !current };
-      try {
-        window.localStorage.setItem(EXPANDED_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }
-
-  function isSectionOpen(section: AdminNavSectionDef, pathname: string) {
-    if (sectionContainsActive(section, pathname)) return true;
-    if (!hydrated) return section.defaultOpen !== false;
-    if (section.id in expanded) return expanded[section.id]!;
-    return section.defaultOpen !== false;
-  }
+  const isSectionOpen = useCallback(
+    (section: AdminNavSectionDef, pathname: string) => {
+      if (sectionContainsActive(section, pathname)) return true;
+      if (section.id in snapshot.expanded) return snapshot.expanded[section.id]!;
+      return section.defaultOpen !== false;
+    },
+    [snapshot.expanded],
+  );
 
   return {
-    collapsed,
+    collapsed: snapshot.collapsed,
     toggleCollapsed,
     toggleSection,
     isSectionOpen,
-    hydrated,
   };
 }
 

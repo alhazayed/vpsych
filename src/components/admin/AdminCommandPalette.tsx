@@ -46,13 +46,7 @@ function pushRecent(href: string) {
   }
 }
 
-export function AdminCommandPalette({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+function PaletteDialog({ onClose }: { onClose: () => void }) {
   const tNav = useTranslations("nav");
   const tShell = useTranslations("shell");
   const router = useRouter();
@@ -60,7 +54,7 @@ export function AdminCommandPalette({
   const listId = useId();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [recent, setRecent] = useState<string[]>([]);
+  const [recent] = useState(() => readRecent());
 
   const resolveLabel = useCallback(
     (key: string) => tNav(key as "overview"),
@@ -79,39 +73,19 @@ export function AdminCommandPalette({
       .filter((x): x is AdminNavItemDef => Boolean(x));
   }, [recent, resolveLabel]);
 
-  const display = query.trim() ? results : recentItems.length ? recentItems : results;
+  const display = query.trim()
+    ? results
+    : recentItems.length
+      ? recentItems
+      : results;
 
   useEffect(() => {
-    if (!open) return;
-    setQuery("");
-    setActiveIndex(0);
-    setRecent(readRecent());
-    const t = window.setTimeout(() => inputRef.current?.focus(), 0);
-    return () => window.clearTimeout(t);
-  }, [open]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        onOpenChange(!open);
-      }
-      if (e.key === "Escape" && open) {
-        e.preventDefault();
-        onOpenChange(false);
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onOpenChange]);
+    inputRef.current?.focus();
+  }, []);
 
   function go(item: AdminNavItemDef) {
     pushRecent(item.href);
-    onOpenChange(false);
+    onClose();
     router.push(item.href);
   }
 
@@ -129,14 +103,12 @@ export function AdminCommandPalette({
     }
   }
 
-  if (!open) return null;
-
   return (
     <div
       className="fixed inset-0 z-[80] flex items-start justify-center bg-[color-mix(in_srgb,var(--on-surface)_40%,transparent)] px-4 pt-[12vh]"
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onOpenChange(false);
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
@@ -155,7 +127,10 @@ export function AdminCommandPalette({
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActiveIndex(0);
+            }}
             onKeyDown={onInputKey}
             placeholder={tShell("commandPalette.placeholder")}
             className="w-full border-0 bg-transparent py-3.5 text-sm text-[var(--on-surface)] outline-none placeholder:text-[var(--outline)]"
@@ -220,4 +195,30 @@ export function AdminCommandPalette({
       </div>
     </div>
   );
+}
+
+export function AdminCommandPalette({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        onOpenChange(!open);
+      }
+      if (e.key === "Escape" && open) {
+        e.preventDefault();
+        onOpenChange(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onOpenChange]);
+
+  if (!open) return null;
+  return <PaletteDialog onClose={() => onOpenChange(false)} />;
 }
