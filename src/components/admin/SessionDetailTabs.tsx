@@ -5,10 +5,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/AdminUi";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
-import {
-  formatSessionDuration,
-  sessionStatusTone,
-} from "@/lib/admin/session-ops";
+import { sessionStatusTone } from "@/lib/admin/session-ops";
 import type { MessageRole, SessionStatus } from "@/lib/types";
 
 type TabId = "overview" | "conversation" | "assessment" | "report" | "technical";
@@ -53,6 +50,9 @@ export function SessionDetailTabs({
     caseInstanceId: string | null;
     clinicalSnapshot: unknown;
     immersionMetrics: unknown;
+    /** Pre-formatted, status-aware duration from the server */
+    durationLabel: string | null;
+    durationStale?: boolean;
   };
   messages: SessionDetailMessage[];
   report: {
@@ -106,11 +106,11 @@ export function SessionDetailTabs({
     clinicalSnapshot: string;
     immersion: string;
     none: string;
+    staleBadge: string;
   };
   locale: string;
 }) {
   const [tab, setTab] = useState<TabId>("overview");
-  const duration = formatSessionDuration(session.startedAt, session.endedAt);
   const statusLabel =
     session.status === "active"
       ? labels.statusActive
@@ -209,7 +209,21 @@ export function SessionDetailTabs({
             />
             <DetailItem
               label={labels.duration}
-              value={duration ?? labels.none}
+              value={
+                session.durationLabel ? (
+                  <span className="inline-flex flex-wrap items-center gap-2">
+                    {session.durationLabel}
+                    {session.durationStale ? (
+                      <StatusBadge
+                        label={labels.staleBadge}
+                        tone="warning"
+                      />
+                    ) : null}
+                  </span>
+                ) : (
+                  labels.none
+                )
+              }
             />
             <DetailItem
               label={labels.language}

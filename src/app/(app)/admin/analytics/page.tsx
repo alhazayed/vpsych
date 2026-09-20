@@ -111,6 +111,19 @@ export default async function AdminAnalyticsPage({
         ]}
       />
 
+      <p
+        className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface)]"
+        role="status"
+      >
+        <span className="font-medium">{t("scopePlatform")}</span>
+        <span className="text-[var(--on-surface-variant)]">
+          {" · "}
+          {t("scopeAllOrgs")}
+          {" · "}
+          {t(`range.${rangeKey}`)}
+        </span>
+      </p>
+
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium text-[var(--on-surface-variant)]">
           {t("dateRange")}

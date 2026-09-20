@@ -10,6 +10,7 @@ import {
   type SessionDetailScoreItem,
 } from "@/components/admin/SessionDetailTabs";
 import {
+  formatSessionDurationDisplay,
   isAdminTestClinicalSnapshot,
   sessionStatusTone,
 } from "@/lib/admin/session-ops";
@@ -34,6 +35,7 @@ export default async function AdminSessionDetailPage({
       status,
       started_at,
       ended_at,
+      max_duration_sec,
       language,
       difficulty,
       therapy_modality,
@@ -104,6 +106,21 @@ export default async function AdminSessionDetailPage({
         ? t("statusCompleted")
         : t("statusExpired");
 
+  const duration = formatSessionDurationDisplay(
+    status,
+    session.started_at,
+    session.ended_at,
+    session.max_duration_sec ?? undefined,
+  );
+  const durationLabel =
+    duration == null
+      ? null
+      : duration.label === "past_limit"
+        ? t("durationPastLimit")
+        : status === "active"
+          ? t("durationElapsed", { duration: duration.label })
+          : duration.label;
+
   const transcript: SessionDetailMessage[] = (messages ?? []).map((m) => ({
     id: m.id,
     role: m.role as MessageRole,
@@ -157,6 +174,8 @@ export default async function AdminSessionDetailPage({
           caseInstanceId: session.case_instance_id,
           clinicalSnapshot: session.clinical_snapshot,
           immersionMetrics: session.immersion_metrics,
+          durationLabel,
+          durationStale: duration?.stale ?? false,
         }}
         messages={transcript}
         report={report}
@@ -204,6 +223,7 @@ export default async function AdminSessionDetailPage({
           clinicalSnapshot: t("clinicalSnapshot"),
           immersion: t("immersion"),
           none: t("none"),
+          staleBadge: t("staleBadge"),
         }}
       />
     </main>

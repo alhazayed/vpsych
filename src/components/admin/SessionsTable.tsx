@@ -19,6 +19,8 @@ export function SessionsTable({
     searchPlaceholder: string;
     emptyTitle: string;
     emptyDescription: string;
+    emptyFilteredTitle: string;
+    emptyFilteredDescription: string;
     clearFilters: string;
     colSession: string;
     colLearner: string;
@@ -43,6 +45,7 @@ export function SessionsTable({
     adminTest: string;
     showing: string;
     unassignedOrg: string;
+    staleBadge: string;
   };
 }) {
   const [q, setQ] = useState("");
@@ -129,8 +132,14 @@ export function SessionsTable({
 
       {filtered.length === 0 ? (
         <EmptyState
-          title={labels.emptyTitle}
-          description={labels.emptyDescription}
+          title={
+            rows.length === 0 ? labels.emptyTitle : labels.emptyFilteredTitle
+          }
+          description={
+            rows.length === 0
+              ? labels.emptyDescription
+              : labels.emptyFilteredDescription
+          }
           icon="clinical_notes"
           action={
             q || status !== "all" || report !== "all" ? (
@@ -214,6 +223,14 @@ export function SessionsTable({
                     </td>
                     <td className="hidden px-4 py-3 text-[var(--on-surface-variant)] md:table-cell">
                       {r.durationLabel ?? "—"}
+                      {r.durationStale ? (
+                        <span className="ms-2">
+                          <StatusBadge
+                            label={labels.staleBadge}
+                            tone="warning"
+                          />
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge

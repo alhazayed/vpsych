@@ -67,6 +67,13 @@ export default async function AdminEnterprisePage() {
         ]}
       />
 
+      <p
+        className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface-variant)]"
+        role="note"
+      >
+        {t("readOnlyNotice")}
+      </p>
+
       <section className="grid gap-4 sm:grid-cols-3">
         <MetricCard
           label={t("statOrgs")}

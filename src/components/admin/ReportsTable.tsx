@@ -14,6 +14,7 @@ export type ReportRow = {
   language: string;
   score: number | null;
   status: string;
+  statusLabel: string;
   createdAt: string;
   createdAtLabel: string;
 };
@@ -27,6 +28,8 @@ export function ReportsTable({
     searchPlaceholder: string;
     emptyTitle: string;
     emptyDescription: string;
+    emptyFilteredTitle: string;
+    emptyFilteredDescription: string;
     clearFilters: string;
     colLearner: string;
     colPatient: string;
@@ -61,6 +64,8 @@ export function ReportsTable({
     return Array.from(set).sort();
   }, [rows]);
 
+  const filtersActive = Boolean(q || lang !== "all");
+
   return (
     <div>
       <div className="flex flex-wrap items-end gap-3 border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-4 py-4 md:px-6">
@@ -88,7 +93,7 @@ export function ReportsTable({
             ))}
           </select>
         </label>
-        {(q || lang !== "all") && (
+        {filtersActive && (
           <button
             type="button"
             className="btn-secondary"
@@ -104,11 +109,17 @@ export function ReportsTable({
 
       {filtered.length === 0 ? (
         <EmptyState
-          title={labels.emptyTitle}
-          description={labels.emptyDescription}
+          title={
+            rows.length === 0 ? labels.emptyTitle : labels.emptyFilteredTitle
+          }
+          description={
+            rows.length === 0
+              ? labels.emptyDescription
+              : labels.emptyFilteredDescription
+          }
           icon="assignment"
           action={
-            q || lang !== "all" ? (
+            filtersActive ? (
               <button
                 type="button"
                 className="btn-secondary"
@@ -168,7 +179,7 @@ export function ReportsTable({
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge
-                        label={r.status}
+                        label={r.statusLabel}
                         tone={
                           r.status === "completed"
                             ? "active"

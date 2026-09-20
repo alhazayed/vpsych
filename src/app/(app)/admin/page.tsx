@@ -8,7 +8,9 @@ import {
   QuickActions,
 } from "@/components/admin/AdminUi";
 import { assessVirtualPatientCompleteness } from "@/lib/admin/virtual-patient-completeness";
+import { readLifecycleFromRow } from "@/lib/admin/virtual-patient-lifecycle";
 import { PACKAGE_VERSION } from "@/lib/ops/versions";
+import { expireStaleSessionsVisible } from "@/lib/session-expiry";
 import { getTranslations } from "next-intl/server";
 
 function startOfUtcDay(d = new Date()) {
@@ -27,13 +29,16 @@ export default async function AdminHomePage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.home");
 
+  // Best-effort: expire abandoned actives so overview KPIs match operational reality.
+  await expireStaleSessionsVisible(supabase);
+
   const todayStart = startOfUtcDay();
   const weekStart = daysAgoIso(7);
 
   const [
     { data: avatars },
     { data: reports },
-    feedbackRes,
+    { count: openFeedbackCount },
     { data: recentSessions },
     { count: sessionsToday },
     { data: weekSessions },
@@ -42,7 +47,7 @@ export default async function AdminHomePage() {
     supabase
       .from("avatars")
       .select(
-        "id, name, disorder, is_active, human_personality, personalities, persona_prompt, voice_profile_id, voice_id, voice_id_ar, clinical_core",
+        "id, name, disorder, is_active, lifecycle_status, human_personality, personalities, persona_prompt, voice_profile_id, voice_id, voice_id_ar, clinical_core",
       )
       .order("name"),
     supabase
@@ -58,7 +63,10 @@ export default async function AdminHomePage() {
       )
       .order("created_at", { ascending: false })
       .limit(6),
-    supabase.from("institutional_feedback").select("id, status").limit(100),
+    supabase
+      .from("institutional_feedback")
+      .select("id", { count: "exact", head: true })
+      .not("status", "in", "(resolved,wont_fix,duplicate)"),
     supabase
       .from("sessions")
       .select("id, status, created_at, avatar_id, profiles(display_name)")
@@ -77,17 +85,16 @@ export default async function AdminHomePage() {
       .select("id", { count: "exact", head: true }),
   ]);
 
-  const openFeedback = (feedbackRes.data ?? []).filter((f) => {
-    const s = String(f.status ?? "");
-    return s !== "resolved" && s !== "wont_fix" && s !== "duplicate";
-  }).length;
+  const openFeedback = openFeedbackCount ?? 0;
 
   const avatarNameById = new Map(
     (avatars ?? []).map((a) => [a.id, a.name] as const),
   );
 
   const list = avatars ?? [];
-  const activeCount = list.filter((a) => a.is_active).length;
+  const publishedCount = list.filter(
+    (a) => readLifecycleFromRow(a) === "published",
+  ).length;
   const incomplete = list.filter(
     (a) => !assessVirtualPatientCompleteness(a).isComplete,
   );
@@ -136,14 +143,12 @@ export default async function AdminHomePage() {
     });
   }
 
-  const expiredNoReportHint =
-    week.filter((s) => s.status === "expired").length > 0;
-  if (expiredNoReportHint) {
-    const expiredCount = week.filter((s) => s.status === "expired").length;
+  const expiredCount = week.filter((s) => s.status === "expired").length;
+  if (expiredCount > 0) {
     attention.push({
       id: "expired",
       label: t("attentionExpired", { count: expiredCount }),
-      href: "/admin/reports",
+      href: "/admin/sessions",
       actionLabel: t("review"),
     });
   }
@@ -168,13 +173,13 @@ export default async function AdminHomePage() {
           label={t("statActiveLearnersSessions")}
           value={String(sessionsToday ?? 0)}
           hint={t("statSessionsTodayHint")}
-          href="/admin/reports"
+          href="/admin/sessions"
         />
         <MetricCard
           label={t("statCompletion")}
           value={completionRate != null ? `${completionRate}%` : "—"}
           hint={t("statCompletionHint")}
-          href="/admin/curriculum"
+          href="/admin/analytics?range=7d"
         />
         <MetricCard
           label={t("statAvgScore")}
@@ -184,7 +189,7 @@ export default async function AdminHomePage() {
         />
         <MetricCard
           label={t("statActive")}
-          value={String(activeCount)}
+          value={String(publishedCount)}
           hint={t("statActiveHint")}
           href="/admin/avatars"
         />
@@ -303,9 +308,17 @@ export default async function AdminHomePage() {
         </section>
 
         <section className="clinical-card p-5">
-          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            {t("recentActivity")}
-          </h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+              {t("recentActivity")}
+            </h2>
+            <Link
+              href="/admin/sessions"
+              className="text-xs font-medium text-[var(--primary)] hover:underline"
+            >
+              {t("viewAll")}
+            </Link>
+          </div>
           {(recentSessions ?? []).length === 0 ? (
             <p className="text-sm text-[var(--on-surface-variant)]">
               {t("recentActivityEmpty")}
@@ -325,20 +338,22 @@ export default async function AdminHomePage() {
                       ? "warning"
                       : "info";
                 return (
-                  <li
-                    key={s.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2"
-                  >
-                    <span>
-                      {learner} · {name}
-                    </span>
-                    <span className="flex items-center gap-2 text-xs text-[var(--on-surface-variant)]">
-                      <StatusBadge
-                        label={t(`status.${s.status}` as "status.active")}
-                        tone={tone}
-                      />
-                      {new Date(s.created_at).toLocaleString()}
-                    </span>
+                  <li key={s.id}>
+                    <Link
+                      href={`/admin/sessions/${s.id}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2 hover:bg-[var(--surface-container-low)]"
+                    >
+                      <span>
+                        {learner} · {name}
+                      </span>
+                      <span className="flex items-center gap-2 text-xs text-[var(--on-surface-variant)]">
+                        <StatusBadge
+                          label={t(`status.${s.status}` as "status.active")}
+                          tone={tone}
+                        />
+                        {new Date(s.created_at).toLocaleString()}
+                      </span>
+                    </Link>
                   </li>
                 );
               })}
@@ -372,12 +387,8 @@ export default async function AdminHomePage() {
           </h2>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center justify-between gap-2">
-              <span>{t("systemApp")}</span>
-              <StatusBadge label={t("statusOperational")} tone="active" />
-            </li>
-            <li className="flex items-center justify-between gap-2">
               <span>{t("systemAdminAccess")}</span>
-              <StatusBadge label={t("statusOperational")} tone="active" />
+              <StatusBadge label={t("statusVerified")} tone="active" />
             </li>
             <li className="flex items-center justify-between gap-2 text-xs text-[var(--on-surface-variant)]">
               <span>{t("systemVersion")}</span>
@@ -388,11 +399,11 @@ export default async function AdminHomePage() {
             </li>
           </ul>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/admin/cidp" className="btn-secondary">
-              {t("openOperations")}
-            </Link>
             <Link href="/admin/diagnostics" className="btn-secondary">
               {t("openDiagnostics")}
+            </Link>
+            <Link href="/admin/cidp" className="btn-secondary">
+              {t("openOperations")}
             </Link>
           </div>
         </section>

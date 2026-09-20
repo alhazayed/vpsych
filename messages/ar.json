@@ -688,7 +688,7 @@
       "empty": "لا توجد تقارير بعد.",
       "searchPlaceholder": "ابحث عن متدرب أو مريض أو جلسة…",
       "emptyTitle": "لا توجد تقارير تقييم",
-      "emptyDescription": "لا توجد تقارير تطابق عوامل التصفية المحددة، أو لم يُنشأ أي تقرير بعد.",
+      "emptyDescription": "لم تُنشأ تقارير تقييم بعد.",
       "clearFilters": "مسح عوامل التصفية",
       "colLearner": "المتدرب",
       "colPatient": "السيناريو / المريض",
@@ -699,7 +699,9 @@
       "showing": "عرض {count} تقارير",
       "filterLanguage": "اللغة",
       "filterAll": "الكل",
-      "showingLabel": "عرض #COUNT# تقارير"
+      "showingLabel": "عرض #COUNT# تقارير",
+      "emptyFilteredTitle": "لا توجد تقارير تطابق عوامل التصفية",
+      "emptyFilteredDescription": "جرّب مسح عوامل التصفية أو توسيع البحث."
     },
     "reportDetail": {
       "back": "كل التقارير",
@@ -1152,8 +1154,8 @@
       "subtitle": "ماذا يحدث في VPsych الآن، وما الذي يحتاج انتباهك؟",
       "greetingHint": "لمحة تشغيلية من بيانات المنصة الحية.",
       "kpiRegion": "مؤشرات رئيسية",
-      "statActive": "مرضى افتراضيون نشطون",
-      "statActiveHint": "منشورون ومتاحون للتدريب",
+      "statActive": "مرضى افتراضيون منشورون",
+      "statActiveHint": "حالة دورة الحياة: منشور — متاحون للتدريب",
       "statIncomplete": "مرضى غير مكتملين",
       "statIncompleteHint": "ينقصهم الإعداد السريري المطلوب",
       "statTotalPatients": "إجمالي المرضى",
@@ -1197,10 +1199,11 @@
         "completed": "مكتملة",
         "expired": "منتهية"
       },
-      "systemHint": "فحوصات الخدمات الحية وجاهزية الذكاء الاصطناعي ضمن صحة النظام. العمليات تعرض مقاييس النشر.",
+      "systemHint": "تم التحقق من وصول وحدة التحكم عبر جلسة المسؤول. فحوصات الخدمات الحية وجاهزية الذكاء الاصطناعي ضمن صحة النظام — هذه اللوحة لا تدّعي التشغيل دون فحص.",
       "openOperations": "العمليات",
       "openDiagnostics": "صحة النظام",
-      "actionSessions": "عرض الجلسات"
+      "actionSessions": "عرض الجلسات",
+      "statusVerified": "موثّق"
     },
     "diagnostics": {
       "title": "صحة النظام",
@@ -1237,7 +1240,7 @@
       "statWithReportHint": "تقرير التقييم متاح",
       "searchPlaceholder": "ابحث عن متدرب أو مريض أو مؤسسة أو معرّف جلسة…",
       "emptyTitle": "لا توجد جلسات محاكاة",
-      "emptyDescription": "لا توجد جلسات تطابق عوامل التصفية المحددة.",
+      "emptyDescription": "لم تُسجَّل أي جلسات محاكاة بعد.",
       "clearFilters": "مسح عوامل التصفية",
       "colSession": "الجلسة",
       "colLearner": "المتدرب",
@@ -1295,7 +1298,16 @@
       "clinicalSnapshot": "لقطة سريرية (JSON)",
       "immersion": "مقاييس الانغماس",
       "none": "—",
-      "showingLabel": "عرض #COUNT# جلسات"
+      "showingLabel": "عرض #COUNT# جلسات",
+      "emptyFilteredTitle": "لا توجد جلسات تطابق عوامل التصفية",
+      "emptyFilteredDescription": "جرّب مسح عوامل التصفية أو توسيع البحث.",
+      "loadErrorTitle": "الجلسات غير متاحة",
+      "loadErrorDescription": "تعذّر تحميل قائمة الجلسات. أعد المحاولة أو راجع صحة النظام.",
+      "durationPastLimit": "تجاوز الحد",
+      "durationElapsed": "{duration} مضت",
+      "statStale": "تجاوزت المدة",
+      "statStaleHint": "ما زالت مُعلَّمة كنشطة بعد المدة القصوى (تُنهى عند التحديث)",
+      "staleBadge": "متأخرة"
     },
     "contentHub": {
       "title": "مكتبة المحتوى",
@@ -1352,19 +1364,21 @@
       "qLanguage": "ما لغات الجلسات المستخدمة؟",
       "byOrganization": "حسب المؤسسة",
       "qOrganization": "كيف يتوزع النشاط عبر المؤسسات؟",
-      "disclaimer": "المقاييس أعداد من الجلسات وتقارير الجلسات فقط. عمليات CIDP تبقى لوحة النشر.",
-      "unassigned": "غير معيّنة"
+      "disclaimer": "أعداد على مستوى المنصة من الجلسات وتقارير الجلسات للفترة المحددة. ليست محدودة بمؤسسة. عمليات CIDP تبقى لوحة النشر.",
+      "unassigned": "غير معيّنة",
+      "scopePlatform": "تحليلات المنصة",
+      "scopeAllOrgs": "جميع المؤسسات"
     },
     "organization": {
       "title": "المؤسسات",
       "subtitle": "قائمة المؤسسات وعضوياتها لمسؤولي المنصة.",
       "statOrgs": "المؤسسات",
-      "statOrgsHint": "صفوف جدول المؤسسات",
+      "statOrgsHint": "جميع المؤسسات الظاهرة لمسؤولي المنصة",
       "statActiveOrgs": "مؤسسات نشطة",
       "statMembers": "عضويات نشطة",
-      "statMembersHint": "عضويات المؤسسات النشطة",
+      "statMembersHint": "عضويات نشطة (عيّنة حتى 500)",
       "rosterTitle": "قائمة المؤسسات",
-      "rosterSubtitle": "مؤسسات حية مع أعداد العضوية والجلسات (نافذة عينة).",
+      "rosterSubtitle": "المؤسسات مع أعداد الأعضاء وعيّنات الجلسات الأخيرة. للعرض فقط.",
       "rosterEmpty": "لا توجد مؤسسات.",
       "colOrg": "المؤسسة",
       "colMembers": "الأعضاء",
@@ -1380,7 +1394,8 @@
       "rolesNote": "أدوار العضوية (طالب، مقيم، هيئة تدريس، …) لا تمنح وصول /admin. فقط profiles.role = admin يفعل ذلك.",
       "controlPlane": "مستوى التحكم المؤسسي",
       "controlPlaneHint": "الكتالوج ومصفوفة الصلاحيات والمراقبة من وحدة المؤسسات.",
-      "feedbackLink": "قائمة الملاحظات"
+      "feedbackLink": "قائمة الملاحظات",
+      "readOnlyNotice": "قائمة للقراءة فقط — لا تُدار تغييرات العضوية من هذه الواجهة."
     }
   },
   "validation": {

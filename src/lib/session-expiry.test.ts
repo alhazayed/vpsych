@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { expireStaleSession, isSessionTimedOut } from "./session-expiry";
+import {
+  expireStaleSession,
+  expireStaleSessionsVisible,
+  isSessionTimedOut,
+} from "./session-expiry";
 
 describe("isSessionTimedOut", () => {
   it("is false while time remains", () => {
@@ -60,5 +64,54 @@ describe("expireStaleSession", () => {
       status: "expired",
       ended_at: "2026-01-01T00:40:00.000Z",
     });
+  });
+});
+
+describe("expireStaleSessionsVisible", () => {
+  it("returns 0 when no active rows", async () => {
+    const limit = vi.fn().mockResolvedValue({ data: [], error: null });
+    const order = vi.fn(() => ({ limit }));
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    const n = await expireStaleSessionsVisible({ from } as never);
+    expect(n).toBe(0);
+  });
+
+  it("expires timed-out actives in the visible set", async () => {
+    const listLimit = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "s1",
+          status: "active",
+          started_at: "2026-01-01T00:00:00.000Z",
+          max_duration_sec: 2400,
+          ended_at: null,
+        },
+      ],
+      error: null,
+    });
+    const order = vi.fn(() => ({ limit: listLimit }));
+    const eqStatusSelect = vi.fn(() => ({ order }));
+    const selectList = vi.fn(() => ({ eq: eqStatusSelect }));
+
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "s1" }, error: null });
+    const selectUpdate = vi.fn(() => ({ maybeSingle }));
+    const eqStatusUpdate = vi.fn(() => ({ select: selectUpdate }));
+    const eqId = vi.fn(() => ({ eq: eqStatusUpdate }));
+    const update = vi.fn(() => ({ eq: eqId }));
+
+    let call = 0;
+    const from = vi.fn(() => {
+      call += 1;
+      if (call === 1) return { select: selectList };
+      return { update };
+    });
+
+    const now = new Date("2026-01-01T01:00:00.000Z");
+    const n = await expireStaleSessionsVisible({ from } as never, now);
+    expect(n).toBe(1);
   });
 });

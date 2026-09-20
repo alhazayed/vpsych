@@ -12,6 +12,7 @@ export default async function AdminReportsPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.reports");
   const tHome = await getTranslations("admin.home");
+  const tSessions = await getTranslations("admin.sessions");
   const tCommon = await getTranslations("common");
 
   const { data: reports } = await supabase
@@ -47,6 +48,12 @@ export default async function AdminReportsPage() {
         )
       : 0;
 
+  const statusLabelFor = (status: string) => {
+    if (status === "active") return tSessions("statusActive");
+    if (status === "expired") return tSessions("statusExpired");
+    return tSessions("statusCompleted");
+  };
+
   const rows: ReportRow[] = list.map((report) => {
     const session = report.sessions as unknown as {
       started_at: string;
@@ -57,6 +64,7 @@ export default async function AdminReportsPage() {
     } | null;
     const overall = (report.scores as { overall?: number } | null)?.overall;
     const lang = String(report.language ?? session?.language ?? "en");
+    const status = session?.status ?? "completed";
     return {
       id: report.id,
       sessionId: report.session_id,
@@ -65,7 +73,8 @@ export default async function AdminReportsPage() {
       disorder: session?.avatars?.disorder ?? "",
       language: lang,
       score: typeof overall === "number" ? overall : null,
-      status: session?.status ?? "completed",
+      status,
+      statusLabel: statusLabelFor(status),
       createdAt: report.created_at,
       createdAtLabel: format(new Date(report.created_at), "MMM d, yyyy HH:mm"),
     };
@@ -107,6 +116,8 @@ export default async function AdminReportsPage() {
             searchPlaceholder: t("searchPlaceholder"),
             emptyTitle: t("emptyTitle"),
             emptyDescription: t("emptyDescription"),
+            emptyFilteredTitle: t("emptyFilteredTitle"),
+            emptyFilteredDescription: t("emptyFilteredDescription"),
             clearFilters: t("clearFilters"),
             colLearner: t("colLearner"),
             colPatient: t("colPatient"),

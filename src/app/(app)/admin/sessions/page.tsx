@@ -1,13 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { MetricCard } from "@/components/admin/AdminUi";
+import { ErrorState, MetricCard } from "@/components/admin/AdminUi";
 import { SessionsTable } from "@/components/admin/SessionsTable";
 import {
-  formatSessionDuration,
+  formatSessionDurationDisplay,
   isAdminTestClinicalSnapshot,
   type AdminSessionListRow,
 } from "@/lib/admin/session-ops";
+import { expireStaleSessionsVisible } from "@/lib/session-expiry";
 import type { SessionStatus } from "@/lib/types";
 
 export default async function AdminSessionsPage() {
@@ -15,7 +16,10 @@ export default async function AdminSessionsPage() {
   const t = await getTranslations("admin.sessions");
   const tHome = await getTranslations("admin.home");
 
-  const { data: sessions } = await supabase
+  // Best-effort: mark timed-out actives as expired before listing (RLS allows admin update).
+  await expireStaleSessionsVisible(supabase);
+
+  const { data: sessions, error: sessionsError } = await supabase
     .from("sessions")
     .select(
       `
@@ -23,6 +27,7 @@ export default async function AdminSessionsPage() {
       status,
       started_at,
       ended_at,
+      max_duration_sec,
       language,
       institution_id,
       difficulty,
@@ -36,6 +41,25 @@ export default async function AdminSessionsPage() {
     )
     .order("started_at", { ascending: false })
     .limit(300);
+
+  if (sessionsError) {
+    return (
+      <main className="mx-auto max-w-[1280px] space-y-8 px-4 py-8 md:px-8">
+        <AdminPageHeader
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: tHome("title"), href: "/admin" },
+            { label: t("title") },
+          ]}
+        />
+        <ErrorState
+          title={t("loadErrorTitle")}
+          description={t("loadErrorDescription")}
+        />
+      </main>
+    );
+  }
 
   const list = sessions ?? [];
   const rows: AdminSessionListRow[] = list.map((s) => {
@@ -54,10 +78,25 @@ export default async function AdminSessionsPage() {
       report?.scores && typeof report.scores === "object"
         ? (report.scores as { overall?: number }).overall
         : null;
+    const status = s.status as SessionStatus;
+    const duration = formatSessionDurationDisplay(
+      status,
+      s.started_at,
+      s.ended_at,
+      s.max_duration_sec ?? undefined,
+    );
+    const durationLabel =
+      duration == null
+        ? null
+        : duration.label === "past_limit"
+          ? t("durationPastLimit")
+          : status === "active"
+            ? t("durationElapsed", { duration: duration.label })
+            : duration.label;
 
     return {
       id: s.id,
-      status: s.status as SessionStatus,
+      status,
       startedAt: s.started_at,
       endedAt: s.ended_at,
       language: String(s.language ?? "en"),
@@ -66,7 +105,8 @@ export default async function AdminSessionsPage() {
       disorder: avatar?.disorder ?? "",
       organization: institution?.name ?? null,
       institutionId: s.institution_id,
-      durationLabel: formatSessionDuration(s.started_at, s.ended_at),
+      durationLabel,
+      durationStale: duration?.stale ?? false,
       score: typeof overall === "number" ? overall : null,
       reportStatus: report ? "available" : "none",
       isAdminTest: isAdminTestClinicalSnapshot(s.clinical_snapshot),
@@ -78,6 +118,7 @@ export default async function AdminSessionsPage() {
   const active = rows.filter((r) => r.status === "active").length;
   const completed = rows.filter((r) => r.status === "completed").length;
   const withReport = rows.filter((r) => r.reportStatus === "available").length;
+  const staleCount = rows.filter((r) => r.durationStale).length;
 
   return (
     <main className="mx-auto max-w-[1280px] space-y-8 px-4 py-8 md:px-8">
@@ -90,7 +131,7 @@ export default async function AdminSessionsPage() {
         ]}
       />
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label={t("statActive")}
           value={String(active)}
@@ -106,6 +147,12 @@ export default async function AdminSessionsPage() {
           value={String(withReport)}
           hint={t("statWithReportHint")}
         />
+        <MetricCard
+          label={t("statStale")}
+          value={String(staleCount)}
+          hint={t("statStaleHint")}
+          tone={staleCount > 0 ? "warning" : "default"}
+        />
       </section>
 
       <section className="clinical-card overflow-hidden">
@@ -115,6 +162,8 @@ export default async function AdminSessionsPage() {
             searchPlaceholder: t("searchPlaceholder"),
             emptyTitle: t("emptyTitle"),
             emptyDescription: t("emptyDescription"),
+            emptyFilteredTitle: t("emptyFilteredTitle"),
+            emptyFilteredDescription: t("emptyFilteredDescription"),
             clearFilters: t("clearFilters"),
             colSession: t("colSession"),
             colLearner: t("colLearner"),
@@ -139,6 +188,7 @@ export default async function AdminSessionsPage() {
             adminTest: t("adminTest"),
             showing: t("showingLabel"),
             unassignedOrg: t("unassignedOrg"),
+            staleBadge: t("staleBadge"),
           }}
         />
       </section>
