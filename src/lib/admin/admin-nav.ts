@@ -43,10 +43,17 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
     defaultOpen: true,
     items: [
       {
+        href: "/admin/learners",
+        labelKey: "learners",
+        icon: "group",
+        keywords: ["learners", "students", "trainees", "directory"],
+        match: (p) => p.startsWith("/admin/learners"),
+      },
+      {
         href: "/admin/curriculum",
         labelKey: "learnersProgress",
         icon: "timeline",
-        keywords: ["learners", "ace", "curriculum", "progress"],
+        keywords: ["ace", "curriculum", "progress", "adaptive"],
         match: (p) => p.startsWith("/admin/curriculum"),
       },
       {

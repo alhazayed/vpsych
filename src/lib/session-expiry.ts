@@ -67,6 +67,11 @@ export async function expireStaleSession(
  * Platform admins see all sessions (RLS); used on the admin sessions list
  * so abandoned rooms are not shown as indefinitely "active".
  * Caps work per call to keep page loads bounded.
+ *
+ * Semantics: wall-clock from `started_at` vs `max_duration_sec` only.
+ * No heartbeat/last-activity — this matches product max-duration rules and
+ * does not terminate a still-open session before its configured limit.
+ * Does NOT generate assessment reports (same as historical passive expiry).
  */
 export async function expireStaleSessionsVisible(
   supabase: SupabaseClient,
@@ -87,6 +92,32 @@ export async function expireStaleSessionsVisible(
     if (await expireStaleSession(supabase, row, now)) expired += 1;
   }
   return expired;
+}
+
+/**
+ * Batch expiry for scheduled maintenance (cron).
+ * Uses the same wall-clock rule as `expireStaleSession`.
+ * Prefer service-role client so RLS does not hide rows; safe to re-run.
+ */
+export async function expireStaleSessionsBatch(
+  supabase: SupabaseClient,
+  now: Date = new Date(),
+  limit = 200,
+): Promise<{ scanned: number; expired: number }> {
+  const { data: rows, error } = await supabase
+    .from("sessions")
+    .select("id, status, started_at, max_duration_sec, ended_at")
+    .eq("status", "active")
+    .order("started_at", { ascending: true })
+    .limit(limit);
+
+  if (error || !rows?.length) return { scanned: 0, expired: 0 };
+
+  let expired = 0;
+  for (const row of rows as ExpirableSession[]) {
+    if (await expireStaleSession(supabase, row, now)) expired += 1;
+  }
+  return { scanned: rows.length, expired };
 }
 
 /**

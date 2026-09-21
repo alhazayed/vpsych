@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   expireStaleSession,
+  expireStaleSessionsBatch,
   expireStaleSessionsVisible,
   isSessionTimedOut,
 } from "./session-expiry";
@@ -113,5 +114,17 @@ describe("expireStaleSessionsVisible", () => {
     const now = new Date("2026-01-01T01:00:00.000Z");
     const n = await expireStaleSessionsVisible({ from } as never, now);
     expect(n).toBe(1);
+  });
+});
+
+describe("expireStaleSessionsBatch", () => {
+  it("returns zeros when no active rows", async () => {
+    const limit = vi.fn().mockResolvedValue({ data: [], error: null });
+    const order = vi.fn(() => ({ limit }));
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    const result = await expireStaleSessionsBatch({ from } as never);
+    expect(result).toEqual({ scanned: 0, expired: 0 });
   });
 });

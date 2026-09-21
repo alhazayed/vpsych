@@ -14,6 +14,7 @@ import {
   isAdminTestClinicalSnapshot,
   sessionStatusTone,
 } from "@/lib/admin/session-ops";
+import { expireStaleSession } from "@/lib/session-expiry";
 import type { MessageRole, SessionStatus } from "@/lib/types";
 
 export default async function AdminSessionDetailPage({
@@ -27,7 +28,7 @@ export default async function AdminSessionDetailPage({
   const tHome = await getTranslations("admin.home");
   const locale = await getLocale();
 
-  const { data: session } = await supabase
+  const { data: sessionRaw } = await supabase
     .from("sessions")
     .select(
       `
@@ -43,6 +44,7 @@ export default async function AdminSessionDetailPage({
       case_instance_id,
       clinical_snapshot,
       immersion_metrics,
+      therapist_id,
       profiles ( display_name ),
       avatars ( name, disorder ),
       institutions:institution_id ( name ),
@@ -51,6 +53,46 @@ export default async function AdminSessionDetailPage({
     )
     .eq("id", id)
     .maybeSingle();
+
+  if (!sessionRaw) notFound();
+
+  // Defensive: expire if past max duration before rendering.
+  await expireStaleSession(supabase, {
+    id: sessionRaw.id,
+    status: sessionRaw.status as SessionStatus,
+    started_at: sessionRaw.started_at,
+    max_duration_sec: sessionRaw.max_duration_sec,
+    ended_at: sessionRaw.ended_at,
+  });
+
+  const { data: session } =
+    sessionRaw.status === "active"
+      ? await supabase
+          .from("sessions")
+          .select(
+            `
+      id,
+      status,
+      started_at,
+      ended_at,
+      max_duration_sec,
+      language,
+      difficulty,
+      therapy_modality,
+      interaction_mode,
+      case_instance_id,
+      clinical_snapshot,
+      immersion_metrics,
+      therapist_id,
+      profiles ( display_name ),
+      avatars ( name, disorder ),
+      institutions:institution_id ( name ),
+      session_reports ( id, scores, narrative, language, created_at )
+    `,
+          )
+          .eq("id", id)
+          .maybeSingle()
+      : { data: sessionRaw };
 
   if (!session) notFound();
 
@@ -70,6 +112,8 @@ export default async function AdminSessionDetailPage({
   const institution = session.institutions as unknown as {
     name: string;
   } | null;
+  const learnerId = session.therapist_id as string;
+  const learnerName = profile?.display_name ?? t("unknownLearner");
   const reports = session.session_reports as unknown as Array<{
     id: string;
     scores: {
@@ -132,7 +176,7 @@ export default async function AdminSessionDetailPage({
     <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 md:px-8">
       <AdminPageHeader
         title={`${t("detailTitle")} #${session.id.slice(0, 8)}`}
-        subtitle={`${profile?.display_name ?? t("unknownLearner")} · ${avatar?.name ?? t("unknownPatient")}`}
+        subtitle={`${learnerName} · ${avatar?.name ?? t("unknownPatient")}`}
         breadcrumbs={[
           { label: tHome("title"), href: "/admin" },
           { label: t("title"), href: "/admin/sessions" },
@@ -144,6 +188,12 @@ export default async function AdminSessionDetailPage({
               label={statusLabel}
               tone={sessionStatusTone(status)}
             />
+            <Link
+              href={`/admin/learners/${learnerId}`}
+              className="btn-secondary"
+            >
+              {t("viewLearner")}
+            </Link>
             {report ? (
               <Link
                 href={`/admin/reports/${session.id}`}
@@ -163,7 +213,8 @@ export default async function AdminSessionDetailPage({
           startedAt: session.started_at,
           endedAt: session.ended_at,
           language: session.language,
-          learner: profile?.display_name ?? t("unknownLearner"),
+          learner: learnerName,
+          learnerId,
           patient: avatar?.name ?? t("unknownPatient"),
           disorder: avatar?.disorder ?? "",
           organization: institution?.name ?? null,
@@ -224,6 +275,8 @@ export default async function AdminSessionDetailPage({
           immersion: t("immersion"),
           none: t("none"),
           staleBadge: t("staleBadge"),
+          staleExplanation: t("staleExplanation"),
+          viewLearner: t("viewLearner"),
         }}
       />
     </main>

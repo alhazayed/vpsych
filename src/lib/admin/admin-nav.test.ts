@@ -15,6 +15,7 @@ describe("admin-nav IA", () => {
   it("exposes hierarchical sections without inventing routes", () => {
     const hrefs = flattenAdminNav().map((i) => i.href);
     expect(hrefs).toContain("/admin");
+    expect(hrefs).toContain("/admin/learners");
     expect(hrefs).toContain("/admin/sessions");
     expect(hrefs).toContain("/admin/reports");
     expect(hrefs).toContain("/admin/content");
@@ -39,9 +40,12 @@ describe("admin-nav IA", () => {
     ]);
   });
 
-  it("matches nested session and report routes", () => {
+  it("matches nested session and learner routes", () => {
     expect(findAdminNavItem("/admin/sessions/abc")?.href).toBe(
       "/admin/sessions",
+    );
+    expect(findAdminNavItem("/admin/learners/abc")?.href).toBe(
+      "/admin/learners",
     );
     expect(findAdminNavItem("/admin/reports/sess-1")?.href).toBe(
       "/admin/reports",
@@ -60,6 +64,7 @@ describe("admin-nav IA", () => {
         operations: "Operations",
         systemHealth: "System Health",
         learnersProgress: "Learners & Progress",
+        learners: "Learners",
         competencies: "Competencies",
         voices: "Voices",
         cases: "Cases",

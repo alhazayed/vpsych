@@ -40,6 +40,8 @@ function isPublicPath(path: string): boolean {
   if (path.startsWith("/sitemap") || path.startsWith("/sitemaps/")) return true;
   if (path.startsWith("/.well-known/")) return true;
   if (path === "/api/health") return true;
+  // Cron routes authenticate via CRON_SECRET in the Route Handler (fail closed).
+  if (path.startsWith("/api/cron/")) return true;
   return false;
 }
 
