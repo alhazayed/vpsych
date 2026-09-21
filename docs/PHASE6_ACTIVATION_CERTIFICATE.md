@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Certificate | `VPSYCH-PHASE6-ACTIVATION` |
-| Commit | `6513a50` |
+| Commit | `ae25092` |
 | Branch | `cursor/admin-production-activation-fc9c` |
 | Environment | Vercel project `prj_qiJ1mQvX0s5lJZ9KJnpWAx4EXjNm` · Production URL `https://vpsych.vercel.app` · Supabase `rrzudbkxigeavfdnidnm` |
 | Platform model | **Platform-admin educational console** (not institution-scoped) |
