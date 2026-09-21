@@ -67,3 +67,15 @@ Do not squash the stack into a lossy single commit if merge commits can preserve
 ```text
 PR #226 / cursor/admin-console-ux-overhaul-fc9c → main
 ```
+
+---
+
+## Post-merge update (2026-09-21)
+
+```text
+#226 MERGED → 9454231 · CI GREEN
+#227 MERGED → b3b0d20 · CI GREEN
+#228 MERGED → 77c6757 · CI GREEN
+#229 MERGED → ff15236 · CI GREEN
+PRODUCTION: ff15236 READY
+```
