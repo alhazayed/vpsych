@@ -105,13 +105,25 @@ export async function POST(_request: Request, { params }: Params) {
       (now.getTime() - new Date(typed.started_at).getTime()) / 1000,
     );
     const expired = elapsedSec >= typed.max_duration_sec;
-    const { error: updateError } = await supabase
+    // Align expired ended_at with wall-clock limit (same as passive expiry).
+    const endedAt = expired
+      ? new Date(
+          new Date(typed.started_at).getTime() + typed.max_duration_sec * 1000,
+        ).toISOString()
+      : now.toISOString();
+    const nextStatus = expired ? "expired" : "completed";
+
+    // CAS: only transition from active. Concurrent cron expiry must not 500.
+    const { data: updated, error: updateError } = await supabase
       .from("sessions")
       .update({
-        status: expired ? "expired" : "completed",
-        ended_at: now.toISOString(),
+        status: nextStatus,
+        ended_at: endedAt,
       })
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("status", "active")
+      .select("id, status, ended_at")
+      .maybeSingle();
 
     if (updateError) {
       console.warn("[session-end] status update:", updateError.message);
@@ -120,8 +132,32 @@ export async function POST(_request: Request, { params }: Params) {
         { status: 500 },
       );
     }
-    typed.status = expired ? "expired" : "completed";
-    typed.ended_at = now.toISOString();
+
+    if (updated) {
+      typed.status = updated.status as TherapySession["status"];
+      typed.ended_at = updated.ended_at;
+    } else {
+      // Another writer (cron / message path) finished the row — re-read.
+      const { data: fresh } = await supabase
+        .from("sessions")
+        .select("status, ended_at")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (
+        !fresh ||
+        (fresh.status !== "completed" && fresh.status !== "expired")
+      ) {
+        console.warn("[session-end] CAS miss with unexpected status", {
+          status: fresh?.status ?? null,
+        });
+        return NextResponse.json(
+          { error: "Session status conflict" },
+          { status: 409 },
+        );
+      }
+      typed.status = fresh.status as TherapySession["status"];
+      typed.ended_at = fresh.ended_at;
+    }
   }
 
   // Phase 3C — Admin Test Conversation: central learner-pipeline exclusion.

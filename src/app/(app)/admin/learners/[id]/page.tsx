@@ -258,6 +258,12 @@ export default async function AdminLearnerDetailPage({
         }
       />
 
+      <p
+        className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-xs text-[var(--on-surface-variant)]"
+        role="note"
+      >
+        {t("performanceNote")}
+      </p>
       <dl className="grid gap-3 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
@@ -355,6 +361,7 @@ export default async function AdminLearnerDetailPage({
           certification: t("fieldCertification"),
           none: t("none"),
           sessionsSampleHint: t("sessionsSampleHint"),
+          viewAllSessions: t("viewAllSessions"),
         }}
         overview={{
           trainingLevel: aceProfile?.training_level ?? null,

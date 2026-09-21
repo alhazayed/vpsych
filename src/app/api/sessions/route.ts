@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("preferred_language")
+    .select("preferred_language, primary_institution_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -137,6 +137,8 @@ export async function POST(request: Request) {
   // Phase 3C — learner create path must never persist admin_test markers.
   const learnerSnapshot = stripAdminTestMarker(caseResult.snapshot);
 
+  // Tenant stamp from server-side profile (never from browser body).
+  // Historical sessions keep this value even if the learner later changes org.
   const insertPayload: Record<string, unknown> = {
     therapist_id: user.id,
     avatar_id: body.avatarId,
@@ -151,6 +153,7 @@ export async function POST(request: Request) {
     therapy_modality: caseResult.therapyModality,
     instructor_preset_id: caseResult.preset?.id ?? null,
     interaction_mode: interactionMode,
+    institution_id: profile?.primary_institution_id ?? null,
   };
 
   let { data: session, error } = await supabase

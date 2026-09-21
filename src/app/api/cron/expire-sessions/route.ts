@@ -1,30 +1,28 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { expireStaleSessionsBatch } from "@/lib/session-expiry";
+import { authorizeCronRequest } from "@/lib/cron-auth";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
- * Scheduled session expiry (Vercel Cron).
+ * Scheduled session expiry maintenance endpoint.
  *
- * Auth: Authorization Bearer must match CRON_SECRET.
- * When CRON_SECRET is unset, the route refuses all callers (fail closed).
+ * Endpoint: GET /api/cron/expire-sessions
+ * Authentication: Authorization: Bearer $CRON_SECRET (fail-closed if unset)
+ * Purpose: Expire active sessions past started_at + max_duration_sec.
  *
- * Semantics: marks timed-out `active` sessions as `expired` using
- * started_at + max_duration_sec. Does not run assessment or create reports.
- * Idempotent; safe to invoke repeatedly.
+ * Application support: READY
+ * Scheduler configuration: DEPLOYMENT RESPONSIBILITY
+ * Production scheduler: NOT wired in vercel.json (Hobby rejects crons).
+ * Configure an external scheduler or Vercel Cron (Pro+) to invoke this path.
+ *
+ * Does NOT run assessment or create reports. Idempotent (CAS on status=active).
+ * Service role stays server-side; never exposed to clients.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) {
-    return NextResponse.json(
-      { error: "Cron endpoint is not configured" },
-      { status: 503 },
-    );
-  }
-
-  const auth = request.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authz = authorizeCronRequest(request);
+  if (!authz.ok) {
+    return NextResponse.json({ error: authz.error }, { status: authz.status });
   }
 
   const limited = await rateLimit("cron:expire-sessions", 30, 60 * 60 * 1000);
@@ -37,16 +35,41 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
   if (!supabase) {
+    console.warn("[cron/expire-sessions] service role unavailable");
     return NextResponse.json(
       { error: "Service role unavailable for maintenance" },
       { status: 503 },
     );
   }
 
-  const result = await expireStaleSessionsBatch(supabase, new Date(), 200);
-  return NextResponse.json({
-    ok: true,
-    scanned: result.scanned,
-    expired: result.expired,
-  });
+  const started = Date.now();
+  const limit = 200;
+  console.info("[cron/expire-sessions] start", { limit });
+
+  try {
+    const result = await expireStaleSessionsBatch(supabase, new Date(), limit);
+    const durationMs = Date.now() - started;
+    console.info("[cron/expire-sessions] complete", {
+      scanned: result.scanned,
+      expired: result.expired,
+      selectError: result.selectError ?? false,
+      saturated: result.scanned >= limit,
+      durationMs,
+    });
+    return NextResponse.json({
+      ok: true,
+      scanned: result.scanned,
+      expired: result.expired,
+      saturated: result.scanned >= limit,
+    });
+  } catch (err) {
+    console.error("[cron/expire-sessions] failed", {
+      durationMs: Date.now() - started,
+      message: err instanceof Error ? err.message : "unknown",
+    });
+    return NextResponse.json(
+      { error: "Expiry batch failed" },
+      { status: 500 },
+    );
+  }
 }

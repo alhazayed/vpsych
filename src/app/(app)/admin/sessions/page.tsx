@@ -253,6 +253,13 @@ export default async function AdminSessionsPage({
         </p>
       ) : null}
 
+      <p
+        className="text-xs text-[var(--on-surface-variant)]"
+        role="note"
+      >
+        {t("workingSetBadge")}
+      </p>
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label={t("statActive")}

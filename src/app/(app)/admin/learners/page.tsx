@@ -325,6 +325,7 @@ export default async function AdminLearnersPage({
       </section>
 
       <p className="text-xs text-[var(--on-surface-variant)]">{t("privacyNote")}</p>
+      <p className="text-xs text-[var(--on-surface-variant)]">{t("identityNote")}</p>
     </main>
   );
 }

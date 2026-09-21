@@ -1237,7 +1237,7 @@
       "statActive": "Active now",
       "statActiveHint": "Simulations not yet terminal",
       "statCompleted": "Completed (listed)",
-      "statCompletedHint": "Among loaded sessions matching filters",
+      "statCompletedHint": "Among the loaded working set (≤500 matching)",
       "statWithReport": "With report",
       "statWithReportHint": "Assessment report available",
       "searchPlaceholder": "Search learner, patient, org, or session id…",
@@ -1316,12 +1316,13 @@
       "pageOf": "Page {page} of {pages}",
       "paginationLabel": "Session pages",
       "searchSubmit": "Apply",
-      "paginationNote": "Filters apply to the most recent 500 matching sessions; results are paginated server-side.",
+      "paginationNote": "Showing up to the 500 most recent matching sessions (operational working set). Filters and pagination apply within that set — not a guaranteed exact platform total.",
       "learnersCrumb": "Learners",
       "filteredByLearner": "Showing sessions for {name}.",
       "clearLearnerFilter": "Clear learner filter",
       "viewLearner": "View learner",
-      "staleExplanation": "Past expected session duration. This session remains marked active but has exceeded its configured time limit. It will be expired by maintenance or the next defensive refresh."
+      "staleExplanation": "Past expected session duration. This session remains marked active but has exceeded its configured time limit. It will be expired by maintenance or the next defensive refresh.",
+      "workingSetBadge": "Most recent 500 matching"
     },
     "contentHub": {
       "title": "Content library",
@@ -1457,7 +1458,7 @@
       "fieldCertification": "Certification status (ACE)",
       "none": "—",
       "metricSessions": "Sessions (sample)",
-      "metricSessionsHint": "Up to 100 most recent for this learner",
+      "metricSessionsHint": "Count within the 100 most recent sessions shown",
       "metricCompleted": "Completed",
       "metricAvgScore": "Average score",
       "metricAvgScoreHint": "Mean overall from reports in the sample",
@@ -1481,7 +1482,10 @@
       "colCompetencyUpdated": "Last assessed",
       "activitySession": "Session",
       "activityReport": "Report",
-      "sessionsSampleHint": "Most recent 100 sessions for this learner."
+      "sessionsSampleHint": "Most recent 100 sessions for this learner (sample). Not a complete lifetime history.",
+      "viewAllSessions": "View all in Sessions",
+      "performanceNote": "Performance lists overall scores from existing session_reports for this learner’s recent sessions. Scores are educational simulation assessments — not validated clinical grades.",
+      "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory."
     }
   },
   "validation": {

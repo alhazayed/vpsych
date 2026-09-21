@@ -127,4 +127,17 @@ describe("expireStaleSessionsBatch", () => {
     const result = await expireStaleSessionsBatch({ from } as never);
     expect(result).toEqual({ scanned: 0, expired: 0 });
   });
+
+  it("surfaces selectError without throwing", async () => {
+    const limit = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "boom" },
+    });
+    const order = vi.fn(() => ({ limit }));
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    const result = await expireStaleSessionsBatch({ from } as never);
+    expect(result).toEqual({ scanned: 0, expired: 0, selectError: true });
+  });
 });

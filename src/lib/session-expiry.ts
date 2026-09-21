@@ -103,7 +103,11 @@ export async function expireStaleSessionsBatch(
   supabase: SupabaseClient,
   now: Date = new Date(),
   limit = 200,
-): Promise<{ scanned: number; expired: number }> {
+): Promise<{
+  scanned: number;
+  expired: number;
+  selectError?: boolean;
+}> {
   const { data: rows, error } = await supabase
     .from("sessions")
     .select("id, status, started_at, max_duration_sec, ended_at")
@@ -111,7 +115,11 @@ export async function expireStaleSessionsBatch(
     .order("started_at", { ascending: true })
     .limit(limit);
 
-  if (error || !rows?.length) return { scanned: 0, expired: 0 };
+  if (error) {
+    console.warn("[session-expiry] batch select failed:", error.message);
+    return { scanned: 0, expired: 0, selectError: true };
+  }
+  if (!rows?.length) return { scanned: 0, expired: 0 };
 
   let expired = 0;
   for (const row of rows as ExpirableSession[]) {

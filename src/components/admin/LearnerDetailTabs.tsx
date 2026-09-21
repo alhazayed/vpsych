@@ -88,6 +88,7 @@ export function LearnerDetailTabs({
     certification: string;
     none: string;
     sessionsSampleHint: string;
+    viewAllSessions: string;
   };
   locale: string;
 }) {
@@ -218,9 +219,17 @@ export function LearnerDetailTabs({
           <EmptyState title={labels.emptySessions} icon="clinical_notes" />
         ) : (
           <div className="clinical-card overflow-hidden">
-            <p className="border-b border-[var(--outline-variant)] px-4 py-2 text-xs text-[var(--on-surface-variant)] md:px-6">
-              {labels.sessionsSampleHint}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--outline-variant)] px-4 py-2 md:px-6">
+              <p className="text-xs text-[var(--on-surface-variant)]">
+                {labels.sessionsSampleHint}
+              </p>
+              <Link
+                href={`/admin/sessions?learner=${overview.learnerId}`}
+                className="text-xs font-medium text-[var(--primary)] hover:underline"
+              >
+                {labels.viewAllSessions}
+              </Link>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-start text-sm">
                 <thead>
