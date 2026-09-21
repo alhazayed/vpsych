@@ -229,7 +229,7 @@ export default async function AdminHomePage() {
               icon: "assignment",
             },
             {
-              href: "/admin/curriculum",
+              href: "/admin/learners",
               label: t("actionLearners"),
               icon: "group",
             },

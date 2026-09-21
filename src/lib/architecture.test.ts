@@ -67,6 +67,25 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/service:\s*"vpsych"/);
   });
 
+  it("keeps cron session expiry fail-closed and assessment-free", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/path\.startsWith\("\/api\/cron\/"\)/);
+    const route = readFileSync(
+      join(root, "app/api/cron/expire-sessions/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/authorizeCronRequest/);
+    expect(route).toMatch(/expireStaleSessionsBatch/);
+    expect(route).not.toMatch(/assessSession/);
+    expect(route).not.toMatch(/create_session_report/);
+    expect(route).not.toMatch(/NEXT_PUBLIC_CRON/);
+    const auth = readFileSync(join(root, "lib/cron-auth.ts"), "utf8");
+    expect(auth).toMatch(/timingSafeEqual/);
+    const create = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
+    expect(create).toMatch(/institution_id:\s*profile\?\.primary_institution_id/);
+    expect(create).not.toMatch(/body\.institution_id/);
+  });
+
   it("keeps /validation and invite redeem public for invited experts", () => {
     const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
     expect(mw).toMatch(/path === "\/validation"/);

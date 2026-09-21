@@ -132,6 +132,12 @@ export async function POST(request: Request, ctx: Ctx) {
     ? "therapy_room"
     : "classic";
 
+  const { data: adminProfile } = await supabase
+    .from("profiles")
+    .select("primary_institution_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const insertPayload: Record<string, unknown> = {
     therapist_id: user.id,
     avatar_id: id,
@@ -145,6 +151,7 @@ export async function POST(request: Request, ctx: Ctx) {
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
     interaction_mode: interactionMode,
+    institution_id: adminProfile?.primary_institution_id ?? null,
   };
 
   const { data: session, error } = await supabase

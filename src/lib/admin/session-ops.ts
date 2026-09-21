@@ -95,6 +95,8 @@ export type AdminSessionListRow = {
   endedAt: string | null;
   language: string;
   learner: string;
+  /** profiles.id / sessions.therapist_id when known */
+  learnerId?: string | null;
   patient: string;
   disorder: string;
   organization: string | null;

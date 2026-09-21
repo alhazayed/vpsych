@@ -10,11 +10,36 @@ import {
 } from "@/lib/admin/session-ops";
 import type { SessionStatus } from "@/lib/types";
 
+type FilterState = {
+  q: string;
+  status: "all" | SessionStatus;
+  report: "all" | "available" | "none";
+  action: string;
+  learnerId?: string | null;
+};
+
+type PaginationState = {
+  page: number;
+  pages: number;
+  total: number;
+  from: number;
+  to: number;
+  prevHref: string | null;
+  nextHref: string | null;
+  clearHref: string;
+};
+
 export function SessionsTable({
   rows,
   labels,
+  mode = "client",
+  filterState,
+  pagination,
 }: {
   rows: AdminSessionListRow[];
+  mode?: "client" | "server";
+  filterState?: FilterState;
+  pagination?: PaginationState;
   labels: {
     searchPlaceholder: string;
     emptyTitle: string;
@@ -44,15 +69,22 @@ export function SessionsTable({
     actionReport: string;
     adminTest: string;
     showing: string;
+    showingRange?: string;
     unassignedOrg: string;
     staleBadge: string;
+    prev?: string;
+    next?: string;
+    pageOf?: string;
+    paginationLabel?: string;
+    searchSubmit?: string;
   };
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | SessionStatus>("all");
   const [report, setReport] = useState<"all" | "available" | "none">("all");
 
-  const filtered = useMemo(() => {
+  const clientFiltered = useMemo(() => {
+    if (mode === "server") return rows;
     const query = q.trim().toLowerCase();
     return rows.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
@@ -66,7 +98,18 @@ export function SessionsTable({
         (r.organization ?? "").toLowerCase().includes(query)
       );
     });
-  }, [rows, q, status, report]);
+  }, [rows, q, status, report, mode]);
+
+  const displayRows = mode === "server" ? rows : clientFiltered;
+  const filtersActive =
+    mode === "server"
+      ? Boolean(
+          filterState &&
+            (filterState.q ||
+              filterState.status !== "all" ||
+              filterState.report !== "all"),
+        )
+      : Boolean(q || status !== "all" || report !== "all");
 
   const statusLabel = (s: SessionStatus) => {
     if (s === "active") return labels.statusActive;
@@ -74,93 +117,162 @@ export function SessionsTable({
     return labels.statusExpired;
   };
 
+  const emptyBecauseFilter =
+    mode === "server"
+      ? Boolean(pagination && pagination.total === 0 && filtersActive)
+      : rows.length > 0 && displayRows.length === 0;
+
   return (
     <div>
-      <div className="flex flex-wrap items-end gap-3 border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-4 py-4 md:px-6">
-        <label className="min-w-[12rem] flex-1 text-xs font-medium text-[var(--on-surface-variant)]">
-          <span className="mb-1 block">{labels.searchPlaceholder}</span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={labels.searchPlaceholder}
-            className="w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none focus:border-[var(--primary)]"
-          />
-        </label>
-        <label className="text-xs font-medium text-[var(--on-surface-variant)]">
-          <span className="mb-1 block">{labels.filterStatus}</span>
-          <select
-            value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as "all" | SessionStatus)
-            }
-            className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
-          >
-            <option value="all">{labels.filterAll}</option>
-            <option value="active">{labels.statusActive}</option>
-            <option value="completed">{labels.statusCompleted}</option>
-            <option value="expired">{labels.statusExpired}</option>
-          </select>
-        </label>
-        <label className="text-xs font-medium text-[var(--on-surface-variant)]">
-          <span className="mb-1 block">{labels.filterReport}</span>
-          <select
-            value={report}
-            onChange={(e) =>
-              setReport(e.target.value as "all" | "available" | "none")
-            }
-            className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
-          >
-            <option value="all">{labels.filterAll}</option>
-            <option value="available">{labels.reportAvailable}</option>
-            <option value="none">{labels.reportNone}</option>
-          </select>
-        </label>
-        {(q || status !== "all" || report !== "all") && (
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => {
-              setQ("");
-              setStatus("all");
-              setReport("all");
-            }}
-          >
-            {labels.clearFilters}
+      {mode === "server" && filterState ? (
+        <form
+          method="get"
+          action={filterState.action}
+          className="flex flex-wrap items-end gap-3 border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-4 py-4 md:px-6"
+        >
+          {filterState.learnerId ? (
+            <input type="hidden" name="learner" value={filterState.learnerId} />
+          ) : null}
+          <label className="min-w-[12rem] flex-1 text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.searchPlaceholder}</span>
+            <input
+              name="q"
+              defaultValue={filterState.q}
+              placeholder={labels.searchPlaceholder}
+              className="w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none focus:border-[var(--primary)]"
+            />
+          </label>
+          <label className="text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.filterStatus}</span>
+            <select
+              name="status"
+              defaultValue={filterState.status}
+              className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
+            >
+              <option value="all">{labels.filterAll}</option>
+              <option value="active">{labels.statusActive}</option>
+              <option value="completed">{labels.statusCompleted}</option>
+              <option value="expired">{labels.statusExpired}</option>
+            </select>
+          </label>
+          <label className="text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.filterReport}</span>
+            <select
+              name="report"
+              defaultValue={filterState.report}
+              className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
+            >
+              <option value="all">{labels.filterAll}</option>
+              <option value="available">{labels.reportAvailable}</option>
+              <option value="none">{labels.reportNone}</option>
+            </select>
+          </label>
+          <button type="submit" className="btn-secondary">
+            {labels.searchSubmit ?? labels.clearFilters}
           </button>
-        )}
-      </div>
+          {filtersActive && pagination ? (
+            <Link href={pagination.clearHref} className="btn-secondary">
+              {labels.clearFilters}
+            </Link>
+          ) : null}
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-end gap-3 border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-4 py-4 md:px-6">
+          <label className="min-w-[12rem] flex-1 text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.searchPlaceholder}</span>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={labels.searchPlaceholder}
+              className="w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none focus:border-[var(--primary)]"
+            />
+          </label>
+          <label className="text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.filterStatus}</span>
+            <select
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value as "all" | SessionStatus)
+              }
+              className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
+            >
+              <option value="all">{labels.filterAll}</option>
+              <option value="active">{labels.statusActive}</option>
+              <option value="completed">{labels.statusCompleted}</option>
+              <option value="expired">{labels.statusExpired}</option>
+            </select>
+          </label>
+          <label className="text-xs font-medium text-[var(--on-surface-variant)]">
+            <span className="mb-1 block">{labels.filterReport}</span>
+            <select
+              value={report}
+              onChange={(e) =>
+                setReport(e.target.value as "all" | "available" | "none")
+              }
+              className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-3 py-2 text-sm"
+            >
+              <option value="all">{labels.filterAll}</option>
+              <option value="available">{labels.reportAvailable}</option>
+              <option value="none">{labels.reportNone}</option>
+            </select>
+          </label>
+          {filtersActive && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setQ("");
+                setStatus("all");
+                setReport("all");
+              }}
+            >
+              {labels.clearFilters}
+            </button>
+          )}
+        </div>
+      )}
 
-      {filtered.length === 0 ? (
+      {displayRows.length === 0 ? (
         <EmptyState
           title={
-            rows.length === 0 ? labels.emptyTitle : labels.emptyFilteredTitle
+            emptyBecauseFilter
+              ? labels.emptyFilteredTitle
+              : labels.emptyTitle
           }
           description={
-            rows.length === 0
-              ? labels.emptyDescription
-              : labels.emptyFilteredDescription
+            emptyBecauseFilter
+              ? labels.emptyFilteredDescription
+              : labels.emptyDescription
           }
           icon="clinical_notes"
           action={
-            q || status !== "all" || report !== "all" ? (
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  setQ("");
-                  setStatus("all");
-                  setReport("all");
-                }}
-              >
-                {labels.clearFilters}
-              </button>
+            filtersActive ? (
+              mode === "server" && pagination ? (
+                <Link href={pagination.clearHref} className="btn-secondary">
+                  {labels.clearFilters}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setQ("");
+                    setStatus("all");
+                    setReport("all");
+                  }}
+                >
+                  {labels.clearFilters}
+                </button>
+              )
             ) : null
           }
         />
       ) : (
         <>
           <p className="px-4 py-2 text-xs text-[var(--on-surface-variant)] md:px-6">
-            {labels.showing.replace("#COUNT#", String(filtered.length))}
+            {mode === "server" && pagination && labels.showingRange
+              ? labels.showingRange
+              : labels.showing.replace("#COUNT#", String(displayRows.length))}
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-start text-sm">
@@ -187,7 +299,7 @@ export function SessionsTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--surface-container)]">
-                {filtered.map((r) => (
+                {displayRows.map((r) => (
                   <tr
                     key={r.id}
                     className="hover:bg-[var(--surface-container-low)]"
@@ -208,7 +320,18 @@ export function SessionsTable({
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">{r.learner}</td>
+                    <td className="px-4 py-3">
+                      {r.learnerId ? (
+                        <Link
+                          href={`/admin/learners/${r.learnerId}`}
+                          className="text-[var(--primary)] hover:underline"
+                        >
+                          {r.learner}
+                        </Link>
+                      ) : (
+                        r.learner
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <p>{r.patient}</p>
                       <p className="text-xs text-[var(--on-surface-variant)]">
@@ -276,6 +399,31 @@ export function SessionsTable({
               </tbody>
             </table>
           </div>
+          {mode === "server" && pagination && pagination.pages > 1 ? (
+            <nav
+              className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--outline-variant)] px-4 py-3 md:px-6"
+              aria-label={labels.paginationLabel ?? "Pagination"}
+            >
+              {pagination.prevHref ? (
+                <Link href={pagination.prevHref} className="btn-secondary">
+                  {labels.prev ?? "Previous"}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="text-xs text-[var(--on-surface-variant)]">
+                {labels.pageOf ??
+                  `Page ${pagination.page} of ${pagination.pages}`}
+              </span>
+              {pagination.nextHref ? (
+                <Link href={pagination.nextHref} className="btn-secondary">
+                  {labels.next ?? "Next"}
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          ) : null}
         </>
       )}
     </div>

@@ -40,6 +40,7 @@ export function SessionDetailTabs({
     endedAt: string | null;
     language: string | null;
     learner: string;
+    learnerId?: string | null;
     patient: string;
     disorder: string;
     organization: string | null;
@@ -107,6 +108,8 @@ export function SessionDetailTabs({
     immersion: string;
     none: string;
     staleBadge: string;
+    staleExplanation: string;
+    viewLearner: string;
   };
   locale: string;
 }) {
@@ -177,6 +180,14 @@ export function SessionDetailTabs({
           {session.isAdminTest ? (
             <StatusBadge label={labels.adminTest} tone="warning" />
           ) : null}
+          {session.durationStale ? (
+            <p
+              className="rounded-lg border border-[color-mix(in_srgb,var(--secondary)_40%,var(--outline-variant))] bg-[color-mix(in_srgb,var(--secondary-container)_35%,transparent)] px-3 py-2 text-xs text-[var(--on-surface)]"
+              role="status"
+            >
+              {labels.staleExplanation}
+            </p>
+          ) : null}
           <dl className="grid gap-4 sm:grid-cols-2">
             <DetailItem label={labels.sessionId} value={session.id} mono />
             <DetailItem
@@ -188,7 +199,21 @@ export function SessionDetailTabs({
                 />
               }
             />
-            <DetailItem label={labels.learner} value={session.learner} />
+            <DetailItem
+              label={labels.learner}
+              value={
+                session.learnerId ? (
+                  <Link
+                    href={`/admin/learners/${session.learnerId}`}
+                    className="text-[var(--primary)] hover:underline"
+                  >
+                    {session.learner}
+                  </Link>
+                ) : (
+                  session.learner
+                )
+              }
+            />
             <DetailItem
               label={labels.organization}
               value={session.organization ?? labels.unassignedOrg}
