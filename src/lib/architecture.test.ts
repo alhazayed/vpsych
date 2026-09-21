@@ -84,6 +84,16 @@ describe("architecture invariants", () => {
     const create = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
     expect(create).toMatch(/institution_id:\s*profile\?\.primary_institution_id/);
     expect(create).not.toMatch(/body\.institution_id/);
+    // Legacy create fallback must also stamp tenancy (Phase 5).
+    expect(create).toMatch(
+      /legacy[\s\S]*institution_id:\s*profile\?\.primary_institution_id/,
+    );
+  });
+
+  it("keeps platform roles limited to therapist|admin (no invented faculty roles)", () => {
+    const types = readFileSync(join(root, "lib/types.ts"), "utf8");
+    expect(types).toMatch(/export type UserRole = "therapist" \| "admin"/);
+    expect(types).not.toMatch(/"faculty"|"institution_admin"|"supervisor"/);
   });
 
   it("keeps /validation and invite redeem public for invited experts", () => {

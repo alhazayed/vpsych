@@ -83,6 +83,19 @@ export function validateProductionEnv(): {
       purpose: "Horizontal rate limiting",
     },
     {
+      key: "CRON_SECRET",
+      present: present("CRON_SECRET"),
+      requirement: "recommended",
+      purpose:
+        "Bearer auth for GET /api/cron/expire-sessions (fail-closed if unset)",
+    },
+    {
+      key: "SUPABASE_SERVICE_ROLE_KEY",
+      present: present("SUPABASE_SERVICE_ROLE_KEY"),
+      requirement: "recommended",
+      purpose: "Cron batch expiry + privileged report/message paths",
+    },
+    {
       key: "NEXT_PUBLIC_APP_URL",
       present: present("NEXT_PUBLIC_APP_URL"),
       requirement: "optional",

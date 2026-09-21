@@ -13,6 +13,8 @@ export type Profile = {
   display_name: string;
   role: UserRole;
   preferred_language?: PreferredLanguage | null;
+  /** Server-side org stamp source for new sessions (never from browser). */
+  primary_institution_id?: string | null;
   created_at: string;
   updated_at: string;
 };

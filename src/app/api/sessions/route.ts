@@ -183,6 +183,8 @@ export async function POST(request: Request) {
         retry.error.message,
       )
     ) {
+      // Legacy schema fallback still stamps tenancy from the server profile.
+      // Never omit institution_id when the column exists (M23+).
       const legacy = await supabase
         .from("sessions")
         .insert({
@@ -191,6 +193,7 @@ export async function POST(request: Request) {
           status: "active",
           max_duration_sec: maxDurationSec,
           language: caseResult.snapshot.locale || effectiveLocale,
+          institution_id: profile?.primary_institution_id ?? null,
         })
         .select("id")
         .single();

@@ -52,13 +52,14 @@ Authenticated checks require vault `VPSYCH_AUDIT_*` after Credential Verificatio
 | Secret | Required for |
 |--------|----------------|
 | `NEXT_PUBLIC_SUPABASE_URL` / `ANON_KEY` | App boot |
-| `SUPABASE_SERVICE_ROLE_KEY` and/or `REPORT_WRITE_KEY` | Report write |
+| `SUPABASE_SERVICE_ROLE_KEY` and/or `REPORT_WRITE_KEY` | Report write + cron batch expiry |
 | `OPENAI_API_KEY` or `AI_GATEWAY_API_KEY` | Patient + assessment |
 | `ELEVENLABS_API_KEY` (`sk_…`) | TTS |
 | `UPSTASH_REDIS_*` | Horizontal rate limits |
+| `CRON_SECRET` | Bearer auth for `GET /api/cron/expire-sessions` (fail-closed if unset) |
 | `VPSYCH_AUDIT_*` | Certification agents only |
 
-Never commit secrets. Rotate if leaked.
+Never commit secrets. Rotate if leaked. Never put secrets in `NEXT_PUBLIC_*`, client bundles, UI, or logs.
 
 ---
 
@@ -99,7 +100,45 @@ Historical: W3-H5 (RDL-023→024).
 
 ---
 
-## 9. Certification unlock
+## 9. Session expiry cron (Phase 5)
+
+Application support is **READY**. Scheduler configuration is a **deployment responsibility**.
+`vercel.json` does **not** declare crons (Hobby rejects them). Use Vercel Pro Cron or an external scheduler.
+
+| Item | Value |
+|------|--------|
+| Endpoint | `GET /api/cron/expire-sessions` |
+| Auth | `Authorization: Bearer $CRON_SECRET` |
+| Required env | `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` |
+| Recommended schedule | every 5–15 minutes |
+| Success | `200` `{ ok, scanned, expired, saturated }` |
+| Failures | `401` unauthorized · `503` secret/service-role missing · `429` rate limit · `500` batch failure |
+| Idempotency | CAS update `status=active` only; safe to retry |
+| Side effects | Marks timed-out active sessions `expired`; **does not** assess or create reports |
+
+**Verify execution**
+
+```bash
+# Expect 401 or 503 without a valid bearer (never 200)
+curl -sS -o /tmp/cron.json -w '%{http_code}\n' \
+  https://vpsych.vercel.app/api/cron/expire-sessions
+
+# With secret from vault (do not echo the secret):
+curl -sS -H "Authorization: Bearer $CRON_SECRET" \
+  https://vpsych.vercel.app/api/cron/expire-sessions
+# expect: {"ok":true,"scanned":N,"expired":M,"saturated":bool}
+```
+
+Check Vercel/runtime logs for `[cron/expire-sessions] start|complete|failed` with `scanned` / `expired` / `durationMs`.
+
+**Rotate `CRON_SECRET`:** set a new value in Vercel Production → update scheduler → redeploy if needed → revoke old secret.  
+**Disable:** remove/pause the scheduler job; endpoint remains fail-closed without a caller.
+
+Companions: `docs/PHASE5_GOVERNANCE.md`, route comment on `src/app/api/cron/expire-sessions/route.ts`.
+
+---
+
+## 10. Certification unlock
 
 1. Credential Verification Gate PASS.  
 2. Migration parity PASS.  

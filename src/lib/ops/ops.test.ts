@@ -7,6 +7,10 @@ describe("Stage 12 ops helpers", () => {
   it("validateProductionEnv never returns secret values", () => {
     const result = validateProductionEnv();
     expect(result.checks.length).toBeGreaterThan(3);
+    expect(result.checks.some((c) => c.key === "CRON_SECRET")).toBe(true);
+    expect(
+      result.checks.some((c) => c.key === "SUPABASE_SERVICE_ROLE_KEY"),
+    ).toBe(true);
     for (const c of result.checks) {
       expect(c).toHaveProperty("present");
       expect(c).toHaveProperty("key");
