@@ -105,12 +105,18 @@ Historical: W3-H5 (RDL-023→024).
 Application support is **READY**. Scheduler configuration is a **deployment responsibility**.
 `vercel.json` does **not** declare crons (Hobby rejects them). Use Vercel Pro Cron or an external scheduler.
 
+**Phase 6 status:**
+- `CRON_SECRET` is configured in Vercel (production + preview) as a sensitive env var.
+- External scheduler workflow prepared: `.github/workflows/expire-sessions.yml` (every 15 min).
+- Production `main` does **not** yet include the expire-sessions route — merge Phase 4+ first.
+- Repository Actions secret `CRON_SECRET` must be set by an operator (matches Vercel value) before the workflow succeeds.
+
 | Item | Value |
 |------|--------|
 | Endpoint | `GET /api/cron/expire-sessions` |
 | Auth | `Authorization: Bearer $CRON_SECRET` |
 | Required env | `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` |
-| Recommended schedule | every 5–15 minutes |
+| Recommended schedule | every 15 minutes |
 | Success | `200` `{ ok, scanned, expired, saturated }` |
 | Failures | `401` unauthorized · `503` secret/service-role missing · `429` rate limit · `500` batch failure |
 | Idempotency | CAS update `status=active` only; safe to retry |
