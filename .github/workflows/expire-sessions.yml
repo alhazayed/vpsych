@@ -1,0 +1,41 @@
+# External scheduler for passive session expiry (Phase 6).
+#
+# Vercel Hobby rejects vercel.json crons. This workflow is the supported
+# external scheduler once:
+#   1. Phase 4+ expire-sessions route is deployed to production (main), and
+#   2. Repository secret CRON_SECRET matches Vercel production CRON_SECRET.
+#
+# Schedule: every 15 minutes (aligned with ops runbook; not aggressive).
+# Does not assess sessions or create reports.
+
+name: Expire stale sessions
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke expire-sessions cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_URL: ${{ vars.CRON_EXPIRE_SESSIONS_URL || 'https://vpsych.vercel.app/api/cron/expire-sessions' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET repository secret is not configured; skipping."
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/cron-body.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            "$CRON_URL")
+          echo "HTTP $code"
+          # Never print Authorization. Body is counts only.
+          cat /tmp/cron-body.json
+          echo
+          test "$code" = "200"
