@@ -14,7 +14,9 @@ No release-blocking incidents occurred during Phase 7 sequential merges.
 
 ## Conflict protocol
 
-The Phase 7 merge-conflict / failure-handling protocol (mechanical vs security/tenancy/lifecycle) is adopted for any future release work. No Category B–E conflicts were encountered; no `--force` / `--ours` / `--theirs` resolutions were used.
+Full protocol: [`docs/PHASE7_RELEASE_PROTOCOL.md`](./PHASE7_RELEASE_PROTOCOL.md).
+
+Adopted for any future release work. No Category B–E conflicts were encountered during Phase 7; no `--force` / `--ours` / `--theirs` resolutions were used.
 
 ## Data protection
 
