@@ -63,8 +63,35 @@ export async function expireStaleSession(
 }
 
 /**
+ * Expire every timed-out active session visible to the caller.
+ * Platform admins see all sessions (RLS); used on the admin sessions list
+ * so abandoned rooms are not shown as indefinitely "active".
+ * Caps work per call to keep page loads bounded.
+ */
+export async function expireStaleSessionsVisible(
+  supabase: SupabaseClient,
+  now: Date = new Date(),
+  limit = 100,
+): Promise<number> {
+  const { data: rows, error } = await supabase
+    .from("sessions")
+    .select("id, status, started_at, max_duration_sec, ended_at")
+    .eq("status", "active")
+    .order("started_at", { ascending: true })
+    .limit(limit);
+
+  if (error || !rows?.length) return 0;
+
+  let expired = 0;
+  for (const row of rows as ExpirableSession[]) {
+    if (await expireStaleSession(supabase, row, now)) expired += 1;
+  }
+  return expired;
+}
+
+/**
  * Expire every owned active session whose timer has elapsed.
- * Used on the sessions list so abandoned rooms do not linger as "active".
+ * Used on the therapist sessions list so abandoned rooms do not linger as "active".
  */
 export async function expireStaleSessionsForTherapist(
   supabase: SupabaseClient,
