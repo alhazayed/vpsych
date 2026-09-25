@@ -1,8 +1,11 @@
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  buildMessageSignaturePayload,
   buildReportSignaturePayload,
+  buildSignedMessageRpcArgs,
   getReportWriteKey,
+  signSessionMessage,
   signSessionReport,
 } from "./report-sign";
 
@@ -66,5 +69,139 @@ describe("getReportWriteKey", () => {
   it("trims and returns a configured key", () => {
     vi.stubEnv("REPORT_WRITE_KEY", "  secret  ");
     expect(getReportWriteKey()).toBe("secret");
+  });
+});
+
+describe("Phase 8.2 message HMAC", () => {
+  const sessionId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  const key = "message-integrity-test-key";
+
+  it("builds the exact CQG-011 payload (sessionId\\ncontent\\nrole)", () => {
+    expect(
+      buildMessageSignaturePayload({
+        sessionId,
+        content: "Hello patient",
+        role: "assistant",
+      }),
+    ).toBe(`${sessionId}\nHello patient\nassistant`);
+    expect(
+      buildMessageSignaturePayload({
+        sessionId,
+        content: "Session started.",
+        role: "system",
+      }),
+    ).toBe(`${sessionId}\nSession started.\nsystem`);
+  });
+
+  it("signs assistant messages with HMAC-SHA256 hex", () => {
+    const content = "I feel better after that validation.";
+    const expected = createHmac("sha256", key)
+      .update(`${sessionId}\n${content}\nassistant`)
+      .digest("hex");
+    expect(
+      signSessionMessage({ sessionId, content, role: "assistant", key }),
+    ).toBe(expected);
+  });
+
+  it("signs system messages with HMAC-SHA256 hex", () => {
+    const content = "Session started. Speak with the patient avatar.";
+    const expected = createHmac("sha256", key)
+      .update(`${sessionId}\n${content}\nsystem`)
+      .digest("hex");
+    expect(
+      signSessionMessage({ sessionId, content, role: "system", key }),
+    ).toBe(expected);
+  });
+
+  it("rejects signing when key is missing", () => {
+    vi.stubEnv("REPORT_WRITE_KEY", "");
+    expect(() =>
+      signSessionMessage({
+        sessionId,
+        content: "x",
+        role: "assistant",
+      }),
+    ).toThrow(/REPORT_WRITE_KEY/);
+  });
+
+  it("omits p_sig when using service role", () => {
+    const out = buildSignedMessageRpcArgs({
+      sessionId,
+      content: "trusted",
+      role: "assistant",
+      usingServiceRole: true,
+    });
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.args.p_sig).toBeUndefined();
+    expect(out.args.p_content).toBe("trusted");
+  });
+
+  it("attaches p_sig when not using service role", () => {
+    const content = "forged-looking text";
+    const out = buildSignedMessageRpcArgs({
+      sessionId,
+      content,
+      role: "assistant",
+      usingServiceRole: false,
+      key,
+    });
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.args.p_sig).toBe(
+      signSessionMessage({ sessionId, content, role: "assistant", key }),
+    );
+  });
+
+  it("fails closed without service role or REPORT_WRITE_KEY", () => {
+    vi.stubEnv("REPORT_WRITE_KEY", "");
+    const out = buildSignedMessageRpcArgs({
+      sessionId,
+      content: "x",
+      role: "system",
+      usingServiceRole: false,
+    });
+    expect(out.ok).toBe(false);
+  });
+
+  it("invalidates signature when content is modified", () => {
+    const original = signSessionMessage({
+      sessionId,
+      content: "original assistant reply",
+      role: "assistant",
+      key,
+    });
+    const tampered = signSessionMessage({
+      sessionId,
+      content: "TAMPERED assistant reply",
+      role: "assistant",
+      key,
+    });
+    expect(original).not.toBe(tampered);
+  });
+
+  it("invalidates signature when session id is modified", () => {
+    const a = signSessionMessage({
+      sessionId,
+      content: "same",
+      role: "assistant",
+      key,
+    });
+    const b = signSessionMessage({
+      sessionId: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      content: "same",
+      role: "assistant",
+      key,
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it("assistant and system roles produce different signatures for same content", () => {
+    const content = "identical body text";
+    expect(
+      signSessionMessage({ sessionId, content, role: "assistant", key }),
+    ).not.toBe(
+      signSessionMessage({ sessionId, content, role: "system", key }),
+    );
   });
 });

@@ -27,16 +27,32 @@ describe("architecture invariants", () => {
     expect(route).not.toMatch(/aiFailureDetail:/);
   });
 
-  it("session start/message RPCs fall back when service role is unset", () => {
+  it("session start/message RPCs use prepareMessageRpc with HMAC when needed", () => {
     const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
     const message = readFileSync(
       join(root, "app/api/sessions/[id]/message/route.ts"),
       "utf8",
     );
-    expect(start).toMatch(/messageRpcClient/);
-    expect(message).toMatch(/messageRpcClient/);
+    expect(start).toMatch(/prepareMessageRpc/);
+    expect(message).toMatch(/prepareMessageRpc/);
+    expect(message).toMatch(/insert_assistant_message/);
+    expect(start).toMatch(/insert_system_message/);
     expect(start).not.toMatch(/error: "Server misconfigured"/);
     expect(message).not.toMatch(/error: "Server misconfigured"/);
+  });
+
+  it("Phase 8.2 — message HMAC migration restores CQG-011 signatures", () => {
+    const migrations = join(process.cwd(), "supabase/migrations");
+    const files = readdirSync(migrations);
+    const hmac = files.find((f) =>
+      f.endsWith("_phase8_restore_message_hmac.sql"),
+    );
+    expect(hmac).toBeTruthy();
+    const sql = readFileSync(join(migrations, hmac!), "utf8");
+    expect(sql).toMatch(/Invalid message signature/);
+    expect(sql).toMatch(/report_write_key/);
+    expect(sql).toMatch(/extensions\.hmac/);
+    expect(sql).toMatch(/GRANT EXECUTE[\s\S]*authenticated, service_role/);
   });
 
   it("wires Conversation Behaviour Engine into the message route (Mission 7)", () => {

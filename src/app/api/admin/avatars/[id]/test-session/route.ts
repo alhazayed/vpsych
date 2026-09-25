@@ -3,7 +3,7 @@ import { requireApiAdmin } from "@/lib/api-auth";
 import { clientSafeError } from "@/lib/api-errors";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { rateLimit } from "@/lib/rate-limit";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { prepareMessageRpc } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
@@ -175,11 +175,27 @@ export async function POST(request: Request, ctx: Ctx) {
     );
   }
 
-  const writer = messageRpcClient(supabase);
-  const { error: sysErr } = await writer.rpc("insert_system_message", {
-    p_session_id: session.id,
-    p_content: `${ADMIN_TEST_LABEL}. Speak with the patient to verify behavior. Ending will not create a learner assessment.`,
+  const systemContent = `${ADMIN_TEST_LABEL}. Speak with the patient to verify behavior. Ending will not create a learner assessment.`;
+  const prepared = prepareMessageRpc(supabase, {
+    sessionId: session.id,
+    content: systemContent,
+    role: "system",
   });
+  if (!prepared.ok) {
+    console.error("[admin/test-session] system message signing unavailable", {
+      sessionId: session.id,
+    });
+    return NextResponse.json(
+      {
+        error: clientSafeError("Failed to start test session", prepared.error),
+      },
+      { status: 500 },
+    );
+  }
+  const { error: sysErr } = await prepared.client.rpc(
+    "insert_system_message",
+    prepared.args,
+  );
   if (sysErr) {
     console.error("[admin/test-session] system message failed", {
       sessionId: session.id,

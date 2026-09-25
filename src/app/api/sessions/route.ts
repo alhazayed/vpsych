@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { prepareMessageRpc } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -213,11 +213,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const writer = messageRpcClient(supabase);
-  const { error: sysErr } = await writer.rpc("insert_system_message", {
-    p_session_id: session.id,
-    p_content: "Session started. Speak with the patient avatar.",
+  const systemContent = "Session started. Speak with the patient avatar.";
+  const prepared = prepareMessageRpc(supabase, {
+    sessionId: session.id,
+    content: systemContent,
+    role: "system",
   });
+  if (!prepared.ok) {
+    console.error("[sessions] system message signing unavailable", {
+      sessionId: session.id,
+    });
+    return NextResponse.json(
+      { error: clientSafeError("Failed to start session", prepared.error) },
+      { status: 500 },
+    );
+  }
+  const { error: sysErr } = await prepared.client.rpc(
+    "insert_system_message",
+    prepared.args,
+  );
 
   if (sysErr) {
     console.error("[sessions] system message failed", {
