@@ -2,6 +2,11 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logSecurityEvent } from "@/lib/security-audit";
+import {
+  evaluateAdminMfa,
+  isAdminMfaEnforced,
+  type AssuranceSnapshot,
+} from "@/lib/admin-mfa";
 import type { Profile } from "@/lib/types";
 
 export type ApiAuthContext = {
@@ -53,8 +58,25 @@ export async function requireApiUser(
   };
 }
 
+async function readAssurance(
+  supabase: SupabaseClient,
+): Promise<AssuranceSnapshot | null> {
+  try {
+    const { data, error } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error || !data) return null;
+    return {
+      currentLevel: data.currentLevel ?? null,
+      nextLevel: data.nextLevel ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Admin Route Handler guard (JSON 403 + security audit on deny).
+ * When ADMIN MFA is enforced, requires Supabase AAL2 (not UI state).
  */
 export async function requireApiAdmin(
   request?: Request,
@@ -75,6 +97,32 @@ export async function requireApiAdmin(
     return {
       ok: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+
+  const mfa = evaluateAdminMfa({
+    enforced: isAdminMfaEnforced(),
+    assurance: await readAssurance(auth.supabase),
+  });
+  if (!mfa.ok) {
+    await logSecurityEvent({
+      action: opts?.action ?? "admin.access",
+      outcome: "denied",
+      resourceType: opts?.resourceType ?? "api",
+      resourceId: opts?.resourceId ?? null,
+      metadata: {
+        role: auth.profile.role,
+        reason: mfa.reason,
+        currentLevel: mfa.currentLevel,
+      },
+      request,
+    });
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "MFA required", code: "MFA_REQUIRED" },
+        { status: 403 },
+      ),
     };
   }
 

@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { logSecurityEvent } from "@/lib/security-audit";
+import {
+  evaluateAdminMfa,
+  isAdminMfaEnforced,
+} from "@/lib/admin-mfa";
 import type { Profile } from "@/lib/types";
 import { redirect } from "next/navigation";
 
@@ -38,5 +42,34 @@ export async function requireAdmin() {
     });
     redirect("/avatars");
   }
+
+  if (isAdminMfaEnforced()) {
+    let currentLevel: string | null = null;
+    try {
+      const { data } =
+        await ctx.supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      currentLevel = data?.currentLevel ?? null;
+    } catch {
+      currentLevel = null;
+    }
+    const mfa = evaluateAdminMfa({
+      enforced: true,
+      assurance: { currentLevel, nextLevel: null },
+    });
+    if (!mfa.ok) {
+      await logSecurityEvent({
+        action: "admin.access",
+        outcome: "denied",
+        resourceType: "route",
+        metadata: {
+          role: ctx.profile.role,
+          reason: mfa.reason,
+          currentLevel: mfa.currentLevel,
+        },
+      });
+      redirect("/login?mfa=required");
+    }
+  }
+
   return ctx;
 }

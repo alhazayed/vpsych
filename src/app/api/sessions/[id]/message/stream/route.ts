@@ -19,6 +19,7 @@ import {
   progressiveTokens,
 } from "@/lib/realtime";
 import { realtimeMetrics } from "@/lib/realtime/observability";
+import { clientSafeError, clientSafeStreamError } from "@/lib/api-errors";
 import { POST as classicMessagePost } from "../route";
 
 type Params = { params: Promise<{ id: string }> };
@@ -120,10 +121,10 @@ export async function POST(request: Request, ctx: Params) {
             detail: `message_${classicRes.status}`,
           });
           send("error", {
-            message:
-              typeof payload.error === "string"
-                ? payload.error
-                : "Turn failed",
+            message: clientSafeError(
+              "Turn failed",
+              typeof payload.error === "string" ? payload.error : null,
+            ),
             status: classicRes.status,
           });
           controller.close();
@@ -184,9 +185,12 @@ export async function POST(request: Request, ctx: Params) {
         if (abort.aborted) {
           send("interrupted", { reason: "aborted" });
         } else {
+          console.error("[sessions/message/stream] turn failed", {
+            sessionId,
+            error: err instanceof Error ? err.message : String(err),
+          });
           send("error", {
-            message:
-              err instanceof Error ? err.message : "Streaming turn failed",
+            message: clientSafeStreamError(err, "Streaming turn failed"),
           });
         }
         controller.close();

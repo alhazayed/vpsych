@@ -7,6 +7,7 @@ import {
   toClinicalVoiceProfile,
 } from "@/lib/clinical-voice";
 import type { VoiceProfile } from "@/lib/types";
+import { sanitizeDbError } from "@/lib/safe-client-error";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -45,7 +46,7 @@ export async function POST(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
   }
   if (!data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

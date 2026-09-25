@@ -95,6 +95,12 @@ export type EducationCompetencyScore = {
 };
 
 /** Deterministic transcript/session interview evaluation (educational heuristic). */
+export type RiskInquiryStatus =
+  | "DETECTED"
+  | "NOT_DETECTED"
+  | "NOT_APPLICABLE"
+  | "UNCERTAIN";
+
 export type InterviewProcessSignals = {
   open_question_count: number;
   closed_question_count: number;
@@ -107,6 +113,8 @@ export type InterviewProcessSignals = {
   interruption_markers: number;
   leading_question_count: number;
   risk_inquiry_present: boolean;
+  /** Phase 8.3 — structured status; prefers over boolean for scoring gates. */
+  risk_inquiry_status: RiskInquiryStatus;
   mse_probe_present: boolean;
   closure_present: boolean;
   therapist_turn_count: number;
