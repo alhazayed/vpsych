@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient } from "@/lib/supabase/admin";
+import { messageRpcClient, prepareMessageRpc } from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import {
   validatePatientReply,
@@ -228,8 +228,8 @@ export async function POST(request: Request, { params }: Params) {
   // History includes the user message just inserted; assistant count ≈ prior turns.
   const turnIndex = historyRows.filter((m) => m.role === "assistant").length;
 
-  // Prefer service role; fall back to authenticated client. RPC bodies enforce
-  // ownership, active status, and "assistant after user" turn order.
+  // Prefer service role; fall back to authenticated client with HMAC p_sig
+  // (Phase 8.2 / CQG-011). RPC bodies still enforce ownership / turn order.
   const writer = messageRpcClient(supabase);
 
   // Emotion Engine (Mission 2) — best-effort; never blocks the reply path.
@@ -602,13 +602,20 @@ export async function POST(request: Request, { params }: Params) {
     humanizationBehaviors: humanization?.behaviors ?? null,
   });
 
-  const { data: assistantMsg, error: assistantError } = await writer.rpc(
-    "insert_assistant_message",
-    {
-      p_session_id: sessionId,
-      p_content: replyMeta.text,
-    },
-  );
+  const { data: assistantMsg, error: assistantError } = await (async () => {
+    const prepared = prepareMessageRpc(supabase, {
+      sessionId,
+      content: replyMeta.text,
+      role: "assistant",
+    });
+    if (!prepared.ok) {
+      return {
+        data: null,
+        error: { message: prepared.error },
+      };
+    }
+    return prepared.client.rpc("insert_assistant_message", prepared.args);
+  })();
 
   if (assistantError || !assistantMsg) {
     console.error("[sessions/message] assistant message save failed", {
