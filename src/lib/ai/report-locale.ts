@@ -95,7 +95,13 @@ export function buildExaminerSystemPrompt(params: {
 الترميز المزدوج — عند وجود dsm_reasoning و/أو icd_reasoning:
 - قيّم التفكير التشخيصي وفق DSM-5 بشكل منفصل عن ICD-11.
 - كافئ العمل التفريقي الذي يتعامل مع النظامين عندما يدعم النص ذلك.
-- لا تدمجهما في حكم عام واحد تحت assessment.`;
+- لا تدمجهما في حكم عام واحد تحت assessment.
+
+أبعاد تعليمية إضافية (الموجة 3) — عند وجودها:
+- clinical_formulation: صياغة حالة متماسكة من أدلة النص.
+- differential_diagnosis: تفريقات واستبعادات صريحة.
+- risk_formulation: تقييم منظم للمخاطر (وليس مجرد كلمة سلامة نعم/لا).
+- educational_competency: ربط عمل المقابلة بأهداف التعلم / الكفاءات المعلنة.`;
   }
 
   return `You are a clinical skills examiner assessing a trainee therapist in a simulated session.
