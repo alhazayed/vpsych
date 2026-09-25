@@ -14,6 +14,7 @@ import {
 } from "@/lib/education/competency-framework";
 import type {
   InterviewProcessSignals,
+  RiskInquiryStatus,
   SessionEvaluationFinding,
   SessionEvaluationReport,
 } from "@/lib/education/types";
@@ -23,8 +24,50 @@ function clamp(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
+/** English + Arabic risk-inquiry stems (educational heuristic, not clinical validation). */
+const RISK_INQUIRY_RE =
+  /\b(suicid|kill yourself|harm yourself|hurt yourself|ending your life|end your life|safety plan|are you safe|thoughts of (dying|death))\b|انتحار|إيذاء\s*نفس|تؤذي\s*نفس|خطة\s*سلامة|هل\s*أنت\s*بأمان|أفكار\s*(عن\s*)?(الموت|الانتحار)/i;
+
+export type RiskProfileHint = {
+  suicidal_ideation?: string | null;
+  self_harm?: boolean | null;
+  /** When true, risk inquiry is expected regardless of sparse profile fields. */
+  force_applicable?: boolean;
+};
+
+/**
+ * Resolve risk-inquiry applicability from case risk profile.
+ * Absence of SI / self-harm markers → NOT_APPLICABLE (do not auto-critical).
+ * Ambiguous / passive-only without clear teaching need → UNCERTAIN when turns are very short.
+ */
+export function resolveRiskInquiryStatus(opts: {
+  detected: boolean;
+  therapistTurnCount: number;
+  riskProfile?: RiskProfileHint | null;
+}): RiskInquiryStatus {
+  if (opts.detected) return "DETECTED";
+
+  const profile = opts.riskProfile;
+  if (profile) {
+    const si = (profile.suicidal_ideation ?? "").toLowerCase();
+    const hasSi =
+      si.length > 0 &&
+      si !== "none" &&
+      si !== "no" &&
+      si !== "denied";
+    const hasSh = profile.self_harm === true;
+    if (!profile.force_applicable && !hasSi && !hasSh) {
+      return "NOT_APPLICABLE";
+    }
+  }
+
+  if (opts.therapistTurnCount < 3) return "UNCERTAIN";
+  return "NOT_DETECTED";
+}
+
 export function analyzeInterviewProcess(
   messages: Array<{ role: string; content: string }>,
+  opts?: { riskProfile?: RiskProfileHint | null },
 ): InterviewProcessSignals {
   const therapist = messages.filter((m) => m.role === "user");
   let open_question_count = 0;
@@ -80,11 +123,7 @@ export function analyzeInterviewProcess(
     if (/\b(sorry to interrupt|let me stop you|hold on)\b/i.test(lower)) {
       interruption_markers += 1;
     }
-    if (
-      /\b(suicid|kill yourself|harm yourself|hurt yourself|ending your life|end your life|safety plan|are you safe|thoughts of (dying|death))\b/i.test(
-        lower,
-      )
-    ) {
+    if (RISK_INQUIRY_RE.test(t) || RISK_INQUIRY_RE.test(lower)) {
       risk_inquiry_present = true;
     }
     if (
@@ -103,6 +142,12 @@ export function analyzeInterviewProcess(
     }
   }
 
+  const risk_inquiry_status = resolveRiskInquiryStatus({
+    detected: risk_inquiry_present,
+    therapistTurnCount: therapist.length,
+    riskProfile: opts?.riskProfile,
+  });
+
   const n = therapist.length || 1;
   return {
     open_question_count,
@@ -115,7 +160,8 @@ export function analyzeInterviewProcess(
     advice_count,
     interruption_markers,
     leading_question_count,
-    risk_inquiry_present,
+    risk_inquiry_present: risk_inquiry_status === "DETECTED",
+    risk_inquiry_status,
     mse_probe_present,
     closure_present,
     therapist_turn_count: therapist.length,
@@ -129,8 +175,11 @@ export function evaluateSession(input: {
   items: ScoreEntry[];
   messages: Array<{ role: string; content: string }>;
   aceCompetencies?: LearnerCompetency[];
+  riskProfile?: RiskProfileHint | null;
 }): SessionEvaluationReport {
-  const process = analyzeInterviewProcess(input.messages);
+  const process = analyzeInterviewProcess(input.messages, {
+    riskProfile: input.riskProfile,
+  });
   const findings: SessionEvaluationFinding[] = [];
   const missed: string[] = [];
   const strengths: string[] = [];
@@ -176,7 +225,7 @@ export function evaluateSession(input: {
     missed.push("Validation before change / advice");
   }
 
-  if (!process.risk_inquiry_present) {
+  if (process.risk_inquiry_status === "NOT_DETECTED") {
     findings.push({
       id: "missed-risk",
       severity: "critical",
@@ -186,9 +235,19 @@ export function evaluateSession(input: {
       suggestion: "Ask directly about suicidal ideation, plan, intent, and protective factors.",
     });
     missed.push("Risk assessment inquiry");
-  } else {
+  } else if (process.risk_inquiry_status === "DETECTED") {
     strengths.push("Risk inquiry present");
+  } else if (process.risk_inquiry_status === "UNCERTAIN") {
+    findings.push({
+      id: "uncertain-risk",
+      severity: "minor",
+      category: "risk_assessment",
+      title: "Risk inquiry uncertain",
+      evidence: "Too few therapist turns to judge risk screening confidently",
+      suggestion: "Complete a structured risk inquiry when clinically indicated.",
+    });
   }
+  // NOT_APPLICABLE: no critical finding
 
   if (!process.mse_probe_present && process.therapist_turn_count >= 5) {
     findings.push({
@@ -282,7 +341,13 @@ export function evaluateSession(input: {
         1.5,
     ),
     risk: clamp(
-      (process.risk_inquiry_present ? 70 : 25) +
+      (process.risk_inquiry_status === "DETECTED"
+        ? 70
+        : process.risk_inquiry_status === "NOT_APPLICABLE"
+          ? 60
+          : process.risk_inquiry_status === "UNCERTAIN"
+            ? 45
+            : 25) +
         (competency_scores.find((c) => c.id === "risk_assessment")?.score ?? 50) * 0.3,
     ),
     mse: clamp(
