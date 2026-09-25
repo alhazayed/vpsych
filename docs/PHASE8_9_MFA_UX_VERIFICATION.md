@@ -106,6 +106,7 @@ Open redirects blocked via `safeRedirectPath` / `adminMfaReturnPath`.
 
 | Check | Result |
 |-------|--------|
+| GitHub CI (`verify` + Vercel) on `47e9f59` | **SUCCESS** (3/3) |
 | `npm run typecheck` | PASS |
 | `npm run lint` | PASS (0 errors; pre-existing warnings) |
 | `npm test` | PASS — 951 tests |
@@ -113,21 +114,41 @@ Open redirects blocked via `safeRedirectPath` / `adminMfaReturnPath`.
 
 ---
 
+## Live UX verification (local production-mode server)
+
+Ran `next start` with `ADMIN_MFA_REQUIRED=true` against production Supabase Auth (magic-link sessions; no passwords logged).
+
+| Scenario | Result |
+|----------|--------|
+| AAL1 QA admin (`79d996cd…`) → `GET /admin` | **307 → `/auth/mfa?next=/admin`** (challenge UI: title + Verify + code input) |
+| AAL1 Audit Admin (0 factors) → `GET /admin` | **307 → `/auth/mfa` → `/auth/mfa/enroll`** (QR + Confirm; no Avatar bounce) |
+| Authenticated `/login?mfa=required&next=/admin` | **307 → `/auth/mfa` / enroll** (not `/avatars`) |
+| AAL1 `GET /api/admin/analytics` (local) | **403 `MFA_REQUIRED`** |
+| AAL1 `GET /api/admin/analytics` (production) | **403 `MFA_REQUIRED`** |
+| Production `GET /auth/mfa` | **404** (UX not on `main` yet) |
+| Production `/api/health` | **200** |
+| Verified factors census | **1/7** |
+
+Browser demo (Audit Admin enroll bootstrap): confirmed `/admin` and `/login?mfa=required` land on enroll UI; URL never `/avatars`.
+
+---
+
 ## Production verification
 
 | Item | Status |
 |------|--------|
-| MFA challenge usable in production | PENDING deploy of this PR |
-| MFA enrollment usable in production | PENDING deploy |
-| AAL1 API deny / AAL2 allow | Proven in Phase 8.8 (unchanged guards) |
+| MFA challenge usable in production | **PENDING** merge/deploy of PR #242 (`/auth/mfa` still 404 on `vpsych.vercel.app`) |
+| MFA enrollment usable in production | **PENDING** merge/deploy |
+| AAL1 API deny / AAL2 allow | PASS (live prod API; Phase 8.8 + reconfirmed) |
 | Invalid TOTP rejected | Proven in Phase 8.8; UX surfaces safe error |
 | Logout | Client `signOut` on MFA pages → `/login` |
 | Verified admin factors | **1/7** (unchanged — do not auto-enroll remaining six) |
 | P0 HMAC | CLEAR (no change) |
+| Local UX bootstrap (enroll + challenge redirects) | **PASS** |
 
 ### Admin enrollment process (operators)
 
-Each remaining admin should:
+After this PR is on production, each remaining admin should:
 
 1. Sign in at `/login`  
 2. Complete `/auth/mfa/enroll` (or `/auth/mfa` if already enrolled)  
@@ -141,4 +162,4 @@ Do **not** mint factors via service role / SQL.
 
 **CONDITIONAL**
 
-Implementation and automated regression are complete. Mark **CLEAR** only after production deploy proves enroll + challenge UX for a dedicated QA admin without Avatar bounce.
+Implementation, CI, and local production-mode UX verification are complete (Overview no longer bounces to Avatar; enroll/challenge routes work). Mark **CLEAR** only after PR #242 is deployed to production and a QA admin completes enroll or challenge there.
