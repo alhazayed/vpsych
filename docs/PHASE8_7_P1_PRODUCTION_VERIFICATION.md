@@ -1,6 +1,7 @@
 # Phase 8.7 — P1 Production Verification
 
 **Date (UTC):** 2026-09-25T09:37:00Z  
+**Cron verified (UTC):** 2026-09-25T10:19:24Z  
 **Mode:** P1 release remediation (rebase → verify → merge → deploy → verify)  
 **Vocabulary:** `PASS` | `FAIL` | `PARTIAL` | `WAITING` | `CLEAR` | `CONDITIONAL` | `BLOCKED`
 
@@ -8,7 +9,7 @@
 
 ## FINAL STATUS: CONDITIONAL
 
-P1 is **merged and deployed** to production. P0 HMAC remains intact. Production P1 behavioral checks pass for errors, risk, Wave-3 parity, and Next.js. Admin MFA **enforcement code is live** (production default ON), but **no admin has verified MFA factors**, so the live “valid MFA succeeds” path is not proven. Post-deploy `expire-sessions.yml` scheduled run is still **WAITING**.
+P1 is **merged and deployed** to production. P0 HMAC remains intact. Production P1 behavioral checks pass for errors, risk, Wave-3 parity, and Next.js. Post-deploy `expire-sessions.yml` scheduled run on `b627a79` **succeeded** (`HTTP 200`, secret not exposed). Admin MFA **enforcement code is live** (production default ON), but **no admin has verified MFA factors** (`0/7`), so the live “valid MFA succeeds” path is still not proven — criterion 2 remains **PARTIAL**, therefore status stays **CONDITIONAL** (not **CLEAR**).
 
 ---
 
@@ -151,13 +152,17 @@ Fictional session id (marker `phase87_p1_verify`): `84882cdd-74f1-4d32-894c-edca
 | Item | Value |
 |------|-------|
 | Workflow | `expire-sessions.yml` (`*/15`) |
-| Latest scheduled success before this deploy | `2026-09-25T05:13:12Z` run `36097639232` on `dfe118c` |
-| Post-`b627a79` scheduled run | **None yet** at doc timestamp |
+| Pre-deploy latest success | `2026-09-25T05:13:12Z` run `36097639232` on `dfe118c` |
+| Post-`b627a79` scheduled run | **PASS** — run `36122904529` at `2026-09-25T10:14:35Z` |
+| Event | `schedule` |
+| Head SHA | `b627a795da9e991588d08808e8a800981ca64f9a` |
+| Job | `expire` **success** |
+| Production response | `HTTP 200` `{"ok":true,"scanned":1,"expired":0,"saturated":false}` |
+| `CRON_SECRET` exposure | **PASS** — Actions log masks secret as `***`; Authorization header redacted |
+| Health after cron | `GET /api/health` → **200** |
 | Manual cron change | **Not performed** |
 
-**Cron status:** **WAITING FOR SCHEDULED RUN**
-
-Until a successful post-deploy scheduled run is observed, Phase 8.7 cannot be **CLEAR**.
+**Cron status:** **PASS**
 
 ---
 
@@ -165,7 +170,7 @@ Until a successful post-deploy scheduled run is observed, Phase 8.7 cannot be **
 
 1. **Admin MFA enrollment gap** — enforcement is ON in production by default, but **zero** verified MFA factors exist for admin profiles. Admins must enroll TOTP (Supabase Auth MFA) before AAL2 sessions can succeed. Until then, admin UI/API correctly deny with `MFA_REQUIRED` once an authenticated admin session is presented at AAL1.
 2. **Live AAL2 success path** — not proven end-to-end in this run (no enrolled factors / no admin JWT exercise).
-3. **Cron post-deploy** — still waiting; prior overnight runs had failures before the 05:13 success on older SHA.
+3. **Cron** — first post-deploy scheduled run **PASS** (see §6). Ongoing schedule health remains an ops watch item given prior overnight failures on older SHAs.
 4. **Risk heuristic** — bilingual stems remain formative / incomplete by nature; not clinical validation.
 5. **Scores** — competency scores remain unvalidated (product limitation unchanged).
 
@@ -176,19 +181,18 @@ Until a successful post-deploy scheduled run is observed, Phase 8.7 cannot be **
 | Criterion | Status |
 |-----------|--------|
 | 1. P1 is deployed | **PASS** (`b627a79` / `dpl_89HSgDz9RA8KuL6Gw7XW2pbw5A1G`) |
-| 2. Production P1 verification passes | **PARTIAL** (MFA live AAL2 success not proven; other P1 items PASS) |
+| 2. Production P1 verification passes | **PARTIAL** (MFA live AAL2 success not proven — `0/7` admins with verified factors; other P1 items PASS) |
 | 3. P0 remains intact | **PASS** |
-| 4. First post-deployment cron run succeeds | **WAITING** |
+| 4. First post-deployment cron run succeeds | **PASS** (run `36122904529`) |
 
 ### FINAL STATUS: **CONDITIONAL**
 
-Not **CLEAR** (cron waiting + MFA enrollment residual).  
-Not **BLOCKED** (no P0 regression; P1 code is live and core P1 checks pass).
+Not **CLEAR** (Admin MFA enrollment / live AAL2 success still open).  
+Not **BLOCKED** (no P0 regression; P1 deployed; cron green).
 
 ---
 
 ## 9. Follow-up to reach CLEAR
 
 1. Enroll verified MFA factors for at least one production admin; confirm `/api/admin/*` returns success at AAL2 and `403 MFA_REQUIRED` at AAL1.
-2. Observe next successful `expire-sessions.yml` **schedule** run after `b627a79`; confirm HTTP success body without leaking `CRON_SECRET`; re-check `/api/health`.
-3. Update this document’s cron section and promote status to **CLEAR** when both are done.
+2. Re-verify criterion 2 as **PASS**, then promote this document’s final status to **CLEAR**.
