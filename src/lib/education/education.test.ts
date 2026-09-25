@@ -149,10 +149,39 @@ describe("session evaluation", () => {
         { role: "assistant", content: "Maybe." },
         { role: "user", content: "Just try harder." },
       ],
+      riskProfile: { suicidal_ideation: "passive", self_harm: false },
     });
     expect(report.findings.some((f) => f.id === "missed-risk")).toBe(true);
     expect(report.missed_opportunities).toContain("Risk assessment inquiry");
     expect(report.coverage.risk).toBeLessThan(50);
+  });
+
+  it("detects Arabic risk inquiry stems", () => {
+    const process = analyzeInterviewProcess([
+      { role: "user", content: "هل راودتك أفكار عن الانتحار؟" },
+      { role: "assistant", content: "أحياناً." },
+    ]);
+    expect(process.risk_inquiry_status).toBe("DETECTED");
+    expect(process.risk_inquiry_present).toBe(true);
+  });
+
+  it("does not treat absent risk inquiry as critical when NOT_APPLICABLE", () => {
+    const report = evaluateSession({
+      sessionId: "s-na",
+      overall: 70,
+      items: SAMPLE_ITEMS,
+      messages: [
+        { role: "user", content: "How has your sleep been this week?" },
+        { role: "assistant", content: "Okay." },
+        { role: "user", content: "What helps you wind down?" },
+        { role: "assistant", content: "Tea." },
+        { role: "user", content: "Tell me more about work stress." },
+        { role: "assistant", content: "Busy." },
+      ],
+      riskProfile: { suicidal_ideation: "none", self_harm: false },
+    });
+    expect(report.findings.some((f) => f.id === "missed-risk")).toBe(false);
+    expect(report.process.risk_inquiry_status).toBe("NOT_APPLICABLE");
   });
 });
 

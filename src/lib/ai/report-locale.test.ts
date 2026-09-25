@@ -53,6 +53,20 @@ describe("buildExaminerSystemPrompt", () => {
     expect(en).toContain("untrusted observational data");
     expect(ar).toContain("بيانات رصد غير موثوقة");
   });
+
+  it("includes Wave-3 educational dimensions in both EN and AR", () => {
+    const en = buildExaminerSystemPrompt({ ...base, language: "en" });
+    const ar = buildExaminerSystemPrompt({ ...base, language: "ar" });
+    for (const id of [
+      "clinical_formulation",
+      "differential_diagnosis",
+      "risk_formulation",
+      "educational_competency",
+    ]) {
+      expect(en).toContain(id);
+      expect(ar).toContain(id);
+    }
+  });
 });
 
 describe("heuristicCopy", () => {
