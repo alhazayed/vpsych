@@ -6,6 +6,10 @@ import {
   LOCALE_COOKIE,
   type AppLocale,
 } from "@/i18n/config";
+import {
+  adminMfaChallengeHref,
+  isAdminMfaBootstrapPath,
+} from "@/lib/admin-mfa";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 function applyLocaleCookie(
@@ -53,7 +57,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  // Propagate pathname so requireAdmin can preserve returnTo for MFA.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", path);
+
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +77,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
@@ -82,8 +94,8 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage =
     path.startsWith("/login") || path.startsWith("/signup");
-  // Authenticated users on /auth/reset-password must stay there to set a
-  // password; do not treat it as an auth page bounce target.
+  // Authenticated users on /auth/reset-password and /auth/mfa* must stay
+  // there; do not treat those as auth-page bounce targets.
   const isApi = path.startsWith("/api/");
   const isPublic = isPublicPath(path);
 
@@ -100,7 +112,27 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // MFA bootstrap requires a session — send anonymous users to login.
+  if (!user && isAdminMfaBootstrapPath(path)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+
   if (user && isAuthPage) {
+    // Legacy deny redirect from requireAdmin: /login?mfa=required must not
+    // bounce authenticated admins to /avatars — send them to MFA challenge.
+    if (request.nextUrl.searchParams.get("mfa") === "required") {
+      const next = safeRedirectPath(
+        request.nextUrl.searchParams.get("next"),
+        "/admin",
+      );
+      return NextResponse.redirect(
+        new URL(adminMfaChallengeHref(next), request.url),
+      );
+    }
     const next = safeRedirectPath(request.nextUrl.searchParams.get("next"));
     return NextResponse.redirect(new URL(next, request.url));
   }

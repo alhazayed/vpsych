@@ -363,6 +363,25 @@
       "updateFailed": "Could not update password. Try again.",
       "backToLogin": "Back to sign in"
     },
+    "mfa": {
+      "platformName": "VPsych Clinical Assessment Platform",
+      "challengeTitle": "Two-Factor Authentication",
+      "challengeBody": "Enter the six-digit code from your authenticator app to continue to the admin console.",
+      "enrollTitle": "Set up two-factor authentication",
+      "enrollBody": "Scan the QR code with your authenticator app, then enter the six-digit code to finish enrollment.",
+      "preparing": "Preparing authenticator setup…",
+      "enrollFailed": "Could not start MFA enrollment. Sign out and try again.",
+      "qrAlt": "Authenticator QR code",
+      "manualSecretHint": "Or enter this key manually in your authenticator app:",
+      "codeLabel": "Authentication code",
+      "verify": "Verify",
+      "confirmEnroll": "Confirm and continue",
+      "verifying": "Verifying…",
+      "invalidFormat": "Enter a six-digit code.",
+      "invalidCode": "That code is invalid. Try again.",
+      "challengeFailed": "Could not start verification. Try again.",
+      "signOut": "Sign out"
+    },
     "signup": {
       "nav": {
         "solutions": "Solutions",

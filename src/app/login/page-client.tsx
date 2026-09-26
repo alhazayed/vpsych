@@ -7,6 +7,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/client";
+import {
+  isAdminMfaEnforced,
+  resolveAdminPostLoginPath,
+} from "@/lib/admin-mfa";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export default function LoginPage() {
@@ -43,13 +47,44 @@ export default function LoginPage() {
       email,
       password,
     });
-    setLoading(false);
     if (signError) {
+      setLoading(false);
       setError(signError.message);
       return;
     }
     void remember;
-    router.push(next);
+
+    // Admins under MFA enforcement go to enroll/challenge before /admin.
+    let destination = next;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        const { data: aal } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        destination = resolveAdminPostLoginPath({
+          enforced: isAdminMfaEnforced(),
+          isAdmin: profile?.role === "admin",
+          currentLevel: aal?.currentLevel ?? null,
+          verifiedTotpFactors: (factors?.totp ?? [])
+            .filter((f) => f.status === "verified")
+            .map((f) => ({ id: f.id, status: f.status })),
+          intendedNext: next,
+        });
+      }
+    } catch {
+      destination = next;
+    }
+
+    setLoading(false);
+    router.push(destination);
     router.refresh();
   }
 

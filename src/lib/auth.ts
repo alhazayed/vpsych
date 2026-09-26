@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { logSecurityEvent } from "@/lib/security-audit";
 import {
+  adminMfaChallengeHref,
   evaluateAdminMfa,
   isAdminMfaEnforced,
 } from "@/lib/admin-mfa";
 import type { Profile } from "@/lib/types";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function requireUser() {
@@ -29,6 +31,33 @@ export async function requireProfile() {
   }
 
   return { supabase, user, profile: profile as Profile };
+}
+
+/**
+ * Authenticated admin identity without AAL2 — for MFA bootstrap pages only.
+ * Protected admin operations must continue to use requireAdmin().
+ */
+export async function requireAdminIdentity() {
+  const ctx = await requireProfile();
+  if (ctx.profile.role !== "admin") {
+    await logSecurityEvent({
+      action: "admin.access",
+      outcome: "denied",
+      resourceType: "route",
+      metadata: { role: ctx.profile.role, reason: "not_admin" },
+    });
+    redirect("/avatars");
+  }
+  return ctx;
+}
+
+async function pathForMfaRedirect(): Promise<string> {
+  const h = await headers();
+  const fromHeader = h.get("x-pathname");
+  if (fromHeader && fromHeader.startsWith("/")) {
+    return fromHeader;
+  }
+  return "/admin";
 }
 
 export async function requireAdmin() {
@@ -67,7 +96,9 @@ export async function requireAdmin() {
           currentLevel: mfa.currentLevel,
         },
       });
-      redirect("/login?mfa=required");
+      // Send AAL1 admins to the in-app MFA bootstrap — never bounce via
+      // /login (middleware would redirect authenticated users to /avatars).
+      redirect(adminMfaChallengeHref(await pathForMfaRedirect()));
     }
   }
 

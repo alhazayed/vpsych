@@ -1202,3 +1202,39 @@ describe("F-FIND-2 — item discrimination is a corrected item-total correlation
     expect(src).toMatch(/restScores/);
   });
 });
+
+describe("Phase 8.9 — admin MFA bootstrap must not require AAL2", () => {
+  it("requireAdmin sends MFA denials to /auth/mfa, not /login?mfa=required", () => {
+    const auth = readFileSync(join(root, "lib/auth.ts"), "utf8");
+    expect(auth).toMatch(/adminMfaChallengeHref/);
+    expect(auth).not.toMatch(/redirect\("\/login\?mfa=required"\)/);
+    expect(auth).toMatch(/requireAdminIdentity/);
+  });
+
+  it("MFA challenge and enroll pages use requireAdminIdentity (not requireAdmin)", () => {
+    const challenge = readFileSync(join(root, "app/auth/mfa/page.tsx"), "utf8");
+    const enroll = readFileSync(
+      join(root, "app/auth/mfa/enroll/page.tsx"),
+      "utf8",
+    );
+    expect(challenge).toMatch(/requireAdminIdentity/);
+    expect(enroll).toMatch(/requireAdminIdentity/);
+    expect(challenge).not.toMatch(/requireAdmin\(/);
+    expect(enroll).not.toMatch(/requireAdmin\(/);
+  });
+
+  it("enroll client never console.logs TOTP secret or QR payload", () => {
+    const enrollClient = readFileSync(
+      join(root, "app/auth/mfa/enroll/page-client.tsx"),
+      "utf8",
+    );
+    expect(enrollClient).not.toMatch(/console\.(log|debug|info|warn|error)\(/);
+  });
+
+  it("middleware remaps legacy /login?mfa=required to MFA challenge", () => {
+    const mw = readFileSync(join(root, "lib/supabase/middleware.ts"), "utf8");
+    expect(mw).toMatch(/mfa===\"required\"|mfa\"\) === \"required\"/);
+    expect(mw).toMatch(/adminMfaChallengeHref/);
+    expect(mw).toMatch(/isAdminMfaBootstrapPath/);
+  });
+});
