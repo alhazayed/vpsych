@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -95,32 +95,11 @@ export function VirtualPatientDetail({
   };
 }) {
   const [tab, setTab] = useState<TabId>("overview");
-  const [readiness, setReadiness] = useState<CaseReadinessResult | null>(
-    initialReadiness,
-  );
+  // Server-authoritative: page.tsx computes readiness; router.refresh() after
+  // lifecycle actions reloads the prop. No client-side authz mirror.
+  const readiness = initialReadiness;
   const locales = useMemo(() => listAvailableLocales(avatar), [avatar]);
   const lifecycleStatus = readLifecycleFromRow(avatar);
-
-  const refreshReadiness = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/admin/avatars/${avatar.id}/readiness`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { readiness?: CaseReadinessResult };
-      if (data.readiness) setReadiness(data.readiness);
-    } catch {
-      /* keep last known readiness */
-    }
-  }, [avatar.id]);
-
-  useEffect(() => {
-    setReadiness(initialReadiness);
-  }, [initialReadiness]);
-
-  useEffect(() => {
-    if (!initialReadiness) {
-      void refreshReadiness();
-    }
-  }, [initialReadiness, refreshReadiness]);
 
   const statusLabel = (status: VirtualPatientLifecycleStatus): string => {
     switch (status) {
