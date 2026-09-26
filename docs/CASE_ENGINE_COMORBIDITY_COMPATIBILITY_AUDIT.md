@@ -1,8 +1,9 @@
 # Case Engine Comorbidity Compatibility Audit
 
-**Status:** CONDITIONAL (UX + API guards shipped; clinical matrix sync deferred)  
-**Branch:** `cursor/case-engine-comorbidity-compat-fc9c`  
-**Observed failure:** Preview Generator `comorbidity_unlisted` for `bipolar-mania` + `complex-ptsd`
+**Status:** CLEAR (post-merge production verification 2026-09-26)  
+**Merged PR:** [#245](https://github.com/alhazayed/vpsych/pull/245) → `main` @ `7fd82027cffa9eb56d20fd07786c7fe882e3c57e`  
+**Production deploy:** `dpl_68UoKkbsUWCZ9usUK5gqwoTpTxGf` (READY)  
+**Observed failure (pre-fix):** Preview Generator `comorbidity_unlisted` for `bipolar-mania` + `complex-ptsd`
 
 ---
 
@@ -159,11 +160,39 @@ At minimum (requested + related):
 
 ---
 
-## 8. Final status
+## 8. Post-merge production verification (2026-09-26)
 
-**CONDITIONAL**
+Evidence: `/opt/cursor/artifacts/pr245-prod-verify-evidence.json`  
+Host: `https://vpsych.vercel.app` (Playwright + Vercel share; identity classes `qa_admin` / `qa_therapist` only)
 
-- CLEAR for: reported UX failure path, API rejection, help copy, regression tests, no invented clinical rules.
-- CONDITIONAL for: migration↔builtin matrix drift (§6.3) left for a dedicated authoring/sync PR; DB-only disorders still appear in the disorders catalog list (not in Preview primary select after filter).
+| Check | Result |
+|---|---|
+| Production commit | **7fd8202** (`dpl_68UoKkbsUWCZ9usUK5gqwoTpTxGf`, READY) |
+| `GET /api/health` | **200** `{ ok: true, service: "vpsych", version: "1.0.0-rc.1", certId: "VPSYCH-1.0-RC1-STAGE12" }` |
+| Logged out `/admin/cases` | → `/login?next=%2Fadmin%2Fcases`; preview API **401** |
+| Therapist preview / analytics | **403 Forbidden** |
+| Admin AAL1 preview / analytics | **403** `MFA_REQUIRED`; `/admin/cases` → `/auth/mfa` |
+| Admin AAL2 analytics | **200**; MFA challenge completed; `/admin/cases` accessible |
+| Supported pair | `mdd-recurrent-moderate` + `gad-with-panic` → preview **200** + snapshot; UI option present; Preview enabled; JSON rendered; **no** `comorbidity_unlisted` |
+| Unsupported UI | `complex-ptsd` **not** offered as valid comorbid for bipolar; switching primary preserves prior comorbid → **Requires case authoring**; Preview disabled; **no** raw `comorbidity_unlisted` JSON error |
+| Unsupported API bypass | `bipolar-mania` + `complex-ptsd` → **400** `comorbidity_unlisted` + structured `issues` |
+| Unknown comorbidity slug | **400** `unknown_disorder` (no silent drop) |
+| Orphan / reserved primary (`social-anxiety`) | **400** `unknown_disorder` |
+| Bipolar primary-only | preview **200** + snapshot |
+| Create Draft | case-builder create **200**; `lifecycle=draft`; `is_active=false` (`casey-park-muifpsih-psnx`) |
+| Comorbidity ContextualHelp | EN help control present; text includes authored-scenario explanation |
+| MFA / HMAC / RLS / auth / rate limit / audit | **unchanged** (no #245 edits to those paths); `admin-mfa` + `report-sign` + `supabase/admin` + `comorbidity-compat` unit suites **pass** |
+| `npm test` | **985** passed / 105 files |
+| `npm run lint` | **0 errors** (13 pre-existing warnings) |
+| `npm run typecheck` | **pass** |
+| `npm run build` | **pass** |
 
-Do not merge clinical matrix expansions without explicit authoring review.
+Classification of `bipolar-mania` + `complex-ptsd` remains **NEEDS AUTHORING** (no invented clinical rule).
+
+Future (non-blocking): migration↔builtin matrix drift (§6.3) for a dedicated authoring/sync PR.
+
+## 9. Final status
+
+**CLEAR**
+
+Do not invent clinical case content. Do not auto-sync migration drift without authoring review.
