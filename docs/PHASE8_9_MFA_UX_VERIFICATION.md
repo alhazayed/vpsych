@@ -1,8 +1,10 @@
 # Phase 8.9 — Admin MFA UX & Bootstrap Verification
 
-**Status:** CONDITIONAL (implementation complete; live production UX verification pending deploy)
-
-**Date:** 2026-09-25
+**Status:** CLEAR (production verified 2026-09-26)  
+**Date:** 2026-09-25 (implementation) / 2026-09-26 (production release)  
+**Release record:** `docs/PHASE8_9_PRODUCTION_RELEASE.md`  
+**Production commit:** `db7c16b0333485cc6f3ebe5904bbef7cdcce2f90`  
+**Deployment:** `dpl_GzX1uVxRs6udXvXa2XMuqGNbTgny`
 
 ## 8.8A diagnostic (read-only) — root cause
 
@@ -26,8 +28,8 @@ AAL1 admins denied by `requireAdmin()` were redirected to `/login?mfa=required`.
 | A′. Admin Virtual Patients | `/admin/avatars` |
 | B. Admin Overview / Dashboard | `/admin` |
 | C. Admin Dashboard (same as Overview) | `/admin` |
-| D. MFA enrollment | **MISSING pre-8.9** → now `/auth/mfa/enroll` |
-| E. MFA verification / challenge | **MISSING pre-8.9** → now `/auth/mfa` |
+| D. MFA enrollment | `/auth/mfa/enroll` |
+| E. MFA verification / challenge | `/auth/mfa` |
 | F. Login | `/login` |
 | G. Auth callback | `/auth/callback` |
 
@@ -41,11 +43,11 @@ Intentional post-login fallback (`/avatars`) was **unintentionally** reused as t
 
 ### MFA ENROLLMENT ROUTE (pre-8.9)
 
-**MISSING MFA BOOTSTRAP ROUTE** — enforcement only (Phase 8.3 / docs residual risk).
+**MISSING MFA BOOTSTRAP ROUTE** — fixed in Phase 8.9.
 
 ### BOOTSTRAP DEADLOCK
 
-**YES** — all `/admin/*` pages call `requireAdmin()` (AAL2), while enrollment UI did not exist and the only MFA redirect was eaten by middleware.
+**YES (pre-8.9)** — resolved by AAL1-safe `/auth/mfa` + `/auth/mfa/enroll` and MFA deny → challenge URL (not `/login`).
 
 ---
 
@@ -88,67 +90,53 @@ Open redirects blocked via `safeRedirectPath` / `adminMfaReturnPath`.
 
 ---
 
-## Security checks (design)
+## Security checks
 
 | Check | Result |
 |-------|--------|
-| AAL1 blocked from protected admin APIs | Unchanged (`requireApiAdmin` + `MFA_REQUIRED`) |
-| AAL2 allowed | Unchanged |
+| AAL1 blocked from protected admin APIs | **PASS** (live prod 403 `MFA_REQUIRED`) |
+| AAL2 allowed | **PASS** (live prod 200) |
 | Enrollment does not require AAL2 | `requireAdminIdentity` only |
 | Non-admin cannot use MFA bootstrap | Redirect `/avatars` |
 | Client role not sole auth | Server `profiles.role` + Supabase session |
 | Secrets not logged | Architecture test: no `console.*` in enroll client |
-| HMAC / Phase 8 P0 | Untouched |
+| HMAC / Phase 8 P0 | **PASS** (live forgery rejects + legitimate insert) |
 
 ---
 
-## Automated regression (this branch)
+## Automated regression
 
 | Check | Result |
 |-------|--------|
-| GitHub CI (`verify` + Vercel) on `47e9f59` | **SUCCESS** (3/3) |
-| `npm run typecheck` | PASS |
-| `npm run lint` | PASS (0 errors; pre-existing warnings) |
-| `npm test` | PASS — 951 tests |
-| `npm run build` | PASS — emits `/auth/mfa`, `/auth/mfa/enroll` |
+| GitHub CI on PR tip / merge | SUCCESS |
+| `npm test` (post-deploy) | PASS — 955 tests |
+| `npm run lint` | PASS — 0 errors |
+| `npm run build` | PASS — `/auth/mfa`, `/auth/mfa/enroll` |
 
 ---
 
-## Live UX verification (local production-mode server)
-
-Ran `next start` with `ADMIN_MFA_REQUIRED=true` against production Supabase Auth (magic-link sessions; no passwords logged).
-
-| Scenario | Result |
-|----------|--------|
-| AAL1 QA admin (`79d996cd…`) → `GET /admin` | **307 → `/auth/mfa?next=/admin`** (challenge UI: title + Verify + code input) |
-| AAL1 Audit Admin (0 factors) → `GET /admin` | **307 → `/auth/mfa` → `/auth/mfa/enroll`** (QR + Confirm; no Avatar bounce) |
-| Authenticated `/login?mfa=required&next=/admin` | **307 → `/auth/mfa` / enroll** (not `/avatars`) |
-| AAL1 `GET /api/admin/analytics` (local) | **403 `MFA_REQUIRED`** |
-| AAL1 `GET /api/admin/analytics` (production) | **403 `MFA_REQUIRED`** |
-| Production `GET /auth/mfa` | **404** (UX not on `main` yet) |
-| Production `/api/health` | **200** |
-| Verified factors census | **1/7** |
-
-Browser demo (Audit Admin enroll bootstrap): confirmed `/admin` and `/login?mfa=required` land on enroll UI; URL never `/avatars`.
-
----
-
-## Production verification
+## Production verification (2026-09-26)
 
 | Item | Status |
 |------|--------|
-| MFA challenge usable in production | **PENDING** merge/deploy of PR #242 (`/auth/mfa` still 404 on `vpsych.vercel.app`) |
-| MFA enrollment usable in production | **PENDING** merge/deploy |
-| AAL1 API deny / AAL2 allow | PASS (live prod API; Phase 8.8 + reconfirmed) |
-| Invalid TOTP rejected | Proven in Phase 8.8; UX surfaces safe error |
-| Logout | Client `signOut` on MFA pages → `/login` |
-| Verified admin factors | **1/7** (unchanged — do not auto-enroll remaining six) |
-| P0 HMAC | CLEAR (no change) |
-| Local UX bootstrap (enroll + challenge redirects) | **PASS** |
+| PR #242 merged | **PASS** → `db7c16b` |
+| Vercel production READY | **PASS** `dpl_GzX1uVxRs6udXvXa2XMuqGNbTgny` |
+| `/api/health` | **200** |
+| `/auth/mfa` no longer 404 | **PASS** (307 → login when unauthenticated) |
+| MFA enrollment in production | **PASS** (Audit Admin 0→1 verified factor) |
+| AAL2 after enroll | **PASS** |
+| Challenge after re-login | **PASS** → `/auth/mfa` (not `/avatars`) |
+| Invalid TOTP | **REJECTED** (AAL1 retained) |
+| AAL1 API deny | **403 MFA_REQUIRED** |
+| AAL2 API allow | **200** |
+| Logout | **401** |
+| Verified admin factors | **2/7** |
+| P0 HMAC | **CLEAR** |
+| Cron `expire-sessions` | Last 5 runs success (no code change) |
 
 ### Admin enrollment process (operators)
 
-After this PR is on production, each remaining admin should:
+Each remaining admin (5/7):
 
 1. Sign in at `/login`  
 2. Complete `/auth/mfa/enroll` (or `/auth/mfa` if already enrolled)  
@@ -160,6 +148,4 @@ Do **not** mint factors via service role / SQL.
 
 ## FINAL STATUS
 
-**CONDITIONAL**
-
-Implementation, CI, and local production-mode UX verification are complete (Overview no longer bounces to Avatar; enroll/challenge routes work). Mark **CLEAR** only after PR #242 is deployed to production and a QA admin completes enroll or challenge there.
+**CLEAR**
