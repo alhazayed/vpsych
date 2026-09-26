@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ContextualHelp } from "@/components/admin/help/ContextualHelp";
 import {
@@ -946,12 +947,12 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               {busy === "create" ? t("creating") : t("createTrainingPatient")}
             </button>
             {createdId ? (
-              <a
+              <Link
                 className="btn-secondary inline-flex"
                 href={`/admin/avatars/${createdId}`}
               >
                 {t("openDetail")}
-              </a>
+              </Link>
             ) : null}
           </section>
         )}
@@ -989,9 +990,9 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
           >
             {t("saveDraft")}
           </button>
-          <a href="/admin/avatars" className="btn-secondary">
+          <Link href="/admin/avatars" className="btn-secondary">
             {t("cancel")}
-          </a>
+          </Link>
         </div>
       </div>
     </div>
