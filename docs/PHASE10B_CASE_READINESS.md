@@ -2,11 +2,10 @@
 
 **Phase:** 10B  
 **Date (UTC):** 2026-09-26  
-**Baseline:** `main` (Phase 10A audit merged)  
-**Branch:** `cursor/phase10b-case-readiness-fc9c`  
-**PR:** [#248](https://github.com/alhazayed/vpsych/pull/248) — **OPEN / UNMERGED**  
-**Feature tip:** `551a765f73f8f59058267094efcea0615a16d089`  
-**Verification status:** **CONDITIONAL** (preview + local AAL2 verified; production alias still on Phase 10A)
+**Baseline:** `main`  
+**PR:** [#248](https://github.com/alhazayed/vpsych/pull/248) — **MERGED**  
+**Merge commit:** `8ea204e9ea33a34fde6c2cacee76c5c319b8d6c0`  
+**Production verification status:** **CLEAR**
 
 ---
 
@@ -190,22 +189,24 @@ Also run existing MFA/HMAC regression suites and full CI gates.
 
 ---
 
-## Production verification (2026-09-26)
+## Production verification (final — 2026-09-26)
 
-**Decision: CONDITIONAL**  
-PR #248 is **not merged**. Production alias still runs Phase 10A. Phase 10B behavior was verified on the READY preview + local `next start` of tip `551a765` against production Supabase (same pattern as Phase 9).
+**Decision: CLEAR**  
+Host: `https://vpsych.vercel.app`  
+All probes below hit production (`x-vercel-id` recorded in evidence). Earlier CONDITIONAL record (pre-merge) is superseded.
 
 ### 1. Deployment
 
-| Surface | Deployment ID | Commit | State | `/api/health` |
-|---|---|---|---|---|
-| **Production** `vpsych.vercel.app` | `dpl_32qLZ6GghiRUrkkrnjS5CvfsdkK7` | `ac17e717b628848a5498dcddc8ea3aaca051ea28` (PR #247 / Phase 10A) | READY | **200** `{ ok: true, service: "vpsych", version: "1.0.0-rc.1", certId: "VPSYCH-1.0-RC1-STAGE12" }` |
-| **Preview** (PR #248) | `dpl_CLePz1zJ3fgnX7NJQLxqahbSa9bG` | `551a765f73f8f59058267094efcea0615a16d089` | READY | **200** same payload |
-| Local verify host | `127.0.0.1:3010` (`next start`, tip `551a765`) | `551a765` | READY | **200** |
+| Field | Value |
+|---|---|
+| Deployment ID | `dpl_Ezpst552MBW9ETDFp1TLwnA5z2GR` |
+| State | **READY** |
+| Production commit | `8ea204e9ea33a34fde6c2cacee76c5c319b8d6c0` |
+| Subject | Merge pull request **#248** — Phase 10B Case Readiness |
+| Alias | `vpsych.vercel.app` |
+| `/api/health` | **200** `{ ok: true, service: "vpsych", version: "1.0.0-rc.1", certId: "VPSYCH-1.0-RC1-STAGE12" }` |
 
-Production does **not** yet serve the Phase 10B merge commit. Logged-out `GET /api/admin/avatars/…/readiness` on production returns **401** via the admin middleware gate (route handler itself lands only after merge).
-
-### 2. Authorization matrix (local tip = Phase 10B binary)
+### 2. Authorization matrix (production)
 
 | Identity | `GET …/readiness` | Result |
 |---|---|---|
@@ -214,88 +215,76 @@ Production does **not** yet serve the Phase 10B merge commit. Logged-out `GET /a
 | Admin AAL1 | 403 `MFA_REQUIRED` | **PASS** |
 | Admin AAL2 | 200 + readiness payload | **PASS** |
 
-Readiness is not a client authorization bypass — publish still requires server-side `publishVirtualPatient` gates.
+### 3. Readiness API (production AAL2)
 
-### 3. Readiness API samples (AAL2)
-
-| Lifecycle sample | Summary | Notes |
+| Lifecycle | Summary | Notes |
 |---|---|---|
-| Draft `casey-park-muifpsih-psnx` | `NOT READY TO PUBLISH` | Blockers include `personality_ar_stub` + voice; statuses ∈ {COMPLETE, WARNING, BLOCKED}; no internal leak |
-| Testing `imad` | `NOT READY TO PUBLISH` | Symptoms **BLOCKED** (“At least one symptom is required.”) |
-| Published `jordan-hale` | `PUBLISHED` | `readyToPublish: false` |
-| Archived | — | **No archived row in corpus at verify time** (unit tests cover ARCHIVED summary) |
+| Draft | `NOT READY TO PUBLISH` | Statuses ∈ {COMPLETE, WARNING, BLOCKED}; no internal leak |
+| Testing | `NOT READY TO PUBLISH` | Includes **BLOCKED** clinical sections |
+| Published | `PUBLISHED` | `readyToPublish: false` |
+| Archived | — | No archived corpus row; unit tests cover ARCHIVED |
 
-### 4. Guided Builder ↔ Detail agreement
+### 4. Guided Builder ↔ Detail parity (production)
 
-Created fictional draft via Guided create API (`phase10b-verify-muiisw4k` / `0f0c46e7-…`):
+Created fictional draft `phase10b-prod-muik2a5i` (`4ad06d1c-…`):
 
 | Check | Result |
 |---|---|
 | Create | **200**, lifecycle `draft`, `is_active: false` |
-| AR display name | `… (مسودة عربية)` |
-| Double `GET /readiness` | **identical** payloads (`readinessAgree: true`) |
-| `arabicAuthorship` | `stub` |
-| Issue codes | includes `personality_ar_stub` |
-| Arabic section | **BLOCKED** — “Arabic authoring is incomplete (draft stub).” |
-| `readyToPublish` | `false` |
+| Double `GET /readiness` | **identical** |
+| Detail UI Case Readiness panel | **renders** (`#case-readiness-heading` / `#case-readiness-panel`) |
+| UI shows | NOT READY TO PUBLISH; Arabic **Blocked** (draft stub) |
 
-Same endpoint powers Guided end + Detail — one authoritative result.
-
-### 5. Arabic boundary + publish gate
+### 5. Arabic boundary + publish gate (production)
 
 | Check | Result |
 |---|---|
-| EN personality present / AR stub | **PASS** (`مسودة عربية`) |
-| `personality_ar_stub` on readiness | **PASS** |
-| `POST …/publish` with stub | **400** with `personality_ar_stub` (server-side) |
-| EN completion auto-completes AR | **not observed** |
+| AR name contains `مسودة عربية` | **PASS** |
+| `personality_ar_stub` | **PASS** |
+| Arabic section status | **BLOCKED** |
+| `POST …/publish` | **400** codes include `personality_ar_stub` |
+| EN auto-completes AR | **not observed** |
 
-### 6. Lifecycle semantics
+### 6. Lifecycle
 
-Draft / testing / published badges and summaries observed as above. Transition graph not altered. No archived corpus row for live badge check; pure lifecycle helpers + readiness unit tests remain green.
+Draft / testing / published summaries correct; semantics unchanged. Guided create lands as **DRAFT** / inactive.
 
 ### 7. Phase 8 security regression
 
 | Suite | Result |
 |---|---|
 | `admin-mfa.test.ts` | **PASS** (13) |
-| `report-sign.test.ts` (HMAC) | **PASS** (17) |
-| `supabase/admin.test.ts` (HMAC helpers) | **PASS** (7) |
-| `architecture.test.ts` (incl. Phase 10B readiness route guard) | **PASS** (55) |
+| `report-sign.test.ts` | **PASS** (17) |
+| `supabase/admin.test.ts` | **PASS** (7) |
+| `architecture.test.ts` | **PASS** (55) |
 
-MFA / AAL2 / HMAC / RLS / rate-limit / audit paths unchanged by this verification (docs-only commit).
+No browser secrets; MFA / AAL2 / HMAC / RLS / rate-limit / audit untouched by this verification (docs-only).
 
-### 8. Automated gates (tip `551a765`)
+### 8. Automated gates (`main` @ `8ea204e`)
 
 | Gate | Result |
 |---|---|
 | `npm test` | **1000 passed / 106 files** |
 | `npm run lint` | **0 errors** (13 pre-existing warnings) |
 | `npm run typecheck` | **PASS** |
-| `npm run build` | **PASS** (includes `/api/admin/avatars/[id]/readiness`) |
+| `npm run build` | **PASS** (`/api/admin/avatars/[id]/readiness` present) |
 
-Machine evidence: `/opt/cursor/artifacts/phase10b-prod-verify-evidence.json`, `phase10b-guided-followup.json`, `phase10b-prod-verify.log`.
+Evidence: `/opt/cursor/artifacts/phase10b-final-prod-evidence.json`, `phase10b-final-ui-evidence.json`, `phase10b-prod-case-readiness.png`.
 
 ### CLEAR checklist
 
 | Requirement | Status |
 |---|---|
-| production deployment verified on Phase 10B tip | **NO** — PR #248 unmerged; prod = `ac17e71` |
-| health 200 | **YES** (prod + preview + local) |
-| authentication matrix passes | **YES** (local tip) |
-| readiness API verified | **YES** |
-| Guided / detail readiness agree | **YES** |
-| Arabic independence preserved | **YES** |
-| publish blockers understandable | **YES** |
-| publish gate server-authoritative | **YES** |
-| lifecycle semantics intact | **YES** (archived live sample absent) |
-| Phase 8 security regression passes | **YES** |
-| tests / lint / typecheck / build pass | **YES** |
+| production contains merged #248 | **YES** (`8ea204e`) |
+| deployment READY | **YES** |
+| health 200 | **YES** |
+| auth matrix passes | **YES** |
+| readiness API passes | **YES** |
+| Guided/detail readiness agrees | **YES** |
+| Arabic stub protection passes | **YES** |
+| publish gate remains server-side | **YES** |
+| lifecycle unchanged | **YES** |
+| MFA/HMAC/RLS unchanged | **YES** |
+| tests/lint/typecheck/build pass | **YES** |
 
-### Why CONDITIONAL (not CLEAR / BLOCKED)
-
-- Feature behavior and security gates are green on the Phase 10B tip.
-- **CLEAR is blocked solely by missing production deploy of PR #248.**
-- No functional defect found that would warrant **BLOCKED**.
-
-**STOP.** Do not merge automatically. Do not begin Phase 10C.
+**STOP.** Do not begin Phase 10C.
