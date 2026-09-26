@@ -15,13 +15,14 @@
 
 Phase 8 security remains frozen and sufficient for Phase 10 work. Phase 9 delivered a usable Guided AI Case Builder (default on `/admin/avatars/new`) and PR #245 closed the Preview Generator comorbidity desync. Educators can create drafts, move to testing, run admin test conversations, and publish.
 
-The largest remaining friction for a **non-technical administrator** is not security — it is **workflow continuity**:
+The largest remaining friction for a **non-technical administrator** is not security — it is **workflow continuity and false readiness**:
 
-1. **Create ≠ Edit.** Guided Builder only authors new drafts. There is no “resume guided draft” or “edit in Guided mode” from Virtual Patient detail.
+1. **Create ≠ Edit.** Guided Builder only authors new drafts. There is no “resume guided draft” or “edit in Guided mode” from Virtual Patient detail. Library Create is a hint shell (“Open workflow shell”), not a direct CTA.
 2. **Mode switch loses work.** Guided ↔ Advanced replaces entire UI trees with independent client state; no shared draft persistence / warning.
-3. **Lifecycle UX is power-user.** Publish has no confirm; Duplicate uses `window.prompt`; completeness strings are English-hardcoded.
-4. **Terminology split.** “Virtual Patients”, “Cases”, “Templates”, “Presets”, “Content” overlap without a single educator mental model.
-5. **Catalogue drift.** Preview runtime trusts `BUILTIN_COMORBIDITY_RULES`; DB/migrations hold additional authored pairs and disorders not in the builtin packages. Sync is a deliberate authoring project — not an automatic merge.
+3. **Lifecycle UX is power-user.** Publish has no confirm and can skip Testing; Duplicate uses `window.prompt`; detail publish errors are opaque (no gate checklist).
+4. **Arabic stub vs “Ready”.** Guided create writes a stub AR personality (`مسودة عربية`); soft completeness can still show Ready while publish gates are stricter.
+5. **Terminology / preview split.** “Virtual Patients”, “Cases”, “Templates”, “Presets” overlap; preview is fragmented (JSON / summary / `/admin/cases`).
+6. **Catalogue drift.** Preview runtime trusts `BUILTIN_COMORBIDITY_RULES`; DB/migrations hold additional authored pairs and disorders not in the builtin packages. Sync is a deliberate authoring project — not an automatic merge.
 
 **Phase 10 go / no-go:** **GO** for UX hardening + controlled catalogue reconciliation process. **STOP** before inventing comorbidity rules or DSM criterion text. **Do not** touch MFA / AAL2 / HMAC / RLS / audit / rate limits.
 
@@ -70,39 +71,45 @@ Impact: **H** = blocks or confuses typical educators often · **M** = frequent f
 
 | # | Area | Current behavior | File / component | Impact | Proposed improvement | Change type |
 |---|---|---|---|---|---|---|
-| A1 | Navigation | “Virtual Patients”, “Content”, “Cases”, “Templates”, “Presets” are peer nav items; create lives under avatars | `admin-nav.ts`, `content/page.tsx` | M | Single “Training cases” IA: Library / Create / Preview tools; demote engine pages | Code + i18n |
-| A2 | Terminology | “Virtual patient”, “case”, “avatar”, “training simulation”, “disorder” mixed | messages + headers | M | Educator glossary in UI (patient = training persona; case = clinical presentation package) | Code + i18n |
-| A3 | Guided vs Advanced | Default guided; Advanced swaps to full `VirtualPatientWizard`; switching drops in-progress draft | `CreatePatientModeSwitch.tsx` | H | Confirm before switch; optional import guided→advanced snapshot | Code |
-| A4 | New case creation | Guided 10-step flow with catalogues + AI + approvals; works | `GuidedCaseBuilder.tsx` | L | Keep; add progress persistence (below) | — |
-| A5 | Existing case editing | Detail is inspect + lifecycle; **no Guided re-entry**; personality via separate `/admin/personality` | `VirtualPatientDetail.tsx` | H | “Continue in Guided Builder” / Advanced edit for draft & testing | Code (+ maybe API load draft) |
-| A6 | Resume incomplete draft | Client-only Guided state; refresh loses work; library shows drafts but opens detail not builder | `GuidedCaseBuilder.tsx`, library | H | Autosave draft to API or `sessionStorage` + Resume CTA on library cards | Code (+ optional DB fields) |
-| A7 | Duplicate / similar | `window.prompt` for slug; no “create similar” from guided | `VirtualPatientLifecycleActions.tsx` | M | Modal with name/slug; optional “Duplicate into Guided” | Code |
-| A8 | Completeness | Library/detail badges; reasons hardcoded English (“Missing Arabic personality”) | `virtual-patient-completeness.ts` | M | i18n keys; map reasons to Guided steps | Code + i18n |
-| A9 | Validation feedback | Guided: issue list on create fail; Advanced: validate step; publish errors inline | builder + lifecycle | M | Humanize API `issues[]` with step deep-links | Code |
-| A10 | Preview | Guided “generate” shows raw JSON; Case Engine preview is a separate `/admin/cases` page | `GuidedCaseBuilder.tsx`, `CaseEnginePanel.tsx` | M | Inline clinical summary (reuse `ClinicalPreviewSummary`); link “Open Case Engine preview” with prefilled primary | Code |
-| A11 | Testing | Test button only when `lifecycle=testing`; empty state OK | `StartAdminTestConversationButton.tsx` | L | Soft prompt on Publish if never tested | Code |
-| A12 | Publishing | One-click Publish from draft/testing; **no confirm**; archive confirms | `VirtualPatientLifecycleActions.tsx` | H | Confirm dialog + completeness checklist gate messaging | Code |
-| A13 | Search / filter | Library: search + lifecycle + incomplete + sort | `VirtualPatientLibrary.tsx` | L | Add filter by presentation/disorder slug | Code |
-| A14 | Difficulty | Case Engine panel has difficulty; **Guided Builder does not surface difficulty** | `CaseEnginePanel` vs Guided | M | Optional difficulty on Guided create (maps to clinical snapshot / session defaults) | Code (+ data if persisted) |
-| A15 | Scenario / session type | `caseType` fixed `training_simulation`; templates/presets separate | Guided draft + templates | M | Clarify in UI that Templates/Presets are instructor tools, not the create path | i18n / IA |
-| A16 | Contextual help | Phase 9 `ContextualHelp` on Guided steps + Cases comorbidity | `ContextualHelp.tsx`, builder, cases | L | Extend to lifecycle actions + library empty states | Code + i18n |
-| A17 | Keyboard a11y | Step nav buttons; limited roving tabindex; selects OK | Guided builder | M | Ensure step nav arrow keys; focus management on step change; dialogs for confirms | Code |
-| A18 | Arabic | `admin.caseBuilder` + avatars lifecycle keys exist; completeness strings EN-only | `messages/{en,ar}.json`, completeness | M | Translate completeness + detail chrome still in English in places | i18n |
-| A19 | RTL | App locale cookie drives direction; Guided has no extra RTL bugs spotted; `ps-5` used in lists | layout / detail | L | Spot-check Guided dense multi-select in `ar` | Manual QA |
-| A20 | Empty states | Library/test sessions have empties; Guided catalogue fail shows error | AdminUi / builder | L | Empty “no presentations” with CTA | Code |
-| A21 | Error states | MFA_REQUIRED mapped; network errors generic | builder APIs | L | Keep; ensure no raw JSON dumps on create (mostly OK) | Code |
-| A22 | Loading states | `busy` flags on generate/create; catalogues load spinner weak | Guided | L | Skeleton for catalogue load | Code |
-| A23 | Unsaved changes | **No** `beforeunload` / dirty guard on Guided or Wizard | Guided / Wizard | H | Dirty flag + confirm on navigate / mode switch | Code |
-| A24 | Destructive actions | Archive confirms; Publish/Restore/Testing do not | lifecycle actions | M | Confirm publish & restore | Code |
-| A25 | Accidental config loss | Mode switch / refresh / browser back lose Guided draft | Mode switch + no persist | H | Same as A3/A6/A23 | Code |
+| A1 | Navigation / create CTA | Library “Create” opens a **hint shell**; secondary link hardcodes “Open workflow shell” → `/admin/avatars/new` (extra hop) | `VirtualPatientLibrary.tsx` | H | Primary button navigates to create; tip under button; i18n the shell copy | Code + i18n |
+| A2 | Terminology | “Virtual patient”, “case”, “avatar”, “training simulation”, “Phase 3B” mixed | messages + headers + `createHint` | M | Educator glossary; scrub phase labels from UI | Code + i18n |
+| A3 | Guided vs Advanced | Default guided; Advanced remounts `VirtualPatientWizard`; switching **drops** in-progress draft | `CreatePatientModeSwitch.tsx` | H | Confirm before switch; optional import guided→advanced snapshot | Code |
+| A4 | New case creation | Guided 10-step flow with catalogues + AI + approvals; step pills allow skip without per-step validation; “Approve all” can mark AI without generate | `GuidedCaseBuilder.tsx` | M | Gate Next with per-step validation; soft-warn Approve-all when AI not run | Code |
+| A5 | Existing case editing | Detail is inspect + lifecycle; **no Guided re-entry**; wizard supports load-by-id but is unused from detail | `VirtualPatientDetail.tsx`, `VirtualPatientWizard.tsx` | H | “Continue authoring” for draft/testing → wizard or guided resume | Code (+ maybe API) |
+| A6 | Resume incomplete draft | Client-only Guided state; refresh loses work; library drafts open detail not builder | `GuidedCaseBuilder.tsx`, library | H | Autosave / resume CTA; dirty guard | Code (+ optional DB) |
+| A7 | Duplicate / similar | `window.prompt` for kebab slug; inaccessible | `VirtualPatientLifecycleActions.tsx` | M | Accessible modal with suggested slug + validation | Code |
+| A8 | Completeness vs publish | Library “Ready” uses soft checks (EN/AR personality *presence*, voice, clinical). Stub AR + empty personality object can look complete. Publish gates (`assessPublishReadiness`) are stricter | `virtual-patient-completeness.ts`, `validation.ts`, detail/library | H | Split “draft completeness” vs “publish ready”; show gate checklist on detail | Code + i18n |
+| A9 | Validation / publish errors | Guided create shows issues; detail Publish shows opaque `data.error` only (no gate list). Wizard has `ValidationPanel`; detail does not | `VirtualPatientLifecycleActions.tsx`, `persist.ts` | H | Return + render `issues`/`gates` on publish failure with step deep-links | Code |
+| A10 | Preview | Guided generate shows raw JSON; detail “Preview” is static summary; live resolveAvatar preview only in Advanced; Case Engine mint preview on `/admin/cases` | `GuidedCaseBuilder.tsx`, detail, `CaseEnginePanel.tsx` | H | Unified patient preview on detail; hide JSON behind Advanced; deep-link Cases with avatar | Code |
+| A11 | Testing optional | Lifecycle allows `draft` → `published` without testing; test button only in `testing` | `virtual-patient-lifecycle.ts`, lifecycle actions | H | Soft-block or strongly nudge: Testing → ≥1 admin test → Publish | Code (+ optional server policy) |
+| A12 | Publishing | One-click Publish from draft/testing; **no confirm**; archive confirms | `VirtualPatientLifecycleActions.tsx` | H | Confirm + publish-ready checklist | Code |
+| A13 | Search / filter | Client search + lifecycle + incomplete + sort; no pagination; content hub badges use raw `lifecycle_status` | library, `content/page.tsx` | L | i18n status; deep-link `?status=draft`; filter by presentation | Code + i18n |
+| A14 | Difficulty | Case Engine panel has difficulty (raw enum tokens); Guided does not surface difficulty | `CaseEnginePanel.tsx`, Guided | M | Localized option labels; optional difficulty on Guided create | Code + i18n (+ data if persisted) |
+| A15 | Scenario / session type | `caseType` fixed `training_simulation`; templates/presets separate | Guided + templates | M | Clarify Templates/Presets as instructor tools, not create path | i18n / IA |
+| A16 | Contextual help | On Guided steps + Cases comorbidity; missing on lifecycle/publish; hardcoded “Close” / “Help:” | `ContextualHelp.tsx` | M | i18n Close; help on lifecycle + publish gates; focus trap | Code + i18n |
+| A17 | Keyboard a11y | Step buttons OK; detail tabs lack arrow-key / `aria-controls`; no focus move on step change | Guided, detail, wizard | M | WAI-ARIA tabs; focus step heading on change | Code |
+| A18 | Arabic authorship stub | Guided `map-to-write` writes AR personality as stub (`(مسودة عربية)` + finish-independently prompt). Completeness can still pass. Detail has no bilingual clinical editor | `map-to-write.ts`, Guided `createHint`, detail | H | Explicit “Complete Arabic” post-create checklist; block “publish ready” until natively authored AR | Code + validation |
+| A19 | Arabic / RTL chrome | Message trees largely key-complete; many hardcodes remain (Filter/Sort, “Open workflow shell”, detail tabs, completeness reasons) | library, detail, completeness | M | Move all educator strings to `messages/{en,ar}.json` | Code + i18n |
+| A20 | Empty states | Library/test empties OK; Guided catalogue fail OK | AdminUi / builder | L | Empty “no presentations” CTA | Code |
+| A21 | Error states | MFA_REQUIRED mapped; guided validation messages are English API strings | `case-builder/validation.ts` | M | Issue codes → client `t()` | Code + i18n |
+| A22 | Loading states | `busy` on generate/create; weak catalogue skeleton | Guided | L | Skeleton for catalogue load | Code |
+| A23 | Unsaved changes | **No** `beforeunload` / dirty guard; Cancel is bare library link; “Save draft” creates DB row (easy to misread as in-place save) | Guided / Wizard | H | Dirty flag; rename Save draft vs Create; autosave after first persist | Code |
+| A24 | Destructive actions | Archive: `window.confirm`; Publish/Restore/Testing: none | lifecycle actions | M | Consistent confirm dialogs; explain therapist visibility | Code |
+| A25 | Accidental config loss | Mode switch / refresh / back lose Guided draft | Mode switch + no persist | H | Same as A3/A6/A23 | Code |
 
 ### Track A — strengths (keep)
 
 - Lifecycle graph is clear: `draft → testing | published | archived` with therapist visibility only when published (`virtual-patient-lifecycle.ts`).
 - Library search/filter/incomplete sorting is already educator-friendly.
 - Guided catalogues avoid free-text DSM dumps; fictional banner + approvals exist.
-- Admin test conversation is correctly gated to `testing`.
+- Admin test conversation is correctly gated to `testing` and isolated via snapshot marker.
 - Cases comorbidity UX (PR #245) prevents silent invalid previews.
+- EN/AR key trees for `admin.caseBuilder` / `admin.avatars` / `admin.cases` are structurally in sync (hardcodes are the gap).
+- `ContextualHelp` is click/focus/Escape (not hover-only).
+
+### Track A — supplemental deep-dive
+
+Additional forensic detail from the [Admin educator UX audit](bc-c52b94a0-59cd-5a16-b299-4a6e8b91d9d7) pass (incorporated above; no code changes).
 
 ---
 
@@ -222,13 +229,14 @@ Phase 10 **must not** modify:
 
 | ID | Workstream | Goal |
 |---|---|---|
-| **10B** | Guided draft continuity | Autosave / resume / edit-from-detail; dirty navigation guards; mode-switch confirm |
-| **10C** | Lifecycle UX polish | Publish confirm + checklist; duplicate modal; i18n completeness; soft “test before publish” |
-| **10D** | Educator IA & terminology | Nav/content hub rename pass; glossary; link Cases preview from Guided |
-| **10E** | Catalogue reconciliation process | Human-reviewed sync of **REQUIRES REVIEW** pairs only; packages for **NEEDS AUTHORING** disorders stay separate clinical authoring |
-| **10F** | Accessibility & AR pass | Keyboard step nav; RTL/AR completeness; help on lifecycle |
+| **10B** | Guided draft continuity | Direct create CTA; autosave / resume / edit-from-detail; dirty guards; mode-switch confirm; rename Save draft vs Create |
+| **10C** | Lifecycle + publish readiness | Publish confirm; surface publish gates on detail; soft-require testing; duplicate modal; split completeness vs publish-ready |
+| **10D** | Bilingual finish path | Explicit Arabic completion after Guided stub; block false “Ready”; i18n hardcodes |
+| **10E** | Educator IA & preview | Nav/terminology; unified patient preview; Cases deep-link; difficulty labels |
+| **10F** | Catalogue reconciliation process | Human-reviewed sync of **REQUIRES REVIEW** pairs only; **NEEDS AUTHORING** packages stay clinical authoring |
+| **10G** | Accessibility & AR polish | Keyboard tabs/step focus; ContextualHelp i18n; RTL QA |
 
-Suggested sequencing: **10B → 10C → 10D** (UX), then **10E** (clinical data governance), then **10F**.
+Suggested sequencing: **10B → 10C → 10D → 10E** (UX), then **10F** (catalogue governance), then **10G**.
 
 ---
 
@@ -270,15 +278,17 @@ Suggested sequencing: **10B → 10C → 10D** (UX), then **10E** (clinical data 
 ## 10. Suggested implementation order
 
 1. **10B — Continuity (highest educator ROI)**  
-   Dirty guard, mode-switch confirm, resume draft from library/detail, optional `sessionStorage` or draft PATCH.
-2. **10C — Lifecycle safety**  
-   Publish confirm + completeness summary; duplicate modal; i18n incomplete reasons.
-3. **10D — IA clarity**  
-   Nav/copy; Guided ↔ Cases preview handoff; difficulty optional field.
-4. **10E — Catalogue board**  
-   For each **REQUIRES REVIEW** row: accept sync / defer / mark obsolete. For **NEEDS AUTHORING**: clinical authoring tickets (no code invent).
-5. **10F — A11y / AR**  
-   Keyboard + RTL QA + help coverage.
+   Direct create CTA; dirty guard; mode-switch confirm; resume/edit from detail; clarify Save draft vs Create.
+2. **10C — Lifecycle + publish readiness**  
+   Publish confirm + gate checklist on detail; soft-require testing; duplicate modal; split completeness vs publish-ready.
+3. **10D — Bilingual finish**  
+   Post-create Arabic completion path; stop stub AR counting as ready.
+4. **10E — IA + preview**  
+   Terminology/nav; unified preview; Cases deep-link; localized difficulty/modality labels.
+5. **10F — Catalogue board**  
+   For each **REQUIRES REVIEW** row: accept sync / defer / mark obsolete. For **NEEDS AUTHORING**: clinical tickets only (no inventing).
+6. **10G — A11y / AR chrome**  
+   Keyboard tabs/step focus; i18n remaining hardcodes; help coverage.
 
 ---
 
