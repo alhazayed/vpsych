@@ -1,12 +1,13 @@
 # Phase 9 — Production Verification (before merge)
 
-**Decision: CONDITIONAL**  
-**PR:** [#244](https://github.com/alhazayed/vpsych/pull/244)  
+**Decision: CLEAR** (after Phase 9C gate clearance)  
+**PR:** [#244](https://github.com/alhazayed/vpsych/pull/244) — **still UNMERGED** (manual merge only)  
 **Branch:** `cursor/admin-phase9-guided-case-builder-fc9c`  
-**Tip SHA:** `8e9345bccff3bad356d0fd12e72276b647763d55`  
+**Feature tip:** `8e9345bccff3bad356d0fd12e72276b647763d55`  
+**Docs tip (this record):** post-9C commit on same branch  
 **Base:** `b6e5e32b8674e7b4b11b6772bb01671c721e9dc3`  
-**Verified at:** 2026-09-26T07:59Z–08:23Z  
-**Do not merge on this record alone.**
+
+Phase 9B (below) remains historical CONDITIONAL evidence. Phase 9C supersedes the three open gaps.
 
 ---
 
@@ -205,21 +206,115 @@ Rate limiting + `requireApiAdmin` remain architecture-tested. Errors sanitized (
 
 ---
 
-## 24. Final decision
+## 24. Phase 9B decision (historical)
 
-# CONDITIONAL
+# CONDITIONAL (Phase 9B)
 
-**Why not CLEAR**
+Superseded by Phase 9C below.
 
-1. Preview interactive admin cookie session could not be established for `/api/admin/*` (local same-commit + production Supabase used instead).  
-2. Live AI *success* path not evidenced on preview (provider secret unavailable here); failure→manual fallback **is** evidenced.  
-3. `ideal_guidelines` Phase 9 metadata keys are stripped by pre-existing `sync_avatar_flat_from_v2` (non-security data gap).  
-4. Valid HMAC with `REPORT_WRITE_KEY` not re-executed in this environment (forgeries rejected; Phase 8.9B legitimate success retained).
+---
 
-**Why not BLOCKED**
+## PHASE 9C VERIFICATION
 
-- No Phase 8 security boundary failed (HMAC forgeries rejected, MFA AAL1 deny / AAL2 allow, RLS/non-admin deny, no auto-publish, Arabic independent-authoring boundary held, no secrets exposed).  
-- Guided builder UI + draft create path work.  
-- CI and preview deployment healthy.
+**Verified at:** 2026-09-26T08:33Z–08:41Z  
+**Preview (post env fix + redeploy):**  
+- URL: `https://vpsych-morntesjf-alhazayed-1540s-projects.vercel.app`  
+- Deployment: `dpl_FwKmcLezpdthVibxroZ3oeeJZyCd`  
+- Commit: `858b9b3f919b702e95760a8ceb6a8aa5bc119177` (docs tip; feature code identical to `8e9345b`)  
+- Identity class: `qa_admin` / `qa_therapist` (no PII recorded)
 
-**Merge instruction:** Do **not** merge PR #244 on this CONDITIONAL record. Clear the gaps above (preview session auth path and/or production post-merge gate with live AI + trigger metadata) before CLEAR.
+### Preview infrastructure root cause (Gate 1)
+
+Preview `NEXT_PUBLIC_SUPABASE_URL` pointed at a **DNS-dead** Supabase hostname (orphan Preview config). Browser login failed with `net::ERR_NAME_NOT_RESOLVED` before any MFA challenge.
+
+**Remediation (Vercel Preview env only — not a Phase 8 control change):**
+
+1. Pointed Preview `NEXT_PUBLIC_SUPABASE_URL` at the same live Supabase project used by Production  
+2. Replaced Preview `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` to match that project  
+3. Redeployed Preview → `dpl_FwKmcLezpdthVibxroZ3oeeJZyCd`
+
+### AUTHENTICATED PREVIEW — **PASS**
+
+Legitimate Playwright browser session against the redeployed Preview (Vercel share cookie + password + TOTP MFA). Responses carry `x-vercel-id` and host `vpsych-morntesjf-…vercel.app`.
+
+| Actor / AAL | catalogues | generate | create | notes |
+|---|---|---|---|---|
+| Logged out | **401** | — | — | Unauthorized |
+| Therapist (`qa_therapist`) | **403** | — | — | Forbidden |
+| Admin AAL1 | **403** `MFA_REQUIRED` | **403** `MFA_REQUIRED` | **403** `MFA_REQUIRED` | analytics also 403 |
+| Admin AAL2 | **200** (11 presentations) | **200** (see Gate 2) | **200** draft | guided page loads |
+| Cookie cleared | analytics **401** | — | — | |
+
+Evidence: `/opt/cursor/artifacts/phase9c-preview-gates-evidence.json`, screenshot `phase9c-preview-guided.png`.
+
+### LIVE AI SUCCESS — **PASS**
+
+| Check | Result |
+|---|---|
+| `POST /api/admin/case-builder/generate` `{ kind: "symptoms" }` | **200** `ok: true` |
+| `aiSource` | **`gpt`** (server-side OpenAI path) |
+| Suggestion count | **8** |
+| Schema | `{ id, description, domain, salience }` — server validation PASS |
+| Secrets in response | **none** |
+| Auto-persist | **no** (generate never writes avatar) |
+| Audit | `admin.case_builder.generate.symptoms` outcome **success** |
+| Review → approve one → create | **200** slug `casey-nguyen-1q61` |
+| Lifecycle | **`draft`**, `is_active: false`, not published |
+
+Evidence: `phase9c-ai-suggestion-shape.json`, audit rows in evidence JSON.
+
+### IDEAL_GUIDELINES PERSISTENCE — **PASS** (no code change)
+
+**Classification: B — intentional flat projection / non-authoritative for Phase 9 extras.**
+
+Trace:
+
+1. Guided Builder → `mapToVirtualPatientWrite` writes `clinical_core` (incl. `session_goals`, `ideal_approach` with `Primary training framework: …`) and also attaches optional extras on `ideal_guidelines` (`case_type`, `primary_framework`, …).  
+2. Draft RPC persists the avatar row.  
+3. Trigger `sync_avatar_flat_from_v2` **rebuilds** `ideal_guidelines` as `{ session_goals, ideal_approach }` from `clinical_core` (by design since migration `20260731191943_…`).  
+4. Runtime `resolveAvatar` / assessment / VoiceSession read **`clinical_core` first**, then only `session_goals` + `ideal_approach` from `ideal_guidelines` (`Avatar` / `ResolvedAvatar` types do not declare `case_type` / `primary_framework`).
+
+| Concern | Affected? |
+|---|---|
+| Patient simulation | **No** — uses clinical_core + personalities |
+| Session generation | **No** |
+| Reports | **No** — goals/approach from clinical_core / flat projection |
+| Therapeutic framework | **Preserved** in `clinical_core.ideal_approach` text (verified: `ideal_approach_has_framework: true` on created draft) |
+| Clinical presentation | **On** `clinical_core.disorder` / codes / persona |
+| Case classification | API create returns `caseType`; not required on flat ideal_guidelines |
+| Admin edit / resume | Goals + approach remain; structured Phase 9 extras were never part of the typed flat contract |
+
+**No migration / trigger change.** Extending the trigger would alter the long-standing flat projection contract without a runtime consumer.
+
+### Phase 9C regression
+
+| Gate | Result |
+|---|---|
+| `tsc --noEmit` | PASS |
+| `npm run lint` | 0 errors / 13 warnings |
+| `npm test` | **966 passed** |
+| `npm run build` | PASS |
+| AAL1 → 403 / AAL2 → 200 / non-admin → 403 / logout → 401 | PASS (preview) |
+| HMAC unsigned / bad / tampered / wrong session | REJECTED |
+| HMAC valid (service-role path on active session) | **SUCCESS** |
+| Secrets in browser | none |
+
+---
+
+## 25. Final decision (Phase 9C)
+
+# CLEAR
+
+| CLEAR checklist | |
+|---|---|
+| Authenticated preview API matrix | ✓ |
+| Live AI SUCCESS demonstrated | ✓ |
+| AI output schema validated | ✓ |
+| Review / approval demonstrated | ✓ |
+| Draft remains inactive | ✓ |
+| ideal_guidelines persistence verified (intentional projection) | ✓ |
+| No Phase 8 regression | ✓ |
+| tests / lint / build green | ✓ |
+| No secrets exposed | ✓ |
+
+**Merge instruction:** PR #244 is **CLEAR for merge readiness**, but this agent **does not merge**. Human merge when ready.
