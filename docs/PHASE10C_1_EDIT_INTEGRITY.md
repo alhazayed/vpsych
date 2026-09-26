@@ -122,4 +122,4 @@ UI redirects published/archived away from `/edit` to detail; **server gates are 
 
 ---
 
-**PHASE 10C-1 COMPLETE** when CI green and this document matches the shipped branch.
+**PHASE 10C-1 COMPLETE**
