@@ -787,6 +787,8 @@
       "statusTesting": "Testing",
       "statusPublished": "Published",
       "statusArchived": "Archived",
+      "continueAuthoring": "Continue authoring",
+      "continueAuthoringSubtitle": "Advanced editor for {name}. Saves update this draft — does not create a new patient.",
       "complete": "Complete",
       "incomplete": "Incomplete",
       "voiceOk": "Voice assigned",
@@ -843,6 +845,8 @@
       },
       "wizard": {
         "intro": "Author identity, clinical profile, human traits, English and Arabic patients, voice, and default disorder — then validate and publish. Arabic is authored independently (never a silent copy of English).",
+        "editIntro": "Editing an existing draft or testing patient. Save draft updates this record in place. Published patients cannot be edited here — duplicate to create a new draft first.",
+        "backToDetail": "Back to patient",
         "stepIdentity": "Identity",
         "stepClinical": "Clinical",
         "stepPersonality": "Personality",

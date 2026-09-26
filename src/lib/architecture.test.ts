@@ -1292,3 +1292,60 @@ describe("Phase 9 — Guided Case Builder admin APIs preserve Phase 8 gates", ()
     expect(create).toMatch(/logSecurityEvent/);
   });
 });
+
+describe("Phase 10C-1 — edit integrity foundation preserves Phase 8 + immutability", () => {
+  it("voice assign and personality save gate on assertAvatarContentMutable", () => {
+    const voice = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/voice/route.ts"),
+      "utf8",
+    );
+    expect(voice).toMatch(/requireApiAdmin/);
+    expect(voice).toMatch(/rateLimit/);
+    expect(voice).toMatch(/assertAvatarContentMutable/);
+
+    const personality = readFileSync(
+      join(root, "lib/personality-engine/persist.ts"),
+      "utf8",
+    );
+    expect(personality).toMatch(/assertAvatarContentMutable/);
+
+    const personalityRoute = readFileSync(
+      join(root, "app/api/admin/personality/route.ts"),
+      "utf8",
+    );
+    expect(personalityRoute).toMatch(/requireApiAdmin/);
+    expect(personalityRoute).toMatch(/rateLimit/);
+  });
+
+  it("update payload builder omits unspecified ideal_guidelines (no wipe default)", () => {
+    const persist = readFileSync(
+      join(root, "lib/admin/virtual-patient/persist.ts"),
+      "utf8",
+    );
+    expect(persist).toMatch(/mode: \"create\" \| \"update\"/);
+    expect(persist).toMatch(/ideal_guidelines !== undefined/);
+    // Must not unconditionally default guidelines to {} on every build.
+    expect(persist).not.toMatch(
+      /ideal_guidelines:\s*input\.ideal_guidelines\s*\?\?\s*\{\}/,
+    );
+  });
+
+  it("Advanced edit page exists and detail links continue authoring", () => {
+    const editPage = readFileSync(
+      join(root, "app/(app)/admin/avatars/[id]/edit/page.tsx"),
+      "utf8",
+    );
+    expect(editPage).toMatch(/requireAdmin/);
+    expect(editPage).toMatch(/isEditableLifecycle/);
+    expect(editPage).toMatch(/VirtualPatientWizard/);
+    expect(editPage).toMatch(/avatarId=\{id\}/);
+    expect(editPage).not.toMatch(/GuidedCaseBuilder|avatarToGuidedDraft/);
+
+    const detail = readFileSync(
+      join(root, "components/admin/VirtualPatientDetail.tsx"),
+      "utf8",
+    );
+    expect(detail).toMatch(/\/admin\/avatars\/\$\{avatar\.id\}\/edit/);
+    expect(detail).toMatch(/continueAuthoring/);
+  });
+});

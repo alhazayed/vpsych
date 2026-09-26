@@ -34,6 +34,8 @@ export {
   avatarToWriteInput,
   readLifecycleStatus,
   isEditableLifecycle,
+  assertAvatarContentMutable,
+  buildRpcPayload,
   type PersistResult,
 } from "./persist";
 
