@@ -112,8 +112,10 @@ export function getComorbidityCompatibility(
       code: "comorbidity_incompatible",
     };
   }
+  const status: ComorbidityCompatStatus =
+    rule.tier === "possible" || rule.tier === "rare" ? rule.tier : "compatible";
   return {
-    status: rule.tier,
+    status,
     previewAllowed: true,
     rule,
     primary,

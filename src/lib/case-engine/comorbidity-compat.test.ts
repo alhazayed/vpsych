@@ -121,7 +121,7 @@ describe("Case Engine validation — preview generator path", () => {
     const result = validateCaseGeneration(
       {
         persona: jordanPersona,
-        avatarId: jordanPersona.avatar_id,
+        avatarId: "avatar-jordan",
         primaryDisorder: primary,
         comorbidities: [comorbid],
         difficulty: "advanced",
@@ -147,7 +147,7 @@ describe("Case Engine validation — preview generator path", () => {
     const catalog = getBuiltinCatalog();
     const result = generateCaseInstance({
       persona: jordanPersona,
-      avatarId: jordanPersona.avatar_id,
+      avatarId: "avatar-jordan",
       primaryDisorder: findDisorderBySlug("mdd-recurrent-moderate", catalog)!,
       comorbidities: [findDisorderBySlug("gad-with-panic", catalog)!],
       difficulty: "intermediate",
@@ -162,7 +162,7 @@ describe("Case Engine validation — preview generator path", () => {
     const catalog = getBuiltinCatalog();
     const result = generateCaseInstance({
       persona: jordanPersona,
-      avatarId: jordanPersona.avatar_id,
+      avatarId: "avatar-jordan",
       primaryDisorder: findDisorderBySlug("bipolar-mania", catalog)!,
       comorbidities: [],
       difficulty: "advanced",
