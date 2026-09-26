@@ -791,6 +791,23 @@ describe("architecture invariants", () => {
     }
   });
 
+  it("Phase 10B readiness route is admin-gated, rate-limited, and server-authoritative", () => {
+    const route = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/readiness/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/rateLimit/);
+    expect(route).toMatch(/assessCaseReadinessFromAvatar/);
+    expect(route).toMatch(/admin\.avatar\.readiness/);
+    const readiness = readFileSync(
+      join(root, "lib/admin/virtual-patient/readiness.ts"),
+      "utf8",
+    );
+    expect(readiness).toMatch(/assessPublishReadiness/);
+    expect(readiness).not.toMatch(/create second|independent clinical validation/i);
+  });
+
   it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
     const service = readFileSync(
       join(root, "lib/voice/elevenlabs/service.ts"),

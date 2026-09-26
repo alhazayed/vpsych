@@ -77,6 +77,24 @@ function hasAuthoredPersonality(
   );
 }
 
+/**
+ * Guided create writes an Arabic draft stub (`مسودة عربية`). English AI / EN
+ * generation must never count as authoritative Arabic authoring.
+ * Detected here so publish gates and readiness share one rule.
+ */
+export function isArabicPersonalityStub(
+  personalities: VirtualPatientWriteInput["personalities"],
+): boolean {
+  const ar = personalities?.["ar-JO"];
+  if (!ar || typeof ar !== "object") return false;
+  const name = (ar as AvatarPersonality).identity?.display_name ?? "";
+  const prompt = (ar as AvatarPersonality).persona_prompt ?? "";
+  return (
+    name.includes("مسودة عربية") ||
+    prompt.includes("إكمال الشخصية العربية بشكل مستقل")
+  );
+}
+
 function validateClinicalCore(
   core: ClinicalCore | null | undefined,
   mode: "draft" | "publish",
@@ -417,6 +435,18 @@ export function validateVirtualPatientWrite(
             path: "personalities.ar-JO.identity.display_name",
             gate: "personality_ar",
             severity: "warning",
+          },
+        ),
+      );
+    }
+    if (isArabicPersonalityStub(input.personalities)) {
+      issues.push(
+        issue(
+          "personality_ar_stub",
+          "Arabic personality is still a draft stub and must be independently authored before publish",
+          {
+            path: "personalities.ar-JO",
+            gate: "personality_ar",
           },
         ),
       );

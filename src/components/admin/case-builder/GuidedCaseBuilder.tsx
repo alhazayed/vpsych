@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ContextualHelp } from "@/components/admin/help/ContextualHelp";
+import { CaseReadinessPanel } from "@/components/admin/CaseReadinessPanel";
 import {
   COMMUNICATION_STYLES,
   GUIDED_STEPS,
@@ -18,6 +19,7 @@ import {
   type TrainingPresentation,
   type FrameworkOption,
 } from "@/lib/admin/case-builder";
+import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import type { SymptomProfileItem } from "@/lib/types";
 
 type CataloguesPayload = {
@@ -39,6 +41,7 @@ const labelClass =
 
 export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
   const t = useTranslations("admin.caseBuilder");
+  const tReady = useTranslations("admin.avatars.readiness");
   const [draft, setDraft] = useState<GuidedCaseDraft>(() =>
     emptyGuidedDraft({
       voiceProfileId: voices[0]?.id ?? null,
@@ -55,7 +58,29 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [readiness, setReadiness] = useState<CaseReadinessResult | null>(null);
   const [, startTransition] = useTransition();
+
+  const readinessLabels = useMemo(
+    () => ({
+      title: tReady("title"),
+      statusComplete: tReady("statusComplete"),
+      statusWarning: tReady("statusWarning"),
+      statusBlocked: tReady("statusBlocked"),
+      readyToPublish: tReady("readyToPublish"),
+      notReady: tReady("notReady"),
+      publishUnavailable: tReady("publishUnavailable"),
+      published: tReady("published"),
+      archived: tReady("archived"),
+      nextAction: tReady("nextAction"),
+      reviewReadiness: tReady("reviewReadiness"),
+      blockedCount: tReady("blockedCount"),
+      arabicStubNote: tReady("arabicStubNote"),
+      loading: tReady("loading"),
+      loadFailed: tReady("loadFailed"),
+    }),
+    [tReady],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -236,11 +261,25 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
         setStatus(detail || data.error || t("createFailed"));
         return;
       }
-      setCreatedId(data.avatarId ?? null);
-      patch({ avatarId: data.avatarId ?? null, slug: data.slug ?? draft.slug });
+      const newId = data.avatarId ?? null;
+      setCreatedId(newId);
+      patch({ avatarId: newId, slug: data.slug ?? draft.slug });
       setStatus(
         `${t("createSuccess")} ${data.fictionalNotice ?? t("fictionalBanner")}`,
       );
+      if (newId) {
+        try {
+          const readyRes = await fetch(`/api/admin/avatars/${newId}/readiness`);
+          if (readyRes.ok) {
+            const readyData = (await readyRes.json()) as {
+              readiness?: CaseReadinessResult;
+            };
+            if (readyData.readiness) setReadiness(readyData.readiness);
+          }
+        } catch {
+          /* readiness panel stays empty; detail page still authoritative */
+        }
+      }
     } catch {
       setStatus(t("createFailed"));
     } finally {
@@ -953,6 +992,17 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               >
                 {t("openDetail")}
               </Link>
+            ) : null}
+            {createdId ? (
+              <div className="pt-2">
+                <p className="mb-2 text-xs text-[var(--on-surface-variant)]">
+                  {t("readinessAfterCreate")}
+                </p>
+                <CaseReadinessPanel
+                  readiness={readiness}
+                  labels={readinessLabels}
+                />
+              </div>
             ) : null}
           </section>
         )}

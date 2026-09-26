@@ -3,6 +3,11 @@ import { requireAdmin } from "@/lib/auth";
 import { VirtualPatientDetail } from "@/components/admin/VirtualPatientDetail";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import {
+  assessCaseReadinessFromAvatar,
+  avatarToWriteInput,
+  resolvePublishContext,
+} from "@/lib/admin/virtual-patient";
+import {
   getBuiltinPersonality,
   listBuiltinPersonalitySlugs,
   resolveHumanPersonality,
@@ -90,12 +95,49 @@ export default async function AdminAvatarDetailPage({
     },
   ];
 
+  const { data: persona } = await supabase
+    .from("personas")
+    .select("id, default_disorder_id")
+    .eq("avatar_id", id)
+    .maybeSingle();
+
+  const writeInput = avatarToWriteInput(row, persona);
+  const publishCtx = await resolvePublishContext(supabase, writeInput);
+  if (!publishCtx.voiceProfile && voiceProfile) {
+    publishCtx.voiceProfile = voiceProfile;
+  }
+  const initialReadiness = assessCaseReadinessFromAvatar(
+    row,
+    persona,
+    publishCtx,
+  );
+
+  const tReady = await getTranslations("admin.avatars.readiness");
+
   return (
     <VirtualPatientDetail
       avatar={row}
       voiceProfile={voiceProfile}
       personalityAvatars={personalityAvatars}
       testSessions={testSessions}
+      initialReadiness={initialReadiness}
+      readinessLabels={{
+        title: tReady("title"),
+        statusComplete: tReady("statusComplete"),
+        statusWarning: tReady("statusWarning"),
+        statusBlocked: tReady("statusBlocked"),
+        readyToPublish: tReady("readyToPublish"),
+        notReady: tReady("notReady"),
+        publishUnavailable: tReady("publishUnavailable"),
+        published: tReady("published"),
+        archived: tReady("archived"),
+        nextAction: tReady("nextAction"),
+        reviewReadiness: tReady("reviewReadiness"),
+        blockedCount: tReady("blockedCount"),
+        arabicStubNote: tReady("arabicStubNote"),
+        loading: tReady("loading"),
+        loadFailed: tReady("loadFailed"),
+      }}
       labels={{
         home: tHome("title"),
         library: t("title"),

@@ -8,16 +8,19 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PersonalityEnginePanel } from "@/components/admin/PersonalityEnginePanel";
 import { VirtualPatientLifecycleActions } from "@/components/admin/VirtualPatientLifecycleActions";
 import { StartAdminTestConversationButton } from "@/components/admin/StartAdminTestConversationButton";
-import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 import {
-  assessVirtualPatientCompleteness,
-  listAvailableLocales,
-} from "@/lib/admin/virtual-patient-completeness";
+  CaseReadinessPanel,
+  DEFAULT_READINESS_LABELS,
+  type CaseReadinessLabels,
+} from "@/components/admin/CaseReadinessPanel";
+import { VoicePreviewButton } from "@/components/VoicePreviewButton";
+import { listAvailableLocales } from "@/lib/admin/virtual-patient-completeness";
 import {
   lifecycleBadgeTone,
   readLifecycleFromRow,
   type VirtualPatientLifecycleStatus,
 } from "@/lib/admin/virtual-patient-lifecycle";
+import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 
 type TabId =
@@ -65,12 +68,16 @@ export function VirtualPatientDetail({
   voiceProfile,
   personalityAvatars,
   testSessions = [],
+  initialReadiness = null,
+  readinessLabels = DEFAULT_READINESS_LABELS,
   labels,
 }: {
   avatar: Avatar;
   voiceProfile: VoiceProfile | null;
   personalityAvatars: PersonalityAvatar[];
   testSessions?: AdminTestSessionRef[];
+  initialReadiness?: CaseReadinessResult | null;
+  readinessLabels?: CaseReadinessLabels;
   labels: {
     home: string;
     library: string;
@@ -88,10 +95,9 @@ export function VirtualPatientDetail({
   };
 }) {
   const [tab, setTab] = useState<TabId>("overview");
-  const completeness = useMemo(
-    () => assessVirtualPatientCompleteness(avatar),
-    [avatar],
-  );
+  // Server-authoritative: page.tsx computes readiness; router.refresh() after
+  // lifecycle actions reloads the prop. No client-side authz mirror.
+  const readiness = initialReadiness;
   const locales = useMemo(() => listAvailableLocales(avatar), [avatar]);
   const lifecycleStatus = readLifecycleFromRow(avatar);
 
@@ -113,6 +119,16 @@ export function VirtualPatientDetail({
       ? (avatar.clinical_core as Record<string, unknown>)
       : null;
 
+  const reviewReadiness = () => {
+    setTab("overview");
+    if (typeof document !== "undefined") {
+      document.getElementById("case-readiness-heading")?.focus?.();
+      document
+        .getElementById("case-readiness-panel")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <main className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">
       <AdminPageHeader
@@ -125,14 +141,22 @@ export function VirtualPatientDetail({
         ]}
         actions={
           <div className="flex flex-col items-end gap-3">
-            <StatusBadge
-              label={statusLabel(lifecycleStatus)}
-              tone={lifecycleBadgeTone(lifecycleStatus)}
-            />
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+                Lifecycle
+              </span>
+              <StatusBadge
+                label={statusLabel(lifecycleStatus).toUpperCase()}
+                tone={lifecycleBadgeTone(lifecycleStatus)}
+              />
+            </div>
             <VirtualPatientLifecycleActions
               avatarId={avatar.id}
               slug={avatar.slug ?? null}
               lifecycleStatus={lifecycleStatus}
+              readiness={readiness}
+              readinessLabels={readinessLabels}
+              onReviewReadiness={reviewReadiness}
             />
             <StartAdminTestConversationButton
               avatarId={avatar.id}
@@ -170,26 +194,12 @@ export function VirtualPatientDetail({
 
       {tab === "overview" ? (
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="clinical-card space-y-3 p-5">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-              Completeness
-            </h2>
-            <StatusBadge
-              label={completeness.isComplete ? "Ready" : "Needs attention"}
-              tone={completeness.isComplete ? "info" : "warning"}
+          <div id="case-readiness-panel" className="md:col-span-2">
+            <CaseReadinessPanel
+              readiness={readiness}
+              labels={readinessLabels}
+              onReview={reviewReadiness}
             />
-            {completeness.incompleteReasons.length ? (
-              <ul className="list-disc space-y-1 ps-5 text-sm text-[var(--on-surface-variant)]">
-                {completeness.incompleteReasons.map((r) => (
-                  <li key={r}>{r}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-[var(--on-surface-variant)]">
-                Personality, voice, and clinical profile look complete for
-                library use.
-              </p>
-            )}
           </div>
           <div className="clinical-card space-y-3 p-5">
             <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
