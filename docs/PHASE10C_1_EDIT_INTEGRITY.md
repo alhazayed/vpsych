@@ -81,11 +81,19 @@ UI redirects published/archived away from `/edit` to detail; **server gates are 
 
 | Suite | Coverage |
 |---|---|
-| `edit-integrity.test.ts` | Payload omit/preserve, lifecycle gate, personality refuse published, partial update |
+| `edit-integrity.test.ts` | Payload omit/preserve, lifecycle gate, personality refuse published, partial update (12) |
 | `persist.test.ts` | Existing lifecycle/immutability (still green) |
 | `architecture.test.ts` | Voice/personality gates, no wipe default, edit page wiring, no Guided Edit |
 
-Security regression: existing Phase 8 architecture + HMAC/MFA/AAL2 tests unchanged and must pass.
+**Local verification (2026-09-26):**
+
+| Command | Result |
+|---|---|
+| `npm test` | **1015** passed / 107 files |
+| `npm run lint` | 0 errors (13 pre-existing warnings) |
+| `npm run typecheck` | pass |
+| `npm run build` | pass (includes `/admin/avatars/[id]/edit`) |
+| Phase 8 security (`architecture` + `admin-mfa` + `report-sign`) | pass |
 
 ---
 
