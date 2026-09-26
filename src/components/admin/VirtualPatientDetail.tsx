@@ -85,6 +85,7 @@ export function VirtualPatientDetail({
     statusTesting: string;
     statusPublished: string;
     statusArchived: string;
+    continueAuthoring: string;
     testSessionsHeading: string;
     testSessionsEmpty: string;
     testSessionsView: string;
@@ -150,6 +151,15 @@ export function VirtualPatientDetail({
                 tone={lifecycleBadgeTone(lifecycleStatus)}
               />
             </div>
+            {(lifecycleStatus === "draft" ||
+              lifecycleStatus === "testing") && (
+              <Link
+                href={`/admin/avatars/${avatar.id}/edit`}
+                className="btn-primary"
+              >
+                {labels.continueAuthoring}
+              </Link>
+            )}
             <VirtualPatientLifecycleActions
               avatarId={avatar.id}
               slug={avatar.slug ?? null}
