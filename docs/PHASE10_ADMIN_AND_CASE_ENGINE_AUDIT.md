@@ -151,59 +151,88 @@ Additional forensic detail from the [Admin educator UX audit](bc-c52b94a0-59cd-5
 | bpd | mdd-recurrent-moderate | compatible | SUPPORTED |
 | adult-adhd | ptsd | impossible | UNSUPPORTED (explicit) |
 
-UI exposes only compatible/possible rows. API rejects unlisted / impossible / unknown.
+UI exposes rules with `compatible === true` and `tier !== "impossible"` (compatible **and** possible). API rejects unlisted / impossible / unknown.
 
-### 4.3 Migration-only pairs (in SQL seeds, not in builtin)
+**Counts:** builtin disorders 11 · migration disorders 17 · builtin rules 17 · migration rules (effective) 28 · exact both 14 · tier drift 1 · migration-only 13 · builtin-only 2 · orphan `DISORDER_IDS` 6 · duplicate keys 0 · UI-previewable comorbidity pairs 14 · **OBSOLETE:** none.
 
-| Primary | Comorbid | Migration tier | Classification | Notes |
+### 4.3 Shared pairs with tier drift
+
+| Primary | Comorbid | Migration (effective) | Builtin | Classification |
 |---|---|---|---|---|
-| complex-ptsd | mdd-recurrent-moderate | compatible | **REQUIRES REVIEW** | Both packages in builtin; rule missing from builtin |
-| complex-ptsd | alcohol-use-disorder | possible | **REQUIRES REVIEW** | Same |
-| bipolar-mania | mdd-recurrent-moderate | impossible | **REQUIRES REVIEW** | Explicit reject in SQL; builtin treats as unlisted |
-| ptsd | bpd | possible | **REQUIRES REVIEW** | |
-| bpd | ptsd | possible | **REQUIRES REVIEW** | |
-| bpd | alcohol-use-disorder | possible | **REQUIRES REVIEW** | |
-| schizophrenia | mdd-recurrent-moderate | possible | **REQUIRES REVIEW** | |
-| adult-adhd | mdd-recurrent-moderate | compatible | **REQUIRES REVIEW** | |
-| mdd-recurrent-moderate | social-anxiety | compatible | **NEEDS AUTHORING** | `social-anxiety` not in `BUILTIN_DISORDERS` |
-| mdd-recurrent-moderate | ocd | possible | **NEEDS AUTHORING** | OCD package not in builtin |
-| adult-adhd | social-anxiety | possible | **NEEDS AUTHORING** | |
-| eating-disorders | mdd-recurrent-moderate | compatible | **NEEDS AUTHORING** | eating package not in builtin |
-| eating-disorders | gad-with-panic | possible | **NEEDS AUTHORING** | |
+| mdd-recurrent-moderate | alcohol-use-disorder | compatible=true, tier=**compatible** | compatible=true, tier=**possible** | **REQUIRES REVIEW** |
 
-### 4.4 Builtin-only pairs (runtime SUPPORTED; weaker DB mirror)
+### 4.4 Migration-only pairs (in SQL seeds, not in builtin)
+
+Both disorders already in `BUILTIN_DISORDERS` — Preview today → `comorbidity_unlisted`. Promoting into builtin requires a deliberate simulation authoring pass (do not auto-sync):
+
+| Primary | Comorbid | Migration tier | Classification |
+|---|---|---|---|
+| complex-ptsd | mdd-recurrent-moderate | compatible | **NEEDS AUTHORING** |
+| complex-ptsd | alcohol-use-disorder | possible | **NEEDS AUTHORING** |
+| ptsd | bpd | possible | **NEEDS AUTHORING** |
+| bpd | ptsd | possible | **NEEDS AUTHORING** |
+| bpd | alcohol-use-disorder | possible | **NEEDS AUTHORING** |
+| schizophrenia | mdd-recurrent-moderate | possible | **NEEDS AUTHORING** |
+| adult-adhd | mdd-recurrent-moderate | compatible | **NEEDS AUTHORING** |
+| bipolar-mania | mdd-recurrent-moderate | impossible | **REQUIRES REVIEW** (mirror explicit reject into builtin) |
+
+Touches migration-only / orphan disorder packages:
+
+| Primary | Comorbid | Migration tier | Classification |
+|---|---|---|---|
+| mdd-recurrent-moderate | social-anxiety | compatible | **NEEDS AUTHORING** |
+| mdd-recurrent-moderate | ocd | possible | **NEEDS AUTHORING** |
+| adult-adhd | social-anxiety | possible | **NEEDS AUTHORING** |
+| eating-disorders | mdd-recurrent-moderate | compatible | **NEEDS AUTHORING** |
+| eating-disorders | gad-with-panic | possible | **NEEDS AUTHORING** |
+
+No rule in either catalogue: **`bipolar-mania` + `complex-ptsd`** → **NEEDS AUTHORING**.
+
+### 4.5 Builtin-only pairs (Preview SUPPORTED; DB lag)
 
 | Primary | Comorbid | Classification |
 |---|---|---|
-| gad-with-panic | alcohol-use-disorder | **REQUIRES REVIEW** (DB parity) |
-| alcohol-use-disorder | gad-with-panic | **REQUIRES REVIEW** (DB parity) |
+| gad-with-panic | alcohol-use-disorder | **SUPPORTED** (Preview) + **REQUIRES REVIEW** (DB parity) |
+| alcohol-use-disorder | gad-with-panic | **SUPPORTED** (Preview) + **REQUIRES REVIEW** (DB parity) |
 
-### 4.5 Orphan / unavailable disorders
+### 4.6 Orphan `DISORDER_IDS` / migration-only packages
 
-| ID key / slug | In DISORDER_IDS | In BUILTIN_DISORDERS | In DB seed | Classification |
-|---|---|---|---|---|
-| pdd | yes | no | yes | **NEEDS AUTHORING** (package) or **OBSOLETE** if unused |
-| socialAnxiety / social-anxiety | yes | no | yes | **NEEDS AUTHORING** |
-| ocd | yes | no | yes | **NEEDS AUTHORING** |
-| asd | yes | no | yes | **NEEDS AUTHORING** |
-| schizoaffective | yes | no | yes | **NEEDS AUTHORING** |
-| eating / eating-disorders | yes | no | yes | **NEEDS AUTHORING** |
-| bipolar-mania + complex-ptsd | n/a | both packages yes | **no rule** | **NEEDS AUTHORING** (ordered pair + joint cues) |
+| ID key | Migration slug | Mig comorbidity rules? | Classification |
+|---|---|---|---|
+| pdd | pdd | no | **NEEDS AUTHORING** |
+| socialAnxiety | social-anxiety | yes (comorbid) | **NEEDS AUTHORING** |
+| ocd | ocd | yes (comorbid) | **NEEDS AUTHORING** |
+| asd | asd | no | **NEEDS AUTHORING** |
+| schizoaffective | schizoaffective | no | **NEEDS AUTHORING** |
+| eating | eating-disorders | yes (primary) | **NEEDS AUTHORING** (+ key↔slug **REQUIRES REVIEW**) |
 
-### 4.6 Duplicates / slug mismatches
+All 11 builtin disorders are migration-seeded (no builtin-only disorders).
 
-- Builtin: **0** duplicate `(primary, comorbid)` keys; **0** orphan rule IDs.
-- Slugs for shared disorders are consistent (`bipolar-mania`, `complex-ptsd`, …).
-- Complex PTSD is ICD-11-only (`6B41`) — intentional, not a bug.
+### 4.7 Code / label mismatches (REQUIRES REVIEW)
 
-### 4.7 Exposure surfaces
+| Slug | Field | Migration | Builtin |
+|---|---|---|---|
+| complex-ptsd | dsm5_code | `309.81` | `null` (ICD-11-only intent) |
+| complex-ptsd | icd10_code | `F43.1` | `null` |
+| complex-ptsd | severity_default | severe | moderate |
+| bpd | icd11_code | `6D10.0` | `6D10.1/6D11.5` |
+| bipolar-mania | icd11_code | `6A60.1` | `6A60.2` |
+| eating | ID key vs slug | slug `eating-disorders` | key `eating` |
+
+Duplicates: **0** in builtin and migration effective unique keys. Orphan rule IDs in builtin: **0**.
+
+### 4.8 Exposure surfaces
 
 | Surface | Combinations |
 |---|---|
-| UI comorbidity dropdown | Compatible/possible from builtin for selected primary only |
-| Preview API | Accepts only pairs that pass `validateComorbidities` on builtin; unknown slugs → `unknown_disorder` |
+| UI comorbidity dropdown | Per-primary allow-list from `listCompatibleComorbiditySlugs` (e.g. MDD → AUD, BPD, GAD, panic, PTSD; bipolar/complex-ptsd/panic/delirium → empty) |
+| Preview API | Builtin only; unknown slug → `unknown_disorder`; unlisted → `comorbidity_unlisted`; explicit block → `comorbidity_incompatible` |
 | Runtime generation | Same validator inside `generateCaseInstance` |
-| DB disorders list on `/admin/cases` | May list DB-only actives; Preview primary filter now restricts to builtin-known |
+| DB disorders list on `/admin/cases` | May list up to 17 DB actives; Preview primary select is builtin-filtered (11) |
+
+### 4.9 Supplemental deep-dive
+
+Full pair-by-pair tables from the [Case Engine catalogue reconciliation](bc-d7fd34eb-f74f-5a29-8161-07b4f02c8240) pass (incorporated above; no code or clinical inventing).
 
 ---
 
@@ -233,7 +262,7 @@ Phase 10 **must not** modify:
 | **10C** | Lifecycle + publish readiness | Publish confirm; surface publish gates on detail; soft-require testing; duplicate modal; split completeness vs publish-ready |
 | **10D** | Bilingual finish path | Explicit Arabic completion after Guided stub; block false “Ready”; i18n hardcodes |
 | **10E** | Educator IA & preview | Nav/terminology; unified patient preview; Cases deep-link; difficulty labels |
-| **10F** | Catalogue reconciliation process | Human-reviewed sync of **REQUIRES REVIEW** pairs only; **NEEDS AUTHORING** packages stay clinical authoring |
+| **10F** | Catalogue reconciliation process | Board: **REQUIRES REVIEW** (tier/code/DB parity, bipolar×MDD impossible mirror) vs **NEEDS AUTHORING** (migration-only simulation pairs + orphan packages); never auto-sync |
 | **10G** | Accessibility & AR polish | Keyboard tabs/step focus; ContextualHelp i18n; RTL QA |
 
 Suggested sequencing: **10B → 10C → 10D → 10E** (UX), then **10F** (catalogue governance), then **10G**.
