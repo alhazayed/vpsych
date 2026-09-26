@@ -169,6 +169,28 @@ describe("virtual patient validation", () => {
     ).toBe(true);
   });
 
+  it("blocks publish when Arabic is still a Guided stub", () => {
+    const input = publishReadyInput();
+    input.personalities!["ar-JO"] = {
+      ...input.personalities!["ar-JO"]!,
+      identity: {
+        ...input.personalities!["ar-JO"]!.identity,
+        display_name: "ليان (مسودة عربية)",
+      },
+      persona_prompt:
+        "يجب على المؤلف إكمال الشخصية العربية بشكل مستقل قبل النشر (لا تنسخ الإنجليزية).",
+    };
+    const result = assessPublishReadiness(input, {
+      voiceProfile: activeVoice,
+      defaultDisorderId: "disorder-1",
+      defaultDisorderActive: true,
+    });
+    expect(result.publishReady).toBe(false);
+    expect(result.issues.some((i) => i.code === "personality_ar_stub")).toBe(
+      true,
+    );
+  });
+
   it("blocks publish when human personality invalid", () => {
     const input = publishReadyInput();
     input.human_personality = {
