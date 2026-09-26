@@ -1238,3 +1238,40 @@ describe("Phase 8.9 — admin MFA bootstrap must not require AAL2", () => {
     expect(mw).toMatch(/isAdminMfaBootstrapPath/);
   });
 });
+
+describe("Phase 9 — Guided Case Builder admin APIs preserve Phase 8 gates", () => {
+  it("case-builder routes requireApiAdmin + rateLimit and never call providers from client", () => {
+    const routes = [
+      "app/api/admin/case-builder/catalogues/route.ts",
+      "app/api/admin/case-builder/generate/route.ts",
+      "app/api/admin/case-builder/create/route.ts",
+    ];
+    for (const rel of routes) {
+      const src = readFileSync(join(root, rel), "utf8");
+      expect(src, rel).toMatch(/requireApiAdmin/);
+      expect(src, rel).toMatch(/rateLimit/);
+    }
+    const generate = readFileSync(
+      join(root, "lib/admin/case-builder/generate.ts"),
+      "utf8",
+    );
+    expect(generate).toMatch(/hasAnyAiKey/);
+    expect(generate).toMatch(/preferOpenAiSdk|gatewayModelId/);
+    const guidedUi = readFileSync(
+      join(root, "components/admin/case-builder/GuidedCaseBuilder.tsx"),
+      "utf8",
+    );
+    expect(guidedUi).not.toMatch(/OPENAI_API_KEY|SUPABASE_SERVICE_ROLE|REPORT_WRITE_KEY/);
+    expect(guidedUi).toMatch(/\/api\/admin\/case-builder\//);
+  });
+
+  it("create path uses existing virtual patient draft persistence", () => {
+    const create = readFileSync(
+      join(root, "app/api/admin/case-builder/create/route.ts"),
+      "utf8",
+    );
+    expect(create).toMatch(/createVirtualPatientDraft/);
+    expect(create).toMatch(/validateGuidedDraft/);
+    expect(create).toMatch(/logSecurityEvent/);
+  });
+});
