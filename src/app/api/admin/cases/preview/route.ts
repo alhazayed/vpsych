@@ -80,17 +80,53 @@ export async function POST(request: Request) {
   const catalog = getBuiltinCatalog();
   const primary = findDisorderBySlug(body.disorderSlug, catalog);
   if (!primary) {
-    return NextResponse.json({ error: "Unknown disorder" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "Unknown disorder",
+        code: "unknown_disorder",
+        issues: [
+          {
+            code: "unknown_disorder",
+            message: `Unknown primary disorder: ${body.disorderSlug}`,
+            path: "disorderSlug",
+          },
+        ],
+      },
+      { status: 400 },
+    );
   }
-  const comorbidities = (body.comorbiditySlugs ?? [])
-    .map((s) => findDisorderBySlug(s, catalog))
-    .filter(Boolean);
+
+  // Reject unknown comorbidity slugs — do not silently drop them.
+  const comorbiditySlugs = body.comorbiditySlugs ?? [];
+  const comorbidities: NonNullable<
+    ReturnType<typeof findDisorderBySlug>
+  >[] = [];
+  for (const slug of comorbiditySlugs) {
+    const row = findDisorderBySlug(slug, catalog);
+    if (!row) {
+      return NextResponse.json(
+        {
+          error: `Unknown comorbidity: ${slug}`,
+          code: "unknown_disorder",
+          issues: [
+            {
+              code: "unknown_disorder",
+              message: `Unknown comorbidity: ${slug}`,
+              path: "comorbidities",
+            },
+          ],
+        },
+        { status: 400 },
+      );
+    }
+    comorbidities.push(row);
+  }
 
   const result = generateCaseInstance({
     persona,
     avatarId: typed.id,
     primaryDisorder: primary,
-    comorbidities: comorbidities as NonNullable<typeof comorbidities[number]>[],
+    comorbidities,
     difficulty: body.difficulty ?? "intermediate",
     therapyModality: body.therapyModality ?? "supportive",
     locale: body.locale ?? "en-US",
@@ -99,7 +135,15 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.issues }, { status: 400 });
+    const summary = result.issues.map((i) => i.message).join("; ");
+    return NextResponse.json(
+      {
+        error: summary || "Case preview validation failed",
+        code: result.issues[0]?.code,
+        issues: result.issues,
+      },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({
