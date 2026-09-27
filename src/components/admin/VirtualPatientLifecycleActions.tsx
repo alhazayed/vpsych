@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { VirtualPatientLifecycleStatus } from "@/lib/admin/virtual-patient-lifecycle";
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
@@ -9,6 +9,7 @@ import {
   PublishReadinessCallout,
   type CaseReadinessLabels,
 } from "@/components/admin/CaseReadinessPanel";
+import { educatorAdminError } from "@/lib/admin/admin-product-errors";
 
 /**
  * Contextual lifecycle actions for Virtual Patient detail (Option B).
@@ -29,15 +30,43 @@ export function VirtualPatientLifecycleActions({
   onReviewReadiness?: () => void;
 }) {
   const t = useTranslations("admin.avatars.lifecycle");
+  const tErrors = useTranslations("admin.productErrors");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [dupSlug, setDupSlug] = useState("");
+  const dialogTitleId = useId();
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const publishCancelRef = useRef<HTMLButtonElement>(null);
 
   const publishBlocked =
     readiness != null &&
     !readiness.readyToPublish &&
     (lifecycleStatus === "draft" || lifecycleStatus === "testing");
+
+  useEffect(() => {
+    if (duplicateOpen) {
+      firstFieldRef.current?.focus();
+    } else if (publishOpen) {
+      publishCancelRef.current?.focus();
+    }
+    if (!duplicateOpen && !publishOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setDuplicateOpen(false);
+        setPublishOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [duplicateOpen, publishOpen]);
+
+  function mapError(raw: unknown, fallback: string): string {
+    return educatorAdminError(raw, (key) => tErrors(key), fallback);
+  }
 
   async function post(path: string, body?: unknown) {
     setError(null);
@@ -51,18 +80,23 @@ export function VirtualPatientLifecycleActions({
     return { res, data };
   }
 
-  async function duplicate() {
+  function openDuplicate() {
     const suggested = slug ? `${slug}-copy` : "patient-copy";
-    const nextSlug = window.prompt(t("duplicatePrompt"), suggested);
-    if (!nextSlug?.trim()) return;
+    setDupSlug(suggested);
+    setDuplicateOpen(true);
+  }
+
+  async function confirmDuplicate() {
+    if (!dupSlug.trim()) return;
     try {
       const { res, data } = await post(`/api/admin/avatars/${avatarId}/duplicate`, {
-        slug: nextSlug.trim(),
+        slug: dupSlug.trim(),
       });
       if (!res.ok) {
-        setError(data.error ?? t("duplicateFailed"));
+        setError(mapError(data.error ?? data.code, t("duplicateFailed")));
         return;
       }
+      setDuplicateOpen(false);
       setMessage(t("duplicated"));
       router.push(`/admin/avatars/${data.avatar.id}`);
       router.refresh();
@@ -71,10 +105,11 @@ export function VirtualPatientLifecycleActions({
     }
   }
 
-  async function publish() {
+  async function confirmPublish() {
     if (publishBlocked) {
       setError(t("publishBlockedHint"));
       onReviewReadiness?.();
+      setPublishOpen(false);
       return;
     }
     try {
@@ -88,10 +123,14 @@ export function VirtualPatientLifecycleActions({
                 .filter(Boolean)
                 .join("; ")}`
             : "";
-        setError((data.error ?? t("publishFailed")) + issueHint);
+        setError(
+          mapError(data.error ?? data.code, t("publishFailed")) + issueHint,
+        );
         onReviewReadiness?.();
+        setPublishOpen(false);
         return;
       }
+      setPublishOpen(false);
       setMessage(t("published"));
       router.refresh();
     } catch {
@@ -104,7 +143,7 @@ export function VirtualPatientLifecycleActions({
     try {
       const { res, data } = await post(`/api/admin/avatars/${avatarId}/archive`);
       if (!res.ok) {
-        setError(data.error ?? t("archiveFailed"));
+        setError(mapError(data.error ?? data.code, t("archiveFailed")));
         return;
       }
       setMessage(t("archived"));
@@ -118,7 +157,7 @@ export function VirtualPatientLifecycleActions({
     try {
       const { res, data } = await post(`/api/admin/avatars/${avatarId}/restore`);
       if (!res.ok) {
-        setError(data.error ?? t("restoreFailed"));
+        setError(mapError(data.error ?? data.code, t("restoreFailed")));
         return;
       }
       setMessage(t("restored"));
@@ -135,7 +174,7 @@ export function VirtualPatientLifecycleActions({
         { status: "testing" },
       );
       if (!res.ok) {
-        setError(data.error ?? t("testingFailed"));
+        setError(mapError(data.error ?? data.code, t("testingFailed")));
         return;
       }
       setMessage(t("movedToTesting"));
@@ -152,7 +191,7 @@ export function VirtualPatientLifecycleActions({
         { status: "draft" },
       );
       if (!res.ok) {
-        setError(data.error ?? t("draftFailed"));
+        setError(mapError(data.error ?? data.code, t("draftFailed")));
         return;
       }
       setMessage(t("returnedToDraft"));
@@ -162,6 +201,15 @@ export function VirtualPatientLifecycleActions({
     }
   }
 
+  const statusHelp =
+    lifecycleStatus === "draft"
+      ? t("statusDraftHelp")
+      : lifecycleStatus === "testing"
+        ? t("statusTestingHelp")
+        : lifecycleStatus === "published"
+          ? t("statusPublishedHelp")
+          : t("statusArchivedHelp");
+
   const publishButton = (
     <button
       type="button"
@@ -169,7 +217,7 @@ export function VirtualPatientLifecycleActions({
       disabled={pending || publishBlocked}
       aria-disabled={pending || publishBlocked}
       title={publishBlocked ? t("publishBlockedHint") : undefined}
-      onClick={() => startTransition(() => void publish())}
+      onClick={() => setPublishOpen(true)}
     >
       {t("publish")}
     </button>
@@ -177,12 +225,20 @@ export function VirtualPatientLifecycleActions({
 
   return (
     <div className="flex flex-col items-end gap-2">
+      <p className="max-w-sm text-end text-xs text-[var(--on-surface-variant)]">
+        {statusHelp}
+      </p>
+      {(lifecycleStatus === "published" || lifecycleStatus === "archived") && (
+        <p className="max-w-sm text-end text-xs text-[var(--on-surface-variant)]">
+          {t("immutableEditHint")}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           className="btn-secondary"
           disabled={pending}
-          onClick={() => startTransition(() => void duplicate())}
+          onClick={openDuplicate}
         >
           {t("duplicate")}
         </button>
@@ -272,6 +328,108 @@ export function VirtualPatientLifecycleActions({
         <p className="max-w-sm text-end text-xs text-[var(--on-surface-variant)]">
           {message}
         </p>
+      ) : null}
+
+      {duplicateOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDuplicateOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={dialogTitleId}
+            className="w-full max-w-md rounded-xl border border-[var(--outline-variant)] bg-[var(--surface)] p-5 shadow-lg"
+          >
+            <h2
+              id={dialogTitleId}
+              className="text-base font-semibold text-[var(--on-surface)]"
+            >
+              {t("duplicateTitle")}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+              {t("duplicateHelp")}
+            </p>
+            <label className="mt-4 flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
+              {t("duplicateIdLabel")}
+              <input
+                ref={firstFieldRef}
+                className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--on-surface)]"
+                value={dupSlug}
+                onChange={(e) => setDupSlug(e.target.value)}
+                required
+              />
+              <span className="font-normal text-[var(--on-surface-variant)]">
+                {t("duplicateIdHint")}
+              </span>
+            </label>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setDuplicateOpen(false)}
+              >
+                {t("duplicateCancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={pending || !dupSlug.trim()}
+                onClick={() => startTransition(() => void confirmDuplicate())}
+              >
+                {t("duplicateConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {publishOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setPublishOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${dialogTitleId}-publish`}
+            className="w-full max-w-md rounded-xl border border-[var(--outline-variant)] bg-[var(--surface)] p-5 shadow-lg"
+          >
+            <h2
+              id={`${dialogTitleId}-publish`}
+              className="text-base font-semibold text-[var(--on-surface)]"
+            >
+              {t("publishConfirmTitle")}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+              {t("publishConfirmBody")}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className="btn-secondary"
+                ref={publishCancelRef}
+                onClick={() => setPublishOpen(false)}
+              >
+                {t("publishCancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={pending}
+                onClick={() => startTransition(() => void confirmPublish())}
+              >
+                {t("publishConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

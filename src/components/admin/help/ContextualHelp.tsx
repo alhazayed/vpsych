@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type ContextualHelpProps = {
   label: string;
@@ -18,10 +19,13 @@ export function ContextualHelp({
   help,
   variant = "tooltip",
 }: ContextualHelpProps) {
+  const t = useTranslations("admin.contextualHelp");
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+  const helpAria = t("helpAria", { label });
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +33,22 @@ export function ContextualHelp({
       if (e.key === "Escape") {
         setOpen(false);
         btnRef.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable = [
+        btnRef.current,
+        closeRef.current,
+      ].filter((el): el is HTMLButtonElement => Boolean(el));
+      if (focusable.length < 2) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     }
     function onPointer(e: MouseEvent) {
@@ -43,6 +63,7 @@ export function ContextualHelp({
     }
     document.addEventListener("keydown", onKey);
     document.addEventListener("mousedown", onPointer);
+    closeRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("mousedown", onPointer);
@@ -56,7 +77,7 @@ export function ContextualHelp({
         ref={btnRef}
         type="button"
         className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--outline-variant)] text-[10px] font-semibold text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
-        aria-label={`Help: ${label}`}
+        aria-label={helpAria}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
@@ -68,13 +89,14 @@ export function ContextualHelp({
           ref={panelRef}
           id={panelId}
           role="dialog"
-          aria-label={`Help: ${label}`}
+          aria-label={helpAria}
           className={`absolute start-0 z-30 mt-7 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] p-3 text-xs leading-relaxed text-[var(--on-surface)] shadow-md ${
             variant === "popover" ? "w-72 max-w-[80vw]" : "w-56 max-w-[75vw]"
           }`}
         >
           <p>{help}</p>
           <button
+            ref={closeRef}
             type="button"
             className="mt-2 text-[11px] font-medium text-[var(--primary)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             onClick={() => {
@@ -82,7 +104,7 @@ export function ContextualHelp({
               btnRef.current?.focus();
             }}
           >
-            Close
+            {t("close")}
           </button>
         </div>
       ) : null}

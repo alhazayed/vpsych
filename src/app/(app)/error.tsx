@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AppSegmentError({
@@ -10,6 +11,9 @@ export default function AppSegmentError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname() ?? "";
+  const isAdmin = pathname.startsWith("/admin");
+
   useEffect(() => {
     console.error("[app-shell-error]", error.digest ?? error.message);
   }, [error]);
@@ -20,8 +24,9 @@ export default function AppSegmentError({
         This view failed to load
       </h1>
       <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-        The authenticated workspace hit an unexpected error. Retry the view or
-        continue from My Sessions.
+        {isAdmin
+          ? "The administrator console hit an unexpected error. Retry this view or return to the admin overview."
+          : "The authenticated workspace hit an unexpected error. Retry the view or continue from My Sessions."}
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <button
@@ -32,10 +37,10 @@ export default function AppSegmentError({
           Retry
         </button>
         <Link
-          href="/sessions"
+          href={isAdmin ? "/admin" : "/sessions"}
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm font-medium"
         >
-          My Sessions
+          {isAdmin ? "Admin overview" : "My Sessions"}
         </Link>
       </div>
     </div>

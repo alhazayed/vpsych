@@ -6,3 +6,4 @@ export * from "./generate";
 export * from "./avatar-to-guided";
 export * from "./change-tracking";
 export * from "./guided-merge";
+export * from "./humanize-guided";

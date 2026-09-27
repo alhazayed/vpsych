@@ -1093,10 +1093,12 @@ function ValidationPanel({
                 <span>
                   {issue.message}
                   {issue.path ? (
-                    <span className="text-[var(--on-surface-variant)]">
-                      {" "}
-                      ({issue.path})
-                    </span>
+                    <AdvancedDetails
+                      title={t("fieldPathDetails")}
+                      className="mt-1"
+                    >
+                      <code className="text-xs">{issue.path}</code>
+                    </AdvancedDetails>
                   ) : null}
                 </span>
               </li>
@@ -1132,14 +1134,20 @@ export function VirtualPatientWizard({
   voices,
   disorders: initialDisorders,
   avatarId: initialAvatarId,
+  onDirtyChange,
 }: {
   voices: WizardVoiceOption[];
   disorders: WizardDisorderOption[];
   avatarId?: string;
+  /** Phase 10D — notify parent when Advanced form has unsaved edits. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const t = useTranslations("admin.avatars.wizard");
   const [step, setStep] = useState<StepId>("identity");
   const [form, setForm] = useState<FormState>(createInitialForm);
+  const [baselineSnapshot, setBaselineSnapshot] = useState(() =>
+    JSON.stringify(createInitialForm()),
+  );
   const [avatarId, setAvatarId] = useState<string | null>(initialAvatarId ?? null);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -1153,6 +1161,21 @@ export function VirtualPatientWizard({
   const [loadingExisting, setLoadingExisting] = useState(Boolean(initialAvatarId));
 
   const stepIndex = STEPS.indexOf(step);
+  const dirty = JSON.stringify(form) !== baselineSnapshot;
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
 
   useEffect(() => {
     if (!initialAvatarId) return;
@@ -1169,12 +1192,12 @@ export function VirtualPatientWizard({
             setLoadingExisting(false);
             return;
           }
-          setForm(
-            applyLoadedAvatar(
-              data.avatar as Record<string, unknown>,
-              data.persona as { default_disorder_id?: string | null } | null,
-            ),
+          const loaded = applyLoadedAvatar(
+            data.avatar as Record<string, unknown>,
+            data.persona as { default_disorder_id?: string | null } | null,
           );
+          setForm(loaded);
+          setBaselineSnapshot(JSON.stringify(loaded));
           setAvatarId(initialAvatarId);
           setSavedSlug(String(data.avatar?.slug ?? ""));
           if (data.validation) {
@@ -1274,6 +1297,8 @@ export function VirtualPatientWizard({
       setAvatarId(id);
       setSavedSlug(slug);
       setDraftSaved(true);
+      setBaselineSnapshot(JSON.stringify(form));
+      onDirtyChange?.(false);
       if (data.validation) {
         setValidation(data.validation as ValidationResult);
         setPublishReady(Boolean(data.validation.publishReady));

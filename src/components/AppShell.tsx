@@ -124,6 +124,7 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/admin/cases")) return "cases";
   if (pathname.startsWith("/admin/templates")) return "templates";
   if (pathname.startsWith("/admin/presets")) return "presets";
+  if (pathname.startsWith("/admin/learners")) return "learners";
   if (pathname.startsWith("/admin/curriculum")) return "learnersProgress";
   if (pathname.startsWith("/admin/graph")) return "competencies";
   if (pathname.startsWith("/learning/supervisor")) return "supervisorAi";
@@ -207,6 +208,7 @@ export function AppShell({
       | "pageTitle.cases"
       | "pageTitle.templates"
       | "pageTitle.presets"
+      | "pageTitle.learners"
       | "pageTitle.learnersProgress"
       | "pageTitle.competencies"
       | "pageTitle.supervisorAi"
