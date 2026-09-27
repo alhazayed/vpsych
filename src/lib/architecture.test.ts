@@ -1337,9 +1337,8 @@ describe("Phase 10C-1 — edit integrity foundation preserves Phase 8 + immutabi
     );
     expect(editPage).toMatch(/requireAdmin/);
     expect(editPage).toMatch(/isEditableLifecycle/);
-    expect(editPage).toMatch(/VirtualPatientWizard/);
-    expect(editPage).toMatch(/avatarId=\{id\}/);
-    expect(editPage).not.toMatch(/GuidedCaseBuilder|avatarToGuidedDraft/);
+    expect(editPage).toMatch(/EditPatientModeSwitch/);
+    expect(editPage).toMatch(/avatarToGuidedDraft/);
 
     const detail = readFileSync(
       join(root, "components/admin/VirtualPatientDetail.tsx"),
@@ -1347,5 +1346,24 @@ describe("Phase 10C-1 — edit integrity foundation preserves Phase 8 + immutabi
     );
     expect(detail).toMatch(/\/admin\/avatars\/\$\{avatar\.id\}\/edit/);
     expect(detail).toMatch(/continueAuthoring/);
+  });
+
+  it("Phase 10C-2 Guided Edit merge API is wired (no second persist engine)", () => {
+    const route = readFileSync(
+      join(root, "app/api/admin/case-builder/[id]/route.ts"),
+      "utf8",
+    );
+    expect(route).toMatch(/requireApiAdmin/);
+    expect(route).toMatch(/assertAvatarContentMutable/);
+    expect(route).toMatch(/buildGuidedMergeWriteInput/);
+    expect(route).toMatch(/updateVirtualPatientDraft/);
+    expect(route).not.toMatch(/createVirtualPatientDraft/);
+
+    const merge = readFileSync(
+      join(root, "lib/admin/case-builder/guided-merge.ts"),
+      "utf8",
+    );
+    expect(merge).toMatch(/ar-JO/);
+    expect(merge).toMatch(/human_personality/);
   });
 });
