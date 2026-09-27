@@ -6,7 +6,8 @@
 **Production baseline:** `vpsych.vercel.app` / `dpl_3imnPZhKV6SUkuyXTR5DYQkSHgBM`  
 **Branch:** `cursor/phase10d-admin-ux-fc9c`  
 **PR:** https://github.com/alhazayed/vpsych/pull/253  
-**Production verification status:** **NOT CLAIMED** — LOCAL PASS only for this phase.
+**Preview verification status:** **CLEAR** (PR #253 preview only)  
+**Production verification status:** **NOT CLAIMED** — production remains Phase 10C-2 CLEAR; do not merge / do not deploy production from this verification.
 
 ---
 
@@ -16,7 +17,7 @@ Phase 10D makes the administrator console usable by a psychiatry/education admin
 
 Read-only audit first (`docs/PHASE10D_ADMIN_UX_AUDIT.md`) found **no open P0** security/data-integrity defects. Implementation focused on justified P1/P2 items: humanized Guided AI/review, lifecycle confirmations, chrome/trust fixes, create-mode AI Approve/Reject, Advanced dirty protection, educator error mapping, ContextualHelp i18n, and accessibility basics.
 
-**Verdict:** LOCAL PASS. Preview/production CLEAR is out of scope until separately verified.
+**Verdict:** PREVIEW **CLEAR** on PR #253 head `88ebb43b8a3a5de6d16d0bce1bc81f8b0c05cb05`. Production CLEAR is **not** claimed. Do not merge. Do not deploy production. Do not start Phase 10C-3.
 
 ---
 
@@ -198,18 +199,115 @@ Phase 10C-2 merge invariants remain covered by `guided-edit.test.ts` (27) + `edi
 
 ---
 
-## 17. Preview verification
+## 17. PREVIEW VERIFICATION (PR #253)
 
-**Not run in this agent turn as production CLEAR.** Deploy preview and exercise:
+**Status:** **CLEAR**  
+**Date (UTC):** 2026-09-27  
+**Scope:** Vercel preview for PR #253 only. **Not** production. **No merge. No production deploy. No Phase 10C-3.**
 
-LOGIN → MFA → Admin → Create Virtual Patient → Guided → Review → Create Draft → Guided Edit one field → Save → reject AI → published immutability → duplicate → Arabic preservation.
+### Deployment alignment
+
+| Field | Value |
+|---|---|
+| Preview URL | `https://vpsych-ayuxsg336-alhazayed-1540s-projects.vercel.app` |
+| Preview alias | `https://vpsych-git-cursor-phase10d-admi-90a121-alhazayed-1540s-projects.vercel.app` |
+| Deployment ID | `dpl_GHCnYGbDVBqKdDcG3DNnnUGrqgGA` |
+| Commit SHA | `88ebb43b8a3a5de6d16d0bce1bc81f8b0c05cb05` |
+| Branch | `cursor/phase10d-admin-ux-fc9c` |
+| State | `READY` |
+| `/api/health` | **200** `{ ok: true, service: "vpsych", version: "1.0.0-rc.1" }` |
+| Production baseline (untouched) | Phase 10C-2 CLEAR — `vpsych.vercel.app` / `dpl_3imnPZhKV6SUkuyXTR5DYQkSHgBM` / `71e36f1…` |
+
+Evidence: `/opt/cursor/artifacts/phase10d-preview-verify-evidence.json`, `/opt/cursor/artifacts/phase10d-preview-verify.log`.
+
+### Admin auth matrix
+
+| Actor | Result |
+|---|---|
+| Logged out → admin API | **401** Unauthorized |
+| Therapist → admin API | **403** Forbidden |
+| Admin password (AAL1) | `currentLevel=aal1`, `nextLevel=aal2` |
+| Admin AAL1 → protected admin API | **403** `{ code: "MFA_REQUIRED" }` |
+| Admin AAL2 (TOTP) | `currentLevel=aal2`; admin pages + APIs accessible |
+
+Bypass for Deployment Protection: `npx vercel curl` (OIDC). No auth bypass of app MFA/AAL2.
+
+### Automated preview suite
+
+**PREVIEW_CHECKS_PASS — pass=49 fail=0** against the real Vercel preview (localhost proxies explicitly rejected).
+
+Highlights:
+
+| Area | Result |
+|---|---|
+| Guided create | Draft `5f4dbe59-…` created; `lifecycle=draft`; `is_active=false`; no auto-publish |
+| AI suggestion | Framework generate **200** with primary; reject path left DB unchanged; no secrets in body |
+| AI approve (edit) | PATCH applied **only** `symptoms` |
+| Guided Edit one-field | Same avatar ID; symptoms changed; goals/framework/`ideal_guidelines`/context/Arabic/personality/voice preserved |
+| 10C-2 style persistence | `communication_style` → `guarded` persisted after interaction-only save |
+| Arabic authored (Lena dup) | EN profile edit; Arabic display name `لينا منصور` unchanged |
+| Arabic stub | Stub draft still `personality_ar_stub` / BLOCKED with human remediation |
+| Readiness | **200**; overall **BLOCKED** on incomplete draft; human explanations (no machine IDs as primary text) |
+| Lifecycle | Published PATCH **409** `lifecycle_immutable`; duplicate → new draft; original stays published; move → testing + editable PATCH **200** |
+| Comorbidity (#245) | `POST /api/admin/cases/preview` with unknown comorbidity → **400** `unknown_disorder` / “Unknown comorbidity…” |
+| Edit UI | `/edit` shows **EDITING EXISTING CASE** + Guided chrome; raw JSON not dominant |
+| Nav | `/admin`, `/admin/avatars`, `/admin/avatars/new`, learners, voices → **200** |
+| Arabic UI HTML | `dir=rtl` + Arabic copy on `/admin/avatars/new` |
+
+Fixture draft used for Guided Edit / testing lifecycle: `5f4dbe59-4e1a-4d2a-b8b7-40ef14071748` (`phase10d-ux-muk3kvk5`).
+
+### Browser / accessibility / responsive (preview)
+
+Cookie-injected AAL2 session (same audit admin after MFA) + Deployment Protection share link.
+
+| Check | Result |
+|---|---|
+| Guided create UI | Guided default; educator steps; “Create draft now”; unsaved banner |
+| Guided Edit banner | **EDITING EXISTING CASE**; Testing lifecycle; merge wording; Arabic stub note |
+| Dirty state | Profile display-name edit → Advanced click → `window.confirm`: “You have unsaved Guided changes. Switch modes and discard them?” (dismissed) |
+| ContextualHelp | Help control present (`aria-label: Help: Patient profile`); Escape closes |
+| Keyboard focus | Visible outline on focused control (`outline: … auto 1px`) |
+| Arabic / RTL | `lang=ar` `dir=rtl`; Arabic chrome + Guided create |
+| Narrow (~768px) | No horizontal overflow; Guided usable |
+| Screenshots | `/opt/cursor/artifacts/phase10d-preview-guided-en.png`, `…-ar-rtl.png`, `…-edit-banner.png`, `…-dirty-confirm.png` (dialog text captured in JSON), `…-narrow-admin.png`, `…-a11y-focus.png`, `…-detail.png` |
+
+Browser smoke JSON: `/opt/cursor/artifacts/phase10d-browser-smoke.json`, `phase10d-browser-dirty.json`.
+
+### Local gates (re-run during preview verification)
+
+| Gate | Result |
+|---|---|
+| `npm test` | **1051 / 1051** PASS |
+| `npm run lint` | **0 errors** (13 pre-existing warnings) |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS |
+| Focused security (MFA, HMAC/report-sign, architecture, guided-edit, edit-integrity, rate-limit, security-headers) | **138** PASS |
+
+### CLEAR checklist
+
+- [x] Preview deployed from PR #253 head  
+- [x] Health 200  
+- [x] Auth matrix passes  
+- [x] Guided create works  
+- [x] AI review behavior works  
+- [x] Review / draft creation / readiness work  
+- [x] Guided Edit works  
+- [x] Phase 10C-2 merge semantics intact  
+- [x] Arabic preserved / stub remains stub  
+- [x] Lifecycle behavior intact  
+- [x] Comorbidity behavior intact  
+- [x] Accessibility checks pass (keyboard focus, help Escape, labels; readiness/errors not color-only in API copy)  
+- [x] Security regression passes  
+- [x] Tests / lint / typecheck / build pass  
+
+**Final status: CLEAR** (preview only).
 
 ---
 
 ## 18. Production verification status
 
-**NOT CLEAR.**  
-Production remains at Phase 10C-2 baseline until this PR is merged and production-verified separately. Do not treat LOCAL PASS as production PASS.
+**NOT CLEAR / NOT RUN for Phase 10D.**  
+Production remains at Phase 10C-2 baseline (`dpl_3imnPZhKV6SUkuyXTR5DYQkSHgBM`). Do not treat preview CLEAR as production PASS. Do not merge. Do not deploy production.
 
 ---
 
@@ -220,13 +318,13 @@ Production remains at Phase 10C-2 baseline until this PR is merged and productio
 3. Detail tab labels still English-hardcoded (ARIA fixed).
 4. Duplicate API still requires internal ID (slug); UI labels it “Internal ID” but does not invent a second identifier.
 5. No autosave / revision history (out of scope).
-6. No browser E2E recorded in this run — unit/integration + build only.
+6. Browser form password login from the computer-use agent failed (likely input mangling); verification used Supabase session cookie injection + `vercel curl` for authenticated preview evidence — same AAL2 audit account.
 
 ---
 
 ## 20. Recommended next phase
 
-1. Preview + production admin workflow smoke (manual) before claiming CLEAR.  
+1. Production admin workflow smoke **after** explicit merge approval (separate phase).  
 2. Optional Phase 10D.1: Guided comorbidity step **only if** create/PATCH persistence is designed without inventing clinical rules.  
 3. Localize readiness explanation map by `code` without changing gate math.  
 4. i18n remaining Detail chrome.  
@@ -253,5 +351,5 @@ Production remains at Phase 10C-2 baseline until this PR is merged and productio
 - [x] No auto-publish  
 - [x] npm test / lint / typecheck / build PASS locally  
 - [x] Security regression PASS locally  
-- [ ] Preview verification  
+- [x] Preview verification — **CLEAR**  
 - [ ] Production CLEAR — **explicitly not claimed**
