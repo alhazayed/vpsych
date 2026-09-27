@@ -2,23 +2,44 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { GuidedCaseBuilder } from "@/components/admin/case-builder/GuidedCaseBuilder";
+import {
+  GuidedCaseBuilder,
+  type GuidedCaseIdentity,
+} from "@/components/admin/case-builder/GuidedCaseBuilder";
 import {
   VirtualPatientWizard,
   type WizardDisorderOption,
   type WizardVoiceOption,
 } from "@/components/admin/VirtualPatientWizard";
+import type {
+  ArabicAuthorshipState,
+  GuidedCaseDraft,
+} from "@/lib/admin/case-builder";
+import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 
 type Props = {
   voices: WizardVoiceOption[];
   disorders: WizardDisorderOption[];
+  caseIdentity: GuidedCaseIdentity;
+  initialDraft: GuidedCaseDraft;
+  initialReadiness: CaseReadinessResult | null;
+  arabicAuthorship: ArabicAuthorshipState;
+  presentationUnresolved: boolean;
 };
 
 /**
- * Guided Mode (default) vs Advanced Mode (existing Virtual Patient wizard).
- * Switching modes with unsaved Guided work requires confirmation.
+ * Phase 10C-2 — Guided (default) vs Advanced for existing draft|testing cases.
+ * Mode switches require confirmation when Guided has unsaved changes.
  */
-export function CreatePatientModeSwitch({ voices, disorders }: Props) {
+export function EditPatientModeSwitch({
+  voices,
+  disorders,
+  caseIdentity,
+  initialDraft,
+  initialReadiness,
+  arabicAuthorship,
+  presentationUnresolved,
+}: Props) {
   const t = useTranslations("admin.caseBuilder");
   const [mode, setMode] = useState<"guided" | "advanced">("guided");
 
@@ -28,6 +49,7 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
   }
 
   function switchToGuided() {
+    // Advanced wizard manages its own dirty state; confirm leaving Advanced.
     const ok = window.confirm(t("switchToGuidedConfirm"));
     if (!ok) return;
     setMode("guided");
@@ -48,15 +70,24 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
             {t("guidedMode")}
           </button>
         </div>
-        <VirtualPatientWizard voices={voices} disorders={disorders} />
+        <VirtualPatientWizard
+          voices={voices}
+          disorders={disorders}
+          avatarId={caseIdentity.id}
+        />
       </div>
     );
   }
 
   return (
     <GuidedCaseBuilder
-      mode="create"
+      mode="edit"
       voices={voices.map((v) => ({ id: v.id, voice_name: v.voice_name }))}
+      caseIdentity={caseIdentity}
+      initialDraft={initialDraft}
+      initialReadiness={initialReadiness}
+      arabicAuthorship={arabicAuthorship}
+      presentationUnresolved={presentationUnresolved}
       onSwitchAdvanced={switchToAdvanced}
     />
   );

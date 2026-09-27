@@ -29,7 +29,25 @@ export const GUIDED_STEPS = [
   "create",
 ] as const;
 
-export type GuidedStepId = (typeof GUIDED_STEPS)[number];
+/** Guided Edit steps — same builder; Review Changes + Save instead of Create. */
+export const EDIT_GUIDED_STEPS = [
+  "presentation",
+  "profile",
+  "goals",
+  "symptoms",
+  "context",
+  "framework",
+  "interaction",
+  "generate",
+  "reviewChanges",
+  "save",
+] as const;
+
+export type GuidedCreateStepId = (typeof GUIDED_STEPS)[number];
+export type GuidedEditStepId = (typeof EDIT_GUIDED_STEPS)[number];
+export type GuidedStepId = GuidedCreateStepId | GuidedEditStepId;
+
+export type GuidedBuilderMode = "create" | "edit";
 
 export type StructuredContext = {
   education?: string;
@@ -76,6 +94,8 @@ export type SectionApprovalKey =
 
 export type GuidedCaseDraft = {
   caseType: "training_simulation";
+  /** create = new patient; edit = merge into existing (Phase 10C-2). */
+  mode: GuidedBuilderMode;
   step: GuidedStepId;
   presentationId: string | null;
   presentationSlug: string | null;
@@ -122,6 +142,7 @@ export function emptyGuidedDraft(
 ): GuidedCaseDraft {
   return {
     caseType: "training_simulation",
+    mode: "create",
     step: "presentation",
     presentationId: null,
     presentationSlug: null,

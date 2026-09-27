@@ -7,12 +7,23 @@ import { ContextualHelp } from "@/components/admin/help/ContextualHelp";
 import { CaseReadinessPanel } from "@/components/admin/CaseReadinessPanel";
 import {
   COMMUNICATION_STYLES,
+  EDIT_GUIDED_STEPS,
   GUIDED_STEPS,
   THERAPEUTIC_CHALLENGES,
   THERAPY_FRAMEWORKS,
+  buildChangeReview,
   customGoal,
   emptyGuidedDraft,
+  isGuidedDraftDirty,
+  listApprovedSaveFields,
+  markFieldAiSuggested,
+  markFieldApproved,
+  markFieldChanged,
+  type ArabicAuthorshipState,
+  type GuidedBuilderMode,
   type GuidedCaseDraft,
+  type GuidedChangeApprovals,
+  type GuidedEditableField,
   type GuidedStepId,
   type LibrarySymptom,
   type SessionGoalItem,
@@ -29,9 +40,24 @@ type CataloguesPayload = {
   frameworks: FrameworkOption[];
 };
 
+export type GuidedCaseIdentity = {
+  id: string;
+  name: string;
+  slug: string;
+  lifecycleStatus: string;
+};
+
 type Props = {
   voices: { id: string; voice_name: string }[];
   onSwitchAdvanced: () => void;
+  mode?: GuidedBuilderMode;
+  /** Required for edit mode — existing case identity banner. */
+  caseIdentity?: GuidedCaseIdentity | null;
+  initialDraft?: GuidedCaseDraft | null;
+  initialReadiness?: CaseReadinessResult | null;
+  arabicAuthorship?: ArabicAuthorshipState;
+  presentationUnresolved?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const fieldClass =
@@ -39,14 +65,35 @@ const fieldClass =
 const labelClass =
   "flex flex-col gap-1 text-xs font-medium text-[var(--outline)]";
 
-export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
+export function GuidedCaseBuilder({
+  voices,
+  onSwitchAdvanced,
+  mode = "create",
+  caseIdentity = null,
+  initialDraft = null,
+  initialReadiness = null,
+  arabicAuthorship = "missing",
+  presentationUnresolved = false,
+  onDirtyChange,
+}: Props) {
   const t = useTranslations("admin.caseBuilder");
   const tReady = useTranslations("admin.avatars.readiness");
-  const [draft, setDraft] = useState<GuidedCaseDraft>(() =>
-    emptyGuidedDraft({
-      voiceProfileId: voices[0]?.id ?? null,
-    }),
+  const isEdit = mode === "edit";
+  const steps = isEdit ? EDIT_GUIDED_STEPS : GUIDED_STEPS;
+
+  const [baseline, setBaseline] = useState<GuidedCaseDraft | null>(() =>
+    isEdit && initialDraft ? structuredClone(initialDraft) : null,
   );
+  const [draft, setDraft] = useState<GuidedCaseDraft>(() =>
+    initialDraft
+      ? { ...initialDraft, mode }
+      : emptyGuidedDraft({
+          mode,
+          voiceProfileId: voices[0]?.id ?? null,
+        }),
+  );
+  const [approvals, setApprovals] = useState<GuidedChangeApprovals>({});
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [catalogues, setCatalogues] = useState<CataloguesPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchPresentation, setSearchPresentation] = useState("");
@@ -58,8 +105,64 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const [readiness, setReadiness] = useState<CaseReadinessResult | null>(null);
+  const [savedOk, setSavedOk] = useState(false);
+  const [pendingFramework, setPendingFramework] = useState<{
+    primary: GuidedCaseDraft["primaryFramework"];
+    supporting: GuidedCaseDraft["supportingFrameworks"];
+    rationale: string;
+  } | null>(null);
+  const [readiness, setReadiness] = useState<CaseReadinessResult | null>(
+    initialReadiness,
+  );
   const [, startTransition] = useTransition();
+
+  const dirty = useMemo(() => {
+    if (isEdit && baseline) return isGuidedDraftDirty(baseline, draft);
+    if (!isEdit) {
+      return Boolean(
+        draft.presentationId ||
+          draft.profile.displayName.trim() ||
+          draft.goals.length ||
+          draft.symptoms.length ||
+          draft.contextNarrative.trim() ||
+          draft.primaryFramework ||
+          draft.communicationStyle,
+      );
+    }
+    return false;
+  }, [isEdit, baseline, draft]);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  function requestSwitchAdvanced() {
+    if (dirty) {
+      const ok = window.confirm(t("unsavedSwitchConfirm"));
+      if (!ok) return;
+    }
+    onSwitchAdvanced();
+  }
+
+  function touchField(
+    field: GuidedEditableField,
+    source: "administrator" | "ai_suggestion_approved" = "administrator",
+  ) {
+    if (!isEdit) return;
+    setApprovals((a) => markFieldChanged(a, field, source));
+    setReviewConfirmed(false);
+    setSavedOk(false);
+  }
 
   const readinessLabels = useMemo(
     () => ({
@@ -112,7 +215,17 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
     };
   }, [t]);
 
-  const stepIndex = GUIDED_STEPS.indexOf(draft.step);
+  const stepIndex = (steps as readonly string[]).indexOf(draft.step);
+
+  const changeReview = useMemo(() => {
+    if (!isEdit || !baseline) return [];
+    return buildChangeReview(baseline, draft, approvals);
+  }, [isEdit, baseline, draft, approvals]);
+
+  const approvedSaveFields = useMemo(() => {
+    if (!isEdit || !baseline) return [];
+    return listApprovedSaveFields(baseline, draft, approvals);
+  }, [isEdit, baseline, draft, approvals]);
 
   const filteredPresentations = useMemo(() => {
     const q = searchPresentation.trim().toLowerCase();
@@ -144,31 +257,37 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
   }
 
   function go(step: GuidedStepId) {
+    if (!(steps as readonly string[]).includes(step)) return;
     patch({ step });
   }
 
   function selectPresentation(p: TrainingPresentation) {
+    const seedSymptoms =
+      isEdit || draft.symptoms.length > 0
+        ? draft.symptoms
+        : (p.symptoms ?? []).slice(0, 6);
+    const seedGoals =
+      isEdit || draft.goals.length > 0
+        ? draft.goals
+        : (p.sessionGoals ?? []).slice(0, 4).map((label, i) => ({
+            id: `seed-${p.slug}-${i}`,
+            label,
+            category: "assessment" as const,
+          }));
     patch({
       presentationId: p.id,
       presentationSlug: p.slug,
       presentationName: p.name,
       dsm5Code: p.dsm5_code,
       icd11Code: p.icd11_code,
-      disclosureRules: p.disclosureRules ?? [],
-      symptoms:
-        draft.symptoms.length > 0
-          ? draft.symptoms
-          : (p.symptoms ?? []).slice(0, 6),
-      goals:
-        draft.goals.length > 0
-          ? draft.goals
-          : (p.sessionGoals ?? []).slice(0, 4).map((label, i) => ({
-              id: `seed-${p.slug}-${i}`,
-              label,
-              category: "assessment" as const,
-            })),
+      disclosureRules: isEdit
+        ? draft.disclosureRules
+        : (p.disclosureRules ?? draft.disclosureRules),
+      symptoms: seedSymptoms,
+      goals: seedGoals,
       sectionApprovals: { ...draft.sectionApprovals, presentation: true },
     });
+    touchField("presentation");
   }
 
   async function runGenerate(kind: "symptoms" | "context" | "framework" | "case") {
@@ -209,20 +328,32 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
       if (r.kind === "symptoms" && r.suggestions) {
         patch({ aiSymptomSuggestions: r.suggestions });
         setSelectedAiSymptoms(new Set(r.suggestions.map((s) => s.id)));
+        if (isEdit) setApprovals((a) => markFieldAiSuggested(a, "symptoms"));
         setStatus(t("aiSymptomsReady"));
       } else if (r.kind === "context" && r.structured) {
         patch({
           structuredContext: r.structured,
           structuredContextApproved: false,
         });
+        if (isEdit) setApprovals((a) => markFieldAiSuggested(a, "context"));
         setStatus(t("aiContextReady"));
       } else if (r.kind === "framework" && r.primary) {
-        patch({
-          primaryFramework: r.primary,
-          supportingFrameworks: r.supporting ?? [],
-          frameworkRationale: r.rationale ?? "",
-        });
-        setStatus(t("aiFrameworkReady"));
+        if (isEdit) {
+          setPendingFramework({
+            primary: r.primary,
+            supporting: r.supporting ?? [],
+            rationale: r.rationale ?? "",
+          });
+          setApprovals((a) => markFieldAiSuggested(a, "framework"));
+          setStatus(t("aiFrameworkReady"));
+        } else {
+          patch({
+            primaryFramework: r.primary,
+            supportingFrameworks: r.supporting ?? [],
+            frameworkRationale: r.rationale ?? "",
+          });
+          setStatus(t("aiFrameworkReady"));
+        }
       } else if (r.kind === "case" && r.generated) {
         patch({
           generated: r.generated,
@@ -241,6 +372,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
   }
 
   async function createPatient(skipApprovals = false) {
+    if (isEdit) return;
     setBusy("create");
     setStatus(null);
     try {
@@ -287,11 +419,66 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
     }
   }
 
+  async function saveGuidedEdit() {
+    if (!isEdit || !caseIdentity || !baseline) return;
+    if (!reviewConfirmed) {
+      setStatus(t("confirmReviewRequired"));
+      return;
+    }
+    setBusy("save");
+    setStatus(null);
+    try {
+      const res = await fetch(`/api/admin/case-builder/${caseIdentity.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draft,
+          approvals,
+          approvedFields: approvedSaveFields,
+          confirmReview: true,
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        code?: string;
+        issues?: { message: string }[];
+        readiness?: CaseReadinessResult;
+        appliedFields?: string[];
+        noop?: boolean;
+        message?: string;
+      };
+      if (!res.ok) {
+        const detail = data.issues?.map((i) => i.message).join(" · ");
+        setStatus(detail || data.error || t("saveFailed"));
+        return;
+      }
+      if (data.readiness) setReadiness(data.readiness);
+      setSavedOk(true);
+      setApprovals({});
+      setReviewConfirmed(false);
+      setStatus(
+        data.noop
+          ? t("saveNoop")
+          : `${t("saveSuccess")} (${(data.appliedFields ?? []).join(", ") || "—"})`,
+      );
+      setBaseline(structuredClone(draft));
+      onDirtyChange?.(false);
+    } catch {
+      setStatus(t("saveFailed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (loadError) {
     return (
       <div className="clinical-card space-y-3 p-6" role="alert">
         <p className="text-sm text-[var(--on-surface)]">{loadError}</p>
-        <button type="button" className="btn-secondary" onClick={onSwitchAdvanced}>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={requestSwitchAdvanced}
+        >
           {t("useAdvanced")}
         </button>
       </div>
@@ -308,16 +495,52 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
 
   return (
     <div className="space-y-4">
-      <div
-        className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container)] px-4 py-3 text-sm text-[var(--on-surface)]"
-        role="status"
-      >
-        {t("fictionalBanner")}
-      </div>
+      {isEdit ? (
+        <div
+          className="rounded-lg border border-[var(--primary)] bg-[var(--primary)]/10 px-4 py-3 text-sm text-[var(--on-surface)]"
+          role="status"
+        >
+          <p className="font-semibold tracking-wide">
+            {t("editingExistingBanner")}
+          </p>
+          {caseIdentity ? (
+            <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
+              {caseIdentity.name} · {caseIdentity.slug} ·{" "}
+              {caseIdentity.lifecycleStatus}
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs">{t("editingMergeNotice")}</p>
+          <p className="mt-1 text-xs">
+            {t("arabicAuthorship", { state: arabicAuthorship })}
+          </p>
+        </div>
+      ) : (
+        <div
+          className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container)] px-4 py-3 text-sm text-[var(--on-surface)]"
+          role="status"
+        >
+          {t("fictionalBanner")}
+        </div>
+      )}
+
+      {presentationUnresolved ? (
+        <div
+          className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-xs"
+          role="status"
+        >
+          {t("presentationUnresolved")}
+        </div>
+      ) : null}
+
+      {dirty ? (
+        <p className="text-xs text-[var(--on-surface-variant)]" role="status">
+          {t("unsavedChanges")}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label={t("stepsNav")} className="flex flex-wrap gap-1">
-          {GUIDED_STEPS.map((id, i) => (
+          {steps.map((id, i) => (
             <button
               key={id}
               type="button"
@@ -335,7 +558,11 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
             </button>
           ))}
         </nav>
-        <button type="button" className="btn-secondary text-xs" onClick={onSwitchAdvanced}>
+        <button
+          type="button"
+          className="btn-secondary text-xs"
+          onClick={requestSwitchAdvanced}
+        >
           {t("advancedMode")}
         </button>
       </div>
@@ -423,7 +650,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                         ? String(draft.profile.age)
                         : draft.profile[key]
                     }
-                    onChange={(e) =>
+                    onChange={(e) => {
                       patch({
                         profile: {
                           ...draft.profile,
@@ -436,8 +663,9 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                           ...draft.sectionApprovals,
                           profile: true,
                         },
-                      })
-                    }
+                      });
+                      touchField("profile");
+                    }}
                   />
                 </label>
               ))}
@@ -446,7 +674,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                 <select
                   className={fieldClass}
                   value={draft.profile.gender}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     patch({
                       profile: {
                         ...draft.profile,
@@ -456,8 +684,9 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                         ...draft.sectionApprovals,
                         profile: true,
                       },
-                    })
-                  }
+                    });
+                    touchField("profile");
+                  }}
                 >
                   {["female", "male", "non-binary", "unspecified"].map((g) => (
                     <option key={g} value={g}>
@@ -509,6 +738,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                               goals: next.length > 0,
                             },
                           });
+                          touchField("goals");
                         }}
                       />
                       <span>
@@ -544,6 +774,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                       goals: true,
                     },
                   });
+                  touchField("goals");
                 }}
               >
                 {t("addCustomGoal")}
@@ -601,6 +832,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                               symptoms: next.length > 0,
                             },
                           });
+                          touchField("symptoms");
                         }}
                       />
                       <span>
@@ -626,25 +858,59 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               />
             </button>
             {draft.aiSymptomSuggestions.length > 0 && (
-              <div className="space-y-2 rounded-lg border border-dashed border-[var(--outline-variant)] p-3">
+              <div className="space-y-3 rounded-lg border border-dashed border-[var(--outline-variant)] p-3">
                 <p className="text-xs font-semibold uppercase text-[var(--outline)]">
                   {t("suggestedByAi")}
                 </p>
-                {draft.aiSymptomSuggestions.map((s) => (
-                  <label key={s.id} className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedAiSymptoms.has(s.id)}
-                      onChange={() => {
-                        const next = new Set(selectedAiSymptoms);
-                        if (next.has(s.id)) next.delete(s.id);
-                        else next.add(s.id);
-                        setSelectedAiSymptoms(next);
-                      }}
-                    />
-                    <span>{s.description}</span>
-                  </label>
-                ))}
+                {isEdit ? (
+                  <div className="grid gap-3 md:grid-cols-2 text-sm">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold">{t("currentValues")}</p>
+                      <ul className="list-disc ps-4">
+                        {draft.symptoms.map((s) => (
+                          <li key={s.id}>{s.description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-semibold">{t("suggestedValues")}</p>
+                      {draft.aiSymptomSuggestions.map((s) => (
+                        <label
+                          key={s.id}
+                          className="flex items-start gap-2 py-0.5"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedAiSymptoms.has(s.id)}
+                            onChange={() => {
+                              const next = new Set(selectedAiSymptoms);
+                              if (next.has(s.id)) next.delete(s.id);
+                              else next.add(s.id);
+                              setSelectedAiSymptoms(next);
+                            }}
+                          />
+                          <span>{s.description}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  draft.aiSymptomSuggestions.map((s) => (
+                    <label key={s.id} className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedAiSymptoms.has(s.id)}
+                        onChange={() => {
+                          const next = new Set(selectedAiSymptoms);
+                          if (next.has(s.id)) next.delete(s.id);
+                          else next.add(s.id);
+                          setSelectedAiSymptoms(next);
+                        }}
+                      />
+                      <span>{s.description}</span>
+                    </label>
+                  ))
+                )}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -665,10 +931,19 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                           symptoms: true,
                         },
                       });
+                      if (isEdit && accepted.length > 0) {
+                        setApprovals((a) =>
+                          markFieldApproved(
+                            a,
+                            "symptoms",
+                            "ai_suggestion_approved",
+                          ),
+                        );
+                      }
                       setSelectedAiSymptoms(new Set());
                     }}
                   >
-                    {t("acceptSelected")}
+                    {t("approve")}
                   </button>
                   <button
                     type="button"
@@ -676,9 +951,18 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                     onClick={() => {
                       patch({ aiSymptomSuggestions: [] });
                       setSelectedAiSymptoms(new Set());
+                      if (isEdit) {
+                        setApprovals((a) => {
+                          const next = { ...a };
+                          if (next.symptoms?.status === "ai_suggested") {
+                            delete next.symptoms;
+                          }
+                          return next;
+                        });
+                      }
                     }}
                   >
-                    {t("rejectAll")}
+                    {t("reject")}
                   </button>
                 </div>
               </div>
@@ -696,15 +980,16 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               <textarea
                 className={`${fieldClass} min-h-28`}
                 value={draft.contextNarrative}
-                onChange={(e) =>
+                onChange={(e) => {
                   patch({
                     contextNarrative: e.target.value,
                     sectionApprovals: {
                       ...draft.sectionApprovals,
                       context: e.target.value.trim().length > 0,
                     },
-                  })
-                }
+                  });
+                  touchField("context");
+                }}
               />
             </label>
             <button
@@ -723,15 +1008,26 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={() =>
+                  onClick={() => {
                     patch({
                       structuredContextApproved: true,
                       sectionApprovals: {
                         ...draft.sectionApprovals,
                         context: true,
                       },
-                    })
-                  }
+                    });
+                    if (isEdit) {
+                      setApprovals((a) =>
+                        markFieldApproved(
+                          a,
+                          "context",
+                          a.context?.status === "ai_suggested"
+                            ? "ai_suggestion_approved"
+                            : "administrator",
+                        ),
+                      );
+                    }
+                  }}
                 >
                   {t("approveStructured")}
                 </button>
@@ -759,15 +1055,16 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                     type="radio"
                     name="primaryFramework"
                     checked={draft.primaryFramework === f.modality}
-                    onChange={() =>
+                    onChange={() => {
                       patch({
                         primaryFramework: f.modality,
                         sectionApprovals: {
                           ...draft.sectionApprovals,
                           framework: true,
                         },
-                      })
-                    }
+                      });
+                      touchField("framework");
+                    }}
                   />
                   <span>
                     <span className="font-medium">{f.label}</span>
@@ -786,10 +1083,71 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
             >
               {busy === "framework" ? t("generating") : t("aiRecommendFramework")}
             </button>
-            {draft.frameworkRationale ? (
+            {draft.frameworkRationale && !pendingFramework ? (
               <p className="text-sm text-[var(--on-surface-variant)]">
                 <strong>{t("whySuggested")}</strong> {draft.frameworkRationale}
               </p>
+            ) : null}
+            {isEdit && pendingFramework ? (
+              <div className="space-y-2 rounded-lg border border-dashed border-[var(--outline-variant)] p-3 text-sm">
+                <p className="text-xs font-semibold">{t("currentValues")}</p>
+                <p>{draft.primaryFramework ?? "—"}</p>
+                <p className="text-xs font-semibold">{t("suggestedValues")}</p>
+                <p>
+                  {pendingFramework.primary}
+                  {pendingFramework.supporting.length
+                    ? ` (+ ${pendingFramework.supporting.join(", ")})`
+                    : ""}
+                </p>
+                {pendingFramework.rationale ? (
+                  <p className="text-xs text-[var(--on-surface-variant)]">
+                    {pendingFramework.rationale}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn-primary text-xs"
+                    onClick={() => {
+                      patch({
+                        primaryFramework: pendingFramework.primary,
+                        supportingFrameworks: pendingFramework.supporting,
+                        frameworkRationale: pendingFramework.rationale,
+                        sectionApprovals: {
+                          ...draft.sectionApprovals,
+                          framework: true,
+                        },
+                      });
+                      setApprovals((a) =>
+                        markFieldApproved(
+                          a,
+                          "framework",
+                          "ai_suggestion_approved",
+                        ),
+                      );
+                      setPendingFramework(null);
+                    }}
+                  >
+                    {t("approve")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary text-xs"
+                    onClick={() => {
+                      setPendingFramework(null);
+                      setApprovals((a) => {
+                        const next = { ...a };
+                        if (next.framework?.status === "ai_suggested") {
+                          delete next.framework;
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    {t("reject")}
+                  </button>
+                </div>
+              </div>
             ) : null}
           </section>
         )}
@@ -807,7 +1165,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               <select
                 className={fieldClass}
                 value={draft.communicationStyle ?? ""}
-                onChange={(e) =>
+                onChange={(e) => {
                   patch({
                     communicationStyle: (e.target.value ||
                       null) as GuidedCaseDraft["communicationStyle"],
@@ -815,8 +1173,9 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                       ...draft.sectionApprovals,
                       interaction: Boolean(e.target.value),
                     },
-                  })
-                }
+                  });
+                  touchField("interaction");
+                }}
               >
                 <option value="">{t("selectPlaceholder")}</option>
                 {COMMUNICATION_STYLES.map((s) => (
@@ -843,6 +1202,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
                             ? draft.therapeuticChallenges.filter((x) => x !== c)
                             : [...draft.therapeuticChallenges, c];
                           patch({ therapeuticChallenges: next });
+                          touchField("interaction");
                         }}
                       />
                       {t(`challenges.${c}`)}
@@ -856,9 +1216,10 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
               <select
                 className={fieldClass}
                 value={draft.voiceProfileId ?? ""}
-                onChange={(e) =>
-                  patch({ voiceProfileId: e.target.value || null })
-                }
+                onChange={(e) => {
+                  patch({ voiceProfileId: e.target.value || null });
+                  touchField("voice");
+                }}
               >
                 <option value="">{t("voiceOptional")}</option>
                 {voices.map((v) => (
@@ -899,7 +1260,7 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
           </section>
         )}
 
-        {draft.step === "review" && (
+        {draft.step === "review" && !isEdit && (
           <section className="space-y-3">
             <h2 className="text-base font-semibold">{t("steps.review")}</h2>
             {(
@@ -971,7 +1332,103 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
           </section>
         )}
 
-        {draft.step === "create" && (
+        {draft.step === "reviewChanges" && isEdit && (
+          <section className="space-y-3">
+            <h2 className="text-base font-semibold">
+              {t("steps.reviewChanges")}
+            </h2>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {t("reviewChangesHint")}
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-start text-xs">
+                <thead>
+                  <tr className="border-b border-[var(--outline-variant)] text-[var(--outline)]">
+                    <th className="py-2 pe-2 font-medium">{t("reviewField")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("reviewCurrent")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("reviewNew")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("reviewSource")}</th>
+                    <th className="py-2 font-medium">{t("reviewStatus")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {changeReview.map((row) => (
+                    <tr
+                      key={row.field}
+                      className={`border-b border-[var(--outline-variant)]/60 ${
+                        row.changed ? "" : "opacity-60"
+                      }`}
+                    >
+                      <td className="py-2 pe-2 align-top font-medium">
+                        {t(`fields.${row.field}`)}
+                      </td>
+                      <td className="max-w-[12rem] py-2 pe-2 align-top break-words">
+                        {row.currentValue || "—"}
+                      </td>
+                      <td className="max-w-[12rem] py-2 pe-2 align-top break-words">
+                        {row.changed ? row.newValue || "—" : t("unchanged")}
+                      </td>
+                      <td className="py-2 pe-2 align-top">
+                        {row.source === "ai_suggestion_approved"
+                          ? t("sourceAiApproved")
+                          : row.source === "administrator"
+                            ? t("sourceAdministrator")
+                            : row.changed
+                              ? t("sourceAdministrator")
+                              : "—"}
+                      </td>
+                      <td className="py-2 align-top">
+                        {row.changed ? (
+                          <button
+                            type="button"
+                            className={
+                              row.status === "user_approved"
+                                ? "btn-primary text-xs"
+                                : "btn-secondary text-xs"
+                            }
+                            onClick={() =>
+                              setApprovals((a) =>
+                                markFieldApproved(
+                                  a,
+                                  row.field,
+                                  a[row.field]?.source ===
+                                    "ai_suggestion_approved"
+                                    ? "ai_suggestion_approved"
+                                    : "administrator",
+                                ),
+                              )
+                            }
+                          >
+                            {row.status === "user_approved"
+                              ? t("approved")
+                              : t("approveChange")}
+                          </button>
+                        ) : (
+                          <span>{t("unchanged")}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={reviewConfirmed}
+                onChange={(e) => setReviewConfirmed(e.target.checked)}
+              />
+              <span>{t("confirmChangesCheckbox")}</span>
+            </label>
+            <p className="text-xs text-[var(--on-surface-variant)]">
+              {t("approvedFieldsCount", {
+                count: approvedSaveFields.length,
+              })}
+            </p>
+          </section>
+        )}
+
+        {draft.step === "create" && !isEdit && (
           <section className="space-y-3">
             <h2 className="text-base font-semibold">{t("steps.create")}</h2>
             <p className="text-sm text-[var(--on-surface-variant)]">
@@ -1007,6 +1464,42 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
           </section>
         )}
 
+        {draft.step === "save" && isEdit && (
+          <section className="space-y-3">
+            <h2 className="text-base font-semibold">{t("steps.save")}</h2>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {t("saveHint")}
+            </p>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={busy === "save" || !reviewConfirmed}
+              onClick={() => void saveGuidedEdit()}
+            >
+              {busy === "save" ? t("saving") : t("saveMergedChanges")}
+            </button>
+            {caseIdentity ? (
+              <Link
+                className="btn-secondary inline-flex"
+                href={`/admin/avatars/${caseIdentity.id}`}
+              >
+                {t("openDetail")}
+              </Link>
+            ) : null}
+            {(savedOk || readiness) && (
+              <div className="pt-2">
+                <p className="mb-2 text-xs text-[var(--on-surface-variant)]">
+                  {t("readinessAfterSave")}
+                </p>
+                <CaseReadinessPanel
+                  readiness={readiness}
+                  labels={readinessLabels}
+                />
+              </div>
+            )}
+          </section>
+        )}
+
         {status ? (
           <p className="text-sm text-[var(--on-surface)]" role="status">
             {status}
@@ -1018,29 +1511,53 @@ export function GuidedCaseBuilder({ voices, onSwitchAdvanced }: Props) {
             type="button"
             className="btn-secondary"
             disabled={stepIndex === 0}
-            onClick={() => go(GUIDED_STEPS[Math.max(0, stepIndex - 1)]!)}
+            onClick={() => go(steps[Math.max(0, stepIndex - 1)]!)}
           >
             {t("back")}
           </button>
           <button
             type="button"
             className="btn-primary"
-            disabled={stepIndex >= GUIDED_STEPS.length - 1}
+            disabled={stepIndex >= steps.length - 1}
             onClick={() =>
-              go(GUIDED_STEPS[Math.min(GUIDED_STEPS.length - 1, stepIndex + 1)]!)
+              go(steps[Math.min(steps.length - 1, stepIndex + 1)]!)
             }
           >
             {t("next")}
           </button>
-          <button
-            type="button"
+          {!isEdit ? (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy === "create"}
+              onClick={() => void createPatient(true)}
+            >
+              {t("saveDraft")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy === "save" || !reviewConfirmed}
+              onClick={() => void saveGuidedEdit()}
+            >
+              {t("saveMergedChanges")}
+            </button>
+          )}
+          <Link
+            href={
+              isEdit && caseIdentity
+                ? `/admin/avatars/${caseIdentity.id}`
+                : "/admin/avatars"
+            }
             className="btn-secondary"
-            disabled={busy === "create"}
-            onClick={() => void createPatient(true)}
+            onClick={(e) => {
+              if (dirty) {
+                const ok = window.confirm(t("unsavedLeaveConfirm"));
+                if (!ok) e.preventDefault();
+              }
+            }}
           >
-            {t("saveDraft")}
-          </button>
-          <Link href="/admin/avatars" className="btn-secondary">
             {t("cancel")}
           </Link>
         </div>
