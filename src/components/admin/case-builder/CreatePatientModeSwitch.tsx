@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { GuidedCaseBuilder } from "@/components/admin/case-builder/GuidedCaseBuilder";
 import {
@@ -21,16 +21,10 @@ type Props = {
 export function CreatePatientModeSwitch({ voices, disorders }: Props) {
   const t = useTranslations("admin.caseBuilder");
   const [mode, setMode] = useState<"guided" | "advanced">("guided");
-  const [guidedDirty, setGuidedDirty] = useState(false);
-
-  const onDirtyChange = useCallback((dirty: boolean) => {
-    setGuidedDirty(dirty);
-  }, []);
 
   function switchToAdvanced() {
     // GuidedCaseBuilder already confirms when dirty before calling this.
     setMode("advanced");
-    setGuidedDirty(false);
   }
 
   function switchToGuided() {
@@ -63,7 +57,6 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
     <GuidedCaseBuilder
       mode="create"
       voices={voices.map((v) => ({ id: v.id, voice_name: v.voice_name }))}
-      onDirtyChange={onDirtyChange}
       onSwitchAdvanced={switchToAdvanced}
     />
   );

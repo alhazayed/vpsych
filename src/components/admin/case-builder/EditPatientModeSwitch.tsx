@@ -88,7 +88,6 @@ export function EditPatientModeSwitch({
       initialReadiness={initialReadiness}
       arabicAuthorship={arabicAuthorship}
       presentationUnresolved={presentationUnresolved}
-      onDirtyChange={onDirtyChange}
       onSwitchAdvanced={switchToAdvanced}
     />
   );
