@@ -917,7 +917,7 @@ export function GuidedCaseBuilder({
                             ? (() => {
                                 try {
                                   return t(
-                                    `salience.${s.salience as "overt"}`,
+                                    `salience.${s.salience as "presenting"}`,
                                   );
                                 } catch {
                                   return s.salience;
@@ -1454,7 +1454,7 @@ export function GuidedCaseBuilder({
                   </dt>
                   <dd>
                     {draft.symptoms.length
-                      ? draft.symptoms.map((s) => s.label).join("; ")
+                      ? draft.symptoms.map((s) => s.description).join("; ")
                       : t("reviewEmpty")}
                   </dd>
                 </div>

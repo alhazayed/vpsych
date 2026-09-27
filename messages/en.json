@@ -1750,8 +1750,8 @@
         "publish": "Makes the Virtual Patient available for normal simulation use. Requires Case Readiness to pass. This cannot be undone by editing — duplicate instead if you need changes later."
       },
       "salience": {
-        "overt": "Clearly presented",
-        "emergent": "Emerges with exploration",
+        "presenting": "Clearly presented",
+        "elicited": "Emerges with exploration",
         "hidden": "Hidden until assessed"
       },
       "profile": {
