@@ -575,6 +575,146 @@ describe("Phase 10C-2 Q — unsaved-change protection helpers", () => {
   });
 });
 
+describe("Phase 10C-2 hotfix — communication_style persistence contract", () => {
+  it("maps communicationStyle → ideal_guidelines.communication_style on interaction merge", () => {
+    const avatar = makeAvatar();
+    const baseline = avatarToGuidedDraft(avatar, personaFor(avatar)).draft;
+    expect(baseline.communicationStyle).toBe("guarded");
+    const draft: GuidedCaseDraft = {
+      ...structuredClone(baseline),
+      communicationStyle: "anxious",
+    };
+    const approvals = markFieldApproved({}, "interaction", "administrator");
+    const merge = buildGuidedMergeWriteInput({
+      existing: avatar,
+      existingPersona: personaFor(avatar),
+      baseline,
+      draft,
+      approvals,
+    });
+    expect(merge.ok).toBe(true);
+    if (!merge.ok) return;
+    expect(merge.appliedFields).toEqual(["interaction"]);
+    const g = merge.input.ideal_guidelines as Record<string, unknown>;
+    expect(g.communication_style).toBe("anxious");
+    expect(g.session_goals).toEqual(avatar.ideal_guidelines?.session_goals);
+    expect(g.ideal_approach).toBe(avatar.ideal_guidelines?.ideal_approach);
+    expect(g.custom_educator_note).toBe("preserve-me-10c2");
+    expect(g.case_type).toBe("training_simulation");
+    expect(merge.input.clinical_core).toBeUndefined();
+    expect(merge.input.personalities).toBeUndefined();
+  });
+
+  it("reload mapper returns communicationStyle from persisted guidelines", () => {
+    const avatar = makeAvatar();
+    const { draft } = avatarToGuidedDraft(avatar, personaFor(avatar));
+    expect(draft.communicationStyle).toBe("guarded");
+    expect(draft.therapeuticChallenges).toContain(
+      "difficulty_establishing_rapport",
+    );
+  });
+
+  it("symptom-only merge omits ideal_guidelines (style preserved by key absence)", () => {
+    const avatar = makeAvatar();
+    const baseline = avatarToGuidedDraft(avatar, personaFor(avatar)).draft;
+    const draft: GuidedCaseDraft = {
+      ...structuredClone(baseline),
+      symptoms: [
+        ...baseline.symptoms,
+        { id: "sx-only", description: "symptom only isolation" },
+      ],
+    };
+    const approvals = markFieldApproved({}, "symptoms", "administrator");
+    const merge = buildGuidedMergeWriteInput({
+      existing: avatar,
+      existingPersona: personaFor(avatar),
+      baseline,
+      draft,
+      approvals,
+    });
+    expect(merge.ok).toBe(true);
+    if (!merge.ok) return;
+    expect(merge.appliedFields).toEqual(["symptoms"]);
+    expect(merge.input.ideal_guidelines).toBeUndefined();
+    expect(merge.input.clinical_core?.session_goals).toEqual(
+      avatar.clinical_core?.session_goals,
+    );
+  });
+
+  it("goals-only merge updates goals without rewriting communication_style away", () => {
+    const avatar = makeAvatar();
+    const baseline = avatarToGuidedDraft(avatar, personaFor(avatar)).draft;
+    const draft: GuidedCaseDraft = {
+      ...structuredClone(baseline),
+      goals: [
+        ...baseline.goals,
+        {
+          id: "goal-only",
+          label: "Practice grounding (isolation)",
+          category: "intervention",
+          custom: true,
+        },
+      ],
+    };
+    const approvals = markFieldApproved({}, "goals", "administrator");
+    const merge = buildGuidedMergeWriteInput({
+      existing: avatar,
+      existingPersona: personaFor(avatar),
+      baseline,
+      draft,
+      approvals,
+    });
+    expect(merge.ok).toBe(true);
+    if (!merge.ok) return;
+    expect(merge.appliedFields).toEqual(["goals"]);
+    const g = merge.input.ideal_guidelines as Record<string, unknown>;
+    expect(g.communication_style).toBe("guarded");
+    expect(g.custom_educator_note).toBe("preserve-me-10c2");
+    expect(String(g.session_goals)).toContain("Practice grounding (isolation)");
+  });
+
+  it("interaction-only merge does not alter symptoms", () => {
+    const avatar = makeAvatar();
+    const baseline = avatarToGuidedDraft(avatar, personaFor(avatar)).draft;
+    const draft: GuidedCaseDraft = {
+      ...structuredClone(baseline),
+      communicationStyle: "defensive",
+    };
+    const approvals = markFieldApproved({}, "interaction", "administrator");
+    const merge = buildGuidedMergeWriteInput({
+      existing: avatar,
+      existingPersona: personaFor(avatar),
+      baseline,
+      draft,
+      approvals,
+    });
+    expect(merge.ok).toBe(true);
+    if (!merge.ok) return;
+    expect(merge.input.clinical_core).toBeUndefined();
+    expect(
+      (merge.input.ideal_guidelines as { communication_style?: string })
+        .communication_style,
+    ).toBe("defensive");
+  });
+
+  it("trigger migration merges extras instead of wiping ideal_guidelines", () => {
+    const sql = readFileSync(
+      join(
+        root,
+        "../supabase/migrations/20260927092011_preserve_ideal_guidelines_extras.sql",
+      ),
+      "utf8",
+    );
+    expect(sql).toMatch(/existing_guidelines/);
+    expect(sql).toMatch(/existing_guidelines \|\| jsonb_build_object/);
+    expect(sql).toMatch(/communication_style/);
+    // Must not reintroduce the wipe-only assignment of only two keys.
+    expect(sql).not.toMatch(
+      /NEW\.ideal_guidelines := jsonb_build_object\(\s*'session_goals',\s*goals,\s*'ideal_approach',\s*approach\s*\)/,
+    );
+  });
+});
+
 describe("Phase 10C-2 R/S/T — wiring + security regression (source)", () => {
   it("case-builder [id] route uses requireApiAdmin, rate limit, mutability, audit", () => {
     const route = readFileSync(

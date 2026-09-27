@@ -5,7 +5,7 @@
 **Baseline:** Phase 10C-1 production CLEAR (`b2ef8a7`); Phase 10B readiness CLEAR  
 **Production security (Phase 8):** MFA / AAL2 / HMAC / RLS / authorization / rate limiting / audit logging — **UNCHANGED**  
 **Scope:** Guided Edit for existing fictional Virtual Patients with **merge-only** persistence.  
-**Explicitly out of scope:** Autosave, revision history, automatic merge/deploy, new migrations (none required).
+**Explicitly out of scope:** Autosave, revision history, automatic merge/deploy, Phase 10C-3.
 
 ---
 
@@ -133,7 +133,17 @@ Unchanged Phase 8 controls:
 
 ## 11. Migrations
 
-**None.** Application-level merge semantics only.
+| Version | Name | Why required |
+|---|---|---|
+| `20260927092011` | `preserve_ideal_guidelines_extras` | `sync_avatar_flat_from_v2` previously rebuilt `ideal_guidelines` as only `{ session_goals, ideal_approach }`, wiping Guided extras such as `communication_style`. Hotfix merges those two flat keys into the existing object. |
+
+No new columns. Canonical store remains `avatars.ideal_guidelines` jsonb.
+
+### Persistence defect (fixed)
+
+**ROOT CAUSE:** Application merge (`guided-merge.ts` → `buildRpcPayload` → `admin_update_virtual_patient`) correctly wrote `ideal_guidelines.communication_style`, but BEFORE INSERT/UPDATE trigger `trg_sync_avatar_flat_from_v2` replaced the column with a two-key projection whenever `clinical_core` (always set by the update RPC) was touched.
+
+**FIX:** Trigger now does `existing_guidelines || { session_goals, ideal_approach }` so authored extras survive.
 
 ---
 
@@ -161,21 +171,15 @@ Suite: `src/lib/admin/case-builder/guided-edit.test.ts` (+ architecture wiring).
 | Q | Dirty / review helpers |
 | R/S/T | Auth, MFA wiring, HMAC/RLS regression via architecture |
 
-### Local gate results (2026-09-27)
+### Local gate results (2026-09-27 hotfix)
 
-| Command | Result |
-|---|---|
-| `npm test` | **1037** passed / 108 files |
-| `npm run lint` | 0 errors (13 pre-existing warnings) |
-| `npm run typecheck` | pass |
-| `npm run build` | pass (includes `/admin/avatars/[id]/edit`, `/api/admin/case-builder/[id]`) |
-| Phase 8 security (`architecture` + `admin-mfa` + `report-sign` + `edit-integrity`) | pass |
+See commit notes after `npm test` / lint / typecheck / build on the hotfix revision.
 
 ---
 
 ## 13. Known limitations
 
-- Context narrative is not fully reverse-mapped from existing persona prompts (loads empty; new context appends a marked EN section only when approved).
+- Context narrative is not fully reverse-mapped from existing persona prompts (loads empty; new context appends a marked EN section only when approved). Persist merge still preserves existing EN `persona_prompt` when context is not approved.
 - Comorbidity authoring remains Case Engine / Advanced surfaces; Guided Edit does not invent comorbidity UI.
 - Advanced wizard dirty state is confirmed on switch but not fully mirrored into Guided draft.
 - No autosave / revision history (deferred).

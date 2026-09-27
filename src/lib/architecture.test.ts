@@ -1365,5 +1365,19 @@ describe("Phase 10C-1 — edit integrity foundation preserves Phase 8 + immutabi
     );
     expect(merge).toMatch(/ar-JO/);
     expect(merge).toMatch(/human_personality/);
+    expect(merge).toMatch(/communication_style/);
+  });
+
+  it("Phase 10C-2 hotfix keeps ideal_guidelines extras across flat sync", () => {
+    const migration = readFileSync(
+      join(
+        root,
+        "../supabase/migrations/20260927092011_preserve_ideal_guidelines_extras.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toMatch(/sync_avatar_flat_from_v2/);
+    expect(migration).toMatch(/existing_guidelines \|\| jsonb_build_object/);
+    expect(migration).toMatch(/communication_style/);
   });
 });
