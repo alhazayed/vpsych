@@ -171,9 +171,17 @@ Suite: `src/lib/admin/case-builder/guided-edit.test.ts` (+ architecture wiring).
 | Q | Dirty / review helpers |
 | R/S/T | Auth, MFA wiring, HMAC/RLS regression via architecture |
 
-### Local gate results (2026-09-27 hotfix)
+### Local + preview gate results (2026-09-27 hotfix `67a33c8`)
 
-See commit notes after `npm test` / lint / typecheck / build on the hotfix revision.
+| Command | Result |
+|---|---|
+| `npm test` | **1044** passed / 108 files |
+| `npm run lint` | 0 errors (13 pre-existing warnings) |
+| `npm run typecheck` | pass |
+| `npm run build` | pass |
+| `npm run test:migrations` | local structure OK (`20260927092011` present) |
+| Phase 8 / 10C security (`architecture` + `admin-mfa` + `report-sign` + `edit-integrity` + `guided-edit`) | **129** focused tests pass |
+| Preview live style persist (`dpl_BZEug2t…` @ `67a33c8`) | **32/32** PASS — CLEAR FOR VERIFICATION |
 
 ---
 
