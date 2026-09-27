@@ -19,6 +19,13 @@ import {
   coerceVoiceProfile,
   legacyColumnsFromProfile,
 } from "@/lib/voice/registry";
+import {
+  isEditableLifecycle,
+  readLifecycleStatus,
+} from "./persist-lifecycle";
+
+export { isEditableLifecycle, readLifecycleStatus } from "./persist-lifecycle";
+export { assertAvatarContentMutable } from "./mutability";
 
 export type PersistResult =
   | {
@@ -56,27 +63,6 @@ function rpcErrorStatus(message: string): number {
   )
     return 400;
   return 500;
-}
-
-export function readLifecycleStatus(
-  avatar: Pick<Avatar, "lifecycle_status" | "is_active">,
-): VirtualPatientLifecycleStatus {
-  const raw = avatar.lifecycle_status;
-  if (
-    raw === "draft" ||
-    raw === "testing" ||
-    raw === "published" ||
-    raw === "archived"
-  ) {
-    return raw;
-  }
-  return avatar.is_active ? "published" : "draft";
-}
-
-export function isEditableLifecycle(
-  status: VirtualPatientLifecycleStatus,
-): boolean {
-  return status === "draft" || status === "testing";
 }
 
 export async function resolvePublishContext(
@@ -122,9 +108,21 @@ export async function resolvePublishContext(
   return ctx;
 }
 
-function buildRpcPayload(
+/**
+ * Build RPC jsonb payload.
+ *
+ * `admin_update_virtual_patient` uses key-presence semantics: a missing key
+ * preserves the existing column; a present key replaces it. Never default
+ * omitable fields to `{}` / `[]` on update — that wiped authored
+ * ideal_guidelines (Phase 10C audit).
+ *
+ * On create, omitted guidelines/rubric/HP still default to empty via the
+ * create RPC's coalesce, or via explicit create defaults below.
+ */
+export function buildRpcPayload(
   input: VirtualPatientWriteInput,
   ctx: PublishContext,
+  mode: "create" | "update" = "create",
 ): Record<string, unknown> {
   const persona =
     input.persona || ctx.defaultDisorderId
@@ -139,19 +137,62 @@ function buildRpcPayload(
         }
       : null;
 
-  return {
+  const payload: Record<string, unknown> = {
     slug: input.slug,
     default_locale: input.default_locale ?? "en-US",
-    clinical_core: input.clinical_core ?? null,
-    personalities: input.personalities ?? null,
-    human_personality: input.human_personality ?? {},
-    rubric: input.rubric ?? [],
-    ideal_guidelines: input.ideal_guidelines ?? {},
-    voice_profile_id: input.voice_profile_id ?? null,
-    voice_id: input.voice_id ?? null,
-    voice_id_ar: input.voice_id_ar ?? null,
     persona,
   };
+
+  if (input.clinical_core !== undefined) {
+    payload.clinical_core = input.clinical_core ?? null;
+  } else if (mode === "create") {
+    payload.clinical_core = null;
+  }
+
+  if (input.personalities !== undefined) {
+    payload.personalities = input.personalities ?? null;
+  } else if (mode === "create") {
+    payload.personalities = null;
+  }
+
+  if (input.human_personality !== undefined) {
+    payload.human_personality = input.human_personality ?? {};
+  } else if (mode === "create") {
+    payload.human_personality = {};
+  }
+
+  if (input.rubric !== undefined) {
+    payload.rubric = input.rubric ?? [];
+  } else if (mode === "create") {
+    payload.rubric = [];
+  }
+
+  // Critical: omit on update when undefined so persisted guidelines survive.
+  if (input.ideal_guidelines !== undefined) {
+    payload.ideal_guidelines = input.ideal_guidelines ?? {};
+  } else if (mode === "create") {
+    payload.ideal_guidelines = {};
+  }
+
+  if (input.voice_profile_id !== undefined) {
+    payload.voice_profile_id = input.voice_profile_id;
+  } else if (mode === "create") {
+    payload.voice_profile_id = null;
+  }
+
+  if (input.voice_id !== undefined) {
+    payload.voice_id = input.voice_id;
+  } else if (mode === "create") {
+    payload.voice_id = null;
+  }
+
+  if (input.voice_id_ar !== undefined) {
+    payload.voice_id_ar = input.voice_id_ar;
+  } else if (mode === "create") {
+    payload.voice_id_ar = null;
+  }
+
+  return payload;
 }
 
 export async function createVirtualPatientDraft(
@@ -169,7 +210,7 @@ export async function createVirtualPatientDraft(
     };
   }
 
-  const payload = buildRpcPayload(input, ctx);
+  const payload = buildRpcPayload(input, ctx, "create");
   if (input.voice_profile_id && ctx.voiceProfile) {
     const legacy = legacyColumnsFromProfile(ctx.voiceProfile);
     payload.voice_id = legacy.voice_id ?? null;
@@ -226,14 +267,14 @@ export async function updateVirtualPatientDraft(
   }
 
   const status = readLifecycleStatus(existing as unknown as Avatar);
-  if (status === "published") {
-    return {
-      ok: false,
-      status: 409,
-      error: "Published avatars are immutable; duplicate to create a new draft",
-    };
-  }
-  if (status === "archived") {
+  if (!isEditableLifecycle(status)) {
+    if (status === "published") {
+      return {
+        ok: false,
+        status: 409,
+        error: "Published avatars are immutable; duplicate to create a new draft",
+      };
+    }
     return {
       ok: false,
       status: 409,
@@ -254,7 +295,7 @@ export async function updateVirtualPatientDraft(
     };
   }
 
-  const payload = buildRpcPayload(writeInput, ctx);
+  const payload = buildRpcPayload(writeInput, ctx, "update");
   if (writeInput.voice_profile_id && ctx.voiceProfile) {
     const legacy = legacyColumnsFromProfile(ctx.voiceProfile);
     payload.voice_id = legacy.voice_id ?? null;

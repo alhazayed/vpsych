@@ -127,12 +127,17 @@ export async function PUT(request: Request) {
   });
 
   if (!result.ok) {
+    const status =
+      result.status === 404 || result.status === 409 ? result.status : 500;
     return NextResponse.json(
       {
-        error: clientSafeError("Failed to save personality", result.error),
+        error:
+          status === 500
+            ? clientSafeError("Failed to save personality", result.error)
+            : result.error,
         issues: result.issues,
       },
-      { status: 500 },
+      { status },
     );
   }
 

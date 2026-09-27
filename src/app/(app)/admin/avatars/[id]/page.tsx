@@ -145,6 +145,7 @@ export default async function AdminAvatarDetailPage({
         statusTesting: t("statusTesting"),
         statusPublished: t("statusPublished"),
         statusArchived: t("statusArchived"),
+        continueAuthoring: t("continueAuthoring"),
         testSessionsHeading: tTranscript("listHeading"),
         testSessionsEmpty: tTranscript("listEmpty"),
         testSessionsView: tTranscript("listView"),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-audit";
 import {
@@ -16,6 +17,7 @@ type Params = { params: Promise<{ id: string }> };
  * Body: { voice_profile_id: string | null }
  * Syncs legacy voice_id / voice_id_ar for backward compatibility.
  * Unassign clears the legacy column synced from the previous profile.
+ * Published/archived avatars are immutable (Phase 10C-1).
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { id: avatarId } = await params;
@@ -32,6 +34,14 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
       { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  const mutable = await assertAvatarContentMutable(supabase, avatarId);
+  if (!mutable.ok) {
+    return NextResponse.json(
+      { error: mutable.error },
+      { status: mutable.status },
     );
   }
 

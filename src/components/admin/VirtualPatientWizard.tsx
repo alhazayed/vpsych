@@ -288,6 +288,10 @@ function defaultClinical(): ClinicalCore {
   };
 }
 
+const DEFAULT_ALLIANCE_RUBRIC = [
+  { id: "alliance", label: "Alliance", weight: 1, max: 5 },
+] as const;
+
 type FormState = {
   slug: string;
   default_locale: string;
@@ -303,6 +307,10 @@ type FormState = {
   voice_profile_id: string;
   default_disorder_id: string;
   humanLocale: "en-US" | "ar-JO";
+  /** Opaque persisted training config — round-tripped on edit (Phase 10C-1). */
+  ideal_guidelines: Record<string, unknown> | null;
+  /** Persisted rubric — never replace with alliance-only on edit load. */
+  rubric: unknown;
 };
 
 function createInitialForm(): FormState {
@@ -321,6 +329,8 @@ function createInitialForm(): FormState {
     voice_profile_id: "",
     default_disorder_id: "",
     humanLocale: "en-US",
+    ideal_guidelines: null,
+    rubric: [...DEFAULT_ALLIANCE_RUBRIC],
   };
 }
 
@@ -385,7 +395,7 @@ function buildWriteInput(form: FormState): VirtualPatientWriteInput {
     avatar_slug: slug || form.arHuman.avatar_slug,
   };
 
-  return {
+  const input: VirtualPatientWriteInput = {
     slug,
     default_locale: form.default_locale || "en-US",
     clinical_core: clinical,
@@ -402,8 +412,16 @@ function buildWriteInput(form: FormState): VirtualPatientWriteInput {
       create: true,
       default_disorder_id: form.default_disorder_id || null,
     },
-    rubric: [{ id: "alliance", label: "Alliance", weight: 1, max: 5 }],
+    rubric: form.rubric ?? [...DEFAULT_ALLIANCE_RUBRIC],
   };
+
+  // Only send guidelines when we have a loaded/authored object. Omitting on
+  // update preserves persisted ideal_guidelines (key-presence RPC semantics).
+  if (form.ideal_guidelines != null) {
+    input.ideal_guidelines = form.ideal_guidelines;
+  }
+
+  return input;
 }
 
 function applyLoadedAvatar(
@@ -419,6 +437,17 @@ function applyLoadedAvatar(
       Record<string, HumanPersonalityProfile>
     > | null) ?? {};
   const slug = String(avatar.slug ?? "");
+
+  const loadedGuidelines =
+    avatar.ideal_guidelines &&
+    typeof avatar.ideal_guidelines === "object" &&
+    !Array.isArray(avatar.ideal_guidelines)
+      ? (avatar.ideal_guidelines as Record<string, unknown>)
+      : null;
+  const loadedRubric =
+    avatar.rubric !== undefined && avatar.rubric !== null
+      ? avatar.rubric
+      : [...DEFAULT_ALLIANCE_RUBRIC];
 
   return {
     slug,
@@ -458,6 +487,8 @@ function applyLoadedAvatar(
     voice_profile_id: String(avatar.voice_profile_id ?? ""),
     default_disorder_id: String(persona?.default_disorder_id ?? ""),
     humanLocale: "en-US",
+    ideal_guidelines: loadedGuidelines,
+    rubric: loadedRubric,
   };
 }
 
@@ -1858,8 +1889,11 @@ export function VirtualPatientWizard({
           >
             {t("publish")}
           </button>
-          <Link href="/admin/avatars" className="btn-secondary">
-            {t("back")}
+          <Link
+            href={avatarId ? `/admin/avatars/${avatarId}` : "/admin/avatars"}
+            className="btn-secondary"
+          >
+            {avatarId ? t("backToDetail") : t("back")}
           </Link>
         </div>
 

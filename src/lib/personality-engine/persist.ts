@@ -1,10 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
 import type { HumanPersonalityMap, HumanPersonalityProfile } from "./types";
 import { validateHumanPersonality } from "./validation";
 
 export type PersistPersonalityResult =
   | { ok: true; map: HumanPersonalityMap }
-  | { ok: false; error: string; issues?: string[] };
+  | { ok: false; error: string; status?: number; issues?: string[] };
 
 /**
  * Load human_personality map for an avatar (admin / resolve helpers).
@@ -42,6 +43,16 @@ export async function saveHumanPersonalityProfile(
       ok: false,
       error: "Invalid personality profile",
       issues: validated.issues.map((i) => `${i.path ?? i.code}: ${i.message}`),
+    };
+  }
+
+  // Phase 10C-1 — published/archived content is immutable via side routes too.
+  const mutable = await assertAvatarContentMutable(client, params.avatarId);
+  if (!mutable.ok) {
+    return {
+      ok: false,
+      error: mutable.error,
+      status: mutable.status,
     };
   }
 
