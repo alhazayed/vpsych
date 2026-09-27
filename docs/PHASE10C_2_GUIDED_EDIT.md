@@ -161,6 +161,16 @@ Suite: `src/lib/admin/case-builder/guided-edit.test.ts` (+ architecture wiring).
 | Q | Dirty / review helpers |
 | R/S/T | Auth, MFA wiring, HMAC/RLS regression via architecture |
 
+### Local gate results (2026-09-27)
+
+| Command | Result |
+|---|---|
+| `npm test` | **1037** passed / 108 files |
+| `npm run lint` | 0 errors (13 pre-existing warnings) |
+| `npm run typecheck` | pass |
+| `npm run build` | pass (includes `/admin/avatars/[id]/edit`, `/api/admin/case-builder/[id]`) |
+| Phase 8 security (`architecture` + `admin-mfa` + `report-sign` + `edit-integrity`) | pass |
+
 ---
 
 ## 13. Known limitations

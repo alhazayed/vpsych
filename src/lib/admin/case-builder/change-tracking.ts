@@ -117,7 +117,7 @@ export function summarizeGuidedField(
     case "voice":
       return draft.voiceProfileId ?? "(none)";
     case "severity":
-      return draft.severity;
+      return draft.severity ?? "";
     case "riskProfile":
       return stableStringify(draft.riskProfile);
     case "disclosureRules":
@@ -181,7 +181,7 @@ function fieldSnapshot(field: GuidedEditableField, draft: GuidedCaseDraft): stri
     case "voice":
       return draft.voiceProfileId ?? "";
     case "severity":
-      return draft.severity;
+      return draft.severity ?? "";
     case "riskProfile":
       return stableStringify(draft.riskProfile);
     case "disclosureRules":

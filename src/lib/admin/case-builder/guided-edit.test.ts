@@ -125,8 +125,11 @@ function makeAvatar(opts?: {
     ideal_approach: "Primary training framework: cbt. Collaborative.",
     risk_profile: { suicidal_ideation: "none" },
     case_file: {
-      consistency_rules: ["preserve-case-file"],
-    } as ClinicalCore["case_file"],
+      consistency_rules: {
+        principle: "preserve-case-file",
+        canonical_facts_immutable: ["preserve-case-file"],
+      },
+    },
   };
 
   const ar = opts?.missingAr
@@ -309,9 +312,9 @@ describe("Phase 10C-2 E/F/G/H/I — preservation", () => {
   it("E ideal_guidelines custom keys preserved on framework merge", () => {
     const avatar = makeAvatar();
     const baseline = avatarToGuidedDraft(avatar, personaFor(avatar)).draft;
-    const draft = {
+    const draft: GuidedCaseDraft = {
       ...structuredClone(baseline),
-      primaryFramework: "mi" as const,
+      primaryFramework: "motivational_interviewing",
       frameworkRationale: "Shift for training focus",
     };
     const approvals = markFieldApproved({}, "framework", "administrator");
@@ -327,7 +330,7 @@ describe("Phase 10C-2 E/F/G/H/I — preservation", () => {
     const g = merge.input.ideal_guidelines as Record<string, unknown>;
     expect(g.custom_educator_note).toBe("preserve-me-10c2");
     expect(g.case_type).toBe("training_simulation");
-    expect(g.primary_framework).toBe("mi");
+    expect(g.primary_framework).toBe("motivational_interviewing");
   });
 
   it("F clinical_core case_file preserved when symptoms change", () => {
