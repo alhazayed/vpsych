@@ -623,7 +623,7 @@ describe("architecture invariants", () => {
     ).not.toThrow();
   });
 
-  it("Stage 11 Realtime owns presentation only and never owns patient mind", () => {
+  it("Stage 11 Realtime owns presentation only and never owns patient mind", async () => {
     const barrel = readFileSync(join(root, "lib/realtime/index.ts"), "utf8");
     const bridge = readFileSync(
       join(root, "lib/realtime/session-bridge.ts"),
@@ -670,7 +670,7 @@ describe("architecture invariants", () => {
     expect(stream).toMatch(/isRealtimeStreamingEnabled/);
     expect(pipeline).toMatch(/therapistInterrupted/);
 
-    // Phase 9.1 — voice UIs must send therapistInterrupted (closes OWN-05).
+    // Phase 9.1 / 9.1R — wiring + behavioral contracts (not mere string presence).
     const voiceSession = readFileSync(
       join(root, "components/VoiceSession.tsx"),
       "utf8",
@@ -680,23 +680,75 @@ describe("architecture invariants", () => {
       "utf8",
     );
     const voiceClient = readFileSync(join(root, "lib/voice/client.ts"), "utf8");
-    const turnFence = readFileSync(
-      join(root, "lib/voice/turn-fence.ts"),
+    const messageRoute = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
       "utf8",
     );
-    expect(voiceSession).toMatch(/therapistInterrupted/);
-    expect(voiceSession).toMatch(/createVoiceTurnFence/);
-    expect(therapyRoomSession).toMatch(/therapistInterrupted/);
-    expect(therapyRoomSession).toMatch(/pendingTherapistInterruptedRef/);
     const clinicTherapyRoom = readFileSync(
       join(root, "components/therapy-room/TherapyRoom.tsx"),
       "utf8",
     );
-    expect(clinicTherapyRoom).toMatch(/therapistInterrupted/);
-    expect(clinicTherapyRoom).toMatch(/createVoiceTurnFence/);
+
+    // UIs must use the interrupt latch + consume-on-valid-submit contract.
+    expect(voiceSession).toMatch(/createTherapistInterruptedFlag/);
+    expect(voiceSession).toMatch(/onValidTurnSubmit/);
+    expect(voiceSession).toMatch(/createMicClaim/);
+    expect(voiceSession).toMatch(/clearVoiceTurnPending/);
+    expect(therapyRoomSession).toMatch(/createTherapistInterruptedFlag/);
+    expect(therapyRoomSession).toMatch(/consumeForSubmit/);
+    expect(clinicTherapyRoom).toMatch(/createTherapistInterruptedFlag/);
+    expect(clinicTherapyRoom).toMatch(/onValidTurnSubmit/);
     expect(voiceClient).toMatch(/signal:\s*params\.signal/);
-    expect(turnFence).toMatch(/createVoiceTurnFence/);
-    expect(turnFence).toMatch(/isStaleVoiceResult/);
+
+    // Server tip-of-conversation guard (no schema migration).
+    expect(messageRoute).toMatch(/isAssistantPersistTipCurrent/);
+    expect(messageRoute).toMatch(/Turn superseded|superseded:\s*true/);
+
+    // Behavioral: interrupt latch survives empty STT; tip guard rejects stale.
+    const { createTherapistInterruptedFlag } = await import(
+      "@/lib/voice/interrupt-flag"
+    );
+    const { isAssistantPersistTipCurrent } = await import(
+      "@/lib/voice/stale-assistant-guard"
+    );
+    const { createMicClaim } = await import("@/lib/voice/mic-claim");
+    const { clearVoiceTurnPending, shouldApplyVoiceTurnResult } = await import(
+      "@/lib/voice/turn-lifecycle"
+    );
+    const { createVoiceTurnFence } = await import("@/lib/voice/turn-fence");
+
+    const flag = createTherapistInterruptedFlag();
+    flag.mark();
+    expect(flag.isPending()).toBe(true);
+    // empty STT would not call consumeForSubmit
+    expect(flag.isPending()).toBe(true);
+    expect(flag.consumeForSubmit()).toBe(true);
+
+    expect(
+      isAssistantPersistTipCurrent({
+        expectedUserMessageId: "u1",
+        tip: { id: "u2", role: "user" },
+      }),
+    ).toBe(false);
+
+    const mic = createMicClaim();
+    expect(mic.tryClaim()).toBe(true);
+    expect(mic.tryClaim()).toBe(false);
+
+    const fence = createVoiceTurnFence();
+    const turnId = fence.beginTurn();
+    let pending = true;
+    fence.invalidate();
+    expect(
+      shouldApplyVoiceTurnResult({
+        turnId,
+        isActive: (id) => fence.isActive(id),
+      }),
+    ).toBe(false);
+    clearVoiceTurnPending((v) => {
+      pending = v;
+    });
+    expect(pending).toBe(false);
 
     // Must not re-export patient cognition owners
     expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);

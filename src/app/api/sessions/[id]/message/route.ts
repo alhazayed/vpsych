@@ -31,6 +31,7 @@ import { expireStaleSession } from "@/lib/session-expiry";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import { clientSafeError } from "@/lib/api-errors";
+import { isAssistantPersistTipCurrent } from "@/lib/voice/stale-assistant-guard";
 import {
   expressionPromptBlock,
   processEmotionTurn,
@@ -601,6 +602,54 @@ export async function POST(request: Request, { params }: Params) {
     decisionAct: decisionPlan?.act ?? null,
     humanizationBehaviors: humanization?.behaviors ?? null,
   });
+
+  // Phase 9.1R — stale-turn guard (no schema change).
+  // insert_assistant_message only checks that the tip role is `user`, not which
+  // user row. If a newer therapist turn inserted another user message while
+  // this request was still generating, persisting here would mis-pair a stale
+  // assistant with the newer user turn. Require our userMsg to still be tip.
+  if (request.signal.aborted) {
+    console.warn("[sessions/message] client aborted before assistant persist", {
+      sessionId,
+      userMessageId: userMsg.id,
+    });
+    return NextResponse.json(
+      { error: "Request aborted", aborted: true, superseded: true },
+      { status: 409 },
+    );
+  }
+
+  const { data: tipRow } = await supabase
+    .from("session_messages")
+    .select("id, role")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (
+    !isAssistantPersistTipCurrent({
+      expectedUserMessageId: String(userMsg.id),
+      tip: tipRow
+        ? { id: String(tipRow.id), role: String(tipRow.role) }
+        : null,
+    })
+  ) {
+    console.warn("[sessions/message] stale turn superseded; skip assistant persist", {
+      sessionId,
+      expectedUserMessageId: userMsg.id,
+      tipId: tipRow?.id ?? null,
+      tipRole: tipRow?.role ?? null,
+    });
+    return NextResponse.json(
+      {
+        error: "Turn superseded",
+        superseded: true,
+        userMessage: userMsg,
+      },
+      { status: 409 },
+    );
+  }
 
   const { data: assistantMsg, error: assistantError } = await (async () => {
     const prepared = prepareMessageRpc(supabase, {

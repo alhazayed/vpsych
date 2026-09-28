@@ -19,6 +19,12 @@ import {
   runVoiceConversationTurn,
   submitConversationTurn,
 } from "@/lib/voice/conversation-pipeline";
+import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
+import { createMicClaim } from "@/lib/voice/mic-claim";
+import {
+  clearVoiceTurnPending,
+  shouldApplyVoiceTurnResult,
+} from "@/lib/voice/turn-lifecycle";
 import {
   startMicWavRecording,
   type MicRecorder,
@@ -110,8 +116,10 @@ export function VoiceSession({
   const turnFenceRef = useRef(createVoiceTurnFence());
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackAbortRef = useRef<AbortController | null>(null);
-  /** Next therapist submit follows a barge-in / cut-off of patient audio. */
-  const pendingTherapistInterruptedRef = useRef(false);
+  /** Latch: consume only on valid replacement submit (Phase 9.1R). */
+  const interruptFlagRef = useRef(createTherapistInterruptedFlag());
+  /** Sync mic ownership — claimed before await getUserMedia (Phase 9.1R). */
+  const micClaimRef = useRef(createMicClaim());
   const speakingRef = useRef(false);
 
   const stopPlayback = useCallback(() => {
@@ -136,7 +144,7 @@ export function VoiceSession({
   const interruptPatientVoice = useCallback(
     (opts?: { markTherapistInterrupted?: boolean }) => {
       if (opts?.markTherapistInterrupted) {
-        pendingTherapistInterruptedRef.current = true;
+        interruptFlagRef.current.mark();
       }
       turnFenceRef.current.invalidate();
       turnAbortRef.current?.abort();
@@ -155,10 +163,16 @@ export function VoiceSession({
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
       micRecorderRef.current = null;
+      micClaimRef.current.release();
+      interruptFlagRef.current.clear();
       turnFenceRef.current.invalidate();
       turnAbortRef.current?.abort();
       turnAbortRef.current = null;
       stopPlayback();
+      // Always release UI busy state on end — fence may have invalidated an
+      // in-flight turn that would otherwise skip setPending(false) (Phase 9.1R).
+      clearVoiceTurnPending(setPending);
+      setListening(false);
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
       });
@@ -169,6 +183,7 @@ export function VoiceSession({
         );
         endingRef.current = false;
         setEnding(false);
+        clearVoiceTurnPending(setPending);
         return;
       }
       const data = (await res.json().catch(() => ({}))) as {
@@ -185,6 +200,7 @@ export function VoiceSession({
       setStatus(t("status.endFailed"));
       endingRef.current = false;
       setEnding(false);
+      clearVoiceTurnPending(setPending);
     }
   }, [router, session.avatar_id, session.id, t, stopPlayback]);
 
@@ -209,9 +225,12 @@ export function VoiceSession({
   }, [messages, status]);
 
   useEffect(() => {
+    const micClaim = micClaimRef.current;
     return () => {
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
+      micClaim.release();
+      turnAbortRef.current?.abort();
       stopPlayback();
     };
   }, [stopPlayback]);
@@ -326,8 +345,8 @@ export function VoiceSession({
       const turnAbort = new AbortController();
       turnAbortRef.current = turnAbort;
 
-      const therapistInterrupted = pendingTherapistInterruptedRef.current;
-      pendingTherapistInterruptedRef.current = false;
+      // Text body is already a valid replacement turn — consume latch now.
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
 
       setPending(true);
       setStatus(t("status.patientResponding"));
@@ -339,7 +358,12 @@ export function VoiceSession({
           therapistInterrupted,
           signal: turnAbort.signal,
         });
-        if (!turnFenceRef.current.isActive(turnId)) {
+        if (
+          !shouldApplyVoiceTurnResult({
+            turnId,
+            isActive: (id) => turnFenceRef.current.isActive(id),
+          })
+        ) {
           return;
         }
         if (!turn.ok) {
@@ -367,12 +391,18 @@ export function VoiceSession({
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
         );
       } catch {
-        if (!turnFenceRef.current.isActive(turnId)) return;
+        if (
+          !shouldApplyVoiceTurnResult({
+            turnId,
+            isActive: (id) => turnFenceRef.current.isActive(id),
+          })
+        ) {
+          return;
+        }
         setStatus(t("status.networkError"));
       } finally {
-        if (turnFenceRef.current.isActive(turnId)) {
-          setPending(false);
-        }
+        // Cleanup always — fence only gates result application (Phase 9.1R Fix 1).
+        clearVoiceTurnPending(setPending);
       }
     },
     [endSession, interruptPatientVoice, pending, session.id, speak, t, voiceEnabled],
@@ -384,6 +414,7 @@ export function VoiceSession({
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setListening(false);
+    micClaimRef.current.release();
     if (!recorder) return;
 
     const turnId = turnFenceRef.current.beginTurn();
@@ -393,15 +424,22 @@ export function VoiceSession({
     const playbackAbort = new AbortController();
     playbackAbortRef.current = playbackAbort;
 
-    const therapistInterrupted = pendingTherapistInterruptedRef.current;
-    pendingTherapistInterruptedRef.current = false;
+    // Peek only — consume in onValidTurnSubmit after non-empty STT (Phase 9.1R).
+    const therapistInterrupted = interruptFlagRef.current.isPending();
 
     setStatus(t("status.transcribing"));
     setPending(true);
 
     try {
       const wav = await recorder.stop();
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
 
       const result = await runVoiceConversationTurn({
         sessionId: session.id,
@@ -419,38 +457,83 @@ export function VoiceSession({
         signal: turnAbort.signal,
         playbackSignal: playbackAbort.signal,
         therapistInterrupted,
+        onValidTurnSubmit: () => {
+          interruptFlagRef.current.consumeForSubmit();
+        },
         turn: {
           turnId,
           isActive: (id) => turnFenceRef.current.isActive(id),
         },
         onTranscript: (transcript) => {
-          if (!turnFenceRef.current.isActive(turnId)) return;
+          if (
+            !shouldApplyVoiceTurnResult({
+              turnId,
+              isActive: (id) => turnFenceRef.current.isActive(id),
+            })
+          ) {
+            return;
+          }
           setDraft(transcript);
         },
         onMessages: (userMessage, assistantMessage) => {
-          if (!turnFenceRef.current.isActive(turnId)) return;
+          if (
+            !shouldApplyVoiceTurnResult({
+              turnId,
+              isActive: (id) => turnFenceRef.current.isActive(id),
+            })
+          ) {
+            return;
+          }
           setMessages((prev) => [...prev, userMessage, assistantMessage]);
         },
         speakHandlers: {
           onstart: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = true;
             setSpeaking(true);
           },
           onend: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = false;
             setSpeaking(false);
           },
           onerror: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = false;
             setSpeaking(false);
           },
         },
       });
 
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
 
       if (!result.ok) {
         if (result.stage === "cancelled") return;
@@ -464,6 +547,7 @@ export function VoiceSession({
           return;
         }
         if (result.stage === "stt" && result.error === "No speech detected") {
+          // Interrupt latch intentionally NOT consumed — next valid turn keeps it.
           setStatus(t("status.noSpeech"));
           return;
         }
@@ -476,12 +560,18 @@ export function VoiceSession({
         voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
       );
     } catch {
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
       setStatus(t("status.micTranscribeError"));
     } finally {
-      if (turnFenceRef.current.isActive(turnId)) {
-        setPending(false);
-      }
+      // Cleanup always — fence only gates result application (Phase 9.1R Fix 1).
+      clearVoiceTurnPending(setPending);
     }
   }
 
@@ -547,15 +637,23 @@ export function VoiceSession({
   async function toggleListen() {
     if (pending || ending || !voiceEnabled) return;
 
-    if (listening) {
+    if (listening || micClaimRef.current.isClaimed()) {
       if (micRecorderRef.current) {
         await stopOpenAIListen();
         return;
       }
+      if (micClaimRef.current.isClaimed() && !micRecorderRef.current) {
+        // Acquisition in flight or failed mid-way — ignore duplicate triggers.
+        return;
+      }
       recognitionRef.current?.stop();
       setListening(false);
+      micClaimRef.current.release();
       return;
     }
+
+    // Synchronous claim BEFORE await getUserMedia (Phase 9.1R Fix 2).
+    if (!micClaimRef.current.tryClaim()) return;
 
     // Starting a new listen while the patient is speaking = therapist barge-in.
     if (speakingRef.current) {
@@ -564,6 +662,11 @@ export function VoiceSession({
 
     try {
       const recorder = await startMicWavRecording(20000);
+      if (!micClaimRef.current.isClaimed()) {
+        // Session ended / cancelled during acquisition — drop the recorder.
+        recorder.cancel();
+        return;
+      }
       micRecorderRef.current = recorder;
       setListening(true);
       setDraft("");
@@ -574,6 +677,7 @@ export function VoiceSession({
       );
       startBrowserListen({ autoSend: false, interimOnly: true });
     } catch {
+      micClaimRef.current.release();
       startBrowserListen({ autoSend: true });
     }
   }
@@ -585,6 +689,7 @@ export function VoiceSession({
       micRecorderRef.current = null;
       setListening(false);
     }
+    micClaimRef.current.release();
     interruptPatientVoice();
     const next = !voiceEnabled;
     setVoiceEnabled(next);

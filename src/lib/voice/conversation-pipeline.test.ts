@@ -65,6 +65,62 @@ describe("conversation pipeline stages", () => {
     expect(result.data.assistantMessage.role).toBe("assistant");
   });
 
+  it("onValidTurnSubmit runs only after non-empty STT (interrupt latch contract)", async () => {
+    const onValid = vi.fn();
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).includes("/transcribe")) {
+        return Response.json({ transcript: "   ", provider: "openai" });
+      }
+      return Response.json({ error: "should not submit" }, { status: 500 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const empty = await runVoiceConversationTurn({
+      sessionId: "s1",
+      audio: new Blob([new Uint8Array([1])], { type: "audio/wav" }),
+      locale: "en",
+      voiceEnabled: false,
+      therapistInterrupted: true,
+      onValidTurnSubmit: onValid,
+    });
+    expect(empty.ok).toBe(false);
+    expect(onValid).not.toHaveBeenCalled();
+
+    fetchMock.mockImplementation(async (url: string) => {
+      if (String(url).includes("/transcribe")) {
+        return Response.json({ transcript: "Hello", provider: "openai" });
+      }
+      return Response.json({
+        userMessage: {
+          id: "u1",
+          session_id: "s1",
+          role: "user",
+          content: "Hello",
+          created_at: "2026-07-31T12:00:00.000Z",
+        },
+        assistantMessage: {
+          id: "a1",
+          session_id: "s1",
+          role: "assistant",
+          content: "Hi",
+          created_at: "2026-07-31T12:00:01.000Z",
+        },
+        locale: "en",
+      });
+    });
+
+    const ok = await runVoiceConversationTurn({
+      sessionId: "s1",
+      audio: new Blob([new Uint8Array([1])], { type: "audio/wav" }),
+      locale: "en",
+      voiceEnabled: false,
+      therapistInterrupted: true,
+      onValidTurnSubmit: onValid,
+    });
+    expect(ok.ok).toBe(true);
+    expect(onValid).toHaveBeenCalledTimes(1);
+  });
+
   it("Test 3 — therapist interruption sends therapistInterrupted: true", async () => {
     const fetchMock = vi.fn(async () =>
       Response.json({

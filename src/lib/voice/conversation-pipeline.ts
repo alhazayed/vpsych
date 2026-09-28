@@ -441,6 +441,12 @@ export async function runVoiceConversationTurn(params: {
   signal?: AbortSignal;
   /** True when this therapist utterance cut off prior patient speech. */
   therapistInterrupted?: boolean;
+  /**
+   * Called only after a non-empty transcript is ready and immediately before
+   * submitConversationTurn — use to consume the interrupt latch (Phase 9.1R).
+   * Not called on empty/no-speech STT.
+   */
+  onValidTurnSubmit?: () => void;
   /** Active turn identity for stale-result rejection. */
   turn?: VoiceTurnGuard;
   /** AbortController used for TTS playback (separate from STT/message abort). */
@@ -492,6 +498,9 @@ export async function runVoiceConversationTurn(params: {
   if (!stale()) {
     params.onTranscript?.(transcript);
   }
+
+  // Consume interrupt latch only for a valid replacement turn (Phase 9.1R).
+  params.onValidTurnSubmit?.();
 
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,

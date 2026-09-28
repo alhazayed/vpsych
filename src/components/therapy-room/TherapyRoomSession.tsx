@@ -49,6 +49,7 @@ import {
   submitConversationTurn,
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
+import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
 import type {
   ResolvedAvatar,
@@ -140,10 +141,10 @@ export function TherapyRoomSession({
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
   /**
-   * Phase 9.1 — set on barge-in; consumed by the next submitConversationTurn
-   * so CBE receives therapistInterrupted: true (closes OWN-05 for TRM).
+   * Phase 9.1R — mark on barge-in; consume only on valid replacement submit
+   * (empty STT must not clear the latch).
    */
-  const pendingTherapistInterruptedRef = useRef(false);
+  const interruptFlagRef = useRef(createTherapistInterruptedFlag());
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -296,6 +297,7 @@ export function TherapyRoomSession({
     vadRef.current?.cancel();
     vadRef.current = null;
     cancelTurnWork();
+    interruptFlagRef.current.clear();
     stopPlayback();
     ambienceRef.current?.stop();
     ambienceRef.current = null;
@@ -381,7 +383,7 @@ export function TherapyRoomSession({
           if (bargeInFired || endingRef.current) return;
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
-          pendingTherapistInterruptedRef.current = true;
+          interruptFlagRef.current.mark();
           immersionRef.current.track("therapist_interrupt");
           telemetryRef.current.record("barge_in");
           abort.abort();
@@ -554,8 +556,8 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       const gptStarted = telemetryRef.current.mark();
 
-      const therapistInterrupted = pendingTherapistInterruptedRef.current;
-      pendingTherapistInterruptedRef.current = false;
+      // Consume only now — after non-empty transcript (Phase 9.1R Fix 3).
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
 
       let turn;
       try {
@@ -971,7 +973,7 @@ export function TherapyRoomSession({
 
       // Text while patient is speaking counts as therapist interruption.
       if (fsmRef.current.getState() === "AVATAR_SPEAKING") {
-        pendingTherapistInterruptedRef.current = true;
+        interruptFlagRef.current.mark();
         stopPlayback();
         dispatch("BARGE_IN");
       }
@@ -994,8 +996,7 @@ export function TherapyRoomSession({
         dispatch("STT_OK");
       }
 
-      const therapistInterrupted = pendingTherapistInterruptedRef.current;
-      pendingTherapistInterruptedRef.current = false;
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
 
       turnAbortRef.current?.abort();
       const abort = new AbortController();

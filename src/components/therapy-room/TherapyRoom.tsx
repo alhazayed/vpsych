@@ -27,6 +27,12 @@ import {
   runVoiceConversationTurn,
   submitConversationTurn,
 } from "@/lib/voice/conversation-pipeline";
+import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
+import { createMicClaim } from "@/lib/voice/mic-claim";
+import {
+  clearVoiceTurnPending,
+  shouldApplyVoiceTurnResult,
+} from "@/lib/voice/turn-lifecycle";
 import {
   startMicWavRecording,
   type MicRecorder,
@@ -119,7 +125,8 @@ export function TherapyRoom({
   const turnFenceRef = useRef(createVoiceTurnFence());
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackAbortRef = useRef<AbortController | null>(null);
-  const pendingTherapistInterruptedRef = useRef(false);
+  const interruptFlagRef = useRef(createTherapistInterruptedFlag());
+  const micClaimRef = useRef(createMicClaim());
   const speakingRef = useRef(false);
 
   const stopPlayback = useCallback(() => {
@@ -218,7 +225,11 @@ export function TherapyRoom({
       turnFenceRef.current.invalidate();
       turnAbortRef.current?.abort();
       turnAbortRef.current = null;
+      micClaimRef.current.release();
+      interruptFlagRef.current.clear();
       stopPlayback();
+      clearVoiceTurnPending(setPending);
+      setListening(false);
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
       });
@@ -227,6 +238,7 @@ export function TherapyRoom({
         setStatus(data.error ?? t("endFailed"));
         endingRef.current = false;
         setEnding(false);
+        clearVoiceTurnPending(setPending);
         return;
       }
       const data = (await res.json().catch(() => ({}))) as {
@@ -243,6 +255,7 @@ export function TherapyRoom({
       setStatus(t("endFailed"));
       endingRef.current = false;
       setEnding(false);
+      clearVoiceTurnPending(setPending);
     }
   }, [runDepartureThenDebrief, router, session.avatar_id, session.id, stopPlayback, t]);
 
@@ -263,9 +276,12 @@ export function TherapyRoom({
   }, [endSession, phase, session.max_duration_sec, session.started_at]);
 
   useEffect(() => {
+    const micClaim = micClaimRef.current;
     return () => {
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
+      micClaim.release();
+      turnAbortRef.current?.abort();
       stopPlayback();
     };
   }, [stopPlayback]);
@@ -347,7 +363,7 @@ export function TherapyRoom({
       if (!trimmed || pending || endingRef.current || paused) return;
 
       if (speakingRef.current) {
-        pendingTherapistInterruptedRef.current = true;
+        interruptFlagRef.current.mark();
         turnFenceRef.current.invalidate();
         turnAbortRef.current?.abort();
         turnAbortRef.current = null;
@@ -358,8 +374,7 @@ export function TherapyRoom({
       turnAbortRef.current?.abort();
       const turnAbort = new AbortController();
       turnAbortRef.current = turnAbort;
-      const therapistInterrupted = pendingTherapistInterruptedRef.current;
-      pendingTherapistInterruptedRef.current = false;
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
 
       setPending(true);
       setStatus(t("patientThinking"));
@@ -370,7 +385,14 @@ export function TherapyRoom({
           therapistInterrupted,
           signal: turnAbort.signal,
         });
-        if (!turnFenceRef.current.isActive(turnId)) return;
+        if (
+          !shouldApplyVoiceTurnResult({
+            turnId,
+            isActive: (id) => turnFenceRef.current.isActive(id),
+          })
+        ) {
+          return;
+        }
         if (!turn.ok) {
           if (turn.aborted) return;
           if (turn.expired) {
@@ -388,12 +410,17 @@ export function TherapyRoom({
         }
         setStatus(t("ready"));
       } catch {
-        if (!turnFenceRef.current.isActive(turnId)) return;
+        if (
+          !shouldApplyVoiceTurnResult({
+            turnId,
+            isActive: (id) => turnFenceRef.current.isActive(id),
+          })
+        ) {
+          return;
+        }
         setStatus(t("networkError"));
       } finally {
-        if (turnFenceRef.current.isActive(turnId)) {
-          setPending(false);
-        }
+        clearVoiceTurnPending(setPending);
       }
     },
     [endSession, muted, paused, pending, session.id, speak, stopPlayback, t],
@@ -405,6 +432,7 @@ export function TherapyRoom({
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setListening(false);
+    micClaimRef.current.release();
     if (!recorder) return;
 
     const turnId = turnFenceRef.current.beginTurn();
@@ -413,14 +441,20 @@ export function TherapyRoom({
     turnAbortRef.current = turnAbort;
     const playbackAbort = new AbortController();
     playbackAbortRef.current = playbackAbort;
-    const therapistInterrupted = pendingTherapistInterruptedRef.current;
-    pendingTherapistInterruptedRef.current = false;
+    const therapistInterrupted = interruptFlagRef.current.isPending();
 
     setStatus(t("transcribing"));
     setPending(true);
     try {
       const wav = await recorder.stop();
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
       const result = await runVoiceConversationTurn({
         sessionId: session.id,
         audio: wav,
@@ -437,29 +471,60 @@ export function TherapyRoom({
         signal: turnAbort.signal,
         playbackSignal: playbackAbort.signal,
         therapistInterrupted,
+        onValidTurnSubmit: () => {
+          interruptFlagRef.current.consumeForSubmit();
+        },
         turn: {
           turnId,
           isActive: (id) => turnFenceRef.current.isActive(id),
         },
         speakHandlers: {
           onstart: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = true;
             setSpeaking(true);
           },
           onend: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = false;
             setSpeaking(false);
           },
           onerror: () => {
-            if (!turnFenceRef.current.isActive(turnId)) return;
+            if (
+              !shouldApplyVoiceTurnResult({
+                turnId,
+                isActive: (id) => turnFenceRef.current.isActive(id),
+              })
+            ) {
+              return;
+            }
             speakingRef.current = false;
             setSpeaking(false);
           },
         },
       });
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
       if (!result.ok) {
         if (result.stage === "cancelled") return;
         if (result.expired) {
@@ -473,27 +538,41 @@ export function TherapyRoom({
       setLastPatientLine(result.turn.assistantMessage.content);
       setStatus(t("ready"));
     } catch {
-      if (!turnFenceRef.current.isActive(turnId)) return;
+      if (
+        !shouldApplyVoiceTurnResult({
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        })
+      ) {
+        return;
+      }
       setStatus(t("networkError"));
     } finally {
-      if (turnFenceRef.current.isActive(turnId)) {
-        setPending(false);
-      }
+      clearVoiceTurnPending(setPending);
     }
   }
 
   async function startListen() {
     if (pending || paused || endingRef.current || phase !== "in_session") return;
+    if (micClaimRef.current.isClaimed()) return;
+    if (!micClaimRef.current.tryClaim()) return;
+
     if (speakingRef.current) {
-      pendingTherapistInterruptedRef.current = true;
+      interruptFlagRef.current.mark();
       turnFenceRef.current.invalidate();
       turnAbortRef.current?.abort();
       turnAbortRef.current = null;
     }
     stopPlayback();
     try {
-      micRecorderRef.current = await startMicWavRecording(20000);
+      const recorder = await startMicWavRecording(20000);
+      if (!micClaimRef.current.isClaimed()) {
+        recorder.cancel();
+        return;
+      }
+      micRecorderRef.current = recorder;
     } catch {
+      micClaimRef.current.release();
       setStatus(t("micDenied"));
       return;
     }
@@ -518,12 +597,18 @@ export function TherapyRoom({
   }
 
   function toggleListen() {
-    if (listening) void stopListen();
-    else void startListen();
+    if (listening || (micClaimRef.current.isClaimed() && micRecorderRef.current)) {
+      void stopListen();
+      return;
+    }
+    if (micClaimRef.current.isClaimed() && !micRecorderRef.current) {
+      return;
+    }
+    void startListen();
   }
 
   function interruptPatient() {
-    pendingTherapistInterruptedRef.current = true;
+    interruptFlagRef.current.mark();
     turnFenceRef.current.invalidate();
     turnAbortRef.current?.abort();
     turnAbortRef.current = null;
