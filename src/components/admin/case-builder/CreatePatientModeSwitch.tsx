@@ -16,11 +16,12 @@ type Props = {
 
 /**
  * Guided Mode (default) vs Advanced Mode (existing Virtual Patient wizard).
- * Switching modes with unsaved Guided work requires confirmation.
+ * Switching modes with unsaved Guided or Advanced work requires confirmation.
  */
 export function CreatePatientModeSwitch({ voices, disorders }: Props) {
   const t = useTranslations("admin.caseBuilder");
   const [mode, setMode] = useState<"guided" | "advanced">("guided");
+  const [advancedDirty, setAdvancedDirty] = useState(false);
 
   function switchToAdvanced() {
     // GuidedCaseBuilder already confirms when dirty before calling this.
@@ -28,8 +29,14 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
   }
 
   function switchToGuided() {
-    const ok = window.confirm(t("switchToGuidedConfirm"));
-    if (!ok) return;
+    if (advancedDirty) {
+      const ok = window.confirm(t("unsavedAdvancedConfirm"));
+      if (!ok) return;
+    } else {
+      const ok = window.confirm(t("switchToGuidedConfirm"));
+      if (!ok) return;
+    }
+    setAdvancedDirty(false);
     setMode("guided");
   }
 
@@ -48,7 +55,16 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
             {t("guidedMode")}
           </button>
         </div>
-        <VirtualPatientWizard voices={voices} disorders={disorders} />
+        {advancedDirty ? (
+          <p className="text-xs text-[var(--on-surface-variant)]" role="status">
+            {t("unsavedChanges")}
+          </p>
+        ) : null}
+        <VirtualPatientWizard
+          voices={voices}
+          disorders={disorders}
+          onDirtyChange={setAdvancedDirty}
+        />
       </div>
     );
   }

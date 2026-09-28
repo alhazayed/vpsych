@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ContextualHelp } from "@/components/admin/help/ContextualHelp";
+import { AdvancedJson } from "@/components/admin/AdvancedDetails";
 import { CaseReadinessPanel } from "@/components/admin/CaseReadinessPanel";
 import {
   COMMUNICATION_STYLES,
@@ -19,6 +20,9 @@ import {
   markFieldAiSuggested,
   markFieldApproved,
   markFieldChanged,
+  summarizeGeneratedBundle,
+  summarizeStructuredContext,
+  truncateSummary,
   type ArabicAuthorshipState,
   type GuidedBuilderMode,
   type GuidedCaseDraft,
@@ -30,6 +34,7 @@ import {
   type TrainingPresentation,
   type FrameworkOption,
 } from "@/lib/admin/case-builder";
+import { educatorAdminError } from "@/lib/admin/admin-product-errors";
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import type { SymptomProfileItem } from "@/lib/types";
 
@@ -78,8 +83,50 @@ export function GuidedCaseBuilder({
 }: Props) {
   const t = useTranslations("admin.caseBuilder");
   const tReady = useTranslations("admin.avatars.readiness");
+  const tErrors = useTranslations("admin.productErrors");
   const isEdit = mode === "edit";
   const steps = isEdit ? EDIT_GUIDED_STEPS : GUIDED_STEPS;
+
+  function mapError(error: unknown, fallback: string): string {
+    return educatorAdminError(
+      error,
+      (key) => tErrors(key),
+      fallback,
+    );
+  }
+
+  function lifecycleLabel(status: string): string {
+    const key = status as "draft" | "testing" | "published" | "archived";
+    try {
+      return t(`lifecycleLabels.${key}`);
+    } catch {
+      return status;
+    }
+  }
+
+  function lifecycleDescription(status: string): string {
+    const key = status as "draft" | "testing" | "published" | "archived";
+    try {
+      return t(`lifecycleDescriptions.${key}`);
+    } catch {
+      return "";
+    }
+  }
+
+  function arabicAuthorshipLabel(state: ArabicAuthorshipState): string {
+    try {
+      return t(`arabicAuthorshipStates.${state}`);
+    } catch {
+      return state;
+    }
+  }
+
+  function frameworkLabel(modality: string | null | undefined): string {
+    if (!modality) return t("reviewEmpty");
+    return (
+      THERAPY_FRAMEWORKS.find((f) => f.modality === modality)?.label ?? modality
+    );
+  }
 
   const [baseline, setBaseline] = useState<GuidedCaseDraft | null>(() =>
     isEdit && initialDraft ? structuredClone(initialDraft) : null,
@@ -338,22 +385,16 @@ export function GuidedCaseBuilder({
         if (isEdit) setApprovals((a) => markFieldAiSuggested(a, "context"));
         setStatus(t("aiContextReady"));
       } else if (r.kind === "framework" && r.primary) {
+        // Phase 10D: never auto-apply AI framework in create or edit — Approve/Reject.
+        setPendingFramework({
+          primary: r.primary,
+          supporting: r.supporting ?? [],
+          rationale: r.rationale ?? "",
+        });
         if (isEdit) {
-          setPendingFramework({
-            primary: r.primary,
-            supporting: r.supporting ?? [],
-            rationale: r.rationale ?? "",
-          });
           setApprovals((a) => markFieldAiSuggested(a, "framework"));
-          setStatus(t("aiFrameworkReady"));
-        } else {
-          patch({
-            primaryFramework: r.primary,
-            supportingFrameworks: r.supporting ?? [],
-            frameworkRationale: r.rationale ?? "",
-          });
-          setStatus(t("aiFrameworkReady"));
         }
+        setStatus(t("aiFrameworkReady"));
       } else if (r.kind === "case" && r.generated) {
         patch({
           generated: r.generated,
@@ -390,7 +431,10 @@ export function GuidedCaseBuilder({
       };
       if (!res.ok) {
         const detail = data.issues?.map((i) => i.message).join(" · ");
-        setStatus(detail || data.error || t("createFailed"));
+        setStatus(
+          detail ||
+            mapError(data.error ?? data, t("createFailed")),
+        );
         return;
       }
       const newId = data.avatarId ?? null;
@@ -449,17 +493,31 @@ export function GuidedCaseBuilder({
       };
       if (!res.ok) {
         const detail = data.issues?.map((i) => i.message).join(" · ");
-        setStatus(detail || data.error || t("saveFailed"));
+        setStatus(
+          detail ||
+            mapError(data.code ?? data.error ?? data, t("saveFailed")),
+        );
         return;
       }
       if (data.readiness) setReadiness(data.readiness);
       setSavedOk(true);
       setApprovals({});
       setReviewConfirmed(false);
+      const appliedLabels = (data.appliedFields ?? [])
+        .map((field) => {
+          try {
+            return t(`fields.${field as "presentation"}`);
+          } catch {
+            return field;
+          }
+        })
+        .join(", ");
       setStatus(
         data.noop
           ? t("saveNoop")
-          : `${t("saveSuccess")} (${(data.appliedFields ?? []).join(", ") || "—"})`,
+          : appliedLabels
+            ? `${t("saveSuccess")} (${appliedLabels})`
+            : t("saveSuccess"),
       );
       setBaseline(structuredClone(draft));
       onDirtyChange?.(false);
@@ -504,14 +562,27 @@ export function GuidedCaseBuilder({
             {t("editingExistingBanner")}
           </p>
           {caseIdentity ? (
-            <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-              {caseIdentity.name} · {caseIdentity.slug} ·{" "}
-              {caseIdentity.lifecycleStatus}
-            </p>
+            <div className="mt-1 space-y-1 text-xs text-[var(--on-surface-variant)]">
+              <p>
+                <span className="font-medium text-[var(--on-surface)]">
+                  {caseIdentity.name}
+                </span>
+                {" · "}
+                {lifecycleLabel(caseIdentity.lifecycleStatus)}
+              </p>
+              {lifecycleDescription(caseIdentity.lifecycleStatus) ? (
+                <p>{lifecycleDescription(caseIdentity.lifecycleStatus)}</p>
+              ) : null}
+              <p>
+                {t("internalId")}: {caseIdentity.slug}
+              </p>
+            </div>
           ) : null}
           <p className="mt-1 text-xs">{t("editingMergeNotice")}</p>
           <p className="mt-1 text-xs">
-            {t("arabicAuthorship", { state: arabicAuthorship })}
+            {t("arabicAuthorship", {
+              state: arabicAuthorshipLabel(arabicAuthorship),
+            })}
           </p>
         </div>
       ) : (
@@ -577,6 +648,9 @@ export function GuidedCaseBuilder({
                 variant="popover"
               />
             </h2>
+            <p className="text-xs text-[var(--on-surface-variant)]">
+              {t("comorbidityAdvancedHint")}
+            </p>
             <label className={labelClass}>
               {t("searchPresentation")}
               <input
@@ -838,8 +912,19 @@ export function GuidedCaseBuilder({
                       <span>
                         {s.description}{" "}
                         <span className="text-xs text-[var(--outline)]">
-                          ({s.uiCategory}
-                          {s.salience ? ` · ${s.salience}` : ""})
+                          (
+                          {s.salience
+                            ? (() => {
+                                try {
+                                  return t(
+                                    `salience.${s.salience as "presenting"}`,
+                                  );
+                                } catch {
+                                  return s.salience;
+                                }
+                              })()
+                            : s.uiCategory}
+                          )
                         </span>
                       </span>
                     </label>
@@ -1001,10 +1086,28 @@ export function GuidedCaseBuilder({
               {busy === "context" ? t("generating") : t("aiStructureContext")}
             </button>
             {draft.structuredContext && (
-              <div className="space-y-2 rounded-lg border border-[var(--outline-variant)] p-3 text-sm">
-                <pre className="whitespace-pre-wrap text-xs">
-                  {JSON.stringify(draft.structuredContext, null, 2)}
-                </pre>
+              <div className="space-y-2 rounded-lg border border-dashed border-[var(--outline-variant)] p-3 text-sm">
+                <p className="text-xs font-semibold text-[var(--primary)]">
+                  {t("aiSuggestionLabel")}
+                </p>
+                <dl className="space-y-2">
+                  {summarizeStructuredContext(draft.structuredContext).map(
+                    (row) => (
+                      <div key={row.label}>
+                        <dt className="text-[11px] font-medium text-[var(--outline)]">
+                          {row.label}
+                        </dt>
+                        <dd className="text-sm text-[var(--on-surface)]">
+                          {truncateSummary(row.value)}
+                        </dd>
+                      </div>
+                    ),
+                  )}
+                </dl>
+                <AdvancedJson
+                  title={t("advancedRawJson")}
+                  value={draft.structuredContext}
+                />
                 <button
                   type="button"
                   className="btn-primary"
@@ -1088,15 +1191,20 @@ export function GuidedCaseBuilder({
                 <strong>{t("whySuggested")}</strong> {draft.frameworkRationale}
               </p>
             ) : null}
-            {isEdit && pendingFramework ? (
+            {pendingFramework ? (
               <div className="space-y-2 rounded-lg border border-dashed border-[var(--outline-variant)] p-3 text-sm">
+                <p className="text-xs font-semibold text-[var(--primary)]">
+                  {t("aiSuggestionLabel")}
+                </p>
                 <p className="text-xs font-semibold">{t("currentValues")}</p>
-                <p>{draft.primaryFramework ?? "—"}</p>
+                <p>{frameworkLabel(draft.primaryFramework)}</p>
                 <p className="text-xs font-semibold">{t("suggestedValues")}</p>
                 <p>
-                  {pendingFramework.primary}
+                  {frameworkLabel(pendingFramework.primary)}
                   {pendingFramework.supporting.length
-                    ? ` (+ ${pendingFramework.supporting.join(", ")})`
+                    ? ` (+ ${pendingFramework.supporting
+                        .map((m) => frameworkLabel(m))
+                        .join(", ")})`
                     : ""}
                 </p>
                 {pendingFramework.rationale ? (
@@ -1118,13 +1226,17 @@ export function GuidedCaseBuilder({
                           framework: true,
                         },
                       });
-                      setApprovals((a) =>
-                        markFieldApproved(
-                          a,
-                          "framework",
-                          "ai_suggestion_approved",
-                        ),
-                      );
+                      if (isEdit) {
+                        setApprovals((a) =>
+                          markFieldApproved(
+                            a,
+                            "framework",
+                            "ai_suggestion_approved",
+                          ),
+                        );
+                        setReviewConfirmed(false);
+                        setSavedOk(false);
+                      }
                       setPendingFramework(null);
                     }}
                   >
@@ -1135,16 +1247,26 @@ export function GuidedCaseBuilder({
                     className="btn-secondary text-xs"
                     onClick={() => {
                       setPendingFramework(null);
-                      setApprovals((a) => {
-                        const next = { ...a };
-                        if (next.framework?.status === "ai_suggested") {
-                          delete next.framework;
-                        }
-                        return next;
-                      });
+                      if (isEdit) {
+                        setApprovals((a) => {
+                          const next = { ...a };
+                          if (next.framework?.status === "ai_suggested") {
+                            delete next.framework;
+                          }
+                          return next;
+                        });
+                      }
                     }}
                   >
                     {t("reject")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary text-xs"
+                    disabled={busy === "framework"}
+                    onClick={() => void runGenerate("framework")}
+                  >
+                    {t("regenerate")}
                   </button>
                 </div>
               </div>
@@ -1253,16 +1375,135 @@ export function GuidedCaseBuilder({
               {busy === "case" ? t("generating") : t("aiBuildCase")}
             </button>
             {draft.generated ? (
-              <pre className="max-h-80 overflow-auto rounded-lg bg-[var(--surface-container)] p-3 text-xs">
-                {JSON.stringify(draft.generated, null, 2)}
-              </pre>
+              <div className="space-y-2 rounded-lg border border-dashed border-[var(--outline-variant)] p-3">
+                <p className="text-xs font-semibold text-[var(--primary)]">
+                  {t("aiSuggestionLabel")}
+                </p>
+                <dl className="max-h-80 space-y-2 overflow-auto text-sm">
+                  {summarizeGeneratedBundle(draft.generated).map((row) => (
+                    <div key={row.label}>
+                      <dt className="text-[11px] font-medium text-[var(--outline)]">
+                        {row.label}
+                      </dt>
+                      <dd className="text-[var(--on-surface)]">
+                        {truncateSummary(row.value, 280)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <AdvancedJson
+                  title={t("advancedRawJson")}
+                  value={draft.generated}
+                />
+              </div>
             ) : null}
           </section>
         )}
 
         {draft.step === "review" && !isEdit && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold">{t("steps.review")}</h2>
+            <h2 className="text-base font-semibold">
+              <ContextualHelp
+                label={t("steps.review")}
+                help={t("help.review")}
+                variant="popover"
+              />
+            </h2>
+            <p className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container)] px-3 py-2 text-sm font-medium text-[var(--on-surface)]">
+              {t("nothingPublishedYet")}
+            </p>
+            <div className="space-y-3 rounded-lg border border-[var(--outline-variant)] p-3">
+              <h3 className="text-sm font-semibold">{t("reviewSummaryTitle")}</h3>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--outline)]">
+                {t("reviewAdminContent")}
+              </p>
+              <dl className="space-y-2 text-sm">
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("steps.presentation")}
+                  </dt>
+                  <dd>
+                    {draft.presentationName || t("reviewEmpty")}
+                    {draft.dsm5Code ? ` (${draft.dsm5Code})` : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("profile.displayName")}
+                  </dt>
+                  <dd>
+                    {draft.profile.displayName.trim() || t("reviewEmpty")}
+                    {draft.profile.age
+                      ? ` · ${draft.profile.age}`
+                      : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("steps.goals")}
+                  </dt>
+                  <dd>
+                    {draft.goals.length
+                      ? draft.goals.map((g) => g.label).join("; ")
+                      : t("reviewEmpty")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("steps.symptoms")}
+                  </dt>
+                  <dd>
+                    {draft.symptoms.length
+                      ? draft.symptoms.map((s) => s.description).join("; ")
+                      : t("reviewEmpty")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("steps.framework")}
+                  </dt>
+                  <dd>{frameworkLabel(draft.primaryFramework)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--outline)]">
+                    {t("communicationStyle")}
+                  </dt>
+                  <dd>
+                    {draft.communicationStyle
+                      ? t(`communication.${draft.communicationStyle}`)
+                      : t("reviewEmpty")}
+                  </dd>
+                </div>
+              </dl>
+              {draft.generated || draft.structuredContext ? (
+                <>
+                  <p className="pt-2 text-[11px] font-medium uppercase tracking-wide text-[var(--outline)]">
+                    {t("reviewAiContent")}
+                  </p>
+                  <ul className="list-disc space-y-1 ps-5 text-sm text-[var(--on-surface-variant)]">
+                    {draft.structuredContext ? (
+                      <li>
+                        {t("steps.context")}
+                        {draft.structuredContextApproved
+                          ? ` — ${t("approved")}`
+                          : ` — ${t("aiSuggestionLabel")}`}
+                      </li>
+                    ) : null}
+                    {draft.generated ? (
+                      <li>
+                        {t("steps.generate")}
+                        {draft.sectionApprovals.generated
+                          ? ` — ${t("approved")}`
+                          : ` — ${t("aiSuggestionLabel")}`}
+                      </li>
+                    ) : null}
+                  </ul>
+                </>
+              ) : null}
+              <p className="text-xs text-[var(--on-surface-variant)]">
+                {t("comorbidityAdvancedHint")}
+              </p>
+            </div>
             {(
               [
                 "presentation",
@@ -1430,9 +1671,18 @@ export function GuidedCaseBuilder({
 
         {draft.step === "create" && !isEdit && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold">{t("steps.create")}</h2>
+            <h2 className="text-base font-semibold">
+              <ContextualHelp
+                label={t("steps.create")}
+                help={t("help.create")}
+                variant="popover"
+              />
+            </h2>
             <p className="text-sm text-[var(--on-surface-variant)]">
               {t("createHint")}
+            </p>
+            <p className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container)] px-3 py-2 text-sm font-medium">
+              {t("nothingPublishedYet")}
             </p>
             <button
               type="button"
@@ -1440,7 +1690,7 @@ export function GuidedCaseBuilder({
               disabled={busy === "create"}
               onClick={() => void createPatient(false)}
             >
-              {busy === "create" ? t("creating") : t("createTrainingPatient")}
+              {busy === "create" ? t("creating") : t("createDraftNow")}
             </button>
             {createdId ? (
               <Link
@@ -1530,9 +1780,10 @@ export function GuidedCaseBuilder({
               type="button"
               className="btn-secondary"
               disabled={busy === "create"}
+              title={t("saveDraftHint")}
               onClick={() => void createPatient(true)}
             >
-              {t("saveDraft")}
+              {t("createDraftFooter")}
             </button>
           ) : (
             <button

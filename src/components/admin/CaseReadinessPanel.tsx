@@ -147,9 +147,17 @@ export function CaseReadinessPanel({
                 <span className="sr-only">{statusWord(it.status, labels)}</span>
               </div>
               {it.status !== "COMPLETE" ? (
-                <p className="mt-0.5 text-[var(--on-surface-variant)]">
-                  {it.explanation}
-                </p>
+                <div className="mt-0.5 space-y-1 text-[var(--on-surface-variant)]">
+                  <p>{it.explanation}</p>
+                  {it.remediation ? (
+                    <p className="text-xs">
+                      <span className="font-medium text-[var(--on-surface)]">
+                        {labels.nextAction}:{" "}
+                      </span>
+                      {it.remediation}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           </li>

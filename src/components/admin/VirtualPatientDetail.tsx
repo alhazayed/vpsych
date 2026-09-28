@@ -181,29 +181,56 @@ export function VirtualPatientDetail({
         aria-label="Virtual patient sections"
         className="mb-6 flex flex-wrap gap-2 border-b border-[var(--outline-variant)] pb-3"
       >
-        {TABS.map((t) => {
-          const selected = tab === t.id;
+        {TABS.map((tabItem) => {
+          const selected = tab === tabItem.id;
           return (
             <button
-              key={t.id}
+              key={tabItem.id}
               type="button"
               role="tab"
+              id={`vp-tab-${tabItem.id}`}
               aria-selected={selected}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              aria-controls={`vp-tabpanel-${tabItem.id}`}
+              tabIndex={selected ? 0 : -1}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${
                 selected
                   ? "bg-[var(--surface-container)] text-[var(--primary)]"
                   : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)]"
               }`}
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(tabItem.id)}
+              onKeyDown={(e) => {
+                const idx = TABS.findIndex((x) => x.id === tabItem.id);
+                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  const dir =
+                    e.key === "ArrowRight" ? 1 : -1;
+                  const next = TABS[(idx + dir + TABS.length) % TABS.length]!;
+                  setTab(next.id);
+                  queueMicrotask(() =>
+                    document.getElementById(`vp-tab-${next.id}`)?.focus(),
+                  );
+                } else if (e.key === "Home") {
+                  e.preventDefault();
+                  setTab(TABS[0]!.id);
+                } else if (e.key === "End") {
+                  e.preventDefault();
+                  setTab(TABS[TABS.length - 1]!.id);
+                }
+              }}
             >
-              {t.label}
+              {tabItem.label}
             </button>
           );
         })}
       </div>
 
       {tab === "overview" ? (
-        <section className="grid gap-4 md:grid-cols-2">
+        <section
+          id="vp-tabpanel-overview"
+          role="tabpanel"
+          aria-labelledby="vp-tab-overview"
+          className="grid gap-4 md:grid-cols-2"
+        >
           <div id="case-readiness-panel" className="md:col-span-2">
             <CaseReadinessPanel
               readiness={readiness}
@@ -289,7 +316,12 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "clinical" ? (
-        <section className="clinical-card space-y-4 p-5">
+        <section
+          id="vp-tabpanel-clinical"
+          role="tabpanel"
+          aria-labelledby="vp-tab-clinical"
+          className="clinical-card space-y-4 p-5"
+        >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
             Clinical profile
           </h2>
@@ -322,13 +354,23 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "personality" ? (
-        <section className="clinical-card p-5">
+        <section
+          id="vp-tabpanel-personality"
+          role="tabpanel"
+          aria-labelledby="vp-tab-personality"
+          className="clinical-card p-5"
+        >
           <PersonalityEnginePanel initialAvatars={personalityAvatars} />
         </section>
       ) : null}
 
       {tab === "behaviour" ? (
-        <section className="clinical-card space-y-3 p-5">
+        <section
+          id="vp-tabpanel-behaviour"
+          role="tabpanel"
+          aria-labelledby="vp-tab-behaviour"
+          className="clinical-card space-y-3 p-5"
+        >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
             Behaviour
           </h2>
@@ -354,7 +396,12 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "voice" ? (
-        <section className="clinical-card space-y-4 p-5">
+        <section
+          id="vp-tabpanel-voice"
+          role="tabpanel"
+          aria-labelledby="vp-tab-voice"
+          className="clinical-card space-y-4 p-5"
+        >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
             Voice
           </h2>
@@ -419,7 +466,12 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "therapy" ? (
-        <section className="clinical-card space-y-3 p-5">
+        <section
+          id="vp-tabpanel-therapy"
+          role="tabpanel"
+          aria-labelledby="vp-tab-therapy"
+          className="clinical-card space-y-3 p-5"
+        >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
             Therapy configuration
           </h2>
@@ -444,7 +496,12 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "preview" ? (
-        <section className="clinical-card space-y-4 p-5">
+        <section
+          id="vp-tabpanel-preview"
+          role="tabpanel"
+          aria-labelledby="vp-tab-preview"
+          className="clinical-card space-y-4 p-5"
+        >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
             Patient preview
           </h2>
@@ -492,7 +549,12 @@ export function VirtualPatientDetail({
       ) : null}
 
       {tab === "advanced" ? (
-        <section className="space-y-3">
+        <section
+          id="vp-tabpanel-advanced"
+          role="tabpanel"
+          aria-labelledby="vp-tab-advanced"
+          className="space-y-3"
+        >
           <AdvancedJson
             value={{
               id: avatar.id,
