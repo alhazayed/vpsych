@@ -649,13 +649,15 @@ describe("playPatientSpeech progressive integration", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    // Each sentence ~300 chars so adjacent merges exceed coalesce ceiling (480).
-    // 8 sentences → cannot fit MAX_PROGRESSIVE_TTS_CHUNKS (=6) safely → legacy.
-    const filler = "word ".repeat(55).trim();
-    const text = Array.from(
-      { length: 8 },
-      (_, i) => `Block ${i + 1} ${filler}.`,
-    ).join(" ");
+    // Default maxChars=180 / coalesce=480 ⇒ each coalesced piece holds ~2
+    // originals. Need ≥13 near-max chunks so ceil(N/2) > 6 → legacy_blob
+    // before progressive playback starts.
+    const text = Array.from({ length: 14 }, (_, i) => {
+      const body = `Clinical observation ${i + 1} ${"detail ".repeat(20)}`.trim();
+      return `${body}.`;
+    }).join(" ");
+    const raw = chunkTextForSpeechPlayback(text);
+    expect(raw.length).toBeGreaterThan(12);
     const plan = planSpeechChunksForPlayback(text);
     expect(plan.mode).toBe("legacy_blob");
 
