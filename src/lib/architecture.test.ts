@@ -688,6 +688,12 @@ describe("architecture invariants", () => {
     expect(voiceSession).toMatch(/createVoiceTurnFence/);
     expect(therapyRoomSession).toMatch(/therapistInterrupted/);
     expect(therapyRoomSession).toMatch(/pendingTherapistInterruptedRef/);
+    const clinicTherapyRoom = readFileSync(
+      join(root, "components/therapy-room/TherapyRoom.tsx"),
+      "utf8",
+    );
+    expect(clinicTherapyRoom).toMatch(/therapistInterrupted/);
+    expect(clinicTherapyRoom).toMatch(/createVoiceTurnFence/);
     expect(voiceClient).toMatch(/signal:\s*params\.signal/);
     expect(turnFence).toMatch(/createVoiceTurnFence/);
     expect(turnFence).toMatch(/isStaleVoiceResult/);
