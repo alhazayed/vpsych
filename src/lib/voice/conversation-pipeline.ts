@@ -9,6 +9,10 @@
  *
  * Text-only sessions skip STT + TTS and call the same message API.
  * Voice mode is optional; transcript persistence always happens server-side.
+ *
+ * Phase 9.1 — turn fencing + AbortSignal:
+ * Late results from superseded turns must not play audio or update active UI.
+ * Clinical cognition remains owned exclusively by the message API.
  */
 
 import {
@@ -18,9 +22,18 @@ import {
 } from "@/lib/voice/client";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
+import {
+  isStaleVoiceResult,
+  type VoiceTurnId,
+} from "@/lib/voice/turn-fence";
 
 export type { SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 export type { SessionMessage };
+export type { VoiceTurnId } from "@/lib/voice/turn-fence";
+export {
+  createVoiceTurnFence,
+  isStaleVoiceResult,
+} from "@/lib/voice/turn-fence";
 
 export type PipelineTurnResult = {
   userMessage: SessionMessage;
@@ -44,6 +57,24 @@ export type SpeakHandlers = {
   onend?: () => void;
   onerror?: () => void;
 };
+
+/** Optional turn fence attached to async voice work. */
+export type VoiceTurnGuard = {
+  turnId: VoiceTurnId;
+  isActive: (turnId: VoiceTurnId) => boolean;
+};
+
+function isGuardStale(
+  guard: VoiceTurnGuard | undefined,
+  signal?: AbortSignal,
+): boolean {
+  if (!guard) return Boolean(signal?.aborted);
+  return isStaleVoiceResult({
+    turnId: guard.turnId,
+    isActive: guard.isActive,
+    signal,
+  });
+}
 
 /** Resolve session speech locale from session.language (en | ar). */
 export function resolvePipelineLocale(
@@ -94,68 +125,100 @@ export async function transcribeTherapistSpeech(params: {
 export async function submitConversationTurn(params: {
   sessionId: string;
   message: string;
-  /** Stage 11 / RT-06 — therapist barge-in cut off the prior patient turn. */
+  /** Stage 11 / RT-06 / Phase 9.1 — therapist barge-in cut off the prior patient turn. */
   therapistInterrupted?: boolean;
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
-  | { ok: false; error: string; expired?: boolean; status: number }
+  | {
+      ok: false;
+      error: string;
+      expired?: boolean;
+      status: number;
+      aborted?: boolean;
+      /** Phase 9.1S — server rejected stale assistant persist. */
+      superseded?: boolean;
+    }
 > {
-  const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: params.message,
-      ...(params.therapistInterrupted
-        ? { therapistInterrupted: true }
-        : {}),
-    }),
-    signal: params.signal,
-  });
-  const data = (await res.json().catch(() => ({}))) as {
-    error?: string;
-    expired?: boolean;
-    userMessage?: SessionMessage;
-    assistantMessage?: SessionMessage;
-    remainingSeconds?: number;
-    locale?: string;
-    voiceHints?: PipelineTurnResult["voiceHints"];
-    humanizationEnabled?: boolean;
-  };
-
-  if (!res.ok) {
-    return {
-      ok: false,
-      error: data.error ?? "Failed to send message",
-      expired: Boolean(data.expired),
-      status: res.status,
+  try {
+    const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: params.message,
+        ...(params.therapistInterrupted
+          ? { therapistInterrupted: true }
+          : {}),
+      }),
+      signal: params.signal,
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      expired?: boolean;
+      superseded?: boolean;
+      aborted?: boolean;
+      userMessage?: SessionMessage;
+      assistantMessage?: SessionMessage;
+      remainingSeconds?: number;
+      locale?: string;
+      voiceHints?: PipelineTurnResult["voiceHints"];
+      humanizationEnabled?: boolean;
     };
-  }
 
-  if (!data.userMessage || !data.assistantMessage) {
+    if (!res.ok) {
+      const superseded =
+        Boolean(data.superseded) ||
+        (res.status === 409 &&
+          /superseded/i.test(String(data.error ?? "")));
+      return {
+        ok: false,
+        error: data.error ?? "Failed to send message",
+        expired: Boolean(data.expired),
+        status: res.status,
+        superseded,
+        // Treat superseded like a cancelled/stale outcome for UI fencing.
+        aborted: Boolean(data.aborted) || superseded,
+      };
+    }
+
+    if (!data.userMessage || !data.assistantMessage) {
+      return {
+        ok: false,
+        error: "Incomplete message response",
+        status: 502,
+      };
+    }
+
     return {
-      ok: false,
-      error: "Incomplete message response",
-      status: 502,
+      ok: true,
+      data: {
+        userMessage: data.userMessage,
+        assistantMessage: data.assistantMessage,
+        remainingSeconds: data.remainingSeconds,
+        locale: resolvePipelineLocale(data.locale),
+        voiceHints: data.voiceHints ?? null,
+        humanizationEnabled: Boolean(data.humanizationEnabled),
+      },
     };
+  } catch (error) {
+    if (params.signal?.aborted) {
+      return {
+        ok: false,
+        error: "aborted",
+        status: 0,
+        aborted: true,
+      };
+    }
+    throw error;
   }
-
-  return {
-    ok: true,
-    data: {
-      userMessage: data.userMessage,
-      assistantMessage: data.assistantMessage,
-      remainingSeconds: data.remainingSeconds,
-      locale: resolvePipelineLocale(data.locale),
-      voiceHints: data.voiceHints ?? null,
-      humanizationEnabled: Boolean(data.humanizationEnabled),
-    },
-  };
 }
 
 /**
  * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
  * No-op safe when voice is disabled by the caller.
+ *
+ * Phase 9.1 — passes AbortSignal into synthesizeSpeech and rejects stale turns
+ * via VoiceTurnGuard before attaching/playing audio.
  */
 export async function playPatientSpeech(params: {
   text: string;
@@ -174,11 +237,15 @@ export async function playPatientSpeech(params: {
   pauseBeforeMs?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
-  /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
+  /** Abort cancels ElevenLabs fetch + browser playback (barge-in / pause / end). */
   signal?: AbortSignal;
+  /** Turn fence — late results from superseded turns never play. */
+  turn?: VoiceTurnGuard;
 }): Promise<"elevenlabs" | "browser" | "interrupted"> {
   const handlers = params.handlers ?? {};
-  if (params.signal?.aborted) {
+  const stale = () => isGuardStale(params.turn, params.signal);
+
+  if (stale()) {
     handlers.onerror?.();
     return "interrupted";
   }
@@ -196,10 +263,15 @@ export async function playPatientSpeech(params: {
         { once: true },
       );
     });
-    if (params.signal?.aborted) {
+    if (stale()) {
       handlers.onerror?.();
       return "interrupted";
     }
+  }
+
+  if (stale()) {
+    handlers.onerror?.();
+    return "interrupted";
   }
 
   handlers.onstart?.();
@@ -217,9 +289,10 @@ export async function playPatientSpeech(params: {
     emotion: params.emotion,
     stability: params.stability,
     style: params.style,
+    signal: params.signal,
   });
 
-  if (params.signal?.aborted) {
+  if (stale() || result.mode === "interrupted") {
     if (result.mode === "elevenlabs" && result.objectUrl) {
       URL.revokeObjectURL(result.objectUrl);
     }
@@ -228,7 +301,7 @@ export async function playPatientSpeech(params: {
   }
 
   const browserFallback = (onDone: () => void) => {
-    if (params.signal?.aborted) {
+    if (stale()) {
       onDone();
       return;
     }
@@ -251,6 +324,13 @@ export async function playPatientSpeech(params: {
   };
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
+    // Re-check after blob creation — turn may have been superseded mid-download.
+    if (stale()) {
+      URL.revokeObjectURL(result.objectUrl);
+      handlers.onerror?.();
+      return "interrupted";
+    }
+
     const audio = new Audio(result.objectUrl);
     if (params.audioRef) params.audioRef.current = audio;
 
@@ -280,9 +360,15 @@ export async function playPatientSpeech(params: {
           finish("interrupted");
         };
 
-        audio.onended = () => finish("elevenlabs");
+        audio.onended = () => {
+          if (stale()) {
+            finish("interrupted");
+            return;
+          }
+          finish("elevenlabs");
+        };
         audio.onerror = () => {
-          if (params.signal?.aborted) {
+          if (stale()) {
             finish("interrupted");
             return;
           }
@@ -292,7 +378,7 @@ export async function playPatientSpeech(params: {
         params.signal?.addEventListener("abort", onAbort, { once: true });
 
         void audio.play().catch(() => {
-          if (params.signal?.aborted) {
+          if (stale()) {
             finish("interrupted");
             return;
           }
@@ -302,7 +388,7 @@ export async function playPatientSpeech(params: {
     );
   }
 
-  if (params.signal?.aborted) {
+  if (stale()) {
     handlers.onerror?.();
     return "interrupted";
   }
@@ -327,9 +413,12 @@ export async function playPatientSpeech(params: {
       params.locale,
       {
         onstart: handlers.onstart,
-        onend: () => finish("browser"),
+        onend: () => {
+          if (stale()) finish("interrupted");
+          else finish("browser");
+        },
         onerror: () => {
-          if (params.signal?.aborted) finish("interrupted");
+          if (stale()) finish("interrupted");
           else {
             handlers.onerror?.();
             finish("browser");
@@ -344,6 +433,9 @@ export async function playPatientSpeech(params: {
 /**
  * Full voice turn: STT → message API (GPT-5 + persistence) → optional TTS.
  * Text-only callers should use `submitConversationTurn` directly.
+ *
+ * Phase 9.1 — supports AbortSignal, therapistInterrupted, and turn fencing.
+ * Stale turns never call onMessages / playPatientSpeech.
  */
 export async function runVoiceConversationTurn(params: {
   sessionId: string;
@@ -363,20 +455,44 @@ export async function runVoiceConversationTurn(params: {
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
   speakHandlers?: SpeakHandlers;
+  signal?: AbortSignal;
+  /** True when this therapist utterance cut off prior patient speech. */
+  therapistInterrupted?: boolean;
+  /**
+   * Called only after a non-empty transcript is ready and immediately before
+   * submitConversationTurn — use to consume the interrupt latch (Phase 9.1R).
+   * Not called on empty/no-speech STT.
+   */
+  onValidTurnSubmit?: () => void;
+  /** Active turn identity for stale-result rejection. */
+  turn?: VoiceTurnGuard;
+  /** AbortController used for TTS playback (separate from STT/message abort). */
+  playbackSignal?: AbortSignal;
 }): Promise<
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
       ok: false;
-      stage: "stt" | "message";
+      stage: "stt" | "message" | "cancelled";
       error: string;
       unavailable?: boolean;
       expired?: boolean;
     }
 > {
+  const stale = () => isGuardStale(params.turn, params.signal);
+
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
+
   const stt = await transcribeTherapistSpeech({
     audio: params.audio,
     locale: params.sessionLanguage ?? params.locale,
+    signal: params.signal,
   });
+
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
 
   if (!stt.ok) {
     return {
@@ -396,12 +512,23 @@ export async function runVoiceConversationTurn(params: {
     };
   }
 
-  params.onTranscript?.(transcript);
+  if (!stale()) {
+    params.onTranscript?.(transcript);
+  }
+
+  // Consume interrupt latch only for a valid replacement turn (Phase 9.1R).
+  params.onValidTurnSubmit?.();
 
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
+    therapistInterrupted: params.therapistInterrupted,
+    signal: params.signal,
   });
+
+  if (stale() || (turn.ok === false && turn.aborted)) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
 
   if (!turn.ok) {
     return {
@@ -412,9 +539,17 @@ export async function runVoiceConversationTurn(params: {
     };
   }
 
+  // Server may have persisted; client must still drop superseded UI/playback.
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
+
   params.onMessages?.(turn.data.userMessage, turn.data.assistantMessage);
 
   if (params.voiceEnabled) {
+    if (stale()) {
+      return { ok: false, stage: "cancelled", error: "Turn superseded" };
+    }
     const hints = turn.data.voiceHints;
     void playPatientSpeech({
       text: turn.data.assistantMessage.content,
@@ -432,6 +567,8 @@ export async function runVoiceConversationTurn(params: {
       pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      signal: params.playbackSignal ?? params.signal,
+      turn: params.turn,
     });
   }
 

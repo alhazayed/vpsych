@@ -76,7 +76,7 @@ Controlled Institutional Deployment **does not** own PatientDecisionPlan, Emotio
 | OWN-02 | Trust/rapport in Emotion **and** Adaptation | Parallel variables | Medium | Contract: Emotion=affect, Adaptation=alliance |
 | OWN-03 | CBE vs Humanization silence/hesitation | Both inject cues; CBE may short-circuit | Medium | Precedence: CBE gate > Humanization micro |
 | OWN-04 | Message route is god-orchestrator | Inline composition | Low (intentional v1) | Optional `lib/session-turn` extract |
-| OWN-05 | `therapistInterrupted` API without client senders | Route accepts; classic UI rarely sends | Medium | Stage 11 pipeline accepts flag; wire TRM barge-in callers |
+| OWN-05 | `therapistInterrupted` API without client senders | **Closed (Phase 9.1)** — VoiceSession + TherapyRoomSession send flag after barge-in / cut-off | — | Keep turn-fence + pendingTherapistInterruptedRef wired |
 | OWN-06 | Dual TRM flags | Stage 2 ARCH-S2-03 | Medium | Unify flag matrix |
 | OWN-07 | ACE↔CGE import cycle | Managed by barrel exclusion | Medium | Extract bridge package |
 

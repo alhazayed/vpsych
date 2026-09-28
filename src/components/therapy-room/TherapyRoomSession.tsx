@@ -49,6 +49,7 @@ import {
   submitConversationTurn,
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
+import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
 import type {
   ResolvedAvatar,
@@ -139,6 +140,11 @@ export function TherapyRoomSession({
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
+  /**
+   * Phase 9.1R — mark on barge-in; consume only on valid replacement submit
+   * (empty STT must not clear the latch).
+   */
+  const interruptFlagRef = useRef(createTherapistInterruptedFlag());
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -291,6 +297,7 @@ export function TherapyRoomSession({
     vadRef.current?.cancel();
     vadRef.current = null;
     cancelTurnWork();
+    interruptFlagRef.current.clear();
     stopPlayback();
     ambienceRef.current?.stop();
     ambienceRef.current = null;
@@ -376,6 +383,7 @@ export function TherapyRoomSession({
           if (bargeInFired || endingRef.current) return;
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
+          interruptFlagRef.current.mark();
           immersionRef.current.track("therapist_interrupt");
           telemetryRef.current.record("barge_in");
           abort.abort();
@@ -402,8 +410,13 @@ export function TherapyRoomSession({
         disorderSlug,
         audioRef,
         signal: abort.signal,
+        turn: {
+          turnId: generation,
+          isActive: (id) => fsmRef.current.isCurrent(id),
+        },
         handlers: {
           onstart: () => {
+            if (!fsmRef.current.isCurrent(generation)) return;
             if (audioRef.current) {
               applyHtmlAudioModulation(audioRef.current, mod);
             }
@@ -543,6 +556,9 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       const gptStarted = telemetryRef.current.mark();
 
+      // Consume only now — after non-empty transcript (Phase 9.1R Fix 3).
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+
       let turn;
       try {
         const [, result] = await Promise.all([
@@ -550,6 +566,7 @@ export function TherapyRoomSession({
           submitConversationTurn({
             sessionId: session.id,
             message: transcript,
+            therapistInterrupted,
             signal: abort.signal,
           }),
         ]);
@@ -569,6 +586,8 @@ export function TherapyRoomSession({
       });
 
       if (!turn.ok) {
+        // Phase 9.1S — superseded is a normal stale-turn outcome, not GPT_FAIL.
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -578,6 +597,9 @@ export function TherapyRoomSession({
         setStatusKey("error");
         return;
       }
+
+      // Drop UI/playback updates if barge-in superseded this generation mid-flight.
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
       setMessages((prev) => [
         ...prev,
@@ -950,6 +972,13 @@ export function TherapyRoomSession({
       if (!trimmed || endingRef.current) return;
       if (fsmRef.current.getState() === "PAUSED") return;
 
+      // Text while patient is speaking counts as therapist interruption.
+      if (fsmRef.current.getState() === "AVATAR_SPEAKING") {
+        interruptFlagRef.current.mark();
+        stopPlayback();
+        dispatch("BARGE_IN");
+      }
+
       immersionRef.current.track("text_turn");
       turnIndexRef.current += 1;
       const generation = fsmRef.current.getGeneration();
@@ -962,15 +991,27 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       await new Promise((r) => window.setTimeout(r, thinking.thinkingLatencyMs));
 
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+
       if (fsmRef.current.getState() === "PROCESSING_STT") {
         dispatch("STT_OK");
       }
 
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+
+      turnAbortRef.current?.abort();
+      const abort = new AbortController();
+      turnAbortRef.current = abort;
+
       const turn = await submitConversationTurn({
         sessionId: session.id,
         message: trimmed,
+        therapistInterrupted,
+        signal: abort.signal,
       });
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       if (!turn.ok) {
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -996,7 +1037,7 @@ export function TherapyRoomSession({
         listenLoopRef.current();
       }
     },
-    [dispatch, endSession, session.id, setPresence, speakPatient],
+    [dispatch, endSession, session.id, setPresence, speakPatient, stopPlayback],
   );
 
   const busy =

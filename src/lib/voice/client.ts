@@ -8,10 +8,21 @@ import {
   normalizeSpeechPace,
   type SpeechPace,
 } from "@/lib/voice/prosody";
+import { isAbortError } from "@/lib/voice/turn-fence";
+
+export type SynthesizeSpeechResult = {
+  mode: "elevenlabs" | "browser" | "interrupted";
+  objectUrl?: string;
+};
 
 /**
  * Request TTS from /api/voice/tts with graceful browser fallback.
  * Does not break text mode — callers may ignore audio entirely.
+ *
+ * Phase 9.1 — AbortSignal cancels the browser fetch. The Next.js route may
+ * still finish upstream ElevenLabs work after the client disconnects; that is
+ * a documented infrastructure limit. The client must never attach/play audio
+ * for an aborted or superseded turn.
  */
 export async function synthesizeSpeech(params: {
   text: string;
@@ -28,7 +39,13 @@ export async function synthesizeSpeech(params: {
   /** Mission 10 — optional Humanization / HCE prosody overrides. */
   stability?: number | null;
   style?: number | null;
-}): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
+  /** Cancel in-flight TTS fetch (barge-in / turn supersede). */
+  signal?: AbortSignal;
+}): Promise<SynthesizeSpeechResult> {
+  if (params.signal?.aborted) {
+    return { mode: "interrupted" };
+  }
+
   try {
     const res = await fetch("/api/voice/tts", {
       method: "POST",
@@ -48,12 +65,20 @@ export async function synthesizeSpeech(params: {
         style: params.style ?? undefined,
         stream: true,
       }),
+      signal: params.signal,
     });
+
+    if (params.signal?.aborted) {
+      return { mode: "interrupted" };
+    }
 
     if (res.ok && res.body) {
       // Consume the (possibly streamed) body into a playable blob.
       // MediaSource progressive playback is optional; blob keeps broad support.
       const blob = await new Response(res.body).blob();
+      if (params.signal?.aborted) {
+        return { mode: "interrupted" };
+      }
       return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
     }
 
@@ -61,7 +86,14 @@ export async function synthesizeSpeech(params: {
       console.warn("ElevenLabs TTS failed; falling back to browser.", res.status);
     }
   } catch (err) {
+    if (params.signal?.aborted || isAbortError(err)) {
+      return { mode: "interrupted" };
+    }
     console.warn("ElevenLabs TTS unavailable; falling back to browser.", err);
+  }
+
+  if (params.signal?.aborted) {
+    return { mode: "interrupted" };
   }
 
   return { mode: "browser" };
