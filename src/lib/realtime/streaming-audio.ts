@@ -3,6 +3,7 @@
  */
 
 import { createAudioBufferManager } from "@/lib/realtime/audio-buffer";
+import { chunkTextForSpeechPlayback } from "@/lib/voice/speech-chunker";
 
 export type StreamingAudioManager = ReturnType<typeof createStreamingAudioManager>;
 
@@ -56,29 +57,5 @@ export function chunkTextForSpeech(
   text: string,
   maxChars: number,
 ): string[] {
-  const trimmed = text.trim();
-  if (!trimmed) return [];
-  if (trimmed.length <= maxChars) return [trimmed];
-
-  const parts: string[] = [];
-  const sentences = trimmed.split(/(?<=[.!?…。؟])\s+/);
-  let buf = "";
-  for (const sentence of sentences) {
-    if (!sentence) continue;
-    if ((buf + " " + sentence).trim().length <= maxChars) {
-      buf = (buf + " " + sentence).trim();
-      continue;
-    }
-    if (buf) parts.push(buf);
-    if (sentence.length <= maxChars) {
-      buf = sentence;
-    } else {
-      for (let i = 0; i < sentence.length; i += maxChars) {
-        parts.push(sentence.slice(i, i + maxChars));
-      }
-      buf = "";
-    }
-  }
-  if (buf) parts.push(buf);
-  return parts;
+  return chunkTextForSpeechPlayback(text, { maxChars, minChars: 1 });
 }

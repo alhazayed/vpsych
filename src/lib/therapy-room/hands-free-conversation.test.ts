@@ -253,7 +253,8 @@ describe("hands-free conversation telemetry", () => {
     expect(summary.events.some((e) => e.code === "stt_timeout")).toBe(true);
 
     const json = JSON.stringify(tel.countersOnly());
-    expect(json).not.toMatch(/transcript|audio|wav|patient said/i);
+    // PHI-ish content must never appear; metric field names may include "Audio".
+    expect(json).not.toMatch(/transcript|patient said|\.wav|audio\/mpeg/i);
     expect(json).toContain('"errors":1');
   });
 

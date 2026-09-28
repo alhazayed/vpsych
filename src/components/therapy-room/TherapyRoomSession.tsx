@@ -398,7 +398,7 @@ export function TherapyRoomSession({
         },
       });
 
-      const mode = await playPatientSpeech({
+      const spoken = await playPatientSpeech({
         text,
         locale,
         voiceId: avatar.voice_id,
@@ -436,11 +436,35 @@ export function TherapyRoomSession({
       bargeInStopRef.current = null;
       playbackAbortRef.current = null;
 
+      // Phase 9.2 — split generation vs playback (do not mix into one number).
+      if (spoken.metrics.ttsTotalGenerationMs != null) {
+        telemetryRef.current.record("tts_generation_latency_ms", {
+          valueMs: spoken.metrics.ttsTotalGenerationMs,
+        });
+        // Backward-compatible alias: generation only (not full playback).
+        telemetryRef.current.record("tts_latency_ms", {
+          valueMs: spoken.metrics.ttsTotalGenerationMs,
+        });
+      }
+      if (spoken.metrics.ttsFirstAudioPlayMs != null) {
+        telemetryRef.current.record("time_to_first_patient_audio_ms", {
+          valueMs: spoken.metrics.ttsFirstAudioPlayMs,
+        });
+      }
+      const playbackMs =
+        spoken.metrics.totalPatientAudioDurationMs ??
+        telemetryRef.current.elapsed(playbackStarted);
+      telemetryRef.current.record("patient_playback_duration_ms", {
+        valueMs: playbackMs,
+      });
       telemetryRef.current.record("playback_duration_ms", {
-        valueMs: telemetryRef.current.elapsed(playbackStarted),
+        valueMs: playbackMs,
+      });
+      telemetryRef.current.record("tts_playback_path", {
+        code: spoken.playbackPath,
       });
 
-      if (bargeInFired || mode === "interrupted") {
+      if (bargeInFired || spoken.mode === "interrupted") {
         return;
       }
 
@@ -611,11 +635,8 @@ export function TherapyRoomSession({
       // Transition into AVATAR_SPEAKING before TTS.
       if (!dispatch("GPT_OK").ok) return;
 
-      const ttsStarted = telemetryRef.current.mark();
+      // speakPatient records tts_generation / time_to_first_audio / playback.
       await speakPatient(turn.data.assistantMessage.content, generation);
-      telemetryRef.current.record("tts_latency_ms", {
-        valueMs: telemetryRef.current.elapsed(ttsStarted),
-      });
       telemetryRef.current.record("turn_complete");
 
       if (

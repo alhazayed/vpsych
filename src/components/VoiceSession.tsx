@@ -271,7 +271,7 @@ export function VoiceSession({
 
       speakingRef.current = true;
       setSpeaking(true);
-      const mode = await playPatientSpeech({
+      const spoken = await playPatientSpeech({
         text,
         locale,
         voiceId: avatar.voice_id,
@@ -284,6 +284,7 @@ export function VoiceSession({
         disorderSlug,
         stability: voiceHints?.stability ?? null,
         style: voiceHints?.style ?? null,
+        // Humanization pause once before first chunk (not between sentences).
         pauseBeforeMs: voiceHints?.pause_before_ms ?? null,
         audioRef,
         signal: playbackAbort.signal,
@@ -309,10 +310,10 @@ export function VoiceSession({
           },
         },
       });
-      if (mode === "interrupted" || !fence.isActive(activeTurnId)) {
+      if (spoken.mode === "interrupted" || !fence.isActive(activeTurnId)) {
         return;
       }
-      if (mode === "browser") {
+      if (spoken.mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
       }
     },

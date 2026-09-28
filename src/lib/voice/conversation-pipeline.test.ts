@@ -303,8 +303,8 @@ describe("Phase 9.1 — TTS cancellation + turn fencing", () => {
       }),
     );
 
-    const mode = await speakPromise;
-    expect(mode).toBe("interrupted");
+    const spoken = await speakPromise;
+    expect(spoken.mode).toBe("interrupted");
     expect(playSpy).not.toHaveBeenCalled();
   });
 
@@ -348,12 +348,13 @@ describe("Phase 9.1 — TTS cancellation + turn fencing", () => {
       ),
     );
 
-    const mode = await playPatientSpeech({
+    const spoken = await playPatientSpeech({
       text: "Natural reply",
       locale: "en",
       turn: { turnId, isActive: (id) => fence.isActive(id) },
     });
-    expect(mode).toBe("elevenlabs");
+    expect(spoken.mode).toBe("elevenlabs");
+    expect(spoken.playbackPath).toBe("progressive_queue");
     expect(playSpy).toHaveBeenCalledTimes(1);
   });
 
