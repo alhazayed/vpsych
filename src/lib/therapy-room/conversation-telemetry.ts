@@ -10,6 +10,11 @@ export type ConversationTelemetryKind =
   /** @deprecated Prefer tts_generation_latency_ms — kept as generation-only alias. */
   | "tts_latency_ms"
   | "tts_generation_latency_ms"
+  /**
+   * Wall ms until first patient audio play() resolved successfully
+   * (playback initiation confirmed). Not recorded on mere play() attempt
+   * or when play() rejects (e.g. NotAllowedError).
+   */
   | "time_to_first_patient_audio_ms"
   | "patient_playback_duration_ms"
   | "playback_duration_ms"

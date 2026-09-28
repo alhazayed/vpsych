@@ -26,7 +26,7 @@ import {
   isStaleVoiceResult,
   type VoiceTurnId,
 } from "@/lib/voice/turn-fence";
-import { chunkTextForSpeechPlayback } from "@/lib/voice/speech-chunker";
+import { planSpeechChunksForPlayback } from "@/lib/voice/speech-chunker";
 import {
   DEFAULT_TTS_IN_FLIGHT,
   playQueuedSpeech,
@@ -41,7 +41,11 @@ export {
   createVoiceTurnFence,
   isStaleVoiceResult,
 } from "@/lib/voice/turn-fence";
-export { chunkTextForSpeechPlayback } from "@/lib/voice/speech-chunker";
+export {
+  chunkTextForSpeechPlayback,
+  planSpeechChunksForPlayback,
+  MAX_PROGRESSIVE_TTS_CHUNKS,
+} from "@/lib/voice/speech-chunker";
 export {
   DEFAULT_TTS_IN_FLIGHT,
   playQueuedSpeech,
@@ -259,9 +263,11 @@ function emptyPlayResult(
 /**
  * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
  *
- * Phase 9.2 — progressive sentence/phrase queue by default:
- * chunk text → bounded concurrent TTS → play first chunk ASAP.
- * Humanization `pauseBeforeMs` applies **once** before the first chunk only.
+ * Phase 9.2 / 9.2R — progressive sentence/phrase queue by default:
+ * plan chunks (hard max per response) → bounded concurrent TTS (×2) →
+ * play first chunk ASAP. Over-budget replies coalesce or use `legacy_blob`
+ * **before** progressive playback starts. Humanization `pauseBeforeMs`
+ * applies **once** before the first chunk only.
  *
  * Phase 9.1 — AbortSignal + VoiceTurnGuard still gate playback.
  */
@@ -398,14 +404,18 @@ export async function playPatientSpeech(params: {
 
       return await new Promise<PlayPatientSpeechResult>((resolve) => {
         let settled = false;
-        const playStarted = performance.now();
+        let playStarted: number | null = null;
+        let firstPlayMs: number | null = null;
         const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
           if (settled) return;
           settled = true;
           params.signal?.removeEventListener("abort", onAbort);
           URL.revokeObjectURL(result.objectUrl!);
           if (params.audioRef) params.audioRef.current = null;
-          const playMs = Math.max(0, Math.round(performance.now() - playStarted));
+          const playMs =
+            playStarted != null
+              ? Math.max(0, Math.round(performance.now() - playStarted))
+              : null;
           if (mode === "elevenlabs") handlers.onend?.();
           else if (mode === "interrupted") handlers.onerror?.();
           const path: SpeechQueuePlaybackPath =
@@ -419,7 +429,9 @@ export async function playPatientSpeech(params: {
             playbackPath: path,
             metrics: {
               ttsFirstChunkReadyMs: mode === "interrupted" ? null : readyMs,
-              ttsFirstAudioPlayMs: mode === "interrupted" ? null : readyMs,
+              // Only after successful play() initiation — not on attempt.
+              ttsFirstAudioPlayMs:
+                mode === "interrupted" ? null : firstPlayMs,
               ttsTotalGenerationMs: mode === "interrupted" ? null : readyMs,
               totalPatientAudioDurationMs:
                 mode === "elevenlabs" ? playMs : null,
@@ -460,13 +472,24 @@ export async function playPatientSpeech(params: {
 
         params.signal?.addEventListener("abort", onAbort, { once: true });
 
-        void audio.play().catch(() => {
-          if (stale()) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
-        });
+        void audio
+          .play()
+          .then(() => {
+            if (settled || stale()) {
+              if (!settled && stale()) finish("interrupted");
+              return;
+            }
+            playStarted = performance.now();
+            firstPlayMs = Math.max(0, Math.round(playStarted - t0));
+            // onstart already fired before synthesize for legacy path.
+          })
+          .catch(() => {
+            if (stale()) {
+              finish("interrupted");
+              return;
+            }
+            browserFallback(() => finish("browser"));
+          });
       });
     }
 
@@ -522,7 +545,15 @@ export async function playPatientSpeech(params: {
     return playLegacyBlob();
   }
 
-  const chunks = chunkTextForSpeechPlayback(params.text);
+  // Phase 9.2R — hard chunk budget before any progressive TTS starts.
+  const plan = planSpeechChunksForPlayback(params.text);
+  if (plan.mode === "legacy_blob") {
+    // Cannot safely fit progressive budget → one whole-utterance TTS.
+    // Must run before progressive playback (never duplicate after chunk 1).
+    return playLegacyBlob();
+  }
+
+  const chunks = plan.chunks;
   if (chunks.length === 0) {
     handlers.onerror?.();
     return emptyPlayResult("interrupted", "interrupted", pauseMs);

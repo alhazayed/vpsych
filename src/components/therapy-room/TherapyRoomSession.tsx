@@ -446,6 +446,7 @@ export function TherapyRoomSession({
           valueMs: spoken.metrics.ttsTotalGenerationMs,
         });
       }
+      // Phase 9.2R — only when play() resolved successfully (not on attempt).
       if (spoken.metrics.ttsFirstAudioPlayMs != null) {
         telemetryRef.current.record("time_to_first_patient_audio_ms", {
           valueMs: spoken.metrics.ttsFirstAudioPlayMs,
@@ -875,7 +876,8 @@ export function TherapyRoomSession({
           break;
         case "repeat":
           if (lastPatientText && fsmRef.current.getState() !== "PAUSED") {
-            // Replay without advancing turn index / transcript.
+            // Replay without advancing turn index / transcript / clinical state.
+            // Phase 9.2R — same VoiceTurnGuard fencing as normal patient playback.
             const gen = fsmRef.current.getGeneration();
             if (fsmRef.current.getState() === "LISTENING") {
               vadRef.current?.cancel();
@@ -902,6 +904,10 @@ export function TherapyRoomSession({
                   disorderSlug,
                   audioRef,
                   signal: abort.signal,
+                  turn: {
+                    turnId: gen,
+                    isActive: (id) => fsmRef.current.isCurrent(id),
+                  },
                 });
                 playbackAbortRef.current = null;
                 if (

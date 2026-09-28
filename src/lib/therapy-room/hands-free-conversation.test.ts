@@ -234,6 +234,9 @@ describe("hands-free conversation telemetry", () => {
     tel.record("stt_latency_ms", { valueMs: 180 });
     tel.record("gpt_latency_ms", { valueMs: 900 });
     tel.record("tts_latency_ms", { valueMs: 400 });
+    tel.record("tts_generation_latency_ms", { valueMs: 400 });
+    tel.record("time_to_first_patient_audio_ms", { valueMs: 520 });
+    tel.record("patient_playback_duration_ms", { valueMs: 3200 });
     tel.record("playback_duration_ms", { valueMs: 3200 });
     tel.record("mic_reopen_latency_ms", {
       valueMs: tel.elapsed(t0) < 0 ? 0 : 120,
@@ -250,12 +253,23 @@ describe("hands-free conversation telemetry", () => {
     expect(summary.retries).toBe(1);
     expect(summary.avgSpeechMs).toBe(1400);
     expect(summary.avgSttMs).toBe(180);
+    expect(summary.avgTtsMs).toBe(400);
+    expect(summary.avgTimeToFirstAudioMs).toBe(520);
+    expect(summary.avgPlaybackMs).toBe(3200);
     expect(summary.events.some((e) => e.code === "stt_timeout")).toBe(true);
 
     const json = JSON.stringify(tel.countersOnly());
     // PHI-ish content must never appear; metric field names may include "Audio".
     expect(json).not.toMatch(/transcript|patient said|\.wav|audio\/mpeg/i);
     expect(json).toContain('"errors":1');
+  });
+
+  it("time_to_first_patient_audio_ms averages only successful initiation samples", () => {
+    const tel = createConversationTelemetry();
+    // Successful play() initiation only — callers must not record on attempt.
+    tel.record("time_to_first_patient_audio_ms", { valueMs: 300 });
+    tel.record("time_to_first_patient_audio_ms", { valueMs: 500 });
+    expect(tel.summarize().avgTimeToFirstAudioMs).toBe(400);
   });
 
   it("documents performance budgets", () => {

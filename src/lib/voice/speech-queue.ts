@@ -1,11 +1,16 @@
 /**
- * Phase 9.2 — ordered patient-speech audio queue (transport only).
+ * Phase 9.2 / 9.2R — ordered patient-speech audio queue (transport only).
  *
  * Text chunks → TTS → enqueue object URLs → HTMLAudioElement sequence.
  * First ready chunk plays without waiting for later chunks.
  *
  * Concurrency: at most {@link DEFAULT_TTS_IN_FLIGHT} synthesize calls in flight
  * so a long reply cannot stampede /api/voice/tts (rate limit 60/h/user).
+ *
+ * Phase 9.2R — `HTMLMediaElement.play()` rejection (e.g. Safari NotAllowedError
+ * on a fresh Audio element for chunk 2) stops the queue without replaying
+ * already-heard chunks, without GPT_FAIL, and with object-URL cleanup.
+ * First-audio telemetry records only after play() resolves successfully.
  */
 
 import {
@@ -39,12 +44,23 @@ export type SpeechQueueEvent =
       chunkIndex: number;
       at: number;
       fatal: boolean;
+    }
+  | {
+      type: "audio_play_rejected";
+      chunkIndex: number;
+      at: number;
+      /** Browser DOMException name when available (e.g. NotAllowedError). */
+      errorName?: string;
     };
 
 export type SpeechQueueMetrics = {
   /** Wall ms from queue start → first chunk object URL ready. */
   ttsFirstChunkReadyMs: number | null;
-  /** Wall ms from queue start → first audio.play() resolved start. */
+  /**
+   * Wall ms from queue start → first `HTMLMediaElement.play()` promise
+   * resolution (successful playback initiation). Null if play never
+   * succeeded — not recorded on mere attempt.
+   */
   ttsFirstAudioPlayMs: number | null;
   /** Wall ms spanning all TTS fetches (start of first → last chunk ready/fail). */
   ttsTotalGenerationMs: number | null;
@@ -100,6 +116,8 @@ type Slot = {
   resolveReady: () => void;
 };
 
+type PlaySlotOutcome = "ok" | "interrupted" | "failed" | "autoplay_blocked";
+
 function isStale(
   turn: SpeechQueueTurnGuard | undefined,
   signal?: AbortSignal,
@@ -134,6 +152,14 @@ function emptyMetrics(
     chunksPlayed: 0,
     playbackPath,
   };
+}
+
+function playRejectionName(err: unknown): string | undefined {
+  if (err && typeof err === "object" && "name" in err) {
+    const name = (err as { name?: unknown }).name;
+    return typeof name === "string" ? name : undefined;
+  }
+  return undefined;
 }
 
 /**
@@ -284,12 +310,12 @@ export async function playQueuedSpeech(
   const createAudio =
     params.createAudio ?? ((src: string) => new Audio(src));
 
-  const playSlot = (slot: Slot): Promise<"ok" | "interrupted" | "failed"> => {
+  const playSlot = (slot: Slot): Promise<PlaySlotOutcome> => {
     if (cancelled || abort.signal.aborted || isStale(params.turn, params.signal)) {
       return Promise.resolve("interrupted");
     }
     if (slot.failed || !slot.objectUrl) {
-      return Promise.resolve(slot.index === 0 ? "failed" : "failed");
+      return Promise.resolve("failed");
     }
 
     const url = slot.objectUrl;
@@ -298,9 +324,9 @@ export async function playQueuedSpeech(
 
     return new Promise((resolve) => {
       let settled = false;
-      const playStarted = now();
+      let playStarted: number | null = null;
 
-      const finish = (outcome: "ok" | "interrupted" | "failed") => {
+      const finish = (outcome: PlaySlotOutcome) => {
         if (settled) return;
         settled = true;
         abort.signal.removeEventListener("abort", onAbort);
@@ -316,7 +342,7 @@ export async function playQueuedSpeech(
         if (params.audioRef?.current === audio) {
           params.audioRef.current = null;
         }
-        if (outcome === "ok") {
+        if (outcome === "ok" && playStarted != null) {
           playWallMs += Math.max(0, now() - playStarted);
           chunksPlayed += 1;
           emit({
@@ -341,19 +367,58 @@ export async function playQueuedSpeech(
 
       abort.signal.addEventListener("abort", onAbort, { once: true });
 
-      const tPlay = now();
-      if (firstPlayAt == null) {
-        firstPlayAt = tPlay;
-        emit({ type: "audio_queue_first_play", at: tPlay });
-        params.handlers?.onstart?.();
-      }
-      emit({
-        type: "audio_chunk_play_start",
-        chunkIndex: slot.index,
-        at: tPlay,
-      });
-
-      void audio.play().catch(() => finish("failed"));
+      // Do not record first-audio telemetry until play() resolves successfully.
+      // Safari/iOS often rejects play() on a new HTMLAudioElement after an
+      // async gap (NotAllowedError) — attempting play is not "first audio".
+      void audio
+        .play()
+        .then(() => {
+          if (settled) return;
+          if (
+            cancelled ||
+            abort.signal.aborted ||
+            isStale(params.turn, params.signal)
+          ) {
+            finish("interrupted");
+            return;
+          }
+          const tPlay = now();
+          playStarted = tPlay;
+          if (firstPlayAt == null) {
+            firstPlayAt = tPlay;
+            emit({ type: "audio_queue_first_play", at: tPlay });
+            params.handlers?.onstart?.();
+          }
+          emit({
+            type: "audio_chunk_play_start",
+            chunkIndex: slot.index,
+            at: tPlay,
+          });
+          // Completion via onended / onerror / abort.
+        })
+        .catch((err: unknown) => {
+          if (settled) return;
+          if (
+            cancelled ||
+            abort.signal.aborted ||
+            isStale(params.turn, params.signal)
+          ) {
+            finish("interrupted");
+            return;
+          }
+          const errorName = playRejectionName(err);
+          emit({
+            type: "audio_play_rejected",
+            chunkIndex: slot.index,
+            at: now(),
+            errorName,
+          });
+          // NotAllowedError and other play() rejections: presentation failure.
+          // Never bypass autoplay policy; never synthesize a user gesture.
+          finish(
+            errorName === "NotAllowedError" ? "autoplay_blocked" : "failed",
+          );
+        });
     });
   };
 
@@ -411,8 +476,11 @@ export async function playQueuedSpeech(
         cancelQueue();
         break;
       }
-      if (outcome === "failed") {
-        if (i === 0) {
+      if (outcome === "autoplay_blocked" || outcome === "failed") {
+        // Chunk 0 play rejection → interrupted so pipeline can legacy-fallback
+        // (no audio heard yet). Later-chunk rejection → stop without replaying
+        // heard audio and without whole-utterance legacy (would duplicate).
+        if (i === 0 || chunksPlayed === 0) {
           mode = "interrupted";
           playbackPath = "interrupted";
           params.handlers?.onerror?.();
@@ -421,6 +489,8 @@ export async function playQueuedSpeech(
         }
         params.handlers?.onerror?.();
         cancelQueue();
+        mode = "elevenlabs";
+        playbackPath = "progressive_queue";
         break;
       }
     }

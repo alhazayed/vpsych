@@ -1,5 +1,5 @@
 /**
- * Phase 9.2 — deterministic sentence/phrase chunking for progressive TTS.
+ * Phase 9.2 / 9.2R — deterministic sentence/phrase chunking for progressive TTS.
  *
  * Segments patient reply text for speech synthesis only. Does not rewrite,
  * translate, summarize, or alter clinical meaning — join(chunks) preserves
@@ -13,16 +13,59 @@ export const DEFAULT_MAX_SPEECH_CHUNK_CHARS = 180;
 export const DEFAULT_MIN_SPEECH_CHUNK_CHARS = 24;
 
 /**
+ * Hard maximum progressive TTS HTTP requests per patient response.
+ *
+ * Rationale (Phase 9.2R): `/api/voice/tts` is rate-limited at 60/h/user.
+ * Preview already observed 429s after a short English progressive burst.
+ * Concurrency stays at {@link DEFAULT_TTS_IN_FLIGHT} (= 2); raising the
+ * rate limit is not the first fix. Six chunks still covers typical
+ * multi-sentence replies while bounding worst-case fan-out. Responses that
+ * cannot safely coalesce into ≤6 chunks (without oversized merges) fall
+ * back to a single whole-utterance `legacy_blob` request **before**
+ * progressive playback starts — never truncate clinical text, never
+ * start progressive then replay.
+ */
+export const MAX_PROGRESSIVE_TTS_CHUNKS = 6;
+
+/**
+ * Ceiling when coalescing over-budget chunks. Above the soft per-chunk
+ * target so adjacent sentences can merge, but below “whole essay” size
+ * so progressive first-audio benefit remains meaningful. If safe merges
+ * still leave more than {@link MAX_PROGRESSIVE_TTS_CHUNKS} pieces, the
+ * planner chooses `legacy_blob` (one TTS) instead of unbounded requests.
+ */
+export const MAX_COALESCED_SPEECH_CHUNK_CHARS = 480;
+
+/**
  * Sentence terminators (EN + AR) and clause separators used as soft breaks.
  * Terminators stay attached to the preceding phrase.
+ *
+ * Soft/clause set includes Arabic semicolon U+061B (؛) in addition to
+ * ASCII `;` and fullwidth `；`.
  */
 const TERMINATOR_RE = /([.!?…。؟]+)(\s+|$)/g;
-const CLAUSE_RE = /([,،；;]+)(\s+|$)/g;
+const CLAUSE_RE = /([,،；;؛]+)(\s+|$)/g;
 
 export type SpeechChunkerOptions = {
   maxChars?: number;
   minChars?: number;
+  /** Override {@link MAX_PROGRESSIVE_TTS_CHUNKS} (tests). */
+  maxChunks?: number;
+  /** Override {@link MAX_COALESCED_SPEECH_CHUNK_CHARS} (tests). */
+  maxCoalescedChars?: number;
 };
+
+export type SpeechPlaybackPlan =
+  | {
+      mode: "progressive";
+      chunks: string[];
+    }
+  | {
+      mode: "legacy_blob";
+      /** Full utterance text for one TTS request (clinical text preserved). */
+      text: string;
+      reason: "exceeds_chunk_budget";
+    };
 
 function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -47,7 +90,7 @@ function splitSentences(text: string): string[] {
   return parts.length > 0 ? parts : text.trim() ? [text.trim()] : [];
 }
 
-/** Soft-split a long sentence on commas / Arabic commas when over max. */
+/** Soft-split a long sentence on commas / Arabic commas / semicolons when over max. */
 function splitClauses(sentence: string, maxChars: number): string[] {
   if (sentence.length <= maxChars) return [sentence];
   const parts: string[] = [];
@@ -104,7 +147,8 @@ function endsWithTerminator(phrase: string): boolean {
 
 function isMicroFragment(phrase: string, minChars: number): boolean {
   // True micro-utterances (Mm. / آه.) — coalesce. Terminated sentences stay alone.
-  const letters = phrase.replace(/[.!?…。؟،,；;\s]/g, "");
+  // Include Arabic semicolon U+061B in strip set.
+  const letters = phrase.replace(/[.!?…。؟،,；;؛\s]/g, "");
   return letters.length > 0 && letters.length < Math.min(minChars, 8);
 }
 
@@ -176,6 +220,8 @@ function packPhrases(
 
 /**
  * Segment text for progressive TTS. Deterministic for a given (text, options).
+ * Does **not** apply the progressive chunk-count budget — use
+ * {@link planSpeechChunksForPlayback} before issuing TTS.
  */
 export function chunkTextForSpeechPlayback(
   text: string,
@@ -220,4 +266,96 @@ export function chunkTextForSpeechPlayback(
  */
 export function joinSpeechChunks(chunks: string[]): string {
   return normalizeWhitespace(chunks.join(" "));
+}
+
+/**
+ * Merge adjacent chunks from the tail when the merge fits `maxCoalescedChars`,
+ * preserving earlier chunks for first-audio latency. Returns null when the
+ * result still exceeds `maxChunks` (caller should use legacy_blob).
+ */
+export function coalesceSpeechChunksToBudget(
+  chunks: string[],
+  maxChunks: number,
+  maxCoalescedChars: number,
+): string[] | null {
+  if (chunks.length === 0) return [];
+  if (chunks.length <= maxChunks) return [...chunks];
+
+  const out = [...chunks];
+  let guard = out.length * out.length + 4;
+  while (out.length > maxChunks && guard-- > 0) {
+    let mergedAny = false;
+    // Prefer merging later pairs so chunk 0 stays short when possible.
+    for (let i = out.length - 1; i >= 1; i--) {
+      const merged = `${out[i - 1]} ${out[i]}`;
+      if (merged.length <= maxCoalescedChars) {
+        out[i - 1] = merged;
+        out.splice(i, 1);
+        mergedAny = true;
+        break;
+      }
+    }
+    if (!mergedAny) break;
+  }
+
+  if (out.length > maxChunks) return null;
+  return out;
+}
+
+/**
+ * Plan TTS playback for one patient response under the progressive chunk budget.
+ *
+ * - Normal replies → progressive chunks (≤ {@link MAX_PROGRESSIVE_TTS_CHUNKS}).
+ * - Over budget → coalesce within {@link MAX_COALESCED_SPEECH_CHUNK_CHARS}.
+ * - Still over budget → `legacy_blob` **before** any progressive playback.
+ * - Clinical text is never truncated or rewritten (whitespace-normalized only).
+ */
+export function planSpeechChunksForPlayback(
+  text: string,
+  options: SpeechChunkerOptions = {},
+): SpeechPlaybackPlan {
+  const maxChunks = Math.max(
+    1,
+    options.maxChunks ?? MAX_PROGRESSIVE_TTS_CHUNKS,
+  );
+  const maxCoalescedChars = Math.max(
+    options.maxChars ?? DEFAULT_MAX_SPEECH_CHUNK_CHARS,
+    options.maxCoalescedChars ?? MAX_COALESCED_SPEECH_CHUNK_CHARS,
+  );
+
+  const normalized = normalizeWhitespace(text);
+  const chunks = chunkTextForSpeechPlayback(text, options);
+
+  if (chunks.length === 0) {
+    // Empty — pipeline handles as interrupted; surface as progressive empty.
+    return { mode: "progressive", chunks: [] };
+  }
+
+  if (chunks.length <= maxChunks) {
+    return { mode: "progressive", chunks };
+  }
+
+  const coalesced = coalesceSpeechChunksToBudget(
+    chunks,
+    maxChunks,
+    maxCoalescedChars,
+  );
+
+  if (coalesced && coalesced.length <= maxChunks) {
+    // Sanity: clinical text preserved.
+    if (joinSpeechChunks(coalesced) !== joinSpeechChunks(chunks)) {
+      return {
+        mode: "legacy_blob",
+        text: normalized,
+        reason: "exceeds_chunk_budget",
+      };
+    }
+    return { mode: "progressive", chunks: coalesced };
+  }
+
+  return {
+    mode: "legacy_blob",
+    text: normalized,
+    reason: "exceeds_chunk_budget",
+  };
 }

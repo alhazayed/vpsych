@@ -4,7 +4,11 @@ import {
   playQueuedSpeech,
   type SynthesizeChunkResult,
 } from "@/lib/voice/speech-queue";
-import { chunkTextForSpeechPlayback } from "@/lib/voice/speech-chunker";
+import {
+  chunkTextForSpeechPlayback,
+  MAX_PROGRESSIVE_TTS_CHUNKS,
+  planSpeechChunksForPlayback,
+} from "@/lib/voice/speech-chunker";
 import { createVoiceTurnFence } from "@/lib/voice/turn-fence";
 import { playPatientSpeech } from "@/lib/voice/conversation-pipeline";
 
@@ -214,6 +218,211 @@ describe("playQueuedSpeech", () => {
     expect(result.mode).toBe("interrupted");
     expect(result.metrics.chunksPlayed).toBe(0);
   });
+
+  it("9.2R — first-audio metric only after play() resolves", async () => {
+    let resolvePlay!: () => void;
+    const playGate = new Promise<void>((r) => {
+      resolvePlay = r;
+    });
+    const playSpy = vi.fn().mockImplementation(function (this: {
+      onended: (() => void) | null;
+    }) {
+      return playGate.then(() => {
+        setTimeout(() => this.onended?.(), 1);
+      });
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+
+    const events: string[] = [];
+    const pending = playQueuedSpeech({
+      chunks: ["Only."],
+      onEvent: (e) => events.push(e.type),
+      synthesizeChunk: async () => ({ ok: true, objectUrl: "blob:1" }),
+    });
+
+    // play() not resolved yet — first_play must not have fired.
+    await Promise.resolve();
+    expect(events).not.toContain("audio_queue_first_play");
+
+    resolvePlay();
+    const result = await pending;
+    expect(events).toContain("audio_queue_first_play");
+    expect(result.metrics.ttsFirstAudioPlayMs).not.toBeNull();
+  });
+
+  it("9.2R — chunk1 play ok; chunk2 NotAllowedError; no duplicate / no leak", async () => {
+    let playCount = 0;
+    const revoke = vi.fn();
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => `blob:mock-${Math.random()}`),
+      revokeObjectURL: revoke,
+    });
+    const playSpy = vi.fn().mockImplementation(function (this: {
+      onended: (() => void) | null;
+    }) {
+      playCount += 1;
+      if (playCount === 1) {
+        setTimeout(() => this.onended?.(), 1);
+        return Promise.resolve();
+      }
+      return Promise.reject(
+        Object.assign(new Error("play blocked"), { name: "NotAllowedError" }),
+      );
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+
+    const events: Array<{ type: string; chunkIndex?: number }> = [];
+    const result = await playQueuedSpeech({
+      chunks: ["First.", "Second.", "Third."],
+      onEvent: (e) =>
+        events.push({
+          type: e.type,
+          chunkIndex: "chunkIndex" in e ? e.chunkIndex : undefined,
+        }),
+      synthesizeChunk: async (_t, i) => ({
+        ok: true,
+        objectUrl: `blob:${i}`,
+      }),
+    });
+
+    expect(playCount).toBe(2);
+    expect(result.metrics.chunksPlayed).toBe(1);
+    expect(
+      events.some(
+        (e) => e.type === "audio_play_rejected" && e.chunkIndex === 1,
+      ),
+    ).toBe(true);
+    // No replay of chunk 1 after rejection.
+    expect(playCount).toBeLessThan(3);
+    expect(revoke.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("9.2R — abort during rejected play cleans up without leak", async () => {
+    const revoke = vi.fn();
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:x"),
+      revokeObjectURL: revoke,
+    });
+    const abort = new AbortController();
+    const playSpy = vi.fn().mockImplementation(() => {
+      abort.abort();
+      return Promise.reject(
+        Object.assign(new Error("blocked"), { name: "NotAllowedError" }),
+      );
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+
+    const result = await playQueuedSpeech({
+      chunks: ["One.", "Two."],
+      signal: abort.signal,
+      synthesizeChunk: async (_t, i) => ({
+        ok: true,
+        objectUrl: `blob:${i}`,
+      }),
+    });
+    expect(result.mode).toBe("interrupted");
+    expect(result.metrics.chunksPlayed).toBe(0);
+    expect(result.metrics.ttsFirstAudioPlayMs).toBeNull();
+    expect(revoke).toHaveBeenCalled();
+  });
+
+  it("9.2R — stale turn during playback never continues", async () => {
+    const fence = createVoiceTurnFence();
+    const turnId = fence.beginTurn();
+    let playCalls = 0;
+    const playSpy = vi.fn().mockImplementation(function (this: {
+      onended: (() => void) | null;
+    }) {
+      playCalls += 1;
+      fence.beginTurn(); // supersede mid-play
+      setTimeout(() => this.onended?.(), 1);
+      return Promise.resolve();
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+
+    const result = await playQueuedSpeech({
+      chunks: ["One.", "Two."],
+      turn: { turnId, isActive: (id) => fence.isActive(id) },
+      synthesizeChunk: async (_t, i) => ({
+        ok: true,
+        objectUrl: `blob:${i}`,
+      }),
+    });
+    expect(result.mode).toBe("interrupted");
+    expect(playCalls).toBe(1);
+  });
 });
 
 describe("playPatientSpeech progressive integration", () => {
@@ -400,5 +609,115 @@ describe("playPatientSpeech progressive integration", () => {
     });
     expect(spoken.playbackPath).toBe("legacy_blob");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("9.2R — over-budget response uses legacy_blob before progressive (1 TTS)", async () => {
+    const playSpy = vi.fn().mockImplementation(function (this: {
+      onended: (() => void) | null;
+    }) {
+      queueMicrotask(() => this.onended?.());
+      return Promise.resolve();
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+    vi.stubGlobal("URL", {
+      createObjectURL: () => "blob:budget",
+      revokeObjectURL: vi.fn(),
+    });
+    const fetchMock = vi.fn(async () =>
+      new Response(new Uint8Array([1, 2, 3, 4]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    // Each sentence ~300 chars so adjacent merges exceed coalesce ceiling (480).
+    // 8 sentences → cannot fit MAX_PROGRESSIVE_TTS_CHUNKS (=6) safely → legacy.
+    const filler = "word ".repeat(55).trim();
+    const text = Array.from(
+      { length: 8 },
+      (_, i) => `Block ${i + 1} ${filler}.`,
+    ).join(" ");
+    const plan = planSpeechChunksForPlayback(text);
+    expect(plan.mode).toBe("legacy_blob");
+
+    const spoken = await playPatientSpeech({ text, locale: "en" });
+    expect(spoken.playbackPath).toBe("legacy_blob");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(playSpy).toHaveBeenCalledTimes(1);
+    expect(MAX_PROGRESSIVE_TTS_CHUNKS).toBe(6);
+  });
+
+  it("9.2R — progressive path never issues more TTS than chunk budget", async () => {
+    const playSpy = vi.fn().mockImplementation(function (this: {
+      onended: (() => void) | null;
+    }) {
+      queueMicrotask(() => this.onended?.());
+      return Promise.resolve();
+    });
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(function AudioMock(this: {
+        play: typeof playSpy;
+        pause: () => void;
+        removeAttribute: () => void;
+        load: () => void;
+        onended: (() => void) | null;
+        onerror: (() => void) | null;
+      }) {
+        this.play = playSpy;
+        this.pause = vi.fn();
+        this.removeAttribute = vi.fn();
+        this.load = vi.fn();
+        this.onended = null;
+        this.onerror = null;
+        return this;
+      }),
+    );
+    vi.stubGlobal("URL", {
+      createObjectURL: () => "blob:n",
+      revokeObjectURL: vi.fn(),
+    });
+    const fetchMock = vi.fn(async () =>
+      new Response(new Uint8Array([9]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const text = Array.from(
+      { length: 10 },
+      (_, i) => `Sentence number ${i + 1} about the week.`,
+    ).join(" ");
+    const raw = chunkTextForSpeechPlayback(text);
+    expect(raw.length).toBeGreaterThan(MAX_PROGRESSIVE_TTS_CHUNKS);
+
+    const spoken = await playPatientSpeech({ text, locale: "en" });
+    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(
+      MAX_PROGRESSIVE_TTS_CHUNKS,
+    );
+    expect(
+      spoken.playbackPath === "progressive_queue" ||
+        spoken.playbackPath === "legacy_blob",
+    ).toBe(true);
   });
 });

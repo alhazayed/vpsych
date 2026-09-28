@@ -696,6 +696,10 @@ describe("architecture invariants", () => {
     expect(voiceSession).toMatch(/clearVoiceTurnPending/);
     expect(therapyRoomSession).toMatch(/createTherapistInterruptedFlag/);
     expect(therapyRoomSession).toMatch(/consumeForSubmit/);
+    // Phase 9.2R — repeat playback uses the same VoiceTurnGuard fencing.
+    expect(therapyRoomSession).toMatch(
+      /case "repeat":[\s\S]*?turn:\s*\{[\s\S]*?isActive:[\s\S]*?isCurrent/,
+    );
     expect(clinicTherapyRoom).toMatch(/createTherapistInterruptedFlag/);
     expect(clinicTherapyRoom).toMatch(/onValidTurnSubmit/);
     expect(voiceClient).toMatch(/signal:\s*params\.signal/);
