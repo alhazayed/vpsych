@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { messageRpcClient, prepareMessageRpc } from "@/lib/supabase/admin";
+import {
+  isAssistantPersistSupersededError,
+  messageRpcClient,
+  prepareMessageRpc,
+} from "@/lib/supabase/admin";
 import { generatePatientReplyDetailed } from "@/lib/ai/patient-agent";
 import {
   validatePatientReply,
@@ -603,11 +607,7 @@ export async function POST(request: Request, { params }: Params) {
     humanizationBehaviors: humanization?.behaviors ?? null,
   });
 
-  // Phase 9.1R — stale-turn guard (no schema change).
-  // insert_assistant_message only checks that the tip role is `user`, not which
-  // user row. If a newer therapist turn inserted another user message while
-  // this request was still generating, persisting here would mis-pair a stale
-  // assistant with the newer user turn. Require our userMsg to still be tip.
+  // Phase 9.1R — early tip check (optimization). Phase 9.1S RPC is authoritative.
   if (request.signal.aborted) {
     console.warn("[sessions/message] client aborted before assistant persist", {
       sessionId,
@@ -656,6 +656,7 @@ export async function POST(request: Request, { params }: Params) {
       sessionId,
       content: replyMeta.text,
       role: "assistant",
+      userMessageId: String(userMsg.id),
     });
     if (!prepared.ok) {
       return {
@@ -667,6 +668,22 @@ export async function POST(request: Request, { params }: Params) {
   })();
 
   if (assistantError || !assistantMsg) {
+    // Phase 9.1S — RPC atomic tip rejection (race between app check and insert).
+    if (isAssistantPersistSupersededError(assistantError)) {
+      console.warn("[sessions/message] RPC rejected superseded assistant", {
+        sessionId,
+        userMessageId: userMsg.id,
+        error: assistantError?.message,
+      });
+      return NextResponse.json(
+        {
+          error: "Turn superseded",
+          superseded: true,
+          userMessage: userMsg,
+        },
+        { status: 409 },
+      );
+    }
     console.error("[sessions/message] assistant message save failed", {
       sessionId,
       error: assistantError?.message,

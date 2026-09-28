@@ -586,7 +586,8 @@ export function TherapyRoomSession({
       });
 
       if (!turn.ok) {
-        if (turn.aborted) return;
+        // Phase 9.1S — superseded is a normal stale-turn outcome, not GPT_FAIL.
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -1010,7 +1011,7 @@ export function TherapyRoomSession({
       });
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       if (!turn.ok) {
-        if (turn.aborted) return;
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;

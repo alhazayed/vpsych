@@ -394,7 +394,7 @@ export function TherapyRoom({
           return;
         }
         if (!turn.ok) {
-          if (turn.aborted) return;
+          if (turn.aborted || turn.superseded) return;
           if (turn.expired) {
             await endSession();
             return;

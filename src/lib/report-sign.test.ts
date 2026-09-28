@@ -125,32 +125,48 @@ describe("Phase 8.2 message HMAC", () => {
   });
 
   it("omits p_sig when using service role", () => {
+    const userMessageId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
     const out = buildSignedMessageRpcArgs({
       sessionId,
       content: "trusted",
       role: "assistant",
       usingServiceRole: true,
+      userMessageId,
     });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.args.p_sig).toBeUndefined();
     expect(out.args.p_content).toBe("trusted");
+    expect(out.args.p_user_message_id).toBe(userMessageId);
   });
 
   it("attaches p_sig when not using service role", () => {
     const content = "forged-looking text";
+    const userMessageId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
     const out = buildSignedMessageRpcArgs({
       sessionId,
       content,
       role: "assistant",
       usingServiceRole: false,
       key,
+      userMessageId,
     });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
+    expect(out.args.p_user_message_id).toBe(userMessageId);
     expect(out.args.p_sig).toBe(
       signSessionMessage({ sessionId, content, role: "assistant", key }),
     );
+  });
+
+  it("rejects assistant RPC args without userMessageId (Phase 9.1S)", () => {
+    const out = buildSignedMessageRpcArgs({
+      sessionId,
+      content: "x",
+      role: "assistant",
+      usingServiceRole: true,
+    });
+    expect(out.ok).toBe(false);
   });
 
   it("fails closed without service role or REPORT_WRITE_KEY", () => {

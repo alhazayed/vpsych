@@ -66,6 +66,8 @@ export type MessageRpcRole = "assistant" | "system";
 export type MessageRpcArgs = {
   p_session_id: string;
   p_content: string;
+  /** Phase 9.1S — required for insert_assistant_message tip identity. */
+  p_user_message_id?: string;
   p_sig?: string;
 };
 
@@ -73,6 +75,7 @@ export type MessageRpcArgs = {
  * Build RPC args for message inserts.
  * - With service role: p_sig omitted (DB bypasses HMAC).
  * - Without service role: requires REPORT_WRITE_KEY and attaches p_sig.
+ * - Assistant inserts must pass userMessageId (Phase 9.1S atomic tip guard).
  */
 export function buildSignedMessageRpcArgs(params: {
   sessionId: string;
@@ -80,10 +83,24 @@ export function buildSignedMessageRpcArgs(params: {
   role: MessageRpcRole;
   usingServiceRole: boolean;
   key?: string | null;
+  /** Originating user message id — required when role is assistant. */
+  userMessageId?: string | null;
 }): { ok: true; args: MessageRpcArgs } | { ok: false; error: string } {
+  if (params.role === "assistant") {
+    const id = params.userMessageId?.trim();
+    if (!id) {
+      return {
+        ok: false,
+        error: "Assistant message RPC requires userMessageId (Phase 9.1S).",
+      };
+    }
+  }
   const base: MessageRpcArgs = {
     p_session_id: params.sessionId,
     p_content: params.content,
+    ...(params.role === "assistant" && params.userMessageId
+      ? { p_user_message_id: params.userMessageId }
+      : {}),
   };
   if (params.usingServiceRole) {
     return { ok: true, args: base };

@@ -367,7 +367,8 @@ export function VoiceSession({
           return;
         }
         if (!turn.ok) {
-          if (turn.aborted) return;
+          // Phase 9.1S — superseded/stale: silent cleanup, no clinical error UX.
+          if (turn.aborted || turn.superseded) return;
           if (turn.expired) {
             await endSession();
             return;

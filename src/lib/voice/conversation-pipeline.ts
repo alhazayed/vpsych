@@ -130,7 +130,15 @@ export async function submitConversationTurn(params: {
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
-  | { ok: false; error: string; expired?: boolean; status: number; aborted?: boolean }
+  | {
+      ok: false;
+      error: string;
+      expired?: boolean;
+      status: number;
+      aborted?: boolean;
+      /** Phase 9.1S — server rejected stale assistant persist. */
+      superseded?: boolean;
+    }
 > {
   try {
     const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
@@ -147,6 +155,8 @@ export async function submitConversationTurn(params: {
     const data = (await res.json().catch(() => ({}))) as {
       error?: string;
       expired?: boolean;
+      superseded?: boolean;
+      aborted?: boolean;
       userMessage?: SessionMessage;
       assistantMessage?: SessionMessage;
       remainingSeconds?: number;
@@ -156,11 +166,18 @@ export async function submitConversationTurn(params: {
     };
 
     if (!res.ok) {
+      const superseded =
+        Boolean(data.superseded) ||
+        (res.status === 409 &&
+          /superseded/i.test(String(data.error ?? "")));
       return {
         ok: false,
         error: data.error ?? "Failed to send message",
         expired: Boolean(data.expired),
         status: res.status,
+        superseded,
+        // Treat superseded like a cancelled/stale outcome for UI fencing.
+        aborted: Boolean(data.aborted) || superseded,
       };
     }
 

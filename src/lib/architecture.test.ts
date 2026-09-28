@@ -700,9 +700,15 @@ describe("architecture invariants", () => {
     expect(clinicTherapyRoom).toMatch(/onValidTurnSubmit/);
     expect(voiceClient).toMatch(/signal:\s*params\.signal/);
 
-    // Server tip-of-conversation guard (no schema migration).
+    // Server tip-of-conversation guard + Phase 9.1S atomic RPC identity.
     expect(messageRoute).toMatch(/isAssistantPersistTipCurrent/);
     expect(messageRoute).toMatch(/Turn superseded|superseded:\s*true/);
+    expect(messageRoute).toMatch(/userMessageId:\s*String\(userMsg\.id\)/);
+    expect(messageRoute).toMatch(/isAssistantPersistSupersededError/);
+    const phase91s = readdirSync(join(process.cwd(), "supabase/migrations")).find(
+      (f) => f.includes("phase91s_atomic_assistant_tip_guard"),
+    );
+    expect(phase91s).toBeTruthy();
 
     // Behavioral: interrupt latch survives empty STT; tip guard rejects stale.
     const { createTherapistInterruptedFlag } = await import(
