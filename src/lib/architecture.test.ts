@@ -670,6 +670,28 @@ describe("architecture invariants", () => {
     expect(stream).toMatch(/isRealtimeStreamingEnabled/);
     expect(pipeline).toMatch(/therapistInterrupted/);
 
+    // Phase 9.1 — voice UIs must send therapistInterrupted (closes OWN-05).
+    const voiceSession = readFileSync(
+      join(root, "components/VoiceSession.tsx"),
+      "utf8",
+    );
+    const therapyRoomSession = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    const voiceClient = readFileSync(join(root, "lib/voice/client.ts"), "utf8");
+    const turnFence = readFileSync(
+      join(root, "lib/voice/turn-fence.ts"),
+      "utf8",
+    );
+    expect(voiceSession).toMatch(/therapistInterrupted/);
+    expect(voiceSession).toMatch(/createVoiceTurnFence/);
+    expect(therapyRoomSession).toMatch(/therapistInterrupted/);
+    expect(therapyRoomSession).toMatch(/pendingTherapistInterruptedRef/);
+    expect(voiceClient).toMatch(/signal:\s*params\.signal/);
+    expect(turnFence).toMatch(/createVoiceTurnFence/);
+    expect(turnFence).toMatch(/isStaleVoiceResult/);
+
     // Must not re-export patient cognition owners
     expect(barrel).not.toMatch(/export \* from ["']@\/lib\/emotion["']/);
     expect(barrel).not.toMatch(/export \* from ["']@\/lib\/adaptation["']/);

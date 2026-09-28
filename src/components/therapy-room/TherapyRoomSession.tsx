@@ -139,6 +139,11 @@ export function TherapyRoomSession({
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
+  /**
+   * Phase 9.1 — set on barge-in; consumed by the next submitConversationTurn
+   * so CBE receives therapistInterrupted: true (closes OWN-05 for TRM).
+   */
+  const pendingTherapistInterruptedRef = useRef(false);
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -376,6 +381,7 @@ export function TherapyRoomSession({
           if (bargeInFired || endingRef.current) return;
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
+          pendingTherapistInterruptedRef.current = true;
           immersionRef.current.track("therapist_interrupt");
           telemetryRef.current.record("barge_in");
           abort.abort();
@@ -402,8 +408,13 @@ export function TherapyRoomSession({
         disorderSlug,
         audioRef,
         signal: abort.signal,
+        turn: {
+          turnId: generation,
+          isActive: (id) => fsmRef.current.isCurrent(id),
+        },
         handlers: {
           onstart: () => {
+            if (!fsmRef.current.isCurrent(generation)) return;
             if (audioRef.current) {
               applyHtmlAudioModulation(audioRef.current, mod);
             }
@@ -543,6 +554,9 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       const gptStarted = telemetryRef.current.mark();
 
+      const therapistInterrupted = pendingTherapistInterruptedRef.current;
+      pendingTherapistInterruptedRef.current = false;
+
       let turn;
       try {
         const [, result] = await Promise.all([
@@ -550,6 +564,7 @@ export function TherapyRoomSession({
           submitConversationTurn({
             sessionId: session.id,
             message: transcript,
+            therapistInterrupted,
             signal: abort.signal,
           }),
         ]);
@@ -569,6 +584,7 @@ export function TherapyRoomSession({
       });
 
       if (!turn.ok) {
+        if (turn.aborted) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -578,6 +594,9 @@ export function TherapyRoomSession({
         setStatusKey("error");
         return;
       }
+
+      // Drop UI/playback updates if barge-in superseded this generation mid-flight.
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
       setMessages((prev) => [
         ...prev,
@@ -950,6 +969,13 @@ export function TherapyRoomSession({
       if (!trimmed || endingRef.current) return;
       if (fsmRef.current.getState() === "PAUSED") return;
 
+      // Text while patient is speaking counts as therapist interruption.
+      if (fsmRef.current.getState() === "AVATAR_SPEAKING") {
+        pendingTherapistInterruptedRef.current = true;
+        stopPlayback();
+        dispatch("BARGE_IN");
+      }
+
       immersionRef.current.track("text_turn");
       turnIndexRef.current += 1;
       const generation = fsmRef.current.getGeneration();
@@ -962,15 +988,28 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       await new Promise((r) => window.setTimeout(r, thinking.thinkingLatencyMs));
 
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+
       if (fsmRef.current.getState() === "PROCESSING_STT") {
         dispatch("STT_OK");
       }
 
+      const therapistInterrupted = pendingTherapistInterruptedRef.current;
+      pendingTherapistInterruptedRef.current = false;
+
+      turnAbortRef.current?.abort();
+      const abort = new AbortController();
+      turnAbortRef.current = abort;
+
       const turn = await submitConversationTurn({
         sessionId: session.id,
         message: trimmed,
+        therapistInterrupted,
+        signal: abort.signal,
       });
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       if (!turn.ok) {
+        if (turn.aborted) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -996,7 +1035,7 @@ export function TherapyRoomSession({
         listenLoopRef.current();
       }
     },
-    [dispatch, endSession, session.id, setPresence, speakPatient],
+    [dispatch, endSession, session.id, setPresence, speakPatient, stopPlayback],
   );
 
   const busy =

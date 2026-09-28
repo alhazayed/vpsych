@@ -13,6 +13,7 @@ import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
+  createVoiceTurnFence,
   playPatientSpeech,
   resolvePipelineLocale,
   runVoiceConversationTurn,
@@ -105,15 +106,45 @@ export function VoiceSession({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  /** Phase 9.1 — monotonic turn fence for stale STT/message/TTS rejection. */
+  const turnFenceRef = useRef(createVoiceTurnFence());
+  const turnAbortRef = useRef<AbortController | null>(null);
+  const playbackAbortRef = useRef<AbortController | null>(null);
+  /** Next therapist submit follows a barge-in / cut-off of patient audio. */
+  const pendingTherapistInterruptedRef = useRef(false);
+  const speakingRef = useRef(false);
 
   const stopPlayback = useCallback(() => {
     window.speechSynthesis?.cancel();
+    playbackAbortRef.current?.abort();
+    playbackAbortRef.current = null;
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
+      try {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute("src");
+        audioRef.current.load();
+      } catch {
+        /* ignore */
+      }
       audioRef.current = null;
     }
+    speakingRef.current = false;
+    setSpeaking(false);
   }, []);
+
+  /** Supersede in-flight voice work; optionally mark therapistInterrupted. */
+  const interruptPatientVoice = useCallback(
+    (opts?: { markTherapistInterrupted?: boolean }) => {
+      if (opts?.markTherapistInterrupted) {
+        pendingTherapistInterruptedRef.current = true;
+      }
+      turnFenceRef.current.invalidate();
+      turnAbortRef.current?.abort();
+      turnAbortRef.current = null;
+      stopPlayback();
+    },
+    [stopPlayback],
+  );
 
   const endSession = useCallback(async () => {
     if (endingRef.current) return;
@@ -124,6 +155,9 @@ export function VoiceSession({
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
       micRecorderRef.current = null;
+      turnFenceRef.current.invalidate();
+      turnAbortRef.current?.abort();
+      turnAbortRef.current = null;
       stopPlayback();
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
@@ -193,9 +227,30 @@ export function VoiceSession({
         speech_pace?: string;
         speech_energy?: string;
       } | null,
+      turnId?: number,
     ) => {
       if (!voiceEnabled) return;
-      stopPlayback();
+      const fence = turnFenceRef.current;
+      const activeTurnId = turnId ?? fence.getActiveTurnId();
+      if (!fence.isActive(activeTurnId)) return;
+
+      playbackAbortRef.current?.abort();
+      const playbackAbort = new AbortController();
+      playbackAbortRef.current = playbackAbort;
+
+      window.speechSynthesis?.cancel();
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.removeAttribute("src");
+          audioRef.current.load();
+        } catch {
+          /* ignore */
+        }
+        audioRef.current = null;
+      }
+
+      speakingRef.current = true;
       setSpeaking(true);
       const mode = await playPatientSpeech({
         text,
@@ -212,12 +267,32 @@ export function VoiceSession({
         style: voiceHints?.style ?? null,
         pauseBeforeMs: voiceHints?.pause_before_ms ?? null,
         audioRef,
+        signal: playbackAbort.signal,
+        turn: {
+          turnId: activeTurnId,
+          isActive: (id) => fence.isActive(id),
+        },
         handlers: {
-          onstart: () => setSpeaking(true),
-          onend: () => setSpeaking(false),
-          onerror: () => setSpeaking(false),
+          onstart: () => {
+            if (!fence.isActive(activeTurnId)) return;
+            speakingRef.current = true;
+            setSpeaking(true);
+          },
+          onend: () => {
+            if (!fence.isActive(activeTurnId)) return;
+            speakingRef.current = false;
+            setSpeaking(false);
+          },
+          onerror: () => {
+            if (!fence.isActive(activeTurnId)) return;
+            speakingRef.current = false;
+            setSpeaking(false);
+          },
         },
       });
+      if (mode === "interrupted" || !fence.isActive(activeTurnId)) {
+        return;
+      }
       if (mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
       }
@@ -230,7 +305,6 @@ export function VoiceSession({
       avatar.voice_profile_id,
       disorderSlug,
       locale,
-      stopPlayback,
       t,
       voiceEnabled,
     ],
@@ -241,6 +315,20 @@ export function VoiceSession({
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || pending || endingRef.current) return;
+
+      // Cutting off patient audio with a new therapist turn counts as interruption.
+      if (speakingRef.current) {
+        interruptPatientVoice({ markTherapistInterrupted: true });
+      }
+
+      const turnId = turnFenceRef.current.beginTurn();
+      turnAbortRef.current?.abort();
+      const turnAbort = new AbortController();
+      turnAbortRef.current = turnAbort;
+
+      const therapistInterrupted = pendingTherapistInterruptedRef.current;
+      pendingTherapistInterruptedRef.current = false;
+
       setPending(true);
       setStatus(t("status.patientResponding"));
       setDraft("");
@@ -248,8 +336,14 @@ export function VoiceSession({
         const turn = await submitConversationTurn({
           sessionId: session.id,
           message: trimmed,
+          therapistInterrupted,
+          signal: turnAbort.signal,
         });
+        if (!turnFenceRef.current.isActive(turnId)) {
+          return;
+        }
         if (!turn.ok) {
+          if (turn.aborted) return;
           if (turn.expired) {
             await endSession();
             return;
@@ -263,18 +357,25 @@ export function VoiceSession({
           turn.data.assistantMessage,
         ]);
         if (voiceEnabled) {
-          void speak(turn.data.assistantMessage.content, turn.data.voiceHints);
+          void speak(
+            turn.data.assistantMessage.content,
+            turn.data.voiceHints,
+            turnId,
+          );
         }
         setStatus(
           voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
         );
       } catch {
+        if (!turnFenceRef.current.isActive(turnId)) return;
         setStatus(t("status.networkError"));
       } finally {
-        setPending(false);
+        if (turnFenceRef.current.isActive(turnId)) {
+          setPending(false);
+        }
       }
     },
-    [endSession, pending, session.id, speak, t, voiceEnabled],
+    [endSession, interruptPatientVoice, pending, session.id, speak, t, voiceEnabled],
   );
 
   async function stopOpenAIListen() {
@@ -285,11 +386,23 @@ export function VoiceSession({
     setListening(false);
     if (!recorder) return;
 
+    const turnId = turnFenceRef.current.beginTurn();
+    turnAbortRef.current?.abort();
+    const turnAbort = new AbortController();
+    turnAbortRef.current = turnAbort;
+    const playbackAbort = new AbortController();
+    playbackAbortRef.current = playbackAbort;
+
+    const therapistInterrupted = pendingTherapistInterruptedRef.current;
+    pendingTherapistInterruptedRef.current = false;
+
     setStatus(t("status.transcribing"));
     setPending(true);
 
     try {
       const wav = await recorder.stop();
+      if (!turnFenceRef.current.isActive(turnId)) return;
+
       const result = await runVoiceConversationTurn({
         sessionId: session.id,
         audio: wav,
@@ -303,18 +416,44 @@ export function VoiceSession({
         speechPace: avatar.personality?.speech?.pace ?? null,
         disorderSlug,
         audioRef,
-        onTranscript: (transcript) => setDraft(transcript),
+        signal: turnAbort.signal,
+        playbackSignal: playbackAbort.signal,
+        therapistInterrupted,
+        turn: {
+          turnId,
+          isActive: (id) => turnFenceRef.current.isActive(id),
+        },
+        onTranscript: (transcript) => {
+          if (!turnFenceRef.current.isActive(turnId)) return;
+          setDraft(transcript);
+        },
         onMessages: (userMessage, assistantMessage) => {
+          if (!turnFenceRef.current.isActive(turnId)) return;
           setMessages((prev) => [...prev, userMessage, assistantMessage]);
         },
         speakHandlers: {
-          onstart: () => setSpeaking(true),
-          onend: () => setSpeaking(false),
-          onerror: () => setSpeaking(false),
+          onstart: () => {
+            if (!turnFenceRef.current.isActive(turnId)) return;
+            speakingRef.current = true;
+            setSpeaking(true);
+          },
+          onend: () => {
+            if (!turnFenceRef.current.isActive(turnId)) return;
+            speakingRef.current = false;
+            setSpeaking(false);
+          },
+          onerror: () => {
+            if (!turnFenceRef.current.isActive(turnId)) return;
+            speakingRef.current = false;
+            setSpeaking(false);
+          },
         },
       });
 
+      if (!turnFenceRef.current.isActive(turnId)) return;
+
       if (!result.ok) {
+        if (result.stage === "cancelled") return;
         if (result.stage === "stt" && result.unavailable) {
           setStatus(t("status.sttUnavailable"));
           startBrowserListen({ autoSend: true });
@@ -337,9 +476,12 @@ export function VoiceSession({
         voiceEnabled ? t("status.listeningNext") : t("status.textReady"),
       );
     } catch {
+      if (!turnFenceRef.current.isActive(turnId)) return;
       setStatus(t("status.micTranscribeError"));
     } finally {
-      setPending(false);
+      if (turnFenceRef.current.isActive(turnId)) {
+        setPending(false);
+      }
     }
   }
 
@@ -415,6 +557,11 @@ export function VoiceSession({
       return;
     }
 
+    // Starting a new listen while the patient is speaking = therapist barge-in.
+    if (speakingRef.current) {
+      interruptPatientVoice({ markTherapistInterrupted: true });
+    }
+
     try {
       const recorder = await startMicWavRecording(20000);
       micRecorderRef.current = recorder;
@@ -438,8 +585,7 @@ export function VoiceSession({
       micRecorderRef.current = null;
       setListening(false);
     }
-    stopPlayback();
-    setSpeaking(false);
+    interruptPatientVoice();
     const next = !voiceEnabled;
     setVoiceEnabled(next);
     setStatus(next ? t("status.ready") : t("status.textOnly"));
