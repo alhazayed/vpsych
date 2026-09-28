@@ -94,8 +94,8 @@ describe("conversation pipeline stages", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    const body = JSON.parse(String(init.body));
+    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(call[1]?.body ?? "{}"));
     expect(body.therapistInterrupted).toBe(true);
     expect(body.message).toBe("Sorry — go on");
   });
