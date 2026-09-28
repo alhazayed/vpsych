@@ -63,6 +63,8 @@ export function prepareMessageRpc(
     sessionId: string;
     content: string;
     role: MessageRpcRole;
+    /** Phase 9.1S — required when role is assistant (atomic tip identity). */
+    userMessageId?: string | null;
   },
 ): PreparedMessageRpc {
   const service = createServiceClient();
@@ -73,6 +75,7 @@ export function prepareMessageRpc(
     content: params.content,
     role: params.role,
     usingServiceRole,
+    userMessageId: params.userMessageId,
   });
   if (!signed.ok) return signed;
   return {
@@ -81,4 +84,16 @@ export function prepareMessageRpc(
     args: signed.args,
     usingServiceRole,
   };
+}
+
+/** True when a PostgREST/RPC error represents a superseded tip (Phase 9.1S). */
+export function isAssistantPersistSupersededError(
+  error: { message?: string | null; code?: string | null } | null | undefined,
+): boolean {
+  if (!error) return false;
+  const msg = String(error.message ?? "");
+  if (/turn superseded/i.test(msg)) return true;
+  // Postgres RAISE EXCEPTION default SQLSTATE P0001 surfaces as code P0001 / 22P02 variants.
+  if (error.code === "P0001" && /superseded/i.test(msg)) return true;
+  return false;
 }

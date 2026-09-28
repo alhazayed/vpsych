@@ -7,8 +7,18 @@ export type ConversationTelemetryKind =
   | "speech_duration_ms"
   | "stt_latency_ms"
   | "gpt_latency_ms"
+  /** @deprecated Prefer tts_generation_latency_ms — kept as generation-only alias. */
   | "tts_latency_ms"
+  | "tts_generation_latency_ms"
+  /**
+   * Wall ms until first patient audio play() resolved successfully
+   * (playback initiation confirmed). Not recorded on mere play() attempt
+   * or when play() rejects (e.g. NotAllowedError).
+   */
+  | "time_to_first_patient_audio_ms"
+  | "patient_playback_duration_ms"
   | "playback_duration_ms"
+  | "tts_playback_path"
   | "mic_reopen_latency_ms"
   | "turn_complete"
   | "barge_in"
@@ -23,7 +33,7 @@ export type ConversationTelemetryEvent = {
   kind: ConversationTelemetryKind;
   /** Milliseconds for latency / duration events; omit for counters. */
   valueMs?: number;
-  /** Non-PHI error code (e.g. stt_timeout, mic_denied). */
+  /** Non-PHI error code (e.g. stt_timeout, mic_denied) or path tag. */
   code?: string;
   at: number;
 };
@@ -37,7 +47,9 @@ export type ConversationTelemetrySummary = {
   avgSpeechMs: number | null;
   avgSttMs: number | null;
   avgGptMs: number | null;
+  /** Average TTS generation latency (not full playback). */
   avgTtsMs: number | null;
+  avgTimeToFirstAudioMs: number | null;
   avgPlaybackMs: number | null;
   avgMicReopenMs: number | null;
   events: ConversationTelemetryEvent[];
@@ -84,7 +96,7 @@ export function createConversationTelemetry(): {
       const speech: number[] = [];
       const stt: number[] = [];
       const gpt: number[] = [];
-      const tts: number[] = [];
+      const firstAudio: number[] = [];
       const playback: number[] = [];
       const micReopen: number[] = [];
       let turns = 0;
@@ -104,11 +116,14 @@ export function createConversationTelemetry(): {
           case "gpt_latency_ms":
             if (e.valueMs != null) gpt.push(e.valueMs);
             break;
-          case "tts_latency_ms":
-            if (e.valueMs != null) tts.push(e.valueMs);
+          case "time_to_first_patient_audio_ms":
+            if (e.valueMs != null) firstAudio.push(e.valueMs);
+            break;
+          case "patient_playback_duration_ms":
+            if (e.valueMs != null) playback.push(e.valueMs);
             break;
           case "playback_duration_ms":
-            if (e.valueMs != null) playback.push(e.valueMs);
+            // Legacy alias — ignored when patient_playback_duration_ms is present.
             break;
           case "mic_reopen_latency_ms":
             if (e.valueMs != null) micReopen.push(e.valueMs);
@@ -133,6 +148,23 @@ export function createConversationTelemetry(): {
         }
       }
 
+      // Prefer dedicated generation events over the legacy alias when both exist.
+      const genOnly = events
+        .filter((e) => e.kind === "tts_generation_latency_ms")
+        .map((e) => e.valueMs)
+        .filter((v): v is number => v != null);
+      const aliasOnly = events
+        .filter((e) => e.kind === "tts_latency_ms")
+        .map((e) => e.valueMs)
+        .filter((v): v is number => v != null);
+      const avgTtsSource = genOnly.length > 0 ? genOnly : aliasOnly;
+      const legacyPlayback = events
+        .filter((e) => e.kind === "playback_duration_ms")
+        .map((e) => e.valueMs)
+        .filter((v): v is number => v != null);
+      const playbackSource =
+        playback.length > 0 ? playback : legacyPlayback;
+
       return {
         turns,
         bargeIns,
@@ -142,8 +174,9 @@ export function createConversationTelemetry(): {
         avgSpeechMs: avgOf(speech),
         avgSttMs: avgOf(stt),
         avgGptMs: avgOf(gpt),
-        avgTtsMs: avgOf(tts),
-        avgPlaybackMs: avgOf(playback),
+        avgTtsMs: avgOf(avgTtsSource),
+        avgTimeToFirstAudioMs: avgOf(firstAudio),
+        avgPlaybackMs: avgOf(playbackSource),
         avgMicReopenMs: avgOf(micReopen),
         events: [...events],
       };
@@ -160,6 +193,7 @@ export function createConversationTelemetry(): {
         avgSttMs: full.avgSttMs,
         avgGptMs: full.avgGptMs,
         avgTtsMs: full.avgTtsMs,
+        avgTimeToFirstAudioMs: full.avgTimeToFirstAudioMs,
         avgPlaybackMs: full.avgPlaybackMs,
         avgMicReopenMs: full.avgMicReopenMs,
       };
