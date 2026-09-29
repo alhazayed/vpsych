@@ -26,6 +26,7 @@ Aligns with Stage 2 ownership matrix and Stage 3 patient ontology. This file is 
 | Patient reply text | Patient Agent | via message RPC | — |
 | `aiSource` truth | Patient Agent / CBE direct | response | Clients must surface |
 | STT / TTS / registry | Voice | voice_profiles | — |
+| Arabic TTS orthography (ASPE) | Voice (`lib/arabic-speech`) | ephemeral (TTS only) | Never mutate stored transcript |
 | Clinical delivery params | CVP | voice_profiles columns | — |
 | Nonverbal timeline | NBE | client memory | — |
 | TRM FSM / clinic day | Therapy Room | client + clinic tables | — |
