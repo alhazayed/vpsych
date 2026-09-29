@@ -20,6 +20,7 @@ import {
   submitConversationTurn,
 } from "@/lib/voice/conversation-pipeline";
 import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
+import { recordForensicBarge } from "@/lib/voice/ios-playback-forensics";
 import { createMicClaim } from "@/lib/voice/mic-claim";
 import {
   clearVoiceTurnPending,
@@ -143,13 +144,47 @@ export function VoiceSession({
   /** Supersede in-flight voice work; optionally mark therapistInterrupted. */
   const interruptPatientVoice = useCallback(
     (opts?: { markTherapistInterrupted?: boolean }) => {
+      const turnId = turnFenceRef.current.getActiveTurnId();
+      // Phase 9.2S — classic VoiceSession barge / supersede trail.
+      recordForensicBarge({
+        step: "interrupt_handler",
+        voice_turn_id: turnId,
+        chunk_index: null,
+        abort_state: Boolean(turnAbortRef.current?.signal.aborted),
+        speaking_state: speakingRef.current,
+        queue_state: "classic_interrupt",
+      });
       if (opts?.markTherapistInterrupted) {
         interruptFlagRef.current.mark();
       }
       turnFenceRef.current.invalidate();
+      recordForensicBarge({
+        step: "turn_fence_invalidate",
+        voice_turn_id: turnId,
+        chunk_index: null,
+        abort_state: Boolean(turnAbortRef.current?.signal.aborted),
+        speaking_state: speakingRef.current,
+        queue_state: "fence_invalidated",
+      });
       turnAbortRef.current?.abort();
       turnAbortRef.current = null;
+      recordForensicBarge({
+        step: "abort_signal",
+        voice_turn_id: turnId,
+        chunk_index: null,
+        abort_state: true,
+        speaking_state: speakingRef.current,
+        queue_state: "turn_aborted_before_stopPlayback",
+      });
       stopPlayback();
+      recordForensicBarge({
+        step: "audio_pause",
+        voice_turn_id: turnId,
+        chunk_index: null,
+        abort_state: true,
+        speaking_state: false,
+        queue_state: "stopPlayback",
+      });
     },
     [stopPlayback],
   );
