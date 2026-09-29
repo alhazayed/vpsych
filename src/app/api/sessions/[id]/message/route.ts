@@ -607,6 +607,7 @@ export async function POST(request: Request, { params }: Params) {
       sessionId,
       content: replyMeta.text,
       role: "assistant",
+      userMessageId: String(userMsg.id),
     });
     if (!prepared.ok) {
       return {
