@@ -50,6 +50,11 @@ import {
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
 import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
+import {
+  beginForensicTurn,
+  markForensicLatency,
+  recordForensicBarge,
+} from "@/lib/voice/ios-playback-forensics";
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
 import type {
   ResolvedAvatar,
@@ -383,17 +388,68 @@ export function TherapyRoomSession({
           if (bargeInFired || endingRef.current) return;
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
+          // Phase 9.2S — barge-in forensic trail (no audio/transcript logged).
+          recordForensicBarge({
+            step: "vad_fired",
+            voice_turn_id: generation,
+            chunk_index: null,
+            abort_state: abort.signal.aborted,
+            speaking_state: true,
+            queue_state: "avatar_speaking",
+          });
           interruptFlagRef.current.mark();
           immersionRef.current.track("therapist_interrupt");
           telemetryRef.current.record("barge_in");
+          recordForensicBarge({
+            step: "interrupt_handler",
+            voice_turn_id: generation,
+            chunk_index: null,
+            abort_state: false,
+            speaking_state: true,
+            queue_state: "interrupting",
+          });
           abort.abort();
+          recordForensicBarge({
+            step: "abort_signal",
+            voice_turn_id: generation,
+            chunk_index: null,
+            abort_state: true,
+            speaking_state: true,
+            queue_state: "aborting_tts_playback",
+            note: "playback AbortController aborted",
+          });
           stopPlayback();
+          recordForensicBarge({
+            step: "audio_pause",
+            voice_turn_id: generation,
+            chunk_index: null,
+            abort_state: true,
+            speaking_state: false,
+            queue_state: "stopPlayback",
+          });
           const transitioned = dispatch("BARGE_IN");
+          recordForensicBarge({
+            step: "turn_fence_invalidate",
+            voice_turn_id: generation,
+            chunk_index: null,
+            abort_state: true,
+            speaking_state: false,
+            queue_state: transitioned.ok ? "BARGE_IN_ok" : "BARGE_IN_rejected",
+          });
           if (transitioned.ok) {
             setPresence("interrupted", "barge");
             setStatusKey("listening");
             // Mic reopens immediately — no click required.
             listenLoopRef.current();
+            recordForensicBarge({
+              step: "therapist_turn_submit",
+              voice_turn_id: generation,
+              chunk_index: null,
+              abort_state: true,
+              speaking_state: false,
+              queue_state: "listen_loop_restarted",
+              note: "hands-free listen resumed after barge-in",
+            });
           }
         },
       });
@@ -521,6 +577,11 @@ export function TherapyRoomSession({
       const abort = new AbortController();
       turnAbortRef.current = abort;
 
+      // Phase 9.2S — open forensic turn before STT (same id reused at TTS).
+      beginForensicTurn(generation);
+      markForensicLatency("therapist_speech_end");
+      markForensicLatency("STT_request_start");
+
       const sttStarted = telemetryRef.current.mark();
       setStatusKey("processingStt");
 
@@ -538,6 +599,7 @@ export function TherapyRoomSession({
         setStatusKey("error");
         return;
       }
+      markForensicLatency("STT_complete");
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
@@ -580,9 +642,20 @@ export function TherapyRoomSession({
 
       setStatusKey("thinking");
       const gptStarted = telemetryRef.current.mark();
+      markForensicLatency("message_request_start");
 
       // Consume only now — after non-empty transcript (Phase 9.1R Fix 3).
       const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+      if (therapistInterrupted) {
+        recordForensicBarge({
+          step: "therapist_turn_submit",
+          voice_turn_id: generation,
+          chunk_index: null,
+          abort_state: abort.signal.aborted,
+          speaking_state: false,
+          queue_state: "submit_with_therapistInterrupted",
+        });
+      }
 
       let turn;
       try {
@@ -603,6 +676,8 @@ export function TherapyRoomSession({
         setStatusKey("error");
         return;
       }
+      markForensicLatency("message_complete");
+      markForensicLatency("patient_cognition_complete");
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 

@@ -33,6 +33,12 @@ import {
   type SpeechQueueMetrics,
   type SpeechQueuePlaybackPath,
 } from "@/lib/voice/speech-queue";
+import {
+  beginForensicTurn,
+  finishForensicTurn,
+  markForensicLatency,
+  addForensicNote,
+} from "@/lib/voice/ios-playback-forensics";
 
 export type { SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 export type { SessionMessage };
@@ -312,6 +318,15 @@ export async function playPatientSpeech(params: {
     return emptyPlayResult("interrupted", "interrupted");
   }
 
+  // Phase 9.2S — begin/reuse forensic turn for iPhone/Safari dump (no content).
+  const forensicTurnId = params.turn?.turnId ?? `speech-${Date.now()}`;
+  beginForensicTurn(forensicTurnId);
+  addForensicNote("playPatientSpeech_start");
+
+  const finishForensics = () => {
+    finishForensicTurn();
+  };
+
   // Humanization pause: once, before any TTS — not per sentence.
   const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
   if (pauseMs > 0) {
@@ -328,12 +343,14 @@ export async function playPatientSpeech(params: {
     });
     if (stale()) {
       handlers.onerror?.();
+      finishForensics();
       return emptyPlayResult("interrupted", "interrupted", pauseMs);
     }
   }
 
   if (stale()) {
     handlers.onerror?.();
+    finishForensics();
     return emptyPlayResult("interrupted", "interrupted", pauseMs);
   }
 
@@ -542,7 +559,9 @@ export async function playPatientSpeech(params: {
   };
 
   if (params.preferPlayback === "legacy_blob") {
-    return playLegacyBlob();
+    const legacy = await playLegacyBlob();
+    finishForensics();
+    return legacy;
   }
 
   // Phase 9.2R — hard chunk budget before any progressive TTS starts.
@@ -550,12 +569,16 @@ export async function playPatientSpeech(params: {
   if (plan.mode === "legacy_blob") {
     // Cannot safely fit progressive budget → one whole-utterance TTS.
     // Must run before progressive playback (never duplicate after chunk 1).
-    return playLegacyBlob();
+    addForensicNote("plan_over_budget_legacy_blob");
+    const legacy = await playLegacyBlob();
+    finishForensics();
+    return legacy;
   }
 
   const chunks = plan.chunks;
   if (chunks.length === 0) {
     handlers.onerror?.();
+    finishForensics();
     return emptyPlayResult("interrupted", "interrupted", pauseMs);
   }
 
@@ -567,11 +590,12 @@ export async function playPatientSpeech(params: {
     audioRef: params.audioRef,
     handlers,
     onEvent: params.onQueueEvent,
-    synthesizeChunk: async (text, _index, signal) => {
+    synthesizeChunk: async (text, index, signal) => {
       const result = await synthesizeSpeech({
         ...ttsParams,
         text,
         signal,
+        forensicChunkIndex: index,
       });
       if (result.mode === "interrupted") {
         return { ok: false, reason: "interrupted" };
@@ -590,7 +614,9 @@ export async function playPatientSpeech(params: {
     !stale() &&
     !params.signal?.aborted
   ) {
+    addForensicNote("progressive_interrupted_legacy_fallback");
     const legacy = await playLegacyBlob();
+    finishForensicTurn();
     return {
       ...legacy,
       // Keep explicit diagnostics: fallback used after progressive failure.
@@ -606,6 +632,7 @@ export async function playPatientSpeech(params: {
     };
   }
 
+  finishForensicTurn();
   return {
     mode: queued.mode === "elevenlabs" ? "elevenlabs" : "interrupted",
     playbackPath: queued.playbackPath,
@@ -670,11 +697,17 @@ export async function runVoiceConversationTurn(params: {
     return { ok: false, stage: "cancelled", error: "Turn superseded" };
   }
 
+  // Phase 9.2S — open forensic turn before STT so latency marks attach.
+  beginForensicTurn(params.turn?.turnId ?? `voice-${Date.now()}`);
+  markForensicLatency("therapist_speech_end");
+  markForensicLatency("STT_request_start");
+
   const stt = await transcribeTherapistSpeech({
     audio: params.audio,
     locale: params.sessionLanguage ?? params.locale,
     signal: params.signal,
   });
+  markForensicLatency("STT_complete");
 
   if (stale()) {
     return { ok: false, stage: "cancelled", error: "Turn superseded" };
@@ -705,12 +738,15 @@ export async function runVoiceConversationTurn(params: {
   // Consume interrupt latch only for a valid replacement turn (Phase 9.1R).
   params.onValidTurnSubmit?.();
 
+  markForensicLatency("message_request_start");
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
     therapistInterrupted: params.therapistInterrupted,
     signal: params.signal,
   });
+  markForensicLatency("message_complete");
+  markForensicLatency("patient_cognition_complete");
 
   if (stale() || (turn.ok === false && turn.aborted)) {
     return { ok: false, stage: "cancelled", error: "Turn superseded" };

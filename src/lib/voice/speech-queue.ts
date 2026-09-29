@@ -17,6 +17,11 @@ import {
   isStaleVoiceResult,
   type VoiceTurnId,
 } from "@/lib/voice/turn-fence";
+import {
+  createForensicAudioElement,
+  playAudioWithForensics,
+  recordForensicBarge,
+} from "@/lib/voice/ios-playback-forensics";
 
 /** Max concurrent TTS fetches while earlier audio may still be playing. */
 export const DEFAULT_TTS_IN_FLIGHT = 2;
@@ -232,6 +237,14 @@ export async function playQueuedSpeech(
   const cancelQueue = () => {
     cancelled = true;
     abort.abort();
+    recordForensicBarge({
+      step: "queue_cancel",
+      voice_turn_id: params.turn?.turnId ?? null,
+      chunk_index: null,
+      abort_state: true,
+      speaking_state: null,
+      queue_state: "cancelled",
+    });
     cleanupAllUrls();
     for (const slot of slots) slot.resolveReady();
   };
@@ -307,9 +320,6 @@ export async function playQueuedSpeech(
     }
   };
 
-  const createAudio =
-    params.createAudio ?? ((src: string) => new Audio(src));
-
   const playSlot = (slot: Slot): Promise<PlaySlotOutcome> => {
     if (cancelled || abort.signal.aborted || isStale(params.turn, params.signal)) {
       return Promise.resolve("interrupted");
@@ -319,7 +329,10 @@ export async function playQueuedSpeech(
     }
 
     const url = slot.objectUrl;
-    const audio = createAudio(url);
+    // Phase 9.2S — default constructor records per-chunk media events.
+    const audio = params.createAudio
+      ? params.createAudio(url)
+      : createForensicAudioElement(url, slot.index);
     if (params.audioRef) params.audioRef.current = audio;
 
     return new Promise((resolve) => {
@@ -331,6 +344,16 @@ export async function playQueuedSpeech(
         settled = true;
         abort.signal.removeEventListener("abort", onAbort);
         try {
+          if (outcome === "interrupted") {
+            recordForensicBarge({
+              step: "audio_pause",
+              voice_turn_id: params.turn?.turnId ?? null,
+              chunk_index: slot.index,
+              abort_state: abort.signal.aborted,
+              speaking_state: false,
+              queue_state: cancelled ? "cancelled" : "aborting",
+            });
+          }
           audio.pause();
           audio.removeAttribute("src");
           audio.load();
@@ -370,8 +393,13 @@ export async function playQueuedSpeech(
       // Do not record first-audio telemetry until play() resolves successfully.
       // Safari/iOS often rejects play() on a new HTMLAudioElement after an
       // async gap (NotAllowedError) — attempting play is not "first audio".
-      void audio
-        .play()
+      const fenceActive = params.turn
+        ? params.turn.isActive(params.turn.turnId)
+        : null;
+      void playAudioWithForensics(audio, slot.index, {
+        abortSignal: abort.signal,
+        turnFenceActive: fenceActive,
+      })
         .then(() => {
           if (settled) return;
           if (

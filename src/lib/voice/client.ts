@@ -9,10 +9,18 @@ import {
   type SpeechPace,
 } from "@/lib/voice/prosody";
 import { isAbortError } from "@/lib/voice/turn-fence";
+import { patchForensicChunk } from "@/lib/voice/ios-playback-forensics";
 
 export type SynthesizeSpeechResult = {
   mode: "elevenlabs" | "browser" | "interrupted";
   objectUrl?: string;
+  /** Phase 9.2S — diagnostic only; never log body bytes. */
+  forensic?: {
+    status: number;
+    contentType: string | null;
+    byteLength: number;
+    blobType: string;
+  };
 };
 
 /**
@@ -41,9 +49,20 @@ export async function synthesizeSpeech(params: {
   style?: number | null;
   /** Cancel in-flight TTS fetch (barge-in / turn supersede). */
   signal?: AbortSignal;
+  /** Phase 9.2S — optional chunk index for forensic dump (no content logged). */
+  forensicChunkIndex?: number;
 }): Promise<SynthesizeSpeechResult> {
   if (params.signal?.aborted) {
     return { mode: "interrupted" };
+  }
+
+  const chunkIndex = params.forensicChunkIndex;
+  if (chunkIndex != null) {
+    patchForensicChunk(
+      chunkIndex,
+      { tts_request_start: performance.now() },
+      "tts_request_start",
+    );
   }
 
   try {
@@ -72,14 +91,56 @@ export async function synthesizeSpeech(params: {
       return { mode: "interrupted" };
     }
 
+    const contentType = res.headers.get("content-type");
+
     if (res.ok && res.body) {
       // Consume the (possibly streamed) body into a playable blob.
       // MediaSource progressive playback is optional; blob keeps broad support.
+      //
+      // Phase 9.2S NOTE (diagnostic, not a fix): wrapping `res.body` in a new
+      // `Response` without Content-Type may yield `blob.type === ""`. Chromium
+      // often still decodes; iOS Safari is stricter. Forensic fields capture
+      // header content-type vs blob.type for the real-device pass.
       const blob = await new Response(res.body).blob();
       if (params.signal?.aborted) {
         return { mode: "interrupted" };
       }
-      return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
+      const objectUrl = URL.createObjectURL(blob);
+      const forensic = {
+        status: res.status,
+        contentType,
+        byteLength: blob.size,
+        blobType: blob.type,
+      };
+      if (chunkIndex != null) {
+        patchForensicChunk(
+          chunkIndex,
+          {
+            tts_response_status: forensic.status,
+            tts_content_type: forensic.contentType,
+            tts_byte_length: forensic.byteLength,
+            blob_created: true,
+            blob_type: forensic.blobType,
+            object_url_created: Boolean(objectUrl),
+          },
+          "tts_response",
+        );
+      }
+      return { mode: "elevenlabs", objectUrl, forensic };
+    }
+
+    if (chunkIndex != null) {
+      patchForensicChunk(
+        chunkIndex,
+        {
+          tts_response_status: res.status,
+          tts_content_type: contentType,
+          tts_byte_length: 0,
+          blob_created: false,
+          object_url_created: false,
+        },
+        "tts_response",
+      );
     }
 
     if (res.status !== 501) {
