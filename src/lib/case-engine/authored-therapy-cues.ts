@@ -10,7 +10,15 @@
  * Keep condensed — do not paste entire case files into the prompt.
  */
 
-export type AuthoredTherapyCueKey = "maya-chen" | "jordan-hale";
+import {
+  WAVE1_THERAPY_CUES,
+  type Wave1TherapyCueKey,
+} from "@/lib/case-engine/authored-therapy-cues-wave1";
+
+export type AuthoredTherapyCueKey =
+  | "maya-chen"
+  | "jordan-hale"
+  | Wave1TherapyCueKey;
 
 export type AuthoredTherapyCues = {
   slug: AuthoredTherapyCueKey;
@@ -77,14 +85,15 @@ const JORDAN: AuthoredTherapyCues = {
 const BY_SLUG: Record<AuthoredTherapyCueKey, AuthoredTherapyCues> = {
   "maya-chen": MAYA,
   "jordan-hale": JORDAN,
+  ...(WAVE1_THERAPY_CUES as Record<Wave1TherapyCueKey, AuthoredTherapyCues>),
 };
 
 export function authoredTherapyCuesFor(
   avatarSlug?: string | null,
 ): AuthoredTherapyCues | null {
   if (!avatarSlug) return null;
-  if (avatarSlug === "maya-chen" || avatarSlug === "jordan-hale") {
-    return BY_SLUG[avatarSlug];
+  if (avatarSlug in BY_SLUG) {
+    return BY_SLUG[avatarSlug as AuthoredTherapyCueKey];
   }
   return null;
 }
