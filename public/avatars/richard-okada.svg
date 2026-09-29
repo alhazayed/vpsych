@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Richard Okada">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0d8e8"/>
+      <stop offset="100%" stop-color="#e8dfd0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <ellipse cx="200" cy="310" rx="110" ry="40" fill="#2c333a" opacity="0.35"/>
+  <circle cx="200" cy="170" r="78" fill="#b09070"/>
+  <path d="M110 170c10-70 50-110 90-110s80 40 90 110c-20 8-40 12-90 12s-70-4-90-12z" fill="#3f2f2a"/>
+  <path d="M145 250c25 28 85 28 110 0" fill="none" stroke="#b88a72" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="172" cy="168" r="6" fill="#2d2a26"/>
+  <circle cx="228" cy="168" r="6" fill="#2d2a26"/>
+  <path d="M175 205c15 12 35 12 50 0" fill="none" stroke="#a56d5c" stroke-width="4" stroke-linecap="round"/>
+  <path d="M130 250c20 70 120 70 140 0" fill="#2c333a"/>
+</svg>
