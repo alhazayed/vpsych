@@ -49,6 +49,7 @@ import {
   submitConversationTurn,
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
+import { createTherapistInterruptedFlag } from "@/lib/voice/interrupt-flag";
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
 import type {
   ResolvedAvatar,
@@ -139,6 +140,11 @@ export function TherapyRoomSession({
   const turnAbortRef = useRef<AbortController | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
   const syncUiRef = useRef<() => void>(() => undefined);
+  /**
+   * Phase 9.1R — mark on barge-in; consume only on valid replacement submit
+   * (empty STT must not clear the latch).
+   */
+  const interruptFlagRef = useRef(createTherapistInterruptedFlag());
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -291,6 +297,7 @@ export function TherapyRoomSession({
     vadRef.current?.cancel();
     vadRef.current = null;
     cancelTurnWork();
+    interruptFlagRef.current.clear();
     stopPlayback();
     ambienceRef.current?.stop();
     ambienceRef.current = null;
@@ -376,6 +383,7 @@ export function TherapyRoomSession({
           if (bargeInFired || endingRef.current) return;
           if (!fsmRef.current.isCurrent(generation)) return;
           bargeInFired = true;
+          interruptFlagRef.current.mark();
           immersionRef.current.track("therapist_interrupt");
           telemetryRef.current.record("barge_in");
           abort.abort();
@@ -390,7 +398,7 @@ export function TherapyRoomSession({
         },
       });
 
-      const mode = await playPatientSpeech({
+      const spoken = await playPatientSpeech({
         text,
         locale,
         voiceId: avatar.voice_id,
@@ -402,8 +410,13 @@ export function TherapyRoomSession({
         disorderSlug,
         audioRef,
         signal: abort.signal,
+        turn: {
+          turnId: generation,
+          isActive: (id) => fsmRef.current.isCurrent(id),
+        },
         handlers: {
           onstart: () => {
+            if (!fsmRef.current.isCurrent(generation)) return;
             if (audioRef.current) {
               applyHtmlAudioModulation(audioRef.current, mod);
             }
@@ -423,11 +436,36 @@ export function TherapyRoomSession({
       bargeInStopRef.current = null;
       playbackAbortRef.current = null;
 
+      // Phase 9.2 — split generation vs playback (do not mix into one number).
+      if (spoken.metrics.ttsTotalGenerationMs != null) {
+        telemetryRef.current.record("tts_generation_latency_ms", {
+          valueMs: spoken.metrics.ttsTotalGenerationMs,
+        });
+        // Backward-compatible alias: generation only (not full playback).
+        telemetryRef.current.record("tts_latency_ms", {
+          valueMs: spoken.metrics.ttsTotalGenerationMs,
+        });
+      }
+      // Phase 9.2R — only when play() resolved successfully (not on attempt).
+      if (spoken.metrics.ttsFirstAudioPlayMs != null) {
+        telemetryRef.current.record("time_to_first_patient_audio_ms", {
+          valueMs: spoken.metrics.ttsFirstAudioPlayMs,
+        });
+      }
+      const playbackMs =
+        spoken.metrics.totalPatientAudioDurationMs ??
+        telemetryRef.current.elapsed(playbackStarted);
+      telemetryRef.current.record("patient_playback_duration_ms", {
+        valueMs: playbackMs,
+      });
       telemetryRef.current.record("playback_duration_ms", {
-        valueMs: telemetryRef.current.elapsed(playbackStarted),
+        valueMs: playbackMs,
+      });
+      telemetryRef.current.record("tts_playback_path", {
+        code: spoken.playbackPath,
       });
 
-      if (bargeInFired || mode === "interrupted") {
+      if (bargeInFired || spoken.mode === "interrupted") {
         return;
       }
 
@@ -543,6 +581,9 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       const gptStarted = telemetryRef.current.mark();
 
+      // Consume only now — after non-empty transcript (Phase 9.1R Fix 3).
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+
       let turn;
       try {
         const [, result] = await Promise.all([
@@ -550,6 +591,7 @@ export function TherapyRoomSession({
           submitConversationTurn({
             sessionId: session.id,
             message: transcript,
+            therapistInterrupted,
             signal: abort.signal,
           }),
         ]);
@@ -569,6 +611,8 @@ export function TherapyRoomSession({
       });
 
       if (!turn.ok) {
+        // Phase 9.1S — superseded is a normal stale-turn outcome, not GPT_FAIL.
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -578,6 +622,9 @@ export function TherapyRoomSession({
         setStatusKey("error");
         return;
       }
+
+      // Drop UI/playback updates if barge-in superseded this generation mid-flight.
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
       setMessages((prev) => [
         ...prev,
@@ -589,11 +636,8 @@ export function TherapyRoomSession({
       // Transition into AVATAR_SPEAKING before TTS.
       if (!dispatch("GPT_OK").ok) return;
 
-      const ttsStarted = telemetryRef.current.mark();
+      // speakPatient records tts_generation / time_to_first_audio / playback.
       await speakPatient(turn.data.assistantMessage.content, generation);
-      telemetryRef.current.record("tts_latency_ms", {
-        valueMs: telemetryRef.current.elapsed(ttsStarted),
-      });
       telemetryRef.current.record("turn_complete");
 
       if (
@@ -832,7 +876,8 @@ export function TherapyRoomSession({
           break;
         case "repeat":
           if (lastPatientText && fsmRef.current.getState() !== "PAUSED") {
-            // Replay without advancing turn index / transcript.
+            // Replay without advancing turn index / transcript / clinical state.
+            // Phase 9.2R — same VoiceTurnGuard fencing as normal patient playback.
             const gen = fsmRef.current.getGeneration();
             if (fsmRef.current.getState() === "LISTENING") {
               vadRef.current?.cancel();
@@ -859,6 +904,10 @@ export function TherapyRoomSession({
                   disorderSlug,
                   audioRef,
                   signal: abort.signal,
+                  turn: {
+                    turnId: gen,
+                    isActive: (id) => fsmRef.current.isCurrent(id),
+                  },
                 });
                 playbackAbortRef.current = null;
                 if (
@@ -950,6 +999,13 @@ export function TherapyRoomSession({
       if (!trimmed || endingRef.current) return;
       if (fsmRef.current.getState() === "PAUSED") return;
 
+      // Text while patient is speaking counts as therapist interruption.
+      if (fsmRef.current.getState() === "AVATAR_SPEAKING") {
+        interruptFlagRef.current.mark();
+        stopPlayback();
+        dispatch("BARGE_IN");
+      }
+
       immersionRef.current.track("text_turn");
       turnIndexRef.current += 1;
       const generation = fsmRef.current.getGeneration();
@@ -962,15 +1018,27 @@ export function TherapyRoomSession({
       setStatusKey("thinking");
       await new Promise((r) => window.setTimeout(r, thinking.thinkingLatencyMs));
 
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+
       if (fsmRef.current.getState() === "PROCESSING_STT") {
         dispatch("STT_OK");
       }
 
+      const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+
+      turnAbortRef.current?.abort();
+      const abort = new AbortController();
+      turnAbortRef.current = abort;
+
       const turn = await submitConversationTurn({
         sessionId: session.id,
         message: trimmed,
+        therapistInterrupted,
+        signal: abort.signal,
       });
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       if (!turn.ok) {
+        if (turn.aborted || turn.superseded) return;
         if (turn.expired) {
           await endSession();
           return;
@@ -996,7 +1064,7 @@ export function TherapyRoomSession({
         listenLoopRef.current();
       }
     },
-    [dispatch, endSession, session.id, setPresence, speakPatient],
+    [dispatch, endSession, session.id, setPresence, speakPatient, stopPlayback],
   );
 
   const busy =

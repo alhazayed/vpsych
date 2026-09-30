@@ -9,6 +9,10 @@
  *
  * Text-only sessions skip STT + TTS and call the same message API.
  * Voice mode is optional; transcript persistence always happens server-side.
+ *
+ * Phase 9.1 — turn fencing + AbortSignal:
+ * Late results from superseded turns must not play audio or update active UI.
+ * Clinical cognition remains owned exclusively by the message API.
  */
 
 import {
@@ -18,9 +22,34 @@ import {
 } from "@/lib/voice/client";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
+import {
+  isStaleVoiceResult,
+  type VoiceTurnId,
+} from "@/lib/voice/turn-fence";
+import { planSpeechChunksForPlayback } from "@/lib/voice/speech-chunker";
+import {
+  DEFAULT_TTS_IN_FLIGHT,
+  playQueuedSpeech,
+  type SpeechQueueMetrics,
+  type SpeechQueuePlaybackPath,
+} from "@/lib/voice/speech-queue";
 
 export type { SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 export type { SessionMessage };
+export type { VoiceTurnId } from "@/lib/voice/turn-fence";
+export {
+  createVoiceTurnFence,
+  isStaleVoiceResult,
+} from "@/lib/voice/turn-fence";
+export {
+  chunkTextForSpeechPlayback,
+  planSpeechChunksForPlayback,
+  MAX_PROGRESSIVE_TTS_CHUNKS,
+} from "@/lib/voice/speech-chunker";
+export {
+  DEFAULT_TTS_IN_FLIGHT,
+  playQueuedSpeech,
+} from "@/lib/voice/speech-queue";
 
 export type PipelineTurnResult = {
   userMessage: SessionMessage;
@@ -44,6 +73,24 @@ export type SpeakHandlers = {
   onend?: () => void;
   onerror?: () => void;
 };
+
+/** Optional turn fence attached to async voice work. */
+export type VoiceTurnGuard = {
+  turnId: VoiceTurnId;
+  isActive: (turnId: VoiceTurnId) => boolean;
+};
+
+function isGuardStale(
+  guard: VoiceTurnGuard | undefined,
+  signal?: AbortSignal,
+): boolean {
+  if (!guard) return Boolean(signal?.aborted);
+  return isStaleVoiceResult({
+    turnId: guard.turnId,
+    isActive: guard.isActive,
+    signal,
+  });
+}
 
 /** Resolve session speech locale from session.language (en | ar). */
 export function resolvePipelineLocale(
@@ -94,68 +141,135 @@ export async function transcribeTherapistSpeech(params: {
 export async function submitConversationTurn(params: {
   sessionId: string;
   message: string;
-  /** Stage 11 / RT-06 — therapist barge-in cut off the prior patient turn. */
+  /** Stage 11 / RT-06 / Phase 9.1 — therapist barge-in cut off the prior patient turn. */
   therapistInterrupted?: boolean;
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
-  | { ok: false; error: string; expired?: boolean; status: number }
+  | {
+      ok: false;
+      error: string;
+      expired?: boolean;
+      status: number;
+      aborted?: boolean;
+      /** Phase 9.1S — server rejected stale assistant persist. */
+      superseded?: boolean;
+    }
 > {
-  const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: params.message,
-      ...(params.therapistInterrupted
-        ? { therapistInterrupted: true }
-        : {}),
-    }),
-    signal: params.signal,
-  });
-  const data = (await res.json().catch(() => ({}))) as {
-    error?: string;
-    expired?: boolean;
-    userMessage?: SessionMessage;
-    assistantMessage?: SessionMessage;
-    remainingSeconds?: number;
-    locale?: string;
-    voiceHints?: PipelineTurnResult["voiceHints"];
-    humanizationEnabled?: boolean;
+  try {
+    const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: params.message,
+        ...(params.therapistInterrupted
+          ? { therapistInterrupted: true }
+          : {}),
+      }),
+      signal: params.signal,
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      expired?: boolean;
+      superseded?: boolean;
+      aborted?: boolean;
+      userMessage?: SessionMessage;
+      assistantMessage?: SessionMessage;
+      remainingSeconds?: number;
+      locale?: string;
+      voiceHints?: PipelineTurnResult["voiceHints"];
+      humanizationEnabled?: boolean;
+    };
+
+    if (!res.ok) {
+      const superseded =
+        Boolean(data.superseded) ||
+        (res.status === 409 &&
+          /superseded/i.test(String(data.error ?? "")));
+      return {
+        ok: false,
+        error: data.error ?? "Failed to send message",
+        expired: Boolean(data.expired),
+        status: res.status,
+        superseded,
+        // Treat superseded like a cancelled/stale outcome for UI fencing.
+        aborted: Boolean(data.aborted) || superseded,
+      };
+    }
+
+    if (!data.userMessage || !data.assistantMessage) {
+      return {
+        ok: false,
+        error: "Incomplete message response",
+        status: 502,
+      };
+    }
+
+    return {
+      ok: true,
+      data: {
+        userMessage: data.userMessage,
+        assistantMessage: data.assistantMessage,
+        remainingSeconds: data.remainingSeconds,
+        locale: resolvePipelineLocale(data.locale),
+        voiceHints: data.voiceHints ?? null,
+        humanizationEnabled: Boolean(data.humanizationEnabled),
+      },
+    };
+  } catch (error) {
+    if (params.signal?.aborted) {
+      return {
+        ok: false,
+        error: "aborted",
+        status: 0,
+        aborted: true,
+      };
+    }
+    throw error;
+  }
+}
+
+export type PlayPatientSpeechResult = {
+  mode: "elevenlabs" | "browser" | "interrupted";
+  /** Explicit path — never claim progressive when legacy Blob was used. */
+  playbackPath: SpeechQueuePlaybackPath;
+  metrics: SpeechQueueMetrics & {
+    /** Humanization pause applied once before first TTS (ms). */
+    pauseBeforeAppliedMs: number;
   };
+};
 
-  if (!res.ok) {
-    return {
-      ok: false,
-      error: data.error ?? "Failed to send message",
-      expired: Boolean(data.expired),
-      status: res.status,
-    };
-  }
-
-  if (!data.userMessage || !data.assistantMessage) {
-    return {
-      ok: false,
-      error: "Incomplete message response",
-      status: 502,
-    };
-  }
-
+function emptyPlayResult(
+  mode: PlayPatientSpeechResult["mode"],
+  playbackPath: SpeechQueuePlaybackPath,
+  pauseBeforeAppliedMs = 0,
+): PlayPatientSpeechResult {
   return {
-    ok: true,
-    data: {
-      userMessage: data.userMessage,
-      assistantMessage: data.assistantMessage,
-      remainingSeconds: data.remainingSeconds,
-      locale: resolvePipelineLocale(data.locale),
-      voiceHints: data.voiceHints ?? null,
-      humanizationEnabled: Boolean(data.humanizationEnabled),
+    mode,
+    playbackPath,
+    metrics: {
+      ttsFirstChunkReadyMs: null,
+      ttsFirstAudioPlayMs: null,
+      ttsTotalGenerationMs: null,
+      totalPatientAudioDurationMs: null,
+      chunkCount: 0,
+      chunksPlayed: 0,
+      playbackPath,
+      pauseBeforeAppliedMs,
     },
   };
 }
 
 /**
  * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
- * No-op safe when voice is disabled by the caller.
+ *
+ * Phase 9.2 / 9.2R — progressive sentence/phrase queue by default:
+ * plan chunks (hard max per response) → bounded concurrent TTS (×2) →
+ * play first chunk ASAP. Over-budget replies coalesce or use `legacy_blob`
+ * **before** progressive playback starts. Humanization `pauseBeforeMs`
+ * applies **once** before the first chunk only.
+ *
+ * Phase 9.1 — AbortSignal + VoiceTurnGuard still gate playback.
  */
 export async function playPatientSpeech(params: {
   text: string;
@@ -170,19 +284,35 @@ export async function playPatientSpeech(params: {
   emotion?: string | null;
   stability?: number | null;
   style?: number | null;
-  /** Mission 10 — thinking pause before first audio. */
+  /**
+   * Mission 10 — intentional humanization pause before **first** audio only.
+   * Never applied between progressive chunks.
+   */
   pauseBeforeMs?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
-  /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
+  /** Abort cancels TTS fetches + playback (barge-in / pause / end). */
   signal?: AbortSignal;
-}): Promise<"elevenlabs" | "browser" | "interrupted"> {
+  /** Turn fence — late results from superseded turns never play. */
+  turn?: VoiceTurnGuard;
+  /**
+   * Force legacy whole-utterance Blob playback (A/B / fallback).
+   * Default uses progressive queue when the reply chunks into ≥1 segments.
+   */
+  preferPlayback?: "progressive_queue" | "legacy_blob";
+  /** Override TTS in-flight bound (tests). */
+  maxTtsInFlight?: number;
+  onQueueEvent?: Parameters<typeof playQueuedSpeech>[0]["onEvent"];
+}): Promise<PlayPatientSpeechResult> {
   const handlers = params.handlers ?? {};
-  if (params.signal?.aborted) {
+  const stale = () => isGuardStale(params.turn, params.signal);
+
+  if (stale()) {
     handlers.onerror?.();
-    return "interrupted";
+    return emptyPlayResult("interrupted", "interrupted");
   }
 
+  // Humanization pause: once, before any TTS — not per sentence.
   const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
   if (pauseMs > 0) {
     await new Promise<void>((resolve) => {
@@ -196,16 +326,18 @@ export async function playPatientSpeech(params: {
         { once: true },
       );
     });
-    if (params.signal?.aborted) {
+    if (stale()) {
       handlers.onerror?.();
-      return "interrupted";
+      return emptyPlayResult("interrupted", "interrupted", pauseMs);
     }
   }
 
-  handlers.onstart?.();
+  if (stale()) {
+    handlers.onerror?.();
+    return emptyPlayResult("interrupted", "interrupted", pauseMs);
+  }
 
-  const result = await synthesizeSpeech({
-    text: params.text,
+  const ttsParams = {
     locale: params.locale,
     voiceId: params.voiceId,
     voiceIdAr: params.voiceIdAr,
@@ -217,55 +349,98 @@ export async function playPatientSpeech(params: {
     emotion: params.emotion,
     stability: params.stability,
     style: params.style,
-  });
-
-  if (params.signal?.aborted) {
-    if (result.mode === "elevenlabs" && result.objectUrl) {
-      URL.revokeObjectURL(result.objectUrl);
-    }
-    handlers.onerror?.();
-    return "interrupted";
-  }
-
-  const browserFallback = (onDone: () => void) => {
-    if (params.signal?.aborted) {
-      onDone();
-      return;
-    }
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => {
-          handlers.onend?.();
-          onDone();
-        },
-        onerror: () => {
-          handlers.onerror?.();
-          onDone();
-        },
-      },
-      params.speechPace,
-    );
   };
 
-  if (result.mode === "elevenlabs" && result.objectUrl) {
-    const audio = new Audio(result.objectUrl);
-    if (params.audioRef) params.audioRef.current = audio;
+  const playLegacyBlob = async (): Promise<PlayPatientSpeechResult> => {
+    const t0 = performance.now();
+    handlers.onstart?.();
+    const result = await synthesizeSpeech({
+      ...ttsParams,
+      text: params.text,
+      signal: params.signal,
+    });
 
-    return await new Promise<"elevenlabs" | "browser" | "interrupted">(
-      (resolve) => {
+    if (stale() || result.mode === "interrupted") {
+      if (result.mode === "elevenlabs" && result.objectUrl) {
+        URL.revokeObjectURL(result.objectUrl);
+      }
+      handlers.onerror?.();
+      return emptyPlayResult("interrupted", "interrupted", pauseMs);
+    }
+
+    const browserFallback = (onDone: () => void) => {
+      if (stale()) {
+        onDone();
+        return;
+      }
+      speakWithBrowser(
+        params.text,
+        params.locale,
+        {
+          onstart: handlers.onstart,
+          onend: () => {
+            handlers.onend?.();
+            onDone();
+          },
+          onerror: () => {
+            handlers.onerror?.();
+            onDone();
+          },
+        },
+        params.speechPace,
+      );
+    };
+
+    if (result.mode === "elevenlabs" && result.objectUrl) {
+      if (stale()) {
+        URL.revokeObjectURL(result.objectUrl);
+        handlers.onerror?.();
+        return emptyPlayResult("interrupted", "interrupted", pauseMs);
+      }
+
+      const readyMs = Math.max(0, Math.round(performance.now() - t0));
+      const audio = new Audio(result.objectUrl);
+      if (params.audioRef) params.audioRef.current = audio;
+
+      return await new Promise<PlayPatientSpeechResult>((resolve) => {
         let settled = false;
+        let playStarted: number | null = null;
+        let firstPlayMs: number | null = null;
         const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
           if (settled) return;
           settled = true;
           params.signal?.removeEventListener("abort", onAbort);
           URL.revokeObjectURL(result.objectUrl!);
           if (params.audioRef) params.audioRef.current = null;
+          const playMs =
+            playStarted != null
+              ? Math.max(0, Math.round(performance.now() - playStarted))
+              : null;
           if (mode === "elevenlabs") handlers.onend?.();
           else if (mode === "interrupted") handlers.onerror?.();
-          resolve(mode);
+          const path: SpeechQueuePlaybackPath =
+            mode === "elevenlabs"
+              ? "legacy_blob"
+              : mode === "browser"
+                ? "browser"
+                : "interrupted";
+          resolve({
+            mode,
+            playbackPath: path,
+            metrics: {
+              ttsFirstChunkReadyMs: mode === "interrupted" ? null : readyMs,
+              // Only after successful play() initiation — not on attempt.
+              ttsFirstAudioPlayMs:
+                mode === "interrupted" ? null : firstPlayMs,
+              ttsTotalGenerationMs: mode === "interrupted" ? null : readyMs,
+              totalPatientAudioDurationMs:
+                mode === "elevenlabs" ? playMs : null,
+              chunkCount: 1,
+              chunksPlayed: mode === "elevenlabs" ? 1 : 0,
+              playbackPath: path,
+              pauseBeforeAppliedMs: pauseMs,
+            },
+          });
         };
 
         const onAbort = () => {
@@ -280,9 +455,15 @@ export async function playPatientSpeech(params: {
           finish("interrupted");
         };
 
-        audio.onended = () => finish("elevenlabs");
+        audio.onended = () => {
+          if (stale()) {
+            finish("interrupted");
+            return;
+          }
+          finish("elevenlabs");
+        };
         audio.onerror = () => {
-          if (params.signal?.aborted) {
+          if (stale()) {
             finish("interrupted");
             return;
           }
@@ -291,59 +472,156 @@ export async function playPatientSpeech(params: {
 
         params.signal?.addEventListener("abort", onAbort, { once: true });
 
-        void audio.play().catch(() => {
-          if (params.signal?.aborted) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
-        });
-      },
-    );
-  }
+        void audio
+          .play()
+          .then(() => {
+            if (settled || stale()) {
+              if (!settled && stale()) finish("interrupted");
+              return;
+            }
+            playStarted = performance.now();
+            firstPlayMs = Math.max(0, Math.round(playStarted - t0));
+            // onstart already fired before synthesize for legacy path.
+          })
+          .catch(() => {
+            if (stale()) {
+              finish("interrupted");
+              return;
+            }
+            browserFallback(() => finish("browser"));
+          });
+      });
+    }
 
-  if (params.signal?.aborted) {
-    handlers.onerror?.();
-    return "interrupted";
-  }
+    if (stale()) {
+      handlers.onerror?.();
+      return emptyPlayResult("interrupted", "interrupted", pauseMs);
+    }
 
-  return await new Promise<"browser" | "interrupted">((resolve) => {
-    let settled = false;
-    const finish = (mode: "browser" | "interrupted") => {
-      if (settled) return;
-      settled = true;
-      params.signal?.removeEventListener("abort", onAbort);
-      if (mode === "interrupted") handlers.onerror?.();
-      else handlers.onend?.();
-      resolve(mode);
-    };
-    const onAbort = () => {
-      window.speechSynthesis?.cancel();
-      finish("interrupted");
-    };
-    params.signal?.addEventListener("abort", onAbort, { once: true });
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => finish("browser"),
-        onerror: () => {
-          if (params.signal?.aborted) finish("interrupted");
-          else {
-            handlers.onerror?.();
-            finish("browser");
-          }
+    return await new Promise<PlayPatientSpeechResult>((resolve) => {
+      let settled = false;
+      const finish = (mode: "browser" | "interrupted") => {
+        if (settled) return;
+        settled = true;
+        params.signal?.removeEventListener("abort", onAbort);
+        if (mode === "interrupted") handlers.onerror?.();
+        else handlers.onend?.();
+        resolve(
+          emptyPlayResult(
+            mode,
+            mode === "browser" ? "browser" : "interrupted",
+            pauseMs,
+          ),
+        );
+      };
+      const onAbort = () => {
+        window.speechSynthesis?.cancel();
+        finish("interrupted");
+      };
+      params.signal?.addEventListener("abort", onAbort, { once: true });
+      speakWithBrowser(
+        params.text,
+        params.locale,
+        {
+          onstart: handlers.onstart,
+          onend: () => {
+            if (stale()) finish("interrupted");
+            else finish("browser");
+          },
+          onerror: () => {
+            if (stale()) finish("interrupted");
+            else {
+              handlers.onerror?.();
+              finish("browser");
+            }
+          },
         },
-      },
-      params.speechPace,
-    );
+        params.speechPace,
+      );
+    });
+  };
+
+  if (params.preferPlayback === "legacy_blob") {
+    return playLegacyBlob();
+  }
+
+  // Phase 9.2R — hard chunk budget before any progressive TTS starts.
+  const plan = planSpeechChunksForPlayback(params.text);
+  if (plan.mode === "legacy_blob") {
+    // Cannot safely fit progressive budget → one whole-utterance TTS.
+    // Must run before progressive playback (never duplicate after chunk 1).
+    return playLegacyBlob();
+  }
+
+  const chunks = plan.chunks;
+  if (chunks.length === 0) {
+    handlers.onerror?.();
+    return emptyPlayResult("interrupted", "interrupted", pauseMs);
+  }
+
+  const queued = await playQueuedSpeech({
+    chunks,
+    maxInFlight: params.maxTtsInFlight ?? DEFAULT_TTS_IN_FLIGHT,
+    signal: params.signal,
+    turn: params.turn,
+    audioRef: params.audioRef,
+    handlers,
+    onEvent: params.onQueueEvent,
+    synthesizeChunk: async (text, _index, signal) => {
+      const result = await synthesizeSpeech({
+        ...ttsParams,
+        text,
+        signal,
+      });
+      if (result.mode === "interrupted") {
+        return { ok: false, reason: "interrupted" };
+      }
+      if (result.mode === "elevenlabs" && result.objectUrl) {
+        return { ok: true, objectUrl: result.objectUrl };
+      }
+      return { ok: false, reason: "failed" };
+    },
   });
+
+  // First-chunk hard failure → explicit legacy Blob fallback (not silent).
+  if (
+    queued.playbackPath === "interrupted" &&
+    queued.metrics.chunksPlayed === 0 &&
+    !stale() &&
+    !params.signal?.aborted
+  ) {
+    const legacy = await playLegacyBlob();
+    return {
+      ...legacy,
+      // Keep explicit diagnostics: fallback used after progressive failure.
+      playbackPath:
+        legacy.playbackPath === "legacy_blob" ||
+        legacy.playbackPath === "browser"
+          ? legacy.playbackPath
+          : legacy.playbackPath,
+      metrics: {
+        ...legacy.metrics,
+        pauseBeforeAppliedMs: pauseMs,
+      },
+    };
+  }
+
+  return {
+    mode: queued.mode === "elevenlabs" ? "elevenlabs" : "interrupted",
+    playbackPath: queued.playbackPath,
+    metrics: {
+      ...queued.metrics,
+      pauseBeforeAppliedMs: pauseMs,
+    },
+  };
 }
 
 /**
  * Full voice turn: STT → message API (GPT-5 + persistence) → optional TTS.
  * Text-only callers should use `submitConversationTurn` directly.
+ *
+ * Phase 9.1 — supports AbortSignal, therapistInterrupted, and turn fencing.
+ * Stale turns never call onMessages / playPatientSpeech.
  */
 export async function runVoiceConversationTurn(params: {
   sessionId: string;
@@ -363,20 +641,44 @@ export async function runVoiceConversationTurn(params: {
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
   speakHandlers?: SpeakHandlers;
+  signal?: AbortSignal;
+  /** True when this therapist utterance cut off prior patient speech. */
+  therapistInterrupted?: boolean;
+  /**
+   * Called only after a non-empty transcript is ready and immediately before
+   * submitConversationTurn — use to consume the interrupt latch (Phase 9.1R).
+   * Not called on empty/no-speech STT.
+   */
+  onValidTurnSubmit?: () => void;
+  /** Active turn identity for stale-result rejection. */
+  turn?: VoiceTurnGuard;
+  /** AbortController used for TTS playback (separate from STT/message abort). */
+  playbackSignal?: AbortSignal;
 }): Promise<
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
       ok: false;
-      stage: "stt" | "message";
+      stage: "stt" | "message" | "cancelled";
       error: string;
       unavailable?: boolean;
       expired?: boolean;
     }
 > {
+  const stale = () => isGuardStale(params.turn, params.signal);
+
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
+
   const stt = await transcribeTherapistSpeech({
     audio: params.audio,
     locale: params.sessionLanguage ?? params.locale,
+    signal: params.signal,
   });
+
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
 
   if (!stt.ok) {
     return {
@@ -396,12 +698,23 @@ export async function runVoiceConversationTurn(params: {
     };
   }
 
-  params.onTranscript?.(transcript);
+  if (!stale()) {
+    params.onTranscript?.(transcript);
+  }
+
+  // Consume interrupt latch only for a valid replacement turn (Phase 9.1R).
+  params.onValidTurnSubmit?.();
 
   const turn = await submitConversationTurn({
     sessionId: params.sessionId,
     message: transcript,
+    therapistInterrupted: params.therapistInterrupted,
+    signal: params.signal,
   });
+
+  if (stale() || (turn.ok === false && turn.aborted)) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
 
   if (!turn.ok) {
     return {
@@ -412,9 +725,17 @@ export async function runVoiceConversationTurn(params: {
     };
   }
 
+  // Server may have persisted; client must still drop superseded UI/playback.
+  if (stale()) {
+    return { ok: false, stage: "cancelled", error: "Turn superseded" };
+  }
+
   params.onMessages?.(turn.data.userMessage, turn.data.assistantMessage);
 
   if (params.voiceEnabled) {
+    if (stale()) {
+      return { ok: false, stage: "cancelled", error: "Turn superseded" };
+    }
     const hints = turn.data.voiceHints;
     void playPatientSpeech({
       text: turn.data.assistantMessage.content,
@@ -432,6 +753,8 @@ export async function runVoiceConversationTurn(params: {
       pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
+      signal: params.playbackSignal ?? params.signal,
+      turn: params.turn,
     });
   }
 
