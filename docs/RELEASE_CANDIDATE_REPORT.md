@@ -13,9 +13,10 @@
 |---|---|
 | Release branch | `cursor/soft-release-desktop-f2a6` |
 | Phase 9.2R source tip | `53682666d9b41d39fd3502f0904fa7d110baf0d5` (PR #256 — not auto-merged) |
-| Soft-release HEAD (at report time) | see latest commits on #259 |
-| Preview deployment verified | `dpl_2TQe6hpnPGoT2SJzBpDrSAJHmi22` @ `4ff476c` |
-| Preview URL | `https://vpsych-plj9uh9ud-alhazayed-1540s-projects.vercel.app` |
+| Soft-release HEAD (at report time) | `7bbb088a20ef018282efb5329bf2ca58c78abbc5` |
+| Preview deployment verified (undici / pre-B1 voice) | `dpl_2TQe6hpnPGoT2SJzBpDrSAJHmi22` @ `4ff476c` |
+| Preview deployment verified (post B1–B4 tip) | `dpl_AV44BYnfYnNu7ZTd8ko3cCfb8grj` @ `7bbb088` |
+| Preview URL (tip) | `https://vpsych-fh23fktgn-alhazayed-1540s-projects.vercel.app` |
 | Production (NOT soft-release target) | `dpl_Bss4qYyg8XBsqWY4XxfLogSuEKk9` @ `main` `90f0e08` |
 | Database | Supabase `vpsych` (`rrzudbkxigeavfdnidnm`) |
 
