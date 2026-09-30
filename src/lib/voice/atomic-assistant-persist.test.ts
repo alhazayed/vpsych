@@ -199,5 +199,10 @@ describe("Phase 9.1S atomic assistant tip guard", () => {
         code: "P0001",
       }),
     ).toBe(true);
+    expect(
+      isAssistantPersistSupersededError({
+        message: "Assistant reply requires a preceding user turn",
+      }),
+    ).toBe(true);
   });
 });

@@ -78,8 +78,18 @@ describe("supabase admin helpers", () => {
         code: "P0001",
       }),
     ).toBe(true);
+    // Soft-release B1: concurrent assistant tip between app check and RPC.
+    expect(
+      isAssistantPersistSupersededError({
+        message: "Assistant reply requires a preceding user turn",
+        code: "P0001",
+      }),
+    ).toBe(true);
     expect(
       isAssistantPersistSupersededError({ message: "Not authorized" }),
+    ).toBe(false);
+    expect(
+      isAssistantPersistSupersededError({ message: "Empty content" }),
     ).toBe(false);
   });
 
