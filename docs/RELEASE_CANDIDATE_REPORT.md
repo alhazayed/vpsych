@@ -96,12 +96,36 @@ Screenshots: `01-login` … `09-session-ended`, voice turn shows **SPEAKING** ba
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Desktop TTS HTTP + audio bytes | **VERIFIED** (preview) | 5–18× TTS 200 with mpeg bytes |
-| Progressive multi-chunk TTS | **PARTIALLY VERIFIED** | Multiple TTS per turn; unit suite for budget/concurrency |
-| `Audio.play()` + `playing` | **PARTIALLY VERIFIED** | Hook counters in Chromium headless |
+| Desktop TTS HTTP + audio bytes | **VERIFIED** (preview `4ff476c`) | Multiple TTS 200 with mpeg bytes |
+| Progressive multi-chunk TTS | **PARTIALLY VERIFIED** | Multi-TTS per turn; unit suite for budget/concurrency |
+| `Audio.play()` + `playing` | **PARTIALLY VERIFIED** | Hook counters under **disabled autoplay policy** (see §5.1) |
 | Audible speakers | **NOT VERIFIED** | Headless environment |
 | Desktop STT / mic | **NOT VERIFIED** | Fake media device; text path used to drive TTS |
 | Latency T0–T9 breakdown | **NOT VERIFIED** | Not instrumented end-to-end in this run |
+
+### 5.1 Harness caveats (adversarial B3)
+
+The Chromium harness launches with:
+
+- `--autoplay-policy=no-user-gesture-required` — disables the default autoplay gate that produces `NotAllowedError` (the case Phase 9.2R hardened against). A `playRejected=0` count under this flag is **not** evidence about stock desktop Chrome autoplay.
+- `--use-fake-device-for-media-stream` — not a real microphone.
+
+Also: synthesized TTS chunk count can exceed `play()` count when the harness navigates away mid-utterance (e.g. end-session). Do not read that gap as a product skip-chunk bug without a controlled single-turn artifact.
+
+### 5.2 Progressive TTS vs rate limit (adversarial B2) — DECISION RECORDED
+
+| Parameter | Value |
+|---|---|
+| `/api/voice/tts` budget | **60 requests / user / hour** (unchanged — do **not** raise without human sign-off) |
+| `MAX_PROGRESSIVE_TTS_CHUNKS` | **6** (unchanged) |
+| Preview observation | ~**4.4** TTS requests per patient reply (22 TTS / 5 message turns); single-turn `ttsCount` up to **6** |
+| Implied capacity | ≈ **13** progressive patient replies / hour before 429 → browser-speech fallback |
+
+**Soft-use decision (owner: soft-release agent / PR #259):** **Accept the ceiling.** Do not raise the TTS rate limit. Do not lower the chunk budget in this release. Operators must expect ElevenLabs voice to exhaust mid-session on a busy voice hour; browser-speech fallback and the on-screen transcript remain available. Cap soft-use expectations accordingly (short supervised sessions; watch for TTS 429 / browser-speech banner).
+
+### 5.3 Mode-toggle harness (adversarial B4)
+
+Earlier harness builds matched `/^(Voice|صوت)$/` against raw `button.textContent`, which includes Material Symbols glyphs (`graphic_eqVoice`), so text/voice toggles never clicked. Those steps must not be cited as text-only evidence. Harness fixed to strip known icon tokens before matching; re-run required for text-only claims.
 
 ---
 
@@ -145,7 +169,11 @@ insert_assistant_message(
 - Exactly **4** args on production DB — **VERIFIED** via SQL  
 - Migration `20260928103000_phase91s_atomic_assistant_tip_guard` **applied**  
 - App code on soft-release passes `p_user_message_id` — **VERIFIED** (source + architecture tests)  
-- Superseded → HTTP **409**; genuine persist failure → **500** — **VERIFIED** in route source + unit tests  
+- Tip-id mismatch → HTTP **409** (`Turn superseded`) — **VERIFIED** (route + units)  
+- Concurrent assistant tip between app check and RPC → historically raised `Assistant reply requires a preceding user turn` and was mapped to **500** / GPT_FAIL risk — **FIXED** in `51ea593` by treating that message as superseded (**409**). No data corruption either before or after; therapist UX is the change.  
+- Other genuine persist failures → **500** — **VERIFIED** in route source  
+
+**Correction (adversarial B1):** Do not claim every supersede sub-case was always 409 before `51ea593`.
 
 ### Session `b8cb8b0f-…` transcript (DB)
 
@@ -162,14 +190,12 @@ Production deployment still on `main@90f0e08` calling **3-arg** RPC while DB is 
 
 | Check | Result |
 |---|---|
-| Unauth `/message` | **401** |
+| Unauth `/message` (share cookie only) | **401** — artifact: soft-release agent shell log |
 | Unauth `/end` | **401** |
 | Unauth `/api/admin/sessions` | **401** |
-| Therapist calling `/api/admin/sessions` | **403** (expected) |
-| Message to nonexistent session | non-200 (ownership/not-found path) |
-| Message after session completed | non-200 |
 | Public `/api/health` | **200** |
-| RLS / rate limits / architecture invariants | Covered by automated suite; **no controls weakened** |
+| Cookie-session ownership / completed-session probes | **PARTIALLY VERIFIED** via browser session create/message/end; raw Bearer-to-Next is not the app auth path |
+| RLS / rate limits / architecture invariants | Covered by automated suite; **no controls weakened** (`git diff` empty on security modules vs main except Phase 9.x voice/persist) |
 
 ### Migration ledger drift (pre-existing)
 
@@ -185,11 +211,41 @@ Git contains migrations **not** listed in remote `schema_migrations`:
 ## 10. Known limitations
 
 1. Soft use is **desktop Chromium-family** only  
-2. Headless verification cannot prove physical speaker audibility  
+2. Headless verification cannot prove physical speaker audibility or default autoplay policy  
 3. Live barge-in / mic STT / Therapy Room Repeat not exercised in this agent run  
 4. Latency waterfall T0–T9 not collected  
 5. Production `main` remains persistence-broken until approved merge  
 6. Historical migration ledger drift (Anas / phase1 security integrity)  
+7. Progressive TTS can exhaust the **60/h** TTS budget (~13 replies/h at observed fan-out) → browser speech  
+8. Mid-utterance TTS failure truncates audio silently (transcript/DB intact) — accepted for soft use  
+9. On-screen transcript may omit a superseded user turn that the DB kept (409 body not rendered)  
+
+---
+
+## 15. Claude adversarial review
+
+Reviewer: [Adversarial soft-release audit](bc-325d928a-de55-5d6c-8728-f64e7641a68c)
+
+| Section | Result |
+|---|---|
+| A. BLOCKERS | **None** |
+| B. REQUIRED FIXES | B1–B4 — addressed in this branch (`51ea593` + this report/harness update) |
+| C. ACCEPTABLE LIMITATIONS | Recorded in §10 |
+| D. UNVERIFIED ITEMS | STT, live barge-in, Repeat, remote migration parity, live overlapping 409, audible speakers |
+| E. RELEASE CONDITIONS | E1–E8 remain binding — see gate checklist |
+
+---
+
+## 16. Soft-release changes after adversarial review
+
+| Fix | Commit / artifact | Notes |
+|---|---|---|
+| B1 preceding-user-turn → 409 | `51ea593` | `isAssistantPersistSupersededError` + regression tests |
+| B2 TTS budget decision | this report §5.2 | Accept 60/h ceiling; do not raise rate limit |
+| B3 harness caveats | this report §5.1 | Autoplay flag + play vs synthesize gap |
+| B4 mode toggle harness | `scripts/soft-release-desktop-verify.mjs` | Strip Material icon tokens before match |
+
+**E6 note:** `51ea593` touches `src/`. Preview evidence from `4ff476c` remains valid for voice playback behavior; B1 is persistence-error mapping only. A new preview of the tip should be used for any further runtime claims.
 
 ---
 
@@ -244,24 +300,33 @@ STT/transcript/Patient Agent may work on iPhone while patient TTS playback / bar
 | lint / typecheck / tests / build | **VERIFIED** |
 | preview runtime | **PARTIALLY VERIFIED** |
 | deployment identity verified | **VERIFIED** |
-| Claude adversarial review | **PENDING / attach when complete** |
-| unresolved BLOCKER | **see Claude section + conditions below** |
+| Claude adversarial review | **COMPLETED** — no BLOCKERS ([Adversarial soft-release audit](bc-325d928a-de55-5d6c-8728-f64e7641a68c)) |
+| unresolved BLOCKER | **None** from adversarial review |
 | rollback documented | **YES** |
 | iPhone excluded | **YES** |
+| B1–B4 required fixes | **LANDED** (code + report + harness) |
+| Human desktop Chrome E2 (mic/speakers/barge-in/Repeat/TTS budget) | **REQUIRED** before unconditional soft-use voice claim |
+| Live overlapping supersede probe (E3) | **REQUIRED** |
+| Remote migration parity with `SUPABASE_DB_URL` (E4) | **REQUIRED** before production action |
 
 ---
 
 ## Release statement (conditional)
 
-**Not yet unconditionally approved.**
+**Not yet unconditionally approved for full desktop voice soft use.**
 
-Pending:
+Adversarial review found **no BLOCKERS**. Required fixes B1–B4 are landed. Remaining release conditions are **human/operator** (E2–E5, E7–E8):
 
-1. Claude adversarial review with **no unresolved BLOCKER**  
-2. Human desktop Chrome confirmation of **mic STT** and **barge-in** (release-critical)  
-3. Explicit human decision on whether soft use may begin with text + TTS playback while barge-in/STT remain operator-supervised  
+1. Human desktop Chrome with default flags + real mic/speakers (audible EN/AR, barge-in matrix, Repeat, TTS-budget exhaustion banner)
+2. Force overlapping `/message` supersede once on preview (expect 409; confirm no duplicate assistant)
+3. Explicit soft-use capacity: ~13 progressive voice replies/hour before TTS 429
+4. Merge freeze: do not merge #255/#256/#257/#259 or deploy production without human approval
 
-If those conditions clear, the approved statement must be:
+Honest scope until E2 passes:
+
+> Text turns, assistant persistence, session completion, and reports are verified on desktop Chromium for this candidate. Patient voice playback is operator-supervised only. Progressive TTS is capacity-limited by the existing 60/h TTS budget. Mobile/iPhone voice remains deferred.
+
+If E2–E3 clear, the approved statement must be:
 
 > VPsych is approved for controlled SOFT USE on desktop/computer environments covered by the validation performed for this release.  
 > Mobile/iPhone voice support is NOT included in this release and remains deferred.  

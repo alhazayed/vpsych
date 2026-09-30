@@ -194,15 +194,28 @@ async function startFirstAvatar(page) {
   return { url, sessionId };
 }
 
+/** Material Symbols icon glyphs are concatenated into button.textContent. */
+function buttonLabel(text) {
+  return String(text || "")
+    .replace(/graphic_eq|mic|meeting_room|keyboard|hearing/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function ensureTextMode(page) {
   const buttons = await page.$$("button");
   for (const btn of buttons) {
-    const text = ((await page.evaluate((el) => el.textContent, btn)) || "").trim();
+    const raw = ((await page.evaluate((el) => el.textContent, btn)) || "").trim();
+    const text = buttonLabel(raw);
     // Label shows current mode. "Voice"/"صوت" means voice is on → click to text.
     if (/^(Voice|صوت)$/i.test(text)) {
       await btn.click();
       await sleep(500);
-      return "switched-to-text";
+      const after = buttonLabel(
+        ((await page.evaluate((el) => el.textContent, btn)) || "").trim(),
+      );
+      if (/^(Text|نص)$/i.test(after)) return "switched-to-text";
+      return `clicked-voice-toggle-but-label=${after || raw}`;
     }
   }
   return "already-text-or-unknown";
@@ -211,11 +224,16 @@ async function ensureTextMode(page) {
 async function ensureVoiceMode(page) {
   const buttons = await page.$$("button");
   for (const btn of buttons) {
-    const text = ((await page.evaluate((el) => el.textContent, btn)) || "").trim();
+    const raw = ((await page.evaluate((el) => el.textContent, btn)) || "").trim();
+    const text = buttonLabel(raw);
     if (/^(Text|نص)$/i.test(text)) {
       await btn.click();
       await sleep(500);
-      return "switched-to-voice";
+      const after = buttonLabel(
+        ((await page.evaluate((el) => el.textContent, btn)) || "").trim(),
+      );
+      if (/^(Voice|صوت)$/i.test(after)) return "switched-to-voice";
+      return `clicked-text-toggle-but-label=${after || raw}`;
     }
   }
   return "already-voice-or-unknown";
