@@ -150,18 +150,47 @@ async function startFirstAvatar(page) {
   await goto(page, "/avatars");
   await page.waitForSelector("article", { timeout: 45000 });
   await shot(page, "02-avatars");
-  const btn = await page.$("article button");
-  if (!btn) throw new Error("No avatar start button");
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 90000 }),
-    btn.click(),
-  ]);
+  // Prefer the explicit start CTA — article also has Classic/Therapy Room toggles.
+  const buttons = await page.$$("article button");
+  let startBtn = null;
+  for (const btn of buttons) {
+    const text = ((await page.evaluate((el) => el.textContent, btn)) || "").trim();
+    // EN: "Start 40-min voice session"; AR: localized CTA still contains mic icon + session wording
+    if (
+      (/start/i.test(text) && /session|voice|40/i.test(text)) ||
+      /بدء|جلسة|صوت/.test(text)
+    ) {
+      startBtn = btn;
+      break;
+    }
+  }
+  if (!startBtn) {
+    const labels = [];
+    for (const btn of buttons) {
+      labels.push(((await page.evaluate((el) => el.textContent, btn)) || "").trim());
+    }
+    throw new Error(`No avatar Start session button; labels=${JSON.stringify(labels)}`);
+  }
+
+  const navPromise = page
+    .waitForFunction(
+      () => /\/sessions\/[0-9a-f-]{36}|\/clinic\/room\/[0-9a-f-]{36}/i.test(location.pathname),
+      { timeout: 90000 },
+    )
+    .catch(() => null);
+  await startBtn.click();
+  await navPromise;
   await sleep(2000);
   await shot(page, "03-session-started");
   const url = page.url();
   const m = url.match(/\/sessions\/([0-9a-f-]{36})|\/clinic\/room\/([0-9a-f-]{36})/i);
   const sessionId = m?.[1] || m?.[2] || null;
-  record("session-create", sessionId ? "PASS" : "PARTIAL", { url, sessionId });
+  if (!sessionId) {
+    const body = await page.evaluate(() => document.body.innerText.slice(0, 800));
+    record("session-create", "FAIL", { url, note: body });
+    throw new Error(`Session did not start; url=${url}`);
+  }
+  record("session-create", "PASS", { url, sessionId });
   return { url, sessionId };
 }
 
@@ -265,6 +294,43 @@ async function main() {
   });
   const page = await browser.newPage();
   attachNetwork(page);
+  await page.evaluateOnNewDocument(() => {
+    const g = window;
+    g.__VPSYCH_SOFT_RELEASE_AUDIO__ = {
+      playCalls: 0,
+      playResolved: 0,
+      playRejected: 0,
+      playingEvents: 0,
+      errors: 0,
+      lastCurrentTime: 0,
+    };
+    const OriginalAudio = g.Audio;
+    g.Audio = function (...args) {
+      const audio = new OriginalAudio(...args);
+      audio.addEventListener("playing", () => {
+        g.__VPSYCH_SOFT_RELEASE_AUDIO__.playingEvents += 1;
+      });
+      audio.addEventListener("error", () => {
+        g.__VPSYCH_SOFT_RELEASE_AUDIO__.errors += 1;
+      });
+      const origPlay = audio.play.bind(audio);
+      audio.play = () => {
+        g.__VPSYCH_SOFT_RELEASE_AUDIO__.playCalls += 1;
+        return origPlay()
+          .then((v) => {
+            g.__VPSYCH_SOFT_RELEASE_AUDIO__.playResolved += 1;
+            g.__VPSYCH_SOFT_RELEASE_AUDIO__.lastCurrentTime = audio.currentTime;
+            return v;
+          })
+          .catch((err) => {
+            g.__VPSYCH_SOFT_RELEASE_AUDIO__.playRejected += 1;
+            throw err;
+          });
+      };
+      return audio;
+    };
+    g.Audio.prototype = OriginalAudio.prototype;
+  });
 
   try {
     // Seed share cookie/path first
@@ -364,8 +430,10 @@ async function main() {
     // Playback probe via page evaluate (best-effort)
     const playbackProbe = await page.evaluate(async () => {
       const audios = [...document.querySelectorAll("audio")];
+      const hooked = window.__VPSYCH_SOFT_RELEASE_AUDIO__ || null;
       return {
         audioElements: audios.length,
+        hooked,
         states: audios.map((a) => ({
           src: (a.currentSrc || a.src || "").slice(0, 80),
           paused: a.paused,
@@ -375,7 +443,20 @@ async function main() {
         })),
       };
     });
-    record("html-audio-probe", playbackProbe.audioElements > 0 ? "PARTIAL" : "BLOCKED", playbackProbe);
+    const hooked = playbackProbe.hooked;
+    if (hooked && hooked.playResolved > 0) {
+      record("html-audio-probe", "PASS", playbackProbe);
+      report.classifications.desktopPlayback =
+        "PARTIALLY VERIFIED — Audio.play() resolved in Chromium headless; audible speaker output not confirmed";
+    } else if (hooked && hooked.playCalls > 0) {
+      record("html-audio-probe", "PARTIAL", playbackProbe);
+      report.classifications.desktopPlayback =
+        "PARTIALLY VERIFIED — play() attempted; resolve/playing incomplete in headless";
+    } else {
+      record("html-audio-probe", "BLOCKED", playbackProbe);
+      report.classifications.desktopPlayback =
+        "NOT VERIFIED — no Audio.play() hooks observed (TTS bytes may still succeed)";
+    }
 
     report.classifications.bargeIn =
       "NOT VERIFIED in this headless run (requires live mic VAD on desktop Chrome)";
