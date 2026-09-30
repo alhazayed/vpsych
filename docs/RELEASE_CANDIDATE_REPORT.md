@@ -13,7 +13,7 @@
 |---|---|
 | Release branch | `cursor/soft-release-desktop-f2a6` |
 | Phase 9.2R source tip | `53682666d9b41d39fd3502f0904fa7d110baf0d5` (PR #256 — not auto-merged) |
-| Soft-release HEAD (at report time) | `7bbb088a20ef018282efb5329bf2ca58c78abbc5` |
+| Soft-release HEAD (at report time) | `60ae1f5` (docs pin; runtime tip verified `7bbb088`) |
 | Preview deployment verified (undici / pre-B1 voice) | `dpl_2TQe6hpnPGoT2SJzBpDrSAJHmi22` @ `4ff476c` |
 | Preview deployment verified (post B1–B4 tip) | `dpl_AV44BYnfYnNu7ZTd8ko3cCfb8grj` @ `7bbb088` |
 | Preview URL (tip) | `https://vpsych-fh23fktgn-alhazayed-1540s-projects.vercel.app` |
@@ -126,7 +126,17 @@ Also: synthesized TTS chunk count can exceed `play()` count when the harness nav
 
 ### 5.3 Mode-toggle harness (adversarial B4)
 
-Earlier harness builds matched `/^(Voice|صوت)$/` against raw `button.textContent`, which includes Material Symbols glyphs (`graphic_eqVoice`), so text/voice toggles never clicked. Those steps must not be cited as text-only evidence. Harness fixed to strip known icon tokens before matching; re-run required for text-only claims.
+Earlier harness builds matched `/^(Voice|صوت)$/` against raw `button.textContent`, which includes Material Symbols glyphs (`graphic_eqVoice`), so text/voice toggles never clicked. Those steps must not be cited as text-only evidence.
+
+**Fixed and re-verified** on tip preview `dpl_AV44BYnfYnNu7ZTd8ko3cCfb8grj`:
+
+- `text-mode` → `switched-to-text`
+- EN turns 1–2 + rapid turn: **3× `/message` 200 with 0 TTS** while in text mode
+- `voice-mode` → `switched-to-voice`
+- subsequent turn: **6× `/tts` 200** + `playResolved=6` / `playingEvents=6`
+
+Artifact: `/opt/cursor/artifacts/soft-release-desktop-post-b1/soft-release-desktop-report.json`  
+EN session: `07accff9-c5d2-42fd-813e-670a046ced2d` · AR: `f0dbc709-0056-4ea4-8599-6c0ddcaa368a`
 
 ---
 
@@ -246,7 +256,7 @@ Reviewer: [Adversarial soft-release audit](bc-325d928a-de55-5d6c-8728-f64e7641a6
 | B3 harness caveats | this report §5.1 | Autoplay flag + play vs synthesize gap |
 | B4 mode toggle harness | `scripts/soft-release-desktop-verify.mjs` | Strip Material icon tokens before match |
 
-**E6 note:** `51ea593` touches `src/`. Preview evidence from `4ff476c` remains valid for voice playback behavior; B1 is persistence-error mapping only. A new preview of the tip should be used for any further runtime claims.
+**E6 note:** `51ea593` touches `src/`. Tip preview `dpl_AV44BYnfYnNu7ZTd8ko3cCfb8grj` @ `7bbb088` re-verified text-mode, voice TTS, play hooks, AR, and session end after B1–B4.
 
 ---
 
@@ -268,15 +278,16 @@ STT/transcript/Patient Agent may work on iPhone while patient TTS playback / bar
 
 ## 13. Deployment ID
 
-**Verified preview:** `dpl_2TQe6hpnPGoT2SJzBpDrSAJHmi22`
+**Pre-B1 voice evidence preview:** `dpl_2TQe6hpnPGoT2SJzBpDrSAJHmi22`  
+**Post B1–B4 tip preview:** `dpl_AV44BYnfYnNu7ZTd8ko3cCfb8grj`
 
 ---
 
 ## 14. Commit SHA
 
 **Phase 9.2R baseline:** `53682666d9b41d39fd3502f0904fa7d110baf0d5`  
-**Verified preview commit:** `4ff476c466a6e19e0fd8f61609e35dd373b9a649`  
-**Branch tip:** see PR #259 HEAD after report commits
+**B1 fix:** `51ea5933aadda3c63e5ba63b938b1e59efd95a3e`  
+**Branch tip (report):** `7bbb088a20ef018282efb5329bf2ca58c78abbc5`
 
 ---
 
