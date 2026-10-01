@@ -358,6 +358,13 @@ export async function startHandsFreeVad(
   let speechStartedAt: number | null = null;
   let lastSpeechAt: number | null = null;
   let totalSpeechMs = 0;
+  /**
+   * Index in `chunks` of the first voiced frame. Audio more than
+   * SPEECH_LEAD_IN_MS before it is silence-before-speaking (the mic opens as
+   * soon as the patient stops) and is not uploaded: STT latency grows with
+   * clip length.
+   */
+  let firstVoicedChunk: number | null = null;
   /** Two-stage: a pause was reported and not yet resumed. */
   let pausePending = false;
   /** Two-stage: start of the current re-voicing run while pausePending. */
@@ -366,6 +373,13 @@ export async function startHandsFreeVad(
   const startedAt = Date.now();
 
   // Barge-in pre-roll: the therapist is already mid-word.
+  /** Frames to upload: from just before the first voiced frame. */
+  const framesForUpload = (): Float32Array[] => {
+    if (firstVoicedChunk == null || chunks.length === 0) return chunks;
+    const frameMs = (chunks[firstVoicedChunk]!.length / audioContext.sampleRate) * 1000;
+    const leadFrames = Math.ceil(SPEECH_LEAD_IN_MS / Math.max(1, frameMs));
+    return chunks.slice(Math.max(0, firstVoicedChunk - leadFrames));
+  };
   const seedPreroll = (preroll: VadPreroll) => {
     for (const frame of preroll.frames) {
       chunks.push(resampleLinear(frame, preroll.sampleRate, audioContext.sampleRate));
@@ -407,7 +421,7 @@ export async function startHandsFreeVad(
       settle?.(null);
       return;
     }
-    settle?.(encodeCapturedFrames(chunks, sampleRate));
+    settle?.(encodeCapturedFrames(framesForUpload(), sampleRate));
   };
 
   processor.onaudioprocess = (event) => {
@@ -466,6 +480,7 @@ export async function startHandsFreeVad(
       if (!speaking) {
         speaking = true;
         speechStartedAt = now;
+        if (firstVoicedChunk == null) firstVoicedChunk = chunks.length - 1;
         options.onSpeechStart?.();
       }
       lastSpeechAt = now;
@@ -496,7 +511,7 @@ export async function startHandsFreeVad(
           pausePending = true;
           resumeRunStartedAt = null;
           twoStage.onPause({
-            wav: encodeCapturedFrames(chunks, audioContext.sampleRate),
+            wav: encodeCapturedFrames(framesForUpload(), audioContext.sampleRate),
             speechMs: totalSpeechMs,
             silenceStartedAt: lastSpeechAt,
           });
@@ -540,6 +555,9 @@ export async function startHandsFreeVad(
 
 /** Audio kept before the detected speech onset in a handoff pre-roll. */
 const PREROLL_LEAD_MS = 300;
+
+/** Audio kept before the first voiced frame of a capture (STT upload). */
+const SPEECH_LEAD_IN_MS = 300;
 
 /** Upper bound on post-detection capture held for an un-drained handoff. */
 const HANDOFF_MAX_HOLD_MS = 5000;

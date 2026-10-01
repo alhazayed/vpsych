@@ -276,3 +276,17 @@ need a decision: the TTS model (`eleven_flash_v2_5` / `eleven_turbo_v2_5`), the
 STT model (`gpt-4o-mini-transcribe`), parallelising the message route's DB
 work, and streaming the patient reply into TTS. Also note: this session made
 6 speculative STT calls for 4 turns, against a 120/h `stt` rate budget.
+
+### 10.1 Second live session (5 turns, after `a5a02ff`)
+
+| Stage | Measured |
+|---|---|
+| Speculative STT (`gpt-4o-transcribe`) | **2.13 s** average. 4 of 5 commits hit the 2.2 s max-silence ceiling while waiting for it |
+| Server: user message saved → reply saved | 2.2–5.9 s, growing with reply length (249 chars → 5.9 s) |
+| Reply → first audio | 2.14 s |
+
+The parallel monitor start and short first chunk did not measurably change
+the total. Latency is dominated by the three external services. Follow-up
+(voice layer): STT uploads now start 300 ms before the first voiced frame
+instead of at mic open. In the harness the reference clip went from 3.53 s to
+2.88 s uploaded (lead-in 1.02 s → 0.38 s), with endpoint behaviour unchanged.
