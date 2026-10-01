@@ -24,6 +24,7 @@ import { createMicClaim } from "@/lib/voice/mic-claim";
 import {
   clearVoiceTurnPending,
   shouldApplyVoiceTurnResult,
+  therapistTurnStartAction,
 } from "@/lib/voice/turn-lifecycle";
 import {
   startMicWavRecording,
@@ -121,6 +122,12 @@ export function VoiceSession({
   /** Sync mic ownership — claimed before await getUserMedia (Phase 9.1R). */
   const micClaimRef = useRef(createMicClaim());
   const speakingRef = useRef(false);
+  /**
+   * Human Conversation Fidelity — a patient reply is scheduled (TTS
+   * synthesizing / persona pause) but may not be audible yet. Starting the
+   * mic must cancel it so the patient never talks over the therapist.
+   */
+  const patientAudioScheduledRef = useRef(false);
 
   const stopPlayback = useCallback(() => {
     window.speechSynthesis?.cancel();
@@ -137,6 +144,7 @@ export function VoiceSession({
       audioRef.current = null;
     }
     speakingRef.current = false;
+    patientAudioScheduledRef.current = false;
     setSpeaking(false);
   }, []);
 
@@ -247,6 +255,8 @@ export function VoiceSession({
         speech_energy?: string;
       } | null,
       turnId?: number,
+      /** performance.now() when the therapist finished (pause anchor). */
+      speechEndedAt?: number,
     ) => {
       if (!voiceEnabled) return;
       const fence = turnFenceRef.current;
@@ -269,7 +279,9 @@ export function VoiceSession({
         audioRef.current = null;
       }
 
-      speakingRef.current = true;
+      // Scheduled, not yet audible: speakingRef flips on first audio only, so
+      // a mic press during synthesis is not mis-marked as an interruption.
+      patientAudioScheduledRef.current = true;
       setSpeaking(true);
       const spoken = await playPatientSpeech({
         text,
@@ -286,6 +298,7 @@ export function VoiceSession({
         style: voiceHints?.style ?? null,
         // Humanization pause once before first chunk (not between sentences).
         pauseBeforeMs: voiceHints?.pause_before_ms ?? null,
+        pauseAnchorAt: speechEndedAt ?? null,
         audioRef,
         signal: playbackAbort.signal,
         turn: {
@@ -301,11 +314,13 @@ export function VoiceSession({
           onend: () => {
             if (!fence.isActive(activeTurnId)) return;
             speakingRef.current = false;
+            patientAudioScheduledRef.current = false;
             setSpeaking(false);
           },
           onerror: () => {
             if (!fence.isActive(activeTurnId)) return;
             speakingRef.current = false;
+            patientAudioScheduledRef.current = false;
             setSpeaking(false);
           },
         },
@@ -336,10 +351,18 @@ export function VoiceSession({
       const trimmed = text.trim();
       if (!trimmed || pending || endingRef.current) return;
 
-      // Cutting off patient audio with a new therapist turn counts as interruption.
-      if (speakingRef.current) {
-        interruptPatientVoice({ markTherapistInterrupted: true });
+      // Cutting off AUDIBLE patient audio counts as interruption; a reply
+      // that has not started yet is simply cancelled (no overlap, no flag).
+      const startAction = therapistTurnStartAction({
+        patientAudible: speakingRef.current,
+        patientAudioScheduled: patientAudioScheduledRef.current,
+      });
+      if (startAction !== "none") {
+        interruptPatientVoice({
+          markTherapistInterrupted: startAction === "interrupt",
+        });
       }
+      const sentAt = performance.now();
 
       const turnId = turnFenceRef.current.beginTurn();
       turnAbortRef.current?.abort();
@@ -387,6 +410,7 @@ export function VoiceSession({
             turn.data.assistantMessage.content,
             turn.data.voiceHints,
             turnId,
+            sentAt,
           );
         }
         setStatus(
@@ -418,6 +442,8 @@ export function VoiceSession({
     setListening(false);
     micClaimRef.current.release();
     if (!recorder) return;
+    // Therapist finished speaking now (push-to-talk release).
+    const speechEndedAt = performance.now();
 
     const turnId = turnFenceRef.current.beginTurn();
     turnAbortRef.current?.abort();
@@ -459,6 +485,7 @@ export function VoiceSession({
         signal: turnAbort.signal,
         playbackSignal: playbackAbort.signal,
         therapistInterrupted,
+        speechEndedAt,
         onValidTurnSubmit: () => {
           interruptFlagRef.current.consumeForSubmit();
         },
@@ -487,6 +514,7 @@ export function VoiceSession({
             return;
           }
           setMessages((prev) => [...prev, userMessage, assistantMessage]);
+          if (voiceEnabled) patientAudioScheduledRef.current = true;
         },
         speakHandlers: {
           onstart: () => {
@@ -511,6 +539,7 @@ export function VoiceSession({
               return;
             }
             speakingRef.current = false;
+            patientAudioScheduledRef.current = false;
             setSpeaking(false);
           },
           onerror: () => {
@@ -523,6 +552,7 @@ export function VoiceSession({
               return;
             }
             speakingRef.current = false;
+            patientAudioScheduledRef.current = false;
             setSpeaking(false);
           },
         },
@@ -658,8 +688,16 @@ export function VoiceSession({
     if (!micClaimRef.current.tryClaim()) return;
 
     // Starting a new listen while the patient is speaking = therapist barge-in.
-    if (speakingRef.current) {
-      interruptPatientVoice({ markTherapistInterrupted: true });
+    // A reply still synthesizing is cancelled so it cannot start playing over
+    // the therapist's recording (Human Conversation Fidelity).
+    const startAction = therapistTurnStartAction({
+      patientAudible: speakingRef.current,
+      patientAudioScheduled: patientAudioScheduledRef.current,
+    });
+    if (startAction !== "none") {
+      interruptPatientVoice({
+        markTherapistInterrupted: startAction === "interrupt",
+      });
     }
 
     try {

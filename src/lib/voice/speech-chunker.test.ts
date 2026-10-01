@@ -170,3 +170,38 @@ describe("planSpeechChunksForPlayback — Phase 9.2R chunk budget", () => {
     expect(coalesceSpeechChunksToBudget(chunks, 2, 25)).toBeNull();
   });
 });
+
+describe("Human Conversation Fidelity — natural hard-split boundaries", () => {
+  const AR_FUNCTION_WORDS = new Set(["أن", "في", "على", "عن", "من", "مع", "و"]);
+  const EN_FUNCTION_WORDS = new Set(["the", "a", "to", "of", "in", "with"]);
+
+  it("long unpunctuated Arabic never ends a chunk on a binding particle", () => {
+    const text =
+      "أنا أعتقد أن حالتك النفسية تحتاج إلى تقييم أوسع لأنه في أشياء كثير صارت معك من فترة ومش واضح إذا هي مرتبطة بالشغل أو بالبيت أو بالنوم اللي صار قليل كثير في الأسابيع الأخيرة";
+    const chunks = chunkTextForSpeechPlayback(text, { maxChars: 60 });
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks.slice(0, -1)) {
+      const last = chunk.split(/\s+/).pop()!;
+      expect(AR_FUNCTION_WORDS.has(last)).toBe(false);
+    }
+    expect(joinSpeechChunks(chunks)).toBe(text);
+  });
+
+  it("prefers breaking before a connective (لأنه / and / because)", () => {
+    const text =
+      "I have been trying to sleep earlier every night for the last few weeks because my doctor told me that it would help with the anxiety I feel in the mornings";
+    const chunks = chunkTextForSpeechPlayback(text, { maxChars: 100 });
+    expect(chunks[1]!.startsWith("because")).toBe(true);
+    for (const chunk of chunks.slice(0, -1)) {
+      expect(EN_FUNCTION_WORDS.has(chunk.split(/\s+/).pop()!.toLowerCase())).toBe(
+        false,
+      );
+    }
+    expect(joinSpeechChunks(chunks)).toBe(text);
+  });
+
+  it("short acknowledgements stay one short chunk (short responses sound short)", () => {
+    expect(chunkTextForSpeechPlayback("آه، فهمت.")).toEqual(["آه، فهمت."]);
+    expect(chunkTextForSpeechPlayback("تمام.")).toEqual(["تمام."]);
+  });
+});

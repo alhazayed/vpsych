@@ -40,7 +40,23 @@ type TtsBody = {
   /** Mission 10 — Humanization Engine prosody overrides. */
   stability?: number;
   style?: number;
+  /**
+   * Human Conversation Fidelity — request-stitching context (not spoken).
+   * Neighbouring reply text so progressive chunks share one intonation line.
+   */
+  previousText?: string;
+  nextText?: string;
 };
+
+/** Server-side bound on stitching context (client sends ≤ 300 chars). */
+const MAX_STITCH_CONTEXT_CHARS = 600;
+
+function boundedContext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.slice(0, MAX_STITCH_CONTEXT_CHARS);
+}
 
 /**
  * ElevenLabs TTS — streams audio/mpeg when available.
@@ -124,6 +140,8 @@ export async function POST(request: Request) {
       clinicalVoiceSettings,
       stability: body.stability,
       style: body.style,
+      previousText: boundedContext(body.previousText),
+      nextText: boundedContext(body.nextText),
     });
 
     return new NextResponse(result.body, {

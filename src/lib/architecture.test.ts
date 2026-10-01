@@ -898,6 +898,32 @@ describe("architecture invariants", () => {
     expect(readiness).not.toMatch(/create second|independent clinical validation/i);
   });
 
+  it("Human Conversation Fidelity — voice-layer wiring stays in place", () => {
+    const room = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    const classic = readFileSync(join(root, "components/VoiceSession.tsx"), "utf8");
+    const telemetry = readFileSync(
+      join(root, "lib/therapy-room/conversation-telemetry.ts"),
+      "utf8",
+    );
+    const endpointing = readFileSync(join(root, "lib/voice/endpointing.ts"), "utf8");
+    // Two-stage endpoint (speculative STT while the mic stays open).
+    expect(room).toMatch(/createEndpointController/);
+    expect(room).toMatch(/twoStage:\s*\{/);
+    // Barge-in / floor-take hand the live mic + pre-roll to capture.
+    expect(room).toMatch(/handoff:\s*true/);
+    // Interrupt latch only after audible patient audio.
+    expect(room).toMatch(/if \(firstAudioStarted\)\s*\{\s*interruptFlagRef\.current\.mark\(\)/);
+    // Classic UI cancels a scheduled reply instead of letting it overlap.
+    expect(classic).toMatch(/therapistTurnStartAction/);
+    // Endpoint silence is bounded (natural, never open-ended).
+    expect(endpointing).toMatch(/maxSilenceMs:\s*2200/);
+    // Telemetry stays content-free.
+    expect(telemetry).not.toMatch(/transcript\s*[:?]/);
+  });
+
   it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
     const service = readFileSync(
       join(root, "lib/voice/elevenlabs/service.ts"),

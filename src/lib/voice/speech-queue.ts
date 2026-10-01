@@ -95,6 +95,13 @@ export type PlayQueuedSpeechParams = {
     onerror?: () => void;
   };
   /**
+   * Human Conversation Fidelity — resolves when the first chunk may become
+   * audible (persona pause). TTS synthesis starts immediately and overlaps
+   * the gate, so an intentional pause never adds TTS latency on top.
+   * Later chunks are never gated.
+   */
+  startGate?: Promise<void>;
+  /**
    * Optional Audio constructor for tests (defaults to global HTMLAudioElement).
    */
   createAudio?: (src: string) => HTMLAudioElement;
@@ -426,6 +433,8 @@ export async function playQueuedSpeech(
 
   let mode: "elevenlabs" | "interrupted" = "elevenlabs";
   let playbackPath: SpeechQueuePlaybackPath = "progressive_queue";
+  /** Stopped after ≥1 heard chunk (TTS/play failure) — not a completion. */
+  let stoppedEarly = false;
 
   try {
     for (let i = 0; i < slots.length; i++) {
@@ -437,6 +446,9 @@ export async function playQueuedSpeech(
 
       const slot = slots[i]!;
       await slot.ready;
+      if (i === 0 && params.startGate) {
+        await params.startGate;
+      }
 
       if (cancelled || abort.signal.aborted || isStale(params.turn, params.signal)) {
         mode = "interrupted";
@@ -463,6 +475,7 @@ export async function playQueuedSpeech(
         cancelQueue();
         mode = "elevenlabs";
         playbackPath = "progressive_queue";
+        stoppedEarly = true;
         break;
       }
 
@@ -491,11 +504,16 @@ export async function playQueuedSpeech(
         cancelQueue();
         mode = "elevenlabs";
         playbackPath = "progressive_queue";
+        stoppedEarly = true;
         break;
       }
     }
 
-    if (mode === "elevenlabs" && playbackPath === "progressive_queue") {
+    if (
+      mode === "elevenlabs" &&
+      playbackPath === "progressive_queue" &&
+      !stoppedEarly
+    ) {
       emit({ type: "audio_queue_complete", at: now() });
       params.handlers?.onend?.();
     } else if (mode === "interrupted") {

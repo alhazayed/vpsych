@@ -309,7 +309,8 @@ export function TherapyRoom({
         audioRef.current = null;
       }
 
-      speakingRef.current = true;
+      // speakingRef flips on first AUDIBLE audio (onstart) so a mic press
+      // during synthesis is not marked as an interruption.
       setSpeaking(true);
       lastAssistantRef.current = text;
       setLastPatientLine(text);

@@ -48,3 +48,10 @@ Clients should send `therapistInterrupted: true` on the next message when barge-
 | Clinical live-switch params | CVP |
 | Capture / playback / VAD UX | Realtime gateway |
 | STT/TTS HTTP routes | Existing `/api/voice/*` (rate-limited) |
+
+## Human Conversation Fidelity
+
+Two-stage endpointing (speculative STT while the mic stays open), barge-in
+pre-roll handoff, floor control during generation, end-of-speech-anchored
+persona pause, natural chunk boundaries and TTS request stitching are
+documented in [`VOICE_CONVERSATION_FIDELITY.md`](./VOICE_CONVERSATION_FIDELITY.md).

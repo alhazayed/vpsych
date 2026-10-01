@@ -1,0 +1,98 @@
+<!doctype html><html><head><meta charset="utf-8"><title>voice harness</title></head><body>
+<script src="./__BUNDLE__.js"></script>
+<script>
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+async function decode(blob) {
+  const ctx = new OfflineAudioContext(1, 1, 16000);
+  return await ctx.decodeAudioData(await blob.arrayBuffer());
+}
+/** Voiced seconds + first voiced offset (20 ms RMS windows). */
+async function voiced(blob) {
+  const buf = await decode(blob);
+  const d = buf.getChannelData(0); const win = Math.round(buf.sampleRate * 0.02);
+  let v = 0, first = null;
+  for (let i = 0; i + win <= d.length; i += win) {
+    let s = 0; for (let j = 0; j < win; j++) s += d[i+j]*d[i+j];
+    if (Math.sqrt(s/win) > 0.01) { v += 0.02; if (first == null) first = i / buf.sampleRate; }
+  }
+  return { duration: buf.duration, voiced: +v.toFixed(2), firstVoicedAt: first };
+}
+window.runEndpoint = async (arg) => { const pauseMs = typeof arg === 'number' ? arg : arg.pause; const kind = (typeof arg === 'object' && arg.kind) || 'uncertain';
+  const t0 = performance.now(); const ev = []; const at = () => Math.round(performance.now() - t0);
+  const secondStart = 0.5 + 1.8 + pauseMs / 1000;
+  const speechEnd = (secondStart + 1.5) * 1000;
+  if (H.variant === 'before') {
+    const vad = await H.startHandsFreeVad({ silenceMs: 850, maxMs: 15000,
+      onSpeechStart: () => ev.push(['speech_start', at()]), onSpeechEnd: () => ev.push(['speech_end', at()]) });
+    const wav = await vad.done; const endAt = at(); const v = wav ? await voiced(wav) : null;
+    return { endAt, ev, v, premature: !v || v.duration < secondStart + 0.3, speechEnd,
+             transcriptReadyAt: endAt + 400 /* STT runs after endpoint (simulated 400 ms) */ };
+  }
+  let vadLocal = null; let commitRequested = false;
+  const ctrl = H.createEndpointController({ locale: 'ar',
+    transcribe: async (wav, signal) => { const d = (await decode(wav)).duration; await sleep(400);
+      if (signal.aborted) return { ok: false, error: 'aborted', unavailable: false };
+      return { ok: true, transcript: d < secondStart + 0.3 ? (kind === 'incomplete' ? 'أنا من فترة و' : 'أنا من فترة') : 'أنا من فترة ما بنام منيح.' }; },
+    onCommit: (r) => { ev.push(['commit', r, at()]); commitRequested = true; vadLocal?.stop(); },
+    onEvent: (e) => { if (e.type === 'classified') ev.push(['classified', e.completeness, e.requiredSilenceMs, at()]); } });
+  const vad = await H.startHandsFreeVad({ silenceMs: 850, maxMs: 15000,
+    onSpeechStart: () => ev.push(['speech_start', at()]),
+    twoStage: { maxSilenceMs: 2200, resumeMinMs: 150,
+      onPause: (info) => { ev.push(['pause', at()]); ctrl.pause({ wav: info.wav, speechMs: info.speechMs,
+        silenceStartedAt: performance.now() - (Date.now() - info.silenceStartedAt) }); },
+      onActivity: (a) => ctrl.activity(a),
+      onResume: () => { ev.push(['resume', at()]); ctrl.resumed(); } } });
+  vadLocal = vad; if (commitRequested) vad.stop();
+  const wav = await vad.done; const fin = await ctrl.finalize(); const endAt = at();
+  const v = wav ? await voiced(wav) : null;
+  return { endAt, ev, v, premature: !v || v.duration < secondStart + 0.3, speechEnd,
+           transcriptReadyAt: endAt, transcript: fin.stt && fin.stt.transcript };
+};
+window.runBargeIn = async () => {
+  const patient = new Audio('audio/patient.wav'); await patient.play();
+  const t0 = performance.now(); let fired = null, stopAt = null, handoff = null; let gumAt = null;
+  const firedP = new Promise(res => {
+    H.startBargeInMonitor({ handoff: H.variant === 'after', onBargeIn: (h) => {
+      fired = performance.now(); patient.pause(); stopAt = performance.now(); handoff = h || null; res(); } })
+     .then(stop => { gumAt = performance.now(); window.__stopMon = stop; });
+  });
+  await firedP;
+  const ctAtStop = patient.currentTime; await sleep(250); const ctAfter = patient.currentTime;
+  window.__stopMon && window.__stopMon();
+  const reopenStart = performance.now();
+  const vad = await H.startHandsFreeVad(handoff
+    ? { silenceMs: 850, maxMs: 8000, stream: handoff.stream, adoptStream: true, preroll: (c) => handoff.drain(c) }
+    : { silenceMs: 850, maxMs: 8000 });
+  const reopenMs = performance.now() - reopenStart;
+  const wav = await vad.done; const v = wav ? await voiced(wav) : null;
+  return { detectApproxMs: Math.round(fired - (gumAt ?? t0) - 1000), detectLatencyMs: handoff?.detectLatencyMs ?? null,
+    stopMs: +(stopAt - fired).toFixed(2), audioAdvancedAfterStopMs: Math.round((ctAfter - ctAtStop) * 1000),
+    reopenMs: Math.round(reopenMs), captured: v, actualTherapistSpeechS: 1.6 };
+};
+window.runQueue = async (abortAfterMs) => {
+  const blob = await (await fetch('audio/patient.wav')).blob();
+  // Three ~1.0 s chunks cut from the patient fixture.
+  const buf = await decode(blob); const sr = buf.sampleRate; const data = buf.getChannelData(0);
+  const toWavUrl = (start, dur) => { const n = Math.round(dur*sr); const ab = new ArrayBuffer(44+n*2); const dv = new DataView(ab);
+    const w = (o,s)=>{for(let i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i));};
+    w(0,'RIFF');dv.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+    dv.setUint32(24,sr,true);dv.setUint32(28,sr*2,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);w(36,'data');dv.setUint32(40,n*2,true);
+    for(let i=0;i<n;i++){const s=Math.max(-1,Math.min(1,data[Math.round(start*sr)+i]||0));dv.setInt16(44+i*2,s*0x7fff,true);}
+    return URL.createObjectURL(new Blob([ab],{type:'audio/wav'})); };
+  const events = []; const t0 = performance.now(); const abort = new AbortController(); const audioRef = { current: null };
+  let abortAt = null, pausedAt = null;
+  if (abortAfterMs) setTimeout(() => { const a = audioRef.current; abortAt = performance.now(); abort.abort();
+    if (a) pausedAt = a.paused ? performance.now() : null; }, abortAfterMs);
+  const res = await H.playQueuedSpeech({ chunks: ['a.', 'b.', 'c.'], signal: abort.signal, audioRef,
+    onEvent: (e) => events.push([e.type, e.chunkIndex ?? null, Math.round(e.at - t0)]),
+    synthesizeChunk: async (_t, i) => { await sleep(120); return { ok: true, objectUrl: toWavUrl(i * 1.0, 1.0) }; } });
+  const gaps = []; for (let i = 1; i < 3; i++) { const end = events.find(e => e[0]==='audio_chunk_play_end' && e[1]===i-1);
+    const st = events.find(e => e[0]==='audio_chunk_play_start' && e[1]===i); if (end && st) gaps.push(st[2]-end[2]); }
+  return { mode: res.mode, metrics: res.metrics, gapsMs: gaps, abortToPausedMs: abortAt && pausedAt ? +(pausedAt-abortAt).toFixed(2) : null, events };
+};
+window.runReference = async () => {
+  const vad = await H.startHandsFreeVad({ silenceMs: 850, maxMs: 8000 });
+  const wav = await vad.done; return { captured: wav ? await voiced(wav) : null };
+};
+window.ready = true;
+</script></body></html>

@@ -27,7 +27,32 @@ export type ConversationTelemetryKind =
   | "pause"
   | "resume"
   | "session_start"
-  | "session_end";
+  | "session_end"
+  /* Human Conversation Fidelity — timings / counters only, never content. */
+  /** Stage-1 pause detected while the therapist holds the floor. */
+  | "endpoint_pause"
+  /** Therapist resumed during a pending endpoint (premature submit avoided). */
+  | "endpoint_resumed"
+  /** Trailing silence actually waited before commit (ms); code = reason. */
+  | "endpoint_commit_silence_ms"
+  /** Speculative STT transcript reused for the message API (code = completeness). */
+  | "speculative_stt_reused"
+  /** Therapist speech onset → barge-in detection (ms). */
+  | "barge_in_detect_ms"
+  /** Barge-in detection → patient audio paused (ms, main-thread). */
+  | "barge_in_stop_ms"
+  /** Therapist took the floor before the patient reply started. */
+  | "floor_yield"
+  /** A reply held during floor-take was replayed (therapist said nothing). */
+  | "held_reply_played"
+  /** Late async result dropped by turn fence / generation (count). */
+  | "stale_result_discarded"
+  /** Progressive TTS chunks requested / played (count). */
+  | "tts_chunks_generated"
+  | "tts_chunks_played"
+  /** TTS chunk synthesis failure (count) / play() rejection (count). */
+  | "tts_failure"
+  | "playback_failure";
 
 export type ConversationTelemetryEvent = {
   kind: ConversationTelemetryKind;
@@ -35,6 +60,8 @@ export type ConversationTelemetryEvent = {
   valueMs?: number;
   /** Non-PHI error code (e.g. stt_timeout, mic_denied) or path tag. */
   code?: string;
+  /** Non-PHI integer count (chunk counters). */
+  count?: number;
   at: number;
 };
 
@@ -52,6 +79,20 @@ export type ConversationTelemetrySummary = {
   avgTimeToFirstAudioMs: number | null;
   avgPlaybackMs: number | null;
   avgMicReopenMs: number | null;
+  /** Human Conversation Fidelity aggregates (no content). */
+  endpointPauses: number;
+  endpointResumes: number;
+  avgEndpointCommitSilenceMs: number | null;
+  speculativeSttReused: number;
+  avgBargeInDetectMs: number | null;
+  avgBargeInStopMs: number | null;
+  floorYields: number;
+  heldRepliesPlayed: number;
+  staleResultsDiscarded: number;
+  ttsChunksGenerated: number;
+  ttsChunksPlayed: number;
+  ttsFailures: number;
+  playbackFailures: number;
   events: ConversationTelemetryEvent[];
 };
 
@@ -63,7 +104,7 @@ function avgOf(values: number[]): number | null {
 export function createConversationTelemetry(): {
   record: (
     kind: ConversationTelemetryKind,
-    opts?: { valueMs?: number; code?: string },
+    opts?: { valueMs?: number; code?: string; count?: number },
   ) => void;
   mark: () => number;
   elapsed: (startedAt: number) => number;
@@ -75,7 +116,7 @@ export function createConversationTelemetry(): {
 
   const record = (
     kind: ConversationTelemetryKind,
-    opts?: { valueMs?: number; code?: string },
+    opts?: { valueMs?: number; code?: string; count?: number },
   ) => {
     events.push({
       kind,
@@ -84,6 +125,10 @@ export function createConversationTelemetry(): {
           ? Math.max(0, Math.round(opts.valueMs))
           : undefined,
       code: opts?.code,
+      count:
+        opts?.count != null && Number.isFinite(opts.count)
+          ? Math.max(0, Math.round(opts.count))
+          : undefined,
       at: Date.now(),
     });
   };
@@ -104,6 +149,20 @@ export function createConversationTelemetry(): {
       let errors = 0;
       let retries = 0;
       let pauses = 0;
+      const endpointSilence: number[] = [];
+      const bargeDetect: number[] = [];
+      const bargeStop: number[] = [];
+      let endpointPauses = 0;
+      let endpointResumes = 0;
+      let speculativeSttReused = 0;
+      let floorYields = 0;
+      let heldRepliesPlayed = 0;
+      let staleResultsDiscarded = 0;
+      let ttsChunksGenerated = 0;
+      let ttsChunksPlayed = 0;
+      let ttsFailures = 0;
+      let playbackFailures = 0;
+      const countOf = (e: ConversationTelemetryEvent) => e.count ?? 1;
 
       for (const e of events) {
         switch (e.kind) {
@@ -143,6 +202,45 @@ export function createConversationTelemetry(): {
           case "pause":
             pauses += 1;
             break;
+          case "endpoint_pause":
+            endpointPauses += 1;
+            break;
+          case "endpoint_resumed":
+            endpointResumes += 1;
+            break;
+          case "endpoint_commit_silence_ms":
+            if (e.valueMs != null) endpointSilence.push(e.valueMs);
+            break;
+          case "speculative_stt_reused":
+            speculativeSttReused += 1;
+            break;
+          case "barge_in_detect_ms":
+            if (e.valueMs != null) bargeDetect.push(e.valueMs);
+            break;
+          case "barge_in_stop_ms":
+            if (e.valueMs != null) bargeStop.push(e.valueMs);
+            break;
+          case "floor_yield":
+            floorYields += 1;
+            break;
+          case "held_reply_played":
+            heldRepliesPlayed += 1;
+            break;
+          case "stale_result_discarded":
+            staleResultsDiscarded += countOf(e);
+            break;
+          case "tts_chunks_generated":
+            ttsChunksGenerated += e.count ?? 0;
+            break;
+          case "tts_chunks_played":
+            ttsChunksPlayed += e.count ?? 0;
+            break;
+          case "tts_failure":
+            ttsFailures += countOf(e);
+            break;
+          case "playback_failure":
+            playbackFailures += countOf(e);
+            break;
           default:
             break;
         }
@@ -178,6 +276,19 @@ export function createConversationTelemetry(): {
         avgTimeToFirstAudioMs: avgOf(firstAudio),
         avgPlaybackMs: avgOf(playbackSource),
         avgMicReopenMs: avgOf(micReopen),
+        endpointPauses,
+        endpointResumes,
+        avgEndpointCommitSilenceMs: avgOf(endpointSilence),
+        speculativeSttReused,
+        avgBargeInDetectMs: avgOf(bargeDetect),
+        avgBargeInStopMs: avgOf(bargeStop),
+        floorYields,
+        heldRepliesPlayed,
+        staleResultsDiscarded,
+        ttsChunksGenerated,
+        ttsChunksPlayed,
+        ttsFailures,
+        playbackFailures,
         events: [...events],
       };
     },
@@ -196,6 +307,19 @@ export function createConversationTelemetry(): {
         avgTimeToFirstAudioMs: full.avgTimeToFirstAudioMs,
         avgPlaybackMs: full.avgPlaybackMs,
         avgMicReopenMs: full.avgMicReopenMs,
+        endpointPauses: full.endpointPauses,
+        endpointResumes: full.endpointResumes,
+        avgEndpointCommitSilenceMs: full.avgEndpointCommitSilenceMs,
+        speculativeSttReused: full.speculativeSttReused,
+        avgBargeInDetectMs: full.avgBargeInDetectMs,
+        avgBargeInStopMs: full.avgBargeInStopMs,
+        floorYields: full.floorYields,
+        heldRepliesPlayed: full.heldRepliesPlayed,
+        staleResultsDiscarded: full.staleResultsDiscarded,
+        ttsChunksGenerated: full.ttsChunksGenerated,
+        ttsChunksPlayed: full.ttsChunksPlayed,
+        ttsFailures: full.ttsFailures,
+        playbackFailures: full.playbackFailures,
       };
     },
   };

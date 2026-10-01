@@ -35,6 +35,13 @@ export type ElevenLabsSynthesizeParams = {
   /** Mission 10 — optional Humanization Engine prosody overrides. */
   stability?: number | null;
   style?: number | null;
+  /**
+   * Human Conversation Fidelity — request stitching (`previous_text` /
+   * `next_text`). Improves prosodic continuity across progressive chunks.
+   * Disable with ELEVENLABS_REQUEST_STITCHING=off.
+   */
+  previousText?: string | null;
+  nextText?: string | null;
 };
 
 export type ElevenLabsSynthesizeResult = {
@@ -97,6 +104,50 @@ function modelId() {
   return process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
 }
 
+/** Request stitching is on unless explicitly disabled. */
+export function requestStitchingEnabled(): boolean {
+  const raw = (process.env.ELEVENLABS_REQUEST_STITCHING ?? "").trim().toLowerCase();
+  return !(raw === "off" || raw === "false" || raw === "0" || raw === "no");
+}
+
+/**
+ * Opt-in language enforcement (`language_code`). Off by default: not every
+ * model accepts it, and an unsupported value fails the request. Enable with
+ * ELEVENLABS_LANGUAGE_CODE=on after confirming the configured model.
+ */
+export function languageCodeEnforcementEnabled(): boolean {
+  const raw = (process.env.ELEVENLABS_LANGUAGE_CODE ?? "").trim().toLowerCase();
+  return raw === "on" || raw === "true" || raw === "1" || raw === "yes";
+}
+
+/**
+ * Build the ElevenLabs TTS JSON body. Exported for contract tests.
+ */
+export function buildElevenLabsTtsBody(params: {
+  text: string;
+  modelId: string;
+  voiceSettings: ElevenLabsVoiceSettings;
+  locale: SessionSpeechLocale;
+  previousText?: string | null;
+  nextText?: string | null;
+}): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    text: params.text,
+    model_id: params.modelId,
+    voice_settings: params.voiceSettings,
+  };
+  if (requestStitchingEnabled()) {
+    const prev = params.previousText?.trim();
+    const next = params.nextText?.trim();
+    if (prev) body.previous_text = prev;
+    if (next) body.next_text = next;
+  }
+  if (languageCodeEnforcementEnabled()) {
+    body.language_code = params.locale === "ar" ? "ar" : "en";
+  }
+  return body;
+}
+
 function apiKey() {
   // Strip accidental wrapping quotes from dashboard paste errors.
   const raw = process.env.ELEVENLABS_API_KEY?.trim() || "";
@@ -125,9 +176,13 @@ function cacheKey(params: {
   modelId: string;
   locale: SessionSpeechLocale;
   voiceSettings: ElevenLabsVoiceSettings;
+  /** Serialized request body extras (stitching context, language_code). */
+  extras?: string;
 }) {
   return createHash("sha256")
     .update(params.text)
+    .update("\0")
+    .update(params.extras ?? "")
     .update("\0")
     .update(params.voiceId)
     .update("\0")
@@ -306,12 +361,25 @@ export const elevenLabsService = {
         continue;
       }
 
+      const requestBody = buildElevenLabsTtsBody({
+        text,
+        modelId: model,
+        voiceSettings,
+        locale: params.locale,
+        previousText: params.previousText,
+        nextText: params.nextText,
+      });
       const key = cacheKey({
         text,
         voiceId,
         modelId: model,
         locale: params.locale,
         voiceSettings,
+        extras: JSON.stringify([
+          requestBody.previous_text ?? "",
+          requestBody.next_text ?? "",
+          requestBody.language_code ?? "",
+        ]),
       });
 
       const cached = readCache(key);
@@ -341,11 +409,7 @@ export const elevenLabsService = {
             "Content-Type": "application/json",
             Accept: "audio/mpeg",
           },
-          body: JSON.stringify({
-            text,
-            model_id: model,
-            voice_settings: voiceSettings,
-          }),
+          body: JSON.stringify(requestBody),
           // Abort hung upstream TTS (RT-03 / RT-S11-04).
           signal: AbortSignal.timeout(elevenLabsTimeoutMs()),
         });

@@ -37,6 +37,14 @@ import {
   type TherapyRoomSettings,
   type VadController,
 } from "@/lib/therapy-room";
+import type { BargeInHandoff } from "@/lib/therapy-room/vad";
+import {
+  createEndpointController,
+  type EndpointController,
+  type SpeculativeSttResult,
+} from "@/lib/voice/endpoint-controller";
+import { ENDPOINT_TIMING } from "@/lib/voice/endpointing";
+import { effectivePauseBeforeMs } from "@/lib/voice/response-timing";
 import {
   applyAnimationState,
   createAnimationScheduler,
@@ -64,6 +72,15 @@ function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): stri
     "generic"
   );
 }
+
+/** Held replies older than this are not voiced (conversation moved on). */
+const HELD_REPLY_MAX_AGE_MS = 20_000;
+/**
+ * Continuous therapist speech needed to take the floor while the patient
+ * reply is generating (stricter than barge-in: nothing is playing yet, so a
+ * false positive would cost a reply rather than stop audio).
+ */
+const FLOOR_TAKE_MIN_SPEECH_MS = 450;
 
 /**
  * Immersive Therapy Room — fullscreen, patient-centered, true hands-free.
@@ -145,6 +162,21 @@ export function TherapyRoomSession({
    * (empty STT must not clear the latch).
    */
   const interruptFlagRef = useRef(createTherapistInterruptedFlag());
+  /**
+   * Human Conversation Fidelity — two-stage endpoint for the open capture,
+   * live mic handed over by a barge-in / floor-take (pre-roll keeps the
+   * therapist's first words), end-of-speech anchor for response timing,
+   * and a reply held while the therapist took the floor.
+   */
+  const endpointRef = useRef<EndpointController | null>(null);
+  const handoffRef = useRef<BargeInHandoff | null>(null);
+  const lastVoicedAtRef = useRef<number | null>(null);
+  const floorTakenGenRef = useRef<number | null>(null);
+  const heldReplyRef = useRef<{
+    userMessage: SessionMessage;
+    assistantMessage: SessionMessage;
+    heldAt: number;
+  } | null>(null);
 
   const syncUi = useCallback(() => {
     const state = fsmRef.current.getState();
@@ -247,6 +279,12 @@ export function TherapyRoomSession({
     turnAbortRef.current = null;
     playbackAbortRef.current?.abort();
     playbackAbortRef.current = null;
+    endpointRef.current?.cancel();
+    endpointRef.current = null;
+    handoffRef.current?.release();
+    handoffRef.current = null;
+    floorTakenGenRef.current = null;
+    heldReplyRef.current = null;
   }, []);
 
   const stopPlayback = useCallback(() => {
@@ -377,26 +415,65 @@ export function TherapyRoomSession({
       playbackAbortRef.current = abort;
       const playbackStarted = telemetryRef.current.mark();
       let bargeInFired = false;
+      /** True once patient audio is actually audible (play() resolved). */
+      let firstAudioStarted = false;
 
-      bargeInStopRef.current = await startBargeInMonitor({
-        onBargeIn: () => {
-          if (bargeInFired || endingRef.current) return;
-          if (!fsmRef.current.isCurrent(generation)) return;
+      const stopMonitor = await startBargeInMonitor({
+        // Hand the live mic + pre-roll to capture so the interruption's first
+        // words ("طيب بس…") reach STT instead of being lost to mic reopen.
+        handoff: true,
+        onBargeIn: (handoff) => {
+          if (bargeInFired || endingRef.current) {
+            handoff?.release();
+            return;
+          }
+          if (!fsmRef.current.isCurrent(generation)) {
+            handoff?.release();
+            return;
+          }
           bargeInFired = true;
-          interruptFlagRef.current.mark();
-          immersionRef.current.track("therapist_interrupt");
-          telemetryRef.current.record("barge_in");
+          // Only a cut-off of AUDIBLE patient speech is an interruption.
+          // Speaking before the patient's first word is taking the floor.
+          if (firstAudioStarted) {
+            interruptFlagRef.current.mark();
+            immersionRef.current.track("therapist_interrupt");
+            telemetryRef.current.record("barge_in");
+          } else {
+            telemetryRef.current.record("floor_yield", {
+              code: "before_first_audio",
+            });
+          }
+          if (handoff) {
+            telemetryRef.current.record("barge_in_detect_ms", {
+              valueMs: handoff.detectLatencyMs,
+            });
+          }
           abort.abort();
           stopPlayback();
+          if (handoff) {
+            telemetryRef.current.record("barge_in_stop_ms", {
+              valueMs: performance.now() - handoff.detectedAt,
+            });
+          }
           const transitioned = dispatch("BARGE_IN");
           if (transitioned.ok) {
+            handoffRef.current?.release();
+            handoffRef.current = handoff ?? null;
             setPresence("interrupted", "barge");
             setStatusKey("listening");
             // Mic reopens immediately — no click required.
             listenLoopRef.current();
+          } else {
+            handoff?.release();
           }
         },
       });
+      // Playback may have been cancelled while the monitor was starting.
+      if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) {
+        stopMonitor();
+      } else {
+        bargeInStopRef.current = stopMonitor;
+      }
 
       const spoken = await playPatientSpeech({
         text,
@@ -414,9 +491,19 @@ export function TherapyRoomSession({
           turnId: generation,
           isActive: (id) => fsmRef.current.isCurrent(id),
         },
+        onQueueEvent: (event) => {
+          if (event.type === "tts_chunk_failed") {
+            telemetryRef.current.record("tts_failure");
+          } else if (event.type === "audio_play_rejected") {
+            telemetryRef.current.record("playback_failure", {
+              code: event.errorName,
+            });
+          }
+        },
         handlers: {
           onstart: () => {
             if (!fsmRef.current.isCurrent(generation)) return;
+            firstAudioStarted = true;
             if (audioRef.current) {
               applyHtmlAudioModulation(audioRef.current, mod);
             }
@@ -464,6 +551,12 @@ export function TherapyRoomSession({
       telemetryRef.current.record("tts_playback_path", {
         code: spoken.playbackPath,
       });
+      telemetryRef.current.record("tts_chunks_generated", {
+        count: spoken.metrics.chunkCount,
+      });
+      telemetryRef.current.record("tts_chunks_played", {
+        count: spoken.metrics.chunksPlayed,
+      });
 
       if (bargeInFired || spoken.mode === "interrupted") {
         return;
@@ -495,10 +588,85 @@ export function TherapyRoomSession({
     ],
   );
 
+  /**
+   * Human Conversation Fidelity — replay a reply that arrived while the
+   * therapist had the floor, when what they said turned out to be nothing
+   * (noise / no speech). The reply was already persisted server-side.
+   */
+  const playHeldReply = useCallback((): boolean => {
+    const held = heldReplyRef.current;
+    heldReplyRef.current = null;
+    if (!held || endingRef.current) return false;
+    const append = () =>
+      setMessages((prev) => [...prev, held.userMessage, held.assistantMessage]);
+    if (performance.now() - held.heldAt > HELD_REPLY_MAX_AGE_MS) {
+      // Too old to voice naturally; keep the transcript consistent with DB.
+      append();
+      return false;
+    }
+    if (!dispatch("HELD_REPLY").ok) {
+      heldReplyRef.current = held;
+      return false;
+    }
+    append();
+    setLastPatientText(held.assistantMessage.content);
+    telemetryRef.current.record("held_reply_played");
+    const gen = fsmRef.current.getGeneration();
+    void speakPatient(held.assistantMessage.content, gen).then(() => {
+      if (
+        fsmRef.current.isCurrent(gen) &&
+        !endingRef.current &&
+        fsmRef.current.getState() === "LISTENING"
+      ) {
+        listenLoopRef.current();
+      }
+    });
+    return true;
+  }, [dispatch, speakPatient]);
+
+  /** After a capture that produced no usable speech: held reply or listen. */
+  const resumeAfterEmptyCapture = useCallback(() => {
+    if (!playHeldReply()) listenLoopRef.current();
+  }, [playHeldReply]);
+
+  /** Stash a reply that arrived after the therapist took the floor. */
+  const holdReply = useCallback(
+    (userMessage: SessionMessage, assistantMessage: SessionMessage) => {
+      floorTakenGenRef.current = null;
+      heldReplyRef.current = {
+        userMessage,
+        assistantMessage,
+        heldAt: performance.now(),
+      };
+      // The floor-take capture already ended empty and a fresh listen has
+      // heard nothing yet → the therapist is waiting for an answer.
+      const vad = vadRef.current;
+      if (
+        fsmRef.current.getState() === "LISTENING" &&
+        (!vad || vad.speechMs() === 0)
+      ) {
+        vad?.cancel();
+        vadRef.current = null;
+        endpointRef.current?.cancel();
+        endpointRef.current = null;
+        playHeldReply();
+      }
+    },
+    [playHeldReply],
+  );
+
   const processTherapistAudio = useCallback(
-    async (wav: Blob, source: "hands_free" | "patient_interrupt") => {
+    async (
+      wav: Blob,
+      source: "hands_free" | "patient_interrupt",
+      /** Speculative transcript for exactly this audio (two-stage endpoint). */
+      preStt?: SpeculativeSttResult | null,
+    ) => {
       if (endingRef.current) return;
       const generation = fsmRef.current.getGeneration();
+      // End-of-speech anchor for response timing (Human Conversation Fidelity).
+      const speechEndedAt = lastVoicedAtRef.current ?? performance.now();
+      lastVoicedAtRef.current = null;
 
       const speechEnd = dispatch("SPEECH_END");
       if (!speechEnd.ok) return;
@@ -517,33 +685,43 @@ export function TherapyRoomSession({
         `think-${turnIndexRef.current}`,
       );
 
-      turnAbortRef.current?.abort();
+      // A pending floor-take keeps the earlier request alive so its reply can
+      // be held (and replayed if this capture turns out empty).
+      if (floorTakenGenRef.current == null) {
+        turnAbortRef.current?.abort();
+      }
       const abort = new AbortController();
       turnAbortRef.current = abort;
 
-      const sttStarted = telemetryRef.current.mark();
       setStatusKey("processingStt");
 
-      let stt;
-      try {
-        stt = await transcribeTherapistSpeech({
-          audio: wav,
-          locale: session.language ?? locale,
-          signal: abort.signal,
+      let stt: SpeculativeSttResult;
+      if (preStt) {
+        // Two-stage endpoint already transcribed exactly this audio.
+        stt = preStt;
+        telemetryRef.current.record("speculative_stt_reused");
+      } else {
+        const sttStarted = telemetryRef.current.mark();
+        try {
+          stt = await transcribeTherapistSpeech({
+            audio: wav,
+            locale: session.language ?? locale,
+            signal: abort.signal,
+          });
+        } catch {
+          if (abort.signal.aborted) return;
+          telemetryRef.current.record("error", { code: "stt_network" });
+          dispatch("STT_FAIL");
+          setStatusKey("error");
+          return;
+        }
+
+        if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+
+        telemetryRef.current.record("stt_latency_ms", {
+          valueMs: telemetryRef.current.elapsed(sttStarted),
         });
-      } catch {
-        if (abort.signal.aborted) return;
-        telemetryRef.current.record("error", { code: "stt_network" });
-        dispatch("STT_FAIL");
-        setStatusKey("error");
-        return;
       }
-
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
-
-      telemetryRef.current.record("stt_latency_ms", {
-        valueMs: telemetryRef.current.elapsed(sttStarted),
-      });
 
       if (!stt.ok) {
         telemetryRef.current.record("error", {
@@ -555,7 +733,7 @@ export function TherapyRoomSession({
         ) {
           dispatch("STT_EMPTY");
           setPresence("listening", "retry");
-          listenLoopRef.current();
+          resumeAfterEmptyCapture();
           return;
         }
         dispatch("STT_FAIL");
@@ -567,15 +745,35 @@ export function TherapyRoomSession({
       if (!transcript) {
         dispatch("STT_EMPTY");
         setPresence("listening", "empty");
-        listenLoopRef.current();
+        resumeAfterEmptyCapture();
         return;
       }
 
       if (!dispatch("STT_OK").ok) return;
 
-      // Clinical thinking latency overlaps GPT request.
+      // A real new therapist turn supersedes any reply held during a
+      // floor-take. It was persisted server-side, so keep the visible
+      // transcript consistent with the record (it was never voiced).
+      floorTakenGenRef.current = null;
+      const held = heldReplyRef.current;
+      heldReplyRef.current = null;
+      if (held) {
+        setMessages((prev) => [
+          ...prev,
+          held.userMessage,
+          held.assistantMessage,
+        ]);
+      }
+
+      // Clinical thinking latency overlaps the GPT request and is measured
+      // from end-of-speech, so it never stacks on STT time.
+      const thinkMs = effectivePauseBeforeMs({
+        pauseBeforeMs: thinking.thinkingLatencyMs,
+        anchorAt: speechEndedAt,
+        now: performance.now(),
+      });
       const thinkPromise = new Promise<void>((resolve) => {
-        window.setTimeout(resolve, thinking.thinkingLatencyMs);
+        window.setTimeout(resolve, thinkMs);
       });
 
       setStatusKey("thinking");
@@ -583,6 +781,49 @@ export function TherapyRoomSession({
 
       // Consume only now — after non-empty transcript (Phase 9.1R Fix 3).
       const therapistInterrupted = interruptFlagRef.current.consumeForSubmit();
+
+      // Floor control: if the therapist starts a new utterance while the
+      // reply is generating, the patient yields instead of talking over them.
+      let floorDisposed = false;
+      let floorStop: (() => void) | null = null;
+      const disposeFloor = () => {
+        floorDisposed = true;
+        floorStop?.();
+        floorStop = null;
+      };
+      void startBargeInMonitor({
+        handoff: true,
+        minSpeechMs: FLOOR_TAKE_MIN_SPEECH_MS,
+        onBargeIn: (handoff) => {
+          if (
+            floorDisposed ||
+            endingRef.current ||
+            !fsmRef.current.isCurrent(generation) ||
+            fsmRef.current.getState() !== "WAITING_GPT"
+          ) {
+            handoff?.release();
+            return;
+          }
+          floorDisposed = true;
+          floorStop = null;
+          if (!dispatch("THERAPIST_RESUMED").ok) {
+            handoff?.release();
+            return;
+          }
+          floorTakenGenRef.current = generation;
+          telemetryRef.current.record("floor_yield", {
+            code: "during_generation",
+          });
+          handoffRef.current?.release();
+          handoffRef.current = handoff ?? null;
+          setPresence("listening", "floor");
+          setStatusKey("listening");
+          listenLoopRef.current();
+        },
+      }).then((stop) => {
+        if (floorDisposed) stop();
+        else floorStop = stop;
+      });
 
       let turn;
       try {
@@ -597,14 +838,28 @@ export function TherapyRoomSession({
         ]);
         turn = result;
       } catch {
+        disposeFloor();
         if (abort.signal.aborted) return;
+        if (!fsmRef.current.isCurrent(generation)) return;
         telemetryRef.current.record("error", { code: "gpt_network" });
         dispatch("GPT_FAIL");
         setStatusKey("error");
         return;
       }
+      disposeFloor();
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+        if (
+          turn.ok &&
+          !endingRef.current &&
+          floorTakenGenRef.current === generation
+        ) {
+          holdReply(turn.data.userMessage, turn.data.assistantMessage);
+        } else {
+          telemetryRef.current.record("stale_result_discarded");
+        }
+        return;
+      }
 
       telemetryRef.current.record("gpt_latency_ms", {
         valueMs: telemetryRef.current.elapsed(gptStarted),
@@ -651,7 +906,9 @@ export function TherapyRoomSession({
     [
       dispatch,
       endSession,
+      holdReply,
       locale,
+      resumeAfterEmptyCapture,
       session.id,
       session.language,
       setPresence,
@@ -666,9 +923,12 @@ export function TherapyRoomSession({
     if (vadRef.current) return;
 
     const generation = fsmRef.current.getGeneration();
+    // Live mic + pre-roll from a barge-in / floor-take, if any.
+    const handoff = handoffRef.current;
+    handoffRef.current = null;
     setPresence("listening", `listen-${turnIndexRef.current}`);
     setStatusKey("listening");
-    setTherapistSpeaking(false);
+    setTherapistSpeaking(Boolean(handoff));
 
     if (playbackEndedAtRef.current != null) {
       telemetryRef.current.record("mic_reopen_latency_ms", {
@@ -677,14 +937,51 @@ export function TherapyRoomSession({
       playbackEndedAtRef.current = null;
     }
 
+    let controller: EndpointController | null = null;
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
       const speechStartedAt = { current: null as number | null };
+      let vadLocal: VadController | null = null;
+      let commitRequested = false;
+
+      // Two-stage endpoint: a pause triggers speculative STT while the mic
+      // stays open; unfinished thoughts get more silence before commit.
+      controller = createEndpointController({
+        locale: locale === "ar" ? "ar" : "en",
+        transcribe: (audio, signal) =>
+          transcribeTherapistSpeech({
+            audio,
+            locale: session.language ?? locale,
+            signal,
+          }),
+        onCommit: () => {
+          commitRequested = true;
+          void vadLocal?.stop();
+        },
+        onEvent: (event) => {
+          if (event.type === "pause") {
+            telemetryRef.current.record("endpoint_pause");
+          } else if (event.type === "resumed") {
+            telemetryRef.current.record("endpoint_resumed");
+          } else if (event.type === "commit") {
+            telemetryRef.current.record("endpoint_commit_silence_ms", {
+              valueMs: event.silenceMs,
+              code: event.reason,
+            });
+          }
+        },
+      });
+      endpointRef.current = controller;
+      const endpoint = controller;
 
       const vad = await startHandsFreeVad({
         silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
         maxMs: 28000,
+        stream: handoff?.stream,
+        adoptStream: Boolean(handoff),
+        // Drained on the VAD's first audio callback: no capture gap.
+        preroll: handoff ? (cutoff: number) => handoff.drain(cutoff) : undefined,
         onSpeechStart: () => {
           speechStartedAt.current = telemetryRef.current.mark();
           setTherapistSpeaking(true);
@@ -707,44 +1004,97 @@ export function TherapyRoomSession({
           if (hit) interruptedByPatient = true;
           return hit;
         },
+        twoStage: {
+          maxSilenceMs: ENDPOINT_TIMING.maxSilenceMs,
+          resumeMinMs: ENDPOINT_TIMING.resumeMinMs,
+          onPause: (info) => {
+            if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+              return;
+            }
+            // VAD timestamps are Date.now()-based; anchor on performance.now().
+            const voicedAt =
+              performance.now() - Math.max(0, Date.now() - info.silenceStartedAt);
+            lastVoicedAtRef.current = voicedAt;
+            dispatch("PAUSE_DETECTED");
+            setTherapistSpeaking(false);
+            endpoint.pause({
+              wav: info.wav,
+              speechMs: info.speechMs,
+              silenceStartedAt: voicedAt,
+            });
+          },
+          onActivity: (active) => {
+            // Possible resume: hold the commit until confirmed or rejected.
+            endpoint.activity(active);
+          },
+          onResume: () => {
+            if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+              return;
+            }
+            lastVoicedAtRef.current = null;
+            endpoint.resumed();
+            dispatch("SPEECH_RESUMED");
+            setTherapistSpeaking(true);
+          },
+        },
       });
+      vadLocal = vad;
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
         vad.cancel();
+        endpoint.cancel();
         return;
       }
       if (fsmRef.current.getState() !== "LISTENING") {
         vad.cancel();
+        endpoint.cancel();
         return;
       }
 
       vadRef.current = vad;
+      if (commitRequested) void vad.stop();
       const wav = await vad.done;
-      vadRef.current = null;
+      if (vadRef.current === vad) vadRef.current = null;
+      const finalized = await endpoint.finalize();
+      if (endpointRef.current === endpoint) endpointRef.current = null;
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
         return;
       }
-      if (fsmRef.current.getState() !== "LISTENING") {
+      const after = fsmRef.current.getState();
+      if (after !== "LISTENING" && after !== "ENDPOINT_PENDING") {
         return;
       }
       if (!wav) {
-        // Empty — keep listening without leaving LISTENING.
-        listenLoopRef.current();
+        // Empty — keep listening (or voice a held reply).
+        if (after === "ENDPOINT_PENDING") dispatch("SPEECH_RESUMED");
+        resumeAfterEmptyCapture();
         return;
       }
 
       await processTherapistAudio(
         wav,
         interruptedByPatient ? "patient_interrupt" : "hands_free",
+        finalized.stt,
       );
     } catch {
+      controller?.cancel();
+      handoff?.release();
       telemetryRef.current.record("error", { code: "mic_denied" });
       dispatch("ERROR");
       setStatusKey("error");
       setPresence("idle", "mic-error");
     }
-  }, [dispatch, disorderSlug, processTherapistAudio, session.id, setPresence]);
+  }, [
+    dispatch,
+    disorderSlug,
+    locale,
+    processTherapistAudio,
+    resumeAfterEmptyCapture,
+    session.id,
+    session.language,
+    setPresence,
+  ]);
 
   useEffect(() => {
     listenLoopRef.current = () => {
@@ -1011,7 +1361,12 @@ export function TherapyRoomSession({
       const generation = fsmRef.current.getGeneration();
 
       // Text path: enter STT/GPT pipeline without mic.
-      if (fsmRef.current.getState() === "LISTENING") {
+      const textState = fsmRef.current.getState();
+      if (textState === "LISTENING" || textState === "ENDPOINT_PENDING") {
+        endpointRef.current?.cancel();
+        endpointRef.current = null;
+        vadRef.current?.cancel();
+        vadRef.current = null;
         dispatch("SPEECH_END");
       }
       const thinking = setPresence("thinking", `text-${turnIndexRef.current}`);

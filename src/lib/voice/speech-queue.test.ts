@@ -723,3 +723,57 @@ describe("playPatientSpeech progressive integration", () => {
     ).toBe(true);
   });
 });
+
+describe("Human Conversation Fidelity — start gate overlaps synthesis", () => {
+  beforeEach(() => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => `blob:mock-${Math.random()}`),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("TTS starts before the persona pause ends; first audio waits for the gate", async () => {
+    const playSpy = mockAudio(1);
+    let openGate!: () => void;
+    const gate = new Promise<void>((r) => {
+      openGate = r;
+    });
+    const synthStarted: number[] = [];
+    const done = playQueuedSpeech({
+      chunks: ["One.", "Two."],
+      startGate: gate,
+      synthesizeChunk: async (_t, i) => {
+        synthStarted.push(i);
+        return { ok: true, objectUrl: `blob:${i}` };
+      },
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    expect(synthStarted).toEqual([0, 1]);
+    expect(playSpy).not.toHaveBeenCalled();
+    openGate();
+    const result = await done;
+    expect(playSpy).toHaveBeenCalledTimes(2);
+    expect(result.metrics.chunksPlayed).toBe(2);
+  });
+
+  it("mid-utterance failure reports error only — never a completed reply", async () => {
+    mockAudio(1);
+    const onend = vi.fn();
+    const onerror = vi.fn();
+    const events: string[] = [];
+    await playQueuedSpeech({
+      chunks: ["One.", "Two."],
+      handlers: { onend, onerror },
+      onEvent: (e) => events.push(e.type),
+      synthesizeChunk: async (_t, i) =>
+        i === 0 ? { ok: true, objectUrl: "blob:0" } : { ok: false, reason: "failed" },
+    });
+    expect(onerror).toHaveBeenCalled();
+    expect(onend).not.toHaveBeenCalled();
+    expect(events).not.toContain("audio_queue_complete");
+  });
+});

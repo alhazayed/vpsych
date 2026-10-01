@@ -108,7 +108,70 @@ function splitClauses(sentence: string, maxChars: number): string[] {
   return parts.length > 0 ? parts : [sentence];
 }
 
-/** Hard-split oversized text on whitespace, then by char if needed. */
+/**
+ * Words before which a spoken phrase boundary sounds natural (connectives).
+ * Matched after stripping Arabic tashkeel/tatweel. EN + AR (MSA/Levantine).
+ */
+const BREAK_BEFORE = new Set([
+  "and", "but", "or", "so", "because", "although", "though", "which",
+  "when", "while", "then", "if", "unless", "until",
+  "و", "لكن", "ولكن", "بس", "لأن", "لان", "لأنه", "لانه", "عشان", "علشان",
+  "اللي", "الذي", "التي", "حتى", "لما", "إذا", "اذا", "لو", "وبعدين", "بعدين",
+  "يعني", "ثم", "أو", "او", "ولا",
+]);
+
+/**
+ * Words that must not END a chunk (they bind to the following word):
+ * articles, prepositions, complementizers. "أنا أعتقد أن" | "حالتك…" would
+ * be an audible broken boundary.
+ */
+const NO_BREAK_AFTER = new Set([
+  "the", "a", "an", "to", "of", "in", "on", "at", "for", "with", "from",
+  "my", "your", "his", "her", "their", "our", "this", "that", "very",
+  "أن", "ان", "إن", "انه", "أنه", "إنه", "في", "على", "عن", "من", "مع",
+  "إلى", "الى", "لـ", "بـ", "الـ", "هذا", "هذه", "هاد", "هاي", "كثير", "جدا",
+  "و", "ف",
+]);
+
+function normBreakWord(word: string): string {
+  return word
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670\u0640]/g, "")
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+}
+
+/**
+ * Choose where to break a word buffer that is about to overflow. Returns the
+ * index of the first word of the NEXT chunk (1..words.length-1), preferring
+ * the last connective in the back half, then avoiding a dangling
+ * function word, else the greedy position.
+ */
+function naturalBreakIndex(words: string[], maxChars: number): number {
+  const n = words.length;
+  // Prefer a connective boundary in the back half of the buffer.
+  let length = 0;
+  const startAt: number[] = [];
+  for (let i = 0; i < n; i++) {
+    startAt.push(length);
+    length += words[i]!.length + (i > 0 ? 1 : 0);
+  }
+  for (let i = n - 1; i >= 1; i--) {
+    if (startAt[i]! < maxChars * 0.5) break;
+    if (BREAK_BEFORE.has(normBreakWord(words[i]!))) return i;
+  }
+  // Otherwise do not end on a function word.
+  let idx = n;
+  while (idx > 1 && NO_BREAK_AFTER.has(normBreakWord(words[idx - 1]!))) {
+    idx -= 1;
+  }
+  return idx === n ? n : Math.max(1, idx);
+}
+
+/**
+ * Hard-split oversized text on whitespace (at natural phrase boundaries where
+ * possible), then by char if a single token exceeds maxChars. Text content
+ * and word order are preserved exactly.
+ */
 function hardSplit(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   const words = text.split(/\s+/).filter(Boolean);
@@ -120,24 +183,33 @@ function hardSplit(text: string, maxChars: number): string[] {
     return out;
   }
   const out: string[] = [];
-  let buf = "";
+  let buf: string[] = [];
+  const bufLen = () => buf.join(" ").length;
   for (const word of words) {
-    const next = buf ? `${buf} ${word}` : word;
-    if (next.length <= maxChars) {
-      buf = next;
+    const nextLen = buf.length === 0 ? word.length : bufLen() + 1 + word.length;
+    if (nextLen <= maxChars) {
+      buf.push(word);
       continue;
     }
-    if (buf) out.push(buf);
+    if (buf.length > 0) {
+      const cut = naturalBreakIndex(buf, maxChars);
+      out.push(buf.slice(0, cut).join(" "));
+      buf = buf.slice(cut);
+    }
+    // Carry-over plus the new word may still overflow — flush greedily.
+    while (buf.length > 0 && bufLen() + 1 + word.length > maxChars) {
+      out.push(buf.join(" "));
+      buf = [];
+    }
     if (word.length <= maxChars) {
-      buf = word;
+      buf.push(word);
     } else {
       for (let i = 0; i < word.length; i += maxChars) {
         out.push(word.slice(i, i + maxChars));
       }
-      buf = "";
     }
   }
-  if (buf) out.push(buf);
+  if (buf.length > 0) out.push(buf.join(" "));
   return out;
 }
 
