@@ -35,6 +35,8 @@ export type ConversationTelemetryKind =
   | "endpoint_resumed"
   /** Trailing silence actually waited before commit (ms); code = reason. */
   | "endpoint_commit_silence_ms"
+  /** Commit forced by the max-silence ceiling rather than a decision. */
+  | "endpoint_max_silence_commit"
   /** Speculative STT transcript reused for the message API (code = completeness). */
   | "speculative_stt_reused"
   /** Therapist speech onset → barge-in detection (ms). */
@@ -83,6 +85,7 @@ export type ConversationTelemetrySummary = {
   endpointPauses: number;
   endpointResumes: number;
   avgEndpointCommitSilenceMs: number | null;
+  endpointMaxSilenceCommits: number;
   speculativeSttReused: number;
   avgBargeInDetectMs: number | null;
   avgBargeInStopMs: number | null;
@@ -154,6 +157,7 @@ export function createConversationTelemetry(): {
       const bargeStop: number[] = [];
       let endpointPauses = 0;
       let endpointResumes = 0;
+      let endpointMaxSilenceCommits = 0;
       let speculativeSttReused = 0;
       let floorYields = 0;
       let heldRepliesPlayed = 0;
@@ -210,6 +214,9 @@ export function createConversationTelemetry(): {
             break;
           case "endpoint_commit_silence_ms":
             if (e.valueMs != null) endpointSilence.push(e.valueMs);
+            break;
+          case "endpoint_max_silence_commit":
+            endpointMaxSilenceCommits += 1;
             break;
           case "speculative_stt_reused":
             speculativeSttReused += 1;
@@ -279,6 +286,7 @@ export function createConversationTelemetry(): {
         endpointPauses,
         endpointResumes,
         avgEndpointCommitSilenceMs: avgOf(endpointSilence),
+        endpointMaxSilenceCommits,
         speculativeSttReused,
         avgBargeInDetectMs: avgOf(bargeDetect),
         avgBargeInStopMs: avgOf(bargeStop),
@@ -310,6 +318,7 @@ export function createConversationTelemetry(): {
         endpointPauses: full.endpointPauses,
         endpointResumes: full.endpointResumes,
         avgEndpointCommitSilenceMs: full.avgEndpointCommitSilenceMs,
+        endpointMaxSilenceCommits: full.endpointMaxSilenceCommits,
         speculativeSttReused: full.speculativeSttReused,
         avgBargeInDetectMs: full.avgBargeInDetectMs,
         avgBargeInStopMs: full.avgBargeInStopMs,

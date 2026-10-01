@@ -4,6 +4,8 @@ import {
   coalesceSpeechChunksToBudget,
   DEFAULT_MAX_SPEECH_CHUNK_CHARS,
   joinSpeechChunks,
+  splitLongFirstChunk,
+  FIRST_CHUNK_SOFT_MAX_CHARS,
   MAX_COALESCED_SPEECH_CHUNK_CHARS,
   MAX_PROGRESSIVE_TTS_CHUNKS,
   planSpeechChunksForPlayback,
@@ -203,5 +205,55 @@ describe("Human Conversation Fidelity — natural hard-split boundaries", () => 
   it("short acknowledgements stay one short chunk (short responses sound short)", () => {
     expect(chunkTextForSpeechPlayback("آه، فهمت.")).toEqual(["آه، فهمت."]);
     expect(chunkTextForSpeechPlayback("تمام.")).toEqual(["تمام."]);
+  });
+});
+
+describe("Human Conversation Fidelity — short first chunk for faster first audio", () => {
+  it("splits a long first sentence at its first clause boundary (Arabic)", () => {
+    const reply =
+      "والله يا دكتور صرلي فترة طويلة، ما بقدر أنام منيح وبصحى بالليل كذا مرة وأنا متضايق. بس اليوم أحسن شوي.";
+    const plan = planSpeechChunksForPlayback(reply);
+    expect(plan.mode).toBe("progressive");
+    if (plan.mode !== "progressive") return;
+    expect(plan.chunks[0]).toBe("والله يا دكتور صرلي فترة طويلة،");
+    expect(plan.chunks[0]!.length).toBeLessThanOrEqual(FIRST_CHUNK_SOFT_MAX_CHARS);
+    expect(joinSpeechChunks(plan.chunks)).toBe(reply);
+  });
+
+  it("falls back to a connective when the first sentence has no comma (English)", () => {
+    const reply =
+      "I have not been sleeping well at all lately because work keeps me up thinking about everything I did wrong.";
+    const plan = planSpeechChunksForPlayback(reply);
+    if (plan.mode !== "progressive") throw new Error("expected progressive");
+    expect(plan.chunks[0]).toBe("I have not been sleeping well at all lately");
+    expect(plan.chunks[1]!.startsWith("because")).toBe(true);
+    expect(joinSpeechChunks(plan.chunks)).toBe(reply);
+  });
+
+  it("leaves short first sentences and short replies alone", () => {
+    for (const short of [
+      "آه، فهمت. يعني النوم صار صعب من فترة؟",
+      "I see, that sounds hard. Tell me more about it.",
+    ]) {
+      const plan = planSpeechChunksForPlayback(short);
+      if (plan.mode !== "progressive") throw new Error("expected progressive");
+      // Under the first-chunk limit: identical to the plain chunker output.
+      expect(plan.chunks).toEqual(chunkTextForSpeechPlayback(short));
+    }
+  });
+
+  it("never clips a micro tail into its own chunk", () => {
+    const chunks = splitLongFirstChunk([
+      "I have been thinking about what you said last week about my mother, okay.",
+    ]);
+    expect(chunks).toHaveLength(1);
+  });
+
+  it("can be disabled", () => {
+    const reply =
+      "I have not been sleeping well at all lately because work keeps me up thinking about everything I did wrong.";
+    const plan = planSpeechChunksForPlayback(reply, { firstChunkSoftMaxChars: 0 });
+    if (plan.mode !== "progressive") throw new Error("expected progressive");
+    expect(plan.chunks).toEqual([reply]);
   });
 });

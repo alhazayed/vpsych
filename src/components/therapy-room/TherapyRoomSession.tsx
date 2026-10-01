@@ -418,7 +418,12 @@ export function TherapyRoomSession({
       /** True once patient audio is actually audible (play() resolved). */
       let firstAudioStarted = false;
 
-      const stopMonitor = await startBargeInMonitor({
+      /** Playback finished / cancelled — a late monitor must stop itself. */
+      let playbackDone = false;
+      // Start the barge-in mic in PARALLEL with TTS: getUserMedia +
+      // AudioContext startup must not delay the first patient word. First
+      // audio needs ≥1 TTS round-trip, so the monitor is live before it.
+      const monitorReady = startBargeInMonitor({
         // Hand the live mic + pre-roll to capture so the interruption's first
         // words ("طيب بس…") reach STT instead of being lost to mic reopen.
         handoff: true,
@@ -468,12 +473,18 @@ export function TherapyRoomSession({
           }
         },
       });
-      // Playback may have been cancelled while the monitor was starting.
-      if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) {
-        stopMonitor();
-      } else {
-        bargeInStopRef.current = stopMonitor;
-      }
+      void monitorReady.then((stopMonitor) => {
+        // Playback may have ended or been cancelled while the mic started.
+        if (
+          playbackDone ||
+          abort.signal.aborted ||
+          !fsmRef.current.isCurrent(generation)
+        ) {
+          stopMonitor();
+        } else {
+          bargeInStopRef.current = stopMonitor;
+        }
+      });
 
       const spoken = await playPatientSpeech({
         text,
@@ -509,16 +520,19 @@ export function TherapyRoomSession({
             }
           },
           onend: () => {
+            playbackDone = true;
             bargeInStopRef.current?.();
             bargeInStopRef.current = null;
           },
           onerror: () => {
+            // Not final: a legacy-Blob fallback may still play after this.
             bargeInStopRef.current?.();
             bargeInStopRef.current = null;
           },
         },
       });
 
+      playbackDone = true;
       bargeInStopRef.current?.();
       bargeInStopRef.current = null;
       playbackAbortRef.current = null;
@@ -949,12 +963,22 @@ export function TherapyRoomSession({
       // stays open; unfinished thoughts get more silence before commit.
       controller = createEndpointController({
         locale: locale === "ar" ? "ar" : "en",
-        transcribe: (audio, signal) =>
-          transcribeTherapistSpeech({
+        transcribe: async (audio, signal) => {
+          const sttStarted = telemetryRef.current.mark();
+          const result = await transcribeTherapistSpeech({
             audio,
             locale: session.language ?? locale,
             signal,
-          }),
+          });
+          // Speculative STT is the main share of pause → commit time.
+          if (!signal.aborted) {
+            telemetryRef.current.record("stt_latency_ms", {
+              valueMs: telemetryRef.current.elapsed(sttStarted),
+              code: "speculative",
+            });
+          }
+          return result;
+        },
         onCommit: () => {
           commitRequested = true;
           void vadLocal?.stop();
@@ -969,6 +993,10 @@ export function TherapyRoomSession({
               valueMs: event.silenceMs,
               code: event.reason,
             });
+            if (event.reason === "vad_finished") {
+              // Hit the max-silence ceiling (slow STT or unfinished thought).
+              telemetryRef.current.record("endpoint_max_silence_commit");
+            }
           }
         },
       });

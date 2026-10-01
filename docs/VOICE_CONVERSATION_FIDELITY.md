@@ -241,3 +241,38 @@ the soft-release baseline already states.
 5. Evaluate streaming STT and TTS (ElevenLabs WebSocket or OpenAI Realtime) for
    sub-second first audio, behind a flag. This would replace transport only;
    the clinical brain, fence and FSM concepts would stay.
+
+---
+
+## 10. Latency follow-up — live preview session (2026-10-01)
+
+Source: PHI-free `conversationTelemetry` counters plus message timestamps for
+one 4-turn English Therapy Room session on the #260 preview. No content was
+read.
+
+| Stage (avg per turn) | Time | Driver |
+|---|---|---|
+| End of speech → turn committed | 2.24 s | 850 ms pause + speculative STT (STT latency was not recorded; fixed below) |
+| Message API (client-measured) | 3.25 s | ~12 serial DB round-trips + `gpt-5` (minimal reasoning, non-streamed) |
+| Reply → first patient audio | 2.04 s | ElevenLabs `eleven_multilingual_v2`, whole first chunk |
+| **Total** | **≈ 7.5 s** | |
+
+Barge-in in the same session: detection 293 ms, audio stop 3 ms, 2 barge-ins,
+2 endpoint resumes.
+
+Voice-layer changes made in response:
+
+- The barge-in mic monitor now starts **in parallel** with the first TTS
+  request. Before, `getUserMedia` and AudioContext startup ran serially in
+  front of it.
+- A first sentence over 80 chars is split at its first clause boundary or
+  connective (`splitLongFirstChunk`), so the first TTS request is shorter.
+  Stitching keeps the intonation continuous.
+- Telemetry records speculative STT latency (`avgSttMs`) and
+  `endpointMaxSilenceCommits`.
+
+Larger levers are outside the voice layer or carry quality trade-offs, so they
+need a decision: the TTS model (`eleven_flash_v2_5` / `eleven_turbo_v2_5`), the
+STT model (`gpt-4o-mini-transcribe`), parallelising the message route's DB
+work, and streaming the patient reply into TTS. Also note: this session made
+6 speculative STT calls for 4 turns, against a 120/h `stt` rate budget.

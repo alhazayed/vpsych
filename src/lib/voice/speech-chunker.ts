@@ -46,6 +46,18 @@ export const MAX_COALESCED_SPEECH_CHUNK_CHARS = 480;
 const TERMINATOR_RE = /([.!?…。؟]+)(\s+|$)/g;
 const CLAUSE_RE = /([,،；;؛]+)(\s+|$)/g;
 
+/**
+ * Human Conversation Fidelity — first-audio latency. TTS time grows with the
+ * length of the text, and nothing is audible until the first chunk is ready.
+ * A first sentence longer than this is split at its first natural clause
+ * boundary (comma / Arabic comma / semicolon, or before a connective) so the
+ * patient starts speaking sooner. Request stitching keeps the intonation
+ * continuous across the split. Later chunks are unaffected.
+ */
+export const FIRST_CHUNK_SOFT_MAX_CHARS = 80;
+/** Never create a first chunk shorter than this (no clipped openers). */
+const FIRST_CHUNK_MIN_CHARS = 20;
+
 export type SpeechChunkerOptions = {
   maxChars?: number;
   minChars?: number;
@@ -53,6 +65,8 @@ export type SpeechChunkerOptions = {
   maxChunks?: number;
   /** Override {@link MAX_COALESCED_SPEECH_CHUNK_CHARS} (tests). */
   maxCoalescedChars?: number;
+  /** Override {@link FIRST_CHUNK_SOFT_MAX_CHARS}; 0 disables the split. */
+  firstChunkSoftMaxChars?: number;
 };
 
 export type SpeechPlaybackPlan =
@@ -375,6 +389,54 @@ export function coalesceSpeechChunksToBudget(
 }
 
 /**
+ * Split an over-long FIRST chunk at its earliest natural boundary within
+ * [FIRST_CHUNK_MIN_CHARS, softMax]: clause punctuation first, else before a
+ * connective. Returns the chunks unchanged when no natural split exists.
+ */
+export function splitLongFirstChunk(
+  chunks: string[],
+  softMax: number = FIRST_CHUNK_SOFT_MAX_CHARS,
+): string[] {
+  const first = chunks[0];
+  if (!first || softMax <= 0 || first.length <= softMax) return chunks;
+
+  let cut = -1;
+  const clause = new RegExp(CLAUSE_RE.source, "g");
+  let m: RegExpExecArray | null;
+  while ((m = clause.exec(first)) !== null) {
+    const end = m.index + m[1]!.length;
+    if (end > softMax) break;
+    if (end >= FIRST_CHUNK_MIN_CHARS) {
+      cut = end;
+      break;
+    }
+  }
+  if (cut < 0) {
+    // No early clause punctuation: break before a connective instead.
+    const words = first.split(" ");
+    let pos = 0;
+    for (let i = 0; i < words.length; i++) {
+      if (
+        i > 0 &&
+        pos - 1 >= FIRST_CHUNK_MIN_CHARS &&
+        pos - 1 <= softMax &&
+        BREAK_BEFORE.has(normBreakWord(words[i]!))
+      ) {
+        cut = pos - 1;
+        break;
+      }
+      pos += words[i]!.length + 1;
+    }
+  }
+  if (cut < 0) return chunks;
+  const head = first.slice(0, cut).trim();
+  const tail = first.slice(cut).trim();
+  // Never leave a clipped micro-tail ("…, ok.") as its own chunk.
+  if (!head || tail.length < FIRST_CHUNK_MIN_CHARS) return chunks;
+  return [head, tail, ...chunks.slice(1)];
+}
+
+/**
  * Plan TTS playback for one patient response under the progressive chunk budget.
  *
  * - Normal replies → progressive chunks (≤ {@link MAX_PROGRESSIVE_TTS_CHUNKS}).
@@ -404,7 +466,15 @@ export function planSpeechChunksForPlayback(
   }
 
   if (chunks.length <= maxChunks) {
-    return { mode: "progressive", chunks };
+    // Faster first audio when a split still fits the request budget.
+    const firstSplit = splitLongFirstChunk(
+      chunks,
+      options.firstChunkSoftMaxChars ?? FIRST_CHUNK_SOFT_MAX_CHARS,
+    );
+    return {
+      mode: "progressive",
+      chunks: firstSplit.length <= maxChunks ? firstSplit : chunks,
+    };
   }
 
   const coalesced = coalesceSpeechChunksToBudget(
