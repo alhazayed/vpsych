@@ -34,6 +34,7 @@ export type ConversationEvent =
 export type ConversationStatusKey =
   | "ready"
   | "listening"
+  | "confirmingEndpoint"
   | "processingStt"
   | "thinking"
   | "avatarSpeaking"
@@ -62,6 +63,8 @@ const TRANSITIONS: Record<
     STT_FAIL: "ERROR",
     ERROR: "ERROR",
     PAUSE: "PAUSED",
+    // Therapist resumed while STT in flight — cancel pending turn.
+    BARGE_IN: "LISTENING",
     END: "IDLE",
   },
   WAITING_GPT: {
@@ -69,6 +72,8 @@ const TRANSITIONS: Record<
     GPT_FAIL: "ERROR",
     ERROR: "ERROR",
     PAUSE: "PAUSED",
+    // Therapist resumed while GPT in flight — cancel pending response.
+    BARGE_IN: "LISTENING",
     END: "IDLE",
   },
   AVATAR_SPEAKING: {
