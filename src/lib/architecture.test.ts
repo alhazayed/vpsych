@@ -4,6 +4,20 @@ import { join } from "node:path";
 
 const root = join(process.cwd(), "src");
 
+/**
+ * Patient-turn cognition lives in `lib/sessions/clinical-turn.ts`, shared by
+ * the classic /message route and the realtime /message/stream route. Engine
+ * invariants are asserted against the route + that module together; the
+ * "classic and stream routes delegate to the shared pipeline" test below
+ * guarantees neither route can fork it.
+ */
+function messagePipelineSource(): string {
+  return [
+    readFileSync(join(root, "app/api/sessions/[id]/message/route.ts"), "utf8"),
+    readFileSync(join(root, "lib/sessions/clinical-turn.ts"), "utf8"),
+  ].join("\n");
+}
+
 describe("architecture invariants", () => {
   it("does not re-export ACE bridge from the CGE barrel (breaks ACE↔CGE cycle)", () => {
     const barrel = readFileSync(join(root, "lib/cge/index.ts"), "utf8");
@@ -29,10 +43,7 @@ describe("architecture invariants", () => {
 
   it("session start/message RPCs use prepareMessageRpc with HMAC when needed", () => {
     const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     expect(start).toMatch(/prepareMessageRpc/);
     expect(message).toMatch(/prepareMessageRpc/);
     expect(message).toMatch(/insert_assistant_message/);
@@ -57,10 +68,7 @@ describe("architecture invariants", () => {
   });
 
   it("wires Conversation Behaviour Engine into the message route (Mission 7)", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     expect(message).toMatch(/planConversationBehaviour/);
     expect(message).toMatch(/behaviourReinforcement/);
     expect(message).toMatch(/CBE plan failed/);
@@ -226,19 +234,13 @@ describe("architecture invariants", () => {
   });
 
   it("does not feed VMHC private notes into the patient message route", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     expect(message).not.toMatch(/session_private_notes/);
     expect(message).not.toMatch(/private.?notes/i);
   });
 
   it("Emotion Engine soft-fails on the message path and exposes a session API", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     const emotionApi = readFileSync(
       join(root, "app/api/sessions/[id]/emotion/route.ts"),
       "utf8",
@@ -254,10 +256,7 @@ describe("architecture invariants", () => {
   });
 
   it("Mission 8 adaptation is best-effort on the message route", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     const barrel = readFileSync(join(root, "lib/adaptation/index.ts"), "utf8");
     expect(message).toMatch(/processTherapistTurn/);
     expect(message).toMatch(/adaptationBlock/);
@@ -268,10 +267,7 @@ describe("architecture invariants", () => {
   });
 
   it("Mission 4 long-term patient memory is wired best-effort on message + end", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     const end = readFileSync(
       join(root, "app/api/sessions/[id]/end/route.ts"),
       "utf8",
@@ -288,10 +284,7 @@ describe("architecture invariants", () => {
   });
 
   it("wires Mission 10 Humanization Engine into the message route", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     const barrel = readFileSync(join(root, "lib/humanization/index.ts"), "utf8");
     expect(message).toMatch(/buildHumanizationTurn/);
     expect(message).toMatch(/humanizationEnabled/);
@@ -413,10 +406,7 @@ describe("architecture invariants", () => {
       join(root, "lib/clinical-intelligence/promote.ts"),
       "utf8",
     );
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
     const generator = readFileSync(
       join(root, "lib/case-engine/generator.ts"),
@@ -454,10 +444,7 @@ describe("architecture invariants", () => {
   });
 
   it("Stage 6 preserves Adaptation→resolve→Memory→Emotion→CBE→Humanization order", () => {
-    const message = readFileSync(
-      join(root, "app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    const message = messagePipelineSource();
     // Match call sites, not imports.
     const adp = message.indexOf("const adapted = processTherapistTurn");
     const resolve = message.indexOf("const resolved = resolveAvatar");
@@ -624,6 +611,58 @@ describe("architecture invariants", () => {
     ).not.toThrow();
   });
 
+  it("classic and stream routes delegate to the shared clinical turn pipeline", () => {
+    const classic = readFileSync(
+      join(root, "app/api/sessions/[id]/message/route.ts"),
+      "utf8",
+    );
+    const stream = readFileSync(
+      join(root, "app/api/sessions/[id]/message/stream/route.ts"),
+      "utf8",
+    );
+    const streamTurn = readFileSync(
+      join(root, "lib/sessions/stream-turn.ts"),
+      "utf8",
+    );
+    const shared = readFileSync(
+      join(root, "lib/sessions/clinical-turn.ts"),
+      "utf8",
+    );
+
+    // Both transports run the same preparation (auth/session/engines).
+    for (const route of [classic, stream]) {
+      expect(route).toMatch(/prepareClinicalTurn\(/);
+      expect(route).toMatch(/parseTurnMessage\(/);
+      expect(route).toMatch(/rateLimit\(/);
+      expect(route).toMatch(/auth\.getUser\(\)/);
+      // No route re-implements a cognition engine.
+      for (const engine of [
+        /processTherapistTurn\(/,
+        /processEmotionTurn\(/,
+        /planConversationBehaviour\(/,
+        /decidePatientTurn\(/,
+        /buildHumanizationTurn\(/,
+        /validatePatientReply\(/,
+        /insert_assistant_message/,
+      ]) {
+        expect(route).not.toMatch(engine);
+      }
+    }
+    // Same canonical gate + persistence for both.
+    expect(classic).toMatch(/generateValidatedReply\(/);
+    expect(classic).toMatch(/persistAssistantReply\(/);
+    expect(streamTurn).toMatch(/generateValidatedReply\(/);
+    expect(streamTurn).toMatch(/persistAssistantReply\(/);
+    // True provider streaming — never a progressive reveal of a finished reply.
+    expect(streamTurn).toMatch(/generatePatientReplyStream\(/);
+    expect(stream).not.toMatch(/progressiveTokens|progressiveRevealEvents/);
+    expect(streamTurn).not.toMatch(/progressiveTokens|progressiveRevealEvents/);
+    expect(stream).not.toMatch(/classicMessagePost/);
+    // Live 4-arg RPC contract: the reply stays linked to its therapist turn.
+    expect(shared).toMatch(/userMessageId: String\(userMsg\.id\)/);
+    expect(shared).toMatch(/validatePatientReply\(/);
+  });
+
   it("Stage 11 Realtime owns presentation only and never owns patient mind", () => {
     const barrel = readFileSync(join(root, "lib/realtime/index.ts"), "utf8");
     const bridge = readFileSync(
@@ -667,7 +706,10 @@ describe("architecture invariants", () => {
     expect(summary).toMatch(/rateLimit/);
     expect(admin).toMatch(/requireApiAdmin/);
     expect(admin).toMatch(/rateLimit/);
-    expect(stream).toMatch(/classicMessagePost|POST as classicMessagePost/);
+    // The stream route shares cognition with /message instead of re-invoking
+    // or forking it (see "classic and stream routes delegate…" below).
+    expect(stream).toMatch(/prepareClinicalTurn/);
+    expect(stream).toMatch(/runStreamingClinicalTurn/);
     expect(stream).toMatch(/isRealtimeStreamingEnabled/);
     expect(pipeline).toMatch(/therapistInterrupted/);
 
