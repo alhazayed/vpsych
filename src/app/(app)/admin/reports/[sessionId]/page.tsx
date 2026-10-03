@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
+import { FallbackReportNotice } from "@/components/admin/FallbackReportNotice";
+import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { requireAdmin } from "@/lib/auth";
 import { logSecurityEvent } from "@/lib/security-audit";
 import type { SessionReport } from "@/lib/types";
@@ -64,6 +66,11 @@ export default async function AdminReportDetailPage({ params }: Props) {
           ? ` · ${(report as SessionReport).language}`
           : ""}
       </p>
+      {isHeuristicReportScores(report.scores) ? (
+        <div className="mt-6">
+          <FallbackReportNotice sessionId={sessionId} />
+        </div>
+      ) : null}
       <div className="mt-6">
         <ReportView report={report as SessionReport} />
       </div>

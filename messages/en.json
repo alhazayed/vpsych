@@ -145,7 +145,29 @@
     "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals.",
     "graph": {
       "title": "Competency Graph",
-      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways."
+      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways.",
+      "view": {
+        "loading": "Loading competency graph…",
+        "loadFailed": "Could not load the competency graph. Reload the page to try again.",
+        "networkError": "Network error. Check your connection and try again.",
+        "rcaFailed": "Could not build the root-cause report.",
+        "search": "Search competencies",
+        "domain": "Domain",
+        "allDomains": "All domains",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "expand": "Show all",
+        "collapse": "Show fewer",
+        "mastered": "Mastered",
+        "developing": "Developing",
+        "blocked": "Blocked",
+        "notAttempted": "Not attempted",
+        "counts": "{nodes} competencies · {edges} links",
+        "instructorMode": "instructor mode",
+        "nodeState": "{stage} · score {score} · confidence {confidence}",
+        "requires": "Requires: {list}",
+        "showingSome": "Showing 8 of {total}. Select “Show all” to see the full pathway."
+      }
     },
     "supervisor": {
       "title": "Supervisor AI",
@@ -500,7 +522,13 @@
       "next2": "Practice again with another persona to keep building clinical skills. Submit expert feedback through the channel named in your invitation.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
-      "viewReport": "View report"
+      "viewReport": "View report",
+      "finalize": {
+        "pending": "Preparing your performance report…",
+        "done": "Your performance report has been prepared for your instructor.",
+        "error": "The performance report could not be prepared yet. Your transcript is saved.",
+        "retry": "Try again"
+      }
     }
   },
   "session": {
@@ -555,10 +583,13 @@
     "pipelineVoice": "Voice pipeline",
     "pipelineText": "Text only",
     "start": {
-      "failed": "Could not start session",
+      "failed": "Could not start the session. Try again.",
       "networkError": "Network error",
       "starting": "Starting…",
-      "cta": "Start 40-min voice session"
+      "cta": "Start 40-min voice session",
+      "signedOut": "Your sign-in has expired. Sign in again to start a session.",
+      "rateLimited": "You have started many sessions recently. Wait a while and try again.",
+      "patientUnavailable": "This patient is not available right now. Choose another patient."
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
@@ -723,11 +754,24 @@
       "filterAll": "All",
       "showingLabel": "Showing #COUNT# reports",
       "emptyFilteredTitle": "No reports match these filters",
-      "emptyFilteredDescription": "Try clearing filters or broadening your search."
+      "emptyFilteredDescription": "Try clearing filters or broadening your search.",
+      "fallbackBadge": "Fallback"
     },
     "reportDetail": {
       "back": "All reports",
-      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})"
+      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})",
+      "fallback": {
+        "title": "AI examiner was unavailable for this report",
+        "body": "These scores are a keyword-based fallback estimate, not an AI examiner assessment, and are excluded from the report average. Regenerate once the AI provider is available again; the transcript is unchanged and the report is only replaced if the examiner succeeds.",
+        "regenerate": "Regenerate with AI examiner",
+        "regenerating": "Regenerating…",
+        "success": "Report regenerated.",
+        "errorAiUnavailable": "The AI examiner is still unavailable. The report was not changed; try again later.",
+        "errorAlreadyUpdated": "This report has already been updated. Reloading.",
+        "errorRateLimited": "Too many regeneration attempts. Wait a while and try again.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not regenerate the report. Try again."
+      }
     },
     "testTranscript": {
       "title": "Admin test transcript",
@@ -1404,7 +1448,16 @@
       "clearLearnerFilter": "Clear learner filter",
       "viewLearner": "View learner",
       "staleExplanation": "Past expected session duration. This session remains marked active but has exceeded its configured time limit. It will be expired by maintenance or the next defensive refresh.",
-      "workingSetBadge": "Most recent 500 matching"
+      "workingSetBadge": "Most recent 500 matching",
+      "generateReport": {
+        "cta": "Generate report",
+        "generating": "Generating report…",
+        "errorRateLimited": "Too many attempts. Wait a while and try again.",
+        "errorMisconfigured": "Report writing is not configured on the server (REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY).",
+        "errorEmpty": "This session has no therapist turns to assess.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not generate the report. Try again."
+      }
     },
     "contentHub": {
       "title": "Content library",

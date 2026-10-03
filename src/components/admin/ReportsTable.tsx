@@ -13,6 +13,8 @@ export type ReportRow = {
   disorder: string;
   language: string;
   score: number | null;
+  /** Scores came from the heuristic fallback, not the AI examiner. */
+  fallback?: boolean;
   status: string;
   statusLabel: string;
   createdAt: string;
@@ -40,6 +42,7 @@ export function ReportsTable({
     showingLabel: string;
     filterLanguage: string;
     filterAll: string;
+    fallbackBadge: string;
   };
 }) {
   const [q, setQ] = useState("");
@@ -189,8 +192,21 @@ export function ReportsTable({
                         }
                       />
                     </td>
-                    <td className="px-4 py-3 text-end font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)] md:px-6">
-                      {r.score != null ? r.score : "—"}
+                    <td className="whitespace-nowrap px-4 py-3 text-end md:px-6">
+                      <span
+                        className={`font-[family-name:var(--font-headline)] text-lg font-semibold ${
+                          r.fallback
+                            ? "text-[var(--on-surface-variant)]"
+                            : "text-[var(--primary)]"
+                        }`}
+                      >
+                        {r.score != null ? r.score : "—"}
+                      </span>
+                      {r.fallback ? (
+                        <span className="ms-2 align-middle">
+                          <StatusBadge label={labels.fallbackBadge} tone="warning" />
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
