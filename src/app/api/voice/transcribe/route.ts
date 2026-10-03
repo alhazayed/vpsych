@@ -17,6 +17,7 @@ import {
   notConfiguredError,
   openAISpeechLanguage,
   speechLocaleTag,
+  sttProviderFailure,
   type TranscribeSuccess,
 } from "@/lib/voice/stt";
 import { sanitizeProviderError } from "@/lib/safe-client-error";
@@ -118,17 +119,13 @@ export async function POST(request: Request) {
     console.warn(
       "[stt]",
       error instanceof Error ? error.message : String(error),
+      error instanceof OpenAIServiceError
+        ? { kind: error.kind, providerCode: error.providerCode ?? null }
+        : "",
     );
     const mapped =
       error instanceof OpenAIServiceError
-        ? {
-            error: "Speech transcription failed",
-            code: error.code || "OPENAI_STT_FAILED",
-            status:
-              error.status && error.status >= 400 && error.status < 600
-                ? error.status
-                : 502,
-          }
+        ? sttProviderFailure(error)
         : {
             ...sanitizeProviderError(error, {
               code: "OPENAI_STT_FAILED",
