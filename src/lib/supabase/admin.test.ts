@@ -34,15 +34,18 @@ describe("supabase admin helpers", () => {
     const userClient = { tag: "user" } as never;
     const sessionId = "11111111-1111-1111-1111-111111111111";
     const content = "legitimate AI reply";
+    const userMessageId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
     const prepared = prepareMessageRpc(userClient, {
       sessionId,
       content,
       role: "assistant",
+      userMessageId,
     });
     expect(prepared.ok).toBe(true);
     if (!prepared.ok) return;
     expect(prepared.usingServiceRole).toBe(false);
     expect(prepared.client).toBe(userClient);
+    expect(prepared.args.p_user_message_id).toBe(userMessageId);
     expect(prepared.args.p_sig).toBe(
       signSessionMessage({
         sessionId,
@@ -51,6 +54,17 @@ describe("supabase admin helpers", () => {
         key: "unit-test-report-key",
       }),
     );
+  });
+
+  it("prepareMessageRpc requires userMessageId for assistant role", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+    const prepared = prepareMessageRpc({ tag: "user" } as never, {
+      sessionId: "11111111-1111-1111-1111-111111111111",
+      content: "x",
+      role: "assistant",
+    });
+    expect(prepared.ok).toBe(false);
   });
 
   it("prepareMessageRpc fails closed without service role or signing key", () => {

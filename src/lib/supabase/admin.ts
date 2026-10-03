@@ -63,6 +63,8 @@ export function prepareMessageRpc(
     sessionId: string;
     content: string;
     role: MessageRpcRole;
+    /** Required when role is assistant (Phase 9.1S atomic tip identity). */
+    userMessageId?: string | null;
   },
 ): PreparedMessageRpc {
   const service = createServiceClient();
@@ -73,6 +75,7 @@ export function prepareMessageRpc(
     content: params.content,
     role: params.role,
     usingServiceRole,
+    userMessageId: params.userMessageId,
   });
   if (!signed.ok) return signed;
   return {

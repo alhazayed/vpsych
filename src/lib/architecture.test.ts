@@ -36,6 +36,7 @@ describe("architecture invariants", () => {
     expect(start).toMatch(/prepareMessageRpc/);
     expect(message).toMatch(/prepareMessageRpc/);
     expect(message).toMatch(/insert_assistant_message/);
+    expect(message).toMatch(/userMessageId: String\(userMsg\.id\)/);
     expect(start).toMatch(/insert_system_message/);
     expect(start).not.toMatch(/error: "Server misconfigured"/);
     expect(message).not.toMatch(/error: "Server misconfigured"/);
