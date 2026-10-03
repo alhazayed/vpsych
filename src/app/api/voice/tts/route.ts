@@ -12,6 +12,7 @@ import {
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
+import { createServerTiming } from "@/lib/server-timing";
 import {
   elevenLabsSettingsFromEffective,
   liveSwitchVoice,
@@ -65,10 +66,13 @@ function boundedContext(value: unknown): string | undefined {
  */
 export async function POST(request: Request) {
   const requestId = resolveRequestId(request);
+  // Latency diagnosis (durations only) → DevTools "Server Timing".
+  const timing = createServerTiming();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  timing.mark("auth");
   if (!user) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -77,6 +81,7 @@ export async function POST(request: Request) {
   }
 
   const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
+  timing.mark("ratelimit");
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -104,6 +109,7 @@ export async function POST(request: Request) {
       voiceId: body.voiceId,
       voiceIdAr: body.voiceIdAr,
     });
+    timing.mark("voice");
 
     // Mission 3 — live clinical emotion switching when a registry profile exists.
     let clinicalVoiceSettings = undefined as
@@ -143,6 +149,8 @@ export async function POST(request: Request) {
       previousText: boundedContext(body.previousText),
       nextText: boundedContext(body.nextText),
     });
+    // Time until ElevenLabs started streaming (or a cache hit).
+    timing.mark("elevenlabs");
 
     return new NextResponse(result.body, {
       status: 200,
@@ -157,6 +165,7 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        "Server-Timing": timing.header(),
         ...requestIdHeaders(requestId),
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }
