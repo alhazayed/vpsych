@@ -1425,7 +1425,16 @@
       "clearLearnerFilter": "مسح تصفية المتدرب",
       "viewLearner": "عرض المتدرب",
       "staleExplanation": "تجاوزت المدة المتوقعة للجلسة. ما زالت مُعلَّمة كنشطة لكنها تجاوزت الحد الزمني المضبوط. ستُنهى عبر الصيانة أو عند التحديث الدفاعي التالي.",
-      "workingSetBadge": "أحدث 500 مطابقة"
+      "workingSetBadge": "أحدث 500 مطابقة",
+      "generateReport": {
+        "cta": "إنشاء التقرير",
+        "generating": "جارٍ إنشاء التقرير…",
+        "errorRateLimited": "محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً.",
+        "errorMisconfigured": "كتابة التقارير غير مهيّأة على الخادم (REPORT_WRITE_KEY أو SUPABASE_SERVICE_ROLE_KEY).",
+        "errorEmpty": "لا تتضمن هذه الجلسة مداخلات للمعالج لتقييمها.",
+        "errorNetwork": "خطأ في الشبكة. تحقّق من اتصالك وحاول مجدداً.",
+        "errorGeneric": "تعذّر إنشاء التقرير. حاول مجدداً."
+      }
     },
     "contentHub": {
       "title": "مكتبة المحتوى",

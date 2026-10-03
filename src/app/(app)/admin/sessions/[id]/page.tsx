@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { GenerateReportButton } from "@/components/admin/GenerateReportButton";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -172,6 +173,14 @@ export default async function AdminSessionDetailPage({
     created_at: m.created_at,
   }));
 
+  // Finished learner sessions with therapist turns but no report (tab closed,
+  // expiry cron, failed end request) can be assessed on demand.
+  const canGenerateReport =
+    !report &&
+    status !== "active" &&
+    !isAdminTestClinicalSnapshot(session.clinical_snapshot) &&
+    transcript.some((m) => m.role === "user");
+
   return (
     <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 md:px-8">
       <AdminPageHeader
@@ -201,6 +210,8 @@ export default async function AdminSessionDetailPage({
               >
                 {t("actionReport")}
               </Link>
+            ) : canGenerateReport ? (
+              <GenerateReportButton sessionId={session.id} />
             ) : null}
           </div>
         }

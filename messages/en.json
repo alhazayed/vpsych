@@ -1426,7 +1426,16 @@
       "clearLearnerFilter": "Clear learner filter",
       "viewLearner": "View learner",
       "staleExplanation": "Past expected session duration. This session remains marked active but has exceeded its configured time limit. It will be expired by maintenance or the next defensive refresh.",
-      "workingSetBadge": "Most recent 500 matching"
+      "workingSetBadge": "Most recent 500 matching",
+      "generateReport": {
+        "cta": "Generate report",
+        "generating": "Generating report…",
+        "errorRateLimited": "Too many attempts. Wait a while and try again.",
+        "errorMisconfigured": "Report writing is not configured on the server (REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY).",
+        "errorEmpty": "This session has no therapist turns to assess.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not generate the report. Try again."
+      }
     },
     "contentHub": {
       "title": "Content library",

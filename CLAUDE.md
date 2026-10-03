@@ -169,7 +169,10 @@ Write rules that RLS enforces and application code must respect:
   A report persisted from the heuristic fallback (`scientific_provenance.
   assessment_mode = 'heuristic_fallback'`) may be replaced once by an admin via
   `POST /api/admin/reports/[sessionId]/regenerate` (`lib/admin/report-regenerate.ts`);
-  AI-examiner reports are never overwritten.
+  AI-examiner reports are never overwritten. A finished session with no report
+  (tab closed, expiry cron — which never assesses — or a failed end request) is
+  finalized by the learner's complete page via `/end`, or by an admin via
+  `POST /api/admin/reports/[sessionId]/generate`.
 - Reads of `session_reports` are gated on `is_admin()`. Never expose reports on
   a therapist-facing API.
 - Roles live in `profiles.role`, never in `user_metadata`.
