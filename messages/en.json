@@ -500,7 +500,13 @@
       "next2": "Practice again with another persona to keep building clinical skills. Submit expert feedback through the channel named in your invitation.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
-      "viewReport": "View report"
+      "viewReport": "View report",
+      "finalize": {
+        "pending": "Preparing your performance report…",
+        "done": "Your performance report has been prepared for your instructor.",
+        "error": "The performance report could not be prepared yet. Your transcript is saved.",
+        "retry": "Try again"
+      }
     }
   },
   "session": {
