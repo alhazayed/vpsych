@@ -166,6 +166,10 @@ Write rules that RLS enforces and application code must respect:
   `REPORT_WRITE_KEY`, which must equal the Postgres Vault secret
   `report_write_key`. Alternatively set `SUPABASE_SERVICE_ROLE_KEY` and the end
   route inserts directly. With neither set, session end 500s.
+  A report persisted from the heuristic fallback (`scientific_provenance.
+  assessment_mode = 'heuristic_fallback'`) may be replaced once by an admin via
+  `POST /api/admin/reports/[sessionId]/regenerate` (`lib/admin/report-regenerate.ts`);
+  AI-examiner reports are never overwritten.
 - Reads of `session_reports` are gated on `is_admin()`. Never expose reports on
   a therapist-facing API.
 - Roles live in `profiles.role`, never in `user_metadata`.

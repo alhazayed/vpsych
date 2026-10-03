@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { MetricCard } from "@/components/admin/AdminUi";
 import {
@@ -37,14 +38,17 @@ export default async function AdminReportsPage() {
     .order("created_at", { ascending: false });
 
   const list = reports ?? [];
+  // Heuristic-fallback scores are keyword placeholders, not examiner scores;
+  // keep them out of the average so an AI outage cannot skew it.
+  const scored = list.filter((r) => !isHeuristicReportScores(r.scores));
   const avg =
-    list.length > 0
+    scored.length > 0
       ? Math.round(
-          list.reduce((sum, r) => {
+          scored.reduce((sum, r) => {
             const overall =
               (r.scores as { overall?: number } | null)?.overall ?? 0;
             return sum + overall;
-          }, 0) / list.length,
+          }, 0) / scored.length,
         )
       : 0;
 
@@ -73,6 +77,7 @@ export default async function AdminReportsPage() {
       disorder: session?.avatars?.disorder ?? "",
       language: lang,
       score: typeof overall === "number" ? overall : null,
+      fallback: isHeuristicReportScores(report.scores),
       status,
       statusLabel: statusLabelFor(status),
       createdAt: report.created_at,
@@ -99,7 +104,7 @@ export default async function AdminReportsPage() {
         />
         <MetricCard
           label={t("statAvg")}
-          value={list.length ? `${avg}${tCommon("outOf100")}` : "—"}
+          value={scored.length ? `${avg}${tCommon("outOf100")}` : "—"}
           hint={t("statAvgHint")}
         />
         <MetricCard
@@ -128,6 +133,7 @@ export default async function AdminReportsPage() {
             showingLabel: t("showingLabel"),
             filterLanguage: t("filterLanguage"),
             filterAll: t("filterAll"),
+            fallbackBadge: t("fallbackBadge"),
           }}
         />
       </section>

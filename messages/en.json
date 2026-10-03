@@ -723,11 +723,24 @@
       "filterAll": "All",
       "showingLabel": "Showing #COUNT# reports",
       "emptyFilteredTitle": "No reports match these filters",
-      "emptyFilteredDescription": "Try clearing filters or broadening your search."
+      "emptyFilteredDescription": "Try clearing filters or broadening your search.",
+      "fallbackBadge": "Fallback"
     },
     "reportDetail": {
       "back": "All reports",
-      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})"
+      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})",
+      "fallback": {
+        "title": "AI examiner was unavailable for this report",
+        "body": "These scores are a keyword-based fallback estimate, not an AI examiner assessment, and are excluded from the report average. Regenerate once the AI provider is available again; the transcript is unchanged and the report is only replaced if the examiner succeeds.",
+        "regenerate": "Regenerate with AI examiner",
+        "regenerating": "Regenerating…",
+        "success": "Report regenerated.",
+        "errorAiUnavailable": "The AI examiner is still unavailable. The report was not changed; try again later.",
+        "errorAlreadyUpdated": "This report has already been updated. Reloading.",
+        "errorRateLimited": "Too many regeneration attempts. Wait a while and try again.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not regenerate the report. Try again."
+      }
     },
     "testTranscript": {
       "title": "Admin test transcript",
