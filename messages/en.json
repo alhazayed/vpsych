@@ -145,7 +145,29 @@
     "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals.",
     "graph": {
       "title": "Competency Graph",
-      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways."
+      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways.",
+      "view": {
+        "loading": "Loading competency graph…",
+        "loadFailed": "Could not load the competency graph. Reload the page to try again.",
+        "networkError": "Network error. Check your connection and try again.",
+        "rcaFailed": "Could not build the root-cause report.",
+        "search": "Search competencies",
+        "domain": "Domain",
+        "allDomains": "All domains",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "expand": "Show all",
+        "collapse": "Show fewer",
+        "mastered": "Mastered",
+        "developing": "Developing",
+        "blocked": "Blocked",
+        "notAttempted": "Not attempted",
+        "counts": "{nodes} competencies · {edges} links",
+        "instructorMode": "instructor mode",
+        "nodeState": "{stage} · score {score} · confidence {confidence}",
+        "requires": "Requires: {list}",
+        "showingSome": "Showing 8 of {total}. Select “Show all” to see the full pathway."
+      }
     },
     "supervisor": {
       "title": "Supervisor AI",
