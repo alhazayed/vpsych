@@ -28,10 +28,21 @@ export async function synthesizeSpeech(params: {
   /** Mission 10 — optional Humanization / HCE prosody overrides. */
   stability?: number | null;
   style?: number | null;
+  /**
+   * Realtime progressive chunk (one sentence of a streaming reply). Uses the
+   * TTS route's per-chunk budget and length cap instead of the full-reply one.
+   */
+  progressive?: boolean;
+  /** Abort the TTS fetch (barge-in / stale turn). */
+  signal?: AbortSignal;
 }): Promise<{ mode: "elevenlabs" | "browser"; objectUrl?: string }> {
   try {
-    const res = await fetch("/api/voice/tts", {
+    const url = params.progressive
+      ? "/api/voice/tts?progressive=1"
+      : "/api/voice/tts";
+    const res = await fetch(url, {
       method: "POST",
+      signal: params.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: params.text,
@@ -57,10 +68,12 @@ export async function synthesizeSpeech(params: {
       return { mode: "elevenlabs", objectUrl: URL.createObjectURL(blob) };
     }
 
+    if (params.signal?.aborted) return { mode: "browser" };
     if (res.status !== 501) {
       console.warn("ElevenLabs TTS failed; falling back to browser.", res.status);
     }
   } catch (err) {
+    if (params.signal?.aborted) return { mode: "browser" };
     console.warn("ElevenLabs TTS unavailable; falling back to browser.", err);
   }
 

@@ -12,13 +12,20 @@ export function isRealtimeSimulationEnabled(): boolean {
   return server === "true" || pub === "true";
 }
 
-/** Streaming LLM token path (SSE). Requires realtime flag. */
+/**
+ * Streaming LLM token path (SSE `/message/stream` + progressive TTS).
+ *
+ * Requires the realtime simulation flag AND an explicit
+ * FEATURE_REALTIME_STREAMING=true (or NEXT_PUBLIC_…=true). It is never on by
+ * default: enabling the simulation surface alone must not silently move
+ * production voice turns onto the streaming path. Classic /message stays the
+ * default and the fallback.
+ */
 export function isRealtimeStreamingEnabled(): boolean {
   if (!isRealtimeSimulationEnabled()) return false;
   const v = process.env.FEATURE_REALTIME_STREAMING?.trim().toLowerCase();
   const pub =
     process.env.NEXT_PUBLIC_FEATURE_REALTIME_STREAMING?.trim().toLowerCase();
   if (v === "false" || pub === "false") return false;
-  // Default on when realtime simulation is enabled.
-  return true;
+  return v === "true" || pub === "true";
 }

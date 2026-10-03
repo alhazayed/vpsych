@@ -15,6 +15,21 @@ Therapist speech
 
 Orchestrated by `conversation-pipeline.ts`. Text-only sessions skip STT/TTS.
 
+## Realtime turn path (`FEATURE_REALTIME_STREAMING=true`)
+
+```
+Therapist speech
+  → OpenAI STT (/api/voice/transcribe)
+  → /api/sessions/:id/message/stream  (same clinical pipeline; SSE tokens)
+  → sentence events (speech release gate)
+  → progressive ElevenLabs TTS (/api/voice/tts?progressive=1, ≤2 in flight, ≤6 queued)
+  → ordered browser playback
+```
+
+Barge-in aborts TTS, the SSE request and the LLM generation, advances the
+client turn fence, and clears pending audio. Classic `/message` + full-reply
+TTS stays the fallback. See `STREAMING_ENGINE.md`.
+
 ## Realtime gateway (flag-gated)
 
 `createVoiceGateway()` composes:

@@ -131,9 +131,11 @@ export function encodeSse(event: StreamEvent): string {
 
 export function createSseResponse(
   stream: ReadableStream<Uint8Array>,
+  extraHeaders: Record<string, string> = {},
 ): Response {
   return new Response(stream, {
     headers: {
+      ...extraHeaders,
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",

@@ -276,9 +276,32 @@ export async function generatePatientReplyDetailed(params: {
 }
 
 /**
+ * Thrown by `generatePatientReplyStream` when `personaFallback: false` and no
+ * model produced a streamed reply. The caller decides what replaces it (the
+ * realtime route falls back to the classic non-streaming generator), so a
+ * stream failure is never silently presented as a model reply.
+ */
+export class PatientStreamUnavailableError extends Error {
+  readonly errorKind?: OpenAIErrorKind;
+  constructor(message: string, errorKind?: OpenAIErrorKind) {
+    super(message);
+    this.name = "PatientStreamUnavailableError";
+    this.errorKind = errorKind;
+  }
+}
+
+/**
  * Stage 11 — streaming patient reply. Same prompt construction as
  * `generatePatientReplyDetailed`; tokens are presentation-only.
  * Cognition owners upstream are unchanged.
+ *
+ * Abort semantics: once `signal` aborts, generation stops, no provider
+ * failover or persona fallback runs, and the result is `interrupted: true`
+ * with whatever partial text had streamed. Callers must never persist it.
+ *
+ * `onReset` fires before a provider failover when tokens were already
+ * emitted, so the caller can discard the abandoned partial text instead of
+ * concatenating two providers' output.
  */
 export async function generatePatientReplyStream(params: {
   avatar: Pick<
@@ -293,33 +316,76 @@ export async function generatePatientReplyStream(params: {
   userMessage: string;
   behaviourReinforcement?: string | null;
   onToken?: PatientReplyStreamHandlers["onToken"];
+  onReset?: () => void;
   signal?: AbortSignal;
+  /**
+   * Default true (legacy): fall back to a persona reply when every provider
+   * fails. False: throw `PatientStreamUnavailableError` instead, so the caller
+   * can use the classic generator. The no-key path still returns the persona
+   * fallback because the classic generator would do the same.
+   */
+  personaFallback?: boolean;
 }): Promise<PatientReplyStreamResult> {
   const { avatar, history, userMessage, behaviourReinforcement } = params;
+  const allowPersonaFallback = params.personaFallback !== false;
   const fallbacks =
     avatar.fallback_replies?.length > 0
       ? avatar.fallback_replies
       : DEFAULT_FALLBACK_REPLIES;
 
+  let emitted = false;
+  const onToken = (token: string, fullText: string) => {
+    if (params.signal?.aborted) return;
+    emitted = true;
+    params.onToken?.(token, fullText);
+  };
+  const reset = () => {
+    if (emitted) params.onReset?.();
+    emitted = false;
+  };
+  const interruptedResult = (
+    text: string,
+    aiSource: AiSource,
+    model?: string,
+    errorKind?: OpenAIErrorKind,
+  ): PatientReplyStreamResult => ({
+    text: text.trim(),
+    aiSource,
+    model,
+    errorKind,
+    interrupted: true,
+  });
+
   const pickFallback = (
     errorKind?: OpenAIErrorKind,
+    force = false,
   ): PatientReplyStreamResult => {
+    if (params.signal?.aborted) {
+      return interruptedResult("", "persona_fallback", undefined, errorKind);
+    }
+    if (!allowPersonaFallback && !force) {
+      throw new PatientStreamUnavailableError(
+        "No model produced a streamed patient reply",
+        errorKind,
+      );
+    }
     const idx =
       Math.abs(
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
       ) % fallbacks.length;
     const text = fallbacks[idx]!;
-    params.onToken?.(text, text);
+    reset();
+    onToken(text, text);
     return {
       text,
       aiSource: "persona_fallback",
       errorKind,
-      interrupted: Boolean(params.signal?.aborted),
+      interrupted: false,
     };
   };
 
   if (!hasAnyAiKey()) {
-    return pickFallback();
+    return pickFallback(undefined, true);
   }
 
   const prior = history
@@ -342,6 +408,7 @@ export async function generatePatientReplyStream(params: {
   const viaGatewayStream = async (
     priorErrorKind?: OpenAIErrorKind,
   ): Promise<PatientReplyStreamResult> => {
+    reset();
     const messages = [...prior, { role: "user" as const, content: reinforced }];
     const model = gatewayModelId();
     const result = streamText({
@@ -354,26 +421,21 @@ export async function generatePatientReplyStream(params: {
     });
     let text = "";
     for await (const delta of result.textStream) {
-      if (params.signal?.aborted) {
-        return {
-          text: text.trim() || (await result.text).trim(),
-          aiSource: "gateway",
-          model,
-          errorKind: priorErrorKind,
-          interrupted: true,
-        };
-      }
+      if (params.signal?.aborted) break;
       text += delta;
-      params.onToken?.(delta, text);
+      onToken(delta, text);
     }
-    const trimmed = text.trim() || (await result.text).trim();
+    if (params.signal?.aborted) {
+      return interruptedResult(text, "gateway", model, priorErrorKind);
+    }
+    const trimmed = text.trim();
     if (!trimmed) return pickFallback(priorErrorKind);
     return {
       text: trimmed,
       aiSource: "gateway",
       model,
       errorKind: priorErrorKind,
-      interrupted: Boolean(params.signal?.aborted),
+      interrupted: false,
     };
   };
 
@@ -381,6 +443,7 @@ export async function generatePatientReplyStream(params: {
     model?: string,
     priorErrorKind?: OpenAIErrorKind,
   ): Promise<PatientReplyStreamResult> => {
+    reset();
     const result = await openAIService.chatStream(
       {
         messages: [
@@ -393,10 +456,13 @@ export async function generatePatientReplyStream(params: {
         model,
       },
       {
-        onToken: params.onToken,
+        onToken,
         signal: params.signal,
       },
     );
+    if (result.interrupted || params.signal?.aborted) {
+      return interruptedResult(result.text, "gpt", result.model, priorErrorKind);
+    }
     const text = result.text.trim();
     if (!text) return pickFallback(priorErrorKind);
     return {
@@ -404,26 +470,48 @@ export async function generatePatientReplyStream(params: {
       aiSource: "gpt",
       model: result.model,
       errorKind: priorErrorKind,
-      interrupted: result.interrupted,
+      interrupted: false,
     };
   };
+
+  // An abort surfaces as a thrown AbortError from either SDK. It must end the
+  // turn, never trigger a failover that would keep generating after barge-in.
+  const abortedNow = () => Boolean(params.signal?.aborted);
 
   if (preferOpenAiSdk()) {
     try {
       return await viaOpenAiStream();
     } catch (err) {
+      if (err instanceof PatientStreamUnavailableError) throw err;
+      if (abortedNow()) return interruptedResult("", "gpt");
       const kind = openaiErrorKind(err);
+      logPatientAgent("openai_stream_failed", {
+        ...errorDetails(err),
+        next: isRateLimitedOrQuota(err)
+          ? openAiFallbackChatModel()
+          : hasGatewayKey()
+            ? "gateway"
+            : allowPersonaFallback
+              ? "persona_fallback"
+              : "caller",
+      });
       if (isRateLimitedOrQuota(err)) {
         try {
           return await viaOpenAiStream(openAiFallbackChatModel(), kind);
-        } catch {
+        } catch (miniErr) {
+          if (miniErr instanceof PatientStreamUnavailableError) throw miniErr;
+          if (abortedNow()) return interruptedResult("", "gpt");
           // fall through
         }
       }
       if (hasGatewayKey()) {
         try {
           return await viaGatewayStream(kind);
-        } catch {
+        } catch (gatewayErr) {
+          if (gatewayErr instanceof PatientStreamUnavailableError) {
+            throw gatewayErr;
+          }
+          if (abortedNow()) return interruptedResult("", "gateway");
           return pickFallback(kind);
         }
       }
@@ -434,6 +522,12 @@ export async function generatePatientReplyStream(params: {
   try {
     return await viaGatewayStream();
   } catch (err) {
+    if (err instanceof PatientStreamUnavailableError) throw err;
+    if (abortedNow()) return interruptedResult("", "gateway");
+    logPatientAgent("gateway_stream_failed", {
+      ...errorDetails(err),
+      next: allowPersonaFallback ? "persona_fallback" : "caller",
+    });
     return pickFallback(openaiErrorKind(err));
   }
 }
