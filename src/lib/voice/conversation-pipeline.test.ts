@@ -1,6 +1,12 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { resolvePipelineLocale } from "@/lib/voice/conversation-pipeline";
 
+/** 16 kHz mono 16-bit WAV of `ms` silence-ish samples (header + PCM). */
+function fakeWav(ms = 500): Blob {
+  const samples = Math.round((16000 * ms) / 1000);
+  return new Blob([new Uint8Array(44 + samples * 2)], { type: "audio/wav" });
+}
+
 describe("resolvePipelineLocale", () => {
   it("maps session.language to en | ar for the pipeline", () => {
     expect(resolvePipelineLocale("en-US")).toBe("en");
@@ -78,7 +84,7 @@ describe("conversation pipeline stages", () => {
       "@/lib/voice/conversation-pipeline"
     );
     const result = await transcribeTherapistSpeech({
-      audio: new Blob([new Uint8Array([1])], { type: "audio/wav" }),
+      audio: fakeWav(),
       locale: "ar-JO",
     });
     expect(result.ok).toBe(true);
@@ -119,7 +125,7 @@ describe("conversation pipeline stages", () => {
     );
     const result = await runVoiceConversationTurn({
       sessionId: "s1",
-      audio: new Blob([new Uint8Array([1])], { type: "audio/wav" }),
+      audio: fakeWav(),
       locale: "en",
       voiceEnabled: false,
     });

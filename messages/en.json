@@ -525,7 +525,8 @@
       "micTranscribeError": "Mic/transcription error — type your turn below.",
       "ttsBrowserFallback": "Avatar voice unavailable — using your browser’s speech instead.",
       "textOnly": "Text-only mode — type your turns below.",
-      "textReady": "Ready for your next typed turn."
+      "textReady": "Ready for your next typed turn.",
+      "patientAudioUnavailable": "Patient audio unavailable — the reply is shown as text."
     },
     "adminTest": {
       "banner": "ADMIN TEST — NOT A LEARNER SESSION",
@@ -654,6 +655,13 @@
       "transcriptTitle": "Session transcript",
       "notesTitle": "Your private notes",
       "debriefNote": "Competency scores, supervisor feedback, and ACE analysis remain in the admin report."
+    },
+    "voiceTurn": {
+      "you": "You",
+      "patient": "Patient",
+      "fallbackReply": "Fallback reply (AI unavailable)",
+      "audioUnavailable": "Patient audio unavailable.",
+      "playAudio": "Play patient audio"
     }
   },
   "analysis": {

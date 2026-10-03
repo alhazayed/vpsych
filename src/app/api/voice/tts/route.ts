@@ -10,6 +10,7 @@ import {
   ElevenLabsError,
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
+import { VoiceLanguageError } from "@/lib/voice/voice-language";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
@@ -189,6 +190,13 @@ export async function POST(request: Request) {
       );
     }
     console.warn("[tts]", error instanceof Error ? error.message : error);
+    if (error instanceof VoiceLanguageError) {
+      // No approved voice for this language: say so instead of a generic 502.
+      return NextResponse.json(
+        { error: "Text-to-speech failed", code: error.code },
+        { status: error.status, headers: requestIdHeaders(requestId) },
+      );
+    }
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502, headers: requestIdHeaders(requestId) },
