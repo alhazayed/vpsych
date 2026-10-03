@@ -39,6 +39,13 @@ export async function synthesizeSpeech(params: {
   /** Mission 10 — optional Humanization / HCE prosody overrides. */
   stability?: number | null;
   style?: number | null;
+  /**
+   * Request stitching context (Human Conversation Fidelity): text spoken
+   * immediately before / after this chunk, so chunked replies keep one
+   * continuous intonation. Not spoken; bounded server-side.
+   */
+  previousText?: string | null;
+  nextText?: string | null;
   /** Cancel in-flight TTS fetch (barge-in / turn supersede). */
   signal?: AbortSignal;
 }): Promise<SynthesizeSpeechResult> {
@@ -63,6 +70,8 @@ export async function synthesizeSpeech(params: {
         emotion: params.emotion ?? undefined,
         stability: params.stability ?? undefined,
         style: params.style ?? undefined,
+        previousText: params.previousText || undefined,
+        nextText: params.nextText || undefined,
         stream: true,
       }),
       signal: params.signal,

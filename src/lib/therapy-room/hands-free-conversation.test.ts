@@ -328,3 +328,88 @@ describe("continuous conversation loop (FSM walk)", () => {
     expect(fsm.getState()).toBe("LISTENING");
   });
 });
+
+describe("Human Conversation Fidelity — FSM endpoint + floor control", () => {
+  it("pause → ENDPOINT_PENDING keeps the mic open and reads as listening", () => {
+    expect(nextConversationState("LISTENING", "PAUSE_DETECTED")).toBe(
+      "ENDPOINT_PENDING",
+    );
+    expect(micAllowed("ENDPOINT_PENDING")).toBe(true);
+    expect(playbackAllowed("ENDPOINT_PENDING")).toBe(false);
+    expect(statusKeyForState("ENDPOINT_PENDING")).toBe("listening");
+  });
+
+  it("resume returns to LISTENING without bumping the generation", () => {
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    const gen = fsm.getGeneration();
+    fsm.dispatch("PAUSE_DETECTED");
+    fsm.dispatch("SPEECH_RESUMED");
+    expect(fsm.getState()).toBe("LISTENING");
+    expect(fsm.isCurrent(gen)).toBe(true);
+  });
+
+  it("commit from ENDPOINT_PENDING goes through the STT stage", () => {
+    expect(nextConversationState("ENDPOINT_PENDING", "SPEECH_END")).toBe(
+      "PROCESSING_STT",
+    );
+    // No shortcut that would skip the STT stage's fencing.
+    expect(canTransition("ENDPOINT_PENDING", "GPT_OK")).toBe(false);
+    expect(canTransition("ENDPOINT_PENDING", "BARGE_IN")).toBe(false);
+  });
+
+  it("therapist taking the floor during generation supersedes the pending reply", () => {
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    fsm.dispatch("SPEECH_END");
+    fsm.dispatch("STT_OK");
+    const gen = fsm.getGeneration();
+    expect(fsm.dispatch("THERAPIST_RESUMED").ok).toBe(true);
+    expect(fsm.getState()).toBe("LISTENING");
+    expect(fsm.isCurrent(gen)).toBe(false);
+  });
+
+  it("a held reply can only start from LISTENING and owns a new generation", () => {
+    expect(canTransition("WAITING_GPT", "HELD_REPLY")).toBe(false);
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    const gen = fsm.getGeneration();
+    expect(fsm.dispatch("HELD_REPLY").ok).toBe(true);
+    expect(fsm.getState()).toBe("AVATAR_SPEAKING");
+    expect(fsm.isCurrent(gen)).toBe(false);
+  });
+
+  it("existing barge-in exclusions are unchanged", () => {
+    expect(canTransition("PROCESSING_STT", "BARGE_IN")).toBe(false);
+    expect(canTransition("WAITING_GPT", "BARGE_IN")).toBe(false);
+  });
+
+  it("telemetry aggregates fidelity counters without content fields", () => {
+    const tel = createConversationTelemetry();
+    tel.record("endpoint_pause");
+    tel.record("endpoint_resumed");
+    tel.record("endpoint_commit_silence_ms", { valueMs: 900, code: "complete_thought" });
+    tel.record("barge_in_detect_ms", { valueMs: 300 });
+    tel.record("barge_in_stop_ms", { valueMs: 2 });
+    tel.record("floor_yield", { code: "during_generation" });
+    tel.record("tts_chunks_generated", { count: 3 });
+    tel.record("tts_chunks_played", { count: 2 });
+    tel.record("tts_failure");
+    tel.record("stale_result_discarded");
+    const c = tel.countersOnly();
+    expect(c).toMatchObject({
+      endpointPauses: 1,
+      endpointResumes: 1,
+      avgEndpointCommitSilenceMs: 900,
+      avgBargeInDetectMs: 300,
+      avgBargeInStopMs: 2,
+      floorYields: 1,
+      ttsChunksGenerated: 3,
+      ttsChunksPlayed: 2,
+      ttsFailures: 1,
+      staleResultsDiscarded: 1,
+    });
+    const serialized = JSON.stringify(tel.summarize());
+    expect(serialized).not.toMatch(/transcript|content|text/i);
+  });
+});

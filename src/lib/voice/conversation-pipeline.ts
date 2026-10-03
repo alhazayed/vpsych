@@ -28,6 +28,10 @@ import {
 } from "@/lib/voice/turn-fence";
 import { planSpeechChunksForPlayback } from "@/lib/voice/speech-chunker";
 import {
+  effectivePauseBeforeMs,
+  stitchingContextForChunk,
+} from "@/lib/voice/response-timing";
+import {
   DEFAULT_TTS_IN_FLIGHT,
   playQueuedSpeech,
   type SpeechQueueMetrics,
@@ -289,6 +293,14 @@ export async function playPatientSpeech(params: {
    * Never applied between progressive chunks.
    */
   pauseBeforeMs?: number | null;
+  /**
+   * Human Conversation Fidelity — `performance.now()` when the therapist
+   * finished speaking. The persona pause is measured from here (time already
+   * spent in STT / patient generation counts toward it) and overlaps TTS
+   * synthesis, so the pause never stacks on top of processing latency.
+   * Omitted → legacy behaviour (full pause, measured from this call).
+   */
+  pauseAnchorAt?: number | null;
   audioRef?: { current: HTMLAudioElement | null };
   handlers?: SpeakHandlers;
   /** Abort cancels TTS fetches + playback (barge-in / pause / end). */
@@ -312,25 +324,28 @@ export async function playPatientSpeech(params: {
     return emptyPlayResult("interrupted", "interrupted");
   }
 
-  // Humanization pause: once, before any TTS — not per sentence.
-  const pauseMs = Math.max(0, Math.min(6000, params.pauseBeforeMs ?? 0));
-  if (pauseMs > 0) {
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(resolve, pauseMs);
-      params.signal?.addEventListener(
-        "abort",
-        () => {
-          clearTimeout(timer);
-          resolve();
-        },
-        { once: true },
-      );
-    });
-    if (stale()) {
-      handlers.onerror?.();
-      return emptyPlayResult("interrupted", "interrupted", pauseMs);
-    }
-  }
+  // Humanization pause: once, before the first audio — not per sentence.
+  // Anchored to the therapist's end-of-speech when provided, and run as a
+  // gate that overlaps TTS synthesis (Human Conversation Fidelity).
+  const pauseMs = effectivePauseBeforeMs({
+    pauseBeforeMs: params.pauseBeforeMs,
+    anchorAt: params.pauseAnchorAt,
+    now: performance.now(),
+  });
+  const startGate =
+    pauseMs > 0
+      ? new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, pauseMs);
+          params.signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              resolve();
+            },
+            { once: true },
+          );
+        })
+      : undefined;
 
   if (stale()) {
     handlers.onerror?.();
@@ -353,12 +368,15 @@ export async function playPatientSpeech(params: {
 
   const playLegacyBlob = async (): Promise<PlayPatientSpeechResult> => {
     const t0 = performance.now();
-    handlers.onstart?.();
+    // onstart fires when audio is actually audible (play() resolved), same
+    // as the progressive queue — "speaking" must mean the patient is heard.
     const result = await synthesizeSpeech({
       ...ttsParams,
       text: params.text,
       signal: params.signal,
     });
+
+    if (startGate) await startGate;
 
     if (stale() || result.mode === "interrupted") {
       if (result.mode === "elevenlabs" && result.objectUrl) {
@@ -481,7 +499,7 @@ export async function playPatientSpeech(params: {
             }
             playStarted = performance.now();
             firstPlayMs = Math.max(0, Math.round(playStarted - t0));
-            // onstart already fired before synthesize for legacy path.
+            handlers.onstart?.();
           })
           .catch(() => {
             if (stale()) {
@@ -566,11 +584,15 @@ export async function playPatientSpeech(params: {
     turn: params.turn,
     audioRef: params.audioRef,
     handlers,
+    startGate,
     onEvent: params.onQueueEvent,
-    synthesizeChunk: async (text, _index, signal) => {
+    synthesizeChunk: async (text, index, signal) => {
       const result = await synthesizeSpeech({
         ...ttsParams,
         text,
+        // Request stitching: neighbouring text lets the TTS model keep one
+        // continuous prosodic line across chunk boundaries.
+        ...stitchingContextForChunk(chunks, index),
         signal,
       });
       if (result.mode === "interrupted") {
@@ -654,6 +676,8 @@ export async function runVoiceConversationTurn(params: {
   turn?: VoiceTurnGuard;
   /** AbortController used for TTS playback (separate from STT/message abort). */
   playbackSignal?: AbortSignal;
+  /** performance.now() at therapist end-of-speech (persona pause anchor). */
+  speechEndedAt?: number;
 }): Promise<
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
@@ -751,6 +775,7 @@ export async function runVoiceConversationTurn(params: {
       stability: hints?.stability ?? null,
       style: hints?.style ?? null,
       pauseBeforeMs: hints?.pause_before_ms ?? null,
+      pauseAnchorAt: params.speechEndedAt ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
       signal: params.playbackSignal ?? params.signal,

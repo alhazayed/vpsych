@@ -46,6 +46,18 @@ export const MAX_COALESCED_SPEECH_CHUNK_CHARS = 480;
 const TERMINATOR_RE = /([.!?…。؟]+)(\s+|$)/g;
 const CLAUSE_RE = /([,،；;؛]+)(\s+|$)/g;
 
+/**
+ * Human Conversation Fidelity — first-audio latency. TTS time grows with the
+ * length of the text, and nothing is audible until the first chunk is ready.
+ * A first sentence longer than this is split at its first natural clause
+ * boundary (comma / Arabic comma / semicolon, or before a connective) so the
+ * patient starts speaking sooner. Request stitching keeps the intonation
+ * continuous across the split. Later chunks are unaffected.
+ */
+export const FIRST_CHUNK_SOFT_MAX_CHARS = 80;
+/** Never create a first chunk shorter than this (no clipped openers). */
+const FIRST_CHUNK_MIN_CHARS = 20;
+
 export type SpeechChunkerOptions = {
   maxChars?: number;
   minChars?: number;
@@ -53,6 +65,8 @@ export type SpeechChunkerOptions = {
   maxChunks?: number;
   /** Override {@link MAX_COALESCED_SPEECH_CHUNK_CHARS} (tests). */
   maxCoalescedChars?: number;
+  /** Override {@link FIRST_CHUNK_SOFT_MAX_CHARS}; 0 disables the split. */
+  firstChunkSoftMaxChars?: number;
 };
 
 export type SpeechPlaybackPlan =
@@ -108,7 +122,70 @@ function splitClauses(sentence: string, maxChars: number): string[] {
   return parts.length > 0 ? parts : [sentence];
 }
 
-/** Hard-split oversized text on whitespace, then by char if needed. */
+/**
+ * Words before which a spoken phrase boundary sounds natural (connectives).
+ * Matched after stripping Arabic tashkeel/tatweel. EN + AR (MSA/Levantine).
+ */
+const BREAK_BEFORE = new Set([
+  "and", "but", "or", "so", "because", "although", "though", "which",
+  "when", "while", "then", "if", "unless", "until",
+  "و", "لكن", "ولكن", "بس", "لأن", "لان", "لأنه", "لانه", "عشان", "علشان",
+  "اللي", "الذي", "التي", "حتى", "لما", "إذا", "اذا", "لو", "وبعدين", "بعدين",
+  "يعني", "ثم", "أو", "او", "ولا",
+]);
+
+/**
+ * Words that must not END a chunk (they bind to the following word):
+ * articles, prepositions, complementizers. "أنا أعتقد أن" | "حالتك…" would
+ * be an audible broken boundary.
+ */
+const NO_BREAK_AFTER = new Set([
+  "the", "a", "an", "to", "of", "in", "on", "at", "for", "with", "from",
+  "my", "your", "his", "her", "their", "our", "this", "that", "very",
+  "أن", "ان", "إن", "انه", "أنه", "إنه", "في", "على", "عن", "من", "مع",
+  "إلى", "الى", "لـ", "بـ", "الـ", "هذا", "هذه", "هاد", "هاي", "كثير", "جدا",
+  "و", "ف",
+]);
+
+function normBreakWord(word: string): string {
+  return word
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670\u0640]/g, "")
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+}
+
+/**
+ * Choose where to break a word buffer that is about to overflow. Returns the
+ * index of the first word of the NEXT chunk (1..words.length-1), preferring
+ * the last connective in the back half, then avoiding a dangling
+ * function word, else the greedy position.
+ */
+function naturalBreakIndex(words: string[], maxChars: number): number {
+  const n = words.length;
+  // Prefer a connective boundary in the back half of the buffer.
+  let length = 0;
+  const startAt: number[] = [];
+  for (let i = 0; i < n; i++) {
+    startAt.push(length);
+    length += words[i]!.length + (i > 0 ? 1 : 0);
+  }
+  for (let i = n - 1; i >= 1; i--) {
+    if (startAt[i]! < maxChars * 0.5) break;
+    if (BREAK_BEFORE.has(normBreakWord(words[i]!))) return i;
+  }
+  // Otherwise do not end on a function word.
+  let idx = n;
+  while (idx > 1 && NO_BREAK_AFTER.has(normBreakWord(words[idx - 1]!))) {
+    idx -= 1;
+  }
+  return idx === n ? n : Math.max(1, idx);
+}
+
+/**
+ * Hard-split oversized text on whitespace (at natural phrase boundaries where
+ * possible), then by char if a single token exceeds maxChars. Text content
+ * and word order are preserved exactly.
+ */
 function hardSplit(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   const words = text.split(/\s+/).filter(Boolean);
@@ -120,24 +197,33 @@ function hardSplit(text: string, maxChars: number): string[] {
     return out;
   }
   const out: string[] = [];
-  let buf = "";
+  let buf: string[] = [];
+  const bufLen = () => buf.join(" ").length;
   for (const word of words) {
-    const next = buf ? `${buf} ${word}` : word;
-    if (next.length <= maxChars) {
-      buf = next;
+    const nextLen = buf.length === 0 ? word.length : bufLen() + 1 + word.length;
+    if (nextLen <= maxChars) {
+      buf.push(word);
       continue;
     }
-    if (buf) out.push(buf);
+    if (buf.length > 0) {
+      const cut = naturalBreakIndex(buf, maxChars);
+      out.push(buf.slice(0, cut).join(" "));
+      buf = buf.slice(cut);
+    }
+    // Carry-over plus the new word may still overflow — flush greedily.
+    while (buf.length > 0 && bufLen() + 1 + word.length > maxChars) {
+      out.push(buf.join(" "));
+      buf = [];
+    }
     if (word.length <= maxChars) {
-      buf = word;
+      buf.push(word);
     } else {
       for (let i = 0; i < word.length; i += maxChars) {
         out.push(word.slice(i, i + maxChars));
       }
-      buf = "";
     }
   }
-  if (buf) out.push(buf);
+  if (buf.length > 0) out.push(buf.join(" "));
   return out;
 }
 
@@ -303,6 +389,54 @@ export function coalesceSpeechChunksToBudget(
 }
 
 /**
+ * Split an over-long FIRST chunk at its earliest natural boundary within
+ * [FIRST_CHUNK_MIN_CHARS, softMax]: clause punctuation first, else before a
+ * connective. Returns the chunks unchanged when no natural split exists.
+ */
+export function splitLongFirstChunk(
+  chunks: string[],
+  softMax: number = FIRST_CHUNK_SOFT_MAX_CHARS,
+): string[] {
+  const first = chunks[0];
+  if (!first || softMax <= 0 || first.length <= softMax) return chunks;
+
+  let cut = -1;
+  const clause = new RegExp(CLAUSE_RE.source, "g");
+  let m: RegExpExecArray | null;
+  while ((m = clause.exec(first)) !== null) {
+    const end = m.index + m[1]!.length;
+    if (end > softMax) break;
+    if (end >= FIRST_CHUNK_MIN_CHARS) {
+      cut = end;
+      break;
+    }
+  }
+  if (cut < 0) {
+    // No early clause punctuation: break before a connective instead.
+    const words = first.split(" ");
+    let pos = 0;
+    for (let i = 0; i < words.length; i++) {
+      if (
+        i > 0 &&
+        pos - 1 >= FIRST_CHUNK_MIN_CHARS &&
+        pos - 1 <= softMax &&
+        BREAK_BEFORE.has(normBreakWord(words[i]!))
+      ) {
+        cut = pos - 1;
+        break;
+      }
+      pos += words[i]!.length + 1;
+    }
+  }
+  if (cut < 0) return chunks;
+  const head = first.slice(0, cut).trim();
+  const tail = first.slice(cut).trim();
+  // Never leave a clipped micro-tail ("…, ok.") as its own chunk.
+  if (!head || tail.length < FIRST_CHUNK_MIN_CHARS) return chunks;
+  return [head, tail, ...chunks.slice(1)];
+}
+
+/**
  * Plan TTS playback for one patient response under the progressive chunk budget.
  *
  * - Normal replies → progressive chunks (≤ {@link MAX_PROGRESSIVE_TTS_CHUNKS}).
@@ -332,7 +466,15 @@ export function planSpeechChunksForPlayback(
   }
 
   if (chunks.length <= maxChunks) {
-    return { mode: "progressive", chunks };
+    // Faster first audio when a split still fits the request budget.
+    const firstSplit = splitLongFirstChunk(
+      chunks,
+      options.firstChunkSoftMaxChars ?? FIRST_CHUNK_SOFT_MAX_CHARS,
+    );
+    return {
+      mode: "progressive",
+      chunks: firstSplit.length <= maxChunks ? firstSplit : chunks,
+    };
   }
 
   const coalesced = coalesceSpeechChunksToBudget(

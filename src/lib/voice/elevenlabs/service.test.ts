@@ -159,3 +159,95 @@ describe("elevenLabsService", () => {
     expect(calls[1]).toContain("EXAVITQu4vr4xnSDxMaL");
   });
 });
+
+/** "Anas" — approved Arabic voice in the verified catalogue (#212). */
+const APPROVED_AR_VOICE = "R6nda3uM038xEEKi7GFl";
+
+describe("Human Conversation Fidelity — TTS request body", () => {
+  afterEach(() => {
+    resetElevenLabsCache();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    delete process.env.ELEVENLABS_API_KEY;
+    delete process.env.ELEVENLABS_REQUEST_STITCHING;
+    delete process.env.ELEVENLABS_LANGUAGE_CODE;
+  });
+
+  function captureBodies() {
+    const bodies: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return new Response(new Uint8Array([1, 2]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+      }),
+    );
+    return bodies;
+  }
+
+  it("forwards previous_text / next_text for chunk continuity", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    const bodies = captureBodies();
+    await elevenLabsService.synthesize({
+      text: "بس أنا ما بعرف إذا هاد طبيعي.",
+      locale: "ar",
+      voiceIdAr: APPROVED_AR_VOICE,
+      previousText: "آه، فهمت.",
+      nextText: "صرلي أسبوعين هيك.",
+    });
+    expect(bodies[0]).toMatchObject({
+      text: "بس أنا ما بعرف إذا هاد طبيعي.",
+      previous_text: "آه، فهمت.",
+      next_text: "صرلي أسبوعين هيك.",
+    });
+    // language_code is opt-in only.
+    expect(bodies[0]).not.toHaveProperty("language_code");
+  });
+
+  it("stitching kill switch removes context fields", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    process.env.ELEVENLABS_REQUEST_STITCHING = "off";
+    const bodies = captureBodies();
+    await elevenLabsService.synthesize({
+      text: "Hello.",
+      locale: "en",
+      previousText: "Before.",
+      nextText: "After.",
+    });
+    expect(bodies[0]).not.toHaveProperty("previous_text");
+    expect(bodies[0]).not.toHaveProperty("next_text");
+  });
+
+  it("language_code is sent only when explicitly enabled", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    process.env.ELEVENLABS_LANGUAGE_CODE = "on";
+    const bodies = captureBodies();
+    await elevenLabsService.synthesize({
+      text: "مرحبا.",
+      locale: "ar",
+      voiceIdAr: APPROVED_AR_VOICE,
+    });
+    expect(bodies[0]).toMatchObject({ language_code: "ar" });
+  });
+
+  it("same text with different context is not served from the cache", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    const bodies = captureBodies();
+    const a = await elevenLabsService.synthesize({
+      text: "Same words.",
+      locale: "en",
+      previousText: "One.",
+    });
+    await new Response(a.body).arrayBuffer();
+    await new Promise((r) => setTimeout(r, 0));
+    await elevenLabsService.synthesize({
+      text: "Same words.",
+      locale: "en",
+      previousText: "Two.",
+    });
+    expect(bodies).toHaveLength(2);
+  });
+});

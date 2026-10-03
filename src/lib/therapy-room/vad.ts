@@ -54,6 +54,51 @@ export type HandsFreeVadOptions = {
   stream?: MediaStream;
   /** When true, do not stop tracks on finish (caller owns the stream). */
   retainStream?: boolean;
+  /**
+   * Take ownership of `stream` (stop its tracks on finish). Used when the
+   * barge-in monitor hands its live microphone over so capture has no gap.
+   */
+  adoptStream?: boolean;
+  /**
+   * Audio captured BEFORE this VAD started (barge-in monitor ring buffer).
+   * Seeds the capture so the first words of an interruption ("طيب بس…")
+   * reach STT, and starts the VAD in the speaking state. A function is
+   * drained on the first audio callback, so the monitor keeps capturing
+   * until this VAD is live (no gap at the handoff).
+   */
+  preroll?: VadPreroll | ((firstFrameStartedAt: number) => VadPreroll);
+  /**
+   * Human Conversation Fidelity — two-stage endpointing. When set, silence ≥
+   * silenceMs does NOT end the turn: `onPause` receives a snapshot for
+   * speculative STT and the mic stays open. Renewed speech fires `onResume`.
+   * The turn ends via controller.stop(), `maxSilenceMs`, or `maxMs`.
+   */
+  twoStage?: {
+    onPause: (info: {
+      wav: Blob;
+      speechMs: number;
+      /** Date.now()-based timestamp of the last voiced frame. */
+      silenceStartedAt: number;
+    }) => void;
+    onResume: () => void;
+    /**
+     * Voiced audio during a pending pause that is not yet a confirmed resume
+     * (true), or that died out before confirmation (false).
+     */
+    onActivity?: (active: boolean) => void;
+    /** Hard ceiling of trailing silence before auto-commit. */
+    maxSilenceMs: number;
+    /** Continuous voiced time required to count as resumed speech. */
+    resumeMinMs?: number;
+  };
+};
+
+/** Pre-roll handed from the barge-in monitor to the capture VAD. */
+export type VadPreroll = {
+  frames: Float32Array[];
+  sampleRate: number;
+  /** Date.now()-based onset of the therapist speech that triggered barge-in. */
+  speechOnsetAt: number;
 };
 
 function writeString(view: DataView, offset: number, str: string) {
@@ -99,6 +144,87 @@ function downsample(
     result[i] = buffer[Math.floor(i * ratio)] ?? 0;
   }
   return result;
+}
+
+/** Linear resample (pre-roll may come from a context with another rate). */
+function resampleLinear(
+  buffer: Float32Array,
+  fromRate: number,
+  toRate: number,
+): Float32Array {
+  if (fromRate === toRate || buffer.length === 0) return buffer;
+  const newLen = Math.max(1, Math.round((buffer.length * toRate) / fromRate));
+  const out = new Float32Array(newLen);
+  const ratio = (buffer.length - 1) / Math.max(1, newLen - 1);
+  for (let i = 0; i < newLen; i++) {
+    const pos = i * ratio;
+    const lo = Math.floor(pos);
+    const hi = Math.min(buffer.length - 1, lo + 1);
+    const frac = pos - lo;
+    out[i] = (buffer[lo] ?? 0) * (1 - frac) + (buffer[hi] ?? 0) * frac;
+  }
+  return out;
+}
+
+/** Merge captured frames → 16 kHz mono WAV (OpenAI STT-friendly). */
+export function encodeCapturedFrames(
+  frames: Float32Array[],
+  sampleRate: number,
+): Blob {
+  let length = 0;
+  for (const c of frames) length += c.length;
+  const merged = new Float32Array(length);
+  let offset = 0;
+  for (const c of frames) {
+    merged.set(c, offset);
+    offset += c.length;
+  }
+  return encodeWav(downsample(merged, sampleRate, 16000), 16000);
+}
+
+/**
+ * Bounded ring of recent mic frames (barge-in pre-roll). Pure — no Web Audio.
+ * Keeps at most `maxSamples` samples, dropping the oldest whole frames.
+ */
+export function createFrameRing(maxSamples: number): {
+  /** `endedAt` = Date.now() when the frame was delivered (end of frame). */
+  push: (frame: Float32Array, endedAt?: number) => void;
+  snapshot: () => Float32Array[];
+  /** Frames that ended at or before `cutoff` (handoff de-duplication). */
+  snapshotUntil: (cutoff: number) => Float32Array[];
+  /** Frames ending within (from, until] — lead-in trimming + de-duplication. */
+  snapshotBetween: (from: number, until: number) => Float32Array[];
+  samples: () => number;
+  /** Stop evicting (after a barge-in fires, keep everything until drained). */
+  freeze: () => void;
+} {
+  const frames: Float32Array[] = [];
+  const ends: number[] = [];
+  let total = 0;
+  let frozen = false;
+  return {
+    push(frame, endedAt = 0) {
+      frames.push(frame);
+      ends.push(endedAt);
+      total += frame.length;
+      while (
+        !frozen &&
+        frames.length > 1 &&
+        total - frames[0]!.length >= maxSamples
+      ) {
+        total -= frames.shift()!.length;
+        ends.shift();
+      }
+    },
+    snapshot: () => [...frames],
+    snapshotUntil: (cutoff) => frames.filter((_, i) => ends[i]! <= cutoff),
+    snapshotBetween: (from, until) =>
+      frames.filter((_, i) => ends[i]! > from && ends[i]! <= until),
+    samples: () => total,
+    freeze() {
+      frozen = true;
+    },
+  };
 }
 
 export function rms(input: Float32Array): number {
@@ -188,6 +314,9 @@ export function evaluateVadFrame(input: {
 /**
  * Start hands-free listening. Resolves the turn when silence follows speech,
  * max duration hits, or onInterruptCheck returns true (patient interruption).
+ *
+ * With `twoStage`, silence only reports a pause (speculative STT); the turn
+ * resolves on stop(), `twoStage.maxSilenceMs`, or `maxMs`.
  */
 export async function startHandsFreeVad(
   options: HandsFreeVadOptions = {},
@@ -197,8 +326,10 @@ export async function startHandsFreeVad(
   const speechThreshold = options.speechThreshold ?? 0.015;
   const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
   const minSpeechMs = options.minSpeechMs ?? 400;
+  const twoStage = options.twoStage;
+  const resumeMinMs = twoStage?.resumeMinMs ?? 150;
 
-  const ownsStream = !options.stream;
+  const ownsStream = !options.stream || Boolean(options.adoptStream);
   const stream =
     options.stream ??
     (await navigator.mediaDevices.getUserMedia({
@@ -227,8 +358,47 @@ export async function startHandsFreeVad(
   let speechStartedAt: number | null = null;
   let lastSpeechAt: number | null = null;
   let totalSpeechMs = 0;
+  /**
+   * Index in `chunks` of the first voiced frame. Audio more than
+   * SPEECH_LEAD_IN_MS before it is silence-before-speaking (the mic opens as
+   * soon as the patient stops) and is not uploaded: STT latency grows with
+   * clip length.
+   */
+  let firstVoicedChunk: number | null = null;
+  /** Two-stage: a pause was reported and not yet resumed. */
+  let pausePending = false;
+  /** Two-stage: start of the current re-voicing run while pausePending. */
+  let resumeRunStartedAt: number | null = null;
   let settle: ((blob: Blob | null) => void) | null = null;
   const startedAt = Date.now();
+
+  // Barge-in pre-roll: the therapist is already mid-word.
+  /** Frames to upload: from just before the first voiced frame. */
+  const framesForUpload = (): Float32Array[] => {
+    if (firstVoicedChunk == null || chunks.length === 0) return chunks;
+    const frameMs = (chunks[firstVoicedChunk]!.length / audioContext.sampleRate) * 1000;
+    const leadFrames = Math.ceil(SPEECH_LEAD_IN_MS / Math.max(1, frameMs));
+    return chunks.slice(Math.max(0, firstVoicedChunk - leadFrames));
+  };
+  const seedPreroll = (preroll: VadPreroll) => {
+    for (const frame of preroll.frames) {
+      chunks.push(resampleLinear(frame, preroll.sampleRate, audioContext.sampleRate));
+    }
+    speechStartedAt = Math.min(Date.now(), preroll.speechOnsetAt);
+    totalSpeechMs = Date.now() - speechStartedAt;
+  };
+  let pendingPrerollDrain: ((firstFrameStartedAt: number) => VadPreroll) | null =
+    null;
+  if (options.preroll) {
+    speaking = true;
+    lastSpeechAt = Date.now();
+    if (typeof options.preroll === "function") {
+      pendingPrerollDrain = options.preroll;
+    } else {
+      seedPreroll(options.preroll);
+    }
+    options.onSpeechStart?.();
+  }
 
   const finish = async (keep: boolean) => {
     if (stopped) return;
@@ -240,7 +410,7 @@ export async function startHandsFreeVad(
     } catch {
       /* ignore */
     }
-    // Only stop tracks we acquired. Shared streams stay open for the caller.
+    // Only stop tracks we acquired (or adopted). Shared streams stay open.
     if (ownsStream) {
       stream.getTracks().forEach((t) => t.stop());
     }
@@ -251,22 +421,23 @@ export async function startHandsFreeVad(
       settle?.(null);
       return;
     }
-
-    let length = 0;
-    for (const c of chunks) length += c.length;
-    const merged = new Float32Array(length);
-    let offset = 0;
-    for (const c of chunks) {
-      merged.set(c, offset);
-      offset += c.length;
-    }
-    const down = downsample(merged, sampleRate, 16000);
-    settle?.(encodeWav(down, 16000));
+    settle?.(encodeCapturedFrames(framesForUpload(), sampleRate));
   };
 
   processor.onaudioprocess = (event) => {
     if (stopped) return;
     const input = event.inputBuffer.getChannelData(0);
+    if (pendingPrerollDrain) {
+      // Take the monitor's audio up to where this first buffer begins.
+      const drain = pendingPrerollDrain;
+      pendingPrerollDrain = null;
+      const frameMs = (input.length / audioContext.sampleRate) * 1000;
+      try {
+        seedPreroll(drain(Date.now() - frameMs));
+      } catch {
+        /* pre-roll is best-effort; live capture continues */
+      }
+    }
     chunks.push(new Float32Array(input));
 
     const level = rms(input);
@@ -274,10 +445,42 @@ export async function startHandsFreeVad(
     const quietFor =
       speaking && lastSpeechAt != null ? now - lastSpeechAt : 0;
 
+    if (twoStage && pausePending) {
+      if (level >= speechThreshold) {
+        if (resumeRunStartedAt == null) {
+          resumeRunStartedAt = now;
+          twoStage.onActivity?.(true);
+        }
+        // Count frame duration so a single long frame can qualify.
+        const frameMs = (input.length / audioContext.sampleRate) * 1000;
+        if (now - resumeRunStartedAt + frameMs >= resumeMinMs) {
+          pausePending = false;
+          resumeRunStartedAt = null;
+          lastSpeechAt = now;
+          twoStage.onResume();
+        }
+      } else {
+        if (resumeRunStartedAt != null) twoStage.onActivity?.(false);
+        resumeRunStartedAt = null;
+        if (lastSpeechAt != null && now - lastSpeechAt >= twoStage.maxSilenceMs) {
+          speaking = false;
+          options.onSpeechEnd?.();
+          void finish(true);
+          return;
+        }
+      }
+      if (now - startedAt >= maxMs) {
+        options.onSpeechEnd?.();
+        void finish(totalSpeechMs >= minSpeechMs);
+      }
+      return;
+    }
+
     if (level >= speechThreshold) {
       if (!speaking) {
         speaking = true;
         speechStartedAt = now;
+        if (firstVoicedChunk == null) firstVoicedChunk = chunks.length - 1;
         options.onSpeechStart?.();
       }
       lastSpeechAt = now;
@@ -303,6 +506,17 @@ export async function startHandsFreeVad(
         maxMs,
       });
       if (decision.shouldFinish) {
+        if (twoStage && decision.keepAudio && now - startedAt < maxMs) {
+          // Stage 1: report the pause, keep listening.
+          pausePending = true;
+          resumeRunStartedAt = null;
+          twoStage.onPause({
+            wav: encodeCapturedFrames(framesForUpload(), audioContext.sampleRate),
+            speechMs: totalSpeechMs,
+            silenceStartedAt: lastSpeechAt,
+          });
+          return;
+        }
         speaking = false;
         options.onSpeechEnd?.();
         void finish(decision.keepAudio);
@@ -327,26 +541,62 @@ export async function startHandsFreeVad(
   return {
     done,
     async stop() {
+      if (!stopped) options.onSpeechEnd?.();
       await finish(true);
       return done;
     },
     cancel() {
       void finish(false);
     },
-    isSpeaking: () => speaking,
+    isSpeaking: () => speaking && !pausePending,
     speechMs: () => totalSpeechMs,
   };
 }
 
+/** Audio kept before the detected speech onset in a handoff pre-roll. */
+const PREROLL_LEAD_MS = 300;
+
+/** Audio kept before the first voiced frame of a capture (STT upload). */
+const SPEECH_LEAD_IN_MS = 300;
+
+/** Upper bound on post-detection capture held for an un-drained handoff. */
+const HANDOFF_MAX_HOLD_MS = 5000;
+
+/** Live microphone + pre-roll handed from the barge-in monitor to capture. */
+export type BargeInHandoff = {
+  stream: MediaStream;
+  /**
+   * Stop the monitor and return everything it captured (ring + audio since
+   * detection), excluding frames that end after `cutoff` (Date.now()), which
+   * the receiving VAD already has. Pass directly as `preroll`.
+   */
+  drain: (cutoff?: number) => VadPreroll;
+  /** performance.now() when barge-in fired (for stop-latency telemetry). */
+  detectedAt: number;
+  /** ms from therapist speech onset to detection. */
+  detectLatencyMs: number;
+  /** Stop the tracks if nobody adopts the stream. Idempotent. */
+  release: () => void;
+};
+
 /**
  * Monitor mic for barge-in while the patient is speaking.
- * Returns a stop function. No audio is retained.
+ * Returns a stop function. No audio is retained beyond the in-memory
+ * pre-roll ring (≤ prerollMs), which is discarded unless handed off.
  */
 export async function startBargeInMonitor(opts: {
-  onBargeIn: () => void;
+  /** `handoff` is present when `handoff: true` was requested. */
+  onBargeIn: (handoff?: BargeInHandoff) => void;
   threshold?: number;
   /** Require this much continuous speech before firing. */
   minSpeechMs?: number;
+  /**
+   * Hand the live stream + pre-roll to the caller instead of stopping it,
+   * so the capture VAD keeps the interruption's first words.
+   */
+  handoff?: boolean;
+  /** Ring-buffer length kept for the handoff (default 1500 ms). */
+  prerollMs?: number;
 }): Promise<() => void> {
   const threshold = opts.threshold ?? 0.02;
   const minSpeechMs = opts.minSpeechMs ?? 280;
@@ -371,19 +621,84 @@ export async function startBargeInMonitor(opts: {
   const processor = audioContext.createScriptProcessor(2048, 1, 1);
   const mute = audioContext.createGain();
   mute.gain.value = 0;
+  const ring = opts.handoff
+    ? createFrameRing(
+        Math.round(((opts.prerollMs ?? 1500) / 1000) * audioContext.sampleRate),
+      )
+    : null;
   let stopped = false;
   let speechStart: number | null = null;
   let fired = false;
+  let handedOff = false;
+
+  const disconnect = () => {
+    try {
+      processor.disconnect();
+      source.disconnect();
+      mute.disconnect();
+    } catch {
+      /* ignore */
+    }
+    void audioContext.close();
+  };
 
   processor.onaudioprocess = (event) => {
-    if (stopped || fired) return;
-    const level = rms(event.inputBuffer.getChannelData(0));
+    if (stopped) return;
+    const input = event.inputBuffer.getChannelData(0);
     const now = Date.now();
+    ring?.push(new Float32Array(input), now);
+    // After firing with a handoff, keep capturing until drained (no gap).
+    if (fired) return;
+    const level = rms(input);
     if (level >= threshold) {
-      if (speechStart == null) speechStart = now;
-      else if (now - speechStart >= minSpeechMs) {
+      if (speechStart == null) {
+        // Frame onset ≈ start of this buffer.
+        speechStart =
+          now - Math.round((input.length / audioContext.sampleRate) * 1000);
+      } else if (now - speechStart >= minSpeechMs) {
         fired = true;
-        opts.onBargeIn();
+        if (!ring) {
+          opts.onBargeIn();
+          return;
+        }
+        handedOff = true;
+        ring.freeze();
+        const onsetAt = speechStart;
+        let released = false;
+        let drained = false;
+        const stopCapture = () => {
+          if (stopped) return;
+          stopped = true;
+          disconnect();
+        };
+        // Never capture unboundedly if nobody drains or releases.
+        const maxHold = setTimeout(stopCapture, HANDOFF_MAX_HOLD_MS);
+        opts.onBargeIn({
+          stream,
+          drain: (cutoff = Date.now()) => {
+            clearTimeout(maxHold);
+            stopCapture();
+            // Keep a short lead-in before the onset, not seconds of silence.
+            const frames = drained
+              ? []
+              : ring.snapshotBetween(onsetAt - PREROLL_LEAD_MS, cutoff);
+            drained = true;
+            return {
+              frames,
+              sampleRate: audioContext.sampleRate,
+              speechOnsetAt: onsetAt,
+            };
+          },
+          detectedAt: performance.now(),
+          detectLatencyMs: now - onsetAt,
+          release: () => {
+            clearTimeout(maxHold);
+            stopCapture();
+            if (released) return;
+            released = true;
+            stream.getTracks().forEach((t) => t.stop());
+          },
+        });
       }
     } else {
       speechStart = null;
@@ -395,15 +710,9 @@ export async function startBargeInMonitor(opts: {
   mute.connect(audioContext.destination);
 
   return () => {
+    if (handedOff) return; // stream now owned by the handoff receiver
     stopped = true;
-    try {
-      processor.disconnect();
-      source.disconnect();
-      mute.disconnect();
-    } catch {
-      /* ignore */
-    }
+    disconnect();
     stream.getTracks().forEach((t) => t.stop());
-    void audioContext.close();
   };
 }

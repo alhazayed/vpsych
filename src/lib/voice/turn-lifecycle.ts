@@ -23,3 +23,25 @@ export function shouldApplyVoiceTurnResult(params: {
 export function clearVoiceTurnPending(setPending: (pending: boolean) => void) {
   setPending(false);
 }
+
+/**
+ * What to do with patient audio when the therapist starts a new turn
+ * (mic press / text send) — Human Conversation Fidelity.
+ *
+ * - `interrupt`: patient audio is AUDIBLE → stop it and mark the next turn as
+ *   a therapist interruption (Phase 9.1 latch).
+ * - `cancel_scheduled`: a reply is synthesizing but not yet audible → cancel
+ *   it so the patient never starts talking over the therapist, WITHOUT the
+ *   interruption flag (nothing was cut off).
+ * - `none`: nothing pending.
+ */
+export type TherapistTurnStartAction = "interrupt" | "cancel_scheduled" | "none";
+
+export function therapistTurnStartAction(params: {
+  patientAudible: boolean;
+  patientAudioScheduled: boolean;
+}): TherapistTurnStartAction {
+  if (params.patientAudible) return "interrupt";
+  if (params.patientAudioScheduled) return "cancel_scheduled";
+  return "none";
+}

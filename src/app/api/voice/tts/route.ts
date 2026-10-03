@@ -12,6 +12,7 @@ import {
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
+import { createServerTiming } from "@/lib/server-timing";
 import {
   elevenLabsSettingsFromEffective,
   liveSwitchVoice,
@@ -40,7 +41,23 @@ type TtsBody = {
   /** Mission 10 — Humanization Engine prosody overrides. */
   stability?: number;
   style?: number;
+  /**
+   * Human Conversation Fidelity — request-stitching context (not spoken).
+   * Neighbouring reply text so progressive chunks share one intonation line.
+   */
+  previousText?: string;
+  nextText?: string;
 };
+
+/** Server-side bound on stitching context (client sends ≤ 300 chars). */
+const MAX_STITCH_CONTEXT_CHARS = 600;
+
+function boundedContext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.slice(0, MAX_STITCH_CONTEXT_CHARS);
+}
 
 /**
  * ElevenLabs TTS — streams audio/mpeg when available.
@@ -49,10 +66,13 @@ type TtsBody = {
  */
 export async function POST(request: Request) {
   const requestId = resolveRequestId(request);
+  // Latency diagnosis (durations only) → DevTools "Server Timing".
+  const timing = createServerTiming();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  timing.mark("auth");
   if (!user) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -61,6 +81,7 @@ export async function POST(request: Request) {
   }
 
   const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
+  timing.mark("ratelimit");
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -88,6 +109,7 @@ export async function POST(request: Request) {
       voiceId: body.voiceId,
       voiceIdAr: body.voiceIdAr,
     });
+    timing.mark("voice");
 
     // Mission 3 — live clinical emotion switching when a registry profile exists.
     let clinicalVoiceSettings = undefined as
@@ -124,7 +146,11 @@ export async function POST(request: Request) {
       clinicalVoiceSettings,
       stability: body.stability,
       style: body.style,
+      previousText: boundedContext(body.previousText),
+      nextText: boundedContext(body.nextText),
     });
+    // Time until ElevenLabs started streaming (or a cache hit).
+    timing.mark("elevenlabs");
 
     return new NextResponse(result.body, {
       status: 200,
@@ -139,6 +165,7 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        "Server-Timing": timing.header(),
         ...requestIdHeaders(requestId),
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }

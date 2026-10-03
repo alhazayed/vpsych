@@ -20,6 +20,7 @@ import {
   type TranscribeSuccess,
 } from "@/lib/voice/stt";
 import { sanitizeProviderError } from "@/lib/safe-client-error";
+import { createServerTiming } from "@/lib/server-timing";
 
 /**
  * OpenAI Speech-to-Text — primary (and only server) STT pipeline.
@@ -33,10 +34,13 @@ import { sanitizeProviderError } from "@/lib/safe-client-error";
  */
 export async function POST(request: Request) {
   const requestId = resolveRequestId(request);
+  // Latency diagnosis (durations only) → DevTools "Server Timing".
+  const timing = createServerTiming();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  timing.mark("auth");
   if (!user) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -45,6 +49,7 @@ export async function POST(request: Request) {
   }
 
   const limited = await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
+  timing.mark("ratelimit");
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -67,6 +72,7 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData();
+  timing.mark("upload");
   const audio = form.get("audio");
   // Automatically follow session.language via the client-supplied locale field.
   const localeRaw = String(form.get("locale") ?? "en");
@@ -104,6 +110,7 @@ export async function POST(request: Request) {
       filename: `speech.${ext}`,
       language,
     });
+    timing.mark("openai");
 
     const body: TranscribeSuccess = {
       transcript: result.transcript,
@@ -113,7 +120,12 @@ export async function POST(request: Request) {
       language,
     };
 
-    return NextResponse.json(body, { headers: requestIdHeaders(requestId) });
+    return NextResponse.json(body, {
+      headers: {
+        ...requestIdHeaders(requestId),
+        "Server-Timing": timing.header(),
+      },
+    });
   } catch (error) {
     console.warn(
       "[stt]",

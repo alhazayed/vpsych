@@ -3,6 +3,7 @@ import { createVoiceTurnFence } from "@/lib/voice/turn-fence";
 import {
   clearVoiceTurnPending,
   shouldApplyVoiceTurnResult,
+  therapistTurnStartAction,
 } from "@/lib/voice/turn-lifecycle";
 
 describe("turn lifecycle cleanup vs apply (Phase 9.1R)", () => {
@@ -52,5 +53,25 @@ describe("turn lifecycle cleanup vs apply (Phase 9.1R)", () => {
         isActive: (id) => fence.isActive(id),
       }),
     ).toBe(true);
+  });
+});
+
+describe("therapistTurnStartAction — no patient speech over the therapist", () => {
+  it("audible patient audio is an interruption", () => {
+    expect(
+      therapistTurnStartAction({ patientAudible: true, patientAudioScheduled: true }),
+    ).toBe("interrupt");
+  });
+
+  it("a reply still synthesizing is cancelled without the interruption flag", () => {
+    expect(
+      therapistTurnStartAction({ patientAudible: false, patientAudioScheduled: true }),
+    ).toBe("cancel_scheduled");
+  });
+
+  it("nothing pending → nothing to do", () => {
+    expect(
+      therapistTurnStartAction({ patientAudible: false, patientAudioScheduled: false }),
+    ).toBe("none");
   });
 });
