@@ -732,7 +732,79 @@
     },
     "reportDetail": {
       "back": "كل التقارير",
-      "meta": "المعالج: {therapist} · المريض: {patient} ({disorder})"
+      "meta": "المعالج: {therapist} · المريض: {patient} ({disorder})",
+      "practice": {
+        "title": "ممارسات الجلسة",
+        "subtitle": "أفضل الممارسات العلاجية الظاهرة في هذا النص، مع عرض استرشادي لمقياس CTS-R وأهداف استبيانات المريض.",
+        "coverage": "{met} من {total}",
+        "informational": "للاطلاع",
+        "detected": "تمت ملاحظته",
+        "missed": "لم تتم ملاحظته",
+        "limitations": "مطابقة عبارات في كلام المعالج فقط. توضح إن كانت الممارسة قد جُرّبت بشكل ظاهر، لا مدى جودتها. ليست أداة معتمدة علميًا؛ استخدمها لتوجيه الإشراف، ولا تعتمدها وحدها كدرجة.",
+        "groups": {
+          "intake": "المقابلة الأولى",
+          "consent": "الموافقة والسرية",
+          "structure": "هيكلة الجلسة",
+          "safety_plan": "خطة الأمان",
+          "measures": "المقاييس المعيارية"
+        },
+        "checks": {
+          "role_intro": "عرّف بنفسه ودوره",
+          "presenting_problem": "استكشف المشكلة الحالية",
+          "history": "سأل عن البداية والتاريخ",
+          "social_context": "سأل عن العائلة والعمل والدعم",
+          "expectations": "سأل عمّا يأمله المريض",
+          "confidentiality": "شرح السرية",
+          "confidentiality_limits": "شرح حدود السرية",
+          "consent_to_proceed": "تأكد من موافقة المريض على المتابعة",
+          "mood_check": "تقييم المزاج",
+          "bridge": "ربط بالجلسة السابقة",
+          "agenda": "حدد جدول الجلسة بالتشارك",
+          "homework_review": "راجع الواجب المنزلي",
+          "homework_set": "اتفق على واجب منزلي",
+          "summary": "لخّص الجلسة",
+          "feedback_elicited": "طلب رأي المريض في الجلسة",
+          "warning_signs": "علامات التحذير",
+          "internal_coping": "ما يستطيع المريض فعله وحده",
+          "social_supports": "أشخاص وأماكن للدعم",
+          "professional_contacts": "جهات مهنية وخطوط الأزمات",
+          "means_safety": "جعل البيئة أكثر أمانًا",
+          "phq9": "تم تطبيق PHQ-9",
+          "gad7": "تم تطبيق GAD-7"
+        },
+        "ctsr": {
+          "title": "CTS-R استرشادي",
+          "total": "{total} / 72 (استرشادي)",
+          "partial": "تم تقييم {rated} من 12 بندًا (استرشادي)",
+          "items": {
+            "agenda_setting": "1. تحديد جدول الجلسة والالتزام به",
+            "collaboration": "2. التعاون",
+            "guided_discovery": "3. الاكتشاف الموجّه",
+            "feedback": "4. التغذية الراجعة",
+            "conceptual_integration": "5. التكامل المفاهيمي",
+            "eliciting_cognitions": "6. استخلاص الأفكار الأساسية",
+            "eliciting_emotion": "7. استخلاص التعبير الانفعالي",
+            "eliciting_behaviours": "8. استخلاص السلوكيات والتخطيط لها",
+            "change_methods": "9. تطبيق أساليب التغيير",
+            "interpersonal_effectiveness": "10. الفعالية في العلاقة",
+            "pacing": "11. الإيقاع واستخدام الوقت",
+            "homework": "12. تحديد الواجب المنزلي"
+          }
+        },
+        "selfReport": {
+          "title": "أهداف استبيانات المريض",
+          "phq9": "PHQ-9: {total} ({band})",
+          "gad7": "GAD-7: {total} ({band})",
+          "note": "ما سيجيب به هذا المريض إذا طبّق المتدرب الاستبيان. مشتقة من الحالة، وليست درجة مريض حقيقي."
+        },
+        "bands": {
+          "minimal": "ضئيل",
+          "mild": "خفيف",
+          "moderate": "متوسط",
+          "moderately_severe": "متوسط إلى شديد",
+          "severe": "شديد"
+        }
+      }
     },
     "testTranscript": {
       "title": "نص المحادثة الاختبارية الإدارية",

@@ -6,6 +6,7 @@ import {
   synthesizePromptInputFromFlat,
 } from "@/lib/ai/prompt-engine";
 import type { AvatarPersonality, ClinicalCore } from "@/lib/types";
+import { formatSelfReportForPrompt } from "@/lib/session-practice";
 
 const core: ClinicalCore = {
   disorder: "Major Depressive Disorder",
@@ -131,6 +132,28 @@ describe("renderPromptTemplate", () => {
 });
 
 describe("assembleSystemPrompt", () => {
+  it("injects the in-character self-report block only when provided", () => {
+    const without = assembleSystemPrompt({
+      clinical_core: core,
+      personality: personality("en-US"),
+      session: { locale: "en-US" },
+    });
+    expect(without).not.toContain("SELF-REPORT QUESTIONNAIRES");
+
+    const withBlock = assembleSystemPrompt({
+      clinical_core: core,
+      personality: personality("ar-JO"),
+      session: { locale: "ar-JO" },
+      fidelity: { self_report_block: formatSelfReportForPrompt(core) },
+    });
+    expect(withBlock).toContain("SELF-REPORT QUESTIONNAIRES");
+    expect(withBlock).toContain("MODULE 4 — SAFETY");
+    // Safety module still comes after (and overrides) the self-report block.
+    expect(withBlock.indexOf("SELF-REPORT QUESTIONNAIRES")).toBeLessThan(
+      withBlock.indexOf("MODULE 4 — SAFETY"),
+    );
+  });
+
   it("builds English modules for en sessions", () => {
     const prompt = assembleSystemPrompt({
       clinical_core: core,

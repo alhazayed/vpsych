@@ -4,7 +4,14 @@ import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
 import { requireAdmin } from "@/lib/auth";
 import { logSecurityEvent } from "@/lib/security-audit";
-import type { SessionReport } from "@/lib/types";
+import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
+import {
+  buildIndicativeCtsr,
+  caseHasRisk,
+  deriveSelfReportProfile,
+  evaluateSessionPractice,
+} from "@/lib/session-practice";
+import type { ClinicalCore, SessionReport } from "@/lib/types";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
@@ -23,6 +30,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
         started_at,
         ended_at,
         status,
+        clinical_snapshot,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -41,9 +49,27 @@ export default async function AdminReportDetailPage({ params }: Props) {
   });
 
   const session = report.sessions as unknown as {
+    clinical_snapshot: { clinical_core?: ClinicalCore | null } | null;
     profiles: { display_name: string } | null;
     avatars: { name: string; disorder: string } | null;
   } | null;
+
+  const { data: messages } = await supabase
+    .from("session_messages")
+    .select("role, content")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+
+  const core = session?.clinical_snapshot?.clinical_core ?? null;
+  const practice = evaluateSessionPractice({
+    messages: (messages ?? []) as Array<{ role: string; content: string }>,
+    riskPresent: caseHasRisk(core?.risk_profile),
+  });
+  const ctsr = buildIndicativeCtsr({
+    items: (report as SessionReport).scores?.items ?? [],
+    practice,
+  });
+  const selfReport = core ? deriveSelfReportProfile(core) : null;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 md:px-8">
@@ -66,6 +92,13 @@ export default async function AdminReportDetailPage({ params }: Props) {
       </p>
       <div className="mt-6">
         <ReportView report={report as SessionReport} />
+      </div>
+      <div className="mt-6">
+        <SessionPracticePanel
+          practice={practice}
+          ctsr={ctsr}
+          selfReport={selfReport}
+        />
       </div>
     </main>
   );
