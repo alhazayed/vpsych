@@ -661,7 +661,8 @@
       "patient": "Patient",
       "fallbackReply": "Fallback reply (AI unavailable)",
       "audioUnavailable": "Patient audio unavailable.",
-      "playAudio": "Play patient audio"
+      "playAudio": "Play patient audio",
+      "fallbackVoice": "Played with the browser's fallback voice, not the patient's voice."
     }
   },
   "analysis": {

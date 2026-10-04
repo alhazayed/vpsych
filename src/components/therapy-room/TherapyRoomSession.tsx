@@ -426,6 +426,7 @@ export function TherapyRoomSession({
       const playbackStarted = telemetryRef.current.mark();
       let bargeInFired = false;
       let bargeInArmTimer: number | null = null;
+      let ttsFailure: { status?: number; code?: string } | null = null;
 
       const onBargeIn = () => {
         if (bargeInFired || endingRef.current) return;
@@ -491,6 +492,9 @@ export function TherapyRoomSession({
               setVoiceDiag((d) => markVoiceStage(d, "tts", "active"));
               break;
             case "tts_response":
+              ttsFailure = event.ok
+                ? null
+                : { status: event.status, code: event.code };
               setVoiceDiag((d) =>
                 markVoiceStage(d, "tts", event.ok ? "ok" : "fail", {
                   tts_status: event.status,
@@ -559,7 +563,24 @@ export function TherapyRoomSession({
       }
 
       if (mode === "browser") {
-        setVoiceDiag((d) => markVoiceStage(d, "audio", "ok"));
+        // Audible, but not the patient's voice: say so instead of passing off
+        // the browser's robotic fallback as the real patient audio.
+        const failure = ttsFailure as { status?: number; code?: string } | null;
+        setVoiceDiag((d) => ({
+          ...markVoiceStage(d, "audio", "ok", { audio_mode: "browser" }),
+          audioDegraded: failure
+            ? {
+                stage: "tts",
+                code: failure.code,
+                status: failure.status,
+                message: describeVoiceError({
+                  stage: "tts",
+                  code: failure.code,
+                  status: failure.status,
+                }),
+              }
+            : null,
+        }));
       }
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) {

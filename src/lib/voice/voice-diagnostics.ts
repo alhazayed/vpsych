@@ -44,6 +44,8 @@ export type VoiceTurnDiagnostics = {
   error: VoiceTurnError | null;
   /** Soft failure: text is fine but patient audio could not be played. */
   audioUnavailable: VoiceTurnError | null;
+  /** Audio played, but only through the browser's fallback voice. */
+  audioDegraded: VoiceTurnError | null;
   /** Safe numeric/shape facts (sizes, statuses, lengths) for the debug panel. */
   facts: Record<string, string | number | boolean>;
 };
@@ -67,6 +69,7 @@ export function initialVoiceDiagnostics(turn = 0): VoiceTurnDiagnostics {
     stages: idleStages(),
     error: null,
     audioUnavailable: null,
+    audioDegraded: null,
     facts: {},
   };
 }
@@ -166,6 +169,9 @@ const CODE_EXPLANATION: Record<string, string> = {
   TTS_CONFIG: "the ElevenLabs API key on the server is misconfigured",
   TTS_BAD_CONTENT: "the voice service returned no playable audio",
   TTS_FAILED: "the ElevenLabs voice service returned an error",
+  TTS_AUTH: "ElevenLabs rejected the server's API key (ELEVENLABS_API_KEY)",
+  TTS_QUOTA: "the ElevenLabs character quota is used up",
+  TTS_PLAN_REQUIRED: "this ElevenLabs voice needs a paid plan",
   VOICE_LANGUAGE_UNAVAILABLE:
     "no approved ElevenLabs voice is configured for this language",
   AUTOPLAY_BLOCKED: "the browser blocked audio playback until you click",

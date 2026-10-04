@@ -46,6 +46,7 @@ export function VoiceTurnPanel({
   const t = useTranslations("therapyRoom.voiceTurn");
   const error = diagnostics.error;
   const audioUnavailable = diagnostics.audioUnavailable;
+  const audioDegraded = diagnostics.audioDegraded;
 
   return (
     <>
@@ -77,9 +78,14 @@ export function VoiceTurnPanel({
         </div>
       )}
 
-      {(error || audioUnavailable) && (
+      {(error || audioUnavailable || audioDegraded) && (
         <div className="trm-voice-alert" role="alert" data-testid="voice-alert">
           {error && <p data-testid="voice-error">{error.message}</p>}
+          {!error && !audioUnavailable && audioDegraded && (
+            <p data-testid="voice-audio-degraded">
+              {t("fallbackVoice")} {audioDegraded.message}
+            </p>
+          )}
           {!error && audioUnavailable && (
             <p data-testid="voice-audio-unavailable">
               {t("audioUnavailable")} {audioUnavailable.message}
