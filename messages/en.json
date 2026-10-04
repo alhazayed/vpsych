@@ -804,6 +804,12 @@
           "moderate": "moderate",
           "moderately_severe": "moderately severe",
           "severe": "severe"
+        },
+        "course": {
+          "title": "Symptom scores across the course",
+          "session": "Session",
+          "sessionN": "Session {n}",
+          "note": "Simulated: scores move with session structure and homework under a fixed rule. Not a validated model of treatment response."
         }
       }
     },

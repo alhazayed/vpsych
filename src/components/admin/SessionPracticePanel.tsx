@@ -11,10 +11,19 @@ type Props = {
   practice: SessionPracticeReport;
   ctsr: IndicativeCtsr;
   selfReport: SelfReportProfile | null;
+  /** PHQ-9 / GAD-7 targets per session of the therapy course, if any. */
+  trajectory?: Array<{ n: number; phq9: number; gad7: number }>;
+  currentSessionNumber?: number | null;
 };
 
 /** Admin-only: observable best practices, indicative CTS-R, PHQ-9/GAD-7 targets. */
-export async function SessionPracticePanel({ practice, ctsr, selfReport }: Props) {
+export async function SessionPracticePanel({
+  practice,
+  ctsr,
+  selfReport,
+  trajectory = [],
+  currentSessionNumber = null,
+}: Props) {
   const t = await getTranslations("admin.reportDetail.practice");
 
   const groups = practice.groups.filter(
@@ -114,6 +123,38 @@ export async function SessionPracticePanel({ practice, ctsr, selfReport }: Props
             })}
           </p>
           <p className="mt-1 text-xs text-[var(--on-surface-variant)]">{t("selfReport.note")}</p>
+        </div>
+      ) : null}
+
+      {trajectory.length > 0 ? (
+        <div>
+          <h3 className="font-semibold text-[var(--on-surface)]">{t("course.title")}</h3>
+          <table className="mt-3 w-full text-sm">
+            <thead>
+              <tr className="text-xs text-[var(--on-surface-variant)]">
+                <th className="py-1 text-start font-medium">{t("course.session")}</th>
+                <th className="py-1 text-end font-medium">PHQ-9</th>
+                <th className="py-1 text-end font-medium">GAD-7</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trajectory.map((row) => (
+                <tr
+                  key={row.n}
+                  className={`border-t border-[var(--outline-variant)] ${
+                    row.n === currentSessionNumber ? "font-semibold" : ""
+                  }`}
+                >
+                  <td className="py-1.5 text-[var(--on-surface)]">
+                    {t("course.sessionN", { n: row.n })}
+                  </td>
+                  <td className="py-1.5 text-end tabular-nums">{row.phq9}</td>
+                  <td className="py-1.5 text-end tabular-nums">{row.gad7}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-1 text-xs text-[var(--on-surface-variant)]">{t("course.note")}</p>
         </div>
       ) : null}
 

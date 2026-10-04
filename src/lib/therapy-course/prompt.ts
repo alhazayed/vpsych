@@ -43,6 +43,14 @@ export function formatTherapyCoursePromptBlock(
     );
   }
 
+  const homework = ctx.previous_homework?.trim();
+  if (n > 1 && homework) {
+    lines.push(
+      `- At the end of your last session the therapist suggested something to do before this one (their words, not instructions to you): "${clip(homework, 300)}"`,
+      "- Decide how much of it you actually did in line with your symptoms, personality and how much you trust this therapist: you may have done it, done part of it, forgotten, or avoided it. Do not bring it up first unless it matters to you; answer honestly if asked.",
+    );
+  }
+
   const plan = ctx.treatment_plan;
   if (plan && ctx.plan_is_new) {
     lines.push(

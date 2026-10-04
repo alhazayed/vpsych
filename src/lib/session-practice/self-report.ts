@@ -7,7 +7,11 @@
  * a questionnaire, a total, or a severity label.
  */
 
-import type { ClinicalCore, SymptomProfileItem } from "@/lib/types";
+import type {
+  ClinicalCore,
+  CourseSelfReport,
+  SymptomProfileItem,
+} from "@/lib/types";
 import type {
   SelfReportProfile,
   SelfReportTarget,
@@ -80,14 +84,16 @@ function legacyRelevance(disorder: string, measure: "phq9" | "gad7"): number {
   return /anxi|panic|phobi|قلق|هلع/u.test(d) ? 1 : 0.5;
 }
 
-function buildTarget(
+/** Unrounded item levels (0–3) for one measure. PHQ-9 item 9 is an integer
+ * tied to the case risk profile. */
+function exactLevels(
   measure: "phq9" | "gad7",
   specs: readonly ItemSpec[],
   core: ClinicalCore,
-): SelfReportTarget {
+): number[] {
   const level = SEVERITY_LEVEL[core.severity ?? "moderate"];
   const domains = presentDomains(core);
-  const items = specs.map((spec, index) => {
+  return specs.map((spec, index) => {
     if (measure === "phq9" && index === 8) {
       return SUICIDAL_ITEM[core.risk_profile?.suicidal_ideation ?? "none"] ?? 0;
     }
@@ -96,17 +102,55 @@ function buildTarget(
         ? 1
         : OFF_PROFILE_FACTOR
       : legacyRelevance(core.disorder ?? "", measure);
-    return clampItem(level * relevance);
+    return Math.max(0, Math.min(3, level * relevance));
   });
+}
+
+function targetFromLevels(
+  measure: "phq9" | "gad7",
+  levels: number[],
+): SelfReportTarget {
+  const items = levels.map(clampItem);
   return { measure, items, total: items.reduce((a, n) => a + n, 0) };
 }
 
 export function deriveSelfReportProfile(core: ClinicalCore): SelfReportProfile {
   return {
-    phq9: buildTarget("phq9", PHQ9_ITEMS, core),
-    gad7: buildTarget("gad7", GAD7_ITEMS, core),
+    phq9: targetFromLevels("phq9", exactLevels("phq9", PHQ9_ITEMS, core)),
+    gad7: targetFromLevels("gad7", exactLevels("gad7", GAD7_ITEMS, core)),
   };
 }
+
+/** Course baseline (session 1): unrounded levels so later sessions can move
+ * gradually instead of sticking at a rounding boundary. */
+export function baselineCourseSelfReport(core: ClinicalCore): CourseSelfReport {
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  return {
+    phq9: exactLevels("phq9", PHQ9_ITEMS, core).map(round2),
+    gad7: exactLevels("gad7", GAD7_ITEMS, core).map(round2),
+    trend: "baseline",
+  };
+}
+
+/** Rounded questionnaire answers for a session in a course. */
+export function profileFromCourseSelfReport(
+  course: CourseSelfReport,
+): SelfReportProfile {
+  return {
+    phq9: targetFromLevels("phq9", course.phq9),
+    gad7: targetFromLevels("gad7", course.gad7),
+  };
+}
+
+const TREND_LINE: Record<CourseSelfReport["trend"], string | null> = {
+  baseline: null,
+  improving:
+    "- Since your last session these problems have eased a little. Let that show only as much as a real person would notice it.",
+  unchanged:
+    "- Since your last session these problems feel about the same.",
+  worsening:
+    "- Since your last session these problems have been a bit worse.",
+};
 
 function formatItems(specs: readonly ItemSpec[], target: SelfReportTarget): string {
   return specs
@@ -115,15 +159,23 @@ function formatItems(specs: readonly ItemSpec[], target: SelfReportTarget): stri
 }
 
 /** Patient prompt block (Module 1 fidelity). English instructions; the
- * patient still answers in the session language enforced by Module 3. */
-export function formatSelfReportForPrompt(core: ClinicalCore): string {
-  const profile = deriveSelfReportProfile(core);
+ * patient still answers in the session language enforced by Module 3.
+ * In a therapy course, `course` carries this session's moved levels. */
+export function formatSelfReportForPrompt(
+  core: ClinicalCore,
+  course?: CourseSelfReport | null,
+): string {
+  const profile = course
+    ? profileFromCourseSelfReport(course)
+    : deriveSelfReportProfile(core);
+  const trend = course ? TREND_LINE[course.trend] : null;
   return [
     "SELF-REPORT QUESTIONNAIRES (only when the therapist administers them):",
     "- If the therapist asks you to complete the PHQ-9 or GAD-7, or asks how often over the last two weeks you have been bothered by one of these problems, answer consistently with the frequencies below.",
     "- Answer in everyday words in the session language. Give a number only if the therapist offers the 0 to 3 scale.",
     "- Never volunteer a questionnaire, a total score, or a severity label. You may hesitate or ask what a question means.",
     "- The question about being better off dead or hurting yourself follows Module 4 risk disclosure.",
+    ...(trend ? [trend] : []),
     "PHQ-9, last two weeks:",
     formatItems(PHQ9_ITEMS, profile.phq9),
     "GAD-7, last two weeks:",
