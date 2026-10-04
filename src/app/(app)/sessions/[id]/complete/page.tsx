@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { SessionMessage, TherapySession } from "@/lib/types";
+import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -68,6 +69,12 @@ export default async function SessionCompletePage({ params }: Props) {
           })}
         </p>
       </div>
+
+      <CourseProgressCard
+        supabase={supabase}
+        courseId={typed.therapy_course_id}
+        sessionNumber={typed.course_session_number}
+      />
 
       {immersionOverall != null && (
         <section className="clinical-card mb-4 p-5 fade-in-up">

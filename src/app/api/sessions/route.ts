@@ -22,6 +22,14 @@ import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import { shouldUseTherapyRoom } from "@/lib/therapy-room";
 import { stripAdminTestMarker } from "@/lib/admin/admin-test-session";
+import {
+  buildCourseSessionContext,
+  countCourseSessions,
+  createCourse,
+  decideCourseStart,
+  loadActiveCourse,
+} from "@/lib/therapy-course";
+import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -88,6 +96,68 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
+  // Therapy course — a plain "see this patient again" start continues the
+  // open course with the same pinned case. Explicit case/preset requests stay
+  // standalone sessions, exactly as before courses existed.
+  const requestsSpecificCase = Boolean(
+    body.disorderSlug ||
+      body.caseId ||
+      body.comorbiditySlugs?.length ||
+      body.templateId ||
+      body.templateSlug ||
+      body.presetId ||
+      body.presetSlug ||
+      body.disorderSlugOverride,
+  );
+  const courseLookup = requestsSpecificCase
+    ? ({ available: false } as const)
+    : await loadActiveCourse(supabase, {
+        therapistId: user.id,
+        avatarId: body.avatarId,
+      });
+  let courseDecision: ReturnType<typeof decideCourseStart> | null = null;
+  if (courseLookup.available) {
+    let sessionCount = 0;
+    if (courseLookup.course) {
+      const counts = await countCourseSessions(
+        supabase,
+        courseLookup.course.id,
+      );
+      if (!counts) {
+        return NextResponse.json(
+          { error: "Could not load your therapy course. Please try again." },
+          { status: 500 },
+        );
+      }
+      sessionCount = counts.total;
+    }
+    courseDecision = decideCourseStart(courseLookup.course, sessionCount);
+    if (courseDecision.kind === "plan_required") {
+      return NextResponse.json(
+        {
+          error:
+            "Write the treatment plan for this patient before starting session 3.",
+          code: "treatment_plan_required",
+          courseId: courseDecision.course.id,
+        },
+        { status: 409 },
+      );
+    }
+    if (courseDecision.kind === "course_finished") {
+      return NextResponse.json(
+        {
+          error:
+            "This course has reached its planned number of sessions. End or extend it from the course page.",
+          code: "course_length_reached",
+          courseId: courseDecision.course.id,
+        },
+        { status: 409 },
+      );
+    }
+  }
+  const continuing =
+    courseDecision?.kind === "continue" ? courseDecision : null;
+
   const builtinPreset =
     (body.presetId ? findPresetById(body.presetId) : undefined) ??
     (body.presetSlug ? findPresetBySlug(body.presetSlug) : undefined);
@@ -101,10 +171,21 @@ export async function POST(request: Request) {
       typedAvatar.default_locale ??
       typedAvatar.language,
   );
-  const effectiveLocale = sessionLanguage;
+  // A continuing course keeps the patient's locale: en-US and ar-JO are
+  // different people, so the course never switches personality mid-therapy.
+  const effectiveLocale = continuing
+    ? normalizeAvatarLocale(
+        continuing.course.clinical_snapshot.locale ??
+          continuing.course.language ??
+          sessionLanguage,
+      )
+    : sessionLanguage;
 
-  // Module 7 — generate immutable CaseInstance for this assessment
-  const caseResult = await createCaseForSession(supabase, {
+  // Module 7 — generate immutable CaseInstance for this assessment. A
+  // continuing therapy course reuses the case pinned when the course began.
+  const caseResult = continuing
+    ? caseFromCourse(continuing.course)
+    : await createCaseForSession(supabase, {
     avatar: typedAvatar,
     locale: effectiveLocale,
     therapistId: user.id,
@@ -135,7 +216,38 @@ export async function POST(request: Request) {
     : "classic";
 
   // Phase 3C — learner create path must never persist admin_test markers.
-  const learnerSnapshot = stripAdminTestMarker(caseResult.snapshot);
+  const baseSnapshot = stripAdminTestMarker(caseResult.snapshot);
+  const persistedCaseId = caseResult.caseInstanceId.startsWith("VPSY-")
+    ? null
+    : caseResult.caseInstanceId;
+
+  // Open a course on the first plain start with this patient. Best-effort: if
+  // it cannot be created the session still runs as a standalone session.
+  let course = continuing?.course ?? null;
+  let courseSessionNumber = continuing?.sessionNumber ?? null;
+  if (courseDecision?.kind === "new_course") {
+    course = await createCourse(supabase, {
+      therapistId: user.id,
+      avatarId: body.avatarId,
+      caseInstanceId: persistedCaseId,
+      snapshot: baseSnapshot,
+      language: baseSnapshot.locale || effectiveLocale,
+      maxDurationSec,
+    });
+    courseSessionNumber = course ? 1 : null;
+  }
+  const learnerSnapshot: CaseInstanceSnapshot =
+    course && courseSessionNumber
+      ? {
+          ...baseSnapshot,
+          therapy_course: buildCourseSessionContext({
+            courseId: course.id,
+            sessionNumber: courseSessionNumber,
+            plannedSessions: course.planned_sessions,
+            treatmentPlan: course.treatment_plan,
+          }),
+        }
+      : baseSnapshot;
 
   // Tenant stamp from server-side profile (never from browser body).
   // Historical sessions keep this value even if the learner later changes org.
@@ -145,9 +257,7 @@ export async function POST(request: Request) {
     status: "active",
     max_duration_sec: maxDurationSec,
     language: learnerSnapshot.locale || effectiveLocale,
-    case_instance_id: caseResult.caseInstanceId.startsWith("VPSY-")
-      ? null
-      : caseResult.caseInstanceId,
+    case_instance_id: persistedCaseId,
     clinical_snapshot: learnerSnapshot,
     difficulty: caseResult.difficulty,
     therapy_modality: caseResult.therapyModality,
@@ -155,6 +265,10 @@ export async function POST(request: Request) {
     interaction_mode: interactionMode,
     institution_id: profile?.primary_institution_id ?? null,
   };
+  if (course && courseSessionNumber) {
+    insertPayload.therapy_course_id = course.id;
+    insertPayload.course_session_number = courseSessionNumber;
+  }
 
   let { data: session, error } = await supabase
     .from("sessions")
@@ -246,9 +360,8 @@ export async function POST(request: Request) {
 
   // Stage 6 — seed case_memory with dyad Adaptation carry + CI mind state (R-I1).
   // Best-effort; never blocks session create.
-  const newCaseId = caseResult.caseInstanceId.startsWith("VPSY-")
-    ? null
-    : caseResult.caseInstanceId;
+  // A continuing course already has case_memory for its case; keep it.
+  const newCaseId = continuing ? null : persistedCaseId;
   if (newCaseId) {
     try {
       const carry = await loadDyadClinicalCarry(supabase, {
@@ -299,5 +412,28 @@ export async function POST(request: Request) {
     primaryObjective: caseResult.preset?.primary_objective ?? null,
     maxDurationSec,
     interactionMode,
+    courseId: course?.id ?? null,
+    courseSessionNumber,
   });
+}
+
+/** Case result for a session that continues an open therapy course. */
+function caseFromCourse(course: {
+  case_instance_id: string | null;
+  clinical_snapshot: CaseInstanceSnapshot;
+  max_duration_sec: number | null;
+}) {
+  const snapshot = course.clinical_snapshot;
+  return {
+    ok: true as const,
+    caseInstanceId:
+      course.case_instance_id ??
+      snapshot.case_instance_id ??
+      snapshot.assessment_id,
+    snapshot,
+    difficulty: snapshot.difficulty,
+    therapyModality: snapshot.therapy_modality,
+    preset: undefined,
+    maxDurationSec: course.max_duration_sec ?? undefined,
+  };
 }

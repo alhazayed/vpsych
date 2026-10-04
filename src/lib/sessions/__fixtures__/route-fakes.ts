@@ -29,7 +29,9 @@ export const avatar: Avatar = {
   updated_at: new Date().toISOString(),
 };
 
-export function fakeSupabase(opts: { status?: string; owner?: string } = {}) {
+export function fakeSupabase(
+  opts: { status?: string; owner?: string; snapshot?: Record<string, unknown> | null } = {},
+) {
   const rpcCalls: RpcCall[] = [];
   const inserts: Array<{ table: string; row: Record<string, unknown> }> = [];
   const messages: Array<Record<string, unknown>> = [];
@@ -42,7 +44,7 @@ export function fakeSupabase(opts: { status?: string; owner?: string } = {}) {
     started_at: new Date().toISOString(),
     max_duration_sec: 2400,
     case_instance_id: null,
-    clinical_snapshot: null,
+    clinical_snapshot: opts.snapshot ?? null,
     avatars: avatar,
   };
 

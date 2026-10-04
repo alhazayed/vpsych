@@ -37,6 +37,7 @@ import {
   type CaseMemoryBlob,
 } from "@/lib/adaptation";
 import { prepareMemoryForTurn } from "@/lib/patient-memory";
+import { injectTherapyCourseIntoSystemPrompt } from "@/lib/therapy-course";
 import {
   isConversationBehaviourEnabled,
   planConversationBehaviour,
@@ -253,9 +254,14 @@ export async function prepareClinicalTurn(params: {
     systemPrompt: resolved.system_prompt,
     identity: resolved.personality?.identity ?? null,
   });
+  // Therapy course — which visit this is and the trainee's treatment plan,
+  // frozen on the session snapshot. Empty for standalone sessions.
   const avatarWithMemory = {
     ...resolved,
-    system_prompt: memoryCtx.systemPrompt,
+    system_prompt: injectTherapyCourseIntoSystemPrompt(
+      memoryCtx.systemPrompt,
+      typed.clinical_snapshot?.therapy_course,
+    ),
   };
 
   const { data: userMsg, error: userMsgError } = await supabase
