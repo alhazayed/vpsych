@@ -32,11 +32,7 @@ describe("Phase 3C admin-test architecture", () => {
     ]);
   });
 
-  it("VoiceSession and Therapy Room redirect admin tests away from learner complete", () => {
-    const voice = readFileSync(
-      join(root, "components/VoiceSession.tsx"),
-      "utf8",
-    );
+  it("Therapy Room redirects admin tests away from learner complete", () => {
     const room = readFileSync(
       join(root, "components/therapy-room/TherapyRoom.tsx"),
       "utf8",
@@ -45,7 +41,7 @@ describe("Phase 3C admin-test architecture", () => {
       join(root, "components/therapy-room/TherapyRoomSession.tsx"),
       "utf8",
     );
-    for (const src of [voice, room, roomSession]) {
+    for (const src of [room, roomSession]) {
       expect(src).toMatch(/AdminTestBanner/);
       expect(src).toMatch(/admin\/avatars\/\$\{session\.avatar_id\}/);
       expect(src).toMatch(/skippedAssessment/);

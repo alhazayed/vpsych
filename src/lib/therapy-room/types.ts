@@ -5,8 +5,8 @@
  * - Therapy Room Mode (TRM / Mission 34) — consultation room scene + TRII
  * - Virtual Mental Health Center (VMHC / Mission 35) — clinic day workflow
  *
- * Both surfaces are optional behind their respective feature flags and do not
- * replace classic VoiceSession.
+ * TRM is the only session experience (the classic session screen was
+ * removed). VMHC stays optional behind FEATURE_THERAPY_ROOM.
  */
 
 import type { CaseDifficulty } from "@/lib/case-engine/types";

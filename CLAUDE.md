@@ -55,7 +55,7 @@ src/
     api/                  Route Handlers (all JSON, all rate-limited)
     login/ signup/ auth/callback/
     error.tsx  global-error.tsx  (app)/error.tsx   ← error boundaries; keep them
-  components/             client components (VoiceSession, ReportView, admin/, ace/, cge/)
+  components/             client components (therapy-room/, ReportView, admin/, ace/, cge/)
   lib/
     ai/                   provider selection, patient agent, assessment, prompt engine
     ai/openai/            official OpenAI SDK client, retry, typed errors
@@ -99,9 +99,11 @@ Read the matching file in `docs/` before changing any of them.
 | Human Personality Engine | `lib/personality-engine/` | `docs/HUMAN_PERSONALITY_ENGINE.md` |
 | Clinical Voice Profiles (CVP) | `lib/clinical-voice/` | `docs/CLINICAL_VOICE_PROFILES.md` |
 
-Therapy Room Mode (optional immersive session UI) lives in `lib/therapy-room/` +
-`components/therapy-room/` — see `docs/THERAPY_ROOM_MODE.md`. Enabled only when
-`NEXT_PUBLIC_THERAPY_ROOM_MODE=true`; classic `VoiceSession` remains default.
+Therapy Room Mode is the only session UI: it lives in `lib/therapy-room/` +
+`components/therapy-room/` — see `docs/THERAPY_ROOM_MODE.md`. The classic
+`VoiceSession` screen was removed; every new session is created with
+`interaction_mode = 'therapy_room'` and `/sessions/[id]` always renders
+`TherapyRoomSession`.
 
 Core invariants:
 

@@ -602,7 +602,6 @@
       "failed": "Could not start the session. Try again.",
       "networkError": "Network error",
       "starting": "Starting…",
-      "cta": "Start 40-min voice session",
       "signedOut": "Your sign-in has expired. Sign in again to start a session.",
       "rateLimited": "You have started many sessions recently. Wait a while and try again.",
       "patientUnavailable": "This patient is not available right now. Choose another patient."
@@ -617,10 +616,7 @@
   },
   "therapyRoom": {
     "start": {
-      "modeLabel": "Session experience",
-      "classic": "Classic",
-      "therapyRoom": "Therapy Room",
-      "cta": "Enter Therapy Room",
+      "cta": "Enter the therapy session",
       "hint": "Fullscreen consultation room — true hands-free voice, patient-focused. Transcript hidden by default."
     },
     "status": {

@@ -347,7 +347,7 @@ export type TherapySession = {
   clinical_snapshot?: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
   difficulty?: import("@/lib/case-engine/types").CaseDifficulty | null;
   therapy_modality?: import("@/lib/case-engine/types").TherapyModality | null;
-  /** classic = VoiceSession; therapy_room = immersive Therapy Room Mode (TRM). */
+  /** therapy_room for every new session; classic only on rows from before the classic screen was removed. */
   interaction_mode?: SessionInteractionMode | null;
   /** Mission 23 / Stage 10 — tenant scope (institutions.id). */
   institution_id?: string | null;
