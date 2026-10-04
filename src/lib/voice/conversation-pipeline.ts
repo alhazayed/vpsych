@@ -37,6 +37,8 @@ export type PipelineTurnResult = {
     speech_energy?: string;
   } | null;
   humanizationEnabled?: boolean;
+  /** gpt | gateway | persona_fallback — a fallback is never a model reply. */
+  aiSource?: string | null;
 };
 
 export type SpeakHandlers = {
@@ -64,7 +66,14 @@ export async function transcribeTherapistSpeech(params: {
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; transcript: string; provider?: string }
-  | { ok: false; error: string; unavailable: boolean; code?: string }
+  | {
+      ok: false;
+      error: string;
+      unavailable: boolean;
+      code?: string;
+      /** HTTP status from /api/voice/transcribe (0 = network / not sent). */
+      status?: number;
+    }
 > {
   const result = await transcribeWithOpenAI({
     audio: params.audio,
@@ -77,6 +86,7 @@ export async function transcribeTherapistSpeech(params: {
       error: result.error,
       unavailable: result.unavailable,
       code: result.code,
+      status: result.status,
     };
   }
   return {
@@ -99,7 +109,13 @@ export async function submitConversationTurn(params: {
   signal?: AbortSignal;
 }): Promise<
   | { ok: true; data: PipelineTurnResult }
-  | { ok: false; error: string; expired?: boolean; status: number }
+  | {
+      ok: false;
+      error: string;
+      expired?: boolean;
+      status: number;
+      code?: string;
+    }
 > {
   const res = await fetch(`/api/sessions/${params.sessionId}/message`, {
     method: "POST",
@@ -121,6 +137,8 @@ export async function submitConversationTurn(params: {
     locale?: string;
     voiceHints?: PipelineTurnResult["voiceHints"];
     humanizationEnabled?: boolean;
+    aiSource?: string;
+    code?: string;
   };
 
   if (!res.ok) {
@@ -129,10 +147,19 @@ export async function submitConversationTurn(params: {
       error: data.error ?? "Failed to send message",
       expired: Boolean(data.expired),
       status: res.status,
+      code: typeof data.code === "string" ? data.code : undefined,
     };
   }
 
-  if (!data.userMessage || !data.assistantMessage) {
+  // Contract: both rows exist and the patient reply has text. A row without
+  // content would render as an empty patient turn (or crash the transcript).
+  if (
+    !data.userMessage ||
+    !data.assistantMessage ||
+    typeof data.userMessage.content !== "string" ||
+    typeof data.assistantMessage.content !== "string" ||
+    !data.assistantMessage.content.trim()
+  ) {
     return {
       ok: false,
       error: "Incomplete message response",
@@ -149,13 +176,46 @@ export async function submitConversationTurn(params: {
       locale: resolvePipelineLocale(data.locale),
       voiceHints: data.voiceHints ?? null,
       humanizationEnabled: Boolean(data.humanizationEnabled),
+      aiSource: typeof data.aiSource === "string" ? data.aiSource : null,
     },
   };
 }
 
+/** Safe playback lifecycle events for the voice diagnostics panel. */
+export type PlaybackDiagnostic =
+  | { event: "tts_request_started" }
+  | {
+      event: "tts_response";
+      ok: boolean;
+      status?: number;
+      code?: string;
+    }
+  | { event: "audio_created" }
+  | { event: "audio_play_called" }
+  | { event: "audio_play_resolved" }
+  | { event: "audio_play_rejected"; reason: string }
+  | { event: "audio_playing" }
+  | { event: "audio_ended" }
+  | { event: "audio_error"; reason: string }
+  | { event: "browser_fallback_started" }
+  | { event: "browser_speech_started" }
+  | { event: "browser_speech_failed" }
+  | { event: "browser_speech_ended" };
+
+/**
+ * Outcome of one patient utterance:
+ * - elevenlabs   ElevenLabs audio played to the end
+ * - browser      browser SpeechSynthesis played instead
+ * - interrupted  aborted (barge-in / pause / end / newer turn)
+ * - unavailable  no audio could be played; `unavailableCode` says why
+ */
+export type PlaybackOutcome = "elevenlabs" | "browser" | "interrupted" | "unavailable";
+
 /**
  * Stages 3–4 — ElevenLabs speech → browser audio, with browser TTS fallback.
- * No-op safe when voice is disabled by the caller.
+ * No-op safe when voice is disabled by the caller. Never hangs: browser speech
+ * has a start watchdog, and a failure of both paths resolves "unavailable"
+ * (with `onUnavailable`) so the caller can show "Patient audio unavailable".
  */
 export async function playPatientSpeech(params: {
   text: string;
@@ -176,8 +236,13 @@ export async function playPatientSpeech(params: {
   handlers?: SpeakHandlers;
   /** Abort cancels ElevenLabs / browser playback (barge-in / pause / end). */
   signal?: AbortSignal;
-}): Promise<"elevenlabs" | "browser" | "interrupted"> {
+  /** Playback lifecycle (no audio contents) for diagnostics. */
+  onDiagnostic?: (d: PlaybackDiagnostic) => void;
+  /** Called once when neither ElevenLabs nor browser speech could play. */
+  onUnavailable?: (info: { code: string; status?: number }) => void;
+}): Promise<PlaybackOutcome> {
   const handlers = params.handlers ?? {};
+  const diag = params.onDiagnostic ?? (() => undefined);
   if (params.signal?.aborted) {
     handlers.onerror?.();
     return "interrupted";
@@ -204,6 +269,7 @@ export async function playPatientSpeech(params: {
 
   handlers.onstart?.();
 
+  diag({ event: "tts_request_started" });
   const result = await synthesizeSpeech({
     text: params.text,
     locale: params.locale,
@@ -217,6 +283,13 @@ export async function playPatientSpeech(params: {
     emotion: params.emotion,
     stability: params.stability,
     style: params.style,
+    signal: params.signal,
+  });
+  diag({
+    event: "tts_response",
+    ok: result.mode === "elevenlabs",
+    status: result.failure?.status,
+    code: result.failure?.code,
   });
 
   if (params.signal?.aborted) {
@@ -227,79 +300,145 @@ export async function playPatientSpeech(params: {
     return "interrupted";
   }
 
-  const browserFallback = (onDone: () => void) => {
-    if (params.signal?.aborted) {
-      onDone();
-      return;
-    }
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => {
-          handlers.onend?.();
-          onDone();
+  /**
+   * Browser SpeechSynthesis fallback. Resolves "browser" when it spoke,
+   * "unavailable" when it could not, "interrupted" when aborted.
+   */
+  const browserFallback = (
+    unavailableCode: string,
+    unavailableStatus?: number,
+  ): Promise<PlaybackOutcome> =>
+    new Promise<PlaybackOutcome>((resolve) => {
+      let settled = false;
+      const finish = (mode: PlaybackOutcome) => {
+        if (settled) return;
+        settled = true;
+        params.signal?.removeEventListener("abort", onAbort);
+        if (mode === "browser") handlers.onend?.();
+        else handlers.onerror?.();
+        if (mode === "unavailable") {
+          params.onUnavailable?.({
+            code: unavailableCode,
+            status: unavailableStatus,
+          });
+        }
+        resolve(mode);
+      };
+      const onAbort = () => {
+        window.speechSynthesis?.cancel();
+        finish("interrupted");
+      };
+      if (params.signal?.aborted) {
+        finish("interrupted");
+        return;
+      }
+      params.signal?.addEventListener("abort", onAbort, { once: true });
+      diag({ event: "browser_fallback_started" });
+      let started = false;
+      speakWithBrowser(
+        params.text,
+        params.locale,
+        {
+          onstart: () => {
+            started = true;
+            diag({ event: "browser_speech_started" });
+          },
+          onend: () => {
+            diag({ event: "browser_speech_ended" });
+            finish("browser");
+          },
+          onerror: () => {
+            if (params.signal?.aborted) {
+              finish("interrupted");
+              return;
+            }
+            diag({ event: "browser_speech_failed" });
+            // Started then cut off still counts as audible speech.
+            finish(started ? "browser" : "unavailable");
+          },
         },
-        onerror: () => {
-          handlers.onerror?.();
-          onDone();
-        },
-      },
-      params.speechPace,
-    );
-  };
+        params.speechPace,
+      );
+    });
 
   if (result.mode === "elevenlabs" && result.objectUrl) {
-    const audio = new Audio(result.objectUrl);
+    const objectUrl = result.objectUrl;
+    const audio = new Audio(objectUrl);
+    diag({ event: "audio_created" });
     if (params.audioRef) params.audioRef.current = audio;
 
-    return await new Promise<"elevenlabs" | "browser" | "interrupted">(
-      (resolve) => {
-        let settled = false;
-        const finish = (mode: "elevenlabs" | "browser" | "interrupted") => {
-          if (settled) return;
-          settled = true;
-          params.signal?.removeEventListener("abort", onAbort);
-          URL.revokeObjectURL(result.objectUrl!);
-          if (params.audioRef) params.audioRef.current = null;
-          if (mode === "elevenlabs") handlers.onend?.();
-          else if (mode === "interrupted") handlers.onerror?.();
-          resolve(mode);
-        };
+    const elevenOutcome = await new Promise<
+      PlaybackOutcome | { fallback: string }
+    >((resolve) => {
+      let settled = false;
+      const finish = (mode: PlaybackOutcome | { fallback: string }) => {
+        if (settled) return;
+        settled = true;
+        params.signal?.removeEventListener("abort", onAbort);
+        // Revoke only after playback is over — never before it starts.
+        URL.revokeObjectURL(objectUrl);
+        if (params.audioRef?.current === audio) params.audioRef.current = null;
+        if (mode === "elevenlabs") handlers.onend?.();
+        else if (mode === "interrupted") handlers.onerror?.();
+        resolve(mode);
+      };
 
-        const onAbort = () => {
-          try {
-            audio.pause();
-            audio.removeAttribute("src");
-            audio.load();
-          } catch {
-            /* ignore */
-          }
-          window.speechSynthesis?.cancel();
+      const onAbort = () => {
+        try {
+          audio.pause();
+          audio.removeAttribute("src");
+          audio.load();
+        } catch {
+          /* ignore */
+        }
+        window.speechSynthesis?.cancel();
+        finish("interrupted");
+      };
+
+      audio.onplaying = () => diag({ event: "audio_playing" });
+      audio.onended = () => {
+        diag({ event: "audio_ended" });
+        finish("elevenlabs");
+      };
+      audio.onerror = () => {
+        if (params.signal?.aborted || settled) {
           finish("interrupted");
-        };
+          return;
+        }
+        const code = audio.error?.code;
+        diag({ event: "audio_error", reason: `media_error_${code ?? "unknown"}` });
+        finish({ fallback: "AUDIO_DECODE" });
+      };
 
-        audio.onended = () => finish("elevenlabs");
-        audio.onerror = () => {
-          if (params.signal?.aborted) {
+      params.signal?.addEventListener("abort", onAbort, { once: true });
+
+      diag({ event: "audio_play_called" });
+      let playPromise: Promise<void> | undefined;
+      try {
+        playPromise = audio.play();
+      } catch (err) {
+        playPromise = Promise.reject(err);
+      }
+      void Promise.resolve(playPromise)
+        .then(() => diag({ event: "audio_play_resolved" }))
+        .catch((err: unknown) => {
+          if (params.signal?.aborted || settled) {
             finish("interrupted");
             return;
           }
-          browserFallback(() => finish("browser"));
-        };
-
-        params.signal?.addEventListener("abort", onAbort, { once: true });
-
-        void audio.play().catch(() => {
-          if (params.signal?.aborted) {
-            finish("interrupted");
-            return;
-          }
-          browserFallback(() => finish("browser"));
+          const name =
+            err && typeof err === "object" && "name" in err
+              ? String((err as { name: unknown }).name)
+              : "error";
+          diag({ event: "audio_play_rejected", reason: name });
+          finish({
+            fallback: name === "NotAllowedError" ? "AUTOPLAY_BLOCKED" : "AUDIO_PLAY_FAILED",
+          });
         });
-      },
-    );
+    });
+
+    if (typeof elevenOutcome === "string") return elevenOutcome;
+    return browserFallback(elevenOutcome.fallback);
   }
 
   if (params.signal?.aborted) {
@@ -307,38 +446,10 @@ export async function playPatientSpeech(params: {
     return "interrupted";
   }
 
-  return await new Promise<"browser" | "interrupted">((resolve) => {
-    let settled = false;
-    const finish = (mode: "browser" | "interrupted") => {
-      if (settled) return;
-      settled = true;
-      params.signal?.removeEventListener("abort", onAbort);
-      if (mode === "interrupted") handlers.onerror?.();
-      else handlers.onend?.();
-      resolve(mode);
-    };
-    const onAbort = () => {
-      window.speechSynthesis?.cancel();
-      finish("interrupted");
-    };
-    params.signal?.addEventListener("abort", onAbort, { once: true });
-    speakWithBrowser(
-      params.text,
-      params.locale,
-      {
-        onstart: handlers.onstart,
-        onend: () => finish("browser"),
-        onerror: () => {
-          if (params.signal?.aborted) finish("interrupted");
-          else {
-            handlers.onerror?.();
-            finish("browser");
-          }
-        },
-      },
-      params.speechPace,
-    );
-  });
+  return browserFallback(
+    result.failure?.code ?? "TTS_FAILED",
+    result.failure?.status,
+  );
 }
 
 /**

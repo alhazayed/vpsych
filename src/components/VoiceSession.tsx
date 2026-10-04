@@ -17,7 +17,19 @@ import {
   resolvePipelineLocale,
   runVoiceConversationTurn,
   submitConversationTurn,
+  transcribeTherapistSpeech,
+  type PipelineTurnResult,
 } from "@/lib/voice/conversation-pipeline";
+// Direct module imports (not the `@/lib/realtime` barrel) keep this client
+// bundle to the modules it uses; the barrel also carries the realtime engine
+// and the session-end bridge.
+import { submitStreamingConversationTurn } from "@/lib/realtime/client-pipeline";
+import {
+  browserSpeechChunkDeps,
+  createProgressiveSpeechQueue,
+  type ProgressiveSpeechQueue,
+} from "@/lib/realtime/progressive-tts";
+import { createTurnFence, type TurnTicket } from "@/lib/realtime/turn-fence";
 import {
   startMicWavRecording,
   type MicRecorder,
@@ -71,16 +83,26 @@ function formatMessageTime(iso: string) {
  * Voice pipeline (optional):
  *   Therapist Speech → OpenAI STT → GPT-5 Patient → ElevenLabs → Browser Audio
  *
+ * Realtime mode (`realtimeStreaming`, server feature flag; off by default):
+ *   STT → /message/stream (shared clinical pipeline, true token streaming)
+ *   → sentence events → bounded progressive ElevenLabs TTS → ordered playback.
+ *   Therapist speech (mic press) or a typed message barges in: TTS and the
+ *   SSE/LLM generation abort, the turn fence advances, pending audio clears.
+ *   Classic /message stays the fallback.
+ *
  * Text-only mode uses the same message API (persist + GPT-5) without mic/TTS.
  */
 export function VoiceSession({
   session,
   avatar,
   initialMessages,
+  realtimeStreaming = false,
 }: {
   session: TherapySession;
   avatar: ResolvedAvatar;
   initialMessages: SessionMessage[];
+  /** Server-resolved `isRealtimeStreamingEnabled()`; classic when false. */
+  realtimeStreaming?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("session");
@@ -105,6 +127,17 @@ export function VoiceSession({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const endingRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Realtime turn state — every async effect is fenced by turn generation.
+  const [fence] = useState(createTurnFence);
+  const speechQueueRef = useRef<ProgressiveSpeechQueue | null>(null);
+  const patientActiveRef = useRef(false);
+  const bargeInRef = useRef(false);
+  const voiceEnabledRef = useRef(voiceEnabled);
+  const [liveReply, setLiveReply] = useState("");
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+  }, [voiceEnabled]);
 
   const stopPlayback = useCallback(() => {
     window.speechSynthesis?.cancel();
@@ -115,6 +148,24 @@ export function VoiceSession({
     }
   }, []);
 
+  /**
+   * Barge-in / cancel for the realtime path, in order:
+   * abort active TTS → abort SSE + LLM generation → advance the turn fence →
+   * clear pending audio. Returns true when the patient was generating or
+   * speaking (the next turn then carries `therapistInterrupted`).
+   */
+  const interruptPatient = useCallback(() => {
+    const wasActive = patientActiveRef.current;
+    speechQueueRef.current?.abort();
+    speechQueueRef.current = null;
+    fence.invalidate();
+    stopPlayback();
+    patientActiveRef.current = false;
+    setLiveReply("");
+    setSpeaking(false);
+    return wasActive;
+  }, [fence, stopPlayback]);
+
   const endSession = useCallback(async () => {
     if (endingRef.current) return;
     endingRef.current = true;
@@ -124,7 +175,7 @@ export function VoiceSession({
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
       micRecorderRef.current = null;
-      stopPlayback();
+      interruptPatient();
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
       });
@@ -152,7 +203,7 @@ export function VoiceSession({
       endingRef.current = false;
       setEnding(false);
     }
-  }, [router, session.avatar_id, session.id, t, stopPlayback]);
+  }, [router, session.avatar_id, session.id, t, interruptPatient]);
 
   useEffect(() => {
     const tick = () => {
@@ -172,15 +223,15 @@ export function VoiceSession({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, status]);
+  }, [messages, status, liveReply]);
 
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
       micRecorderRef.current?.cancel();
-      stopPlayback();
+      interruptPatient();
     };
-  }, [stopPlayback]);
+  }, [interruptPatient]);
 
   const speak = useCallback(
     async (
@@ -220,6 +271,8 @@ export function VoiceSession({
       });
       if (mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
+      } else if (mode === "unavailable") {
+        setStatus(t("status.patientAudioUnavailable"));
       }
     },
     [
@@ -237,7 +290,7 @@ export function VoiceSession({
   );
 
   /** Text or post-STT turn — always persists messages + timestamps server-side. */
-  const sendMessage = useCallback(
+  const sendClassicMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || pending || endingRef.current) return;
@@ -277,6 +330,275 @@ export function VoiceSession({
     [endSession, pending, session.id, speak, t, voiceEnabled],
   );
 
+  /** One progressive TTS queue per draft attempt, fenced to the turn ticket. */
+  const createSpeechQueue = useCallback(
+    (ticket: TurnTicket, hints: PipelineTurnResult["voiceHints"]) => {
+      if (!voiceEnabledRef.current) return null;
+      return createProgressiveSpeechQueue(
+        browserSpeechChunkDeps({
+          locale,
+          voiceId: avatar.voice_id,
+          voiceIdAr: avatar.voice_id_ar,
+          voiceProfileId: avatar.voice_profile_id,
+          avatarId: avatar.id,
+          speechPace:
+            hints?.speech_pace ?? avatar.personality?.speech?.pace ?? null,
+          speechEnergy: hints?.speech_energy ?? null,
+          disorderSlug,
+          stability: hints?.stability ?? null,
+          style: hints?.style ?? null,
+          audioRef,
+          isCurrent: ticket.isCurrent,
+        }),
+        {
+          pauseBeforeMs: hints?.pause_before_ms ?? 0,
+          onPlaybackStart: () => {
+            if (ticket.isCurrent()) setSpeaking(true);
+          },
+          onSettled: (outcome) => {
+            if (!ticket.isCurrent()) return;
+            setSpeaking(false);
+            if (outcome === "completed") patientActiveRef.current = false;
+          },
+        },
+      );
+    },
+    [
+      avatar.id,
+      avatar.personality?.speech?.pace,
+      avatar.voice_id,
+      avatar.voice_id_ar,
+      avatar.voice_profile_id,
+      disorderSlug,
+      locale,
+    ],
+  );
+
+  /**
+   * Realtime turn: SSE token stream → sentence events → progressive TTS.
+   * A new turn (or barge-in) aborts the previous one first; every callback
+   * checks the turn ticket so stale tokens, TTS results, playback callbacks
+   * and completions are discarded.
+   */
+  const sendRealtimeTurn = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || endingRef.current) return;
+      const therapistInterrupted = interruptPatient() || bargeInRef.current;
+      bargeInRef.current = false;
+      const ticket = fence.begin();
+      patientActiveRef.current = true;
+      setLiveReply("");
+      setDraft("");
+      setStatus(t("status.patientResponding"));
+
+      // Holder (not a `let`) so callbacks can set it without TS narrowing to null.
+      const turnHints: { current: PipelineTurnResult["voiceHints"] } = {
+        current: null,
+      };
+      let sentences = 0;
+      const resetSpeech = () => {
+        speechQueueRef.current?.abort();
+        speechQueueRef.current = ticket.isCurrent()
+          ? createSpeechQueue(ticket, turnHints.current)
+          : null;
+      };
+
+      const result = await submitStreamingConversationTurn({
+        sessionId: session.id,
+        message: trimmed,
+        therapistInterrupted,
+        clientTurnId: `t${ticket.generation}`,
+        isCurrent: ticket.isCurrent,
+        handlers: {
+          signal: ticket.signal,
+          onStarted: (info) => {
+            turnHints.current = info.voiceHints ?? null;
+            setMessages((prev) => [...prev, info.userMessage]);
+            resetSpeech();
+          },
+          onToken: (_token, partial) => setLiveReply(partial),
+          onSentence: (sentence) => {
+            sentences += 1;
+            speechQueueRef.current?.enqueue(sentence.text);
+          },
+          onRegenerating: () => {
+            // Draft discarded server-side: drop its text and its audio.
+            setLiveReply("");
+            setSpeaking(false);
+            sentences = 0;
+            resetSpeech();
+          },
+        },
+      });
+
+      if (!ticket.isCurrent() || result.status === "stale") return;
+      setLiveReply("");
+
+      if (result.status === "completed") {
+        const assistant = result.data.assistantMessage;
+        setMessages((prev) => [...prev, assistant]);
+        const queue = speechQueueRef.current;
+        if (queue && sentences > 0) {
+          queue.close();
+        } else if (voiceEnabledRef.current && assistant.content.trim()) {
+          // Classic full-response TTS fallback (no sentence events reached us).
+          queue?.abort();
+          speechQueueRef.current = null;
+          void playPatientSpeech({
+            text: assistant.content,
+            locale,
+            voiceId: avatar.voice_id,
+            voiceIdAr: avatar.voice_id_ar,
+            voiceProfileId: avatar.voice_profile_id,
+            avatarId: avatar.id,
+            speechPace:
+              turnHints.current?.speech_pace ??
+              avatar.personality?.speech?.pace ??
+              null,
+            speechEnergy: turnHints.current?.speech_energy ?? null,
+            disorderSlug,
+            stability: turnHints.current?.stability ?? null,
+            style: turnHints.current?.style ?? null,
+            audioRef,
+            signal: ticket.signal,
+            handlers: {
+              onstart: () => ticket.isCurrent() && setSpeaking(true),
+              onend: () => {
+                if (!ticket.isCurrent()) return;
+                setSpeaking(false);
+                patientActiveRef.current = false;
+              },
+              onerror: () => ticket.isCurrent() && setSpeaking(false),
+            },
+          });
+        } else {
+          patientActiveRef.current = false;
+        }
+        setStatus(
+          voiceEnabledRef.current
+            ? t("status.listeningNext")
+            : t("status.textReady"),
+        );
+        return;
+      }
+
+      speechQueueRef.current?.abort();
+      speechQueueRef.current = null;
+      patientActiveRef.current = false;
+      setSpeaking(false);
+
+      if (result.status === "interrupted") {
+        setStatus(t("status.ready"));
+        return;
+      }
+
+      // failed
+      if (result.expired) {
+        await endSession();
+        return;
+      }
+      if (!result.fallbackToClassic) {
+        setStatus(
+          result.error === "network_error" ||
+            result.error === "stream_disconnected" ||
+            result.error === "stream_incomplete"
+            ? t("status.networkError")
+            : t("status.sendFailed"),
+        );
+        return;
+      }
+
+      // Stream route refused before persisting anything → classic /message.
+      patientActiveRef.current = true;
+      try {
+        const turn = await submitConversationTurn({
+          sessionId: session.id,
+          message: trimmed,
+          therapistInterrupted,
+          signal: ticket.signal,
+        });
+        if (!ticket.isCurrent()) return;
+        if (!turn.ok) {
+          patientActiveRef.current = false;
+          if (turn.expired) {
+            await endSession();
+            return;
+          }
+          setStatus(turn.error || t("status.sendFailed"));
+          return;
+        }
+        setMessages((prev) => [
+          ...prev,
+          turn.data.userMessage,
+          turn.data.assistantMessage,
+        ]);
+        if (voiceEnabledRef.current) {
+          void playPatientSpeech({
+            text: turn.data.assistantMessage.content,
+            locale,
+            voiceId: avatar.voice_id,
+            voiceIdAr: avatar.voice_id_ar,
+            voiceProfileId: avatar.voice_profile_id,
+            avatarId: avatar.id,
+            speechPace:
+              turn.data.voiceHints?.speech_pace ??
+              avatar.personality?.speech?.pace ??
+              null,
+            speechEnergy: turn.data.voiceHints?.speech_energy ?? null,
+            disorderSlug,
+            stability: turn.data.voiceHints?.stability ?? null,
+            style: turn.data.voiceHints?.style ?? null,
+            pauseBeforeMs: turn.data.voiceHints?.pause_before_ms ?? null,
+            audioRef,
+            signal: ticket.signal,
+            handlers: {
+              onstart: () => ticket.isCurrent() && setSpeaking(true),
+              onend: () => {
+                if (!ticket.isCurrent()) return;
+                setSpeaking(false);
+                patientActiveRef.current = false;
+              },
+              onerror: () => ticket.isCurrent() && setSpeaking(false),
+            },
+          });
+        } else {
+          patientActiveRef.current = false;
+        }
+        setStatus(
+          voiceEnabledRef.current
+            ? t("status.listeningNext")
+            : t("status.textReady"),
+        );
+      } catch {
+        if (!ticket.isCurrent()) return;
+        patientActiveRef.current = false;
+        setStatus(t("status.networkError"));
+      }
+    },
+    [
+      avatar.id,
+      avatar.personality?.speech?.pace,
+      avatar.voice_id,
+      avatar.voice_id_ar,
+      avatar.voice_profile_id,
+      createSpeechQueue,
+      disorderSlug,
+      endSession,
+      fence,
+      interruptPatient,
+      locale,
+      session.id,
+      t,
+    ],
+  );
+
+  const sendMessage = useCallback(
+    (text: string) =>
+      realtimeStreaming ? sendRealtimeTurn(text) : sendClassicMessage(text),
+    [realtimeStreaming, sendClassicMessage, sendRealtimeTurn],
+  );
+
   async function stopOpenAIListen() {
     const recorder = micRecorderRef.current;
     micRecorderRef.current = null;
@@ -287,6 +609,40 @@ export function VoiceSession({
 
     setStatus(t("status.transcribing"));
     setPending(true);
+
+    if (realtimeStreaming) {
+      // Realtime: STT → streamed turn (tokens → sentences → progressive TTS).
+      let transcript = "";
+      try {
+        const wav = await recorder.stop();
+        const stt = await transcribeTherapistSpeech({
+          audio: wav,
+          locale: session.language ?? locale,
+        });
+        if (!stt.ok) {
+          if (stt.unavailable) {
+            setStatus(t("status.sttUnavailable"));
+            startBrowserListen({ autoSend: true });
+            return;
+          }
+          setStatus(stt.error || t("status.transcribeFailed"));
+          return;
+        }
+        transcript = stt.transcript.trim();
+        if (!transcript) {
+          setStatus(t("status.noSpeech"));
+          return;
+        }
+        setDraft(transcript);
+      } catch {
+        setStatus(t("status.micTranscribeError"));
+        return;
+      } finally {
+        setPending(false);
+      }
+      await sendRealtimeTurn(transcript);
+      return;
+    }
 
     try {
       const wav = await recorder.stop();
@@ -405,6 +761,11 @@ export function VoiceSession({
   async function toggleListen() {
     if (pending || ending || !voiceEnabled) return;
 
+    if (!listening && realtimeStreaming) {
+      // Therapist starts speaking: barge in before capture begins.
+      if (interruptPatient()) bargeInRef.current = true;
+    }
+
     if (listening) {
       if (micRecorderRef.current) {
         await stopOpenAIListen();
@@ -438,6 +799,9 @@ export function VoiceSession({
       micRecorderRef.current = null;
       setListening(false);
     }
+    // Silence progressive TTS but keep any in-flight streamed reply.
+    speechQueueRef.current?.abort();
+    speechQueueRef.current = null;
     stopPlayback();
     setSpeaking(false);
     const next = !voiceEnabled;
@@ -655,6 +1019,20 @@ export function VoiceSession({
                   {m.content}
                 </div>
               ))}
+            {liveReply && (
+              // Provisional streamed draft — presentation only, never persisted;
+              // replaced by the validated message when the turn completes.
+              <div
+                className="max-w-[92%] rounded-xl bg-[var(--surface-container)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--on-surface)] opacity-70"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                  {avatar.name}
+                </p>
+                {liveReply}
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 

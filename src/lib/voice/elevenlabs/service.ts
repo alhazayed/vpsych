@@ -293,6 +293,7 @@ export const elevenLabsService = {
       voiceSettings.style = Math.max(0, Math.min(1, params.style));
     }
     let lastDetail = "";
+    let lastStatus = 0;
     let lastVoiceId = primaryVoiceId;
 
     for (let i = 0; i < voiceCandidates.length; i++) {
@@ -397,6 +398,7 @@ export const elevenLabsService = {
         };
       }
 
+      lastStatus = res.status;
       lastDetail = await res.text().catch(() => "");
       const planBlocked =
         res.status === 402 ||
@@ -413,7 +415,11 @@ export const elevenLabsService = {
     throw new ElevenLabsError("ElevenLabs TTS failed", {
       code: /paid_plan_required|payment_required/i.test(lastDetail)
         ? "TTS_PLAN_REQUIRED"
-        : "TTS_FAILED",
+        : lastStatus === 401 || /invalid_api_key|unauthorized/i.test(lastDetail)
+          ? "TTS_AUTH"
+          : /quota_exceeded/i.test(lastDetail)
+            ? "TTS_QUOTA"
+            : "TTS_FAILED",
       status: 502,
       detail: `${lastDetail.slice(0, 400)} [voice=${lastVoiceId}]`,
     });

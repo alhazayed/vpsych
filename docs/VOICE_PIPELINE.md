@@ -15,6 +15,21 @@ Therapist speech
 
 Orchestrated by `conversation-pipeline.ts`. Text-only sessions skip STT/TTS.
 
+## Realtime turn path (`FEATURE_REALTIME_STREAMING=true`)
+
+```
+Therapist speech
+  → OpenAI STT (/api/voice/transcribe)
+  → /api/sessions/:id/message/stream  (same clinical pipeline; SSE tokens)
+  → sentence events (speech release gate)
+  → progressive ElevenLabs TTS (/api/voice/tts?progressive=1, ≤2 in flight, ≤6 queued)
+  → ordered browser playback
+```
+
+Barge-in aborts TTS, the SSE request and the LLM generation, advances the
+client turn fence, and clears pending audio. Classic `/message` + full-reply
+TTS stays the fallback. See `STREAMING_ENGINE.md`.
+
 ## Realtime gateway (flag-gated)
 
 `createVoiceGateway()` composes:
@@ -48,3 +63,26 @@ Clients should send `therapistInterrupted: true` on the next message when barge-
 | Clinical live-switch params | CVP |
 | Capture / playback / VAD UX | Realtime gateway |
 | STT/TTS HTTP routes | Existing `/api/voice/*` (rate-limited) |
+
+## Voice turn outcomes and diagnostics (Therapy Room)
+
+Every hands-free turn ends in one visible outcome:
+
+| Outcome | What the therapist sees |
+|---|---|
+| Success | therapist caption + patient caption + patient audio |
+| Partial | both captions + "Patient audio unavailable" naming ElevenLabs or playback, with a "Play patient audio" button |
+| Error | a line naming the failed stage, e.g. `Speech-to-text failed (HTTP 429): OpenAI quota or credit balance is exhausted.` |
+
+Order is strictly serial: STT → therapist caption → `/message` → patient caption → TTS → playback.
+Neither caption depends on TTS or playback.
+
+- `lib/voice/voice-diagnostics.ts` — pure stage reducer + safe error wording.
+- `components/therapy-room/VoiceTurnPanel.tsx` — captions, alert line, and the per-stage
+  debug grid (dev, `NEXT_PUBLIC_VOICE_DEBUG=true`, or `?voiceDebug=1`).
+- `[VOICE][MIC|STT|TTS|TURN]` console lines (same switch) carry sizes, statuses and lengths
+  only — never transcript text, patient text, audio, or keys.
+- `/api/voice/transcribe` maps provider quota / credit exhaustion to `OPENAI_QUOTA_EXHAUSTED`.
+- `/api/voice/tts` maps "no approved voice for this language" to `VOICE_LANGUAGE_UNAVAILABLE` (503).
+- Barge-in is opt-in (`NEXT_PUBLIC_VOICE_BARGE_IN=true`) and arms only 700 ms after audio is
+  actually playing.

@@ -344,6 +344,40 @@ export function detectMedicationContradiction(
   return null;
 }
 
+/**
+ * True when `text` carries anything the canonical fact checks could act on: a
+ * digit (age / dose / duration claims are digit-matched) or the name of any
+ * authored medication agent. Text without either cannot, on its own, trip the
+ * age or medication checks above.
+ *
+ * Used by the realtime speech-release gate to decide whether a streamed
+ * sentence may be spoken before the full reply has been validated. It does
+ * NOT replace `validatePatientReply`, which still runs on every final reply.
+ */
+export function hasCanonicalFactExposure(
+  text: string,
+  facts?: Pick<CanonicalReplyFacts, "medications"> | null,
+): boolean {
+  if (!text) return false;
+  const norm = normalizeForFacts(text);
+  if (/\d/.test(norm)) return true;
+  // Spoken Arabic numerals attached to doses/durations are fact-bearing too.
+  if (statedDoses(norm).length > 0 || statedDurations(norm).length > 0) {
+    return true;
+  }
+  return mentionsAnyMedicationAgent(text, facts);
+}
+
+/** True when `text` names any authored medication agent (any owner/status). */
+export function mentionsAnyMedicationAgent(
+  text: string,
+  facts?: Pick<CanonicalReplyFacts, "medications"> | null,
+): boolean {
+  if (!text) return false;
+  const norm = normalizeForFacts(text);
+  return (facts?.medications ?? []).some((fact) => mentionsAgent(norm, fact));
+}
+
 export function validatePatientReply(
   text: string,
   facts?: CanonicalReplyFacts,

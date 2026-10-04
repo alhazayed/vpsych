@@ -57,10 +57,13 @@ const DISORDER_SLUGS = [
 
 describe("Integrated clinical engine pipeline", () => {
   it("message route composes engines without overwrite (source invariant)", () => {
-    const route = readFileSync(
-      join(process.cwd(), "src/app/api/sessions/[id]/message/route.ts"),
-      "utf8",
-    );
+    // Cognition is shared by /message and /message/stream via clinical-turn.
+    const route = [
+      "src/app/api/sessions/[id]/message/route.ts",
+      "src/lib/sessions/clinical-turn.ts",
+    ]
+      .map((p) => readFileSync(join(process.cwd(), p), "utf8"))
+      .join("\n");
     expect(route).toMatch(/processTherapistTurn/);
     expect(route).toMatch(/prepareMemoryForTurn/);
     expect(route).toMatch(/processEmotionTurn/);
