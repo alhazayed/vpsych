@@ -17,7 +17,22 @@
       "discard": "Discard Changes",
       "confirmSave": "Confirm & Save"
     },
-    "technicalDetails": "Technical details"
+    "technicalDetails": "Technical details",
+    "errorBoundary": {
+      "rootTitle": "Something went wrong",
+      "rootBody": "An unexpected error interrupted this page. You can retry or return to the patient library.",
+      "retry": "Try again",
+      "patientLibrary": "Patient library",
+      "segmentTitle": "This view failed to load",
+      "segmentBodyAdmin": "The administrator console hit an unexpected error. Retry this view or return to the admin overview.",
+      "segmentBodyLearner": "Something went wrong in your workspace. Retry this view or continue from My Sessions.",
+      "adminOverview": "Admin overview",
+      "mySessions": "My Sessions",
+      "reference": "Reference: {digest}",
+      "notFoundTitle": "Page not found",
+      "notFoundBody": "The page you requested does not exist or is no longer available.",
+      "home": "Home"
+    }
   },
   "shell": {
     "tagline": "Clinical Intelligence",

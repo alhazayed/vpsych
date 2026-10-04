@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 export default function RootError({
   error,
@@ -10,6 +11,7 @@ export default function RootError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("common.errorBoundary");
   useEffect(() => {
     console.error("[app-error]", error.digest ?? error.message);
   }, [error]);
@@ -17,25 +19,29 @@ export default function RootError({
   return (
     <main className="mx-auto flex min-h-[50vh] max-w-lg flex-col justify-center px-4 py-16 text-center">
       <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
-        Something went wrong
+        {t("rootTitle")}
       </h1>
       <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-        An unexpected error interrupted this page. You can retry or return to
-        the patient library.
+        {t("rootBody")}
       </p>
+      {error.digest ? (
+        <p className="mt-2 font-mono text-xs text-[var(--outline)]" dir="ltr">
+          {t("reference", { digest: error.digest })}
+        </p>
+      ) : null}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={reset}
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
         >
-          Try again
+          {t("retry")}
         </button>
         <Link
           href="/avatars"
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm font-medium text-[var(--on-surface)]"
         >
-          Patient library
+          {t("patientLibrary")}
         </Link>
       </div>
     </main>
