@@ -15,6 +15,11 @@ import { runSupervisorAfterAssessment } from "@/lib/supervisor";
 import { runValidationAfterAssessment } from "@/lib/validation";
 import { logSecurityEvent } from "@/lib/security-audit";
 import {
+  completeCourse,
+  loadCourseById,
+  shouldCompleteAfterSession,
+} from "@/lib/therapy-course";
+import {
   assertAdminTestSkipAllowed,
   isAdminTestSnapshot,
 } from "@/lib/admin/admin-test-session";
@@ -62,6 +67,23 @@ async function sealLedgerBestEffort(opts: {
     );
   }
   return null;
+}
+
+async function completeCourseAfterSessionBestEffort(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  opts: { courseId: string; sessionNumber: number | null },
+): Promise<void> {
+  try {
+    const course = await loadCourseById(supabase, opts.courseId);
+    if (course && shouldCompleteAfterSession(course, opts.sessionNumber)) {
+      await completeCourse(supabase, course.id, "course_length");
+    }
+  } catch (e) {
+    console.warn(
+      "[sessions/end] therapy course soft-fail:",
+      e instanceof Error ? e.message : e,
+    );
+  }
 }
 
 type Params = { params: Promise<{ id: string }> };
@@ -204,6 +226,15 @@ export async function POST(_request: Request, { params }: Params) {
       ok: true,
       adminTest: true,
       skippedAssessment: true,
+    });
+  }
+
+  // Therapy course — close it after its final planned session. Idempotent and
+  // best-effort: never blocks the report.
+  if (typed.therapy_course_id) {
+    await completeCourseAfterSessionBestEffort(supabase, {
+      courseId: typed.therapy_course_id,
+      sessionNumber: typed.course_session_number ?? null,
     });
   }
 

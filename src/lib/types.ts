@@ -360,8 +360,72 @@ export type TherapySession = {
    * Prefer interaction_mode for TRM; ui_mode routes clinic-day resumes.
    */
   ui_mode?: "chat" | "therapy_room" | null;
+  /** Therapy course this session continues (null = standalone session). */
+  therapy_course_id?: string | null;
+  /** 1-based visit number within the therapy course. */
+  course_session_number?: number | null;
   avatars?: Avatar;
   profiles?: Profile;
+};
+
+export type TherapyCourseStatus = "active" | "completed";
+
+export type TherapyCourseCompletionReason = "terminated" | "course_length";
+
+/** Trainee-authored treatment plan, written after the second session. */
+export type TreatmentPlan = {
+  /** Case formulation: the presenting problem and what maintains it. */
+  formulation: string;
+  /** 1–6 treatment goals. */
+  goals: string[];
+  /** Planned interventions / therapeutic approach. */
+  interventions: string;
+  /** Expected total number of sessions for the course. */
+  expected_sessions: number;
+  /** What the patient should expect, in plain language. */
+  patient_expectations: string;
+  /**
+   * Risk and safety formulation (what raises and lowers risk, safety plan).
+   * Clinician-facing: never shown to the patient. Empty on plans written
+   * before this field existed.
+   */
+  risk_formulation: string;
+};
+
+/**
+ * One trainee working with one patient case across several sessions.
+ * The case snapshot is pinned at course start so the diagnosis and life
+ * story stay the same from visit to visit.
+ */
+export type TherapyCourse = {
+  id: string;
+  therapist_id: string;
+  avatar_id: string;
+  case_instance_id: string | null;
+  clinical_snapshot: import("@/lib/case-engine/types").CaseInstanceSnapshot;
+  language: string | null;
+  max_duration_sec: number | null;
+  status: TherapyCourseStatus;
+  planned_sessions: number;
+  treatment_plan: TreatmentPlan | null;
+  plan_submitted_at: string | null;
+  plan_updated_at: string | null;
+  completed_at: string | null;
+  completion_reason: TherapyCourseCompletionReason | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Course context frozen onto `clinical_snapshot.therapy_course` per session. */
+export type TherapyCourseSessionContext = {
+  course_id: string;
+  session_number: number;
+  planned_sessions: number;
+  is_final_session: boolean;
+  treatment_plan: TreatmentPlan | null;
+  /** True for the first session after the plan was written or revised: the
+   * therapist presents it in this session and the patient can negotiate it. */
+  plan_is_new?: boolean;
 };
 
 export type SessionMessage = {

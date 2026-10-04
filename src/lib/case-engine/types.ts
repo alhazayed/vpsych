@@ -269,6 +269,12 @@ export type CaseInstanceSnapshot = {
    * Identity-stable under diagnosis override; does not drift mid-session.
    */
   human_personality?: import("@/lib/personality-engine").HumanPersonalityProfile;
+  /**
+   * Therapy course context frozen for this session (which visit this is, the
+   * trainee's treatment plan as the patient was told it, final-session flag).
+   * Absent on standalone sessions and on sessions created before courses.
+   */
+  therapy_course?: import("@/lib/types").TherapyCourseSessionContext;
 };
 
 export type CaseValidationIssue = {
