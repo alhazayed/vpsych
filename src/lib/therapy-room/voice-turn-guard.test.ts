@@ -52,9 +52,11 @@ describe("TherapyRoomSession voice turn guardrails", () => {
     expect(fn).toMatch(/describeVoiceError\(/);
   });
 
-  it("keeps barge-in opt-in and armed only after audio is playing", () => {
+  it("keeps barge-in on by default and armed only after audio is playing", () => {
+    // Off-by-default barge-in shipped as "barge-in doesn't work"; it can still
+    // be switched off explicitly.
     expect(src).toMatch(
-      /BARGE_IN_ENABLED = process\.env\.NEXT_PUBLIC_VOICE_BARGE_IN === "true"/,
+      /BARGE_IN_ENABLED = process\.env\.NEXT_PUBLIC_VOICE_BARGE_IN !== "false"/,
     );
     const fn = body("speakPatient");
     // The monitor must not start before playback (it used to start during the
@@ -64,6 +66,29 @@ describe("TherapyRoomSession voice turn guardrails", () => {
     );
     expect(fn).not.toMatch(/bargeInStopRef\.current = await startBargeInMonitor/);
     expect(fn).toMatch(/case "audio_playing":[\s\S]*armBargeIn\(\)/);
+  });
+
+  it("hands the barge-in mic and onset audio to the next listen turn", () => {
+    const speak = body("speakPatient");
+    expect(speak).toMatch(/bargeInHandoffRef\.current = handoff \?\? null/);
+    const listen = body("startListeningLoop");
+    // Taken before any bail-out so an unused handoff is always released.
+    expect(listen.indexOf("bargeInHandoffRef.current = null")).toBeLessThan(
+      listen.indexOf("if (endingRef.current"),
+    );
+    expect(listen).toMatch(/stream: handoff\?\.stream/);
+    expect(listen).toMatch(/preroll: handoff/);
+    expect(listen).toMatch(/handoff\?\.release\(\)/);
+  });
+
+  it("offers a manual interrupt that works even with voice barge-in off", () => {
+    const speak = body("speakPatient");
+    const armIdx = speak.indexOf("if (!BARGE_IN_ENABLED");
+    const manualIdx = speak.indexOf("interruptPatientRef.current = () => onBargeIn()");
+    expect(manualIdx).toBeGreaterThan(-1);
+    // The manual path is not behind the voice barge-in flag.
+    expect(speak.slice(armIdx, armIdx + 80)).not.toMatch(/interruptPatientRef/);
+    expect(body("handleControl")).toMatch(/case "interrupt":/);
   });
 
   it("reports patient audio unavailable instead of failing silently", () => {
