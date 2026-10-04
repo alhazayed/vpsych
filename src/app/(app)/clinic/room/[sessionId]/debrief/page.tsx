@@ -10,6 +10,7 @@ import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
+import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
@@ -20,7 +21,7 @@ export default async function ClinicDebriefPage({ params }: Props) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, therapist_id, status, clinical_snapshot, avatars(name, disorder)")
+    .select("*, avatars(name, disorder)")
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -94,11 +95,28 @@ export default async function ClinicDebriefPage({ params }: Props) {
     needsReport = !hasReportError && hasReport === false;
   }
 
+  // `select("*")` keeps the page working before the therapy-course columns
+  // exist; they are simply absent then.
+  const courseId = (session as { therapy_course_id?: string | null })
+    .therapy_course_id;
+  const courseSessionNumber = (
+    session as { course_session_number?: number | null }
+  ).course_session_number;
+
   return (
     <>
       {needsReport ? (
         <div className="mx-auto max-w-2xl px-4 pt-6 md:px-8">
           <FinalizeSessionReport sessionId={sessionId} refreshOnDone />
+        </div>
+      ) : null}
+      {courseId ? (
+        <div className="mx-auto max-w-2xl px-4 pt-10 md:px-8">
+          <CourseProgressCard
+            supabase={supabase}
+            courseId={courseId}
+            sessionNumber={courseSessionNumber}
+          />
         </div>
       ) : null}
       <SessionDebrief

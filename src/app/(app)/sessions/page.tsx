@@ -19,9 +19,9 @@ export default async function SessionsListPage() {
   // column — selecting it alone 400s the whole list when the migration is absent.
   const { data: sessions, error: sessionsError } = await supabase
     .from("sessions")
-    .select(
-      "id, status, started_at, ended_at, interaction_mode, clinical_snapshot, avatar_id, avatars(name, disorder)",
-    )
+    // `*` so therapy-course columns appear when present without 400-ing the
+    // list on a database that has not applied that migration yet.
+    .select("*, avatars(name, disorder)")
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
   if (sessionsError) {
@@ -39,6 +39,8 @@ export default async function SessionsListPage() {
           | "interaction_mode"
           | "clinical_snapshot"
           | "avatar_id"
+          | "therapy_course_id"
+          | "course_session_number"
         > & {
           avatars: { name: string; disorder: string };
         })[]
@@ -52,6 +54,24 @@ export default async function SessionsListPage() {
       : raw.filter((s) => !isAdminTestSnapshot(s.clinical_snapshot));
 
   const therapyRoom = isTherapyRoomEnabled();
+
+  // Therapy courses (empty when the table is missing).
+  const { data: courseRows } = await supabase
+    .from("therapy_courses")
+    .select("id, status, planned_sessions, updated_at, avatars(name)")
+    .eq("therapist_id", user.id)
+    .order("updated_at", { ascending: false });
+  const courses = (courseRows ?? []).map((c) => {
+    const av = c.avatars as { name: string } | { name: string }[] | null;
+    return {
+      id: c.id as string,
+      status: c.status as string,
+      planned: c.planned_sessions as number,
+      name: (Array.isArray(av) ? av[0]?.name : av?.name) ?? "",
+      held: list.filter((s) => s.therapy_course_id === c.id).length,
+    };
+  });
+  const tCourse = await getTranslations("course");
 
   function statusLabel(status: string) {
     if (status === "active") return t("status.active");
@@ -97,6 +117,47 @@ export default async function SessionsListPage() {
           />
         </div>
       ) : null}
+      {courses.length > 0 && (
+        <section className="clinical-card mb-6 overflow-hidden">
+          <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+              {tCourse("coursesTitle")}
+            </p>
+          </div>
+          <ul className="divide-y divide-[var(--surface-container-low)]">
+            {courses.map((c) => (
+              <li
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--on-surface)]">{c.name}</p>
+                  <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+                    {tCourse("sessionsHeld", { count: c.held })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`status-chip ${
+                      c.status === "active" ? "status-chip-active" : "status-chip-done"
+                    }`}
+                  >
+                    {c.status === "active"
+                      ? tCourse("statusActive")
+                      : tCourse("statusCompleted")}
+                  </span>
+                  <Link
+                    href={`/courses/${c.id}`}
+                    className="text-sm font-medium text-[var(--primary)] hover:underline"
+                  >
+                    {tCourse("openCourse")}
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="clinical-card overflow-hidden">
         <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
@@ -117,6 +178,9 @@ export default async function SessionsListPage() {
                     {s.avatars?.name} · {s.avatars?.disorder}
                   </p>
                   <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+                    {s.course_session_number
+                      ? `${tCourse("sessionBadge", { n: s.course_session_number })} · `
+                      : ""}
                     {format(new Date(s.started_at), "MMM d, yyyy · HH:mm")}
                     {adminTest ? ` · ${t("adminTestHint")}` : ""}
                   </p>

@@ -1,0 +1,31 @@
+/**
+ * Session Practice Engine — therapy best practices observed in a session
+ * (intake, consent, structure, safety planning, measures), an indicative
+ * CTS-R view, and in-character PHQ-9 / GAD-7 self-report targets.
+ *
+ * Observes the therapist only, except `formatSelfReportForPrompt`, which the
+ * avatar resolver injects as a patient fidelity block. Not validated.
+ * See docs/SESSION_PRACTICE_ENGINE.md.
+ */
+
+export * from "@/lib/session-practice/types";
+export { PRACTICE_PATTERNS } from "@/lib/session-practice/patterns";
+export {
+  SESSION_PRACTICE_LIMITATIONS,
+  caseHasRisk,
+  evaluateSessionPractice,
+  windowRange,
+} from "@/lib/session-practice/checklist";
+export {
+  CTSR_ITEM_ORDER,
+  CTSR_LIMITATIONS,
+  buildIndicativeCtsr,
+} from "@/lib/session-practice/cts-r";
+export {
+  FREQUENCY_LABELS,
+  GAD7_ITEMS,
+  PHQ9_ITEMS,
+  deriveSelfReportProfile,
+  formatSelfReportForPrompt,
+  severityBand,
+} from "@/lib/session-practice/self-report";

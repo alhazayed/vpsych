@@ -21,6 +21,7 @@ import {
   withPreservedCaseFile,
 } from "@/lib/ai/canonical-facts";
 import { resolveHumanPersonality } from "@/lib/personality-engine";
+import { formatSelfReportForPrompt } from "@/lib/session-practice";
 import {
   formatFormulationForPrompt,
   formatMseForPrompt,
@@ -460,6 +461,7 @@ export function resolveAvatar(
       avatarSlug: avatar.slug,
       locale,
     });
+    fidelity.self_report_block = formatSelfReportForPrompt(coreWithFacts);
     if (options?.adaptationBlock?.trim()) {
       fidelity.adaptation_block = options.adaptationBlock.trim();
     }
@@ -569,6 +571,7 @@ export function resolveAvatar(
     avatarSlug: avatar.slug,
     locale,
   });
+  assembly.fidelity.self_report_block = formatSelfReportForPrompt(flatMerged);
   assembly.human_personality = resolveHumanPersonality({
     avatar,
     locale,
