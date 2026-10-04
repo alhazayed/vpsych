@@ -84,5 +84,11 @@ Neither caption depends on TTS or playback.
   only — never transcript text, patient text, audio, or keys.
 - `/api/voice/transcribe` maps provider quota / credit exhaustion to `OPENAI_QUOTA_EXHAUSTED`.
 - `/api/voice/tts` maps "no approved voice for this language" to `VOICE_LANGUAGE_UNAVAILABLE` (503).
-- Barge-in is opt-in (`NEXT_PUBLIC_VOICE_BARGE_IN=true`) and arms only 700 ms after audio is
-  actually playing.
+- Barge-in is on by default (`NEXT_PUBLIC_VOICE_BARGE_IN=false` turns voice barge-in off). The
+  mic monitor arms 400 ms after audio is actually playing, spends 450 ms learning the patient's
+  residual echo level, then fires on ≥300 ms of speech at 2.5× that level
+  (`createBargeInDetector` in `lib/therapy-room/vad.ts`). On fire the patient clip stops and the
+  same open mic stream, plus the therapist's first words from a short ring buffer, is handed to
+  the next listen turn, so the transcript does not lose its opening words.
+- An Interrupt control (✋, or Space) appears while the patient is speaking and works even when
+  voice barge-in is off or the device's echo cancellation is too weak for it.

@@ -35,6 +35,7 @@ import {
   statusKeyForState,
   voiceModulationForDisorder,
   type AmbienceController,
+  type BargeInHandoff,
   type ConversationFsm,
   type ConversationState,
   type ConversationStatusKey,
@@ -78,14 +79,15 @@ import type {
 } from "@/lib/types";
 
 /**
- * Barge-in (therapist interrupts patient audio) is off until the basic serial
- * turn is proven reliable: an always-armed mic monitor could abort the
- * patient's own clip on echo / room noise, which is heard as "no patient
- * voice". Opt in with NEXT_PUBLIC_VOICE_BARGE_IN=true.
+ * Barge-in (therapist talks over the patient → patient stops, mic takes the
+ * turn). On by default; the monitor calibrates the patient's echo floor before
+ * it can fire, so the patient's own clip does not abort itself. Set
+ * NEXT_PUBLIC_VOICE_BARGE_IN=false to fall back to strict serial turns. The
+ * Interrupt control works either way.
  */
-const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN === "true";
+const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN !== "false";
 /** When enabled, barge-in arms only this long after audio is actually playing. */
-const BARGE_IN_ARM_DELAY_MS = 700;
+const BARGE_IN_ARM_DELAY_MS = 400;
 
 const subscribeNoop = () => () => undefined;
 
@@ -125,6 +127,7 @@ export function TherapyRoomSession({
   );
   const [elapsed, setElapsed] = useState(0);
   const [fsmState, setFsmState] = useState<ConversationState>("IDLE");
+  const [canInterrupt, setCanInterrupt] = useState(false);
   const [statusKey, setStatusKey] = useState<ConversationStatusKey>("ready");
   const [paused, setPaused] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -171,6 +174,10 @@ export function TherapyRoomSession({
   const behaviorBaseRef = useRef<PatientBehaviorState>(behavior);
   const vadRef = useRef<VadController | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
+  /** Open mic + captured onset from a voice barge-in, for the next listen. */
+  const bargeInHandoffRef = useRef<BargeInHandoff | null>(null);
+  /** Interrupts the patient clip that is playing now (null when none). */
+  const interruptPatientRef = useRef<(() => void) | null>(null);
   const ambienceRef = useRef<AmbienceController | null>(null);
   const immersionRef = useRef<ImmersionTracker>(createImmersionTracker());
   const telemetryRef = useRef<ConversationTelemetry>(createConversationTelemetry());
@@ -288,6 +295,11 @@ export function TherapyRoomSession({
     playbackAbortRef.current = null;
   }, []);
 
+  const releaseBargeInHandoff = useCallback(() => {
+    bargeInHandoffRef.current?.release();
+    bargeInHandoffRef.current = null;
+  }, []);
+
   const stopPlayback = useCallback(() => {
     window.speechSynthesis?.cancel();
     bargeInStopRef.current?.();
@@ -335,6 +347,7 @@ export function TherapyRoomSession({
     setStatusKey("ending");
     vadRef.current?.cancel();
     vadRef.current = null;
+    releaseBargeInHandoff();
     cancelTurnWork();
     stopPlayback();
     ambienceRef.current?.stop();
@@ -378,6 +391,7 @@ export function TherapyRoomSession({
     cancelTurnWork,
     dispatch,
     persistSessionMeta,
+    releaseBargeInHandoff,
     router,
     session.avatar_id,
     session.id,
@@ -428,11 +442,21 @@ export function TherapyRoomSession({
       let bargeInArmTimer: number | null = null;
       let ttsFailure: { status?: number; code?: string } | null = null;
 
-      const onBargeIn = () => {
-        if (bargeInFired || endingRef.current) return;
-        if (!fsmRef.current.isCurrent(generation)) return;
+      const onBargeIn = (handoff?: BargeInHandoff) => {
+        if (bargeInFired || endingRef.current) {
+          handoff?.release();
+          return;
+        }
+        if (!fsmRef.current.isCurrent(generation)) {
+          handoff?.release();
+          return;
+        }
         bargeInFired = true;
-        voiceLog("TURN", "barge_in");
+        interruptPatientRef.current = null;
+        setCanInterrupt(false);
+        bargeInHandoffRef.current?.release();
+        bargeInHandoffRef.current = handoff ?? null;
+        voiceLog("TURN", "barge_in", { source: handoff ? "voice" : "control" });
         immersionRef.current.track("therapist_interrupt");
         telemetryRef.current.record("barge_in");
         abort.abort();
@@ -441,10 +465,17 @@ export function TherapyRoomSession({
         if (transitioned.ok) {
           setPresence("interrupted", "barge");
           setStatusKey("listening");
+          setVoiceDiag((d) =>
+            markVoiceStage(d, "audio", "ok", { audio_mode: "interrupted" }),
+          );
           // Mic reopens immediately — no click required.
           listenLoopRef.current();
+        } else {
+          releaseBargeInHandoff();
         }
       };
+      interruptPatientRef.current = () => onBargeIn();
+      setCanInterrupt(true);
 
       // Arm barge-in only once audio is audibly playing (never during the TTS
       // fetch, never in the first moments while echo cancellation adapts).
@@ -551,7 +582,11 @@ export function TherapyRoomSession({
       });
 
       disarmBargeIn();
-      playbackAbortRef.current = null;
+      if (playbackAbortRef.current === abort) playbackAbortRef.current = null;
+      if (!bargeInFired) {
+        interruptPatientRef.current = null;
+        setCanInterrupt(false);
+      }
 
       telemetryRef.current.record("playback_duration_ms", {
         valueMs: telemetryRef.current.elapsed(playbackStarted),
@@ -601,6 +636,7 @@ export function TherapyRoomSession({
       dispatch,
       disorderSlug,
       locale,
+      releaseBargeInHandoff,
       session.id,
       setPresence,
       speechProfile.energy,
@@ -874,10 +910,18 @@ export function TherapyRoomSession({
   );
 
   const startListeningLoop = useCallback(async () => {
-    if (endingRef.current) return;
+    // Take the barge-in mic (if any) now so a bail-out below can release it.
+    const handoff = bargeInHandoffRef.current;
+    bargeInHandoffRef.current = null;
+    if (endingRef.current || vadRef.current) {
+      handoff?.release();
+      return;
+    }
     const state = fsmRef.current.getState();
-    if (state !== "LISTENING") return;
-    if (vadRef.current) return;
+    if (state !== "LISTENING") {
+      handoff?.release();
+      return;
+    }
 
     const generation = fsmRef.current.getGeneration();
     setPresence("listening", `listen-${turnIndexRef.current}`);
@@ -899,6 +943,16 @@ export function TherapyRoomSession({
       const vad = await startHandsFreeVad({
         silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
         maxMs: 28000,
+        // After a voice barge-in, keep listening on the same open mic and
+        // keep the words already spoken, so the turn starts at its first word.
+        stream: handoff?.stream,
+        preroll: handoff
+          ? {
+              samples: handoff.preroll,
+              sampleRate: handoff.sampleRate,
+              speechMs: handoff.speechMs,
+            }
+          : undefined,
         onSpeechStart: () => {
           voiceLog("MIC", "recording_started");
           setVoiceDiag((d) => markVoiceStage(d, "recording", "active"));
@@ -979,6 +1033,7 @@ export function TherapyRoomSession({
         }
       }
     } catch (err) {
+      handoff?.release();
       const name =
         err && typeof err === "object" && "name" in err
           ? String((err as { name: unknown }).name)
@@ -1060,6 +1115,7 @@ export function TherapyRoomSession({
       fsm.reset("IDLE");
       vadRef.current?.cancel();
       vadRef.current = null;
+      releaseBargeInHandoff();
       cancelTurnWork();
       stopPlayback();
       ambienceRef.current?.stop();
@@ -1113,6 +1169,7 @@ export function TherapyRoomSession({
           telemetryRef.current.record("pause");
           vadRef.current?.cancel();
           vadRef.current = null;
+          releaseBargeInHandoff();
           cancelTurnWork();
           stopPlayback();
           dispatch("PAUSE");
@@ -1130,6 +1187,9 @@ export function TherapyRoomSession({
           }
           break;
         }
+        case "interrupt":
+          interruptPatientRef.current?.();
+          break;
         case "notes":
           immersionRef.current.track("notes_open");
           setNotesOpen((v) => !v);
@@ -1215,6 +1275,7 @@ export function TherapyRoomSession({
       endSession,
       lastPatientText,
       locale,
+      releaseBargeInHandoff,
       setPresence,
       settings.muteAvatar,
       speechProfile.energy,
@@ -1232,7 +1293,14 @@ export function TherapyRoomSession({
       ) {
         return;
       }
-      if (e.key === "Escape") {
+      if (
+        e.code === "Space" &&
+        interruptPatientRef.current &&
+        !(e.target instanceof HTMLButtonElement)
+      ) {
+        e.preventDefault();
+        handleControl("interrupt");
+      } else if (e.key === "Escape") {
         setNotesOpen(false);
         setSettingsOpen(false);
         setTranscriptOpen(false);
@@ -1441,6 +1509,7 @@ export function TherapyRoomSession({
           settingsOpen={settingsOpen}
           transcriptOpen={transcriptOpen}
           ending={ending}
+          canInterrupt={canInterrupt}
           onAction={handleControl}
         />
 
