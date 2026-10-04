@@ -20,6 +20,7 @@ import { embedAdaptationInMemory } from "@/lib/adaptation";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { closeFailedSessionStart } from "@/lib/session-expiry";
 import { shouldUseTherapyRoom } from "@/lib/therapy-room";
 import { stripAdminTestMarker } from "@/lib/admin/admin-test-session";
 
@@ -223,6 +224,7 @@ export async function POST(request: Request) {
     console.error("[sessions] system message signing unavailable", {
       sessionId: session.id,
     });
+    await closeFailedSessionStart(supabase, session.id);
     return NextResponse.json(
       { error: clientSafeError("Failed to start session", prepared.error) },
       { status: 500 },
@@ -238,6 +240,7 @@ export async function POST(request: Request) {
       sessionId: session.id,
       error: sysErr.message,
     });
+    await closeFailedSessionStart(supabase, session.id);
     return NextResponse.json(
       { error: clientSafeError("Failed to start session", sysErr) },
       { status: 500 },

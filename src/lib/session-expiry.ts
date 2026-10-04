@@ -151,3 +151,37 @@ export async function expireStaleSessionsForTherapist(
   }
   return expired;
 }
+
+/**
+ * Close a session whose start failed after the row was inserted (e.g. the
+ * opening system message could not be written). Without this the learner is
+ * shown an error while an empty "active" session lingers in My Sessions and
+ * admin views until max duration. Marked `expired` (not `completed`): it has
+ * no therapist turns, so no report is ever generated for it. Best effort.
+ */
+export async function closeFailedSessionStart(
+  supabase: SupabaseClient,
+  sessionId: string,
+  now: Date = new Date(),
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("sessions")
+      .update({ status: "expired", ended_at: now.toISOString() })
+      .eq("id", sessionId)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+    if (error) {
+      console.warn("[session-expiry] close failed start:", error.message);
+      return false;
+    }
+    return Boolean(data?.id);
+  } catch (e) {
+    console.warn(
+      "[session-expiry] close failed start:",
+      e instanceof Error ? e.message : e,
+    );
+    return false;
+  }
+}
