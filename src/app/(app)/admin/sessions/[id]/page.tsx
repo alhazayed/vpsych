@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GenerateReportButton } from "@/components/admin/GenerateReportButton";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
@@ -29,7 +30,7 @@ export default async function AdminSessionDetailPage({
   const tHome = await getTranslations("admin.home");
   const locale = await getLocale();
 
-  const { data: sessionRaw } = await supabase
+  const { data: sessionRaw, error: sessionRawError } = await supabase
     .from("sessions")
     .select(
       `
@@ -55,6 +56,7 @@ export default async function AdminSessionDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(sessionRawError, "admin-session");
   if (!sessionRaw) notFound();
 
   // Defensive: expire if past max duration before rendering.
@@ -97,11 +99,12 @@ export default async function AdminSessionDetailPage({
 
   if (!session) notFound();
 
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from("session_messages")
     .select("id, role, content, created_at")
     .eq("session_id", id)
     .order("created_at", { ascending: true });
+  throwOnLoadError(messagesError, "admin-session-transcript");
 
   const profile = session.profiles as unknown as {
     display_name: string;

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { VirtualPatientDetail } from "@/components/admin/VirtualPatientDetail";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import {
@@ -27,7 +28,7 @@ export default async function AdminAvatarDetailPage({
   const tHome = await getTranslations("admin.home");
   const tTranscript = await getTranslations("admin.testTranscript");
 
-  const { data: avatar } = await supabase
+  const { data: avatar, error: avatarError } = await supabase
     .from("avatars")
     .select(
       "id, name, slug, disorder, age, gender, is_active, lifecycle_status, language, dialect, voice_id, voice_id_ar, voice_profile_id, human_personality, personalities, clinical_core, persona_prompt, ideal_guidelines, rubric, portrait_url, schema_version, default_locale, available_locales, created_at, updated_at, voice_profile:voice_profiles(*)",
@@ -35,6 +36,7 @@ export default async function AdminAvatarDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(avatarError, "admin-avatar");
   if (!avatar) notFound();
 
   const row = avatar as Avatar & {
