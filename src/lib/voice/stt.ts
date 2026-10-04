@@ -75,6 +75,51 @@ export function notConfiguredError(): TranscribeFailure {
   };
 }
 
+/** Provider error codes that mean "account out of quota / credits". */
+const QUOTA_PROVIDER_CODES = new Set([
+  "insufficient_quota",
+  "credit_balance_exhausted",
+  "billing_hard_limit_reached",
+  "billing_not_active",
+]);
+
+/**
+ * Map an OpenAI STT failure to a safe, specific client error. The provider's
+ * message is never forwarded; only a stable code the UI can explain
+ * (e.g. OPENAI_QUOTA_EXHAUSTED when the account's credit balance is gone).
+ */
+export function sttProviderFailure(error: {
+  code?: string | null;
+  kind?: string | null;
+  status?: number | null;
+  providerCode?: string | null;
+}): TranscribeFailure {
+  const provider = (error.providerCode ?? "").toLowerCase();
+  const status =
+    error.status && error.status >= 400 && error.status < 600
+      ? error.status
+      : 502;
+  if (error.kind === "insufficient_quota" || QUOTA_PROVIDER_CODES.has(provider)) {
+    return {
+      error: "Speech transcription failed: OpenAI quota exhausted",
+      code: "OPENAI_QUOTA_EXHAUSTED",
+      status,
+    };
+  }
+  if (error.kind === "authentication") {
+    return {
+      error: "Speech transcription failed: OpenAI authentication",
+      code: "OPENAI_AUTH",
+      status,
+    };
+  }
+  return {
+    error: "Speech transcription failed",
+    code: error.code || "OPENAI_STT_FAILED",
+    status,
+  };
+}
+
 export function guessAudioExtension(mimeType: string): string {
   const type = mimeType.toLowerCase();
   if (type.includes("wav")) return "wav";

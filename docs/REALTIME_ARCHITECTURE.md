@@ -50,7 +50,8 @@ Transform VPsych into a production-grade real-time clinical simulation platform 
 
 ```
 POST /api/sessions/:id/message          → cognition SSOT (unchanged owners)
-POST /api/sessions/:id/message/stream   → SSE presentation adapter over classic turn
+POST /api/sessions/:id/message/stream   → SSE: same clinical pipeline (lib/sessions/clinical-turn),
+                                          true provider token streaming, progressive TTS
 POST /api/sessions/:id/end
   → assess → education → validation → supervisor → enterprise
   → runRealtimeAfterAssessment()   // soft-fail; never blocks report
@@ -66,13 +67,13 @@ GET  /api/admin/realtime
 | Flag | Default | Effect |
 |------|---------|--------|
 | `FEATURE_REALTIME_SIMULATION` / `NEXT_PUBLIC_…` | off | Enables realtime chrome + streaming APIs |
-| `FEATURE_REALTIME_STREAMING` / `NEXT_PUBLIC_…` | on when simulation on | SSE `/message/stream` |
+| `FEATURE_REALTIME_STREAMING` / `NEXT_PUBLIC_…` | off (explicit `true` required, plus simulation) | SSE `/message/stream`, progressive TTS, barge-in in `VoiceSession` |
 
 ## Streaming model
 
-1. **Cognition SSOT:** classic message route still runs Adaptation → Emotion → CBE → DecisionPlan → Humanization → Patient Agent → `insert_assistant_message`.
-2. **SSE adapter:** `/message/stream` invokes the classic handler, then progressively emits tokens for partial UI / incremental speech scheduling.
-3. **True provider streaming:** `generatePatientReplyStream` + `openAIService.chatStream` are additive APIs for deeper integration without forking soft engines (see `STREAMING_ENGINE.md`).
+1. **Cognition SSOT:** `lib/sessions/clinical-turn.ts` runs Adaptation → Memory → Emotion → CBE → DecisionPlan → Humanization → canonical gate → `insert_assistant_message` for **both** `/message` and `/message/stream`.
+2. **True provider streaming:** `/message/stream` drafts with `generatePatientReplyStream`; tokens reach the client as the model emits them. No progressive reveal of a finished reply.
+3. **Validation before persistence:** only the validated final reply is persisted; a speech release gate decides which streamed sentences may be spoken early (see `STREAMING_ENGINE.md`).
 
 ## Latency honesty
 

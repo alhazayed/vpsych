@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 type ControlId =
+  | "interrupt"
   | "pause"
   | "resume"
   | "notes"
@@ -19,6 +20,7 @@ export function FloatingControls({
   settingsOpen,
   transcriptOpen,
   ending,
+  canInterrupt = false,
   onAction,
 }: {
   paused: boolean;
@@ -27,6 +29,8 @@ export function FloatingControls({
   settingsOpen: boolean;
   transcriptOpen: boolean;
   ending?: boolean;
+  /** True while a patient clip is playing (or loading) and can be cut off. */
+  canInterrupt?: boolean;
   onAction: (id: ControlId) => void;
 }) {
   const t = useTranslations("therapyRoom.controls");
@@ -38,6 +42,16 @@ export function FloatingControls({
     danger?: boolean;
     active?: boolean;
   }> = [
+    ...(canInterrupt
+      ? [
+          {
+            id: "interrupt" as const,
+            icon: "front_hand",
+            label: t("interrupt"),
+            active: true,
+          },
+        ]
+      : []),
     {
       id: paused ? "resume" : "pause",
       icon: paused ? "play_arrow" : "pause",

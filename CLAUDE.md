@@ -132,6 +132,12 @@ POST /api/sessions/[id]/end   → mark completed/expired → session_has_report 
                                 → runAceAfterAssessment() (best effort)
 ```
 
+`POST /api/sessions/[id]/message/stream` (realtime, flag-gated) shares the same
+cognition: both routes call `prepareClinicalTurn` → `generateValidatedReply` →
+`persistAssistantReply` in `lib/sessions/clinical-turn.ts`. Never add engine
+calls to either route directly (`architecture.test.ts` enforces this). See
+`docs/STREAMING_ENGINE.md`.
+
 Sessions hard-expire at `MAX_SESSION_SECONDS` (40 min, `lib/types.ts`),
 enforced server-side.
 

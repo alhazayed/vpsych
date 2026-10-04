@@ -54,6 +54,11 @@ export type HandsFreeVadOptions = {
   stream?: MediaStream;
   /** When true, do not stop tracks on finish (caller owns the stream). */
   retainStream?: boolean;
+  /**
+   * Audio already captured while the therapist started speaking (barge-in).
+   * Seeds the recording and starts the turn in the speaking state.
+   */
+  preroll?: { samples: Float32Array; sampleRate: number; speechMs: number };
 };
 
 function writeString(view: DataView, offset: number, str: string) {
@@ -198,7 +203,8 @@ export async function startHandsFreeVad(
   const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
   const minSpeechMs = options.minSpeechMs ?? 400;
 
-  const ownsStream = !options.stream;
+  // A passed stream is adopted (stopped on finish) unless the caller retains it.
+  const ownsStream = !options.stream || !options.retainStream;
   const stream =
     options.stream ??
     (await navigator.mediaDevices.getUserMedia({
@@ -229,6 +235,20 @@ export async function startHandsFreeVad(
   let totalSpeechMs = 0;
   let settle: ((blob: Blob | null) => void) | null = null;
   const startedAt = Date.now();
+
+  if (options.preroll && options.preroll.samples.length > 0) {
+    chunks.push(
+      downsample(
+        options.preroll.samples,
+        options.preroll.sampleRate,
+        audioContext.sampleRate,
+      ),
+    );
+    speaking = true;
+    speechStartedAt = startedAt - Math.max(0, options.preroll.speechMs);
+    lastSpeechAt = startedAt;
+    totalSpeechMs = startedAt - speechStartedAt;
+  }
 
   const finish = async (keep: boolean) => {
     if (stopped) return;
@@ -323,6 +343,7 @@ export async function startHandsFreeVad(
   const done = new Promise<Blob | null>((resolve) => {
     settle = resolve;
   });
+  if (speaking) options.onSpeechStart?.();
 
   return {
     done,
@@ -339,17 +360,126 @@ export async function startHandsFreeVad(
 }
 
 /**
- * Monitor mic for barge-in while the patient is speaking.
- * Returns a stop function. No audio is retained.
+ * Pure barge-in decision — unit-tested without Web Audio.
+ *
+ * The patient's own voice leaks back into the mic (speakers → room → mic) and
+ * echo cancellation removes only part of it on many devices. A fixed level
+ * threshold either misses the therapist or aborts the patient's clip on its
+ * own echo. So the detector first calibrates the residual echo floor while
+ * the patient is talking, then fires only on sustained speech clearly louder
+ * than that floor. Brief dips between syllables do not reset the run.
  */
-export async function startBargeInMonitor(opts: {
-  onBargeIn: () => void;
+export type BargeInDetectorOptions = {
+  /** Absolute RMS floor (0–1) below which nothing counts as speech. */
   threshold?: number;
-  /** Require this much continuous speech before firing. */
+  /** Continuous speech needed before firing. */
   minSpeechMs?: number;
-}): Promise<() => void> {
-  const threshold = opts.threshold ?? 0.02;
-  const minSpeechMs = opts.minSpeechMs ?? 280;
+  /** Listen-only window at start used to learn the echo floor. */
+  calibrationMs?: number;
+  /** Speech must be this many times louder than the echo floor. */
+  echoRatio?: number;
+  /** Dips shorter than this inside a run keep the run alive. */
+  gapToleranceMs?: number;
+};
+
+export const BARGE_IN_DEFAULTS = {
+  threshold: 0.02,
+  minSpeechMs: 300,
+  calibrationMs: 450,
+  echoRatio: 2.5,
+  gapToleranceMs: 150,
+} as const;
+
+export function createBargeInDetector(options: BargeInDetectorOptions = {}) {
+  const threshold = options.threshold ?? BARGE_IN_DEFAULTS.threshold;
+  const minSpeechMs = options.minSpeechMs ?? BARGE_IN_DEFAULTS.minSpeechMs;
+  const calibrationMs = options.calibrationMs ?? BARGE_IN_DEFAULTS.calibrationMs;
+  const echoRatio = options.echoRatio ?? BARGE_IN_DEFAULTS.echoRatio;
+  const gapToleranceMs =
+    options.gapToleranceMs ?? BARGE_IN_DEFAULTS.gapToleranceMs;
+
+  let startedAt: number | null = null;
+  const calibration: number[] = [];
+  let floor = 0;
+  let runStart: number | null = null;
+  let lastLoudAt: number | null = null;
+  let fired = false;
+
+  const trigger = () => Math.max(threshold, floor * echoRatio);
+
+  return {
+    /** Feed one frame's RMS level; returns true once, when barge-in fires. */
+    push(level: number, now: number): boolean {
+      if (fired) return false;
+      if (startedAt == null) startedAt = now;
+
+      if (now - startedAt < calibrationMs) {
+        calibration.push(level);
+        return false;
+      }
+      if (calibration.length > 0) {
+        // 90th percentile: the echo's loud syllables, not its average.
+        const sorted = [...calibration].sort((a, b) => a - b);
+        floor = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))]!;
+        calibration.length = 0;
+      }
+
+      if (level >= trigger()) {
+        if (runStart == null) runStart = now;
+        lastLoudAt = now;
+        if (now - runStart >= minSpeechMs) {
+          fired = true;
+          return true;
+        }
+        return false;
+      }
+
+      if (runStart != null && lastLoudAt != null && now - lastLoudAt <= gapToleranceMs) {
+        return false;
+      }
+      runStart = null;
+      lastLoudAt = null;
+      // Track a drifting echo floor (louder patient passage, volume change).
+      floor = floor * 0.95 + level * 0.05;
+      return false;
+    },
+    /** Speech duration of the current run (ms), 0 when none. */
+    runMs(now: number): number {
+      return runStart == null ? 0 : now - runStart;
+    },
+    echoFloor: () => floor,
+  };
+}
+
+/**
+ * What the barge-in monitor hands to the next listen turn: the still-open mic
+ * stream plus the audio captured while the therapist started talking, so the
+ * first words are not lost to the mic re-open gap.
+ */
+export type BargeInHandoff = {
+  stream: MediaStream;
+  preroll: Float32Array;
+  sampleRate: number;
+  speechMs: number;
+  /** Stop the stream if nobody adopts it. Idempotent. */
+  release: () => void;
+};
+
+/** How much audio before the fire point is kept for the next turn. */
+const BARGE_IN_PREROLL_MS = 1500;
+/** Audio kept before the detected speech run (word onsets are quiet). */
+const BARGE_IN_LEAD_IN_MS = 250;
+
+/**
+ * Monitor mic for barge-in while the patient is speaking.
+ * Returns a stop function. Audio is kept only in a short in-memory ring
+ * buffer that is handed to the next listen turn on fire, never stored.
+ */
+export async function startBargeInMonitor(
+  opts: BargeInDetectorOptions & {
+    onBargeIn: (handoff: BargeInHandoff) => void;
+  },
+): Promise<() => void> {
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -371,31 +501,16 @@ export async function startBargeInMonitor(opts: {
   const processor = audioContext.createScriptProcessor(2048, 1, 1);
   const mute = audioContext.createGain();
   mute.gain.value = 0;
+  const detector = createBargeInDetector(opts);
+  const ring: Float32Array[] = [];
+  const maxRingSamples = Math.ceil(
+    (audioContext.sampleRate * BARGE_IN_PREROLL_MS) / 1000,
+  );
+  let ringSamples = 0;
   let stopped = false;
-  let speechStart: number | null = null;
-  let fired = false;
+  let handedOff = false;
 
-  processor.onaudioprocess = (event) => {
-    if (stopped || fired) return;
-    const level = rms(event.inputBuffer.getChannelData(0));
-    const now = Date.now();
-    if (level >= threshold) {
-      if (speechStart == null) speechStart = now;
-      else if (now - speechStart >= minSpeechMs) {
-        fired = true;
-        opts.onBargeIn();
-      }
-    } else {
-      speechStart = null;
-    }
-  };
-
-  source.connect(processor);
-  processor.connect(mute);
-  mute.connect(audioContext.destination);
-
-  return () => {
-    stopped = true;
+  const teardownGraph = () => {
     try {
       processor.disconnect();
       source.disconnect();
@@ -403,7 +518,62 @@ export async function startBargeInMonitor(opts: {
     } catch {
       /* ignore */
     }
-    stream.getTracks().forEach((t) => t.stop());
     void audioContext.close();
+  };
+
+  processor.onaudioprocess = (event) => {
+    if (stopped) return;
+    const input = event.inputBuffer.getChannelData(0);
+    ring.push(new Float32Array(input));
+    ringSamples += input.length;
+    while (ring.length > 1 && ringSamples - ring[0]!.length >= maxRingSamples) {
+      ringSamples -= ring.shift()!.length;
+    }
+    const now = Date.now();
+    const speechMs = detector.runMs(now);
+    if (!detector.push(rms(input), now)) return;
+
+    stopped = true;
+    handedOff = true;
+    const sampleRate = audioContext.sampleRate;
+    teardownGraph();
+    // Keep only the therapist's run plus a short lead-in: older ring audio is
+    // mostly patient echo and would be transcribed as the therapist's words.
+    const runMs = Math.max(speechMs, detector.runMs(now));
+    const keep = Math.min(
+      ringSamples,
+      Math.ceil((sampleRate * (runMs + BARGE_IN_LEAD_IN_MS)) / 1000),
+    );
+    const all = new Float32Array(ringSamples);
+    let offset = 0;
+    for (const c of ring) {
+      all.set(c, offset);
+      offset += c.length;
+    }
+    const preroll = all.slice(ringSamples - keep);
+    let released = false;
+    opts.onBargeIn({
+      stream,
+      preroll,
+      sampleRate,
+      speechMs: runMs,
+      release: () => {
+        if (released) return;
+        released = true;
+        stream.getTracks().forEach((t) => t.stop());
+      },
+    });
+  };
+
+  source.connect(processor);
+  processor.connect(mute);
+  mute.connect(audioContext.destination);
+
+  return () => {
+    if (handedOff) return; // the stream now belongs to the handoff
+    if (stopped) return;
+    stopped = true;
+    teardownGraph();
+    stream.getTracks().forEach((t) => t.stop());
   };
 }

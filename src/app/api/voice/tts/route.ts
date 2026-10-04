@@ -10,6 +10,7 @@ import {
   ElevenLabsError,
 } from "@/lib/voice/elevenlabs";
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
+import { VoiceLanguageError } from "@/lib/voice/voice-language";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
@@ -43,6 +44,16 @@ type TtsBody = {
 };
 
 /**
+ * Realtime progressive TTS (`?progressive=1`): one sentence of a streaming
+ * patient reply per request. Its own bucket keeps sentence-level synthesis
+ * from exhausting the full-reply budget, and the per-chunk length cap keeps
+ * its character ceiling (360 × 400 = 144k chars/h) at or below the classic
+ * bucket's (60 × 2500 = 150k chars/h), so it cannot be used to widen spend.
+ */
+const PROGRESSIVE_TTS_MAX_CHARS = 400;
+const PROGRESSIVE_TTS_PER_HOUR = 360;
+
+/**
  * ElevenLabs TTS — streams audio/mpeg when available.
  * Contract preserved: JSON body in, audio/mpeg (or JSON error) out.
  * Clients that cannot stream still receive a complete MPEG response body.
@@ -60,7 +71,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const limited = await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
+  const progressive =
+    new URL(request.url).searchParams.get("progressive") === "1";
+  const limited = progressive
+    ? await rateLimit(
+        `tts-chunk:${user.id}`,
+        PROGRESSIVE_TTS_PER_HOUR,
+        60 * 60 * 1000,
+      )
+    : await rateLimit(`tts:${user.id}`, 60, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },
@@ -78,6 +97,16 @@ export async function POST(request: Request) {
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
   const text = (body.text?.trim() ||
     (body.preview ? previewSampleText(locale) : "")) as string;
+
+  if (progressive && (body.preview || text.length > PROGRESSIVE_TTS_MAX_CHARS)) {
+    return NextResponse.json(
+      {
+        error: `progressive chunk too long (max ${PROGRESSIVE_TTS_MAX_CHARS} characters)`,
+        code: "TTS_CHUNK_TOO_LONG",
+      },
+      { status: 400, headers: requestIdHeaders(requestId) },
+    );
+  }
 
   try {
     // Avatar → voice_profile → voice_id (legacy voiceId* still honored).
@@ -161,6 +190,13 @@ export async function POST(request: Request) {
       );
     }
     console.warn("[tts]", error instanceof Error ? error.message : error);
+    if (error instanceof VoiceLanguageError) {
+      // No approved voice for this language: say so instead of a generic 502.
+      return NextResponse.json(
+        { error: "Text-to-speech failed", code: error.code },
+        { status: error.status, headers: requestIdHeaders(requestId) },
+      );
+    }
     return NextResponse.json(
       { error: "TTS failed", code: "TTS_FAILED" },
       { status: 502, headers: requestIdHeaders(requestId) },

@@ -140,7 +140,29 @@ export { runRealtimeAfterAssessment } from "@/lib/realtime/session-bridge";
 export type { RealtimeBridgeResult } from "@/lib/realtime/session-bridge";
 
 export { submitStreamingConversationTurn } from "@/lib/realtime/client-pipeline";
-export type { StreamTurnHandlers } from "@/lib/realtime/client-pipeline";
+export type {
+  StreamTurnHandlers,
+  StreamingTurnResult,
+  StreamSentence,
+  StreamStartedInfo,
+} from "@/lib/realtime/client-pipeline";
+export { createSseParser } from "@/lib/realtime/sse-parser";
+export type { SseMessage, SseParser } from "@/lib/realtime/sse-parser";
+export { createTurnFence } from "@/lib/realtime/turn-fence";
+export type { TurnFence, TurnTicket } from "@/lib/realtime/turn-fence";
+export {
+  createSentenceSegmenter,
+  segmentForSpeech,
+} from "@/lib/realtime/sentence-segmenter";
+export {
+  createProgressiveSpeechQueue,
+  browserSpeechChunkDeps,
+} from "@/lib/realtime/progressive-tts";
+export type {
+  ProgressiveSpeechQueue,
+  ProgressiveSpeechDeps,
+  SpeechChunkAudio,
+} from "@/lib/realtime/progressive-tts";
 
 export {
   buildStatusEvent,

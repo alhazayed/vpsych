@@ -5,6 +5,7 @@ import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
 import { isTherapyRoomModeEnabled } from "@/lib/therapy-room";
+import { isRealtimeStreamingEnabled } from "@/lib/realtime/feature-flag";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -63,6 +64,7 @@ export default async function SessionPage({ params }: Props) {
       session={typed}
       avatar={resolved}
       initialMessages={(messages ?? []) as SessionMessage[]}
+      realtimeStreaming={isRealtimeStreamingEnabled()}
     />
   );
 }

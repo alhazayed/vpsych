@@ -34,6 +34,32 @@ describe("elevenLabsService", () => {
     ).rejects.toMatchObject({ code: "TTS_CONFIG", status: 503 });
   });
 
+  it("reports a rejected API key as TTS_AUTH, not a generic failure", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_revoked0000000000";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            detail: {
+              type: "authentication_error",
+              code: "unauthorized",
+              status: "invalid_api_key",
+            },
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+    await expect(
+      elevenLabsService.synthesize({
+        text: "Hello",
+        locale: "en",
+        voiceId: "hpp4J3VqNfWAUOO0d1Us",
+      }),
+    ).rejects.toMatchObject({ code: "TTS_AUTH", status: 502 });
+  });
+
   it("rejects empty text", async () => {
     process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
     await expect(

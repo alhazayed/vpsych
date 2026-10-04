@@ -70,6 +70,9 @@ export type InterruptReason =
   | "session_expired";
 
 export type StreamEventType =
+  | "started"
+  | "sentence"
+  | "regenerating"
   | "status"
   | "token"
   | "partial"
