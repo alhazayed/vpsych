@@ -140,7 +140,6 @@ describe("P0-1 transcript surface — scope containment", () => {
 describe("P0-1 transcript surface — Phase 3C behaviour preserved", () => {
   it("does not change the admin-test end redirect target", () => {
     for (const f of [
-      "components/VoiceSession.tsx",
       "components/therapy-room/TherapyRoom.tsx",
       "components/therapy-room/TherapyRoomSession.tsx",
     ]) {

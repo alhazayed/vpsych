@@ -1,23 +1,20 @@
 # Therapy Room Mode (TRM)
 
-**Status:** Optional preview behind `NEXT_PUBLIC_THERAPY_ROOM_MODE`  
+**Status:** The only session experience (2026-10-04). The classic
+`VoiceSession` screen and the Classic / Therapy Room toggle were removed.  
 **Mission:** 34 — transform the live session from a chatbot layout into a
 psychiatric consultation room.
 
-Classic `VoiceSession` remains the default. Therapy Room Mode does **not**
-replace it.
+`NEXT_PUBLIC_THERAPY_ROOM_MODE` no longer gates anything. Every session started
+from the patient library (and every admin test session) is created with
+`sessions.interaction_mode = 'therapy_room'`, and `/sessions/[id]` always
+renders `TherapyRoomSession`. Rows created earlier with `interaction_mode =
+'classic'` stay in the database untouched; an active one opens in the Therapy
+Room, and completed ones keep their history and report pages.
 
-## Enable
-
-```bash
-NEXT_PUBLIC_THERAPY_ROOM_MODE=true
-```
-
-Apply migration `20260806133411_therapy_room_mode.sql` so sessions can store
-`interaction_mode`, `private_notes`, and `immersion_metrics`.
-
-When the flag is on, the patient library Start button offers **Classic** vs
-**Therapy Room**. The chosen mode is persisted on `sessions.interaction_mode`.
+Migration `20260806133411_therapy_room_mode.sql` adds `interaction_mode`,
+`private_notes`, and `immersion_metrics`. If the column is missing, session
+start retries without it (see `app/api/sessions/route.ts`).
 
 ## Design principles
 

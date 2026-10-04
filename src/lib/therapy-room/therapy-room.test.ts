@@ -24,11 +24,10 @@ import {
   createImmersionTracker,
   derivePatientBehavior,
   deterministicJitter,
-  isTherapyRoomModeEnabled,
+  NEW_SESSION_INTERACTION_MODE,
   parseInteractionMode,
   resolveTherapyRoomTheme,
   shouldPatientInterruptTherapist,
-  shouldUseTherapyRoom,
   thinkingLatencyMs,
   voiceModulationForDisorder,
 } from "@/lib/therapy-room";
@@ -190,23 +189,19 @@ describe("therapy-room supervisor + daily summary", () => {
   });
 });
 
-describe("therapy-room feature flag", () => {
+describe("session interaction mode", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults to disabled", () => {
+  it("starts every new session in the Therapy Room, whatever the env", () => {
     vi.stubEnv("NEXT_PUBLIC_THERAPY_ROOM_MODE", "");
-    expect(isTherapyRoomModeEnabled()).toBe(false);
-    expect(shouldUseTherapyRoom("therapy_room")).toBe(false);
+    expect(NEW_SESSION_INTERACTION_MODE).toBe("therapy_room");
   });
 
-  it("requires flag and explicit therapy_room request", () => {
-    vi.stubEnv("NEXT_PUBLIC_THERAPY_ROOM_MODE", "true");
-    expect(isTherapyRoomModeEnabled()).toBe(true);
-    expect(shouldUseTherapyRoom("classic")).toBe(false);
-    expect(shouldUseTherapyRoom("therapy_room")).toBe(true);
+  it("still reads past classic rows", () => {
     expect(parseInteractionMode("therapy_room")).toBe("therapy_room");
+    expect(parseInteractionMode("classic")).toBe("classic");
     expect(parseInteractionMode("nope")).toBe("classic");
   });
 });

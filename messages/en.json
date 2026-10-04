@@ -558,8 +558,7 @@
     "start": {
       "failed": "Could not start session",
       "networkError": "Network error",
-      "starting": "Starting…",
-      "cta": "Start 40-min voice session"
+      "starting": "Starting…"
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
@@ -571,10 +570,7 @@
   },
   "therapyRoom": {
     "start": {
-      "modeLabel": "Session experience",
-      "classic": "Classic",
-      "therapyRoom": "Therapy Room",
-      "cta": "Enter Therapy Room",
+      "cta": "Enter the therapy session",
       "hint": "Fullscreen consultation room — true hands-free voice, patient-focused. Transcript hidden by default."
     },
     "status": {

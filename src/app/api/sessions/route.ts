@@ -20,7 +20,7 @@ import { embedAdaptationInMemory } from "@/lib/adaptation";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
-import { shouldUseTherapyRoom } from "@/lib/therapy-room";
+import { NEW_SESSION_INTERACTION_MODE } from "@/lib/therapy-room";
 import { stripAdminTestMarker } from "@/lib/admin/admin-test-session";
 
 export async function POST(request: Request) {
@@ -61,8 +61,6 @@ export async function POST(request: Request) {
     presetSlug?: string;
     /** Advanced Mode diagnosis pin (requires preset.advanced_mode) */
     disorderSlugOverride?: string;
-    /** Therapy Room Mode — ignored unless NEXT_PUBLIC_THERAPY_ROOM_MODE is on. */
-    interactionMode?: "classic" | "therapy_room";
   };
   if (!body.avatarId) {
     return NextResponse.json({ error: "avatarId required" }, { status: 400 });
@@ -130,9 +128,8 @@ export async function POST(request: Request) {
   const maxDurationSec =
     caseResult.maxDurationSec ?? MAX_SESSION_SECONDS;
 
-  const interactionMode = shouldUseTherapyRoom(body.interactionMode)
-    ? "therapy_room"
-    : "classic";
+  // The Therapy Room is the only session experience; the body cannot opt out.
+  const interactionMode = NEW_SESSION_INTERACTION_MODE;
 
   // Phase 3C — learner create path must never persist admin_test markers.
   const learnerSnapshot = stripAdminTestMarker(caseResult.snapshot);

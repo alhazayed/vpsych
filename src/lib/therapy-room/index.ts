@@ -1,10 +1,8 @@
 /**
  * Therapy room barrel — Therapy Room Mode (TRM) + Virtual Mental Health Center (VMHC).
  *
- * TRM: optional immersive consultation room on /sessions/[id]
- *      (NEXT_PUBLIC_THERAPY_ROOM_MODE).
+ * TRM: the consultation room on /sessions/[id] — the only session experience.
  * VMHC: clinic-day workflow on /clinic (FEATURE_THERAPY_ROOM).
- * Classic VoiceSession remains the default when flags are off.
  */
 
 export { isTherapyRoomEnabled } from "@/lib/features";
@@ -45,9 +43,8 @@ export type {
 } from "./types";
 
 export {
-  isTherapyRoomModeEnabled,
+  NEW_SESSION_INTERACTION_MODE,
   parseInteractionMode,
-  shouldUseTherapyRoom,
 } from "./feature-flag";
 
 export {
