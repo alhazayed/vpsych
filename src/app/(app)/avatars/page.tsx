@@ -6,6 +6,7 @@ import { isTherapyRoomEnabled } from "@/lib/features";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
+import { ErrorState } from "@/components/admin/AdminUi";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -13,13 +14,16 @@ export default async function AvatarsPage() {
   const tCommon = await getTranslations("common");
   const tClinic = await getTranslations("clinic");
   const therapyRoom = isTherapyRoomEnabled();
-  const { data: avatars } = await supabase
+  const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
       "id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales",
     )
     .eq("is_active", true)
     .order("name");
+  if (avatarsError) {
+    console.warn("[avatars] list:", avatarsError.message);
+  }
 
   const list =
     (avatars as
@@ -56,14 +60,23 @@ export default async function AvatarsPage() {
           <h2 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
             {t("title")}
           </h2>
-          <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-            {t("count", {
-              count: list.length,
-              persona: list.length === 1 ? t("persona") : t("personas"),
-            })}
-          </p>
+          {avatarsError ? null : (
+            <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
+              {t("count", {
+                count: list.length,
+                persona: list.length === 1 ? t("persona") : t("personas"),
+              })}
+            </p>
+          )}
         </div>
       </div>
+
+      {avatarsError ? (
+        <ErrorState
+          title={t("loadErrorTitle")}
+          description={t("loadErrorDescription")}
+        />
+      ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((avatar, index) => (

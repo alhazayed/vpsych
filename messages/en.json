@@ -511,7 +511,9 @@
     "title": "Virtual Patient Library",
     "count": "{count} active {persona}",
     "persona": "persona",
-    "personas": "personas"
+    "personas": "personas",
+    "loadErrorTitle": "Patients unavailable",
+    "loadErrorDescription": "Could not load the patient library. Reload the page to try again."
   },
   "sessions": {
     "title": "My Sessions",
@@ -544,7 +546,9 @@
         "error": "The performance report could not be prepared yet. Your transcript is saved.",
         "retry": "Try again"
       }
-    }
+    },
+    "loadErrorTitle": "Sessions unavailable",
+    "loadErrorDescription": "Could not load your session history. Reload the page to try again."
   },
   "session": {
     "status": {
