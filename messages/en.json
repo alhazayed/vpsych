@@ -596,6 +596,7 @@
     },
     "controls": {
       "aria": "Session controls",
+      "interrupt": "Interrupt the patient (Space)",
       "pause": "Pause",
       "resume": "Resume",
       "notes": "Private notes",
