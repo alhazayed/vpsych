@@ -87,7 +87,11 @@ export async function loadCourseById(
   return data ? normalizeCourseRow(data as Record<string, unknown>) : null;
 }
 
-export type CourseSessionCounts = { total: number; completed: number };
+export type CourseSessionCounts = {
+  total: number;
+  completed: number;
+  lastStartedAt: string | null;
+};
 
 export async function countCourseSessions(
   supabase: SupabaseClient,
@@ -95,18 +99,23 @@ export async function countCourseSessions(
 ): Promise<CourseSessionCounts | null> {
   const { data, error } = await supabase
     .from("sessions")
-    .select("status")
+    .select("status, started_at")
     .eq("therapy_course_id", courseId);
   if (error) {
     console.warn("[therapy-course] count sessions:", error.message);
     return null;
   }
-  const rows = (data ?? []) as Array<{ status: string }>;
+  const rows = (data ?? []) as Array<{ status: string; started_at?: string | null }>;
+  const starts = rows
+    .map((r) => r.started_at)
+    .filter((s): s is string => typeof s === "string")
+    .sort();
   return {
     total: rows.length,
     completed: rows.filter(
       (r) => r.status === "completed" || r.status === "expired",
     ).length,
+    lastStartedAt: starts.length ? starts[starts.length - 1]! : null,
   };
 }
 

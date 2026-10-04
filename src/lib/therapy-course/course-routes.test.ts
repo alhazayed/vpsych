@@ -68,6 +68,7 @@ const plan: TreatmentPlan = {
   interventions: "CBT for panic with graded exposure.",
   expected_sessions: 6,
   patient_expectations: "Weekly sessions with practice at home.",
+  risk_formulation: "No current risk; review if sleep worsens.",
 };
 
 type Course = Record<string, unknown>;
@@ -229,7 +230,11 @@ describe("POST /api/sessions with therapy courses", () => {
 
   it("session 3 carries the treatment plan once it exists", async () => {
     const db = startDb({
-      course: activeCourse({ treatment_plan: plan, planned_sessions: 6 }),
+      course: activeCourse({
+        treatment_plan: plan,
+        planned_sessions: 6,
+        plan_updated_at: "2026-10-04T10:00:00Z",
+      }),
       courseSessions: 2,
     });
     state.supabase = db.client;
@@ -243,6 +248,8 @@ describe("POST /api/sessions with therapy courses", () => {
       planned_sessions: 6,
       is_final_session: false,
       treatment_plan: plan,
+      // First session after the plan: the trainee presents and negotiates it.
+      plan_is_new: true,
     });
   });
 

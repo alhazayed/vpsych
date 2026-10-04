@@ -384,6 +384,12 @@ export type TreatmentPlan = {
   expected_sessions: number;
   /** What the patient should expect, in plain language. */
   patient_expectations: string;
+  /**
+   * Risk and safety formulation (what raises and lowers risk, safety plan).
+   * Clinician-facing: never shown to the patient. Empty on plans written
+   * before this field existed.
+   */
+  risk_formulation: string;
 };
 
 /**
@@ -417,6 +423,9 @@ export type TherapyCourseSessionContext = {
   planned_sessions: number;
   is_final_session: boolean;
   treatment_plan: TreatmentPlan | null;
+  /** True for the first session after the plan was written or revised: the
+   * therapist presents it in this session and the patient can negotiate it. */
+  plan_is_new?: boolean;
 };
 
 export type SessionMessage = {

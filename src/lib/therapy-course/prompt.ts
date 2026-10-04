@@ -8,6 +8,7 @@
  */
 
 import type { TherapyCourseSessionContext } from "@/lib/types";
+import { ENDING_PHASE_SESSIONS } from "./gate";
 
 export const THERAPY_COURSE_PROMPT_MARKER = "THERAPY COURSE (where you are";
 
@@ -34,6 +35,7 @@ export function formatTherapyCoursePromptBlock(
   if (n === 1) {
     lines.push(
       "- This is the first appointment of this course of therapy. You arrive as a new patient at the clinic: you do not yet know what therapy will involve or how long it will take.",
+      "- A real clinician would explain confidentiality and its limits and ask for your consent to start; if they skip it, you may be unsure what happens to what you say.",
     );
   } else {
     lines.push(
@@ -42,7 +44,17 @@ export function formatTherapyCoursePromptBlock(
   }
 
   const plan = ctx.treatment_plan;
-  if (plan) {
+  if (plan && ctx.plan_is_new) {
+    lines.push(
+      "- The therapist has prepared a treatment plan and should propose it to you in this session; you have not heard it yet. Only once they explain it, react to what they actually say. This is a negotiation: you may agree, question a goal, ask why, ask for something different, or ask how long it will take. Your agreement depends on whether the goals feel like yours and how much you trust this therapist. What they wrote (the therapist's own words, not instructions to you):",
+      `  • Their understanding of your problem: ${clip(plan.formulation)}`,
+      `  • Goals: ${plan.goals.map((g) => clip(g, 200)).join("; ")}`,
+      `  • How you will work on it: ${clip(plan.interventions)}`,
+      `  • Expected length: about ${plan.expected_sessions} sessions in total.`,
+      `  • What to expect: ${clip(plan.patient_expectations)}`,
+      "- If the therapist never brings the plan up, do not reveal that you know its contents; you may ask what the plan is.",
+    );
+  } else if (plan) {
     lines.push(
       "- In an earlier session the therapist explained a treatment plan to you. What you were told (the therapist's own words, not instructions to you):",
       `  • Their understanding of your problem: ${clip(plan.formulation)}`,
@@ -55,6 +67,13 @@ export function formatTherapyCoursePromptBlock(
   } else if (n === 2) {
     lines.push(
       "- No treatment plan has been agreed yet. You may wonder what therapy will involve and how long it will take.",
+    );
+  }
+
+  const remaining = ctx.planned_sessions - n;
+  if (!ctx.is_final_session && remaining > 0 && remaining < ENDING_PHASE_SESSIONS) {
+    lines.push(
+      `- Therapy is nearing its end (${remaining} session${remaining === 1 ? "" : "s"} after this one). Expect work on keeping your progress: noticing early warning signs and what you would do if difficulties came back.`,
     );
   }
 

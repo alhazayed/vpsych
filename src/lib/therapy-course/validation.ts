@@ -16,6 +16,8 @@ export const PLAN_LIMITS = {
   interventionsMax: 2000,
   expectationsMin: 10,
   expectationsMax: 1500,
+  riskMin: 10,
+  riskMax: 1500,
 } as const;
 
 export type PlanFieldError =
@@ -23,7 +25,8 @@ export type PlanFieldError =
   | "goals"
   | "interventions"
   | "expected_sessions"
-  | "patient_expectations";
+  | "patient_expectations"
+  | "risk_formulation";
 
 export type PlanValidationResult =
   | { ok: true; plan: TreatmentPlan }
@@ -95,6 +98,11 @@ export function validateTreatmentPlan(
     return { ok: false, field: "patient_expectations" };
   }
 
+  const riskFormulation = text(b.risk_formulation);
+  if (!within(riskFormulation, PLAN_LIMITS.riskMin, PLAN_LIMITS.riskMax)) {
+    return { ok: false, field: "risk_formulation" };
+  }
+
   return {
     ok: true,
     plan: {
@@ -103,6 +111,7 @@ export function validateTreatmentPlan(
       interventions,
       expected_sessions: expected,
       patient_expectations: patientExpectations,
+      risk_formulation: riskFormulation,
     },
   };
 }
@@ -126,5 +135,7 @@ export function asTreatmentPlan(v: unknown): TreatmentPlan | null {
     interventions: p.interventions,
     expected_sessions: p.expected_sessions,
     patient_expectations: p.patient_expectations,
+    risk_formulation:
+      typeof p.risk_formulation === "string" ? p.risk_formulation : "",
   };
 }

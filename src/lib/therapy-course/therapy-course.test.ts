@@ -17,6 +17,7 @@ import {
   shouldCompleteAfterSession,
   validateTreatmentPlan,
   asTreatmentPlan,
+  isPlanNew,
 } from "./index";
 
 const plan: TreatmentPlan = {
@@ -27,6 +28,8 @@ const plan: TreatmentPlan = {
   expected_sessions: 10,
   patient_expectations:
     "Weekly sessions; practice exercises at home between sessions.",
+  risk_formulation:
+    "No suicidal ideation; risk rises with alcohol use; safety plan agreed with GP contact.",
 };
 
 function course(over: Partial<TherapyCourse> = {}): TherapyCourse {
@@ -154,6 +157,7 @@ describe("treatment plan validation", () => {
         interventions: "العلاج المعرفي السلوكي والتعرض التدريجي.",
         expected_sessions: 8,
         patient_expectations: "جلسة أسبوعية مع تمارين منزلية بين الجلسات.",
+        risk_formulation: "لا توجد أفكار انتحارية حالياً، ويزداد الخطر مع قلة النوم.",
       },
       { minSessions: 3 },
     );
@@ -169,6 +173,7 @@ describe("treatment plan validation", () => {
     [{ expected_sessions: 21 }, "expected_sessions"],
     [{ expected_sessions: 4.5 }, "expected_sessions"],
     [{ patient_expectations: "" }, "patient_expectations"],
+    [{ risk_formulation: "" }, "risk_formulation"],
   ])("rejects %j as %s", (patch, field) => {
     const r = validateTreatmentPlan({ ...plan, ...patch }, { minSessions: 3 });
     expect(r).toEqual({ ok: false, field });
@@ -181,6 +186,10 @@ describe("treatment plan validation", () => {
 
   it("narrows stored plans and rejects malformed ones", () => {
     expect(asTreatmentPlan(plan)).toEqual(plan);
+    // Plans written before the risk section still load.
+    const legacy: Record<string, unknown> = { ...plan };
+    delete legacy.risk_formulation;
+    expect(asTreatmentPlan(legacy)?.risk_formulation).toBe("");
     expect(asTreatmentPlan({ formulation: "x" })).toBeNull();
     expect(asTreatmentPlan(null)).toBeNull();
   });
@@ -208,6 +217,62 @@ describe("therapy course prompt block", () => {
     expect(block).toContain("session 1");
     expect(block).toContain("first appointment");
     expect(block).not.toContain("treatment plan to you");
+    expect(block).toContain("confidentiality");
+  });
+
+  it("the first session after the plan is a negotiation the therapist leads", () => {
+    const ctx = buildCourseSessionContext({
+      courseId: "c",
+      sessionNumber: 3,
+      plannedSessions: 10,
+      treatmentPlan: plan,
+      planIsNew: true,
+    });
+    expect(ctx.plan_is_new).toBe(true);
+    const block = formatTherapyCoursePromptBlock(ctx);
+    expect(block).toContain("you have not heard it yet");
+    expect(block).toContain("negotiation");
+    expect(block).not.toContain("In an earlier session the therapist explained");
+  });
+
+  it("never gives the patient the clinician-only risk formulation", () => {
+    for (const planIsNew of [true, false]) {
+      const block = formatTherapyCoursePromptBlock(
+        buildCourseSessionContext({
+          courseId: "c",
+          sessionNumber: 4,
+          plannedSessions: 10,
+          treatmentPlan: plan,
+          planIsNew,
+        }),
+      );
+      expect(block).not.toContain("alcohol");
+      expect(block).not.toContain("safety plan");
+    }
+  });
+
+  it("the last sessions before the final one are a relapse-prevention phase", () => {
+    const at = (n: number) =>
+      formatTherapyCoursePromptBlock(
+        buildCourseSessionContext({
+          courseId: "c",
+          sessionNumber: n,
+          plannedSessions: 10,
+          treatmentPlan: plan,
+        }),
+      );
+    expect(at(7)).not.toContain("nearing its end");
+    expect(at(8)).toContain("nearing its end (2 sessions after this one)");
+    expect(at(9)).toContain("nearing its end (1 session after this one)");
+    expect(at(10)).not.toContain("nearing its end");
+    expect(at(10)).toContain("last session");
+  });
+
+  it("knows whether the plan is new to the patient", () => {
+    const c = { treatment_plan: plan, plan_updated_at: "2026-10-04T10:00:00Z" };
+    expect(isPlanNew(c, "2026-10-04T09:00:00Z")).toBe(true);
+    expect(isPlanNew(c, "2026-10-04T11:00:00Z")).toBe(false);
+    expect(isPlanNew({ treatment_plan: null, plan_updated_at: null }, null)).toBe(false);
   });
 
   it("carries the plan and continuity from session 3 on", () => {

@@ -43,8 +43,10 @@ route, reason `course_length`).
 
 `PUT /api/courses/:id/plan` once two sessions are finished. Fields: case
 formulation, 1–6 goals, planned interventions, expected number of sessions
-(3–20, and at least one more than the sessions already held), and what the
-patient should expect in plain words. The expected number of sessions sets
+(3–20, and at least one more than the sessions already held), what the
+patient should expect in plain words, and a risk and safety formulation
+(clinician-only, never given to the patient; described, not a
+low/medium/high label, per NICE NG225). The expected number of sessions sets
 the course length. The plan can be revised; revisions apply from the next
 session.
 
@@ -53,7 +55,12 @@ session.
 No second clinical brain. `prepareClinicalTurn` appends one context block
 (`formatTherapyCoursePromptBlock`) after long-term memory: which visit this
 is, the plan as the patient was told it (marked as the therapist's words,
-not instructions), and termination framing on the final session. Standalone
+not instructions), and termination framing on the final session. In the
+first session after the plan is written or revised (`plan_is_new`) the
+patient has not heard it yet: the trainee presents it and the patient may
+negotiate the goals, since goal consensus predicts outcome. Session 1 cues
+the patient to expect consent and confidentiality. The two sessions before
+the final one are framed as relapse prevention. Standalone
 sessions get no block, so their prompts are unchanged. Continuity of what
 was said comes from the existing long-term patient memory and the shared
 case memory of the pinned case.
@@ -62,3 +69,5 @@ case memory of the pinned case.
 
 - The plan is not scored in the admin report.
 - Clinic-day appointments still show session 1.
+- Symptom measures (PHQ-9 / GAD-7 baseline and per-session re-measurement)
+  are not part of courses yet.

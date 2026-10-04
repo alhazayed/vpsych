@@ -3,7 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { isTherapyRoomEnabled } from "@/lib/features";
-import { courseProgress, loadCourseById } from "@/lib/therapy-course";
+import {
+  courseProgress,
+  isPlanNew,
+  loadCourseById,
+} from "@/lib/therapy-course";
 import type { TherapySession } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 import { TreatmentPlanForm } from "@/components/therapy-course/TreatmentPlanForm";
@@ -157,6 +161,12 @@ export default async function TherapyCoursePage({ params }: Props) {
               <h3 className="mb-1 font-semibold">{t("expectations")}</h3>
               <p className="whitespace-pre-wrap">{plan.patient_expectations}</p>
             </div>
+            {plan.risk_formulation ? (
+              <div>
+                <h3 className="mb-1 font-semibold">{t("risk")}</h3>
+                <p className="whitespace-pre-wrap">{plan.risk_formulation}</p>
+              </div>
+            ) : null}
             <p className="text-[var(--on-surface-variant)]">
               {t("expectedSessions", { n: plan.expected_sessions })}
             </p>
@@ -196,6 +206,11 @@ export default async function TherapyCoursePage({ params }: Props) {
               <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
                 {t("startNext", { n: progress.nextSessionNumber })}
               </h2>
+              {isPlanNew(course, sessions.at(-1)?.started_at ?? null) && (
+                <p className="text-sm text-[var(--on-surface-variant)]">
+                  {t("planPresentNote")}
+                </p>
+              )}
               {progress.nextIsFinal && (
                 <p className="text-sm text-[var(--on-surface-variant)]">
                   {t("finalSessionNote", { n: progress.nextSessionNumber })}

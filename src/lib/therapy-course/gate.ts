@@ -102,6 +102,7 @@ export function buildCourseSessionContext(opts: {
   sessionNumber: number;
   plannedSessions: number;
   treatmentPlan: TreatmentPlan | null;
+  planIsNew?: boolean;
 }): TherapyCourseSessionContext {
   return {
     course_id: opts.courseId,
@@ -109,7 +110,27 @@ export function buildCourseSessionContext(opts: {
     planned_sessions: opts.plannedSessions,
     is_final_session: opts.sessionNumber >= opts.plannedSessions,
     treatment_plan: opts.treatmentPlan,
+    plan_is_new: Boolean(opts.treatmentPlan && opts.planIsNew),
   };
+}
+
+/** Sessions at the end of a course that form the relapse-prevention phase. */
+export const ENDING_PHASE_SESSIONS = 3;
+
+/**
+ * Is the plan new to the patient? True when it was written or revised after
+ * the latest session in the course started.
+ */
+export function isPlanNew(
+  course: Pick<TherapyCourse, "treatment_plan" | "plan_updated_at">,
+  lastSessionStartedAt: string | null,
+): boolean {
+  if (!course.treatment_plan || !course.plan_updated_at) return false;
+  if (!lastSessionStartedAt) return true;
+  return (
+    new Date(course.plan_updated_at).getTime() >
+    new Date(lastSessionStartedAt).getTime()
+  );
 }
 
 export type CourseProgress = {

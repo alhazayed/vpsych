@@ -2116,7 +2116,8 @@
       "expected_sessions": "Choose a number of sessions between {min} and 20.",
       "patient_expectations": "Describe what the patient should expect (at least 10 characters).",
       "generic": "Could not save the treatment plan. Please try again.",
-      "network": "Network error. Check your connection and try again."
+      "network": "Network error. Check your connection and try again.",
+      "risk_formulation": "Describe the risk and safety picture (at least 10 characters)."
     },
     "startNext": "Start session {n}",
     "finalSessionNote": "Session {n} is the planned final session: the patient will expect to talk about ending therapy.",
@@ -2133,6 +2134,10 @@
     "goals": "Goals",
     "interventions": "Interventions",
     "expectations": "What the patient expects",
-    "expectedSessions": "Expected length: {n} sessions"
+    "expectedSessions": "Expected length: {n} sessions",
+    "fieldRisk": "Risk and safety formulation",
+    "fieldRiskHint": "What raises and lowers risk for this patient, and the safety plan. Describe it rather than giving a low, medium or high label. The patient does not see this.",
+    "risk": "Risk and safety",
+    "planPresentNote": "Present the plan to the patient at the start of the next session and agree the goals together. The patient may question or negotiate them."
   }
 }

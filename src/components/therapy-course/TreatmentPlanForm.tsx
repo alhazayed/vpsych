@@ -13,7 +13,8 @@ type FieldError =
   | "goals"
   | "interventions"
   | "expected_sessions"
-  | "patient_expectations";
+  | "patient_expectations"
+  | "risk_formulation";
 
 export function TreatmentPlanForm({
   courseId,
@@ -39,6 +40,7 @@ export function TreatmentPlanForm({
   const [expectations, setExpectations] = useState(
     initialPlan?.patient_expectations ?? "",
   );
+  const [risk, setRisk] = useState(initialPlan?.risk_formulation ?? "");
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState<FieldError | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export function TreatmentPlanForm({
           interventions,
           expected_sessions: expectedSessions,
           patient_expectations: expectations,
+          risk_formulation: risk,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -224,6 +227,26 @@ export function TreatmentPlanForm({
           dir="auto"
         />
         {err("patient_expectations")}
+      </div>
+
+      <div>
+        <label htmlFor="plan-risk" className="block text-sm font-semibold">
+          {t("fieldRisk")}
+        </label>
+        <p className="mb-1 text-xs text-[var(--on-surface-variant)]">
+          {t("fieldRiskHint")}
+        </p>
+        <textarea
+          id="plan-risk"
+          className={fieldClass}
+          rows={3}
+          maxLength={1500}
+          value={risk}
+          onChange={(e) => setRisk(e.target.value)}
+          aria-invalid={fieldError === "risk_formulation"}
+          dir="auto"
+        />
+        {err("risk_formulation")}
       </div>
 
       <button type="submit" className="btn-primary h-11 w-full" disabled={saving}>

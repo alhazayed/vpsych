@@ -27,6 +27,7 @@ import {
   countCourseSessions,
   createCourse,
   decideCourseStart,
+  isPlanNew,
   loadActiveCourse,
 } from "@/lib/therapy-course";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
@@ -116,8 +117,10 @@ export async function POST(request: Request) {
         avatarId: body.avatarId,
       });
   let courseDecision: ReturnType<typeof decideCourseStart> | null = null;
+  let planIsNew = false;
   if (courseLookup.available) {
     let sessionCount = 0;
+    let lastSessionStartedAt: string | null = null;
     if (courseLookup.course) {
       const counts = await countCourseSessions(
         supabase,
@@ -130,8 +133,12 @@ export async function POST(request: Request) {
         );
       }
       sessionCount = counts.total;
+      lastSessionStartedAt = counts.lastStartedAt;
     }
     courseDecision = decideCourseStart(courseLookup.course, sessionCount);
+    planIsNew = courseLookup.course
+      ? isPlanNew(courseLookup.course, lastSessionStartedAt)
+      : false;
     if (courseDecision.kind === "plan_required") {
       return NextResponse.json(
         {
@@ -245,6 +252,7 @@ export async function POST(request: Request) {
             sessionNumber: courseSessionNumber,
             plannedSessions: course.planned_sessions,
             treatmentPlan: course.treatment_plan,
+            planIsNew,
           }),
         }
       : baseSnapshot;
