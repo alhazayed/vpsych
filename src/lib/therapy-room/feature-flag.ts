@@ -1,27 +1,17 @@
 /**
- * Therapy Room Mode feature flag.
- * Optional until expert validation — classic VoiceSession remains default.
+ * Session interaction mode.
+ *
+ * The Therapy Room is the only way to run a session. "classic" survives only
+ * as a stored value on past `sessions` rows; no new session is created with it.
  */
 
-export function isTherapyRoomModeEnabled(): boolean {
-  const raw = process.env.NEXT_PUBLIC_THERAPY_ROOM_MODE;
-  if (!raw) return false;
-  const v = raw.trim().toLowerCase();
-  return v === "1" || v === "true" || v === "yes" || v === "on";
-}
+/** Every new session (learner or admin test) runs in the Therapy Room. */
+export const NEW_SESSION_INTERACTION_MODE = "therapy_room" as const;
 
+/** Read a stored `sessions.interaction_mode` value (past rows may be "classic"). */
 export function parseInteractionMode(
   value: unknown,
 ): "classic" | "therapy_room" {
   if (value === "therapy_room") return "therapy_room";
   return "classic";
-}
-
-/**
- * Resolve whether a new session should use Therapy Room Mode.
- * Requires the public flag AND an explicit therapy_room request.
- */
-export function shouldUseTherapyRoom(requested?: unknown): boolean {
-  if (!isTherapyRoomModeEnabled()) return false;
-  return parseInteractionMode(requested) === "therapy_room";
 }

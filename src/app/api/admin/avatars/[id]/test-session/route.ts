@@ -7,7 +7,7 @@ import { prepareMessageRpc } from "@/lib/supabase/admin";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
-import { shouldUseTherapyRoom } from "@/lib/therapy-room";
+import { NEW_SESSION_INTERACTION_MODE } from "@/lib/therapy-room";
 import {
   ADMIN_TEST_LABEL,
   assertAvatarEligibleForAdminTest,
@@ -47,8 +47,7 @@ export async function POST(request: Request, ctx: Ctx) {
     );
   }
 
-  let body: { interactionMode?: "classic" | "therapy_room"; locale?: string } =
-    {};
+  let body: { locale?: string } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -128,9 +127,8 @@ export async function POST(request: Request, ctx: Ctx) {
   // Authoritative marker — only this route may set admin_test.
   const snapshot = withAdminTestMarker(caseResult.snapshot);
 
-  const interactionMode = shouldUseTherapyRoom(body.interactionMode)
-    ? "therapy_room"
-    : "classic";
+  // The Therapy Room is the only session experience; the body cannot opt out.
+  const interactionMode = NEW_SESSION_INTERACTION_MODE;
 
   const { data: adminProfile } = await supabase
     .from("profiles")
@@ -222,10 +220,7 @@ export async function POST(request: Request, ctx: Ctx) {
     request,
   });
 
-  const path =
-    interactionMode === "therapy_room"
-      ? `/clinic/room/${session.id}?adminTest=1`
-      : `/sessions/${session.id}?adminTest=1`;
+  const path = `/sessions/${session.id}?adminTest=1`;
 
   return NextResponse.json({
     sessionId: session.id,

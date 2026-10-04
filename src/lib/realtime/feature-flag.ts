@@ -1,7 +1,6 @@
 /**
  * Stage 11 realtime simulation feature flags.
  *
- * Classic VoiceSession remains the default interaction path.
  * Realtime streaming / enhanced avatar sync opt-in via flags.
  */
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = join(process.cwd(), "src");
@@ -158,22 +158,30 @@ describe("architecture invariants", () => {
     expect(route).toMatch(/\.eq\("slug", body\.presetSlug\)/);
   });
 
-  it("keeps Therapy Room Mode optional behind a feature flag", () => {
-    const flag = readFileSync(
-      join(root, "lib/therapy-room/feature-flag.ts"),
-      "utf8",
-    );
+  it("runs every session in the Therapy Room (classic session removed)", () => {
     const page = readFileSync(
       join(root, "app/(app)/sessions/[id]/page.tsx"),
       "utf8",
     );
     const start = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
-    expect(flag).toMatch(/NEXT_PUBLIC_THERAPY_ROOM_MODE/);
-    expect(page).toMatch(/VoiceSession/);
+    const adminStart = readFileSync(
+      join(root, "app/api/admin/avatars/[id]/test-session/route.ts"),
+      "utf8",
+    );
+    const button = readFileSync(
+      join(root, "components/StartSessionButton.tsx"),
+      "utf8",
+    );
+    expect(existsSync(join(root, "components/VoiceSession.tsx"))).toBe(false);
     expect(page).toMatch(/TherapyRoomSession/);
-    expect(page).toMatch(/isTherapyRoomModeEnabled/);
-    expect(start).toMatch(/shouldUseTherapyRoom/);
-    expect(start).toMatch(/interaction_mode/);
+    expect(page).not.toMatch(/VoiceSession/);
+    for (const route of [start, adminStart]) {
+      expect(route).toMatch(/NEW_SESSION_INTERACTION_MODE/);
+      expect(route).toMatch(/interaction_mode/);
+      expect(route).not.toMatch(/body\.interactionMode/);
+    }
+    expect(adminStart).not.toMatch(/clinic\/room/);
+    expect(button).not.toMatch(/classic/);
   });
 
   it("therapy-room private notes never enter the patient message API", () => {

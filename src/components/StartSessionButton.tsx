@@ -14,10 +14,6 @@ function cookieLocale(): string | undefined {
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
 
-function therapyRoomFlagEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_THERAPY_ROOM_MODE === "true";
-}
-
 export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const router = useRouter();
   const locale = useLocale() as AppLocale;
@@ -25,8 +21,6 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
   const tRoom = useTranslations("therapyRoom.start");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const roomEnabled = therapyRoomFlagEnabled();
-  const [mode, setMode] = useState<"classic" | "therapy_room">("classic");
 
   async function start() {
     setLoading(true);
@@ -36,11 +30,7 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          avatarId,
-          locale: sessionLocale,
-          interactionMode: roomEnabled ? mode : "classic",
-        }),
+        body: JSON.stringify({ avatarId, locale: sessionLocale }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -57,38 +47,6 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
 
   return (
     <div className="space-y-2">
-      {roomEnabled && (
-        <div
-          className="flex rounded-lg border border-[var(--outline-variant)] p-0.5 text-xs"
-          role="group"
-          aria-label={tRoom("modeLabel")}
-        >
-          <button
-            type="button"
-            className={`flex-1 rounded-md px-2 py-1.5 transition ${
-              mode === "classic"
-                ? "bg-[var(--primary)] text-white"
-                : "text-[var(--on-surface-variant)]"
-            }`}
-            onClick={() => setMode("classic")}
-            disabled={loading}
-          >
-            {tRoom("classic")}
-          </button>
-          <button
-            type="button"
-            className={`flex-1 rounded-md px-2 py-1.5 transition ${
-              mode === "therapy_room"
-                ? "bg-[var(--primary)] text-white"
-                : "text-[var(--on-surface-variant)]"
-            }`}
-            onClick={() => setMode("therapy_room")}
-            disabled={loading}
-          >
-            {tRoom("therapyRoom")}
-          </button>
-        </div>
-      )}
       <button
         type="button"
         onClick={() => void start()}
@@ -96,21 +54,17 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         className="btn-primary w-full"
       >
         <span className="material-symbols-outlined text-[20px]">
-          {mode === "therapy_room" ? "meeting_room" : "mic"}
+          meeting_room
         </span>
-        {loading
-          ? t("starting")
-          : mode === "therapy_room"
-            ? tRoom("cta")
-            : t("cta")}
+        {loading ? t("starting") : tRoom("cta")}
       </button>
-      {roomEnabled && mode === "therapy_room" && (
-        <p className="text-xs text-[var(--on-surface-variant)]">
-          {tRoom("hint")}
-        </p>
-      )}
+      <p className="text-xs text-[var(--on-surface-variant)]">
+        {tRoom("hint")}
+      </p>
       {error && (
-        <p className="text-sm text-[var(--error)]">{error}</p>
+        <p role="alert" className="text-sm text-[var(--error)]">
+          {error}
+        </p>
       )}
     </div>
   );
