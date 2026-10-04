@@ -8,9 +8,11 @@ import {
   type SessionSpeechLocale,
 } from "@/lib/voice/config";
 import {
+  pronunciationSafeSettings,
   resolveVoiceSettings,
   type ElevenLabsVoiceSettings,
 } from "@/lib/voice/prosody";
+import { prepareTextForSpeech } from "@/lib/voice/speech-text";
 import { isVoiceApprovedFor } from "@/lib/voice/voice-language";
 
 export type ElevenLabsSynthesizeParams = {
@@ -95,6 +97,16 @@ function cacheMaxEntries() {
 
 function modelId() {
   return process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
+}
+
+/**
+ * Models that accept `language_code`. Others (eleven_multilingual_v2, the
+ * default) reject the field with a 400, so it is only sent where supported.
+ */
+const LANGUAGE_CODE_MODELS = new Set(["eleven_flash_v2_5", "eleven_turbo_v2_5"]);
+
+export function supportsLanguageCode(model: string): boolean {
+  return LANGUAGE_CODE_MODELS.has(model);
 }
 
 function apiKey() {
@@ -233,7 +245,8 @@ export const elevenLabsService = {
       );
     }
 
-    const text = params.text.trim();
+    // Speech copy only: numbers spelled out, stage directions dropped, etc.
+    const text = prepareTextForSpeech(params.text, params.locale);
     if (!text) {
       throw new ElevenLabsError("text required", {
         code: "BAD_REQUEST",
@@ -275,7 +288,7 @@ export const elevenLabsService = {
     const model = modelId();
     // CVP clinical settings (or pace/energy defaults), then Humanization
     // stability/style overlays for hesitation / fatigue / emotional cues.
-    const voiceSettings: ElevenLabsVoiceSettings = {
+    let voiceSettings: ElevenLabsVoiceSettings = {
       ...(params.clinicalVoiceSettings ??
         resolveVoiceSettings({
           speechPace: params.speechPace,
@@ -292,6 +305,9 @@ export const elevenLabsService = {
     if (typeof params.style === "number" && Number.isFinite(params.style)) {
       voiceSettings.style = Math.max(0, Math.min(1, params.style));
     }
+    // Applied last so no clinical or humanization overlay can push Arabic
+    // speech into the unstable range where pronunciation breaks down.
+    voiceSettings = pronunciationSafeSettings(voiceSettings, params.locale);
     let lastDetail = "";
     let lastStatus = 0;
     let lastVoiceId = primaryVoiceId;
@@ -346,6 +362,11 @@ export const elevenLabsService = {
             text,
             model_id: model,
             voice_settings: voiceSettings,
+            // Pin the language where the model allows it, so short Arabic
+            // replies are not auto-detected as another language.
+            ...(supportsLanguageCode(model)
+              ? { language_code: params.locale }
+              : {}),
           }),
           // Abort hung upstream TTS (RT-03 / RT-S11-04).
           signal: AbortSignal.timeout(elevenLabsTimeoutMs()),
