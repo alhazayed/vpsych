@@ -70,4 +70,17 @@ describe("prepareTextForSpeech", () => {
   it("falls back to the original when cleaning leaves nothing", () => {
     expect(prepareTextForSpeech("*sighs*", "en")).toBe("*sighs*");
   });
+
+  it("keeps the first two trailing-off pauses and turns the rest into breaths", () => {
+    expect(
+      prepareTextForSpeech(
+        "… مش عارفة... يمكن تعبانة … بس ما بنام . . . وكل اشي ثقيل…",
+        "ar",
+      ),
+    ).toBe("مش عارفة… يمكن تعبانة… بس ما بنام، وكل اشي ثقيل.");
+    expect(
+      prepareTextForSpeech("I don't know… maybe… I'm tired… it's fine…", "en"),
+    ).toBe("I don't know… maybe… I'm tired, it's fine.");
+  });
 });
+

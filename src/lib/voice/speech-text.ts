@@ -158,10 +158,37 @@ const EMOJI_RE =
   /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{20E3}]/gu;
 
 /**
+ * Trailing-off pauses written as "…" or "...". ElevenLabs renders each one as
+ * a long silence, so a slow-paced patient (depression) whose reply is full of
+ * them sounds dragged out rather than low-energy. The text keeps the clinical
+ * signal; the audio keeps at most this many real pauses per request and the
+ * rest become ordinary comma breaths.
+ */
+export const MAX_SPOKEN_PAUSES = 2;
+
+const ELLIPSIS_RUN_RE = /(?:\s*(?:\.\s*){2,}\.|\s*…+)+/g;
+
+function limitSpokenPauses(text: string, locale: SessionSpeechLocale): string {
+  const comma = locale === "ar" ? "،" : ",";
+  // A reply that opens on "…" would start with dead air.
+  const trimmed = text.replace(/^(?:\s*(?:\.\s*){2,}\.|\s*…+)+\s*/, "");
+  let kept = 0;
+  return trimmed.replace(ELLIPSIS_RUN_RE, (_run, offset: number, whole: string) => {
+    const atEnd = whole.slice(offset + _run.length).trim() === "";
+    if (kept < MAX_SPOKEN_PAUSES) {
+      kept += 1;
+      return "…";
+    }
+    return atEnd ? "." : `${comma} `;
+  });
+}
+
+/**
  * Prepare a patient reply for speech synthesis.
  *
  * - every locale: drop *stage directions*, [bracketed cues], leftover
- *   markdown emphasis and emoji; collapse whitespace.
+ *   markdown emphasis and emoji; keep at most {@link MAX_SPOKEN_PAUSES}
+ *   "…" pauses; collapse whitespace.
  * - Arabic: remove tatweel and spell numbers as Arabic words.
  *
  * If cleaning would leave nothing to say, the trimmed original is returned so
@@ -183,6 +210,8 @@ export function prepareTextForSpeech(
     out = out.replace(TATWEEL_RE, "");
     out = spellArabicNumbers(out);
   }
+
+  out = limitSpokenPauses(out, locale);
 
   out = out
     .replace(/[ \t]+/g, " ")
