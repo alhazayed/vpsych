@@ -271,6 +271,8 @@ export function VoiceSession({
       });
       if (mode === "browser") {
         setStatus(t("status.ttsBrowserFallback"));
+      } else if (mode === "unavailable") {
+        setStatus(t("status.patientAudioUnavailable"));
       }
     },
     [

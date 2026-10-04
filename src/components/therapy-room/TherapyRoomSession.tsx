@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
@@ -12,6 +18,7 @@ import { PrivateNotesPanel } from "@/components/therapy-room/PrivateNotesPanel";
 import { RoomSettingsPanel } from "@/components/therapy-room/RoomSettingsPanel";
 import { RoomTimer } from "@/components/therapy-room/RoomTimer";
 import { TherapyRoomScene } from "@/components/therapy-room/TherapyRoomScene";
+import { VoiceTurnPanel } from "@/components/therapy-room/VoiceTurnPanel";
 import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
 import { remainingSeconds } from "@/lib/session-timer";
 import {
@@ -50,11 +57,37 @@ import {
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
 import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
+import {
+  beginVoiceTurn,
+  describeAudioUnavailable,
+  describeVoiceError,
+  failVoiceStage,
+  initialVoiceDiagnostics,
+  isVoiceDebugEnabled,
+  markAudioUnavailable,
+  markVoiceStage,
+  voiceLog,
+  wavDurationMs,
+  VOICE_STAGES,
+  type VoiceTurnDiagnostics,
+} from "@/lib/voice/voice-diagnostics";
 import type {
   ResolvedAvatar,
   SessionMessage,
   TherapySession,
 } from "@/lib/types";
+
+/**
+ * Barge-in (therapist interrupts patient audio) is off until the basic serial
+ * turn is proven reliable: an always-armed mic monitor could abort the
+ * patient's own clip on echo / room noise, which is heard as "no patient
+ * voice". Opt in with NEXT_PUBLIC_VOICE_BARGE_IN=true.
+ */
+const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN === "true";
+/** When enabled, barge-in arms only this long after audio is actually playing. */
+const BARGE_IN_ARM_DELAY_MS = 700;
+
+const subscribeNoop = () => () => undefined;
 
 function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): string {
   return (
@@ -100,6 +133,18 @@ export function TherapyRoomSession({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [lastPatientText, setLastPatientText] = useState<string | null>(null);
+  const [lastTherapistText, setLastTherapistText] = useState<string | null>(null);
+  const [therapistPending, setTherapistPending] = useState(false);
+  const [patientFallback, setPatientFallback] = useState(false);
+  const [voiceDiag, setVoiceDiag] = useState<VoiceTurnDiagnostics>(() =>
+    initialVoiceDiagnostics(),
+  );
+  // Client-only (reads ?voiceDebug=1); server snapshot keeps hydration stable.
+  const voiceDebug = useSyncExternalStore(
+    subscribeNoop,
+    () => isVoiceDebugEnabled(),
+    () => false,
+  );
   const [therapistSpeaking, setTherapistSpeaking] = useState(false);
   const [settings, setSettings] = useState<TherapyRoomSettings>(() => ({
     themeId: DEFAULT_THERAPY_ROOM_THEME,
@@ -339,6 +384,11 @@ export function TherapyRoomSession({
     stopPlayback,
   ]);
 
+  /**
+   * Play one patient clip for the current turn. Never hangs and never hides
+   * the patient text: a failure of both ElevenLabs and browser speech marks
+   * "Patient audio unavailable" and the room returns to listening.
+   */
   const speakPatient = useCallback(
     async (text: string, generation: number) => {
       if (endingRef.current || !fsmRef.current.isCurrent(generation)) {
@@ -351,6 +401,11 @@ export function TherapyRoomSession({
       }
 
       if (mutedRef.current) {
+        setVoiceDiag((d) =>
+          markVoiceStage(markVoiceStage(d, "tts", "skipped"), "audio", "skipped", {
+            audio_mode: "muted",
+          }),
+        );
         setPresence("idle", "muted");
         dispatch("PLAYBACK_END");
         playbackEndedAtRef.current = telemetryRef.current.mark();
@@ -370,25 +425,49 @@ export function TherapyRoomSession({
       playbackAbortRef.current = abort;
       const playbackStarted = telemetryRef.current.mark();
       let bargeInFired = false;
+      let bargeInArmTimer: number | null = null;
+      let ttsFailure: { status?: number; code?: string } | null = null;
 
-      bargeInStopRef.current = await startBargeInMonitor({
-        onBargeIn: () => {
-          if (bargeInFired || endingRef.current) return;
-          if (!fsmRef.current.isCurrent(generation)) return;
-          bargeInFired = true;
-          immersionRef.current.track("therapist_interrupt");
-          telemetryRef.current.record("barge_in");
-          abort.abort();
-          stopPlayback();
-          const transitioned = dispatch("BARGE_IN");
-          if (transitioned.ok) {
-            setPresence("interrupted", "barge");
-            setStatusKey("listening");
-            // Mic reopens immediately — no click required.
-            listenLoopRef.current();
+      const onBargeIn = () => {
+        if (bargeInFired || endingRef.current) return;
+        if (!fsmRef.current.isCurrent(generation)) return;
+        bargeInFired = true;
+        voiceLog("TURN", "barge_in");
+        immersionRef.current.track("therapist_interrupt");
+        telemetryRef.current.record("barge_in");
+        abort.abort();
+        stopPlayback();
+        const transitioned = dispatch("BARGE_IN");
+        if (transitioned.ok) {
+          setPresence("interrupted", "barge");
+          setStatusKey("listening");
+          // Mic reopens immediately — no click required.
+          listenLoopRef.current();
+        }
+      };
+
+      // Arm barge-in only once audio is audibly playing (never during the TTS
+      // fetch, never in the first moments while echo cancellation adapts).
+      const armBargeIn = () => {
+        if (!BARGE_IN_ENABLED || bargeInArmTimer != null) return;
+        bargeInArmTimer = window.setTimeout(() => {
+          if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) {
+            return;
           }
-        },
-      });
+          void startBargeInMonitor({ onBargeIn }).then((stop) => {
+            if (abort.signal.aborted || playbackAbortRef.current !== abort) {
+              stop();
+              return;
+            }
+            bargeInStopRef.current = stop;
+          });
+        }, BARGE_IN_ARM_DELAY_MS);
+      };
+      const disarmBargeIn = () => {
+        if (bargeInArmTimer != null) window.clearTimeout(bargeInArmTimer);
+        bargeInStopRef.current?.();
+        bargeInStopRef.current = null;
+      };
 
       const mode = await playPatientSpeech({
         text,
@@ -403,32 +482,105 @@ export function TherapyRoomSession({
         audioRef,
         signal: abort.signal,
         handlers: {
-          onstart: () => {
-            if (audioRef.current) {
-              applyHtmlAudioModulation(audioRef.current, mod);
-            }
-          },
-          onend: () => {
-            bargeInStopRef.current?.();
-            bargeInStopRef.current = null;
-          },
-          onerror: () => {
-            bargeInStopRef.current?.();
-            bargeInStopRef.current = null;
-          },
+          onend: disarmBargeIn,
+          onerror: disarmBargeIn,
+        },
+        onDiagnostic: (event) => {
+          if (!fsmRef.current.isCurrent(generation)) return;
+          switch (event.event) {
+            case "tts_request_started":
+              setVoiceDiag((d) => markVoiceStage(d, "tts", "active"));
+              break;
+            case "tts_response":
+              ttsFailure = event.ok
+                ? null
+                : { status: event.status, code: event.code };
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "tts", event.ok ? "ok" : "fail", {
+                  tts_status: event.status,
+                  tts_code: event.code,
+                }),
+              );
+              break;
+            case "audio_play_called":
+              setVoiceDiag((d) => markVoiceStage(d, "audio", "active"));
+              break;
+            case "audio_playing":
+              if (audioRef.current) {
+                applyHtmlAudioModulation(audioRef.current, mod);
+              }
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", { audio_mode: "elevenlabs" }),
+              );
+              armBargeIn();
+              break;
+            case "browser_speech_started":
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", { audio_mode: "browser" }),
+              );
+              armBargeIn();
+              break;
+            case "audio_play_rejected":
+            case "audio_error":
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", {
+                  audio_error: event.reason,
+                }),
+              );
+              break;
+            case "audio_ended":
+            case "browser_speech_ended":
+              setVoiceDiag((d) => markVoiceStage(d, "audio", "ok"));
+              break;
+            default:
+              break;
+          }
+        },
+        onUnavailable: ({ code, status }) => {
+          if (!fsmRef.current.isCurrent(generation)) return;
+          const { stage, message } = describeAudioUnavailable({ code, status });
+          setVoiceDiag((d) =>
+            markAudioUnavailable(markVoiceStage(d, "audio", "fail"), {
+              stage,
+              code,
+              status,
+              message,
+            }),
+          );
         },
       });
 
-      bargeInStopRef.current?.();
-      bargeInStopRef.current = null;
+      disarmBargeIn();
       playbackAbortRef.current = null;
 
       telemetryRef.current.record("playback_duration_ms", {
         valueMs: telemetryRef.current.elapsed(playbackStarted),
       });
+      voiceLog("TURN", "playback_finished", { mode });
 
       if (bargeInFired || mode === "interrupted") {
         return;
+      }
+
+      if (mode === "browser") {
+        // Audible, but not the patient's voice: say so instead of passing off
+        // the browser's robotic fallback as the real patient audio.
+        const failure = ttsFailure as { status?: number; code?: string } | null;
+        setVoiceDiag((d) => ({
+          ...markVoiceStage(d, "audio", "ok", { audio_mode: "browser" }),
+          audioDegraded: failure
+            ? {
+                stage: "tts",
+                code: failure.code,
+                status: failure.status,
+                message: describeVoiceError({
+                  stage: "tts",
+                  code: failure.code,
+                  status: failure.status,
+                }),
+              }
+            : null,
+        }));
       }
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
@@ -457,6 +609,20 @@ export function TherapyRoomSession({
     ],
   );
 
+  /** Append a saved turn; ids are DB uuids so a re-delivery never duplicates. */
+  const appendTurnMessages = useCallback(
+    (userMessage: SessionMessage, assistantMessage: SessionMessage) => {
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        const next = [...prev];
+        if (!seen.has(userMessage.id)) next.push(userMessage);
+        if (!seen.has(assistantMessage.id)) next.push(assistantMessage);
+        return next;
+      });
+    },
+    [],
+  );
+
   const processTherapistAudio = useCallback(
     async (wav: Blob, source: "hands_free" | "patient_interrupt") => {
       if (endingRef.current) return;
@@ -467,6 +633,17 @@ export function TherapyRoomSession({
 
       turnIndexRef.current += 1;
       setTherapistSpeaking(false);
+      setVoiceDiag((d) =>
+        markVoiceStage(
+          markVoiceStage(beginVoiceTurn(d), "recording", "ok", {
+            blob_size: wav.size,
+            blob_type: wav.type || "(none)",
+            blob_duration_ms: wavDurationMs(wav.size),
+          }),
+          "stt",
+          "active",
+        ),
+      );
 
       if (source === "hands_free") {
         immersionRef.current.track("hands_free_turn");
@@ -496,6 +673,13 @@ export function TherapyRoomSession({
       } catch {
         if (abort.signal.aborted) return;
         telemetryRef.current.record("error", { code: "stt_network" });
+        setVoiceDiag((d) =>
+          failVoiceStage(d, {
+            stage: "stt",
+            code: "NETWORK",
+            message: describeVoiceError({ stage: "stt", code: "NETWORK" }),
+          }),
+        );
         dispatch("STT_FAIL");
         setStatusKey("error");
         return;
@@ -512,14 +696,39 @@ export function TherapyRoomSession({
           code: stt.code ?? "stt_fail",
         });
         if (
+          stt.code === "EMPTY_RECORDING" ||
           stt.error === "No speech detected" ||
           /no speech|empty/i.test(stt.error)
         ) {
+          setVoiceDiag((d) =>
+            markVoiceStage(markVoiceStage(d, "stt", "skipped"), "transcript", "skipped", {
+              note: "empty recording — still listening",
+            }),
+          );
           dispatch("STT_EMPTY");
           setPresence("listening", "retry");
           listenLoopRef.current();
           return;
         }
+        setVoiceDiag((d) =>
+          failVoiceStage(
+            markVoiceStage(d, "stt", "fail", {
+              stt_status: stt.status,
+              stt_code: stt.code,
+            }),
+            {
+              stage: "stt",
+              code: stt.code,
+              status: stt.status,
+              message: describeVoiceError({
+                stage: "stt",
+                code: stt.code,
+                status: stt.status,
+                message: stt.error,
+              }),
+            },
+          ),
+        );
         dispatch("STT_FAIL");
         setStatusKey("error");
         return;
@@ -527,6 +736,12 @@ export function TherapyRoomSession({
 
       const transcript = stt.transcript.trim();
       if (!transcript) {
+        setVoiceDiag((d) =>
+          markVoiceStage(markVoiceStage(d, "stt", "ok"), "transcript", "skipped", {
+            stt_transcript_length: 0,
+            note: "no speech detected — still listening",
+          }),
+        );
         dispatch("STT_EMPTY");
         setPresence("listening", "empty");
         listenLoopRef.current();
@@ -534,6 +749,22 @@ export function TherapyRoomSession({
       }
 
       if (!dispatch("STT_OK").ok) return;
+
+      // The therapist's words are visible the moment STT returns — before the
+      // message API, and independent of TTS / playback.
+      setLastTherapistText(transcript);
+      setTherapistPending(true);
+      setLastPatientText(null);
+      setPatientFallback(false);
+      setVoiceDiag((d) =>
+        markVoiceStage(
+          markVoiceStage(markVoiceStage(d, "stt", "ok"), "transcript", "ok", {
+            stt_transcript_length: transcript.length,
+          }),
+          "message",
+          "active",
+        ),
+      );
 
       // Clinical thinking latency overlaps GPT request.
       const thinkPromise = new Promise<void>((resolve) => {
@@ -557,6 +788,13 @@ export function TherapyRoomSession({
       } catch {
         if (abort.signal.aborted) return;
         telemetryRef.current.record("error", { code: "gpt_network" });
+        setVoiceDiag((d) =>
+          failVoiceStage(d, {
+            stage: "message",
+            code: "NETWORK",
+            message: describeVoiceError({ stage: "message", code: "NETWORK" }),
+          }),
+        );
         dispatch("GPT_FAIL");
         setStatusKey("error");
         return;
@@ -574,19 +812,38 @@ export function TherapyRoomSession({
           return;
         }
         telemetryRef.current.record("error", { code: "gpt_fail" });
+        const failed = turn;
+        setVoiceDiag((d) =>
+          failVoiceStage(d, {
+            stage: "message",
+            code: failed.code,
+            status: failed.status,
+            message: describeVoiceError({
+              stage: "message",
+              code: failed.code,
+              status: failed.status,
+              message: failed.error,
+            }),
+          }),
+        );
         dispatch("GPT_FAIL");
         setStatusKey("error");
         return;
       }
 
-      setMessages((prev) => [
-        ...prev,
-        turn.data.userMessage,
-        turn.data.assistantMessage,
-      ]);
+      appendTurnMessages(turn.data.userMessage, turn.data.assistantMessage);
+      setTherapistPending(false);
+      setLastTherapistText(turn.data.userMessage.content);
       setLastPatientText(turn.data.assistantMessage.content);
+      setPatientFallback(turn.data.aiSource === "persona_fallback");
+      setVoiceDiag((d) =>
+        markVoiceStage(markVoiceStage(d, "message", "ok"), "patientText", "ok", {
+          ai_source: turn.data.aiSource ?? "unknown",
+          patient_text_length: turn.data.assistantMessage.content?.length ?? 0,
+        }),
+      );
 
-      // Transition into AVATAR_SPEAKING before TTS.
+      // Transition into AVATAR_SPEAKING before TTS. Text is already visible.
       if (!dispatch("GPT_OK").ok) return;
 
       const ttsStarted = telemetryRef.current.mark();
@@ -605,6 +862,7 @@ export function TherapyRoomSession({
       }
     },
     [
+      appendTurnMessages,
       dispatch,
       endSession,
       locale,
@@ -642,11 +900,14 @@ export function TherapyRoomSession({
         silenceMs: HANDS_FREE_PERF_BUDGETS.defaultSilenceMs,
         maxMs: 28000,
         onSpeechStart: () => {
+          voiceLog("MIC", "recording_started");
+          setVoiceDiag((d) => markVoiceStage(d, "recording", "active"));
           speechStartedAt.current = telemetryRef.current.mark();
           setTherapistSpeaking(true);
           setPresence("listening", "therapist-speaking");
         },
         onSpeechEnd: () => {
+          voiceLog("MIC", "recording_stopped");
           setTherapistSpeaking(false);
           if (speechStartedAt.current != null) {
             telemetryRef.current.record("speech_duration_ms", {
@@ -675,6 +936,7 @@ export function TherapyRoomSession({
       }
 
       vadRef.current = vad;
+      setVoiceDiag((d) => markVoiceStage(d, "mic", "ok"));
       const wav = await vad.done;
       vadRef.current = null;
 
@@ -690,11 +952,53 @@ export function TherapyRoomSession({
         return;
       }
 
-      await processTherapistAudio(
-        wav,
-        interruptedByPatient ? "patient_interrupt" : "hands_free",
+      try {
+        await processTherapistAudio(
+          wav,
+          interruptedByPatient ? "patient_interrupt" : "hands_free",
+        );
+      } catch (turnErr) {
+        // A bug inside the turn must not be reported as a microphone error,
+        // and must never leave the room silently stuck.
+        console.error("[VOICE][TURN] unexpected turn failure", turnErr);
+        setVoiceDiag((d) => {
+          const stage =
+            VOICE_STAGES.find((s) => d.stages[s] === "active") ?? "message";
+          return failVoiceStage(d, {
+            stage,
+            code: "UNEXPECTED",
+            message: describeVoiceError({
+              stage,
+              message: "unexpected client error",
+            }),
+          });
+        });
+        if (!endingRef.current) {
+          dispatch("ERROR");
+          setStatusKey("error");
+        }
+      }
+    } catch (err) {
+      const name =
+        err && typeof err === "object" && "name" in err
+          ? String((err as { name: unknown }).name)
+          : "error";
+      voiceLog("MIC", "mic_error", { name });
+      setVoiceDiag((d) =>
+        failVoiceStage(d, {
+          stage: "mic",
+          code: name,
+          message: describeVoiceError({
+            stage: "mic",
+            message:
+              name === "NotAllowedError"
+                ? "microphone permission was denied"
+                : name === "NotFoundError"
+                  ? "no microphone was found"
+                  : `could not open the microphone (${name})`,
+          }),
+        }),
       );
-    } catch {
       telemetryRef.current.record("error", { code: "mic_denied" });
       dispatch("ERROR");
       setStatusKey("error");
@@ -730,6 +1034,10 @@ export function TherapyRoomSession({
 
   // Boot: ambience + immersion + automatic listening (no mic click).
   useEffect(() => {
+    // React Strict Mode (dev) runs mount → cleanup → mount. The cleanup below
+    // sets endingRef=true; without this reset every later turn would bail out
+    // on `endingRef.current` and the room would never listen.
+    endingRef.current = false;
     immersionRef.current.track("session_start");
     telemetryRef.current.record("session_start");
     dispatch("START");
@@ -788,6 +1096,7 @@ export function TherapyRoomSession({
   const handleRetry = useCallback(() => {
     if (endingRef.current) return;
     telemetryRef.current.record("retry");
+    setVoiceDiag((d) => ({ ...d, error: null }));
     const result = dispatch("RETRY");
     if (result.ok) {
       setStatusKey("listening");
@@ -966,25 +1275,66 @@ export function TherapyRoomSession({
         dispatch("STT_OK");
       }
 
-      const turn = await submitConversationTurn({
-        sessionId: session.id,
-        message: trimmed,
-      });
+      setLastTherapistText(trimmed);
+      setTherapistPending(true);
+      setLastPatientText(null);
+      setVoiceDiag((d) =>
+        markVoiceStage(
+          markVoiceStage(beginVoiceTurn(d), "transcript", "ok", { input: "text" }),
+          "message",
+          "active",
+        ),
+      );
+      let turn;
+      try {
+        turn = await submitConversationTurn({
+          sessionId: session.id,
+          message: trimmed,
+        });
+      } catch {
+        setVoiceDiag((d) =>
+          failVoiceStage(d, {
+            stage: "message",
+            code: "NETWORK",
+            message: describeVoiceError({ stage: "message", code: "NETWORK" }),
+          }),
+        );
+        dispatch("GPT_FAIL");
+        setStatusKey("error");
+        return;
+      }
       if (!turn.ok) {
         if (turn.expired) {
           await endSession();
           return;
         }
+        const failed = turn;
+        setVoiceDiag((d) =>
+          failVoiceStage(d, {
+            stage: "message",
+            code: failed.code,
+            status: failed.status,
+            message: describeVoiceError({
+              stage: "message",
+              code: failed.code,
+              status: failed.status,
+              message: failed.error,
+            }),
+          }),
+        );
         dispatch("GPT_FAIL");
         setStatusKey("error");
         return;
       }
-      setMessages((prev) => [
-        ...prev,
-        turn.data.userMessage,
-        turn.data.assistantMessage,
-      ]);
+      appendTurnMessages(turn.data.userMessage, turn.data.assistantMessage);
+      setTherapistPending(false);
       setLastPatientText(turn.data.assistantMessage.content);
+      setPatientFallback(turn.data.aiSource === "persona_fallback");
+      setVoiceDiag((d) =>
+        markVoiceStage(markVoiceStage(d, "message", "ok"), "patientText", "ok", {
+          ai_source: turn.data.aiSource ?? "unknown",
+        }),
+      );
       if (!dispatch("GPT_OK").ok) {
         // May already be WAITING_GPT
       }
@@ -996,7 +1346,7 @@ export function TherapyRoomSession({
         listenLoopRef.current();
       }
     },
-    [dispatch, endSession, session.id, setPresence, speakPatient],
+    [appendTurnMessages, dispatch, endSession, session.id, setPresence, speakPatient],
   );
 
   const busy =
@@ -1044,6 +1394,20 @@ export function TherapyRoomSession({
           fsmState={fsmState}
           therapistSpeaking={therapistSpeaking}
           onRetry={handleRetry}
+        />
+
+        <VoiceTurnPanel
+          therapistText={lastTherapistText}
+          therapistPending={therapistPending}
+          patientText={lastPatientText}
+          patientFallback={patientFallback}
+          diagnostics={voiceDiag}
+          debug={voiceDebug}
+          onPlayAudio={
+            voiceDiag.audioUnavailable && lastPatientText
+              ? () => handleControl("repeat")
+              : undefined
+          }
         />
 
         {/* Accessibility: optional silent text fallback, visually minimal */}

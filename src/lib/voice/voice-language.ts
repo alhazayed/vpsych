@@ -57,14 +57,38 @@ export const VERIFIED_VOICE_LANGUAGES: Readonly<
   // Backs the active "Omars" profile used by jordan-hale.
   HJ8unGw6UFYkApOU0Oea: "ar",
   // "Noura - Soft and Polished" — language ar, accent gulf.
-  // Present as an INACTIVE voice_profiles row; listed so that if it is ever
-  // activated it is classified correctly. Listing does not activate it.
+  // Backs the active "Noura" profile used by maya-chen (ar-JO, Layan).
   isQLuoVuANx6FjDxyasX: "ar",
   // "Amira - Poised and Graceful" — language ar, accent gulf.
   cdxrkuYK4nZwDSkjw5sa: "ar",
   // "Anas" — language ar, accent modern standard, male, middle-aged.
   // Authorized for the Arabic catalogue; structured metadata present.
   R6nda3uM038xEEKi7GFl: "ar",
+
+  // Owner's voice list of 2026-10-04 ("Vpsych Voices"). Language and gender
+  // from ElevenLabs voice metadata unless noted.
+  // "Ash - Conversational, Kind and Bright" (owner's name: Aisha) — en,
+  // american, female, young. Backs maya-chen (en-US).
+  m3yAHyFEFKtbCIM5n7GF: "en",
+  // "Brady J – Friendly, Casual, Warm" (owner's name: Brat) — en, american,
+  // male, middle-aged.
+  "3svOJAOhuPHXwQC2H5eq": "en",
+  // "Adam - Engaging, Friendly and Bright" — en, american, male, young.
+  // Backs jordan-hale (en-US).
+  s3TPKV1kjDlVtZbl4Ksh: "en",
+  // "Fadi - Lebanese Conversational Voice" — ar, levantine, male, young.
+  // Backs jordan-hale (ar-JO).
+  oJQlz7pz2yWd7MRmDUXm: "ar",
+  // "Saad" (owner's name: Ahmad) — ar, saudi, male, middle-aged.
+  "3vR1KVyyNDhdkucpugQI": "ar",
+  // "Ghaida - Friendly, Charming and Caring" (owner's name: Hiba) — ar,
+  // syrian, female, young.
+  Wim44P0dU9HtjyzNnFsv: "ar",
+  // "Gamal - Authoritative and Resonant" (owner's name: Jamal) — ar,
+  // egyptian, male, middle-aged. Previously held in
+  // PENDING_LANGUAGE_VERIFICATION because its labels were empty; the vendor
+  // now returns structured labels.language "ar" (checked 2026-10-04).
+  JTMaHm6sHVI3NZgPaWDz: "ar",
 });
 
 /**
@@ -78,14 +102,18 @@ export const VERIFIED_VOICE_LANGUAGES: Readonly<
 export const PENDING_LANGUAGE_VERIFICATION: Readonly<
   Record<string, { claimedLanguage: string; reason: string }>
 > = Object.freeze({
-  // "Gamal - Authoritative and Resonant". Its ElevenLabs `labels` object is
-  // empty, so there is no structured language field at all; Arabic/Egyptian is
-  // asserted only by the vendor's free-text description. Admitting it would
-  // treat prose as equivalent to structured metadata.
-  JTMaHm6sHVI3NZgPaWDz: {
+  // Owner's voice list of 2026-10-04 names these as English (Linda) and
+  // Arabic (Abbas), but neither voice id is in the workspace's ElevenLabs
+  // voice listing, so no structured labels.language could be read.
+  XcXEQzuLXRU9RcfWzEJt: {
+    claimedLanguage: "en",
+    reason:
+      "structured labels.language unavailable; voice not in the workspace voice listing",
+  },
+  LXrTqFIgiubkrMkwvOUr: {
     claimedLanguage: "ar",
     reason:
-      "structured labels.language absent; language claimed only in vendor description",
+      "structured labels.language unavailable; voice not in the workspace voice listing",
   },
 });
 
