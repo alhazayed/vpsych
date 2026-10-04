@@ -775,7 +775,11 @@
       "showingLabel": "عرض #COUNT# تقارير",
       "emptyFilteredTitle": "لا توجد تقارير تطابق عوامل التصفية",
       "emptyFilteredDescription": "جرّب مسح عوامل التصفية أو توسيع البحث.",
-      "fallbackBadge": "تقديري"
+      "fallbackBadge": "تقديري",
+      "loadErrorTitle": "التقارير غير متاحة",
+      "loadErrorDescription": "تعذّر تحميل قائمة التقارير. حاول مجدداً أو راجع صحة النظام.",
+      "statTotalTruncated": "يعرض الجدول أحدث {count}",
+      "statAvgHintRecent": "عبر أحدث التقارير المكتملة المعروضة"
     },
     "reportDetail": {
       "back": "كل التقارير",

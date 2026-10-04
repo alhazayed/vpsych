@@ -776,7 +776,11 @@
       "showingLabel": "Showing #COUNT# reports",
       "emptyFilteredTitle": "No reports match these filters",
       "emptyFilteredDescription": "Try clearing filters or broadening your search.",
-      "fallbackBadge": "Fallback"
+      "fallbackBadge": "Fallback",
+      "loadErrorTitle": "Reports unavailable",
+      "loadErrorDescription": "Could not load the reports list. Try again or check System Health.",
+      "statTotalTruncated": "Table shows the latest {count}",
+      "statAvgHintRecent": "Across the latest completed reports shown"
     },
     "reportDetail": {
       "back": "All reports",
