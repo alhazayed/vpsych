@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { EmptyState, MetricCard } from "@/components/admin/AdminUi";
+import { EmptyState, ErrorState, MetricCard } from "@/components/admin/AdminUi";
+import { loadPeriodAnalytics } from "@/lib/admin/analytics-data";
 
 type RangeKey = "7d" | "30d" | "90d";
 
@@ -28,14 +29,36 @@ export default async function AdminAnalyticsPage({
   since.setUTCDate(since.getUTCDate() - rangeDays);
   const sinceIso = since.toISOString();
 
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select(
-      "id, status, language, institution_id, institutions:institution_id ( name )",
-    )
-    .gte("created_at", sinceIso);
+  const loaded = await loadPeriodAnalytics(supabase, sinceIso);
+  if (!loaded.ok) {
+    console.warn(`[admin-analytics] ${loaded.stage}:`, loaded.message);
+    return (
+      <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 md:px-8">
+        <AdminPageHeader
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: tHome("title"), href: "/admin" },
+            { label: t("title") },
+          ]}
+        />
+        <ErrorState
+          title={t("errorTitle")}
+          description={t("loadError")}
+          action={
+            <Link
+              href={`/admin/analytics?range=${rangeKey}`}
+              className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-sm font-medium"
+            >
+              {t("retry")}
+            </Link>
+          }
+        />
+      </main>
+    );
+  }
 
-  const list = sessions ?? [];
+  const list = loaded.sessions;
   const sessionsStarted = list.length;
   const sessionsCompleted = list.filter((s) => s.status === "completed").length;
   const sessionsExpired = list.filter((s) => s.status === "expired").length;
@@ -64,31 +87,7 @@ export default async function AdminAnalyticsPage({
       });
   }
 
-  const sessionIds = list.map((s) => s.id).slice(0, 500);
-  let reportsCount = 0;
-  let avgOverall: number | null = null;
-  if (sessionIds.length > 0) {
-    const { data: reports } = await supabase
-      .from("session_reports")
-      .select("id, scores")
-      .in("session_id", sessionIds);
-    const reps = reports ?? [];
-    reportsCount = reps.length;
-    const scores = reps
-      .map((r) => {
-        const o =
-          r.scores && typeof r.scores === "object"
-            ? (r.scores as { overall?: number }).overall
-            : null;
-        return o;
-      })
-      .filter((n): n is number => typeof n === "number");
-    if (scores.length > 0) {
-      avgOverall = Math.round(
-        scores.reduce((a, b) => a + b, 0) / scores.length,
-      );
-    }
-  }
+  const { reportsCount, avgOverall } = loaded.reports;
 
   const byLanguage = Array.from(langMap.entries())
     .map(([language, count]) => ({ language, count }))

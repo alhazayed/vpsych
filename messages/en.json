@@ -1065,7 +1065,9 @@
         "rawValidationJson": "Raw validation JSON",
         "fieldPathDetails": "Technical field path",
         "rawPayloadJson": "Raw write payload"
-      }
+      },
+      "loadErrorTitle": "Patient library unavailable",
+      "loadErrorDescription": "Could not load virtual patients. Try again or check System Health."
     },
     "personality": {
       "title": "Personality",
@@ -1538,7 +1540,7 @@
       "qAssessment": "How are learners scoring on completed assessments?",
       "metricReports": "Reports in period",
       "metricAvgScore": "Average overall score",
-      "metricAvgScoreHint": "Mean of overall scores on reports linked to period sessions",
+      "metricAvgScoreHint": "Mean overall score of AI-examiner reports linked to period sessions (fallback reports excluded)",
       "byLanguage": "By language",
       "qLanguage": "Which session languages are in use?",
       "byOrganization": "By organization",
