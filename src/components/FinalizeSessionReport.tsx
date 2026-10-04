@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -11,8 +12,16 @@ type State = "pending" | "done" | "error";
  * request failed. Re-uses the idempotent POST /api/sessions/[id]/end, which
  * skips status changes for non-active sessions and is insert-once on reports.
  */
-export function FinalizeSessionReport({ sessionId }: { sessionId: string }) {
+export function FinalizeSessionReport({
+  sessionId,
+  refreshOnDone = false,
+}: {
+  sessionId: string;
+  /** Re-render the server page after success (e.g. to show coach feedback). */
+  refreshOnDone?: boolean;
+}) {
   const t = useTranslations("sessions.complete.finalize");
+  const router = useRouter();
   const [state, setState] = useState<State>("pending");
   const started = useRef(false);
 
@@ -23,10 +32,11 @@ export function FinalizeSessionReport({ sessionId }: { sessionId: string }) {
         method: "POST",
       });
       setState(res.ok ? "done" : "error");
+      if (res.ok && refreshOnDone) router.refresh();
     } catch {
       setState("error");
     }
-  }, [sessionId]);
+  }, [refreshOnDone, router, sessionId]);
 
   useEffect(() => {
     // Ref guard: React Strict Mode re-runs effects in development.

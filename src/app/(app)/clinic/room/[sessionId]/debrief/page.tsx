@@ -8,6 +8,8 @@ import {
 } from "@/lib/therapy-room";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
+import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
+import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
@@ -18,7 +20,7 @@ export default async function ClinicDebriefPage({ params }: Props) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, therapist_id, clinical_snapshot, avatars(name, disorder)")
+    .select("id, therapist_id, status, clinical_snapshot, avatars(name, disorder)")
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -74,11 +76,36 @@ export default async function ClinicDebriefPage({ params }: Props) {
     .neq("role", "system")
     .order("created_at", { ascending: true });
 
+  // Same self-heal as /sessions/[id]/complete: a room abandoned mid-session or
+  // ended by expiry has no report (and no coach feedback) until /end runs.
+  let needsReport = false;
+  if (
+    shouldOfferReportFinalize({
+      status: session.status as string,
+      therapistId: session.therapist_id as string,
+      viewerId: user.id,
+      roles: (messages ?? []).map((m) => m.role as string),
+    })
+  ) {
+    const { data: hasReport, error: hasReportError } = await supabase.rpc(
+      "session_has_report",
+      { p_session_id: sessionId },
+    );
+    needsReport = !hasReportError && hasReport === false;
+  }
+
   return (
-    <SessionDebrief
-      sessionId={sessionId}
-      briefing={briefing}
-      transcript={messages ?? []}
-    />
+    <>
+      {needsReport ? (
+        <div className="mx-auto max-w-2xl px-4 pt-6 md:px-8">
+          <FinalizeSessionReport sessionId={sessionId} refreshOnDone />
+        </div>
+      ) : null}
+      <SessionDebrief
+        sessionId={sessionId}
+        briefing={briefing}
+        transcript={messages ?? []}
+      />
+    </>
   );
 }
