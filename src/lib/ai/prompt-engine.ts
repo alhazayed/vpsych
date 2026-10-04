@@ -44,6 +44,11 @@ export type PromptFidelityHints = {
    * mitigation (Layer A). Injected when case_file / authored facts resolve.
    */
   canonical_facts_block?: string;
+  /**
+   * Session Practice Engine — case-derived PHQ-9 / GAD-7 frequencies so the
+   * patient answers a questionnaire consistently when one is administered.
+   */
+  self_report_block?: string;
 };
 
 export type PromptAssemblyInput = {
@@ -184,6 +189,8 @@ HOW YOU SPEAK THIS SESSION (diagnosis-specific — mandatory):
 {{fidelity.clinical_intelligence_block}}
 
 {{fidelity.canonical_facts_block}}
+
+{{fidelity.self_report_block}}
 
 {{fidelity.humanization_cue}}
 
@@ -382,6 +389,7 @@ export function assembleSystemPrompt(input: PromptAssemblyInput): string {
         input.fidelity?.clinical_intelligence_block?.trim() || "",
       canonical_facts_block:
         input.fidelity?.canonical_facts_block?.trim() || "",
+      self_report_block: input.fidelity?.self_report_block?.trim() || "",
       humanization_cue: input.fidelity?.humanization_cue?.trim() || "",
     },
   };

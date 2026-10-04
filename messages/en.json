@@ -733,7 +733,79 @@
     },
     "reportDetail": {
       "back": "All reports",
-      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})"
+      "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})",
+      "practice": {
+        "title": "Session practice",
+        "subtitle": "Observable therapy best practices in this transcript, an indicative CTS-R view, and the patient's questionnaire targets.",
+        "coverage": "{met} of {total}",
+        "informational": "For reference",
+        "detected": "observed",
+        "missed": "not observed",
+        "limitations": "Phrase matching on therapist turns only. It shows whether a practice was visibly attempted, not how well. Not a validated instrument; use it to guide supervision, never as a grade on its own.",
+        "groups": {
+          "intake": "Intake",
+          "consent": "Consent and confidentiality",
+          "structure": "Session structure",
+          "safety_plan": "Safety planning",
+          "measures": "Standardised measures"
+        },
+        "checks": {
+          "role_intro": "Introduced self and role",
+          "presenting_problem": "Explored the presenting problem",
+          "history": "Asked about onset and history",
+          "social_context": "Asked about family, work and support",
+          "expectations": "Asked what the patient hopes for",
+          "confidentiality": "Explained confidentiality",
+          "confidentiality_limits": "Explained the limits of confidentiality",
+          "consent_to_proceed": "Checked agreement to proceed",
+          "mood_check": "Mood check",
+          "bridge": "Bridge from the last session",
+          "agenda": "Set an agenda together",
+          "homework_review": "Reviewed homework",
+          "homework_set": "Agreed homework",
+          "summary": "Summarised the session",
+          "feedback_elicited": "Asked for feedback on the session",
+          "warning_signs": "Warning signs",
+          "internal_coping": "Things the patient can do alone",
+          "social_supports": "People and places for support",
+          "professional_contacts": "Professional and crisis contacts",
+          "means_safety": "Making the environment safer",
+          "phq9": "PHQ-9 administered",
+          "gad7": "GAD-7 administered"
+        },
+        "ctsr": {
+          "title": "Indicative CTS-R",
+          "total": "{total} / 72 (indicative)",
+          "partial": "{rated} of 12 items rated (indicative)",
+          "items": {
+            "agenda_setting": "1. Agenda setting and adherence",
+            "collaboration": "2. Collaboration",
+            "guided_discovery": "3. Guided discovery",
+            "feedback": "4. Feedback",
+            "conceptual_integration": "5. Conceptual integration",
+            "eliciting_cognitions": "6. Eliciting key cognitions",
+            "eliciting_emotion": "7. Eliciting emotional expression",
+            "eliciting_behaviours": "8. Eliciting and planning behaviours",
+            "change_methods": "9. Application of change methods",
+            "interpersonal_effectiveness": "10. Interpersonal effectiveness",
+            "pacing": "11. Pacing and use of time",
+            "homework": "12. Homework setting"
+          }
+        },
+        "selfReport": {
+          "title": "Patient questionnaire targets",
+          "phq9": "PHQ-9: {total} ({band})",
+          "gad7": "GAD-7: {total} ({band})",
+          "note": "What this patient reports if the trainee administers the questionnaire. Derived from the case; not a real patient's score."
+        },
+        "bands": {
+          "minimal": "minimal",
+          "mild": "mild",
+          "moderate": "moderate",
+          "moderately_severe": "moderately severe",
+          "severe": "severe"
+        }
+      }
     },
     "testTranscript": {
       "title": "Admin test transcript",
