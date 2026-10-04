@@ -254,18 +254,13 @@ describe("authorized Arabic catalog additions", () => {
     expect(approvedVoicesFor("ar")).toContain(NOURA);
   });
 
-  it("Gamal is held out — description is not structured metadata (3)", () => {
-    // The verification rule requires vendor structured `labels.language`.
-    // Gamal's labels object is empty, so it is approved for nothing and the
-    // reason is recorded rather than the gap being silently closed.
-    expect(trustedVoiceLanguage(GAMAL)).toBeNull();
-    expect(isVoiceApprovedFor(GAMAL, "ar")).toBe(false);
+  it("Gamal is accepted as Arabic once vendor labels exist (3)", () => {
+    // Held out while its ElevenLabs labels were empty; the vendor now returns
+    // structured labels.language "ar", which is the evidence the rule needs.
+    expect(trustedVoiceLanguage(GAMAL)).toBe("ar");
+    expect(isVoiceApprovedFor(GAMAL, "ar")).toBe(true);
     expect(isVoiceApprovedFor(GAMAL, "en")).toBe(false);
-    expect(approvedVoicesFor("ar")).not.toContain(GAMAL);
-    expect(PENDING_LANGUAGE_VERIFICATION[GAMAL]?.claimedLanguage).toBe("ar");
-    expect(PENDING_LANGUAGE_VERIFICATION[GAMAL]?.reason).toMatch(
-      /structured labels\.language absent/,
-    );
+    expect(PENDING_LANGUAGE_VERIFICATION[GAMAL]).toBeUndefined();
   });
 
   it("no authorized Arabic voice can ever be accepted for English (4)", () => {
@@ -329,5 +324,41 @@ describe("authorized Arabic catalog additions", () => {
         voiceProfile: profile(EN_SARAH, "en"),
       }).voiceId,
     ).toBe(EN_SARAH);
+  });
+});
+
+describe("owner's voice list (2026-10-04)", () => {
+  const EN = {
+    aisha: "m3yAHyFEFKtbCIM5n7GF",
+    brady: "3svOJAOhuPHXwQC2H5eq",
+    adam: "s3TPKV1kjDlVtZbl4Ksh",
+  };
+  const AR = {
+    fadi: "oJQlz7pz2yWd7MRmDUXm",
+    saad: "3vR1KVyyNDhdkucpugQI",
+    ghaida: "Wim44P0dU9HtjyzNnFsv",
+    gamal: "JTMaHm6sHVI3NZgPaWDz",
+  };
+  const LINDA = "XcXEQzuLXRU9RcfWzEJt";
+  const ABBAS = "LXrTqFIgiubkrMkwvOUr";
+
+  it("approves each labelled voice for its own language only", () => {
+    for (const id of Object.values(EN)) {
+      expect(isVoiceApprovedFor(id, "en")).toBe(true);
+      expect(isVoiceApprovedFor(id, "ar")).toBe(false);
+    }
+    for (const id of Object.values(AR)) {
+      expect(isVoiceApprovedFor(id, "ar")).toBe(true);
+      expect(isVoiceApprovedFor(id, "en")).toBe(false);
+    }
+  });
+
+  it("holds out voices without vendor labels", () => {
+    for (const id of [LINDA, ABBAS]) {
+      expect(trustedVoiceLanguage(id)).toBeNull();
+      expect(PENDING_LANGUAGE_VERIFICATION[id]?.reason).toMatch(
+        /labels\.language unavailable/,
+      );
+    }
   });
 });
