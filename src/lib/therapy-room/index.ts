@@ -83,11 +83,15 @@ export {
 export {
   startHandsFreeVad,
   startBargeInMonitor,
+  createBargeInDetector,
+  BARGE_IN_DEFAULTS,
   evaluateVadFrame,
   resolveSilenceMs,
   rms,
   type VadController,
   type HandsFreeVadOptions,
+  type BargeInHandoff,
+  type BargeInDetectorOptions,
 } from "./vad";
 
 export {
