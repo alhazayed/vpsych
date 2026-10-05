@@ -31,6 +31,11 @@ import {
   loadActiveCourse,
 } from "@/lib/therapy-course";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import {
+  buildSkillTestSessionContext,
+  loadSkillTestStart,
+  skillTestDbError,
+} from "@/lib/skill-tests";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -70,7 +75,26 @@ export async function POST(request: Request) {
     presetSlug?: string;
     /** Advanced Mode diagnosis pin (requires preset.advanced_mode) */
     disorderSlugOverride?: string;
+    /** Supervisor-assigned skill test; the assignment decides the case. */
+    skillTestId?: string;
   };
+
+  // Skill test — the supervisor's assignment fixes patient, language and case.
+  const skillTest = body.skillTestId
+    ? await loadSkillTestStart(supabase, {
+        userId: user.id,
+        skillTestId: body.skillTestId,
+      })
+    : null;
+  if (skillTest && !skillTest.ok) {
+    return NextResponse.json(
+      { error: skillTest.error, code: skillTest.code },
+      { status: skillTest.status },
+    );
+  }
+  const test = skillTest?.ok ? skillTest : null;
+  if (test) body.avatarId = test.assignment.avatar_id;
+
   if (!body.avatarId) {
     return NextResponse.json({ error: "avatarId required" }, { status: 400 });
   }
@@ -99,7 +123,8 @@ export async function POST(request: Request) {
   // open course with the same pinned case. Explicit case/preset requests stay
   // standalone sessions, exactly as before courses existed.
   const requestsSpecificCase = Boolean(
-    body.disorderSlug ||
+    test ||
+      body.disorderSlug ||
       body.caseId ||
       body.comorbiditySlugs?.length ||
       body.templateId ||
@@ -178,7 +203,9 @@ export async function POST(request: Request) {
   );
   // A continuing course keeps the patient's locale: en-US and ar-JO are
   // different people, so the course never switches personality mid-therapy.
-  const effectiveLocale = continuing
+  const effectiveLocale = test
+    ? test.assignment.language
+    : continuing
     ? normalizeAvatarLocale(
         continuing.course.clinical_snapshot.locale ??
           continuing.course.language ??
@@ -188,8 +215,29 @@ export async function POST(request: Request) {
 
   // Module 7 — generate immutable CaseInstance for this assessment. A
   // continuing therapy course reuses the case pinned when the course began.
+  const pinnedTestSnapshot = test?.assignment.clinical_snapshot ?? null;
+  const testCase =
+    test && pinnedTestSnapshot
+      ? caseFromCourse({
+          case_instance_id: test.assignment.case_instance_id,
+          clinical_snapshot: pinnedTestSnapshot,
+          max_duration_sec: null,
+        })
+      : null;
   const caseResult = continuing
     ? caseFromCourse(continuing.course)
+    : testCase
+    ? testCase
+    : test
+    ? await createCaseForSession(supabase, {
+        avatar: typedAvatar,
+        locale: effectiveLocale,
+        therapistId: user.id,
+        disorderSlug: test.assignment.disorder_slug,
+        comorbiditySlugs: test.assignment.comorbidity_slugs,
+        difficulty: test.assignment.difficulty,
+        severity: test.assignment.severity ?? undefined,
+      })
     : await createCaseForSession(supabase, {
     avatar: typedAvatar,
     locale: effectiveLocale,
@@ -240,8 +288,16 @@ export async function POST(request: Request) {
     });
     courseSessionNumber = course ? 1 : null;
   }
-  const learnerSnapshot: CaseInstanceSnapshot =
-    course && courseSessionNumber
+  const learnerSnapshot: CaseInstanceSnapshot = test
+    ? {
+        ...baseSnapshot,
+        therapy_course: buildSkillTestSessionContext({
+          assignmentId: test.assignment.id,
+          sessionNumber: test.sessionNumber,
+          requiredSessions: test.assignment.required_sessions,
+        }),
+      }
+    : course && courseSessionNumber
       ? {
           ...baseSnapshot,
           therapy_course: buildCourseSessionContext({
@@ -270,6 +326,9 @@ export async function POST(request: Request) {
     interaction_mode: interactionMode,
     institution_id: profile?.primary_institution_id ?? null,
   };
+  if (test) {
+    insertPayload.skill_test_assignment_id = test.assignment.id;
+  }
   if (course && courseSessionNumber) {
     insertPayload.therapy_course_id = course.id;
     insertPayload.course_session_number = courseSessionNumber;
@@ -282,8 +341,10 @@ export async function POST(request: Request) {
     .single();
 
   // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
+  // A skill test session is never retried without its test link.
   if (
     error &&
+    !test &&
     /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset|interaction_mode/i.test(
       error.message,
     )
@@ -322,6 +383,14 @@ export async function POST(request: Request) {
       session = retry.data;
       error = retry.error;
     }
+  }
+
+  const testRejection = test ? skillTestDbError(error?.message) : null;
+  if (testRejection) {
+    return NextResponse.json(
+      { error: testRejection.message, code: testRejection.code },
+      { status: testRejection.status },
+    );
   }
 
   if (error || !session) {
@@ -366,7 +435,7 @@ export async function POST(request: Request) {
   // Stage 6 — seed case_memory with dyad Adaptation carry + CI mind state (R-I1).
   // Best-effort; never blocks session create.
   // A continuing course already has case_memory for its case; keep it.
-  const newCaseId = continuing ? null : persistedCaseId;
+  const newCaseId = continuing || testCase ? null : persistedCaseId;
   if (newCaseId) {
     try {
       const carry = await loadDyadClinicalCarry(supabase, {
@@ -407,7 +476,8 @@ export async function POST(request: Request) {
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
-    diagnosis: caseResult.snapshot.primary_diagnosis.name,
+    // A skill test trainee works the diagnosis out; the response never names it.
+    diagnosis: test ? null : caseResult.snapshot.primary_diagnosis.name,
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,
@@ -419,6 +489,8 @@ export async function POST(request: Request) {
     interactionMode,
     courseId: course?.id ?? null,
     courseSessionNumber,
+    skillTestId: test?.assignment.id ?? null,
+    testSessionNumber: test?.sessionNumber ?? null,
   });
 }
 

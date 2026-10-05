@@ -1,15 +1,16 @@
 import { AppShell } from "@/components/AppShell";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
+import { loadIsSupervisor } from "@/lib/skill-tests/access";
 
 export default async function AppShellLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { profile } = await requireProfile();
+  const { supabase, profile } = await requireProfile();
+  const isSupervisor = await loadIsSupervisor(supabase, profile.id);
   return (
-    <AppShell profile={profile} therapyRoomEnabled={isTherapyRoomEnabled()}>
+    <AppShell profile={profile} isSupervisor={isSupervisor}>
       {children}
     </AppShell>
   );

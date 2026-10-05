@@ -5,6 +5,7 @@ import { requireProfile } from "@/lib/auth";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
+import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,11 @@ export default async function SessionCompletePage({ params }: Props) {
   // Phase 3C — admin tests must not land on learner complete/report UX.
   if (isAdminTestSnapshot(typed.clinical_snapshot)) {
     redirect(`/admin/avatars/${typed.avatar_id}`);
+  }
+
+  // Skill test: the transcript and results go to the assigning supervisor.
+  if (typed.skill_test_assignment_id) {
+    return <SkillTestSubmitted sessionNumber={typed.test_session_number ?? null} />;
   }
 
   const immersionOverall =

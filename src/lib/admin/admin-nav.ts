@@ -63,6 +63,20 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         keywords: ["cge", "competency", "graph", "mastery"],
         match: (p) => p.startsWith("/admin/graph"),
       },
+      {
+        href: "/admin/supervisors",
+        labelKey: "supervisors",
+        icon: "supervisor_account",
+        keywords: ["supervisors", "roles", "skill tests", "assign"],
+        match: (p) => p.startsWith("/admin/supervisors"),
+      },
+      {
+        href: "/supervise",
+        labelKey: "skillTestsAdmin",
+        icon: "assignment_turned_in",
+        keywords: ["skill tests", "assigned patients", "exams", "results"],
+        match: (p) => p.startsWith("/supervise"),
+      },
     ],
   },
   {

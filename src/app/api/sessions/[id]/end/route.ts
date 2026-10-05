@@ -88,6 +88,22 @@ async function completeCourseAfterSessionBestEffort(
 
 type Params = { params: Promise<{ id: string }> };
 
+const SKIPPED_EDUCATION: Awaited<ReturnType<typeof runEducationAfterAssessment>> = {
+  ok: false,
+  ace: { ok: false },
+  bundle: null,
+  portfolio: null,
+  analytics: null,
+  longitudinal: null,
+};
+
+const SKIPPED_SUPERVISOR: Awaited<ReturnType<typeof runSupervisorAfterAssessment>> = {
+  ok: false,
+  bundle: null,
+  dashboard: null,
+  error: null,
+};
+
 export async function POST(_request: Request, { params }: Params) {
   const { id: sessionId } = await params;
   const supabase = await createClient();
@@ -310,8 +326,14 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
+  // Skill test results are for the assigning supervisor and admins only, so
+  // they never feed the trainee-facing learning, coach, or end payload.
+  const isSkillTest = Boolean(typed.skill_test_assignment_id);
+
   // Stage 7 Education + ACE — best-effort; never blocks report; never touches patient mind.
-  const education = await runEducationAfterAssessment(supabase, {
+  const education = isSkillTest
+    ? SKIPPED_EDUCATION
+    : await runEducationAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,
@@ -344,7 +366,9 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   // Stage 9 Supervisor AI — evaluates therapist only; soft-fail; never touches patient mind.
-  const supervisor = await runSupervisorAfterAssessment(supabase, {
+  const supervisor = isSkillTest
+    ? SKIPPED_SUPERVISOR
+    : await runSupervisorAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,

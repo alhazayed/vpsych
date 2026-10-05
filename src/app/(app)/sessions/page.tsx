@@ -37,17 +37,23 @@ export default async function SessionsListPage() {
           | "avatar_id"
           | "therapy_course_id"
           | "course_session_number"
+          | "skill_test_assignment_id"
         > & {
           avatars: { name: string; disorder: string };
         })[]
       | null) ?? [];
 
   // Learner-facing history must not present admin-test rows as training assessments.
-  // Admins still see their test sessions, clearly badged.
+  // Admins still see their test sessions, clearly badged. Skill test sessions
+  // live on the Skill tests page; their results belong to the supervisor.
   const list =
     profile.role === "admin"
       ? raw
-      : raw.filter((s) => !isAdminTestSnapshot(s.clinical_snapshot));
+      : raw.filter(
+          (s) =>
+            !isAdminTestSnapshot(s.clinical_snapshot) &&
+            !s.skill_test_assignment_id,
+        );
 
   const therapyRoom = isTherapyRoomEnabled();
 
