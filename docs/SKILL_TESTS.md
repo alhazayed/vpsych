@@ -35,9 +35,6 @@ completed`, or `cancelled` by the supervisor.
 - The assignment completes when its required sessions have all ended
   (`completed` or `expired`).
 
-Trainees see the patient, the diagnosis, comorbidities, difficulty and
-severity on the Skill tests page (decided by Alhazayed, 2026-10-05).
-
 ## Database rules (enforced by RLS and triggers, not the UI)
 
 - Assignments: readable by the trainee, the assigning supervisor (while still a
@@ -56,10 +53,13 @@ severity on the Skill tests page (decided by Alhazayed, 2026-10-05).
   moved or removed later by a non-admin.
 - Skill test sessions skip the Education/ACE and Supervisor AI hooks, so their
   results never reach trainee-facing learning, and the end response carries no
-  scores.
+  scores. The start response never names the diagnosis.
 
 ## Not in this version
 
+- The diagnosis is hidden in the UI only. The trainee's own session row still
+  holds the case snapshot (the patient engine needs it), so it is readable via
+  the API.
 - Long-term patient memory is keyed by trainee and persona, so practice and test
   sessions with the same persona share it.
 - No treatment plan gate inside a test; the supervisor sets the session count.

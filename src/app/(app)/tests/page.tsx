@@ -18,10 +18,6 @@ type TestRow = Pick<
   | "trainee_id"
   | "language"
   | "created_at"
-  | "disorder_slug"
-  | "comorbidity_slugs"
-  | "difficulty"
-  | "severity"
 > & { avatars: { name: string; portrait_url: string | null } | null };
 
 type TestSessionRow = {
@@ -33,15 +29,12 @@ type TestSessionRow = {
 };
 
 /**
- * Skill test page: only the patients a supervisor assigned to this trainee,
- * with the case spec (diagnosis, comorbidities, difficulty) shown up front.
+ * Skill test page: only the patients a supervisor assigned to this trainee.
+ * The diagnosis is not shown; working it out is part of the test.
  */
 export default async function SkillTestsPage() {
   const { supabase, user } = await requireProfile();
   const t = await getTranslations("skillTests.trainee");
-  const tD = await getTranslations("skillTests.disorders");
-  const tLevel = await getTranslations("skillTests.difficulty");
-  const tSev = await getTranslations("skillTests.severity");
   const locale = await getLocale();
 
   await expireStaleSessionsForTherapist(supabase, user.id);
@@ -49,7 +42,7 @@ export default async function SkillTestsPage() {
   const { data: rows, error } = await supabase
     .from("skill_test_assignments")
     .select(
-      "id, title, status, required_sessions, trainee_instructions, due_at, trainee_id, language, created_at, disorder_slug, comorbidity_slugs, difficulty, severity, avatars(name, portrait_url)",
+      "id, title, status, required_sessions, trainee_instructions, due_at, trainee_id, language, created_at, avatars(name, portrait_url)",
     )
     .eq("trainee_id", user.id)
     .neq("status", "cancelled")
@@ -144,35 +137,6 @@ export default async function SkillTestsPage() {
                   </div>
                 </div>
                 <div className="space-y-4 p-5">
-                  <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                        {t("diagnosis")}
-                      </dt>
-                      <dd>{tD(test.disorder_slug)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                        {t("comorbidities")}
-                      </dt>
-                      <dd>
-                        {test.comorbidity_slugs?.length
-                          ? test.comorbidity_slugs
-                              .map((s) => tD(s))
-                              .join(locale === "ar" ? "، " : ", ")
-                          : t("none")}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                        {t("difficulty")}
-                      </dt>
-                      <dd>
-                        {tLevel(test.difficulty)}
-                        {test.severity ? ` · ${tSev(test.severity)}` : ""}
-                      </dd>
-                    </div>
-                  </dl>
                   <p className="text-sm font-semibold">
                     {done
                       ? t("submitted")

@@ -237,9 +237,11 @@ describe("skill test guardrails (source)", () => {
     expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_SUPERVISOR/);
   });
 
-  it("shows trainees the assigned diagnosis on the skill test page", () => {
-    const page = read("src/app/(app)/tests/page.tsx");
-    expect(page).toContain("tD(test.disorder_slug)");
+  it("never names the diagnosis in a skill test start response", () => {
+    const start = read("src/app/api/sessions/route.ts");
+    expect(start).toContain(
+      "diagnosis: test ? null : caseResult.snapshot.primary_diagnosis.name",
+    );
   });
 
   it("does not list score dashboards in the trainee menu", () => {
