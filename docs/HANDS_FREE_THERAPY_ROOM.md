@@ -184,6 +184,30 @@ sequenceDiagram
 - Constraints: `echoCancellation`, `noiseSuppression`, `autoGainControl`
 - Works for English and Arabic (language handled at STT locale, not VAD)
 
+### Two-stage endpointing
+
+850 ms of silence is a *pause*, not automatically the end of the turn
+(`lib/voice/endpointing.ts`, `lib/voice/endpoint-controller.ts`, FSM state
+`ENDPOINT_PENDING`):
+
+1. On a pause the mic stays open and the audio so far is transcribed
+   speculatively.
+2. The transcript is classified as complete, uncertain or incomplete. Trailing
+   conjunctions, prepositions and hesitations count as incomplete, in English
+   and in Arabic (MSA and Levantine). The required silence is then 850 ms
+   for a complete thought, 1500 ms for an uncertain one and 2000 ms for an
+   incomplete one. 2200 ms is a hard ceiling.
+3. If the therapist resumes (≥ 150 ms of voice), the pending turn is
+   cancelled. The speculative result is discarded, so nothing is sent for a
+   half-thought.
+4. On commit the speculative transcript is reused for the message API, so a
+   turn still costs one STT call.
+
+Telemetry records only `endpoint_pause`, `endpoint_resumed`,
+`endpoint_commit_silence_ms` (code = reason) and `speculative_stt_reused`.
+None of these carries content. Ported from #260. Barge-in capture with
+pre-roll was already on main.
+
 ## Avatar playback lock
 
 While FSM state is `AVATAR_SPEAKING`:

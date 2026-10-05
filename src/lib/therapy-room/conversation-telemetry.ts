@@ -17,7 +17,16 @@ export type ConversationTelemetryKind =
   | "pause"
   | "resume"
   | "session_start"
-  | "session_end";
+  | "session_end"
+  /* Two-stage endpointing: timings and counters only, never content. */
+  /** Stage-1 pause detected while the therapist holds the floor. */
+  | "endpoint_pause"
+  /** Therapist resumed during a pending endpoint (premature submit avoided). */
+  | "endpoint_resumed"
+  /** Trailing silence actually waited before commit (ms); code = reason. */
+  | "endpoint_commit_silence_ms"
+  /** Speculative STT transcript reused for the message API (code = completeness). */
+  | "speculative_stt_reused";
 
 export type ConversationTelemetryEvent = {
   kind: ConversationTelemetryKind;

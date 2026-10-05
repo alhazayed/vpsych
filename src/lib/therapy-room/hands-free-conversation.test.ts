@@ -313,3 +313,42 @@ describe("continuous conversation loop (FSM walk)", () => {
     expect(fsm.getState()).toBe("LISTENING");
   });
 });
+
+describe("two-stage endpointing — FSM", () => {
+  it("pause → ENDPOINT_PENDING keeps the mic open and reads as listening", () => {
+    expect(nextConversationState("LISTENING", "PAUSE_DETECTED")).toBe(
+      "ENDPOINT_PENDING",
+    );
+    expect(micAllowed("ENDPOINT_PENDING")).toBe(true);
+    expect(playbackAllowed("ENDPOINT_PENDING")).toBe(false);
+    expect(statusKeyForState("ENDPOINT_PENDING")).toBe("listening");
+  });
+
+  it("resume returns to LISTENING without bumping the generation", () => {
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    const gen = fsm.getGeneration();
+    fsm.dispatch("PAUSE_DETECTED");
+    fsm.dispatch("SPEECH_RESUMED");
+    expect(fsm.getState()).toBe("LISTENING");
+    expect(fsm.isCurrent(gen)).toBe(true);
+  });
+
+  it("commit from ENDPOINT_PENDING goes through the STT stage", () => {
+    expect(nextConversationState("ENDPOINT_PENDING", "SPEECH_END")).toBe(
+      "PROCESSING_STT",
+    );
+    expect(canTransition("ENDPOINT_PENDING", "GPT_OK")).toBe(false);
+    expect(canTransition("ENDPOINT_PENDING", "BARGE_IN")).toBe(false);
+  });
+
+  it("endpoint telemetry carries timings and codes only", () => {
+    const tel = createConversationTelemetry();
+    tel.record("endpoint_pause");
+    tel.record("endpoint_resumed");
+    tel.record("endpoint_commit_silence_ms", { valueMs: 900, code: "complete_thought" });
+    tel.record("speculative_stt_reused");
+    const serialized = JSON.stringify(tel.summarize());
+    expect(serialized).not.toMatch(/transcript|content|text/i);
+  });
+});
