@@ -8,6 +8,11 @@
 export type ConversationState =
   | "IDLE"
   | "LISTENING"
+  /**
+   * Human Conversation Fidelity — therapist paused; mic still open while a
+   * speculative transcript decides whether the thought is finished.
+   */
+  | "ENDPOINT_PENDING"
   | "PROCESSING_STT"
   | "WAITING_GPT"
   | "AVATAR_SPEAKING"
@@ -28,7 +33,11 @@ export type ConversationEvent =
   | "RESUME"
   | "ERROR"
   | "RETRY"
-  | "END";
+  | "END"
+  /** Silence after speech: possible end of thought (stage 1). */
+  | "PAUSE_DETECTED"
+  /** Therapist kept talking during ENDPOINT_PENDING. */
+  | "SPEECH_RESUMED";
 
 /** Human-readable status keys — map to therapyRoom.status.* i18n. */
 export type ConversationStatusKey =
@@ -51,6 +60,16 @@ const TRANSITIONS: Record<
     END: "IDLE",
   },
   LISTENING: {
+    SPEECH_END: "PROCESSING_STT",
+    PAUSE_DETECTED: "ENDPOINT_PENDING",
+    PAUSE: "PAUSED",
+    ERROR: "ERROR",
+    END: "IDLE",
+  },
+  ENDPOINT_PENDING: {
+    // Therapist kept talking, or the capture ended with nothing usable.
+    SPEECH_RESUMED: "LISTENING",
+    // Commit → STT stage (reuses the speculative transcript when valid).
     SPEECH_END: "PROCESSING_STT",
     PAUSE: "PAUSED",
     ERROR: "ERROR",
@@ -128,9 +147,9 @@ export function transition(
   return { ok: true, from, to, event };
 }
 
-/** States where the therapist microphone may be open. */
+/** States where the therapist capture microphone may be open. */
 export function micAllowed(state: ConversationState): boolean {
-  return state === "LISTENING";
+  return state === "LISTENING" || state === "ENDPOINT_PENDING";
 }
 
 /** States where avatar TTS may play. */
@@ -141,6 +160,7 @@ export function playbackAllowed(state: ConversationState): boolean {
 /** States that block starting a new listen loop. */
 export function listenLoopBlocked(state: ConversationState): boolean {
   return (
+    state === "ENDPOINT_PENDING" ||
     state === "PROCESSING_STT" ||
     state === "WAITING_GPT" ||
     state === "AVATAR_SPEAKING" ||
@@ -159,6 +179,8 @@ export function statusKeyForState(
     case "IDLE":
       return "ready";
     case "LISTENING":
+    case "ENDPOINT_PENDING":
+      // A pause is not "thinking" — the therapist still holds the floor.
       return "listening";
     case "PROCESSING_STT":
       return "processingStt";
