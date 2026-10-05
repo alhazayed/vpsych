@@ -880,6 +880,12 @@
           "moderate": "moderate",
           "moderately_severe": "moderately severe",
           "severe": "severe"
+        },
+        "course": {
+          "title": "Symptom scores across the course",
+          "session": "Session",
+          "sessionN": "Session {n}",
+          "note": "Simulated: scores move with session structure and homework under a fixed rule. Not a validated model of treatment response."
         }
       }
     },
@@ -2285,7 +2291,7 @@
     "viewSession": "View",
     "resumeSession": "Resume",
     "backToPatients": "Back to patients",
-    "progressTitle": "Therapy course",
+    "progressTitle": "Skill progress across this course",
     "goals": "Goals",
     "interventions": "Interventions",
     "expectations": "What the patient expects",
@@ -2294,5 +2300,20 @@
     "fieldRiskHint": "What raises and lowers risk for this patient, and the safety plan. Describe it rather than giving a low, medium or high label. The patient does not see this.",
     "risk": "Risk and safety",
     "planPresentNote": "Present the plan to the patient at the start of the next session and agree the goals together. The patient may question or negotiate them."
+  },
+  "progress": {
+    "overall": "Overall score",
+    "title": "Skill progress",
+    "subtitle": "{n, plural, one {# assessed session} other {# assessed sessions}}, oldest to newest. Each skill is scored 0–100 from the session report.",
+    "notValidated": "These scores are not validated. Use them to discuss trends, not to grade.",
+    "excludedFallback": "{n, plural, one {# session was} other {# sessions were}} left out because the report used the fallback scorer, not the AI examiner.",
+    "emptyFallbackOnly": "No trend yet: {n, plural, one {the only report uses} other {all # reports use}} the fallback scorer.",
+    "truncated": "Showing the latest sessions; {n, plural, one {# older session is} other {# older sessions are}} not drawn.",
+    "empty": "No assessed sessions yet. Scores appear here once a session report exists.",
+    "sessionN": "Session {n}",
+    "axisSession": "Session",
+    "changeSinceFirst": "Change since the first assessed session",
+    "tableView": "Show as a table",
+    "colSkill": "Skill"
   }
 }

@@ -17,6 +17,9 @@ import {
   type AdminSessionListRow,
 } from "@/lib/admin/session-ops";
 import type { SessionStatus } from "@/lib/types";
+import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import { buildSkillProgress } from "@/lib/skill-progress";
+import { SkillProgressChart } from "@/components/progress/SkillProgressChart";
 
 export default async function AdminLearnerDetailPage({
   params,
@@ -94,6 +97,14 @@ export default async function AdminLearnerDetailPage({
   ]);
 
   const sessionList = sessions ?? [];
+  const tProgress = await getTranslations("progress");
+  const skillProgress = buildSkillProgress(
+    sessionList.filter((s) => !isAdminTestClinicalSnapshot(s.clinical_snapshot)),
+    {
+      language: normalizeReportLanguage(locale),
+      overallLabel: tProgress("overall"),
+    },
+  );
   const statsInput = sessionList.map((s) => {
     const reports = s.session_reports as unknown as Array<{
       id: string;
@@ -319,6 +330,8 @@ export default async function AdminLearnerDetailPage({
           value={String(stats.withReport)}
         />
       </section>
+
+      <SkillProgressChart progress={skillProgress} />
 
       <LearnerDetailTabs
         locale={locale}

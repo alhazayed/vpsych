@@ -32,6 +32,10 @@ import {
   loadActiveCourse,
 } from "@/lib/therapy-course";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import {
+  buildCourseCarryOver,
+  loadPreviousCourseSession,
+} from "@/lib/session-practice";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -241,17 +245,31 @@ export async function POST(request: Request) {
     });
     courseSessionNumber = course ? 1 : null;
   }
+  // Session Practice Engine — homework from the previous course session and
+  // PHQ-9 / GAD-7 levels moved by its quality. Best-effort: never blocks start.
+  const carryOver =
+    course && courseSessionNumber
+      ? buildCourseCarryOver({
+          core: baseSnapshot.clinical_core,
+          previous: continuing
+            ? await loadPreviousCourseSession(supabase, course.id)
+            : null,
+        })
+      : null;
   const learnerSnapshot: CaseInstanceSnapshot =
     course && courseSessionNumber
       ? {
           ...baseSnapshot,
-          therapy_course: buildCourseSessionContext({
-            courseId: course.id,
-            sessionNumber: courseSessionNumber,
-            plannedSessions: course.planned_sessions,
-            treatmentPlan: course.treatment_plan,
-            planIsNew,
-          }),
+          therapy_course: {
+            ...buildCourseSessionContext({
+              courseId: course.id,
+              sessionNumber: courseSessionNumber,
+              plannedSessions: course.planned_sessions,
+              treatmentPlan: course.treatment_plan,
+              planIsNew,
+            }),
+            ...carryOver,
+          },
         }
       : baseSnapshot;
 
