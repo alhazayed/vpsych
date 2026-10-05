@@ -191,6 +191,9 @@ describe("POST /api/sessions with therapy courses", () => {
     expect((session.clinical_snapshot as Record<string, unknown>).therapy_course).toMatchObject({
       session_number: 1,
       planned_sessions: 8,
+      // Session Practice Engine: questionnaire baseline frozen at session 1.
+      self_report: { trend: "baseline" },
+      previous_homework: null,
     });
     // The course stores the base case without per-session context.
     const course = db.inserted.find((i) => i.table === "therapy_courses")!.row;

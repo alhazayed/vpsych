@@ -461,7 +461,10 @@ export function resolveAvatar(
       avatarSlug: avatar.slug,
       locale,
     });
-    fidelity.self_report_block = formatSelfReportForPrompt(coreWithFacts);
+    fidelity.self_report_block = formatSelfReportForPrompt(
+      coreWithFacts,
+      snapshot?.therapy_course?.self_report,
+    );
     if (options?.adaptationBlock?.trim()) {
       fidelity.adaptation_block = options.adaptationBlock.trim();
     }
@@ -571,7 +574,10 @@ export function resolveAvatar(
     avatarSlug: avatar.slug,
     locale,
   });
-  assembly.fidelity.self_report_block = formatSelfReportForPrompt(flatMerged);
+  assembly.fidelity.self_report_block = formatSelfReportForPrompt(
+    flatMerged,
+    snapshot?.therapy_course?.self_report,
+  );
   assembly.human_personality = resolveHumanPersonality({
     avatar,
     locale,

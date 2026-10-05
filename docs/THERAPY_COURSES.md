@@ -78,5 +78,5 @@ not validated.
 
 - The plan is not scored in the admin report.
 - Clinic-day appointments still show session 1.
-- Symptom measures (PHQ-9 / GAD-7 baseline and per-session re-measurement)
-  are not part of courses yet.
+- Symptom measures and homework carry-over live in the Session Practice
+  Engine (`docs/SESSION_PRACTICE_ENGINE.md`, "Therapy courses").
