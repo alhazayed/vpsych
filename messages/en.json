@@ -784,7 +784,16 @@
       "loadErrorTitle": "Reports unavailable",
       "loadErrorDescription": "Could not load the reports list. Try again or check System Health.",
       "statTotalTruncated": "Table shows the latest {count}",
-      "statAvgHintRecent": "Across the latest completed reports shown"
+      "statAvgHintRecent": "Across the latest completed reports shown",
+      "export": {
+        "cta": "Export CSV",
+        "pending": "Preparing export…",
+        "done": "Downloaded {count} reports.",
+        "truncated": "Downloaded the latest {count} reports (export limit reached).",
+        "errorRateLimited": "Too many exports. Wait a while and try again.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not export reports. Try again."
+      }
     },
     "reportDetail": {
       "back": "All reports",

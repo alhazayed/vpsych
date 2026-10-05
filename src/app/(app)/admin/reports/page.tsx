@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { ExportReportsButton } from "@/components/admin/ExportReportsButton";
 import { ErrorState, MetricCard } from "@/components/admin/AdminUi";
 import {
   ReportsTable,
@@ -125,6 +126,7 @@ export default async function AdminReportsPage() {
           { label: tHome("title"), href: "/admin" },
           { label: t("title") },
         ]}
+        actions={list.length > 0 ? <ExportReportsButton /> : null}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
