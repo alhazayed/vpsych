@@ -27,9 +27,36 @@ It adds three things, all additive and best-effort:
   computes it on read from `session_messages` and `clinical_snapshot`. Nothing
   is persisted and the signed report payload is unchanged.
 
+## Therapy courses (Phase 2)
+
+`course.ts` hands each course session to the next. At session start
+(`POST /api/sessions`) the route loads the previous course session and freezes
+two fields onto `clinical_snapshot.therapy_course`:
+
+- `previous_homework`: the therapist's last homework turn in the closing third
+  of the previous session. The course prompt block tells the patient what was
+  suggested and lets them decide, in character, how much they did. They do
+  not bring it up first unless it matters to them.
+- `self_report`: unrounded PHQ-9 / GAD-7 item levels. Session 1 is the
+  case-derived baseline. Each later session multiplies the previous levels by
+  a fixed factor (`COURSE_CHANGE`). Before a treatment plan, a well-structured
+  session gives 0.97 and anything else 1. With a plan, structure coverage of
+  0.6 or more gives 0.85, 0.3 to 0.6 gives 0.93, 0.15 to 0.3 gives 1, and below
+  0.15 gives 1.05. Agreed homework multiplies an improving factor by 0.97.
+  Levels never rise more than half a step above baseline, and PHQ-9 item 9
+  stays tied to the case risk profile. The self-report prompt block uses these
+  levels and tells the patient whether things have eased, stayed the same or
+  worsened.
+
+The admin report passes the course session number into the checklist, so
+bridge and homework review are expected from session 2. It also lists the
+questionnaire targets for every session of the course. This is a simulation
+rule, not a validated model of treatment response, and the page says so.
+
+Loading is best-effort: if the previous session cannot be read, the session
+starts at baseline with no homework.
+
 ## Next
 
-Once therapy courses land, pass the course session number into
-`evaluateSessionPractice` so bridge and homework review are expected from
-session 2, and key per-session PHQ-9 / GAD-7 targets on the course so scores can
-move with the quality of therapy (Phase 2).
+Phase 3: a patient-reported alliance rating, a 5 Ps formulation graded against
+the case, in-session crisis escalation, and feedback the trainee can see.

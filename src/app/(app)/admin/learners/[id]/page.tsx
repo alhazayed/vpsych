@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MetricCard } from "@/components/admin/AdminUi";
@@ -16,6 +17,9 @@ import {
   type AdminSessionListRow,
 } from "@/lib/admin/session-ops";
 import type { SessionStatus } from "@/lib/types";
+import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import { buildSkillProgress } from "@/lib/skill-progress";
+import { SkillProgressChart } from "@/components/progress/SkillProgressChart";
 
 export default async function AdminLearnerDetailPage({
   params,
@@ -29,7 +33,7 @@ export default async function AdminLearnerDetailPage({
   const tSessions = await getTranslations("admin.sessions");
   const locale = await getLocale();
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
       "id, display_name, role, preferred_language, primary_institution_id, created_at, updated_at",
@@ -37,6 +41,7 @@ export default async function AdminLearnerDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(profileError, "admin-learner");
   if (!profile) notFound();
 
   const [
@@ -92,6 +97,14 @@ export default async function AdminLearnerDetailPage({
   ]);
 
   const sessionList = sessions ?? [];
+  const tProgress = await getTranslations("progress");
+  const skillProgress = buildSkillProgress(
+    sessionList.filter((s) => !isAdminTestClinicalSnapshot(s.clinical_snapshot)),
+    {
+      language: normalizeReportLanguage(locale),
+      overallLabel: tProgress("overall"),
+    },
+  );
   const statsInput = sessionList.map((s) => {
     const reports = s.session_reports as unknown as Array<{
       id: string;
@@ -317,6 +330,8 @@ export default async function AdminLearnerDetailPage({
           value={String(stats.withReport)}
         />
       </section>
+
+      <SkillProgressChart progress={skillProgress} />
 
       <LearnerDetailTabs
         locale={locale}

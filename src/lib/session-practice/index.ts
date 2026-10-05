@@ -25,7 +25,20 @@ export {
   FREQUENCY_LABELS,
   GAD7_ITEMS,
   PHQ9_ITEMS,
+  baselineCourseSelfReport,
   deriveSelfReportProfile,
+  profileFromCourseSelfReport,
   formatSelfReportForPrompt,
   severityBand,
 } from "@/lib/session-practice/self-report";
+export {
+  COURSE_CHANGE,
+  COURSE_SELF_REPORT_LIMITATION,
+  applyCourseChange,
+  buildCourseCarryOver,
+  courseChangeFactor,
+  extractHomework,
+  loadPreviousCourseSession,
+  sessionStructureQuality,
+  type PreviousCourseSession,
+} from "@/lib/session-practice/course";

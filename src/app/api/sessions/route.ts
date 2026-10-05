@@ -20,6 +20,7 @@ import { embedAdaptationInMemory } from "@/lib/adaptation";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { closeFailedSessionStart } from "@/lib/session-expiry";
 import { NEW_SESSION_INTERACTION_MODE } from "@/lib/therapy-room";
 import { stripAdminTestMarker } from "@/lib/admin/admin-test-session";
 import {
@@ -39,6 +40,10 @@ import {
   sealSkillTestCase,
   traineeVisibleSnapshot,
 } from "@/lib/skill-tests";
+import {
+  buildCourseCarryOver,
+  loadPreviousCourseSession,
+} from "@/lib/session-practice";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -308,6 +313,17 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  // Session Practice Engine — homework from the previous course session and
+  // PHQ-9 / GAD-7 levels moved by its quality. Best-effort: never blocks start.
+  const carryOver =
+    course && courseSessionNumber
+      ? buildCourseCarryOver({
+          core: baseSnapshot.clinical_core,
+          previous: continuing
+            ? await loadPreviousCourseSession(supabase, course.id)
+            : null,
+        })
+      : null;
   const learnerSnapshot: CaseInstanceSnapshot = test
     ? traineeVisibleSnapshot({
         locale: baseSnapshot.locale || effectiveLocale,
@@ -320,13 +336,16 @@ export async function POST(request: Request) {
     : course && courseSessionNumber
       ? {
           ...baseSnapshot,
-          therapy_course: buildCourseSessionContext({
-            courseId: course.id,
-            sessionNumber: courseSessionNumber,
-            plannedSessions: course.planned_sessions,
-            treatmentPlan: course.treatment_plan,
-            planIsNew,
-          }),
+          therapy_course: {
+            ...buildCourseSessionContext({
+              courseId: course.id,
+              sessionNumber: courseSessionNumber,
+              plannedSessions: course.planned_sessions,
+              treatmentPlan: course.treatment_plan,
+              planIsNew,
+            }),
+            ...carryOver,
+          },
         }
       : baseSnapshot;
 
@@ -432,6 +451,7 @@ export async function POST(request: Request) {
     console.error("[sessions] system message signing unavailable", {
       sessionId: session.id,
     });
+    await closeFailedSessionStart(supabase, session.id);
     return NextResponse.json(
       { error: clientSafeError("Failed to start session", prepared.error) },
       { status: 500 },
@@ -447,6 +467,7 @@ export async function POST(request: Request) {
       sessionId: session.id,
       error: sysErr.message,
     });
+    await closeFailedSessionStart(supabase, session.id);
     return NextResponse.json(
       { error: clientSafeError("Failed to start session", sysErr) },
       { status: 500 },

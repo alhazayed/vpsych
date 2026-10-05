@@ -6,6 +6,7 @@ import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { TherapySession } from "@/lib/types";
 import { format } from "date-fns";
+import { ErrorState } from "@/components/admin/AdminUi";
 
 export default async function SessionsListPage() {
   const { supabase, user, profile } = await requireProfile();
@@ -16,13 +17,16 @@ export default async function SessionsListPage() {
 
   // Prefer interaction_mode (Therapy Room Mode). ui_mode is optional VMHC
   // column — selecting it alone 400s the whole list when the migration is absent.
-  const { data: sessions } = await supabase
+  const { data: sessions, error: sessionsError } = await supabase
     .from("sessions")
     // `*` so therapy-course columns appear when present without 400-ing the
     // list on a database that has not applied that migration yet.
     .select("*, avatars(name, disorder)")
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
+  if (sessionsError) {
+    console.warn("[sessions] list:", sessionsError.message);
+  }
 
   const raw =
     (sessions as
@@ -111,6 +115,14 @@ export default async function SessionsListPage() {
         </p>
       </section>
 
+      {sessionsError ? (
+        <div className="mb-6">
+          <ErrorState
+            title={t("loadErrorTitle")}
+            description={t("loadErrorDescription")}
+          />
+        </div>
+      ) : null}
       {courses.length > 0 && (
         <section className="clinical-card mb-6 overflow-hidden">
           <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
@@ -204,7 +216,7 @@ export default async function SessionsListPage() {
               </li>
             );
           })}
-          {!list.length && (
+          {!list.length && !sessionsError && (
             <li className="px-6 py-10 text-sm text-[var(--on-surface-variant)]">
               {t("empty")}{" "}
               <Link

@@ -470,6 +470,25 @@ export type TherapyCourseSessionContext = {
   /** True for the first session after the plan was written or revised: the
    * therapist presents it in this session and the patient can negotiate it. */
   plan_is_new?: boolean;
+  /**
+   * Session Practice Engine — homework the therapist set at the end of the
+   * previous session in this course (therapist's words, clipped). Absent when
+   * none was found.
+   */
+  previous_homework?: string | null;
+  /**
+   * Session Practice Engine — PHQ-9 / GAD-7 item levels (0–3, unrounded) this
+   * patient reports in this session, moved from the course baseline by the
+   * quality of earlier sessions. Simulation model; not validated.
+   */
+  self_report?: CourseSelfReport;
+};
+
+export type CourseSelfReport = {
+  phq9: number[];
+  gad7: number[];
+  /** Change since the previous session in this course. */
+  trend: "baseline" | "improving" | "unchanged" | "worsening";
 };
 
 export type SessionMessage = {

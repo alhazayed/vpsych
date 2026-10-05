@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { GenerateReportButton } from "@/components/admin/GenerateReportButton";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
@@ -29,7 +31,7 @@ export default async function AdminSessionDetailPage({
   const tHome = await getTranslations("admin.home");
   const locale = await getLocale();
 
-  const { data: sessionRaw } = await supabase
+  const { data: sessionRaw, error: sessionRawError } = await supabase
     .from("sessions")
     .select(
       `
@@ -57,6 +59,7 @@ export default async function AdminSessionDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(sessionRawError, "admin-session");
   if (!sessionRaw) notFound();
 
   // Defensive: expire if past max duration before rendering.
@@ -112,11 +115,12 @@ export default async function AdminSessionDetailPage({
     ? openedCase.session.clinical_snapshot
     : session.clinical_snapshot;
 
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from("session_messages")
     .select("id, role, content, created_at")
     .eq("session_id", id)
     .order("created_at", { ascending: true });
+  throwOnLoadError(messagesError, "admin-session-transcript");
 
   const profile = session.profiles as unknown as {
     display_name: string;
@@ -188,6 +192,14 @@ export default async function AdminSessionDetailPage({
     created_at: m.created_at,
   }));
 
+  // Finished learner sessions with therapist turns but no report (tab closed,
+  // expiry cron, failed end request) can be assessed on demand.
+  const canGenerateReport =
+    !report &&
+    status !== "active" &&
+    !isAdminTestClinicalSnapshot(clinicalSnapshot) &&
+    transcript.some((m) => m.role === "user");
+
   return (
     <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 md:px-8">
       <AdminPageHeader
@@ -217,6 +229,8 @@ export default async function AdminSessionDetailPage({
               >
                 {t("actionReport")}
               </Link>
+            ) : canGenerateReport ? (
+              <GenerateReportButton sessionId={session.id} />
             ) : null}
           </div>
         }

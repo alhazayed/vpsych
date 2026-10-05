@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
+import { FallbackReportNotice } from "@/components/admin/FallbackReportNotice";
+import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import {
@@ -10,9 +13,15 @@ import {
   caseHasRisk,
   deriveSelfReportProfile,
   evaluateSessionPractice,
+  profileFromCourseSelfReport,
 } from "@/lib/session-practice";
 import { openSkillTestCase } from "@/lib/skill-tests";
-import type { ClinicalCore, SessionReport } from "@/lib/types";
+import type {
+  ClinicalCore,
+  CourseSelfReport,
+  SessionReport,
+  TherapyCourseSessionContext,
+} from "@/lib/types";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
@@ -21,7 +30,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.reportDetail");
 
-  const { data: report } = await supabase
+  const { data: report, error: reportError } = await supabase
     .from("session_reports")
     .select(
       `
@@ -34,6 +43,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
         clinical_snapshot,
         skill_test_assignment_id,
         sealed_case,
+        therapy_course_id,
+        course_session_number,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -41,6 +52,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
     )
     .eq("session_id", sessionId)
     .maybeSingle();
+  throwOnLoadError(reportError, "admin-report");
 
   if (!report) notFound();
 
@@ -52,9 +64,14 @@ export default async function AdminReportDetailPage({ params }: Props) {
   });
 
   const session = report.sessions as unknown as {
-    clinical_snapshot: { clinical_core?: ClinicalCore | null } | null;
+    clinical_snapshot: {
+      clinical_core?: ClinicalCore | null;
+      therapy_course?: TherapyCourseSessionContext | null;
+    } | null;
     skill_test_assignment_id: string | null;
     sealed_case: string | null;
+    therapy_course_id: string | null;
+    course_session_number: number | null;
     profiles: { display_name: string } | null;
     avatars: { name: string; disorder: string } | null;
   } | null;
@@ -73,13 +90,38 @@ export default async function AdminReportDetailPage({ params }: Props) {
     testCase?.clinical_core ?? session?.clinical_snapshot?.clinical_core ?? null;
   const practice = evaluateSessionPractice({
     messages: (messages ?? []) as Array<{ role: string; content: string }>,
+    sessionNumber: session?.course_session_number ?? null,
     riskPresent: caseHasRisk(core?.risk_profile),
   });
   const ctsr = buildIndicativeCtsr({
     items: (report as SessionReport).scores?.items ?? [],
     practice,
   });
-  const selfReport = core ? deriveSelfReportProfile(core) : null;
+  const courseSelfReport = session?.clinical_snapshot?.therapy_course?.self_report;
+  const selfReport = courseSelfReport
+    ? profileFromCourseSelfReport(courseSelfReport)
+    : core
+      ? deriveSelfReportProfile(core)
+      : null;
+
+  // Measurement-based care: questionnaire targets across the therapy course.
+  let trajectory: Array<{ n: number; phq9: number; gad7: number }> = [];
+  if (session?.therapy_course_id) {
+    const { data: courseSessions } = await supabase
+      .from("sessions")
+      .select("course_session_number, self_report:clinical_snapshot->therapy_course->self_report")
+      .eq("therapy_course_id", session.therapy_course_id)
+      .order("course_session_number", { ascending: true });
+    trajectory = ((courseSessions ?? []) as Array<{
+      course_session_number: number | null;
+      self_report: CourseSelfReport | null;
+    }>)
+      .filter((r) => r.course_session_number && r.self_report)
+      .map((r) => {
+        const p = profileFromCourseSelfReport(r.self_report!);
+        return { n: r.course_session_number!, phq9: p.phq9.total, gad7: p.gad7.total };
+      });
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 md:px-8">
@@ -100,6 +142,11 @@ export default async function AdminReportDetailPage({ params }: Props) {
           ? ` · ${(report as SessionReport).language}`
           : ""}
       </p>
+      {isHeuristicReportScores(report.scores) ? (
+        <div className="mt-6">
+          <FallbackReportNotice sessionId={sessionId} />
+        </div>
+      ) : null}
       <div className="mt-6">
         <ReportView report={report as SessionReport} />
       </div>
@@ -108,6 +155,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
           practice={practice}
           ctsr={ctsr}
           selfReport={selfReport}
+          trajectory={trajectory}
+          currentSessionNumber={session?.course_session_number ?? null}
         />
       </div>
     </main>

@@ -15,6 +15,8 @@ import {
  * Allowed call sites: Route Handlers / Server Actions only.
  * Allowed uses today:
  * - `session_reports` privileged insert/update in `POST /api/sessions/[id]/end`
+ * - `session_reports` insert in `POST /api/admin/reports/[sessionId]/generate`
+ *   (admin-gated; only when `REPORT_WRITE_KEY` is unset, else the signed RPC)
  * - Optional writer for `insert_system_message` / `insert_assistant_message`
  *   (ownership checks still run in the SECURITY DEFINER RPCs; non-service
  *   callers must pass HMAC p_sig — Phase 8.2 / CQG-011)

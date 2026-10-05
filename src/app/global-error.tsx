@@ -26,11 +26,29 @@ export default function GlobalError({
         }}
       >
         <main style={{ maxWidth: 420, padding: 24, textAlign: "center" }}>
+          {/* The root layout (and next-intl) failed, so show both locales. */}
           <h1 style={{ fontSize: 22, marginBottom: 8 }}>VPsych unavailable</h1>
-          <p style={{ fontSize: 14, opacity: 0.75, marginBottom: 20 }}>
-            A critical rendering error occurred
-            {error.digest ? ` (${error.digest})` : ""}.
+          <p style={{ fontSize: 14, opacity: 0.75, marginBottom: 12 }}>
+            A critical error occurred. Reload to try again.
           </p>
+          <h2 dir="rtl" lang="ar" style={{ fontSize: 20, marginBottom: 8 }}>
+            تعذّر تشغيل VPsych
+          </h2>
+          <p
+            dir="rtl"
+            lang="ar"
+            style={{ fontSize: 14, opacity: 0.75, marginBottom: 12 }}
+          >
+            حدث خطأ جسيم. أعد التحميل للمحاولة مجدداً.
+          </p>
+          {error.digest ? (
+            <p
+              dir="ltr"
+              style={{ fontSize: 12, opacity: 0.6, marginBottom: 20, fontFamily: "monospace" }}
+            >
+              {error.digest}
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={reset}
@@ -44,7 +62,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Reload
+            Reload · إعادة التحميل
           </button>
         </main>
       </body>
