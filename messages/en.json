@@ -2234,7 +2234,11 @@
       "startSession": "Start session {n}",
       "starting": "Starting…",
       "startFailed": "The session could not start. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "diagnosis": "Diagnosis",
+      "comorbidities": "Comorbidities",
+      "difficulty": "Difficulty",
+      "none": "None"
     },
     "practice": {
       "title": "Practice scenarios",
@@ -2304,8 +2308,8 @@
       "requiredSessions": "Required sessions",
       "dueAt": "Due date (optional)",
       "instructions": "Instructions for the trainee (optional)",
-      "instructionsPlaceholder": "What the trainee should focus on. Do not reveal the diagnosis.",
-      "instructionsHint": "The trainee sees these instructions. The diagnosis is not shown to them.",
+      "instructionsPlaceholder": "What the trainee should focus on.",
+      "instructionsHint": "The trainee sees these instructions together with the diagnosis, comorbidities and difficulty.",
       "saving": "Assigning…",
       "submit": "Assign test patient",
       "saveFailed": "The test could not be assigned. Please try again.",

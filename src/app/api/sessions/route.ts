@@ -476,8 +476,7 @@ export async function POST(request: Request) {
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
-    // A skill test trainee works the diagnosis out; the response never names it.
-    diagnosis: test ? null : caseResult.snapshot.primary_diagnosis.name,
+    diagnosis: caseResult.snapshot.primary_diagnosis.name,
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,
