@@ -2,12 +2,13 @@
  * Starting a session for a supervisor-assigned skill test.
  *
  * The test reuses the existing clinical engine: the first session mints a
- * CaseInstance from the supervisor's spec through the Case Engine, the
- * database pins it, and later sessions reuse it. Visit awareness comes from
+ * case from the supervisor's spec through the Case Engine, the database pins
+ * it (sealed, see ./exam.ts), and later sessions reuse it. Visit awareness comes from
  * the existing therapy course prompt block (`clinical_snapshot.therapy_course`)
  * with no treatment plan, so the Patient Agent gains no new behaviour.
  * The database triggers in 20261005110000_supervisor_skill_tests.sql enforce
  * the same rules; these helpers give clear errors before the insert.
+ * The trainee never sees the case: see ./exam.ts.
  */
 
 import type {
@@ -15,8 +16,31 @@ import type {
   TherapyCourseSessionContext,
 } from "@/lib/types";
 
+/** Columns a supervisor or admin reads; trainees use `my_skill_tests()`. */
 export const SKILL_TEST_COLUMNS =
-  "id, supervisor_id, trainee_id, avatar_id, title, language, disorder_slug, comorbidity_slugs, difficulty, severity, required_sessions, trainee_instructions, due_at, status, case_instance_id, clinical_snapshot, started_at, completed_at, cancelled_at, created_at, updated_at";
+  "id, supervisor_id, trainee_id, avatar_id, title, language, disorder_slug, comorbidity_slugs, difficulty, severity, required_sessions, trainee_instructions, due_at, status, sealed_spec, sealed_case, started_at, completed_at, cancelled_at, created_at, updated_at";
+
+/**
+ * A trainee's own assignment, as `my_skill_tests()` returns it: no disorder,
+ * comorbidities, difficulty or severity, and the spec and case only sealed.
+ */
+export type TraineeSkillTest = Pick<
+  SkillTestAssignment,
+  | "id"
+  | "trainee_id"
+  | "avatar_id"
+  | "title"
+  | "language"
+  | "required_sessions"
+  | "trainee_instructions"
+  | "due_at"
+  | "status"
+  | "sealed_spec"
+  | "sealed_case"
+  | "started_at"
+  | "completed_at"
+  | "created_at"
+>;
 
 export type SkillTestBlockedCode =
   | "skill_test_not_assigned"

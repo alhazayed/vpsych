@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireSupervisor } from "@/lib/skill-tests/access";
-import { isUuid } from "@/lib/skill-tests";
+import { isUuid, openSkillTestCase } from "@/lib/skill-tests";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { ReportView } from "@/components/ReportView";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
@@ -91,7 +91,10 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
   );
   const messages = (messageRows ?? []) as SessionMessage[];
 
-  const core = test.clinical_snapshot?.clinical_core ?? null;
+  const pinnedCase = test.sealed_case
+    ? openSkillTestCase(test.id, test.sealed_case)
+    : null;
+  const core = pinnedCase?.clinical_core ?? null;
   const selfReport = core ? deriveSelfReportProfile(core) : null;
   const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     dateStyle: "medium",

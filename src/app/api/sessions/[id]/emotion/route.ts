@@ -14,6 +14,7 @@ import {
   tickEmotion,
   type TherapistIntervention,
 } from "@/lib/emotion";
+import { withSkillTestCase } from "@/lib/skill-tests";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { TherapySession } from "@/lib/types";
 
@@ -44,7 +45,12 @@ function isIntervention(v: unknown): v is TherapistIntervention {
 function disorderFromSession(
   session: TherapySession,
 ): string | null {
-  const snap = session.clinical_snapshot as CaseInstanceSnapshot | null | undefined;
+  // A skill test session keeps its case sealed; open it on the server only.
+  const opened = withSkillTestCase(session);
+  const snap = (opened.ok ? opened.session.clinical_snapshot : null) as
+    | CaseInstanceSnapshot
+    | null
+    | undefined;
   if (snap?.primary_diagnosis?.slug) return snap.primary_diagnosis.slug;
   return null;
 }
@@ -74,7 +80,7 @@ export async function GET(_request: Request, { params }: Params) {
   const { data: session, error } = await supabase
     .from("sessions")
     .select(
-      "id, therapist_id, status, case_instance_id, clinical_snapshot, started_at, max_duration_sec",
+      "id, therapist_id, status, case_instance_id, clinical_snapshot, skill_test_assignment_id, sealed_case, started_at, max_duration_sec",
     )
     .eq("id", sessionId)
     .single();
@@ -166,7 +172,7 @@ export async function POST(request: Request, { params }: Params) {
   const { data: session, error } = await supabase
     .from("sessions")
     .select(
-      "id, therapist_id, status, case_instance_id, clinical_snapshot, started_at, max_duration_sec",
+      "id, therapist_id, status, case_instance_id, clinical_snapshot, skill_test_assignment_id, sealed_case, started_at, max_duration_sec",
     )
     .eq("id", sessionId)
     .single();

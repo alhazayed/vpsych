@@ -44,6 +44,8 @@ CREATE TABLE public.sessions (
   max_duration_sec integer NOT NULL DEFAULT 2400,
   clinical_snapshot jsonb,
   difficulty public.case_difficulty,
+  therapy_modality text,
+  instructor_preset_id uuid,
   case_instance_id uuid REFERENCES public.case_instances (id)
 );
 CREATE TABLE public.session_messages (

@@ -35,6 +35,9 @@ import {
   buildSkillTestSessionContext,
   loadSkillTestStart,
   skillTestDbError,
+  SKILL_TEST_SEAL_UNAVAILABLE,
+  sealSkillTestCase,
+  traineeVisibleSnapshot,
 } from "@/lib/skill-tests";
 
 export async function POST(request: Request) {
@@ -215,12 +218,13 @@ export async function POST(request: Request) {
 
   // Module 7 — generate immutable CaseInstance for this assessment. A
   // continuing therapy course reuses the case pinned when the course began.
-  const pinnedTestSnapshot = test?.assignment.clinical_snapshot ?? null;
+  // A skill test reuses the case its first session pinned (opened from the
+  // sealed copy) and never writes a case_instances row the trainee could read.
   const testCase =
-    test && pinnedTestSnapshot
+    test && test.pinnedCase
       ? caseFromCourse({
-          case_instance_id: test.assignment.case_instance_id,
-          clinical_snapshot: pinnedTestSnapshot,
+          case_instance_id: null,
+          clinical_snapshot: test.pinnedCase,
           max_duration_sec: null,
         })
       : null;
@@ -233,10 +237,11 @@ export async function POST(request: Request) {
         avatar: typedAvatar,
         locale: effectiveLocale,
         therapistId: user.id,
-        disorderSlug: test.assignment.disorder_slug,
-        comorbiditySlugs: test.assignment.comorbidity_slugs,
-        difficulty: test.assignment.difficulty,
-        severity: test.assignment.severity ?? undefined,
+        disorderSlug: test.spec.disorder_slug,
+        comorbiditySlugs: test.spec.comorbidity_slugs,
+        difficulty: test.spec.difficulty,
+        severity: test.spec.severity ?? undefined,
+        persist: false,
       })
     : await createCaseForSession(supabase, {
     avatar: typedAvatar,
@@ -269,9 +274,10 @@ export async function POST(request: Request) {
 
   // Phase 3C — learner create path must never persist admin_test markers.
   const baseSnapshot = stripAdminTestMarker(caseResult.snapshot);
-  const persistedCaseId = caseResult.caseInstanceId.startsWith("VPSY-")
-    ? null
-    : caseResult.caseInstanceId;
+  const persistedCaseId =
+    test || caseResult.caseInstanceId.startsWith("VPSY-")
+      ? null
+      : caseResult.caseInstanceId;
 
   // Open a course on the first plain start with this patient. Best-effort: if
   // it cannot be created the session still runs as a standalone session.
@@ -288,15 +294,29 @@ export async function POST(request: Request) {
     });
     courseSessionNumber = course ? 1 : null;
   }
+  // A skill test row keeps only the visit context in the clear; the case
+  // itself is sealed so the trainee has to find it out, as in a real exam.
+  // Later sessions carry the pinned blob unchanged: the database compares it
+  // byte for byte, and a fresh seal of the same case would differ.
+  const sealedCase = test
+    ? (test.assignment.sealed_case ??
+      sealSkillTestCase(test.assignment.id, baseSnapshot))
+    : null;
+  if (test && !sealedCase) {
+    return NextResponse.json(
+      { error: SKILL_TEST_SEAL_UNAVAILABLE, code: "skill_test_unavailable" },
+      { status: 503 },
+    );
+  }
   const learnerSnapshot: CaseInstanceSnapshot = test
-    ? {
-        ...baseSnapshot,
-        therapy_course: buildSkillTestSessionContext({
+    ? traineeVisibleSnapshot({
+        locale: baseSnapshot.locale || effectiveLocale,
+        therapyCourse: buildSkillTestSessionContext({
           assignmentId: test.assignment.id,
           sessionNumber: test.sessionNumber,
           requiredSessions: test.assignment.required_sessions,
         }),
-      }
+      })
     : course && courseSessionNumber
       ? {
           ...baseSnapshot,
@@ -320,14 +340,15 @@ export async function POST(request: Request) {
     language: learnerSnapshot.locale || effectiveLocale,
     case_instance_id: persistedCaseId,
     clinical_snapshot: learnerSnapshot,
-    difficulty: caseResult.difficulty,
-    therapy_modality: caseResult.therapyModality,
+    difficulty: test ? null : caseResult.difficulty,
+    therapy_modality: test ? null : caseResult.therapyModality,
     instructor_preset_id: caseResult.preset?.id ?? null,
     interaction_mode: interactionMode,
     institution_id: profile?.primary_institution_id ?? null,
   };
   if (test) {
     insertPayload.skill_test_assignment_id = test.assignment.id;
+    insertPayload.sealed_case = sealedCase;
   }
   if (course && courseSessionNumber) {
     insertPayload.therapy_course_id = course.id;
@@ -471,13 +492,24 @@ export async function POST(request: Request) {
     }
   }
 
+  if (test) {
+    // Exam: nothing about the case goes back to the trainee's browser.
+    return NextResponse.json({
+      sessionId: session.id,
+      language: learnerSnapshot.locale || effectiveLocale,
+      maxDurationSec,
+      interactionMode,
+      skillTestId: test.assignment.id,
+      testSessionNumber: test.sessionNumber,
+    });
+  }
+
   return NextResponse.json({
     sessionId: session.id,
     language: caseResult.snapshot.locale || effectiveLocale,
     assessmentId: caseResult.snapshot.assessment_id,
     caseInstanceId: caseResult.caseInstanceId,
-    // A skill test trainee works the diagnosis out; the response never names it.
-    diagnosis: test ? null : caseResult.snapshot.primary_diagnosis.name,
+    diagnosis: caseResult.snapshot.primary_diagnosis.name,
     difficulty: caseResult.difficulty,
     therapyModality: caseResult.therapyModality,
     templateId: caseResult.snapshot.template?.id ?? null,
@@ -489,8 +521,8 @@ export async function POST(request: Request) {
     interactionMode,
     courseId: course?.id ?? null,
     courseSessionNumber,
-    skillTestId: test?.assignment.id ?? null,
-    testSessionNumber: test?.sessionNumber ?? null,
+    skillTestId: null,
+    testSessionNumber: null,
   });
 }
 

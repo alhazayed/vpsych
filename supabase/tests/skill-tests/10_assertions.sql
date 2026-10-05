@@ -44,26 +44,34 @@ INSERT INTO public.supervisors (user_id, granted_by) VALUES
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
 DO $$ BEGIN
   INSERT INTO public.skill_test_assignments (supervisor_id, trainee_id, avatar_id, title, language,
-    disorder_slug, difficulty, required_sessions)
+    disorder_slug, difficulty, required_sessions, sealed_spec)
   VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c2',
-    '00000000-0000-0000-0000-00000000aa01', 'x', 'en-US', 'ptsd', 'beginner', 1);
+    '00000000-0000-0000-0000-00000000aa01', 'x', 'en-US', 'ptsd', 'beginner', 1, 'v1.spec');
   RAISE EXCEPTION 'FAIL: trainee created a skill test';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
 DO $$ BEGIN
   INSERT INTO public.skill_test_assignments (supervisor_id, trainee_id, avatar_id, title, language,
-    disorder_slug, difficulty, required_sessions)
+    disorder_slug, difficulty, required_sessions, sealed_spec)
   VALUES ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000c1',
-    '00000000-0000-0000-0000-00000000aa01', 'x', 'en-US', 'ptsd', 'beginner', 1);
+    '00000000-0000-0000-0000-00000000aa01', 'x', 'en-US', 'ptsd', 'beginner', 1, 'v1.spec');
   RAISE EXCEPTION 'FAIL: supervisor created a test in another supervisor''s name';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
+DO $$ BEGIN
+  INSERT INTO public.skill_test_assignments (supervisor_id, trainee_id, avatar_id, title, language,
+    disorder_slug, difficulty, required_sessions, sealed_spec, sealed_case)
+  VALUES ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c1',
+    '00000000-0000-0000-0000-00000000aa01', 'x', 'en-US', 'ptsd', 'beginner', 1, 'v1.spec', 'v1.case');
+  RAISE EXCEPTION 'FAIL: supervisor pre-pinned a case on a new test';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
 INSERT INTO public.skill_test_assignments (id, supervisor_id, trainee_id, avatar_id, title, language,
-  disorder_slug, comorbidity_slugs, difficulty, severity, required_sessions)
+  disorder_slug, comorbidity_slugs, difficulty, severity, required_sessions, sealed_spec)
 VALUES ('00000000-0000-0000-0000-00000000dd01', '00000000-0000-0000-0000-0000000000b1',
   '00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
-  'PTSD intake', 'en-US', 'ptsd', '{alcohol-use-disorder}', 'advanced', 'moderate', 2);
+  'PTSD intake', 'en-US', 'ptsd', '{alcohol-use-disorder}', 'advanced', 'moderate', 2, 'v1.spec-dd01');
 
 DO $$ BEGIN
   UPDATE public.skill_test_assignments SET required_sessions = 12
@@ -86,64 +94,110 @@ DO $$ DECLARE n int; BEGIN
   SELECT count(*) INTO n FROM public.skill_test_assignments;
   IF n <> 0 THEN RAISE EXCEPTION 'FAIL: other trainee sees the assignment'; END IF;
 END $$;
+-- An exam: the trainee never reads the row that names the case. They get
+-- their assignment from my_skill_tests(), which has no case columns.
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
-DO $$ DECLARE n int; BEGIN
+DO $$ DECLARE n int; r record; BEGIN
   SELECT count(*) INTO n FROM public.skill_test_assignments;
-  IF n <> 1 THEN RAISE EXCEPTION 'FAIL: trainee cannot see their own assignment'; END IF;
+  IF n <> 0 THEN RAISE EXCEPTION 'FAIL: trainee reads the assignment row (it names the disorder)'; END IF;
+  SELECT count(*) INTO n FROM public.my_skill_tests();
+  IF n <> 1 THEN RAISE EXCEPTION 'FAIL: trainee does not get their own test from my_skill_tests()'; END IF;
+  SELECT * INTO r FROM public.my_skill_tests('00000000-0000-0000-0000-00000000dd01');
+  IF r.sealed_spec <> 'v1.spec-dd01' OR r.title <> 'PTSD intake' THEN
+    RAISE EXCEPTION 'FAIL: my_skill_tests() row wrong: %', row_to_json(r);
+  END IF;
+  IF to_jsonb(r) ?| array['disorder_slug', 'comorbidity_slugs', 'difficulty', 'severity', 'supervisor_id'] THEN
+    RAISE EXCEPTION 'FAIL: my_skill_tests() exposes case columns: %', row_to_json(r);
+  END IF;
 END $$;
+SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');
+DO $$ DECLARE n int; BEGIN
+  SELECT count(*) INTO n FROM public.my_skill_tests();
+  IF n <> 0 THEN RAISE EXCEPTION 'FAIL: other trainee gets the test from my_skill_tests()'; END IF;
+END $$;
+SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
 
 -- 4. Session rules ------------------------------------------------------------
+-- A test session row may hold only the visit context and locale in the clear.
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
   VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
-    '{"assessment_id":"A1","primary_diagnosis":{"slug":"mdd-recurrent-moderate"}}', 'advanced',
+    '{"primary_diagnosis":{"slug":"ptsd"},"therapy_course":{"session_number":1}}', 'v1.case-A',
     '00000000-0000-0000-0000-00000000dd01');
-  RAISE EXCEPTION 'FAIL: wrong disorder accepted for a test session';
+  RAISE EXCEPTION 'FAIL: a test session stored the diagnosis in the clear';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
-  VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa02',
-    '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"}}', 'advanced',
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, sealed_case, skill_test_assignment_id)
+  VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
+    '{"locale":"en-US"}', 'advanced', 'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
+  RAISE EXCEPTION 'FAIL: a test session stored the difficulty in the clear';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
+DO $$ BEGIN
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, case_instance_id, sealed_case, skill_test_assignment_id)
+  VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
+    '{"locale":"en-US"}', '00000000-0000-0000-0000-00000000cc01', 'v1.case-A',
     '00000000-0000-0000-0000-00000000dd01');
+  RAISE EXCEPTION 'FAIL: a test session linked a readable case_instances row';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
+DO $$ BEGIN
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, skill_test_assignment_id)
+  VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
+    '{"locale":"en-US"}', '00000000-0000-0000-0000-00000000dd01');
+  RAISE EXCEPTION 'FAIL: a test session started without its sealed case';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
+DO $$ BEGIN
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
+  VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa02',
+    '{"locale":"en-US"}', 'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
   RAISE EXCEPTION 'FAIL: wrong patient accepted for a test session';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
   VALUES ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-00000000aa01',
-    '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"}}', 'advanced',
-    '00000000-0000-0000-0000-00000000dd01');
+    '{"locale":"en-US"}', 'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
   RAISE EXCEPTION 'FAIL: another trainee attached a session to the test';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
-INSERT INTO public.sessions (id, therapist_id, avatar_id, clinical_snapshot, difficulty, case_instance_id,
+INSERT INTO public.sessions (id, therapist_id, avatar_id, clinical_snapshot, sealed_case,
   skill_test_assignment_id, test_session_number)
 VALUES ('00000000-0000-0000-0000-0000000e0001', '00000000-0000-0000-0000-0000000000c1',
   '00000000-0000-0000-0000-00000000aa01',
-  '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"},"therapy_course":{"session_number":1}}',
-  'advanced', '00000000-0000-0000-0000-00000000cc01', '00000000-0000-0000-0000-00000000dd01', 7);
+  '{"locale":"en-US","therapy_course":{"session_number":1}}',
+  'v1.case-A', '00000000-0000-0000-0000-00000000dd01', 7);
 
 DO $$ DECLARE r record; BEGIN
   SELECT test_session_number INTO r FROM public.sessions WHERE id = '00000000-0000-0000-0000-0000000e0001';
   IF r.test_session_number <> 1 THEN RAISE EXCEPTION 'FAIL: session number not set by trigger'; END IF;
-  SELECT status, clinical_snapshot, case_instance_id INTO r FROM public.skill_test_assignments
-  WHERE id = '00000000-0000-0000-0000-00000000dd01';
-  IF r.status <> 'in_progress' OR r.clinical_snapshot ->> 'assessment_id' <> 'A1'
-     OR r.clinical_snapshot ? 'therapy_course'
-     OR r.case_instance_id IS DISTINCT FROM '00000000-0000-0000-0000-00000000cc01' THEN
+  SELECT status, sealed_case INTO r FROM public.my_skill_tests('00000000-0000-0000-0000-00000000dd01');
+  IF r.status <> 'in_progress' OR r.sealed_case IS DISTINCT FROM 'v1.case-A' THEN
     RAISE EXCEPTION 'FAIL: case not pinned on first session: %', row_to_json(r);
   END IF;
 END $$;
 
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
   VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
-    '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"}}', 'advanced',
-    '00000000-0000-0000-0000-00000000dd01');
+    '{"locale":"en-US"}', 'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
   RAISE EXCEPTION 'FAIL: second test session started while one is active';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
+DO $$ BEGIN
+  UPDATE public.sessions SET sealed_case = 'v1.case-B'
+  WHERE id = '00000000-0000-0000-0000-0000000e0001';
+  RAISE EXCEPTION 'FAIL: trainee swapped the sealed case of a test session';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+
+DO $$ BEGIN
+  UPDATE public.sessions SET case_instance_id = '00000000-0000-0000-0000-00000000cc01'
+  WHERE id = '00000000-0000-0000-0000-0000000e0001';
+  RAISE EXCEPTION 'FAIL: trainee bound a case_instances row to a test session';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -242,33 +296,30 @@ END $$;
 -- 6. Second session reuses the pinned case and completes the test -------------
 SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
   VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
-    '{"assessment_id":"OTHER","primary_diagnosis":{"slug":"ptsd"}}', 'advanced',
-    '00000000-0000-0000-0000-00000000dd01');
+    '{"locale":"en-US"}', 'v1.case-OTHER', '00000000-0000-0000-0000-00000000dd01');
   RAISE EXCEPTION 'FAIL: a different case was accepted after pinning';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
-INSERT INTO public.sessions (id, therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+INSERT INTO public.sessions (id, therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
 VALUES ('00000000-0000-0000-0000-0000000e0002', '00000000-0000-0000-0000-0000000000c1',
   '00000000-0000-0000-0000-00000000aa01',
-  '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"},"therapy_course":{"session_number":2}}',
-  'advanced', '00000000-0000-0000-0000-00000000dd01');
+  '{"locale":"en-US","therapy_course":{"session_number":2}}',
+  'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
 UPDATE public.sessions SET status = 'completed', ended_at = now()
 WHERE id = '00000000-0000-0000-0000-0000000e0002';
 
 DO $$ DECLARE r record; BEGIN
-  SELECT status, completed_at INTO r FROM public.skill_test_assignments
-  WHERE id = '00000000-0000-0000-0000-00000000dd01';
+  SELECT status, completed_at INTO r FROM public.my_skill_tests('00000000-0000-0000-0000-00000000dd01');
   IF r.status <> 'completed' OR r.completed_at IS NULL THEN
     RAISE EXCEPTION 'FAIL: test not completed after required sessions: %', row_to_json(r);
   END IF;
 END $$;
 DO $$ BEGIN
-  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, difficulty, skill_test_assignment_id)
+  INSERT INTO public.sessions (therapist_id, avatar_id, clinical_snapshot, sealed_case, skill_test_assignment_id)
   VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000aa01',
-    '{"assessment_id":"A1","primary_diagnosis":{"slug":"ptsd"}}', 'advanced',
-    '00000000-0000-0000-0000-00000000dd01');
+    '{"locale":"en-US"}', 'v1.case-A', '00000000-0000-0000-0000-00000000dd01');
   RAISE EXCEPTION 'FAIL: session accepted on a completed test';
 EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 

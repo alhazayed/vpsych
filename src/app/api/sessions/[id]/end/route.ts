@@ -24,6 +24,7 @@ import {
   isAdminTestSnapshot,
 } from "@/lib/admin/admin-test-session";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import { withSkillTestCase } from "@/lib/skill-tests";
 
 async function sealLedgerBestEffort(opts: {
   supabase: Parameters<typeof sealAssessmentQualityLedger>[0];
@@ -132,10 +133,21 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const typed = session as TherapySession & { avatars: Avatar };
-  if (typed.therapist_id !== user.id) {
+  if ((session as TherapySession).therapist_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // A skill test session keeps its case sealed; open it for the assessment.
+  const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
+  if (!opened.ok) {
+    console.error("[sessions/end] sealed test case could not be opened", {
+      sessionId,
+    });
+    return NextResponse.json(
+      { error: "This test session could not be loaded. Please try again." },
+      { status: 500 },
+    );
+  }
+  const typed = opened.session;
 
   if (typed.status === "active") {
     const now = new Date();

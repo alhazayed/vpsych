@@ -18,6 +18,7 @@
  * persona with two different minds.
  */
 
+import { withSkillTestCase } from "@/lib/skill-tests";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { messageRpcClient, prepareMessageRpc } from "@/lib/supabase/admin";
 import type { PatientReplyResult } from "@/lib/ai/patient-agent";
@@ -175,10 +176,19 @@ export async function prepareClinicalTurn(params: {
     return { ok: false, status: 404, body: { error: "Session not found" } };
   }
 
-  const typed = session as TherapySession & { avatars: Avatar };
-  if (typed.therapist_id !== user.id) {
+  if ((session as TherapySession).therapist_id !== user.id) {
     return { ok: false, status: 403, body: { error: "Forbidden" } };
   }
+  // A skill test session keeps its case sealed; open it for the Patient Agent.
+  const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
+  if (!opened.ok) {
+    return {
+      ok: false,
+      status: 500,
+      body: { error: "This test session could not be loaded. Please try again." },
+    };
+  }
+  const typed = opened.session;
   if (typed.status !== "active") {
     return { ok: false, status: 409, body: { error: "Session is not active" } };
   }

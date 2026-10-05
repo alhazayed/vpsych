@@ -7,3 +7,5 @@ export * from "./catalog";
 export * from "./validation";
 export * from "./start";
 export * from "./persist";
+export * from "./exam";
+export { canSealSkillTests } from "./seal";

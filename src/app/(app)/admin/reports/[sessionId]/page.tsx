@@ -11,6 +11,7 @@ import {
   deriveSelfReportProfile,
   evaluateSessionPractice,
 } from "@/lib/session-practice";
+import { openSkillTestCase } from "@/lib/skill-tests";
 import type { ClinicalCore, SessionReport } from "@/lib/types";
 
 type Props = { params: Promise<{ sessionId: string }> };
@@ -31,6 +32,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
         ended_at,
         status,
         clinical_snapshot,
+        skill_test_assignment_id,
+        sealed_case,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -50,6 +53,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
 
   const session = report.sessions as unknown as {
     clinical_snapshot: { clinical_core?: ClinicalCore | null } | null;
+    skill_test_assignment_id: string | null;
+    sealed_case: string | null;
     profiles: { display_name: string } | null;
     avatars: { name: string; disorder: string } | null;
   } | null;
@@ -60,7 +65,12 @@ export default async function AdminReportDetailPage({ params }: Props) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
-  const core = session?.clinical_snapshot?.clinical_core ?? null;
+  // Skill test sessions keep the case sealed in the row; open it for admins.
+  const testCase = session?.skill_test_assignment_id
+    ? openSkillTestCase(session.skill_test_assignment_id, session.sealed_case)
+    : null;
+  const core =
+    testCase?.clinical_core ?? session?.clinical_snapshot?.clinical_core ?? null;
   const practice = evaluateSessionPractice({
     messages: (messages ?? []) as Array<{ role: string; content: string }>,
     riskPresent: caseHasRisk(core?.risk_profile),

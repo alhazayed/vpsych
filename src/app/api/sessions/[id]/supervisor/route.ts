@@ -41,11 +41,19 @@ export async function GET(_request: Request, { params }: Props) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, therapist_id, clinical_snapshot, avatars(name, disorder)")
+    .select(
+      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, avatars(name, disorder)",
+    )
     .eq("id", id)
     .maybeSingle();
 
-  if (!session || session.therapist_id !== user.id) {
+  // Skill test results (and the case) are for the assigning supervisor and
+  // admins only, so the trainee gets no coaching view of a test session.
+  if (
+    !session ||
+    session.therapist_id !== user.id ||
+    session.skill_test_assignment_id
+  ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

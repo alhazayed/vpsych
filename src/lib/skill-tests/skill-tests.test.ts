@@ -237,11 +237,40 @@ describe("skill test guardrails (source)", () => {
     expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_SUPERVISOR/);
   });
 
-  it("never names the diagnosis in a skill test start response", () => {
+  it("returns nothing about the case when a skill test session starts", () => {
     const start = read("src/app/api/sessions/route.ts");
-    expect(start).toContain(
-      "diagnosis: test ? null : caseResult.snapshot.primary_diagnosis.name",
+    const examResponse = start.slice(
+      start.indexOf("  if (test) {\n    // Exam:"),
+      start.indexOf("  return NextResponse.json({\n    sessionId: session.id,\n    language: caseResult"),
     );
+    expect(examResponse).toContain("skillTestId: test.assignment.id");
+    expect(examResponse).not.toMatch(/diagnosis|difficulty|assessmentId|caseInstanceId|template|preset/);
+    // The row stores the case sealed, never a case_instances row.
+    expect(start).toContain("insertPayload.sealed_case = sealedCase;");
+    // Later sessions reuse the pinned blob verbatim (the trigger compares it).
+    expect(start).toMatch(/test\.assignment\.sealed_case \?\?\s+sealSkillTestCase\(/);
+    expect(start).toContain("persist: false,");
+  });
+
+  it("keeps the case off the trainee's session screen and coaching view", () => {
+    const page = read("src/app/(app)/sessions/[id]/page.tsx");
+    expect(page).toContain("avatar={traineeSafeAvatar(resolved)}");
+    expect(page).toContain("session={traineeSafeSession(typed)}");
+    const coach = read("src/app/api/sessions/[id]/supervisor/route.ts");
+    expect(coach).toContain("session.skill_test_assignment_id");
+  });
+
+  it("gives trainees their tests without the case", () => {
+    expect(migration).toContain("CREATE OR REPLACE FUNCTION public.my_skill_tests(");
+    const policy = migration.slice(
+      migration.indexOf('CREATE POLICY "Skill tests supervisor or admin select"'),
+    );
+    expect(policy.slice(0, policy.indexOf(";"))).not.toContain("trainee_id");
+    const fn = migration.slice(
+      migration.indexOf("CREATE OR REPLACE FUNCTION public.my_skill_tests("),
+    );
+    const body = fn.slice(0, fn.indexOf("$$;"));
+    expect(body).not.toMatch(/disorder_slug|comorbidity_slugs|a\.difficulty|a\.severity/);
   });
 
   it("does not list score dashboards in the trainee menu", () => {

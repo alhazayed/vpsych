@@ -3,8 +3,11 @@ import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { requireApiSupervisor } from "@/lib/skill-tests/access";
+import { randomUUID } from "crypto";
 import {
+  SKILL_TEST_SEAL_UNAVAILABLE,
   isPatientCompatible,
+  sealSkillTestSpec,
   validateSkillTestInput,
   type SkillTestValidationError,
 } from "@/lib/skill-tests";
@@ -107,9 +110,26 @@ export async function POST(request: Request) {
     );
   }
 
+  // The trainee's copy of the spec is sealed: an exam case stays unknown to
+  // them until they work it out (see lib/skill-tests/exam.ts).
+  const assignmentId = randomUUID();
+  const sealedSpec = sealSkillTestSpec(assignmentId, {
+    disorder_slug: input.disorderSlug,
+    comorbidity_slugs: input.comorbiditySlugs,
+    difficulty: input.difficulty,
+    severity: input.severity,
+  });
+  if (!sealedSpec) {
+    return NextResponse.json(
+      { error: SKILL_TEST_SEAL_UNAVAILABLE, code: "skill_test_unavailable" },
+      { status: 503 },
+    );
+  }
+
   const { data: created, error } = await supabase
     .from("skill_test_assignments")
     .insert({
+      id: assignmentId,
       supervisor_id: user.id,
       trainee_id: input.traineeId,
       avatar_id: input.avatarId,
@@ -122,6 +142,7 @@ export async function POST(request: Request) {
       required_sessions: input.requiredSessions,
       trainee_instructions: input.traineeInstructions,
       due_at: input.dueAt,
+      sealed_spec: sealedSpec,
     })
     .select("id")
     .single();

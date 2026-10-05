@@ -368,6 +368,12 @@ export type TherapySession = {
   skill_test_assignment_id?: string | null;
   /** 1-based visit number within the skill test (set by the database). */
   test_session_number?: number | null;
+  /**
+   * Skill test sessions only: the full case, sealed for the server. The row's
+   * clinical_snapshot then holds just the visit context, so the trainee
+   * cannot read the diagnosis (see lib/skill-tests/exam.ts).
+   */
+  sealed_case?: string | null;
   avatars?: Avatar;
   profiles?: Profile;
 };
@@ -395,9 +401,10 @@ export type SkillTestAssignment = {
   trainee_instructions: string | null;
   due_at: string | null;
   status: SkillTestStatus;
-  /** Pinned by the first test session. */
-  case_instance_id: string | null;
-  clinical_snapshot: import("@/lib/case-engine/types").CaseInstanceSnapshot | null;
+  /** Supervisor's spec, sealed for the server (see lib/skill-tests/seal.ts). */
+  sealed_spec: string;
+  /** Case pinned by the first test session, sealed for the server. */
+  sealed_case: string | null;
   started_at: string | null;
   completed_at: string | null;
   cancelled_at: string | null;

@@ -3,22 +3,17 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
-import { isSessionLive, decideSkillTestStart } from "@/lib/skill-tests";
+import {
+  decideSkillTestStart,
+  isSessionLive,
+  loadMySkillTests,
+  type TraineeSkillTest,
+} from "@/lib/skill-tests";
 import { StartSkillTestButton } from "@/components/skill-tests/StartSkillTestButton";
-import type { SkillTestAssignment } from "@/lib/types";
 
-type TestRow = Pick<
-  SkillTestAssignment,
-  | "id"
-  | "title"
-  | "status"
-  | "required_sessions"
-  | "trainee_instructions"
-  | "due_at"
-  | "trainee_id"
-  | "language"
-  | "created_at"
-> & { avatars: { name: string; portrait_url: string | null } | null };
+type TestRow = TraineeSkillTest & {
+  avatars: { name: string; portrait_url: string | null } | null;
+};
 
 type TestSessionRow = {
   id: string;
@@ -30,7 +25,9 @@ type TestSessionRow = {
 
 /**
  * Skill test page: only the patients a supervisor assigned to this trainee.
- * The diagnosis is not shown; working it out is part of the test.
+ * It runs like a real exam: the trainee sees who the patient is, never the
+ * case (disorder, comorbidities, difficulty, severity). `my_skill_tests()`
+ * does not return those in the clear.
  */
 export default async function SkillTestsPage() {
   const { supabase, user } = await requireProfile();
@@ -39,18 +36,29 @@ export default async function SkillTestsPage() {
 
   await expireStaleSessionsForTherapist(supabase, user.id);
 
-  const { data: rows, error } = await supabase
-    .from("skill_test_assignments")
-    .select(
-      "id, title, status, required_sessions, trainee_instructions, due_at, trainee_id, language, created_at, avatars(name, portrait_url)",
-    )
-    .eq("trainee_id", user.id)
-    .neq("status", "cancelled")
-    .order("created_at", { ascending: false });
-  if (error) {
-    console.warn("[tests] list:", error.message);
+  const mine = await loadMySkillTests(supabase);
+  if (!mine.ok) {
+    console.warn("[tests] list failed");
   }
-  const tests = (rows ?? []) as unknown as TestRow[];
+  const assigned = (mine.ok ? mine.rows : []).filter(
+    (x) => x.status !== "cancelled",
+  );
+  const avatarIds = [...new Set(assigned.map((x) => x.avatar_id))];
+  const { data: avatarRows } = avatarIds.length
+    ? await supabase
+        .from("avatars")
+        .select("id, name, portrait_url")
+        .in("id", avatarIds)
+    : { data: [] };
+  const avatarById = new Map(
+    ((avatarRows ?? []) as { id: string; name: string; portrait_url: string | null }[]).map(
+      (a) => [a.id, { name: a.name, portrait_url: a.portrait_url }],
+    ),
+  );
+  const tests: TestRow[] = assigned.map((x) => ({
+    ...x,
+    avatars: avatarById.get(x.avatar_id) ?? null,
+  }));
 
   const { data: sessionRows } = tests.length
     ? await supabase
@@ -80,7 +88,7 @@ export default async function SkillTestsPage() {
         </p>
       </section>
 
-      {error ? (
+      {!mine.ok ? (
         <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
           {t("loadError")}
         </p>

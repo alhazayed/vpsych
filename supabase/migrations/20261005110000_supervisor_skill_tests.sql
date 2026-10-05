@@ -8,7 +8,15 @@
 -- who made the assignment. Once a test session has a report, the trainee can no
 -- longer read its transcript.
 --
--- Additive only: two new tables, two nullable columns on sessions, helper
+-- A skill test runs like a real exam: the trainee must work the case out. The
+-- trainee reads their assignments only through my_skill_tests(), which leaves
+-- out the disorder, comorbidities, difficulty and severity. The spec and the
+-- pinned case reach the trainee's rows only as server-sealed ciphertext
+-- (sealed_spec, sealed_case; AES-256-GCM with a key the browser never holds,
+-- see src/lib/skill-tests/seal.ts). A test session's clinical_snapshot holds
+-- just the visit context and locale, and no case_instances row is written.
+--
+-- Additive only: two new tables, three nullable columns on sessions, helper
 -- functions, triggers, and RLS policies. The one replaced policy
 -- ("Participants can view session messages") keeps its previous behaviour for
 -- every non-test session.
@@ -26,8 +34,10 @@
 --   DROP TRIGGER IF EXISTS sessions_skill_test_after_insert ON public.sessions;
 --   DROP TRIGGER IF EXISTS sessions_skill_test_before_update ON public.sessions;
 --   DROP TRIGGER IF EXISTS sessions_skill_test_after_update ON public.sessions;
+--   ALTER TABLE public.sessions DROP COLUMN IF EXISTS sealed_case;
 --   ALTER TABLE public.sessions DROP COLUMN IF EXISTS test_session_number;
 --   ALTER TABLE public.sessions DROP COLUMN IF EXISTS skill_test_assignment_id;
+--   DROP FUNCTION IF EXISTS public.my_skill_tests(uuid);
 --   DROP FUNCTION IF EXISTS public.cancel_skill_test(uuid);
 --   DROP FUNCTION IF EXISTS public.list_skill_test_trainees();
 --   DROP FUNCTION IF EXISTS public.session_messages_readable(uuid);
@@ -108,9 +118,11 @@ CREATE TABLE IF NOT EXISTS public.skill_test_assignments (
   due_at timestamptz,
   status text NOT NULL DEFAULT 'assigned'
     CHECK (status IN ('assigned', 'in_progress', 'completed', 'cancelled')),
-  -- Pinned by the first test session so diagnosis and life story stay fixed.
-  case_instance_id uuid REFERENCES public.case_instances (id) ON DELETE SET NULL,
-  clinical_snapshot jsonb,
+  -- The spec above, sealed by the server for the trainee's start path.
+  sealed_spec text NOT NULL CHECK (char_length(sealed_spec) BETWEEN 1 AND 8000),
+  -- Case pinned (sealed) by the first test session, so diagnosis and life
+  -- story stay fixed across sessions.
+  sealed_case text,
   started_at timestamptz,
   completed_at timestamptz,
   cancelled_at timestamptz,
@@ -125,9 +137,6 @@ CREATE INDEX IF NOT EXISTS skill_test_assignments_supervisor_idx
   ON public.skill_test_assignments (supervisor_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS skill_test_assignments_avatar_idx
   ON public.skill_test_assignments (avatar_id);
-CREATE INDEX IF NOT EXISTS skill_test_assignments_case_instance_idx
-  ON public.skill_test_assignments (case_instance_id)
-  WHERE case_instance_id IS NOT NULL;
 
 COMMENT ON TABLE public.skill_test_assignments IS
   'Supervisor-designed test patient assigned to one trainee. Results visible to the assigning supervisor and admins only.';
@@ -139,6 +148,11 @@ ALTER TABLE public.sessions
 ALTER TABLE public.sessions
   ADD COLUMN IF NOT EXISTS test_session_number integer
     CHECK (test_session_number IS NULL OR test_session_number >= 1);
+
+-- Skill test sessions only: the full case, sealed. clinical_snapshot then
+-- holds just the visit context, so the trainee cannot read the diagnosis.
+ALTER TABLE public.sessions
+  ADD COLUMN IF NOT EXISTS sealed_case text;
 
 CREATE INDEX IF NOT EXISTS sessions_skill_test_assignment_idx
   ON public.sessions (skill_test_assignment_id)
@@ -230,12 +244,13 @@ GRANT EXECUTE ON FUNCTION public.session_messages_readable(uuid) TO authenticate
 -- ---------------------------------------------------------------------------
 ALTER TABLE public.skill_test_assignments ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Skill tests supervisor trainee or admin select" ON public.skill_test_assignments;
-CREATE POLICY "Skill tests supervisor trainee or admin select" ON public.skill_test_assignments
+-- Trainees do not select from this table: the row names the case they are
+-- examined on. They use my_skill_tests() instead.
+DROP POLICY IF EXISTS "Skill tests supervisor or admin select" ON public.skill_test_assignments;
+CREATE POLICY "Skill tests supervisor or admin select" ON public.skill_test_assignments
   FOR SELECT TO authenticated
   USING (
-    trainee_id = (select auth.uid())
-    OR (supervisor_id = (select auth.uid()) AND (select public.is_supervisor()))
+    (supervisor_id = (select auth.uid()) AND (select public.is_supervisor()))
     OR (select public.is_admin())
   );
 
@@ -246,8 +261,7 @@ CREATE POLICY "Skill tests supervisor or admin insert" ON public.skill_test_assi
     supervisor_id = (select auth.uid())
     AND ((select public.is_supervisor()) OR (select public.is_admin()))
     AND status = 'assigned'
-    AND case_instance_id IS NULL
-    AND clinical_snapshot IS NULL
+    AND sealed_case IS NULL
     AND started_at IS NULL
     AND completed_at IS NULL
     AND cancelled_at IS NULL
@@ -336,17 +350,22 @@ BEGIN
     RAISE EXCEPTION 'skill_test_sessions_used' USING ERRCODE = '42501';
   END IF;
 
-  IF a.clinical_snapshot IS NOT NULL THEN
-    IF coalesce(NEW.clinical_snapshot ->> 'assessment_id', '')
-         IS DISTINCT FROM coalesce(a.clinical_snapshot ->> 'assessment_id', '-') THEN
-      RAISE EXCEPTION 'skill_test_case_mismatch' USING ERRCODE = '42501';
-    END IF;
-  ELSE
-    IF coalesce(NEW.clinical_snapshot -> 'primary_diagnosis' ->> 'slug', '')
-         IS DISTINCT FROM a.disorder_slug
-       OR NEW.difficulty::text IS DISTINCT FROM a.difficulty THEN
-      RAISE EXCEPTION 'skill_test_case_mismatch' USING ERRCODE = '42501';
-    END IF;
+  -- Nothing about the case in the clear: the row carries only the visit
+  -- context and locale, plus the sealed case. Later sessions must carry the
+  -- case the first one pinned. The seal binds a case to this assignment, so
+  -- the server refuses any other blob.
+  IF NEW.sealed_case IS NULL
+     OR NEW.case_instance_id IS NOT NULL
+     OR NEW.difficulty IS NOT NULL
+     OR NEW.therapy_modality IS NOT NULL
+     OR NEW.instructor_preset_id IS NOT NULL
+     OR (NEW.clinical_snapshot IS NOT NULL
+         AND (jsonb_typeof(NEW.clinical_snapshot) <> 'object'
+              OR (NEW.clinical_snapshot - 'therapy_course' - 'locale') <> '{}'::jsonb)) THEN
+    RAISE EXCEPTION 'skill_test_case_mismatch' USING ERRCODE = '42501';
+  END IF;
+  IF a.sealed_case IS NOT NULL AND NEW.sealed_case IS DISTINCT FROM a.sealed_case THEN
+    RAISE EXCEPTION 'skill_test_case_mismatch' USING ERRCODE = '42501';
   END IF;
 
   NEW.test_session_number := v_held + 1;
@@ -366,8 +385,7 @@ BEGIN
   END IF;
   UPDATE public.skill_test_assignments
   SET
-    clinical_snapshot = coalesce(clinical_snapshot, NEW.clinical_snapshot - 'therapy_course'),
-    case_instance_id = coalesce(case_instance_id, NEW.case_instance_id),
+    sealed_case = coalesce(sealed_case, NEW.sealed_case),
     status = CASE WHEN status = 'assigned' THEN 'in_progress' ELSE status END,
     started_at = coalesce(started_at, now()),
     updated_at = now()
@@ -384,7 +402,10 @@ SET search_path = public
 AS $$
 BEGIN
   IF (NEW.skill_test_assignment_id IS DISTINCT FROM OLD.skill_test_assignment_id
-      OR NEW.test_session_number IS DISTINCT FROM OLD.test_session_number)
+      OR NEW.test_session_number IS DISTINCT FROM OLD.test_session_number
+      OR NEW.sealed_case IS DISTINCT FROM OLD.sealed_case
+      OR (OLD.skill_test_assignment_id IS NOT NULL
+          AND NEW.case_instance_id IS DISTINCT FROM OLD.case_instance_id))
      AND auth.uid() IS NOT NULL
      AND NOT public.is_admin() THEN
     RAISE EXCEPTION 'Cannot change skill test link' USING ERRCODE = '42501';
@@ -474,6 +495,39 @@ BEGIN
 END;
 $$;
 
+-- The caller's own assignments, without the case: no disorder, comorbidities,
+-- difficulty or severity. The spec and pinned case come back only sealed.
+CREATE OR REPLACE FUNCTION public.my_skill_tests(p_assignment_id uuid DEFAULT NULL)
+RETURNS TABLE (
+  id uuid,
+  trainee_id uuid,
+  avatar_id uuid,
+  title text,
+  language text,
+  required_sessions integer,
+  trainee_instructions text,
+  due_at timestamptz,
+  status text,
+  sealed_spec text,
+  sealed_case text,
+  started_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  select a.id, a.trainee_id, a.avatar_id, a.title, a.language,
+         a.required_sessions, a.trainee_instructions, a.due_at, a.status,
+         a.sealed_spec, a.sealed_case, a.started_at, a.completed_at, a.created_at
+  from public.skill_test_assignments a
+  where a.trainee_id = auth.uid()
+    and (p_assignment_id is null or a.id = p_assignment_id)
+  order by a.created_at desc;
+$$;
+
 CREATE OR REPLACE FUNCTION public.cancel_skill_test(p_assignment_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -494,6 +548,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.list_skill_test_trainees() FROM public, anon;
+REVOKE ALL ON FUNCTION public.my_skill_tests(uuid) FROM public, anon;
 REVOKE ALL ON FUNCTION public.cancel_skill_test(uuid) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.list_skill_test_trainees() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.my_skill_tests(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_skill_test(uuid) TO authenticated;
