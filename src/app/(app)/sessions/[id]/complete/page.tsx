@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
+import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
@@ -53,6 +55,25 @@ export default async function SessionCompletePage({ params }: Props) {
     .order("created_at", { ascending: true });
   const transcript = (messages ?? []) as SessionMessage[];
 
+  // A finished session can lack a report when the tab closed mid-session, the
+  // expiry cron ended it, or the end request failed. Only the owning learner
+  // can finalize it (the end route enforces ownership); skip empty sessions.
+  let needsReport = false;
+  if (
+    shouldOfferReportFinalize({
+      status: typed.status,
+      therapistId: typed.therapist_id,
+      viewerId: user.id,
+      roles: transcript.map((m) => m.role),
+    })
+  ) {
+    const { data: hasReport, error: hasReportError } = await supabase.rpc(
+      "session_has_report",
+      { p_session_id: id },
+    );
+    needsReport = !hasReportError && hasReport === false;
+  }
+
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
       <div className="mb-8 text-center fade-in-up">
@@ -70,6 +91,7 @@ export default async function SessionCompletePage({ params }: Props) {
         </p>
       </div>
 
+      {needsReport ? <FinalizeSessionReport sessionId={id} /> : null}
       <CourseProgressCard
         supabase={supabase}
         courseId={typed.therapy_course_id}

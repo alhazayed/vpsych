@@ -1,12 +1,17 @@
 import { format } from "date-fns";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { MetricCard } from "@/components/admin/AdminUi";
+import { ExportReportsButton } from "@/components/admin/ExportReportsButton";
+import { ErrorState, MetricCard } from "@/components/admin/AdminUi";
 import {
   ReportsTable,
   type ReportRow,
 } from "@/components/admin/ReportsTable";
+
+/** Rows rendered in the table; the total metric uses an exact count. */
+const REPORT_LIST_LIMIT = 500;
 
 export default async function AdminReportsPage() {
   const { supabase } = await requireAdmin();
@@ -15,7 +20,11 @@ export default async function AdminReportsPage() {
   const tSessions = await getTranslations("admin.sessions");
   const tCommon = await getTranslations("common");
 
-  const { data: reports } = await supabase
+  const {
+    data: reports,
+    error: reportsError,
+    count: reportCount,
+  } = await supabase
     .from("session_reports")
     .select(
       `
@@ -33,18 +42,45 @@ export default async function AdminReportsPage() {
         avatars ( name, disorder )
       )
     `,
+      { count: "exact" },
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(REPORT_LIST_LIMIT);
+
+  if (reportsError) {
+    console.warn("[admin-reports] list:", reportsError.message);
+    return (
+      <main className="mx-auto max-w-[1280px] space-y-8 px-4 py-8 md:px-8">
+        <AdminPageHeader
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: tHome("title"), href: "/admin" },
+            { label: t("title") },
+          ]}
+        />
+        <ErrorState
+          title={t("loadErrorTitle")}
+          description={t("loadErrorDescription")}
+        />
+      </main>
+    );
+  }
 
   const list = reports ?? [];
+  const total = reportCount ?? list.length;
+  const truncated = total > list.length;
+  // Heuristic-fallback scores are keyword placeholders, not examiner scores;
+  // keep them out of the average so an AI outage cannot skew it.
+  const scored = list.filter((r) => !isHeuristicReportScores(r.scores));
   const avg =
-    list.length > 0
+    scored.length > 0
       ? Math.round(
-          list.reduce((sum, r) => {
+          scored.reduce((sum, r) => {
             const overall =
               (r.scores as { overall?: number } | null)?.overall ?? 0;
             return sum + overall;
-          }, 0) / list.length,
+          }, 0) / scored.length,
         )
       : 0;
 
@@ -73,6 +109,7 @@ export default async function AdminReportsPage() {
       disorder: session?.avatars?.disorder ?? "",
       language: lang,
       score: typeof overall === "number" ? overall : null,
+      fallback: isHeuristicReportScores(report.scores),
       status,
       statusLabel: statusLabelFor(status),
       createdAt: report.created_at,
@@ -89,18 +126,23 @@ export default async function AdminReportsPage() {
           { label: tHome("title"), href: "/admin" },
           { label: t("title") },
         ]}
+        actions={list.length > 0 ? <ExportReportsButton /> : null}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
           label={t("statTotal")}
-          value={String(list.length)}
-          hint={t("statTotalHint")}
+          value={String(total)}
+          hint={
+            truncated
+              ? t("statTotalTruncated", { count: list.length })
+              : t("statTotalHint")
+          }
         />
         <MetricCard
           label={t("statAvg")}
-          value={list.length ? `${avg}${tCommon("outOf100")}` : "—"}
-          hint={t("statAvgHint")}
+          value={scored.length ? `${avg}${tCommon("outOf100")}` : "—"}
+          hint={truncated ? t("statAvgHintRecent") : t("statAvgHint")}
         />
         <MetricCard
           label={t("statAccess")}
@@ -128,6 +170,7 @@ export default async function AdminReportsPage() {
             showingLabel: t("showingLabel"),
             filterLanguage: t("filterLanguage"),
             filterAll: t("filterAll"),
+            fallbackBadge: t("fallbackBadge"),
           }}
         />
       </section>

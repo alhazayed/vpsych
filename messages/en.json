@@ -17,7 +17,22 @@
       "discard": "Discard Changes",
       "confirmSave": "Confirm & Save"
     },
-    "technicalDetails": "Technical details"
+    "technicalDetails": "Technical details",
+    "errorBoundary": {
+      "rootTitle": "Something went wrong",
+      "rootBody": "An unexpected error interrupted this page. You can retry or return to the patient library.",
+      "retry": "Try again",
+      "patientLibrary": "Patient library",
+      "segmentTitle": "This view failed to load",
+      "segmentBodyAdmin": "The administrator console hit an unexpected error. Retry this view or return to the admin overview.",
+      "segmentBodyLearner": "Something went wrong in your workspace. Retry this view or continue from My Sessions.",
+      "adminOverview": "Admin overview",
+      "mySessions": "My Sessions",
+      "reference": "Reference: {digest}",
+      "notFoundTitle": "Page not found",
+      "notFoundBody": "The page you requested does not exist or is no longer available.",
+      "home": "Home"
+    }
   },
   "shell": {
     "tagline": "Clinical Intelligence",
@@ -145,7 +160,29 @@
     "subtitle": "Your personalized psychiatric training pathway — competencies, next cases, and AI coach goals.",
     "graph": {
       "title": "Competency Graph",
-      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways."
+      "subtitle": "Prerequisites, mastery stages, blocked skills, and root-cause remediation pathways.",
+      "view": {
+        "loading": "Loading competency graph…",
+        "loadFailed": "Could not load the competency graph. Reload the page to try again.",
+        "networkError": "Network error. Check your connection and try again.",
+        "rcaFailed": "Could not build the root-cause report.",
+        "search": "Search competencies",
+        "domain": "Domain",
+        "allDomains": "All domains",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "expand": "Show all",
+        "collapse": "Show fewer",
+        "mastered": "Mastered",
+        "developing": "Developing",
+        "blocked": "Blocked",
+        "notAttempted": "Not attempted",
+        "counts": "{nodes} competencies · {edges} links",
+        "instructorMode": "instructor mode",
+        "nodeState": "{stage} · score {score} · confidence {confidence}",
+        "requires": "Requires: {list}",
+        "showingSome": "Showing 8 of {total}. Select “Show all” to see the full pathway."
+      }
     },
     "supervisor": {
       "title": "Supervisor AI",
@@ -474,7 +511,9 @@
     "title": "Virtual Patient Library",
     "count": "{count} active {persona}",
     "persona": "persona",
-    "personas": "personas"
+    "personas": "personas",
+    "loadErrorTitle": "Patients unavailable",
+    "loadErrorDescription": "Could not load the patient library. Reload the page to try again."
   },
   "sessions": {
     "title": "My Sessions",
@@ -500,8 +539,16 @@
       "next2": "Practice again with another persona to keep building clinical skills. Submit expert feedback through the channel named in your invitation.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
-      "viewReport": "View report"
-    }
+      "viewReport": "View report",
+      "finalize": {
+        "pending": "Preparing your performance report…",
+        "done": "Your performance report has been prepared for your instructor.",
+        "error": "The performance report could not be prepared yet. Your transcript is saved.",
+        "retry": "Try again"
+      }
+    },
+    "loadErrorTitle": "Sessions unavailable",
+    "loadErrorDescription": "Could not load your session history. Reload the page to try again."
   },
   "session": {
     "status": {
@@ -556,9 +603,12 @@
     "pipelineVoice": "Voice pipeline",
     "pipelineText": "Text only",
     "start": {
-      "failed": "Could not start session",
+      "failed": "Could not start the session. Try again.",
       "networkError": "Network error",
-      "starting": "Starting…"
+      "starting": "Starting…",
+      "signedOut": "Your sign-in has expired. Sign in again to start a session.",
+      "rateLimited": "You have started many sessions recently. Wait a while and try again.",
+      "patientUnavailable": "This patient is not available right now. Choose another patient."
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
@@ -729,11 +779,37 @@
       "filterAll": "All",
       "showingLabel": "Showing #COUNT# reports",
       "emptyFilteredTitle": "No reports match these filters",
-      "emptyFilteredDescription": "Try clearing filters or broadening your search."
+      "emptyFilteredDescription": "Try clearing filters or broadening your search.",
+      "fallbackBadge": "Fallback",
+      "loadErrorTitle": "Reports unavailable",
+      "loadErrorDescription": "Could not load the reports list. Try again or check System Health.",
+      "statTotalTruncated": "Table shows the latest {count}",
+      "statAvgHintRecent": "Across the latest completed reports shown",
+      "export": {
+        "cta": "Export CSV",
+        "pending": "Preparing export…",
+        "done": "Downloaded {count} reports.",
+        "truncated": "Downloaded the latest {count} reports (export limit reached).",
+        "errorRateLimited": "Too many exports. Wait a while and try again.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not export reports. Try again."
+      }
     },
     "reportDetail": {
       "back": "All reports",
       "meta": "Therapist: {therapist} · Patient: {patient} ({disorder})",
+      "fallback": {
+        "title": "AI examiner was unavailable for this report",
+        "body": "These scores are a keyword-based fallback estimate, not an AI examiner assessment, and are excluded from the report average. Regenerate once the AI provider is available again; the transcript is unchanged and the report is only replaced if the examiner succeeds.",
+        "regenerate": "Regenerate with AI examiner",
+        "regenerating": "Regenerating…",
+        "success": "Report regenerated.",
+        "errorAiUnavailable": "The AI examiner is still unavailable. The report was not changed; try again later.",
+        "errorAlreadyUpdated": "This report has already been updated. Reloading.",
+        "errorRateLimited": "Too many regeneration attempts. Wait a while and try again.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not regenerate the report. Try again."
+      },
       "practice": {
         "title": "Session practice",
         "subtitle": "Observable therapy best practices in this transcript, an indicative CTS-R view, and the patient's questionnaire targets.",
@@ -1076,7 +1152,9 @@
         "rawValidationJson": "Raw validation JSON",
         "fieldPathDetails": "Technical field path",
         "rawPayloadJson": "Raw write payload"
-      }
+      },
+      "loadErrorTitle": "Patient library unavailable",
+      "loadErrorDescription": "Could not load virtual patients. Try again or check System Health."
     },
     "personality": {
       "title": "Personality",
@@ -1488,7 +1566,16 @@
       "clearLearnerFilter": "Clear learner filter",
       "viewLearner": "View learner",
       "staleExplanation": "Past expected session duration. This session remains marked active but has exceeded its configured time limit. It will be expired by maintenance or the next defensive refresh.",
-      "workingSetBadge": "Most recent 500 matching"
+      "workingSetBadge": "Most recent 500 matching",
+      "generateReport": {
+        "cta": "Generate report",
+        "generating": "Generating report…",
+        "errorRateLimited": "Too many attempts. Wait a while and try again.",
+        "errorMisconfigured": "Report writing is not configured on the server (REPORT_WRITE_KEY or SUPABASE_SERVICE_ROLE_KEY).",
+        "errorEmpty": "This session has no therapist turns to assess.",
+        "errorNetwork": "Network error. Check your connection and try again.",
+        "errorGeneric": "Could not generate the report. Try again."
+      }
     },
     "contentHub": {
       "title": "Content library",
@@ -1540,7 +1627,7 @@
       "qAssessment": "How are learners scoring on completed assessments?",
       "metricReports": "Reports in period",
       "metricAvgScore": "Average overall score",
-      "metricAvgScoreHint": "Mean of overall scores on reports linked to period sessions",
+      "metricAvgScoreHint": "Mean overall score of AI-examiner reports linked to period sessions (fallback reports excluded)",
       "byLanguage": "By language",
       "qLanguage": "Which session languages are in use?",
       "byOrganization": "By organization",

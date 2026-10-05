@@ -8,6 +8,8 @@ import {
 } from "@/lib/therapy-room";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
+import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
+import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 
 type Props = { params: Promise<{ sessionId: string }> };
@@ -75,6 +77,24 @@ export default async function ClinicDebriefPage({ params }: Props) {
     .neq("role", "system")
     .order("created_at", { ascending: true });
 
+  // Same self-heal as /sessions/[id]/complete: a room abandoned mid-session or
+  // ended by expiry has no report (and no coach feedback) until /end runs.
+  let needsReport = false;
+  if (
+    shouldOfferReportFinalize({
+      status: session.status as string,
+      therapistId: session.therapist_id as string,
+      viewerId: user.id,
+      roles: (messages ?? []).map((m) => m.role as string),
+    })
+  ) {
+    const { data: hasReport, error: hasReportError } = await supabase.rpc(
+      "session_has_report",
+      { p_session_id: sessionId },
+    );
+    needsReport = !hasReportError && hasReport === false;
+  }
+
   // `select("*")` keeps the page working before the therapy-course columns
   // exist; they are simply absent then.
   const courseId = (session as { therapy_course_id?: string | null })
@@ -85,6 +105,11 @@ export default async function ClinicDebriefPage({ params }: Props) {
 
   return (
     <>
+      {needsReport ? (
+        <div className="mx-auto max-w-2xl px-4 pt-6 md:px-8">
+          <FinalizeSessionReport sessionId={sessionId} refreshOnDone />
+        </div>
+      ) : null}
       {courseId ? (
         <div className="mx-auto max-w-2xl px-4 pt-10 md:px-8">
           <CourseProgressCard

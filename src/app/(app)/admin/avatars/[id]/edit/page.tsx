@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EditPatientModeSwitch } from "@/components/admin/case-builder/EditPatientModeSwitch";
 import type {
@@ -31,12 +32,13 @@ export default async function AdminEditVirtualPatientPage({
   const tHome = await getTranslations("admin.home");
   const tBuilder = await getTranslations("admin.caseBuilder");
 
-  const { data: avatar } = await supabase
+  const { data: avatar, error: avatarError } = await supabase
     .from("avatars")
     .select("*")
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(avatarError, "admin-avatar-edit");
   if (!avatar) notFound();
 
   const typed = avatar as Avatar;

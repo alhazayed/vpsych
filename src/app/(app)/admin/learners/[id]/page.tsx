@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MetricCard } from "@/components/admin/AdminUi";
@@ -32,7 +33,7 @@ export default async function AdminLearnerDetailPage({
   const tSessions = await getTranslations("admin.sessions");
   const locale = await getLocale();
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
       "id, display_name, role, preferred_language, primary_institution_id, created_at, updated_at",
@@ -40,6 +41,7 @@ export default async function AdminLearnerDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  throwOnLoadError(profileError, "admin-learner");
   if (!profile) notFound();
 
   const [

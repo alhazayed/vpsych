@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AppLocale } from "@/i18n/config";
 import { LOCALE_COOKIE } from "@/i18n/config";
+import { sessionStartErrorKey } from "@/lib/session-start-error";
 
 function cookieLocale(): string | undefined {
   if (typeof document === "undefined") return undefined;
@@ -32,9 +33,12 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ avatarId, locale: sessionLocale }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? t("failed"));
+      // A proxy/edge error page is not JSON; don't misreport it as offline.
+      const data = (await res.json().catch(() => ({}))) as {
+        sessionId?: string;
+      };
+      if (!res.ok || !data.sessionId) {
+        setError(t(res.ok ? "failed" : sessionStartErrorKey(res.status)));
         setLoading(false);
         return;
       }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  closeFailedSessionStart,
   expireStaleSession,
   expireStaleSessionsBatch,
   expireStaleSessionsVisible,
@@ -139,5 +140,42 @@ describe("expireStaleSessionsBatch", () => {
     const from = vi.fn(() => ({ select }));
     const result = await expireStaleSessionsBatch({ from } as never);
     expect(result).toEqual({ scanned: 0, expired: 0, selectError: true });
+  });
+});
+
+describe("closeFailedSessionStart", () => {
+  function fake(result: { data: unknown; error: { message: string } | null }) {
+    const calls: Array<[string, unknown]> = [];
+    let patch: unknown = null;
+    const b = {
+      update: (p: unknown) => {
+        patch = p;
+        return b;
+      },
+      eq: (k: string, v: unknown) => {
+        calls.push([k, v]);
+        return b;
+      },
+      select: () => b,
+      maybeSingle: () => Promise.resolve(result),
+    };
+    return { supabase: { from: () => b }, calls, patch: () => patch };
+  }
+
+  it("expires only a still-active row", async () => {
+    const f = fake({ data: { id: "s1" }, error: null });
+    const now = new Date("2026-01-01T00:00:05.000Z");
+    const ok = await closeFailedSessionStart(f.supabase as never, "s1", now);
+    expect(ok).toBe(true);
+    expect(f.patch()).toEqual({ status: "expired", ended_at: now.toISOString() });
+    expect(f.calls).toEqual([
+      ["id", "s1"],
+      ["status", "active"],
+    ]);
+  });
+
+  it("never throws on a database error", async () => {
+    const f = fake({ data: null, error: { message: "boom" } });
+    await expect(closeFailedSessionStart(f.supabase as never, "s1")).resolves.toBe(false);
   });
 });

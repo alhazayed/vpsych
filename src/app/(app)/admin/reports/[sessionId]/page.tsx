@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
+import { FallbackReportNotice } from "@/components/admin/FallbackReportNotice";
+import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { requireAdmin } from "@/lib/auth";
+import { throwOnLoadError } from "@/lib/admin/page-load";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import {
@@ -26,7 +29,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.reportDetail");
 
-  const { data: report } = await supabase
+  const { data: report, error: reportError } = await supabase
     .from("session_reports")
     .select(
       `
@@ -46,6 +49,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
     )
     .eq("session_id", sessionId)
     .maybeSingle();
+  throwOnLoadError(reportError, "admin-report");
 
   if (!report) notFound();
 
@@ -128,6 +132,11 @@ export default async function AdminReportDetailPage({ params }: Props) {
           ? ` · ${(report as SessionReport).language}`
           : ""}
       </p>
+      {isHeuristicReportScores(report.scores) ? (
+        <div className="mt-6">
+          <FallbackReportNotice sessionId={sessionId} />
+        </div>
+      ) : null}
       <div className="mt-6">
         <ReportView report={report as SessionReport} />
       </div>
