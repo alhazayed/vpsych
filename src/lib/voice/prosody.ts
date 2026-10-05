@@ -124,3 +124,27 @@ export function browserSpeechRateForPace(pace?: SpeechPace | null): number {
       return 0.95;
   }
 }
+
+/**
+ * Arabic pronunciation guard. Low stability and high style let a
+ * multilingual voice drift: Arabic consonants (ع ح ق خ) soften, vowels pick
+ * up an English accent, and words get swallowed. Arabic speech keeps the
+ * clinical direction (slow vs pressured still differ) but within a band where
+ * the voice stays clearly articulated.
+ */
+export const ARABIC_MIN_STABILITY = 0.5;
+export const ARABIC_MAX_STYLE = 0.2;
+export const ARABIC_MIN_SIMILARITY = 0.8;
+
+export function pronunciationSafeSettings(
+  settings: ElevenLabsVoiceSettings,
+  locale: string,
+): ElevenLabsVoiceSettings {
+  if (locale !== "ar") return settings;
+  return {
+    ...settings,
+    stability: Math.max(ARABIC_MIN_STABILITY, settings.stability),
+    similarity_boost: Math.max(ARABIC_MIN_SIMILARITY, settings.similarity_boost),
+    style: Math.min(ARABIC_MAX_STYLE, settings.style ?? 0),
+  };
+}

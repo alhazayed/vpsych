@@ -184,4 +184,60 @@ describe("elevenLabsService", () => {
     expect(calls[0]).toContain("hpp4J3VqNfWAUOO0d1Us");
     expect(calls[1]).toContain("EXAVITQu4vr4xnSDxMaL");
   });
+
+  it("sends Arabic speech text and pronunciation-safe settings upstream", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    const bodies: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return new Response(new Uint8Array([1]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+      }),
+    );
+
+    await elevenLabsService.synthesize({
+      text: "*تتنهد* صارلي 3 أسابيع ما بنام",
+      locale: "ar",
+      voiceIdAr: "isQLuoVuANx6FjDxyasX",
+      speechPace: "pressured",
+    });
+    expect(bodies[0]?.text).toBe("صارلي ثلاثة أسابيع ما بنام");
+    expect(bodies[0]?.voice_settings).toEqual({
+      stability: 0.5,
+      similarity_boost: 0.8,
+      style: 0.2,
+    });
+    // eleven_multilingual_v2 rejects language_code.
+    expect(bodies[0]).not.toHaveProperty("language_code");
+  });
+
+  it("pins language_code only on models that accept it", async () => {
+    process.env.ELEVENLABS_API_KEY = "sk_testkey123456";
+    process.env.ELEVENLABS_MODEL_ID = "eleven_flash_v2_5";
+    const bodies: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return new Response(new Uint8Array([1]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+      }),
+    );
+    try {
+      await elevenLabsService.synthesize({
+        text: "مرحبا",
+        locale: "ar",
+        voiceIdAr: "isQLuoVuANx6FjDxyasX",
+      });
+      expect(bodies[0]?.language_code).toBe("ar");
+    } finally {
+      delete process.env.ELEVENLABS_MODEL_ID;
+    }
+  });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   browserSpeechRateForPace,
   normalizeSpeechPace,
+  pronunciationSafeSettings,
   resolveVoiceSettings,
   voiceSettingsForPaceEnergy,
   voiceSettingsForSpeechProfile,
@@ -46,5 +47,30 @@ describe("CB-HCF-007 voice prosody", () => {
     expect(browserSpeechRateForPace("slow")).toBeLessThan(
       browserSpeechRateForPace("pressured"),
     );
+  });
+});
+
+describe("pronunciationSafeSettings", () => {
+  it("keeps Arabic in a clearly articulated band", () => {
+    expect(
+      pronunciationSafeSettings(
+        { stability: 0.28, similarity_boost: 0.7, style: 0.45 },
+        "ar",
+      ),
+    ).toEqual({ stability: 0.5, similarity_boost: 0.8, style: 0.2 });
+  });
+
+  it("keeps steadier Arabic settings as they are", () => {
+    expect(
+      pronunciationSafeSettings(
+        { stability: 0.62, similarity_boost: 0.85, style: 0.15 },
+        "ar",
+      ),
+    ).toEqual({ stability: 0.62, similarity_boost: 0.85, style: 0.15 });
+  });
+
+  it("leaves English untouched", () => {
+    const en = { stability: 0.28, similarity_boost: 0.7, style: 0.45 };
+    expect(pronunciationSafeSettings(en, "en")).toBe(en);
   });
 });
