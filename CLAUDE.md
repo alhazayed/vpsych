@@ -185,6 +185,9 @@ Write rules that RLS enforces and application code must respect:
 - Reads of `session_reports` are gated on `is_admin()`. Never expose reports on
   a therapist-facing API.
 - Roles live in `profiles.role`, never in `user_metadata`.
+- Supervisors are rows in `public.supervisors` (admin-written). Skill test
+  results are readable only by the assigning supervisor and admins; see
+  `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`.
 - New RLS policies must wrap `auth.uid()` / `is_admin()` in `(select …)` so they
   evaluate once per statement rather than per row.
 

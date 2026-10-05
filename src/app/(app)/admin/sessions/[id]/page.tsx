@@ -17,7 +17,8 @@ import {
   sessionStatusTone,
 } from "@/lib/admin/session-ops";
 import { expireStaleSession } from "@/lib/session-expiry";
-import type { MessageRole, SessionStatus } from "@/lib/types";
+import type { MessageRole, SessionStatus, TherapySession } from "@/lib/types";
+import { withSkillTestCase } from "@/lib/skill-tests";
 
 export default async function AdminSessionDetailPage({
   params,
@@ -45,6 +46,8 @@ export default async function AdminSessionDetailPage({
       interaction_mode,
       case_instance_id,
       clinical_snapshot,
+      skill_test_assignment_id,
+      sealed_case,
       immersion_metrics,
       therapist_id,
       profiles ( display_name ),
@@ -85,6 +88,8 @@ export default async function AdminSessionDetailPage({
       interaction_mode,
       case_instance_id,
       clinical_snapshot,
+      skill_test_assignment_id,
+      sealed_case,
       immersion_metrics,
       therapist_id,
       profiles ( display_name ),
@@ -98,6 +103,17 @@ export default async function AdminSessionDetailPage({
       : { data: sessionRaw };
 
   if (!session) notFound();
+
+  // Skill test sessions keep the case sealed in the row; open it for admins.
+  const openedCase = withSkillTestCase(
+    session as unknown as Pick<
+      TherapySession,
+      "skill_test_assignment_id" | "sealed_case" | "clinical_snapshot"
+    >,
+  );
+  const clinicalSnapshot = openedCase.ok
+    ? openedCase.session.clinical_snapshot
+    : session.clinical_snapshot;
 
   const { data: messages, error: messagesError } = await supabase
     .from("session_messages")
@@ -181,7 +197,7 @@ export default async function AdminSessionDetailPage({
   const canGenerateReport =
     !report &&
     status !== "active" &&
-    !isAdminTestClinicalSnapshot(session.clinical_snapshot) &&
+    !isAdminTestClinicalSnapshot(clinicalSnapshot) &&
     transcript.some((m) => m.role === "user");
 
   return (
@@ -235,9 +251,9 @@ export default async function AdminSessionDetailPage({
           difficulty: session.difficulty,
           modality: session.therapy_modality,
           interactionMode: session.interaction_mode,
-          isAdminTest: isAdminTestClinicalSnapshot(session.clinical_snapshot),
+          isAdminTest: isAdminTestClinicalSnapshot(clinicalSnapshot),
           caseInstanceId: session.case_instance_id,
-          clinicalSnapshot: session.clinical_snapshot,
+          clinicalSnapshot,
           immersionMetrics: session.immersion_metrics,
           durationLabel,
           durationStale: duration?.stale ?? false,

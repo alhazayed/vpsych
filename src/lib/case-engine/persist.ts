@@ -53,6 +53,12 @@ export type StartCaseOptions = {
    * never set this.
    */
   allowInactivePersona?: boolean;
+  /**
+   * false: mint the case without writing a case_instances row (the session
+   * keeps it in its own snapshot). Skill test sessions use this so the
+   * trainee cannot read the case they are examined on.
+   */
+  persist?: boolean;
 };
 
 function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): PersonaRow {
@@ -367,6 +373,15 @@ async function persistCaseInstance(
   return { kind: "persisted", id: inserted.id };
 }
 
+/** persistCaseInstance, or the snapshot-only path when the caller opts out. */
+function persistOrSkip(
+  opts: Pick<StartCaseOptions, "persist">,
+  ...args: Parameters<typeof persistCaseInstance>
+): Promise<PersistOutcome> {
+  if (opts.persist === false) return Promise.resolve({ kind: "absent" });
+  return persistCaseInstance(...args);
+}
+
 export async function createCaseForSession(
   supabase: SupabaseClient,
   opts: StartCaseOptions,
@@ -471,7 +486,8 @@ export async function createCaseForSession(
       findDisorderBySlug(selectedSlug, catalog) ??
       (dbDisorder ? { id: dbDisorder.id } : null);
 
-    const outcome = await persistCaseInstance(
+    const outcome = await persistOrSkip(
+      opts,
       supabase,
       {
         assessment_id: snapshot.assessment_id,
@@ -648,7 +664,8 @@ export async function createCaseForSession(
     const difficulty = resolvedTemplate.difficulty;
     const therapyModality = resolvedTemplate.therapy_modality as TherapyModality;
 
-    const outcome = await persistCaseInstance(
+    const outcome = await persistOrSkip(
+      opts,
       supabase,
       {
         assessment_id: snapshot.assessment_id,
@@ -812,7 +829,8 @@ export async function createCaseForSession(
   const snapshot = generated.snapshot;
 
   // Persist case_instance — if table missing (migration not applied), soft-fail to snapshot-only
-  const outcome = await persistCaseInstance(
+  const outcome = await persistOrSkip(
+    opts,
     supabase,
     {
       assessment_id: snapshot.assessment_id,

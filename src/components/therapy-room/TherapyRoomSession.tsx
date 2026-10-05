@@ -57,7 +57,10 @@ import {
   submitConversationTurn,
   transcribeTherapistSpeech,
 } from "@/lib/voice/conversation-pipeline";
-import { speechBehaviorForDisorder } from "@/lib/case-engine/speech-behavior";
+import {
+  speechBehaviorForDisorder,
+  type SpeechBehaviorProfile,
+} from "@/lib/case-engine/speech-behavior";
 import {
   beginVoiceTurn,
   describeAudioUnavailable,
@@ -93,8 +96,8 @@ const subscribeNoop = () => () => undefined;
 
 function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): string {
   return (
-    session.clinical_snapshot?.primary_diagnosis?.slug ??
-    avatar.disorder ??
+    session.clinical_snapshot?.primary_diagnosis?.slug ||
+    avatar.disorder ||
     "generic"
   );
 }
@@ -109,17 +112,23 @@ export function TherapyRoomSession({
   avatar,
   initialMessages,
   initialNotes = "",
+  speechHint,
 }: {
   session: TherapySession;
   avatar: ResolvedAvatar;
   initialMessages: SessionMessage[];
   initialNotes?: string;
+  /**
+   * Skill tests: the patient's voice pace and energy, given instead of the
+   * disorder so the browser never learns the case.
+   */
+  speechHint?: Pick<SpeechBehaviorProfile, "pace" | "energy">;
 }) {
   const router = useRouter();
   const t = useTranslations("therapyRoom");
   const locale = resolvePipelineLocale(session.language, avatar.language);
   const disorderSlug = disorderSlugFrom(session, avatar);
-  const speechProfile = speechBehaviorForDisorder(disorderSlug);
+  const speechProfile = speechHint ?? speechBehaviorForDisorder(disorderSlug);
 
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>

@@ -23,10 +23,10 @@ type NavItem = {
   match?: (pathname: string) => boolean;
 };
 
-function therapistNav(
-  t: (key: string) => string,
-  therapyRoomEnabled: boolean,
-): NavItem[] {
+// Trainee menu: two ways to see patients (practice by choice, supervisor-
+// assigned skill tests) plus session history. Score dashboards are not listed:
+// assessment results are visible to admins and assigning supervisors only.
+function therapistNav(t: (key: string) => string): NavItem[] {
   return [
     {
       href: "/avatars",
@@ -34,39 +34,17 @@ function therapistNav(
       icon: "library_books",
       match: (p) => p.startsWith("/avatars"),
     },
-    ...(therapyRoomEnabled
-      ? [
-          {
-            href: "/clinic",
-            label: t("clinic"),
-            icon: "local_hospital",
-            match: (p: string) => p.startsWith("/clinic"),
-          } satisfies NavItem,
-        ]
-      : []),
+    {
+      href: "/tests",
+      label: t("skillTests"),
+      icon: "assignment_turned_in",
+      match: (p) => p.startsWith("/tests"),
+    },
     {
       href: "/sessions",
       label: t("mySessions"),
       icon: "clinical_notes",
       match: (p) => p.startsWith("/sessions"),
-    },
-    {
-      href: "/learning",
-      label: t("adaptiveLearning"),
-      icon: "auto_graph",
-      match: (p) => p === "/learning" || p.startsWith("/learning?"),
-    },
-    {
-      href: "/learning/graph",
-      label: t("competencyGraph"),
-      icon: "account_tree",
-      match: (p) => p.startsWith("/learning/graph"),
-    },
-    {
-      href: "/learning/supervisor",
-      label: t("supervisorAi"),
-      icon: "psychology",
-      match: (p) => p.startsWith("/learning/supervisor"),
     },
     {
       href: "/feedback",
@@ -137,18 +115,22 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/feedback")) return "institutionalFeedback";
   if (pathname.startsWith("/admin/research")) return "validation";
   if (pathname.startsWith("/admin/test-sessions")) return "testTranscript";
+  if (pathname.startsWith("/admin/supervisors")) return "supervisors";
   if (pathname.startsWith("/clinic")) return "clinic";
+  if (pathname.startsWith("/tests")) return "skillTests";
+  if (pathname.startsWith("/supervise")) return "supervise";
   if (pathname.startsWith("/sessions")) return "mySessions";
   return "patientLibrary";
 }
 
 export function AppShell({
   profile,
-  therapyRoomEnabled = false,
+  isSupervisor = false,
   children,
 }: {
   profile: Profile;
-  therapyRoomEnabled?: boolean;
+  /** Holds the supervisor role (designs and assigns skill tests). */
+  isSupervisor?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -172,7 +154,17 @@ export function AppShell({
     profile.role === "admin" && pathname.startsWith("/admin");
 
   const therapistItems = [
-    ...therapistNav(tNav, therapyRoomEnabled),
+    ...therapistNav(tNav),
+    ...(isSupervisor || profile.role === "admin"
+      ? [
+          {
+            href: "/supervise",
+            label: tNav("supervise"),
+            icon: "supervisor_account",
+            match: (p: string) => p.startsWith("/supervise"),
+          } satisfies NavItem,
+        ]
+      : []),
     ...(profile.role === "admin"
       ? [
           {
@@ -221,7 +213,10 @@ export function AppShell({
       | "pageTitle.validation"
       | "pageTitle.testTranscript"
       | "pageTitle.clinic"
-      | "pageTitle.mySessions",
+      | "pageTitle.mySessions"
+      | "pageTitle.skillTests"
+      | "pageTitle.supervise"
+      | "pageTitle.supervisors",
   );
 
   const sidebarWidth = collapsed ? "md:w-[4.5rem]" : "md:w-64";

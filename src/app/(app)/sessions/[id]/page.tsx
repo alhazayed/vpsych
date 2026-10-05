@@ -3,6 +3,12 @@ import { TherapyRoomSession } from "@/components/therapy-room/TherapyRoomSession
 import { requireProfile } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
+import {
+  examSpeechHint,
+  traineeSafeAvatar,
+  traineeSafeSession,
+  withSkillTestCase,
+} from "@/lib/skill-tests";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -41,6 +47,24 @@ export default async function SessionPage({ params }: Props) {
   const resolved = resolveAvatar(typed.avatars, typed.language, {
     caseSnapshot: typed.clinical_snapshot,
   });
+
+  // Skill test: an exam. The browser gets the patient's name, portrait and
+  // voice, plus how they speak; the case, prompts and labels stay here.
+  if (typed.skill_test_assignment_id) {
+    const opened = withSkillTestCase(typed);
+    const speechHint = examSpeechHint(
+      opened.ok ? opened.session.clinical_snapshot : null,
+    );
+    return (
+      <TherapyRoomSession
+        session={traineeSafeSession(typed)}
+        avatar={traineeSafeAvatar(resolved)}
+        speechHint={speechHint}
+        initialMessages={(messages ?? []) as SessionMessage[]}
+        initialNotes={typed.private_notes ?? ""}
+      />
+    );
+  }
 
   // The Therapy Room is the only session experience. Sessions started before
   // the classic screen was removed (interaction_mode = "classic") open here too.

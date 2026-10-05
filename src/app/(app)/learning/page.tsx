@@ -1,9 +1,10 @@
 import { getTranslations } from "next-intl/server";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { LearnerDashboard } from "@/components/ace/LearnerDashboard";
 
 export default async function LearningPage() {
-  await requireUser();
+  // Score dashboards are admin-only: trainees do not see assessment results.
+  await requireAdmin();
   const t = await getTranslations("learning");
 
   return (

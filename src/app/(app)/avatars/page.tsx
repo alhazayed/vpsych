@@ -2,10 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
 import { localeNativeNames } from "@/lib/locale-names";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
+import { PracticeScenarioPicker } from "@/components/skill-tests/PracticeScenarioPicker";
+import { isPatientCompatible, listDisorderOptions } from "@/lib/skill-tests";
 import { ErrorState } from "@/components/admin/AdminUi";
 import {
   COURSE_COLUMNS,
@@ -18,8 +19,7 @@ export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
   const t = await getTranslations("avatars");
   const tCommon = await getTranslations("common");
-  const tClinic = await getTranslations("clinic");
-  const therapyRoom = isTherapyRoomEnabled();
+  const tPractice = await getTranslations("skillTests.practice");
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
@@ -74,6 +74,20 @@ export default async function AvatarsPage() {
         >[]
       | null) ?? [];
 
+  // Practice scenarios: every active disorder with the patients who can
+  // present with it (age and gender limits from the Case Engine).
+  const practiceDisorders = listDisorderOptions().map((d) => ({
+    slug: d.slug,
+    patientIds: list
+      .filter((a) =>
+        isPatientCompatible(d.slug, {
+          age: typeof a.age === "number" ? a.age : null,
+          gender: a.gender ?? null,
+        }),
+      )
+      .map((a) => a.id),
+  }));
+
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
       <section className="mb-8 fade-in-up">
@@ -86,14 +100,6 @@ export default async function AvatarsPage() {
         <p className="mt-2 max-w-2xl text-base leading-6 text-[var(--on-surface-variant)]">
           {t("intro")}
         </p>
-        {therapyRoom && (
-          <Link href="/clinic" className="btn-primary mt-5 inline-flex h-11 px-5">
-            <span className="material-symbols-outlined text-[20px]">
-              local_hospital
-            </span>
-            {tClinic("enterClinic")}
-          </Link>
-        )}
       </section>
 
       <div className="mb-6 flex items-end justify-between gap-4">
@@ -227,6 +233,22 @@ export default async function AvatarsPage() {
           </article>
         ))}
       </div>
+
+      <section className="mt-12 fade-in-up" aria-labelledby="practice-title">
+        <h2
+          id="practice-title"
+          className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]"
+        >
+          {tPractice("title")}
+        </h2>
+        <p className="mb-4 mt-1 max-w-2xl text-sm text-[var(--on-surface-variant)]">
+          {tPractice("intro")}
+        </p>
+        <PracticeScenarioPicker
+          disorders={practiceDisorders}
+          patients={list.map((a) => ({ id: a.id, name: a.name }))}
+        />
+      </section>
     </main>
   );
 }

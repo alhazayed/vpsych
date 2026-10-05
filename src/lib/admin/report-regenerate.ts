@@ -27,6 +27,7 @@ import { resolveAvatar } from "@/lib/avatars/resolve";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { getReportWriteKey, signSessionReport } from "@/lib/report-sign";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { withSkillTestCase } from "@/lib/skill-tests";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 
 type ScoresLike = {
@@ -119,7 +120,12 @@ async function loadAndAssess(
   if (!session || !(session as { avatars?: unknown }).avatars) {
     return fail(404, "session_not_found", "Session not found");
   }
-  const typed = session as TherapySession & { avatars: Avatar };
+  // A skill test session keeps its case sealed; open it for the assessment.
+  const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
+  if (!opened.ok) {
+    return fail(500, "db_error", "Could not open the test case");
+  }
+  const typed = opened.session;
   if (typed.status === "active") {
     return fail(409, "session_active", "Session is still active");
   }

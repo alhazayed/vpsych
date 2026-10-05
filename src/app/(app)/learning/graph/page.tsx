@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { CompetencyGraphView } from "@/components/cge/CompetencyGraphView";
 
 export default async function LearningGraphPage() {
-  await requireUser();
+  // Score dashboards are admin-only: trainees do not see assessment results.
+  await requireAdmin();
   const t = await getTranslations("learning.graph");
   const tLearning = await getTranslations("learning");
 
