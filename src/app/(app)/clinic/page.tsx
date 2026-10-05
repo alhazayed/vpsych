@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireProfile } from "@/lib/auth";
+import { requireAdmin, requireProfile } from "@/lib/auth";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import {
   buildAppointmentCard,
@@ -155,7 +155,9 @@ export default async function ClinicPage() {
   if (!isTherapyRoomEnabled()) {
     redirect("/avatars");
   }
-  const { supabase, user } = await requireProfile();
+  // The clinic day is no longer a trainee mode: trainees practise from the
+  // patient library and are tested on supervisor-assigned patients.
+  const { supabase, user } = await requireAdmin();
   const initial = await ensureClinicDay(supabase, user.id);
   if (!initial) {
     redirect("/avatars");
