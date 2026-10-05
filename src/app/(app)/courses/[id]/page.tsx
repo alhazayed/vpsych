@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import {
@@ -12,6 +12,9 @@ import type { TherapySession } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 import { TreatmentPlanForm } from "@/components/therapy-course/TreatmentPlanForm";
 import { EndCourseButton } from "@/components/therapy-course/EndCourseButton";
+import { SkillProgressChart } from "@/components/progress/SkillProgressChart";
+import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import { buildSkillProgress, type SkillProgress } from "@/lib/skill-progress";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -62,6 +65,37 @@ export default async function TherapyCoursePage({ params }: Props) {
   }
 
   const active = course.status === "active";
+
+  // Skill progress reads report scores, which stay admin-only.
+  let skillProgress: SkillProgress | null = null;
+  if (profile.role === "admin" && sessions.length > 0) {
+    const [{ data: reportRows }, tProgress, locale] = await Promise.all([
+      supabase
+        .from("session_reports")
+        .select("session_id, scores")
+        .in(
+          "session_id",
+          sessions.map((s) => s.id),
+        ),
+      getTranslations("progress"),
+      getLocale(),
+    ]);
+    const bySession = new Map(
+      (reportRows ?? []).map((r) => [r.session_id as string, r]),
+    );
+    skillProgress = buildSkillProgress(
+      sessions.map((s) => ({
+        id: s.id,
+        started_at: s.started_at,
+        course_session_number: s.course_session_number,
+        session_reports: bySession.get(s.id) ?? null,
+      })),
+      {
+        language: normalizeReportLanguage(locale),
+        overallLabel: tProgress("overall"),
+      },
+    );
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 md:py-12">
@@ -221,6 +255,15 @@ export default async function TherapyCoursePage({ params }: Props) {
           )}
           <EndCourseButton courseId={course.id} patientName={name} />
         </section>
+      )}
+
+      {skillProgress && (
+        <div className="mb-4 fade-in-up">
+          <SkillProgressChart
+            progress={skillProgress}
+            title={t("progressTitle")}
+          />
+        </div>
       )}
 
       <section className="clinical-card overflow-hidden fade-in-up">

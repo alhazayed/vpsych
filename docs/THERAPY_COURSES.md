@@ -65,6 +65,15 @@ sessions get no block, so their prompts are unchanged. Continuity of what
 was said comes from the existing long-term patient memory and the shared
 case memory of the pinned case.
 
+## Skill progress
+
+Admins see a session-by-session graph on the course page and on the admin
+learner page (`lib/skill-progress`, `components/progress`). It reads the
+existing report scores: the overall score plus each rubric item rescaled to
+0–100, oldest to newest, with a table view. Heuristic-fallback reports are left
+out and counted. Trainees do not see it (reports stay admin-only). Scores are
+not validated.
+
 ## Not in this version
 
 - The plan is not scored in the admin report.
