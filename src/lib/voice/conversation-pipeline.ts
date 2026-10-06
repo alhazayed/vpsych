@@ -453,6 +453,32 @@ export async function playPatientSpeech(params: {
 }
 
 /**
+ * Record how much of a patient reply was heard before the therapist barged
+ * in (`/api/sessions/:id/heard`). Best effort: resolves false on any failure
+ * and never throws, so an interruption is never blocked on it.
+ */
+export async function reportHeardPortion(params: {
+  sessionId: string;
+  messageId: string;
+  heardChars: number;
+}): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/sessions/${params.sessionId}/heard`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messageId: params.messageId,
+        heardChars: params.heardChars,
+      }),
+      keepalive: true,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Full voice turn: STT → message API (GPT-5 + persistence) → optional TTS.
  * Text-only callers should use `submitConversationTurn` directly.
  */

@@ -497,6 +497,11 @@ export type SessionMessage = {
   role: MessageRole;
   content: string;
   created_at: string;
+  /**
+   * Assistant rows only: characters of `content` the therapist heard before
+   * barging in. Null when the reply played in full or was never interrupted.
+   */
+  heard_chars?: number | null;
 };
 
 export type ScoreEntry = {
