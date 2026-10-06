@@ -42,3 +42,14 @@ export {
   sessionStructureQuality,
   type PreviousCourseSession,
 } from "@/lib/session-practice/course";
+export {
+  MIN_TURNS_FOR_EVIDENCE,
+  RUBRIC_PRACTICE_GROUPS,
+  STRONG_OBSERVED,
+  STRONG_TURNS,
+  buildScoreEvidence,
+  reportAssessmentMode,
+  type EvidenceLevel,
+  type EvidenceReason,
+  type ScoreEvidence,
+} from "@/lib/session-practice/evidence";

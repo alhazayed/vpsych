@@ -1,13 +1,64 @@
 import { getTranslations } from "next-intl/server";
 import type { SessionReport } from "@/lib/types";
 import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import type { EvidenceLevel, EvidenceReason, ScoreEvidence } from "@/lib/session-practice";
 
-export async function ReportView({ report }: { report: SessionReport }) {
+const EVIDENCE_COPY: Record<
+  "en" | "ar",
+  {
+    heading: string;
+    note: string;
+    level: Record<EvidenceLevel, string>;
+    reason: Record<EvidenceReason, string>;
+  }
+> = {
+  en: {
+    heading: "Evidence",
+    note: "Evidence labels say how much of the transcript backs each score, not whether the score is right. Scores are not validated.",
+    level: { limited: "Limited evidence", some: "Some evidence", strong: "Strong evidence" },
+    reason: {
+      keyword_estimate: "Keyword estimate, not an examiner reading",
+      few_turns: "Too few therapist turns to judge",
+      no_observed_behaviour: "The behaviour this item looks for was not seen in the transcript",
+      observed_behaviour: "Matching behaviour seen in the transcript",
+      examiner_judgement: "Examiner judgement only; no transcript check for this item",
+    },
+  },
+  ar: {
+    heading: "الأدلة",
+    note: "تبيّن تسميات الأدلة مقدار ما يدعم كل درجة من نص الجلسة، لا صحة الدرجة. الدرجات غير مُتحقَّق من صدقها.",
+    level: { limited: "أدلة محدودة", some: "أدلة متوسطة", strong: "أدلة قوية" },
+    reason: {
+      keyword_estimate: "تقدير بالكلمات المفتاحية، لا قراءة مُقيِّم",
+      few_turns: "عدد مداخلات المعالج قليل جدًا للحكم",
+      no_observed_behaviour: "لم يظهر في النص السلوك الذي يقيسه هذا البند",
+      observed_behaviour: "ظهر في النص سلوك مطابق",
+      examiner_judgement: "حكم المُقيِّم فقط؛ لا فحص نصي لهذا البند",
+    },
+  },
+};
+
+const EVIDENCE_TONE: Record<EvidenceLevel, string> = {
+  limited: "border-[var(--outline-variant)] text-[var(--on-surface-variant)]",
+  some: "border-[var(--primary)] text-[var(--primary)]",
+  strong: "border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]",
+};
+
+export async function ReportView({
+  report,
+  evidence,
+}: {
+  report: SessionReport;
+  /** Optional per-item evidence labels (admin / supervisor views). */
+  evidence?: ScoreEvidence[];
+}) {
   const tCommon = await getTranslations("common");
   const items = report.scores?.items ?? [];
   const overall = report.scores?.overall ?? 0;
   const language = normalizeReportLanguage(report.language);
   const isAr = language === "ar";
+  const evidenceCopy = EVIDENCE_COPY[isAr ? "ar" : "en"];
+  const evidenceById = new Map((evidence ?? []).map((e) => [e.item_id, e]));
 
   const labels = isAr
     ? {
@@ -73,6 +124,11 @@ export async function ReportView({ report }: { report: SessionReport }) {
             {labels.rubric}
           </h2>
         </div>
+        {evidenceById.size > 0 && (
+          <p className="border-b border-[var(--outline-variant)] px-5 py-2 text-xs text-[var(--on-surface-variant)]">
+            {evidenceCopy.note}
+          </p>
+        )}
         <ul className="divide-y divide-[var(--surface-container-low)]">
           {items.map((item) => {
             const pct = item.max ? Math.round((item.score / item.max) * 100) : 0;
@@ -98,6 +154,23 @@ export async function ReportView({ report }: { report: SessionReport }) {
                 <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
                   {item.feedback}
                 </p>
+                {(() => {
+                  const ev = evidenceById.get(item.id);
+                  if (!ev) return null;
+                  return (
+                    <p className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span
+                        className={`rounded-full border px-2 py-0.5 font-semibold ${EVIDENCE_TONE[ev.level]}`}
+                        data-evidence-level={ev.level}
+                      >
+                        {evidenceCopy.level[ev.level]}
+                      </span>
+                      <span className="text-[var(--on-surface-variant)]">
+                        {evidenceCopy.reason[ev.reason]}
+                      </span>
+                    </p>
+                  );
+                })()}
               </li>
             );
           })}

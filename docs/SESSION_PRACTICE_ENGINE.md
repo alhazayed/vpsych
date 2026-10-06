@@ -56,6 +56,24 @@ rule, not a validated model of treatment response, and the page says so.
 Loading is best-effort: if the previous session cannot be read, the session
 starts at baseline with no homework.
 
+## Evidence labels on scores (Phase 3)
+
+`evidence.ts` labels each rubric score on the admin report and the supervisor
+results page as limited, some or strong evidence, with the reason:
+
+- A heuristic fallback report is always limited (keyword estimate).
+- Fewer than 3 therapist turns is always limited.
+- `assessment` (intake, measures), `structure`, `safety` and
+  `risk_formulation` (safety plan) are checked against the practice
+  checklist. None of the matching practices seen means limited. Seen at least
+  2, with 8 or more therapist turns, means strong. Otherwise some.
+- Every other item (alliance, diagnostic reasoning, formulation,
+  interventions, …) has no transcript check. It is "some" at 8 or more turns,
+  else limited, and never strong.
+
+A label describes how much of the transcript backs a score, not whether the
+score is right, and the report says so. Computed on read; nothing persisted.
+
 ## Next
 
 Phase 3: a patient-reported alliance rating, a 5 Ps formulation graded against

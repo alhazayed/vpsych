@@ -10,10 +10,12 @@ import { logSecurityEvent } from "@/lib/security-audit";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import {
   buildIndicativeCtsr,
+  buildScoreEvidence,
   caseHasRisk,
   deriveSelfReportProfile,
   evaluateSessionPractice,
   profileFromCourseSelfReport,
+  reportAssessmentMode,
 } from "@/lib/session-practice";
 import { openSkillTestCase } from "@/lib/skill-tests";
 import type {
@@ -97,6 +99,12 @@ export default async function AdminReportDetailPage({ params }: Props) {
     items: (report as SessionReport).scores?.items ?? [],
     practice,
   });
+  const evidence = buildScoreEvidence({
+    items: (report as SessionReport).scores?.items ?? [],
+    messages: (messages ?? []) as Array<{ role: string }>,
+    practice,
+    assessmentMode: reportAssessmentMode(report.scores),
+  });
   const courseSelfReport = session?.clinical_snapshot?.therapy_course?.self_report;
   const selfReport = courseSelfReport
     ? profileFromCourseSelfReport(courseSelfReport)
@@ -148,7 +156,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
         </div>
       ) : null}
       <div className="mt-6">
-        <ReportView report={report as SessionReport} />
+        <ReportView report={report as SessionReport} evidence={evidence} />
       </div>
       <div className="mt-6">
         <SessionPracticePanel

@@ -9,9 +9,11 @@ import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { CancelSkillTestButton } from "@/components/skill-tests/CancelSkillTestButton";
 import {
   buildIndicativeCtsr,
+  buildScoreEvidence,
   caseHasRisk,
   deriveSelfReportProfile,
   evaluateSessionPractice,
+  reportAssessmentMode,
 } from "@/lib/session-practice";
 import type {
   SessionMessage,
@@ -202,6 +204,12 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
               items: report?.scores?.items ?? [],
               practice,
             });
+            const evidence = buildScoreEvidence({
+              items: report?.scores?.items ?? [],
+              messages: transcript,
+              practice,
+              assessmentMode: reportAssessmentMode(report?.scores),
+            });
             return (
               <section key={s.id} className="space-y-4" aria-label={t("sessionN", { n: s.test_session_number ?? index + 1 })}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -213,7 +221,7 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
                   </span>
                 </div>
                 {report ? (
-                  <ReportView report={report} />
+                  <ReportView report={report} evidence={evidence} />
                 ) : (
                   <p className="clinical-card p-4 text-sm text-[var(--on-surface-variant)]">
                     {s.status === "active" ? t("sessionRunning") : t("reportPending")}
