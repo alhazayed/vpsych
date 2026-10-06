@@ -286,6 +286,24 @@ Recorded client-side and merged into `immersion_metrics.conversationTelemetry` a
 - RTL via existing next-intl locale direction
 - Text fallback input when voice unavailable
 
+## Playback watchdog and voice interruption setting
+
+A patient clip that reports "playing" but never fires `ended` or `error`
+(the browser paused it on an audio-device change, or its clock froze) used to
+leave the room on "Avatar speaking…" forever. `playPatientSpeech` now samples
+the element every 500 ms (`lib/voice/playback-watchdog.ts`): a clip paused by
+the browser gets one resume; no progress for 4 s, or running 4 s past its own
+length, ends the clip as `AUDIO_STALLED`, falls back to browser speech
+(flagged as degraded) and the room returns to listening. A clip that was
+≥ 85 % done counts as spoken.
+
+Room settings has **Interrupt the patient by speaking** (on by default, per
+device in `localStorage`). Off keeps the microphone closed while the patient
+speaks, for headsets that go silent or very quiet when a mic opens mid-clip;
+the ✋ control and Space still interrupt. The voice panel shows
+`barge_in_mic: open` when the barge-in mic opened and
+`audio_paused_by_browser` when the browser paused the clip.
+
 ## Performance budgets
 
 | Metric | Target |

@@ -690,7 +690,9 @@
       "timerMode": "Timer display",
       "remaining": "Remaining",
       "elapsed": "Elapsed",
-      "ambience": "Subtle room ambience"
+      "ambience": "Subtle room ambience",
+      "bargeInByVoice": "Interrupt the patient by speaking",
+      "bargeInByVoiceHint": "Turn off if the patient voice is silent or very quiet on your device (often Bluetooth headsets). You can still interrupt with the hand button or Space."
     },
     "themes": {
       "modernClinic": "Modern Clinic",

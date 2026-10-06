@@ -106,6 +106,27 @@ const BARGE_IN_ARM_DELAY_MS = 400;
 
 const subscribeNoop = () => () => undefined;
 
+/** Per-device choice: some headsets go silent when the mic opens mid-clip. */
+const BARGE_IN_BY_VOICE_KEY = "vpsych.therapyRoom.bargeInByVoice";
+
+function readBargeInByVoice(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(BARGE_IN_BY_VOICE_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function writeBargeInByVoice(on: boolean): void {
+  try {
+    if (on) window.localStorage.removeItem(BARGE_IN_BY_VOICE_KEY);
+    else window.localStorage.setItem(BARGE_IN_BY_VOICE_KEY, "off");
+  } catch {
+    /* storage blocked — the choice lasts for this session only */
+  }
+}
+
 function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): string {
   return (
     session.clinical_snapshot?.primary_diagnosis?.slug ||
@@ -178,6 +199,7 @@ export function TherapyRoomSession({
     muteAvatar: false,
     ambienceEnabled: true,
     ambienceVolume: 0.02,
+    bargeInByVoice: readBargeInByVoice(),
   }));
 
   const [behavior, setBehavior] = useState<PatientBehaviorState>(() => {
@@ -195,6 +217,8 @@ export function TherapyRoomSession({
   const behaviorBaseRef = useRef<PatientBehaviorState>(behavior);
   const vadRef = useRef<VadController | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
+  /** Settings toggle: open the barge-in mic while the patient speaks. */
+  const bargeInByVoiceRef = useRef(true);
   /**
    * Two-stage endpoint for the open capture: a pause starts a speculative
    * transcript while the mic stays open, so a mid-thought pause is not sent.
@@ -236,6 +260,10 @@ export function TherapyRoomSession({
   useEffect(() => {
     mutedRef.current = settings.muteAvatar;
   }, [settings.muteAvatar]);
+  useEffect(() => {
+    bargeInByVoiceRef.current = settings.bargeInByVoice;
+    writeBargeInByVoice(settings.bargeInByVoice);
+  }, [settings.bargeInByVoice]);
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
@@ -548,7 +576,13 @@ export function TherapyRoomSession({
       // Arm barge-in only once audio is audibly playing (never during the TTS
       // fetch, never in the first moments while echo cancellation adapts).
       const armBargeIn = () => {
-        if (!BARGE_IN_ENABLED || bargeInArmTimer != null) return;
+        if (
+          !BARGE_IN_ENABLED ||
+          !bargeInByVoiceRef.current ||
+          bargeInArmTimer != null
+        ) {
+          return;
+        }
         bargeInArmTimer = window.setTimeout(() => {
           if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) {
             return;
@@ -559,6 +593,11 @@ export function TherapyRoomSession({
               return;
             }
             bargeInStopRef.current = stop;
+            setVoiceDiag((d) =>
+              markVoiceStage(d, "audio", d.stages.audio, {
+                barge_in_mic: "open",
+              }),
+            );
           });
         }, BARGE_IN_ARM_DELAY_MS);
       };
@@ -621,6 +660,22 @@ export function TherapyRoomSession({
               );
               armBargeIn();
               break;
+            case "audio_paused_externally":
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", {
+                  audio_paused_by_browser: true,
+                }),
+              );
+              break;
+            case "audio_stalled":
+              // The browser voice that follows is flagged with this cause.
+              ttsFailure = { code: "AUDIO_STALLED" };
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", {
+                  audio_error: event.reason,
+                }),
+              );
+              break;
             case "audio_play_rejected":
             case "audio_error":
               setVoiceDiag((d) =>
@@ -675,11 +730,11 @@ export function TherapyRoomSession({
           ...markVoiceStage(d, "audio", "ok", { audio_mode: "browser" }),
           audioDegraded: failure
             ? {
-                stage: "tts",
+                stage: failure.code === "AUDIO_STALLED" ? "audio" : "tts",
                 code: failure.code,
                 status: failure.status,
                 message: describeVoiceError({
-                  stage: "tts",
+                  stage: failure.code === "AUDIO_STALLED" ? "audio" : "tts",
                   code: failure.code,
                   status: failure.status,
                 }),

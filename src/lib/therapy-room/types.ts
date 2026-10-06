@@ -157,6 +157,12 @@ export type TherapyRoomSettings = {
   muteAvatar: boolean;
   ambienceEnabled: boolean;
   ambienceVolume: number;
+  /**
+   * Listen for the therapist's voice while the patient speaks (barge-in).
+   * Off: the microphone stays closed during patient audio; the ✋ control
+   * and Space still interrupt.
+   */
+  bargeInByVoice: boolean;
 };
 
 /* ─── Virtual Mental Health Center (VMHC) ─────────────────────────────── */

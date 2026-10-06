@@ -960,6 +960,13 @@ a {
   align-items: center;
   gap: 0.6rem;
 }
+.trm-settings__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.55);
+}
 .trm-settings__field select {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
