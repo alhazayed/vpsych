@@ -909,6 +909,25 @@
           "sessionN": "Session {n}",
           "note": "Simulated: scores move with session structure and homework under a fixed rule. Not a validated model of treatment response."
         }
+      },
+      "alliance": {
+        "title": "How the session felt to the patient",
+        "subtitle": "Simulated end-of-session rating in four areas (0–10), read from the virtual patient's rapport and trust during this session.",
+        "unavailable": "No patient trace for this session, so no rating.",
+        "dimensions": {
+          "relationship": "Felt heard and respected",
+          "goals_topics": "Talked about what mattered",
+          "approach": "Approach fit them",
+          "overall": "Overall"
+        },
+        "outOf10": "{value}/10",
+        "total": "Total {value}/40 over {turns} turns.",
+        "rupturesTitle": "Alliance ruptures",
+        "noRuptures": "No ruptures this session.",
+        "rupture": "Turn {turn}: trust fell from {before} to {after}",
+        "repaired": "Repaired by turn {turn}",
+        "notRepaired": "Not repaired",
+        "limitation": "Simulated, not reported by a real client. Modelled on the Session Rating Scale's four areas but not the SRS, and not validated."
       }
     },
     "testTranscript": {
