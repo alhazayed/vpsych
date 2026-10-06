@@ -53,6 +53,7 @@ import {
 } from "@/lib/nbe";
 import {
   playPatientSpeech,
+  reportHeardPortion,
   resolvePipelineLocale,
   submitConversationTurn,
   transcribeTherapistSpeech,
@@ -63,6 +64,11 @@ import {
   type SpeculativeSttResult,
 } from "@/lib/voice/endpoint-controller";
 import { ENDPOINT_TIMING } from "@/lib/voice/endpointing";
+import {
+  heardCharsFromFraction,
+  playbackFraction,
+  type PlaybackProgress,
+} from "@/lib/sessions/heard-text";
 import {
   speechBehaviorForDisorder,
   type SpeechBehaviorProfile,
@@ -426,7 +432,7 @@ export function TherapyRoomSession({
    * "Patient audio unavailable" and the room returns to listening.
    */
   const speakPatient = useCallback(
-    async (text: string, generation: number) => {
+    async (text: string, generation: number, messageId?: string) => {
       if (endingRef.current || !fsmRef.current.isCurrent(generation)) {
         return;
       }
@@ -462,6 +468,45 @@ export function TherapyRoomSession({
       const playbackStarted = telemetryRef.current.mark();
       let bargeInFired = false;
       let bargeInArmTimer: number | null = null;
+      // When audible playback began, for the heard-portion estimate.
+      let audioStartedAt: number | null = null;
+      let browserStartedAt: number | null = null;
+
+      // How much of the reply the therapist heard. Read before playback is
+      // torn down: audio position for ElevenLabs, elapsed time for browser TTS.
+      const recordHeardPortion = () => {
+        if (!messageId) return;
+        const audio = audioRef.current;
+        let progress: PlaybackProgress = { kind: "not_started" };
+        if (audioStartedAt != null && audio) {
+          progress = {
+            kind: "audio",
+            currentTime: audio.currentTime,
+            duration: audio.duration,
+          };
+        } else if (browserStartedAt != null) {
+          progress = {
+            kind: "elapsed",
+            elapsedMs: performance.now() - browserStartedAt,
+          };
+        }
+        const heardChars = heardCharsFromFraction(
+          text,
+          playbackFraction(text, progress),
+        );
+        voiceLog("TURN", "barge_in_heard", {
+          heard_chars: heardChars,
+          total_chars: text.length,
+          progress: progress.kind,
+        });
+        void reportHeardPortion({
+          sessionId: session.id,
+          messageId,
+          heardChars,
+        }).then((ok) => {
+          if (!ok) voiceLog("TURN", "barge_in_heard_not_recorded", {});
+        });
+      };
       let ttsFailure: { status?: number; code?: string } | null = null;
 
       const onBargeIn = (handoff?: BargeInHandoff) => {
@@ -481,6 +526,7 @@ export function TherapyRoomSession({
         voiceLog("TURN", "barge_in", { source: handoff ? "voice" : "control" });
         immersionRef.current.track("therapist_interrupt");
         telemetryRef.current.record("barge_in");
+        recordHeardPortion();
         abort.abort();
         stopPlayback();
         const transitioned = dispatch("BARGE_IN");
@@ -559,6 +605,7 @@ export function TherapyRoomSession({
               setVoiceDiag((d) => markVoiceStage(d, "audio", "active"));
               break;
             case "audio_playing":
+              audioStartedAt ??= performance.now();
               if (audioRef.current) {
                 applyHtmlAudioModulation(audioRef.current, mod);
               }
@@ -568,6 +615,7 @@ export function TherapyRoomSession({
               armBargeIn();
               break;
             case "browser_speech_started":
+              browserStartedAt ??= performance.now();
               setVoiceDiag((d) =>
                 markVoiceStage(d, "audio", "active", { audio_mode: "browser" }),
               );
@@ -916,7 +964,11 @@ export function TherapyRoomSession({
       if (!dispatch("GPT_OK").ok) return;
 
       const ttsStarted = telemetryRef.current.mark();
-      await speakPatient(turn.data.assistantMessage.content, generation);
+      await speakPatient(
+        turn.data.assistantMessage.content,
+        generation,
+        turn.data.assistantMessage.id,
+      );
       telemetryRef.current.record("tts_latency_ms", {
         valueMs: telemetryRef.current.elapsed(ttsStarted),
       });
@@ -1540,7 +1592,11 @@ export function TherapyRoomSession({
       if (!dispatch("GPT_OK").ok) {
         // May already be WAITING_GPT
       }
-      await speakPatient(turn.data.assistantMessage.content, generation);
+      await speakPatient(
+        turn.data.assistantMessage.content,
+        generation,
+        turn.data.assistantMessage.id,
+      );
       if (
         fsmRef.current.isCurrent(generation) &&
         fsmRef.current.getState() === "LISTENING"

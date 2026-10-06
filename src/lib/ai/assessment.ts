@@ -36,6 +36,7 @@ import {
   computeAssessmentValidityIndex,
   aviInputFromAssessment,
 } from "@/lib/avi";
+import { withHeardText } from "@/lib/sessions/heard-text";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -445,13 +446,18 @@ export async function assessSession(params: {
     ResolvedAvatar,
     "name" | "disorder" | "ideal_guidelines" | "rubric"
   >;
-  messages: Pick<SessionMessage, "role" | "content" | "created_at">[];
+  messages: (Pick<SessionMessage, "role" | "content" | "created_at"> & {
+    heard_chars?: number | null;
+  })[];
   durationSec: number;
   /** Session / therapist language (e.g. en, ar, en-US, ar-JO). */
   language?: string | null;
 }): Promise<SessionAssessment> {
   const language = normalizeReportLanguage(params.language);
-  const { avatar, messages, durationSec } = params;
+  const { avatar, durationSec } = params;
+  // Judge only what the therapist heard: interrupted replies are cut where
+  // the therapist barged in.
+  const messages = withHeardText(params.messages, language);
   const rubric = (avatar.rubric?.length ? avatar.rubric : defaultRubric(language)).map(
     (r) => ({
       ...r,

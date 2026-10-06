@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { assessSession } from "@/lib/ai/assessment";
+import { loadAssessmentMessages } from "@/lib/sessions/heard-text";
 import { runEducationAfterAssessment } from "@/lib/education";
 import { runPatientMemoryAfterSession } from "@/lib/patient-memory";
 import { sealAssessmentQualityLedger } from "@/lib/quality-ledger";
@@ -281,11 +282,7 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
-  const { data: messages } = await supabase
-    .from("session_messages")
-    .select("role, content, created_at")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+  const { data: messages } = await loadAssessmentMessages(supabase, sessionId);
 
   const endedAt = typed.ended_at ?? new Date().toISOString();
   const durationSec = Math.floor(
@@ -309,10 +306,7 @@ export async function POST(_request: Request, { params }: Params) {
 
   const assessment = await assessSession({
     avatar: resolved,
-    messages: (messages ?? []) as Pick<
-      SessionMessage,
-      "role" | "content" | "created_at"
-    >[],
+    messages,
     durationSec,
     language: reportLanguage,
   });
