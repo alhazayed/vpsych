@@ -11,6 +11,14 @@ import {
   isAdminMfaBootstrapPath,
 } from "@/lib/admin-mfa";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import {
+  ACCOUNT_NOT_APPROVED_CODE,
+  isApprovalExemptPath,
+  isMissingApprovalColumnError,
+  PENDING_APPROVAL_PATH,
+  resolveApprovalStatus,
+  type ApprovalStatus,
+} from "@/lib/account-approval";
 
 function applyLocaleCookie(
   response: NextResponse,
@@ -140,19 +148,36 @@ export async function updateSession(request: NextRequest) {
   const isAdminPath =
     path.startsWith("/admin") || path.startsWith("/api/admin");
 
+  // Every signed-in request outside the public + auth paths needs an approved
+  // account, so the profile is read for all of them (one primary-key lookup).
+  const needsApproval = Boolean(user) && !isPublic && !isApprovalExemptPath(path);
+
   // Explicit locale cookie wins. LanguageSwitcher sets the cookie immediately and
   // syncs preferred_language asynchronously — never clobber a valid cookie with a
   // stale profile value (that forced Arabic sessions back to en-US).
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   let locale: AppLocale = defaultLocale;
   let profileRole: string | null = null;
+  let approval: ApprovalStatus | "unknown" = "approved";
 
-  if (user && (isAdminPath || !isAppLocale(cookieLocale))) {
-    const { data: profile } = await supabase
+  if (user && (isAdminPath || needsApproval || !isAppLocale(cookieLocale))) {
+    let { data: profile, error } = await supabase
       .from("profiles")
-      .select("preferred_language, role")
+      .select("preferred_language, role, approval_status")
       .eq("id", user.id)
       .maybeSingle();
+
+    if (isMissingApprovalColumnError(error)) {
+      // Approval migration not applied yet: behave exactly as before it.
+      ({ data: profile, error } = await supabase
+        .from("profiles")
+        .select("preferred_language, role")
+        .eq("id", user.id)
+        .maybeSingle());
+      approval = "approved";
+    } else {
+      approval = error ? "unknown" : resolveApprovalStatus(profile);
+    }
 
     profileRole = profile?.role ?? null;
 
@@ -163,6 +188,22 @@ export async function updateSession(request: NextRequest) {
 
   if (isAppLocale(cookieLocale)) {
     locale = cookieLocale;
+  }
+
+  // Unapproved (or unverifiable) accounts are confined to the pending screen.
+  if (user && needsApproval && approval !== "approved") {
+    if (isApi) {
+      return NextResponse.json(
+        approval === "unknown"
+          ? { error: "Account status could not be verified" }
+          : { error: "Account awaiting approval", code: ACCOUNT_NOT_APPROVED_CODE },
+        { status: approval === "unknown" ? 503 : 403 },
+      );
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = PENDING_APPROVAL_PATH;
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   // Defense-in-depth: admin UI + /api/admin require role=admin at the edge.

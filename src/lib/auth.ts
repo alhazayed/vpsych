@@ -6,6 +6,10 @@ import {
   isAdminMfaEnforced,
 } from "@/lib/admin-mfa";
 import type { Profile } from "@/lib/types";
+import {
+  isAccountApproved,
+  PENDING_APPROVAL_PATH,
+} from "@/lib/account-approval";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -28,6 +32,12 @@ export async function requireProfile() {
 
   if (error || !profile) {
     redirect("/login");
+  }
+
+  // Defense in depth behind the middleware gate: no app page renders for an
+  // account the superadmin has not approved.
+  if (!isAccountApproved(profile)) {
+    redirect(PENDING_APPROVAL_PATH);
   }
 
   return { supabase, user, profile: profile as Profile };

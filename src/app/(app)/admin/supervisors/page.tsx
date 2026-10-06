@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { SupervisorRoleToggle } from "@/components/skill-tests/SupervisorRoleToggle";
@@ -23,6 +24,11 @@ export default async function AdminSupervisorsPage() {
         {t("title")}
       </h1>
       <p className="mb-6 mt-2 text-sm text-[var(--on-surface-variant)]">{t("intro")}</p>
+      <p className="mb-6 text-sm">
+        <Link href="/admin/accounts" className="font-semibold text-[var(--primary)] underline-offset-2 hover:underline">
+          {t("accountApprovalsLink")}
+        </Link>
+      </p>
 
       {error ? (
         <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
