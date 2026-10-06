@@ -208,6 +208,25 @@ Telemetry records only `endpoint_pause`, `endpoint_resumed`,
 None of these carries content. Ported from #260. Barge-in capture with
 pre-roll was already on main.
 
+### Heard vs generated text
+
+A barge-in cuts the patient off, but the full reply is already stored. At the
+moment of interrupt the room estimates how much of the reply was audible
+(audio position for ElevenLabs, elapsed time at ~14 chars/s for browser TTS,
+0 if no audio had started) and snaps forward to the end of the word in
+progress. It posts that offset once to `POST /api/sessions/:id/heard`, which
+calls the set-once `mark_assistant_message_heard` RPC (owner, assistant row,
+active session). The offset lands in `session_messages.heard_chars`; `content`
+is never rewritten.
+
+Report generation (`/end` and admin regenerate) loads `heard_chars` through
+`loadAssessmentMessages` and `assessSession` cuts each interrupted reply at the
+offset with an "interrupted here" marker (EN/AR), so the examiner judges only
+what the therapist heard. The offset is an estimate. The patient agent's own
+memory of the turn is unchanged. Migration
+`20261006090000_session_messages_heard_chars.sql`; until it is applied the
+loader falls back to the old columns and reports behave as before.
+
 ## Avatar playback lock
 
 While FSM state is `AVATAR_SPEAKING`:

@@ -28,7 +28,8 @@ import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { getReportWriteKey, signSessionReport } from "@/lib/report-sign";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { withSkillTestCase } from "@/lib/skill-tests";
-import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
+import { loadAssessmentMessages } from "@/lib/sessions/heard-text";
+import type { Avatar, TherapySession } from "@/lib/types";
 
 type ScoresLike = {
   scientific_provenance?: { assessment_mode?: unknown; ai_source?: unknown } | null;
@@ -133,19 +134,15 @@ async function loadAndAssess(
     return fail(409, "admin_test", "Admin test sessions have no report");
   }
 
-  const { data: messages, error: msgErr } = await supabase
-    .from("session_messages")
-    .select("role, content, created_at")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+  const { data: messages, error: msgErr } = await loadAssessmentMessages(
+    supabase,
+    sessionId,
+  );
   if (msgErr) {
     console.warn("[report-regenerate] messages read:", msgErr.message);
     return fail(500, "db_error", "Could not load transcript");
   }
-  const rows = (messages ?? []) as Pick<
-    SessionMessage,
-    "role" | "content" | "created_at"
-  >[];
+  const rows = messages;
   if (opts.requireTherapistTurn && !rows.some((m) => m.role === "user")) {
     return fail(422, "no_therapist_turns", "Session has no therapist turns to assess");
   }

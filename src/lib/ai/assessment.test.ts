@@ -133,3 +133,48 @@ describe("assessSession parse failover", () => {
     );
   });
 });
+
+describe("assessSession heard vs generated text", () => {
+  beforeEach(() => {
+    chatMock.mockReset();
+    process.env.OPENAI_API_KEY = "test-key";
+    delete process.env.AI_GATEWAY_API_KEY;
+    delete process.env.OPENAI_CHAT_PROVIDER;
+    vi.resetModules();
+  });
+  afterEach(() => {
+    delete process.env.OPENAI_API_KEY;
+  });
+
+  it("sends the examiner only the part of an interrupted reply that was heard", async () => {
+    chatMock.mockResolvedValue({ text: goodJson, model: "gpt-5" });
+    const { assessSession } = await import("@/lib/ai/assessment");
+    await assessSession({
+      avatar,
+      messages: [
+        messages[0]!,
+        { ...messages[1]!, heard_chars: "Tired and heavy.".length },
+        {
+          role: "user" as const,
+          content: "Tell me about work.",
+          created_at: new Date().toISOString(),
+        },
+      ],
+      durationSec: 120,
+      language: "en-US",
+    });
+    const sent = JSON.stringify(chatMock.mock.calls[0]);
+    expect(sent).toContain("Tired and heavy.");
+    expect(sent).toContain("the therapist interrupted here");
+    expect(sent).not.toContain("Work has been rough");
+  });
+
+  it("keeps a reply that played in full unchanged", async () => {
+    chatMock.mockResolvedValue({ text: goodJson, model: "gpt-5" });
+    const { assessSession } = await import("@/lib/ai/assessment");
+    await assessSession({ avatar, messages, durationSec: 120, language: "en-US" });
+    const sent = JSON.stringify(chatMock.mock.calls[0]);
+    expect(sent).toContain("Work has been rough");
+    expect(sent).not.toContain("interrupted here");
+  });
+});

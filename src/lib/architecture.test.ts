@@ -879,6 +879,25 @@ describe("architecture invariants", () => {
     expect(telemetry).not.toMatch(/transcript\s*[:?]/);
   });
 
+  it("reports judge only the patient text the therapist heard", () => {
+    const room = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    const endRoute = readFileSync(
+      join(root, "app/api/sessions/[id]/end/route.ts"),
+      "utf8",
+    );
+    const regenerate = readFileSync(join(root, "lib/admin/report-regenerate.ts"), "utf8");
+    const assessment = readFileSync(join(root, "lib/ai/assessment.ts"), "utf8");
+    // Barge-in records the heard offset before playback is torn down.
+    expect(room).toMatch(/recordHeardPortion\(\);\s*abort\.abort\(\)/);
+    // Both report writers load heard_chars and the examiner applies it.
+    expect(endRoute).toMatch(/loadAssessmentMessages\(/);
+    expect(regenerate).toMatch(/loadAssessmentMessages\(/);
+    expect(assessment).toMatch(/withHeardText\(params\.messages/);
+  });
+
   it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
     const service = readFileSync(
       join(root, "lib/voice/elevenlabs/service.ts"),
