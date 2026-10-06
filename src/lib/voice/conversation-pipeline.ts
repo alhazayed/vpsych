@@ -16,6 +16,10 @@ import {
   synthesizeSpeech,
   speakWithBrowser,
 } from "@/lib/voice/client";
+import {
+  PLAYBACK_WATCHDOG_INTERVAL_MS,
+  playbackVerdict,
+} from "@/lib/voice/playback-watchdog";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 
@@ -197,6 +201,10 @@ export type PlaybackDiagnostic =
   | { event: "audio_playing" }
   | { event: "audio_ended" }
   | { event: "audio_error"; reason: string }
+  /** The browser paused the clip on its own; one resume is attempted. */
+  | { event: "audio_paused_externally" }
+  /** The clip stopped advancing or ran far past its length. */
+  | { event: "audio_stalled"; reason: string }
   | { event: "browser_fallback_started" }
   | { event: "browser_speech_started" }
   | { event: "browser_speech_failed" }
@@ -371,9 +379,11 @@ export async function playPatientSpeech(params: {
       PlaybackOutcome | { fallback: string }
     >((resolve) => {
       let settled = false;
+      let watchdog: ReturnType<typeof setInterval> | null = null;
       const finish = (mode: PlaybackOutcome | { fallback: string }) => {
         if (settled) return;
         settled = true;
+        if (watchdog != null) clearInterval(watchdog);
         params.signal?.removeEventListener("abort", onAbort);
         // Revoke only after playback is over — never before it starts.
         URL.revokeObjectURL(objectUrl);
@@ -395,7 +405,61 @@ export async function playPatientSpeech(params: {
         finish("interrupted");
       };
 
-      audio.onplaying = () => diag({ event: "audio_playing" });
+      // Watchdog: "playing" with no "ended" must never leave the room stuck
+      // on "Avatar speaking" (device switch, browser pause, frozen clock).
+      let playingAt: number | null = null;
+      let lastTime = 0;
+      let lastProgressAt = 0;
+      let resumeTried = false;
+      const sample = () => {
+        if (settled || playingAt == null || params.signal?.aborted) return;
+        const now = performance.now();
+        if (audio.ended) {
+          finish("elevenlabs");
+          return;
+        }
+        if (audio.currentTime > lastTime + 0.01) {
+          lastTime = audio.currentTime;
+          lastProgressAt = now;
+        }
+        if (audio.paused && !resumeTried) {
+          resumeTried = true;
+          diag({ event: "audio_paused_externally" });
+          void audio.play().catch(() => undefined);
+        }
+        const verdict = playbackVerdict({
+          now,
+          startedAt: playingAt,
+          lastProgressAt,
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+        });
+        if (verdict === "ok") return;
+        const reason = `${verdict}_at_${Math.round(audio.currentTime * 10) / 10}s`;
+        diag({ event: "audio_stalled", reason });
+        try {
+          audio.pause();
+        } catch {
+          /* ignore */
+        }
+        // Most of the clip already played: treat it as spoken rather than
+        // repeating it in the browser voice.
+        const nearlyDone =
+          Number.isFinite(audio.duration) &&
+          audio.duration > 0 &&
+          audio.currentTime / audio.duration >= 0.85;
+        finish(nearlyDone ? "elevenlabs" : { fallback: "AUDIO_STALLED" });
+      };
+
+      audio.onplaying = () => {
+        diag({ event: "audio_playing" });
+        if (playingAt == null) {
+          playingAt = performance.now();
+          lastProgressAt = playingAt;
+          lastTime = audio.currentTime;
+          watchdog = setInterval(sample, PLAYBACK_WATCHDOG_INTERVAL_MS);
+        }
+      };
       audio.onended = () => {
         diag({ event: "audio_ended" });
         finish("elevenlabs");

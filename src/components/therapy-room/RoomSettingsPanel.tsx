@@ -98,6 +98,22 @@ export function RoomSettingsPanel({
         />
         <span>{t("settings.ambience")}</span>
       </label>
+
+      <label className="trm-settings__toggle">
+        <input
+          type="checkbox"
+          checked={settings.bargeInByVoice}
+          onChange={(e) =>
+            onChange({ ...settings, bargeInByVoice: e.target.checked })
+          }
+        />
+        <span>
+          {t("settings.bargeInByVoice")}
+          <small className="trm-settings__hint">
+            {t("settings.bargeInByVoiceHint")}
+          </small>
+        </span>
+      </label>
     </aside>
   );
 }

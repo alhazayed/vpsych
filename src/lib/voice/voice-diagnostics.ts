@@ -177,6 +177,7 @@ const CODE_EXPLANATION: Record<string, string> = {
   AUTOPLAY_BLOCKED: "the browser blocked audio playback until you click",
   AUDIO_PLAY_FAILED: "the browser could not start audio playback",
   AUDIO_DECODE: "the browser could not decode the patient audio",
+  AUDIO_STALLED: "the patient audio stopped advancing in the browser",
   BROWSER_SPEECH_FAILED: "browser speech synthesis also failed",
   BROWSER_SPEECH_UNSUPPORTED: "this browser has no speech synthesis",
   NETWORK: "the network request failed",
@@ -207,7 +208,12 @@ export function describeVoiceError(input: {
   return `${label} failed${httpPart}: ${cause}.`;
 }
 
-const PLAYBACK_CODES = new Set(["AUTOPLAY_BLOCKED", "AUDIO_PLAY_FAILED", "AUDIO_DECODE"]);
+const PLAYBACK_CODES = new Set([
+  "AUTOPLAY_BLOCKED",
+  "AUDIO_PLAY_FAILED",
+  "AUDIO_DECODE",
+  "AUDIO_STALLED",
+]);
 
 /**
  * Message for PARTIAL turns: names whether ElevenLabs (TTS) or the browser's
