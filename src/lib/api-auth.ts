@@ -8,6 +8,10 @@ import {
   type AssuranceSnapshot,
 } from "@/lib/admin-mfa";
 import type { Profile } from "@/lib/types";
+import {
+  ACCOUNT_NOT_APPROVED_CODE,
+  isAccountApproved,
+} from "@/lib/account-approval";
 
 export type ApiAuthContext = {
   supabase: SupabaseClient;
@@ -47,6 +51,18 @@ export async function requireApiUser(
     return {
       ok: false,
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  // Defense in depth behind the middleware gate: an account the superadmin
+  // has not approved gets no API access.
+  if (!isAccountApproved(profile)) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Account awaiting approval", code: ACCOUNT_NOT_APPROVED_CODE },
+        { status: 403 },
+      ),
     };
   }
 

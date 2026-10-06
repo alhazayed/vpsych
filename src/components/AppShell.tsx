@@ -116,6 +116,7 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/admin/research")) return "validation";
   if (pathname.startsWith("/admin/test-sessions")) return "testTranscript";
   if (pathname.startsWith("/admin/supervisors")) return "supervisors";
+  if (pathname.startsWith("/admin/accounts")) return "accountApprovals";
   if (pathname.startsWith("/clinic")) return "clinic";
   if (pathname.startsWith("/tests")) return "skillTests";
   if (pathname.startsWith("/supervise")) return "supervise";
@@ -216,7 +217,8 @@ export function AppShell({
       | "pageTitle.mySessions"
       | "pageTitle.skillTests"
       | "pageTitle.supervise"
-      | "pageTitle.supervisors",
+      | "pageTitle.supervisors"
+      | "pageTitle.accountApprovals",
   );
 
   const sidebarWidth = collapsed ? "md:w-[4.5rem]" : "md:w-64";

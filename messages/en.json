@@ -86,7 +86,8 @@
       "analyticsOverview": "Analytics",
       "skillTests": "Skill tests",
       "supervise": "Supervise",
-      "supervisors": "Supervisors"
+      "supervisors": "Supervisors",
+      "accountApprovals": "Account approvals"
     },
     "adminTagline": "Administration",
     "therapistWorkspace": "Therapist workspace",
@@ -494,7 +495,7 @@
         "passwordShort": "Password must be at least 8 characters.",
         "passwordPolicy": "Password must be at least 8 characters and include an uppercase letter, a number, and a special character."
       },
-      "checkEmail": "Check your email to confirm your account, then sign in.",
+      "checkEmail": "Check your email to confirm your account. An administrator must then approve it before you can sign in and start training.",
       "creating": "Creating…",
       "submit": "Create Account",
       "hasAccount": "Already have an account?",
@@ -510,6 +511,20 @@
         "privacy": "Privacy Policy",
         "support": "Contact Support"
       }
+    },
+    "pending": {
+      "title": "Your account is awaiting approval",
+      "body": "An administrator must approve new accounts before they can use VPsych. You can sign in again later, or check now if you were told it has been approved.",
+      "rejectedTitle": "Your account was not approved",
+      "rejectedBody": "An administrator did not approve this account, so it cannot use VPsych. Contact your program administrator if you think this is a mistake.",
+      "unknownTitle": "We could not check your account",
+      "unknownBody": "Your account status could not be loaded. Check your connection and try again.",
+      "signedInAs": "Signed in as",
+      "checkAgain": "Check again",
+      "checking": "Checking…",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…",
+      "signOutFailed": "Sign out failed. Please try again."
     }
   },
   "avatars": {
@@ -1456,7 +1471,8 @@
       "openOperations": "Operations",
       "openDiagnostics": "System Health",
       "actionSessions": "View sessions",
-      "statusVerified": "Verified"
+      "statusVerified": "Verified",
+      "pendingAccounts": "{count, plural, one {# new account is waiting for your approval} other {# new accounts are waiting for your approval}}"
     },
     "diagnostics": {
       "title": "System Health",
@@ -1975,6 +1991,27 @@
         "intellectualization": "Intellectualization",
         "limited_insight": "Limited insight"
       }
+    },
+    "accounts": {
+      "title": "Account approvals",
+      "intro": "Nobody can use VPsych until you approve their account. New sign-ups wait here; rejected or revoked accounts cannot open any page.",
+      "loadError": "Accounts could not be loaded. Refresh the page to try again.",
+      "pendingCount": "{count, plural, =0 {No accounts waiting} one {# account waiting for approval} other {# accounts waiting for approval}}",
+      "noPending": "No one is waiting for approval.",
+      "allAccounts": "All accounts",
+      "empty": "There are no other accounts yet.",
+      "signedUp": "Signed up {date}",
+      "statusPending": "Waiting",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "adminBadge": "Superadmin",
+      "approve": "Approve",
+      "reject": "Reject",
+      "revoke": "Revoke access",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "changeFailed": "The account could not be updated. Please try again.",
+      "networkError": "Network error. Check your connection and try again."
     }
   },
   "validation": {
@@ -2455,7 +2492,8 @@
       "saving": "Saving…",
       "saved": "Saved",
       "changeFailed": "The role could not be changed. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "accountApprovalsLink": "New accounts waiting for approval are under Account approvals."
     },
     "complete": {
       "badge": "Session submitted",

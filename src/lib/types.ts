@@ -15,6 +15,10 @@ export type Profile = {
   preferred_language?: PreferredLanguage | null;
   /** Server-side org stamp source for new sessions (never from browser). */
   primary_institution_id?: string | null;
+  /** Superadmin approval gate (`lib/account-approval.ts`). */
+  approval_status?: "pending" | "approved" | "rejected";
+  approval_decided_by?: string | null;
+  approval_decided_at?: string | null;
   created_at: string;
   updated_at: string;
 };

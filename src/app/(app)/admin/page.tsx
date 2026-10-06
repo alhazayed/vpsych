@@ -87,6 +87,13 @@ export default async function AdminHomePage() {
 
   const openFeedback = openFeedbackCount ?? 0;
 
+  // Accounts waiting for superadmin approval (0 if the column is not there yet).
+  const { count: pendingAccountsCount } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("approval_status", "pending");
+  const pendingAccounts = pendingAccountsCount ?? 0;
+
   const avatarNameById = new Map(
     (avatars ?? []).map((a) => [a.id, a.name] as const),
   );
@@ -164,6 +171,23 @@ export default async function AdminHomePage() {
           </p>
         }
       />
+
+      {pendingAccounts > 0 && (
+        <Link
+          href="/admin/accounts"
+          className="clinical-card mb-6 flex items-center justify-between gap-3 p-4 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--surface-container-low)]"
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined" aria-hidden>
+              how_to_reg
+            </span>
+            {t("pendingAccounts", { count: pendingAccounts })}
+          </span>
+          <span className="material-symbols-outlined rtl:rotate-180" aria-hidden>
+            chevron_right
+          </span>
+        </Link>
+      )}
 
       <section
         className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
