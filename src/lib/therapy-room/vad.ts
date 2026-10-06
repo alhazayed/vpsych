@@ -59,6 +59,30 @@ export type HandsFreeVadOptions = {
    * Seeds the recording and starts the turn in the speaking state.
    */
   preroll?: { samples: Float32Array; sampleRate: number; speechMs: number };
+  /**
+   * Two-stage endpointing. When set, silence >= silenceMs does NOT end the
+   * turn: `onPause` receives a snapshot for speculative STT and the mic stays
+   * open. Renewed speech fires `onResume`. The turn ends via stop(),
+   * `maxSilenceMs` of trailing silence, or `maxMs`.
+   */
+  twoStage?: {
+    onPause: (info: {
+      wav: Blob;
+      speechMs: number;
+      /** Date.now()-based timestamp of the last voiced frame. */
+      silenceStartedAt: number;
+    }) => void;
+    onResume: () => void;
+    /**
+     * Voiced audio during a pending pause that is not yet a confirmed resume
+     * (true), or that died out before confirmation (false).
+     */
+    onActivity?: (active: boolean) => void;
+    /** Hard ceiling of trailing silence before auto-commit. */
+    maxSilenceMs: number;
+    /** Continuous voiced time required to count as resumed speech. */
+    resumeMinMs?: number;
+  };
 };
 
 function writeString(view: DataView, offset: number, str: string) {
@@ -89,6 +113,22 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
     view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
   return new Blob([buffer], { type: "audio/wav" });
+}
+
+/** Merge captured frames into a 16 kHz mono WAV (OpenAI STT-friendly). */
+export function encodeCapturedFrames(
+  frames: Float32Array[],
+  sampleRate: number,
+): Blob {
+  let length = 0;
+  for (const c of frames) length += c.length;
+  const merged = new Float32Array(length);
+  let offset = 0;
+  for (const c of frames) {
+    merged.set(c, offset);
+    offset += c.length;
+  }
+  return encodeWav(downsample(merged, sampleRate, 16000), 16000);
 }
 
 function downsample(
@@ -202,6 +242,8 @@ export async function startHandsFreeVad(
   const speechThreshold = options.speechThreshold ?? 0.015;
   const silenceThreshold = options.silenceThreshold ?? speechThreshold * 0.55;
   const minSpeechMs = options.minSpeechMs ?? 400;
+  const twoStage = options.twoStage;
+  const resumeMinMs = twoStage?.resumeMinMs ?? 150;
 
   // A passed stream is adopted (stopped on finish) unless the caller retains it.
   const ownsStream = !options.stream || !options.retainStream;
@@ -233,6 +275,10 @@ export async function startHandsFreeVad(
   let speechStartedAt: number | null = null;
   let lastSpeechAt: number | null = null;
   let totalSpeechMs = 0;
+  /** Two-stage: a pause was reported and not yet resumed. */
+  let pausePending = false;
+  /** Two-stage: start of the current re-voicing run while pausePending. */
+  let resumeRunStartedAt: number | null = null;
   let settle: ((blob: Blob | null) => void) | null = null;
   const startedAt = Date.now();
 
@@ -271,17 +317,7 @@ export async function startHandsFreeVad(
       settle?.(null);
       return;
     }
-
-    let length = 0;
-    for (const c of chunks) length += c.length;
-    const merged = new Float32Array(length);
-    let offset = 0;
-    for (const c of chunks) {
-      merged.set(c, offset);
-      offset += c.length;
-    }
-    const down = downsample(merged, sampleRate, 16000);
-    settle?.(encodeWav(down, 16000));
+    settle?.(encodeCapturedFrames(chunks, sampleRate));
   };
 
   processor.onaudioprocess = (event) => {
@@ -293,6 +329,37 @@ export async function startHandsFreeVad(
     const now = Date.now();
     const quietFor =
       speaking && lastSpeechAt != null ? now - lastSpeechAt : 0;
+
+    if (twoStage && pausePending) {
+      if (level >= speechThreshold) {
+        if (resumeRunStartedAt == null) {
+          resumeRunStartedAt = now;
+          twoStage.onActivity?.(true);
+        }
+        // Count frame duration so a single long frame can qualify.
+        const frameMs = (input.length / audioContext.sampleRate) * 1000;
+        if (now - resumeRunStartedAt + frameMs >= resumeMinMs) {
+          pausePending = false;
+          resumeRunStartedAt = null;
+          lastSpeechAt = now;
+          twoStage.onResume();
+        }
+      } else {
+        if (resumeRunStartedAt != null) twoStage.onActivity?.(false);
+        resumeRunStartedAt = null;
+        if (lastSpeechAt != null && now - lastSpeechAt >= twoStage.maxSilenceMs) {
+          speaking = false;
+          options.onSpeechEnd?.();
+          void finish(true);
+          return;
+        }
+      }
+      if (now - startedAt >= maxMs) {
+        options.onSpeechEnd?.();
+        void finish(totalSpeechMs >= minSpeechMs);
+      }
+      return;
+    }
 
     if (level >= speechThreshold) {
       if (!speaking) {
@@ -323,6 +390,17 @@ export async function startHandsFreeVad(
         maxMs,
       });
       if (decision.shouldFinish) {
+        if (twoStage && decision.keepAudio && now - startedAt < maxMs) {
+          // Stage 1: report the pause, keep listening.
+          pausePending = true;
+          resumeRunStartedAt = null;
+          twoStage.onPause({
+            wav: encodeCapturedFrames(chunks, audioContext.sampleRate),
+            speechMs: totalSpeechMs,
+            silenceStartedAt: lastSpeechAt,
+          });
+          return;
+        }
         speaking = false;
         options.onSpeechEnd?.();
         void finish(decision.keepAudio);
@@ -348,13 +426,14 @@ export async function startHandsFreeVad(
   return {
     done,
     async stop() {
+      if (!stopped && twoStage) options.onSpeechEnd?.();
       await finish(true);
       return done;
     },
     cancel() {
       void finish(false);
     },
-    isSpeaking: () => speaking,
+    isSpeaking: () => speaking && !pausePending,
     speechMs: () => totalSpeechMs,
   };
 }

@@ -859,6 +859,26 @@ describe("architecture invariants", () => {
     expect(readiness).not.toMatch(/create second|independent clinical validation/i);
   });
 
+  it("two-stage endpointing stays wired into the Therapy Room", () => {
+    const room = readFileSync(
+      join(root, "components/therapy-room/TherapyRoomSession.tsx"),
+      "utf8",
+    );
+    const telemetry = readFileSync(
+      join(root, "lib/therapy-room/conversation-telemetry.ts"),
+      "utf8",
+    );
+    const endpointing = readFileSync(join(root, "lib/voice/endpointing.ts"), "utf8");
+    // Speculative STT while the mic stays open, reused for the message API.
+    expect(room).toMatch(/createEndpointController/);
+    expect(room).toMatch(/twoStage:\s*\{/);
+    expect(room).toMatch(/finalized\.stt/);
+    // Endpoint silence is bounded (natural, never open-ended).
+    expect(endpointing).toMatch(/maxSilenceMs:\s*2200/);
+    // Telemetry stays content-free.
+    expect(telemetry).not.toMatch(/transcript\s*[:?]/);
+  });
+
   it("Stage 12 ElevenLabs TTS uses AbortSignal timeout", () => {
     const service = readFileSync(
       join(root, "lib/voice/elevenlabs/service.ts"),
