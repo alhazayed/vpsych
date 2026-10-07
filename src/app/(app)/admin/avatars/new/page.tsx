@@ -19,7 +19,7 @@ export default async function AdminCreateVirtualPatientPage() {
   const [{ data: voiceRows }, { data: disorderRows }] = await Promise.all([
     supabase
       .from("voice_profiles")
-      .select("id, voice_name, language, dialect, gender, is_active")
+      .select("id, voice_name, voice_id, language, dialect, gender, is_active")
       .eq("is_active", true)
       .order("voice_name", { ascending: true }),
     supabase

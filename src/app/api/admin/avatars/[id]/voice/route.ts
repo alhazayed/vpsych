@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
+import { voiceGenderMismatchAfterUpdate } from "@/lib/admin/virtual-patient";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-audit";
 import {
@@ -8,7 +9,7 @@ import {
   coerceVoiceProfile,
   legacyColumnsFromProfile,
 } from "@/lib/voice/registry";
-import type { VoiceProfile } from "@/lib/types";
+import type { Avatar, VoiceProfile } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -80,6 +81,27 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
     legacyPatch = legacyColumnsFromProfile(voice as VoiceProfile);
+
+    // The voice must match the patient's gender (female voice ⇒ female
+    // patient and vice versa).
+    const { data: current } = await supabase
+      .from("avatars")
+      .select("clinical_core, voice_id, voice_id_ar, voice_profile:voice_profiles(*)")
+      .eq("id", avatarId)
+      .maybeSingle();
+    const mismatch = current
+      ? voiceGenderMismatchAfterUpdate(
+          current as unknown as Avatar,
+          { voice_profile_id: voiceProfileId, ...legacyPatch },
+          { voiceProfile: voice as VoiceProfile },
+        )
+      : null;
+    if (mismatch) {
+      return NextResponse.json(
+        { error: mismatch.error, issues: mismatch.issues },
+        { status: 409 },
+      );
+    }
   } else {
     const { data: current } = await supabase
       .from("avatars")

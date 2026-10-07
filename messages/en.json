@@ -1175,7 +1175,13 @@
         "warnings": "Warnings",
         "rawValidationJson": "Raw validation JSON",
         "fieldPathDetails": "Technical field path",
-        "rawPayloadJson": "Raw write payload"
+        "rawPayloadJson": "Raw write payload",
+        "genders": {
+          "female": "Female",
+          "male": "Male"
+        },
+        "chooseGender": "Choose female or male",
+        "voiceGenderHint": "Only voices that match the patient's gender are shown. A female patient has a female voice and a male patient a male voice."
       },
       "loadErrorTitle": "Patient library unavailable",
       "loadErrorDescription": "Could not load virtual patients. Try again or check System Health."
@@ -1992,7 +1998,9 @@
         "dependency": "Dependency",
         "intellectualization": "Intellectualization",
         "limited_insight": "Limited insight"
-      }
+      },
+      "chooseGender": "Choose female or male",
+      "voiceGenderHint": "Only voices that match the patient's gender are shown. A female patient has a female voice and a male patient a male voice."
     },
     "accounts": {
       "title": "Account approvals",

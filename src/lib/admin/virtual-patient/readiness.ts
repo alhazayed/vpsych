@@ -194,13 +194,12 @@ export function assessCaseReadiness(
   }
   if (
     core &&
-    (!core.gender ||
-      !["female", "male", "non-binary", "unspecified"].includes(core.gender))
+    (!core.gender || !["female", "male"].includes(core.gender))
   ) {
     if (!profileIssues.some((i) => i.code === "clinical_gender_required")) {
       profileIssues.push({
         code: "clinical_gender_required",
-        message: "Gender is required",
+        message: "Gender (female or male) is required",
         path: "clinical_core.gender",
         severity: "error",
         gate: "clinical",

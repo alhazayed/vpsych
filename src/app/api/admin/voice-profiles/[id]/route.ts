@@ -8,6 +8,10 @@ import {
   validateClinicalVoiceParams,
 } from "@/lib/clinical-voice";
 import type { VoiceProfile } from "@/lib/types";
+import {
+  normalizeVoiceGender,
+  VOICE_GENDERS,
+} from "@/lib/voice/voice-gender";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 
 type Params = { params: Promise<{ id: string }> };
@@ -98,10 +102,25 @@ export async function PATCH(request: Request, { params }: Params) {
         { status: 400 },
       );
     }
-    patch.gender =
-      typeof body.gender === "string"
-        ? body.gender.trim().slice(0, 40) || null
+    // A voice is male or female; patients are matched to it by gender.
+    const gender =
+      typeof body.gender === "string" && body.gender.trim()
+        ? normalizeVoiceGender(body.gender)
         : null;
+    if (typeof body.gender === "string" && body.gender.trim() && !gender) {
+      return NextResponse.json(
+        { error: "gender must be female or male" },
+        { status: 400 },
+      );
+    }
+    const known = VOICE_GENDERS[(existing as VoiceProfile).voice_id ?? ""];
+    if (gender && known && gender !== known) {
+      return NextResponse.json(
+        { error: `This is a ${known} voice; its gender cannot be set to ${gender}` },
+        { status: 400 },
+      );
+    }
+    patch.gender = gender;
   }
 
   const clinicalPatch = clinicalParamsPatchFromBody(body);

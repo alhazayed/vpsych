@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 import { normalizeSpeechLocale } from "@/lib/voice/config";
+import { isPatientGender, voiceProfileGender } from "@/lib/voice/voice-gender";
 import type {
   ClinicalEmotion,
   EffectiveClinicalVoice,
@@ -599,6 +600,14 @@ export function VoiceManagementPanel({
                 <div className="mt-3 flex flex-wrap gap-2">
                   {avatars.map((avatar) => {
                     const isAssigned = avatarMap[avatar.id] === profile.id;
+                    // A voice only goes to a patient of the same gender.
+                    const voiceGender = voiceProfileGender(profile);
+                    const genderMismatch = Boolean(
+                      voiceGender &&
+                        isPatientGender(avatar.gender) &&
+                        avatar.gender !== voiceGender,
+                    );
+                    if (genderMismatch && !isAssigned) return null;
                     return (
                       <button
                         key={avatar.id}
