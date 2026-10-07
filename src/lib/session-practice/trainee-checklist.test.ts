@@ -41,3 +41,56 @@ describe("trainee checklist", () => {
     expect(withRisk.map((g) => g.group)).toEqual(["structure", "safety_plan"]);
   });
 });
+
+describe("trainee checklist, Arabic spelling variants", () => {
+  it("detects everyday Levantine and MSA phrasing without hamza or taa marbuta", () => {
+    const groups = buildTraineeChecklist(
+      evaluateSessionPractice({
+        sessionNumber: 2,
+        riskPresent: true,
+        messages: [
+          t("مرحبا، كيفك اليوم؟ كيف كان اسبوعك؟"),
+          p("تعبان شوي."),
+          t("المره الماضيه حكينا عن النوم. عملت التمرين اللي اتفقنا عليه؟"),
+          p("جربت شوي."),
+          t("شو حابب نحكي فيه اليوم؟"),
+          p("بدي احكي عن الشغل."),
+          t("لما الافكار تصير صعبه، شو اللي بتلاحظه قبل ما تسوء الامور؟ هاي علامات التحذير."),
+          p("بصير ما انام."),
+          t("شو بتقدر تعمل لحالك عشان تهدا؟ ومين ممكن تتصل فيه؟"),
+          p("اختي."),
+          t("هذا رقم خط المساعده، وممكن نخلي الادويه بعيد عنك."),
+          p("ماشي."),
+          t("خلال الاسبوع الجاي بدي تجرب تكتب افكارك."),
+          p("تمام."),
+          t("باختصار اليوم حكينا عن النوم والشغل. كيف كانت الجلسه بالنسبه الك؟"),
+        ],
+      }),
+    );
+    const items = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.id, i.done]));
+    expect(items).toEqual({
+      mood_check: true,
+      bridge: true,
+      agenda: true,
+      homework_review: true,
+      homework_set: true,
+      summary: true,
+      feedback_elicited: true,
+      warning_signs: true,
+      internal_coping: true,
+      social_supports: true,
+      professional_contacts: true,
+      means_safety: true,
+    });
+  });
+
+  it("still marks practices that were not performed as missed", () => {
+    const groups = buildTraineeChecklist(
+      evaluateSessionPractice({
+        sessionNumber: 2,
+        messages: [t("أهلا."), p("أهلين."), t("احكيلي عن شغلك."), p("الشغل صعب.")],
+      }),
+    );
+    expect(groups.flatMap((g) => g.items).every((i) => !i.done)).toBe(true);
+  });
+});

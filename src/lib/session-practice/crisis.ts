@@ -10,7 +10,7 @@
  * validated. See docs/SESSION_PRACTICE_ENGINE.md.
  */
 
-import { PRACTICE_PATTERNS } from "@/lib/session-practice/patterns";
+import { PRACTICE_PATTERNS, matchesPractice } from "@/lib/session-practice/patterns";
 import type { PracticeCheckId } from "@/lib/session-practice/types";
 
 export const CRISIS_HANDLING_VERSION = "crisis-handling.v1" as const;
@@ -97,13 +97,13 @@ const EXTRA: Partial<Record<CrisisStepId, RegExp>> = {
     /psychiatrist|crisis team|urgent (care|assessment|appointment)|(go|going|get you) to (the )?hospital|your (gp|doctor)|طبيب نفسي|الطبيب النفسي|المستشفى|الطوارئ|طبيبك/iu,
 };
 
-function patternsFor(id: CrisisStepId): RegExp[] {
-  const out: RegExp[] = [];
+function patternsFor(id: CrisisStepId): Array<{ test(text: string): boolean }> {
+  const out: Array<{ test(text: string): boolean }> = [];
   const own = STEP_PATTERNS[id];
   if (own) out.push(own);
   for (const practiceId of REUSED[id] ?? []) {
     const p = PRACTICE_PATTERNS.find((x) => x.id === practiceId);
-    if (p) out.push(p.pattern);
+    if (p) out.push({ test: (text) => matchesPractice(p, text) });
   }
   const extra = EXTRA[id];
   if (extra) out.push(extra);
