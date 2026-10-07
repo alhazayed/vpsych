@@ -9,6 +9,12 @@ import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
 import { LadderResultCard } from "@/components/training/LadderResultCard";
+import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
+import {
+  buildTraineeChecklist,
+  caseHasRisk,
+  evaluateSessionPractice,
+} from "@/lib/session-practice";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -62,6 +68,19 @@ export default async function SessionCompletePage({ params }: Props) {
     .order("created_at", { ascending: true });
   const transcript = (messages ?? []) as SessionMessage[];
 
+  // Practices done or missed, for the trainee. No scores: reports stay admin-only.
+  const checklist = transcript.some((m) => m.role === "user")
+    ? buildTraineeChecklist(
+        evaluateSessionPractice({
+          messages: transcript,
+          sessionNumber: typed.course_session_number ?? null,
+          riskPresent: caseHasRisk(
+            typed.clinical_snapshot?.clinical_core?.risk_profile,
+          ),
+        }),
+      )
+    : [];
+
   // A finished session can lack a report when the tab closed mid-session, the
   // expiry cron ended it, or the end request failed. Only the owning learner
   // can finalize it (the end route enforces ownership); skip empty sessions.
@@ -109,6 +128,10 @@ export default async function SessionCompletePage({ params }: Props) {
         courseId={typed.therapy_course_id}
         sessionNumber={typed.course_session_number}
       />
+
+      {checklist.length > 0 ? (
+        <TraineePracticeChecklist groups={checklist} />
+      ) : null}
 
       {immersionOverall != null && (
         <section className="clinical-card mb-4 p-5 fade-in-up">

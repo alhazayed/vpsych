@@ -64,3 +64,28 @@ export {
   type AllianceRating,
   type AllianceRupture,
 } from "@/lib/session-practice/alliance-rating";
+export {
+  CRISIS_HANDLING_LIMITATIONS,
+  CRISIS_HANDLING_VERSION,
+  CRISIS_STEP_ORDER,
+  STAYED_ENGAGED_TURNS,
+  evaluateCrisisHandling,
+  findDisclosure,
+  type CrisisHandling,
+  type CrisisStep,
+  type CrisisStepId,
+} from "@/lib/session-practice/crisis";
+export {
+  CRISIS_ESCALATION_MARKER,
+  ESCALATION_REPLY,
+  canEscalate,
+  crisisEscalationPhase,
+  formatCrisisEscalationBlock,
+  injectCrisisEscalationIntoSystemPrompt,
+  type CrisisEscalationPhase,
+} from "@/lib/session-practice/crisis-escalation";
+export {
+  buildTraineeChecklist,
+  type TraineeChecklistGroup,
+  type TraineeChecklistItem,
+} from "@/lib/session-practice/trainee-checklist";
