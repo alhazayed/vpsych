@@ -2,7 +2,7 @@
  * Treatment plan validation — hand-written, matches the engine validators.
  */
 
-import type { TreatmentPlan } from "@/lib/types";
+import { FIVE_PS, type FivePsFormulation, type TreatmentPlan } from "@/lib/types";
 import { MAX_PLANNED_SESSIONS } from "./gate";
 
 export const PLAN_LIMITS = {
@@ -18,6 +18,8 @@ export const PLAN_LIMITS = {
   expectationsMax: 1500,
   riskMin: 10,
   riskMax: 1500,
+  fivePMin: 3,
+  fivePMax: 600,
 } as const;
 
 export type PlanFieldError =
@@ -26,7 +28,8 @@ export type PlanFieldError =
   | "interventions"
   | "expected_sessions"
   | "patient_expectations"
-  | "risk_formulation";
+  | "risk_formulation"
+  | "five_ps";
 
 export type PlanValidationResult =
   | { ok: true; plan: TreatmentPlan }
@@ -103,6 +106,11 @@ export function validateTreatmentPlan(
     return { ok: false, field: "risk_formulation" };
   }
 
+  const fivePs = validateFivePs(b.five_ps);
+  if (!fivePs) {
+    return { ok: false, field: "five_ps" };
+  }
+
   return {
     ok: true,
     plan: {
@@ -112,8 +120,35 @@ export function validateTreatmentPlan(
       expected_sessions: expected,
       patient_expectations: patientExpectations,
       risk_formulation: riskFormulation,
+      five_ps: fivePs,
     },
   };
+}
+
+/** Every P is required: a formulation with a blank P is not a 5 Ps formulation. */
+function validateFivePs(v: unknown): FivePsFormulation | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const raw = v as Record<string, unknown>;
+  const out = {} as FivePsFormulation;
+  for (const key of FIVE_PS) {
+    const value = text(raw[key]);
+    if (!within(value, PLAN_LIMITS.fivePMin, PLAN_LIMITS.fivePMax)) return null;
+    out[key] = value;
+  }
+  return out;
+}
+
+/** Narrow a stored 5 Ps value (null when absent or malformed). */
+export function asFivePs(v: unknown): FivePsFormulation | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const raw = v as Record<string, unknown>;
+  const out = {} as FivePsFormulation;
+  for (const key of FIVE_PS) {
+    const value = raw[key];
+    if (typeof value !== "string") return null;
+    out[key] = value;
+  }
+  return out;
 }
 
 /** Narrow a stored jsonb value to a plan (null when malformed). */
@@ -137,5 +172,6 @@ export function asTreatmentPlan(v: unknown): TreatmentPlan | null {
     patient_expectations: p.patient_expectations,
     risk_formulation:
       typeof p.risk_formulation === "string" ? p.risk_formulation : "",
+    five_ps: asFivePs(p.five_ps),
   };
 }

@@ -30,6 +30,13 @@ const plan: TreatmentPlan = {
     "Weekly sessions; practice exercises at home between sessions.",
   risk_formulation:
     "No suicidal ideation; risk rises with alcohol use; safety plan agreed with GP contact.",
+  five_ps: {
+    presenting: "Panic attacks for 14 months with avoidance of the metro and meetings.",
+    predisposing: "Worry-prone since about age 12; sibling with panic disorder.",
+    precipitating: "First attack after a health scare in the family.",
+    perpetuating: "Catastrophic misreading of heart racing, safety behaviours, avoidance.",
+    protective: "Supportive partner, stable job, came for help.",
+  },
 };
 
 function course(over: Partial<TherapyCourse> = {}): TherapyCourse {
@@ -158,6 +165,13 @@ describe("treatment plan validation", () => {
         expected_sessions: 8,
         patient_expectations: "جلسة أسبوعية مع تمارين منزلية بين الجلسات.",
         risk_formulation: "لا توجد أفكار انتحارية حالياً، ويزداد الخطر مع قلة النوم.",
+        five_ps: {
+          presenting: "نوبات هلع منذ سنة مع تجنب المواصلات.",
+          predisposing: "قلق منذ الطفولة.",
+          precipitating: "مرض أحد أفراد الأسرة.",
+          perpetuating: "تفسير كارثي للأعراض وتجنب.",
+          protective: "دعم الزوجة وعمل ثابت.",
+        },
       },
       { minSessions: 3 },
     );
@@ -174,6 +188,10 @@ describe("treatment plan validation", () => {
     [{ expected_sessions: 4.5 }, "expected_sessions"],
     [{ patient_expectations: "" }, "patient_expectations"],
     [{ risk_formulation: "" }, "risk_formulation"],
+    [{ five_ps: undefined }, "five_ps"],
+    [{ five_ps: "presenting only" }, "five_ps"],
+    [{ five_ps: { ...plan.five_ps, protective: "" } }, "five_ps"],
+    [{ five_ps: { ...plan.five_ps, perpetuating: "x".repeat(601) } }, "five_ps"],
   ])("rejects %j as %s", (patch, field) => {
     const r = validateTreatmentPlan({ ...plan, ...patch }, { minSessions: 3 });
     expect(r).toEqual({ ok: false, field });
@@ -190,6 +208,11 @@ describe("treatment plan validation", () => {
     const legacy: Record<string, unknown> = { ...plan };
     delete legacy.risk_formulation;
     expect(asTreatmentPlan(legacy)?.risk_formulation).toBe("");
+    // Plans written before the 5 Ps still load, with no 5 Ps.
+    const noFivePs: Record<string, unknown> = { ...plan };
+    delete noFivePs.five_ps;
+    expect(asTreatmentPlan(noFivePs)?.five_ps).toBeNull();
+    expect(asTreatmentPlan({ ...plan, five_ps: { presenting: "x" } })?.five_ps).toBeNull();
     expect(asTreatmentPlan({ formulation: "x" })).toBeNull();
     expect(asTreatmentPlan(null)).toBeNull();
   });
@@ -248,6 +271,24 @@ describe("therapy course prompt block", () => {
       );
       expect(block).not.toContain("alcohol");
       expect(block).not.toContain("safety plan");
+    }
+  });
+
+  it("never gives the patient the clinician-only 5 Ps formulation", () => {
+    for (const planIsNew of [true, false]) {
+      const block = formatTherapyCoursePromptBlock(
+        buildCourseSessionContext({
+          courseId: "c",
+          sessionNumber: 4,
+          plannedSessions: 10,
+          treatmentPlan: plan,
+          planIsNew,
+        }),
+      );
+      for (const text of Object.values(plan.five_ps ?? {})) {
+        expect(block).not.toContain(text);
+      }
+      expect(block).not.toContain("age 12");
     }
   });
 
