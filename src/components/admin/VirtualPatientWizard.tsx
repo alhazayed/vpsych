@@ -12,6 +12,13 @@ import { useTranslations } from "next-intl";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import type { AvatarPersonality, ClinicalCore, VoiceProfile } from "@/lib/types";
 import type { HumanPersonalityProfile } from "@/lib/personality-engine/types";
+import {
+  isPatientGender,
+  PATIENT_GENDERS,
+  voiceProfileGender,
+  voicesForPatientGender,
+  type PatientGender,
+} from "@/lib/voice/voice-gender";
 
 /** Mirrors Phase 3A `/api/admin/avatars` write + validation shapes (client-side). */
 type ValidationIssue = {
@@ -54,7 +61,8 @@ type VirtualPatientWriteInput = {
 export type WizardVoiceOption = Pick<
   VoiceProfile,
   "id" | "voice_name" | "language" | "dialect" | "gender" | "is_active"
->;
+> &
+  Partial<Pick<VoiceProfile, "voice_id">>;
 
 export type WizardDisorderOption = {
   id: string;
@@ -1393,7 +1401,11 @@ export function VirtualPatientWizard({
     return map[id];
   };
 
-  const activeVoices = voices.filter((v) => v.is_active);
+  // Only voices of the patient's gender (female voice ⇔ female patient).
+  const activeVoices = voicesForPatientGender(
+    voices.filter((v) => v.is_active),
+    form.clinical.gender,
+  );
   const activeDisorders = disorders.filter((d) => d.is_active);
 
   if (loadingExisting) {
@@ -1519,20 +1531,33 @@ export function VirtualPatientWizard({
               <Field label={t("gender")}>
                 <select
                   className={fieldClass}
-                  value={form.clinical.gender}
-                  onChange={(e) =>
-                    patchForm({
-                      clinical: {
-                        ...form.clinical,
-                        gender: e.target
-                          .value as ClinicalCore["gender"],
-                      },
-                    })
+                  value={
+                    isPatientGender(form.clinical.gender)
+                      ? form.clinical.gender
+                      : ""
                   }
+                  onChange={(e) => {
+                    const gender = e.target.value as PatientGender;
+                    const current = voices.find(
+                      (v) => v.id === form.voice_profile_id,
+                    );
+                    patchForm({
+                      clinical: { ...form.clinical, gender },
+                      // Drop a voice that no longer matches the gender.
+                      ...(current && voiceProfileGender(current) !== gender
+                        ? { voice_profile_id: "" }
+                        : {}),
+                    });
+                  }}
                 >
-                  {["female", "male", "non-binary", "unspecified"].map((g) => (
+                  {!isPatientGender(form.clinical.gender) ? (
+                    <option value="" disabled>
+                      {t("chooseGender")}
+                    </option>
+                  ) : null}
+                  {PATIENT_GENDERS.map((g) => (
                     <option key={g} value={g}>
-                      {g}
+                      {t(`genders.${g}`)}
                     </option>
                   ))}
                 </select>
@@ -1727,6 +1752,9 @@ export function VirtualPatientWizard({
                 ))}
               </select>
             </Field>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {t("voiceGenderHint")}
+            </p>
             <p className="text-sm text-[var(--on-surface-variant)]">
               {t("voiceHint")}
             </p>

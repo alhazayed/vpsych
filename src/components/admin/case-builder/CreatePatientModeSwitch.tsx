@@ -72,7 +72,12 @@ export function CreatePatientModeSwitch({ voices, disorders }: Props) {
   return (
     <GuidedCaseBuilder
       mode="create"
-      voices={voices.map((v) => ({ id: v.id, voice_name: v.voice_name }))}
+      voices={voices.map((v) => ({
+        id: v.id,
+        voice_name: v.voice_name,
+        voice_id: v.voice_id,
+        gender: v.gender,
+      }))}
       onSwitchAdvanced={switchToAdvanced}
     />
   );

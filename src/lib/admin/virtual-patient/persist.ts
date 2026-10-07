@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Avatar, VoiceProfile } from "@/lib/types";
+import type { Avatar, ClinicalCore, VoiceProfile } from "@/lib/types";
 import {
   canTransitionLifecycle,
   createLifecycleStatus,
@@ -10,6 +10,7 @@ import {
 import {
   assessDraftWrite,
   assessPublishReadiness,
+  VOICE_GENDER_MISMATCH,
   type PublishContext,
   type ValidationResult,
   type VirtualPatientWriteInput,
@@ -19,6 +20,7 @@ import {
   coerceVoiceProfile,
   legacyColumnsFromProfile,
 } from "@/lib/voice/registry";
+import { findVoiceGenderMismatches } from "@/lib/voice/voice-gender";
 import {
   isEditableLifecycle,
   readLifecycleStatus,
@@ -249,6 +251,49 @@ export async function createVirtualPatientDraft(
   };
 }
 
+/** Reject an update whose resulting voices do not match the patient's gender. */
+export function voiceGenderMismatchAfterUpdate(
+  existing: Pick<
+    Avatar,
+    "clinical_core" | "voice_id" | "voice_id_ar" | "voice_profile"
+  >,
+  payload: Record<string, unknown>,
+  ctx: PublishContext,
+): Extract<PersistResult, { ok: false }> | null {
+  const core = (
+    "clinical_core" in payload ? payload.clinical_core : existing.clinical_core
+  ) as ClinicalCore | null | undefined;
+  const voiceProfile =
+    "voice_profile_id" in payload
+      ? payload.voice_profile_id
+        ? (ctx.voiceProfile ?? null)
+        : null
+      : coerceVoiceProfile(
+          existing.voice_profile as VoiceProfile | VoiceProfile[] | null,
+        );
+  const pick = (key: "voice_id" | "voice_id_ar") =>
+    (key in payload ? payload[key] : existing[key]) as string | null | undefined;
+  const mismatches = findVoiceGenderMismatches({
+    gender: core?.gender,
+    voiceProfile,
+    voice_id: pick("voice_id"),
+    voice_id_ar: pick("voice_id_ar"),
+  });
+  if (mismatches.length === 0) return null;
+  return {
+    ok: false,
+    status: 400,
+    error: "Patient gender must match the voice",
+    issues: mismatches.map((m) => ({
+      code: VOICE_GENDER_MISMATCH,
+      message: `The ${m.voiceGender} voice does not match a ${core?.gender} patient; choose a ${core?.gender} voice`,
+      path: m.slot === "voice_profile" ? "voice_profile_id" : m.slot,
+      severity: "error" as const,
+      gate: "voice",
+    })),
+  };
+}
+
 export async function updateVirtualPatientDraft(
   supabase: SupabaseClient,
   avatarId: string,
@@ -257,7 +302,7 @@ export async function updateVirtualPatientDraft(
   const { data: existing, error: loadErr } = await supabase
     .from("avatars")
     .select(
-      "id, slug, is_active, lifecycle_status, voice_profile_id, voice_profile:voice_profiles(*)",
+      "id, slug, is_active, lifecycle_status, clinical_core, voice_profile_id, voice_id, voice_id_ar, voice_profile:voice_profiles(*)",
     )
     .eq("id", avatarId)
     .maybeSingle();
@@ -310,6 +355,15 @@ export async function updateVirtualPatientDraft(
       payload.voice_id_ar = cleared.voice_id_ar ?? null;
     }
   }
+
+  // A partial update can change gender or voice alone; check the row as it
+  // will be after this write so a gender/voice mismatch is never saved.
+  const mismatch = voiceGenderMismatchAfterUpdate(
+    existing as unknown as Avatar,
+    payload,
+    ctx,
+  );
+  if (mismatch) return mismatch;
 
   const { data, error } = await supabase.rpc("admin_update_virtual_patient", {
     p_avatar_id: avatarId,

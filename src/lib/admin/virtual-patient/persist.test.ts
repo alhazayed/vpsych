@@ -50,7 +50,7 @@ function fullInput() {
     clinical_core: {
       disorder: "GAD",
       age: 34,
-      gender: "non-binary",
+      gender: "female",
       symptom_profile: [{ id: "worry", description: "Worry" }],
       disclosure_rules: [{ topic: "work", condition: "volunteered" }],
       session_goals: ["Alliance"],
@@ -579,5 +579,67 @@ describe("virtual patient persist lifecycle (Option B)", () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.status).toBe(409);
+  });
+});
+
+describe("patient gender must match the voice", () => {
+  it("CREATE: a male patient with a female voice is rejected before any write", async () => {
+    const rpc = vi.fn();
+    const input = fullInput();
+    const result = await createVirtualPatientDraft(
+      mockClient({ rpc, from: voiceAndDisorderFrom() }),
+      { ...input, clinical_core: { ...input.clinical_core, gender: "male" } },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(400);
+      expect(result.issues?.map((i) => i.code)).toContain("voice_gender_mismatch");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("CREATE: non-binary is no longer accepted", async () => {
+    const rpc = vi.fn();
+    const input = fullInput();
+    const result = await createVirtualPatientDraft(
+      mockClient({ rpc, from: voiceAndDisorderFrom() }),
+      {
+        ...input,
+        clinical_core: { ...input.clinical_core, gender: "non-binary" },
+      },
+    );
+    expect(result.ok).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("UPDATE: changing only the gender is checked against the saved voice", async () => {
+    const rpc = vi.fn();
+    const existing = publishableAvatarRow({
+      voice_profile_id: "voice-1",
+      voice_id: "s3TPKV1kjDlVtZbl4Ksh", // Adam, male
+      voice_profile: { ...publishableAvatarRow().voice_profile, voice_id: "s3TPKV1kjDlVtZbl4Ksh" },
+    });
+    const from = vi.fn((table: string) => {
+      if (table === "avatars") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data: existing, error: null }) }),
+          }),
+        };
+      }
+      return voiceAndDisorderFrom()(table);
+    });
+    const result = await updateVirtualPatientDraft(
+      mockClient({ rpc, from }),
+      "avatar-1",
+      {
+        clinical_core: { ...fullInput().clinical_core, gender: "female" },
+      },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues?.map((i) => i.code)).toContain("voice_gender_mismatch");
+    }
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
