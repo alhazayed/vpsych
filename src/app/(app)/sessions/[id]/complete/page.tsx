@@ -8,6 +8,7 @@ import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
+import { LadderResultCard } from "@/components/training/LadderResultCard";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -98,6 +99,11 @@ export default async function SessionCompletePage({ params }: Props) {
       </div>
 
       {needsReport ? <FinalizeSessionReport sessionId={id} /> : null}
+      <LadderResultCard
+        supabase={supabase}
+        sessionId={id}
+        patientName={typed.avatars?.name ?? ""}
+      />
       <CourseProgressCard
         supabase={supabase}
         courseId={typed.therapy_course_id}

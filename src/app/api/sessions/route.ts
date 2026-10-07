@@ -44,6 +44,18 @@ import {
   buildCourseCarryOver,
   loadPreviousCourseSession,
 } from "@/lib/session-practice";
+import {
+  canStartLadderLevel,
+  findLadderPatient,
+  isLadderLevel,
+  LADDER_LEVEL_LOCKED_MESSAGE,
+  ladderComorbidities,
+  ladderLevelDef,
+  ladderProgress,
+  ladderRiskOverlay,
+  loadLadderAttempts,
+  startLadderAttempt,
+} from "@/lib/training-ladder";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -85,7 +97,61 @@ export async function POST(request: Request) {
     disorderSlugOverride?: string;
     /** Supervisor-assigned skill test; the assignment decides the case. */
     skillTestId?: string;
+    /** Training ladder: the program patient and level decide the case. */
+    ladderPatientKey?: string;
+    ladderLevel?: number;
   };
+
+  // Training ladder — the program fixes patient, disorder, comorbidities,
+  // difficulty and risk for the level. The database refuses a locked level
+  // when the attempt is recorded; this check only gives a clear answer early.
+  const ladderRequested =
+    body.ladderPatientKey !== undefined || body.ladderLevel !== undefined;
+  const ladderPatient = ladderRequested
+    ? findLadderPatient(body.ladderPatientKey)
+    : null;
+  const ladderLevel =
+    ladderRequested && isLadderLevel(body.ladderLevel) ? body.ladderLevel : null;
+  if (ladderRequested && (!ladderPatient || !ladderLevel || body.skillTestId)) {
+    return NextResponse.json(
+      { error: "Unknown training patient or level", code: "ladder_invalid" },
+      { status: 400 },
+    );
+  }
+  const ladder =
+    ladderPatient && ladderLevel
+      ? { patient: ladderPatient, level: ladderLevel }
+      : null;
+  if (ladder) {
+    const { data: programRow } = await supabase
+      .from("training_ladder_patients")
+      .select("avatar_id")
+      .eq("key", ladder.patient.key)
+      .eq("is_active", true)
+      .maybeSingle();
+    const attempts = programRow
+      ? await loadLadderAttempts(supabase, {
+          therapistId: user.id,
+          patientKey: ladder.patient.key,
+        })
+      : null;
+    if (!programRow || !attempts?.available) {
+      return NextResponse.json(
+        {
+          error: "The training program is not available right now.",
+          code: "ladder_unavailable",
+        },
+        { status: 503 },
+      );
+    }
+    if (!canStartLadderLevel(ladderProgress(attempts.attempts), ladder.level)) {
+      return NextResponse.json(
+        { error: LADDER_LEVEL_LOCKED_MESSAGE, code: "ladder_level_locked" },
+        { status: 403 },
+      );
+    }
+    body.avatarId = (programRow as { avatar_id: string }).avatar_id;
+  }
 
   // Skill test — the supervisor's assignment fixes patient, language and case.
   const skillTest = body.skillTestId
@@ -132,6 +198,7 @@ export async function POST(request: Request) {
   // standalone sessions, exactly as before courses existed.
   const requestsSpecificCase = Boolean(
     test ||
+      ladder ||
       body.disorderSlug ||
       body.caseId ||
       body.comorbiditySlugs?.length ||
@@ -247,6 +314,16 @@ export async function POST(request: Request) {
         difficulty: test.spec.difficulty,
         severity: test.spec.severity ?? undefined,
         persist: false,
+      })
+    : ladder
+    ? await createCaseForSession(supabase, {
+        avatar: typedAvatar,
+        locale: effectiveLocale,
+        therapistId: user.id,
+        disorderSlug: ladder.patient.primaryDisorderSlug,
+        comorbiditySlugs: ladderComorbidities(ladder.patient, ladder.level),
+        difficulty: ladderLevelDef(ladder.level).difficulty,
+        riskOverlay: ladderRiskOverlay(ladder.level, ladder.patient.risk),
       })
     : await createCaseForSession(supabase, {
     avatar: typedAvatar,
@@ -381,10 +458,11 @@ export async function POST(request: Request) {
     .single();
 
   // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
-  // A skill test session is never retried without its test link.
+  // A skill test or ladder session is never retried without its case.
   if (
     error &&
     !test &&
+    !ladder &&
     /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset|interaction_mode/i.test(
       error.message,
     )
@@ -474,6 +552,21 @@ export async function POST(request: Request) {
     );
   }
 
+  if (ladder) {
+    const attempt = await startLadderAttempt(supabase, {
+      sessionId: session.id,
+      patientKey: ladder.patient.key,
+      level: ladder.level,
+    });
+    if (!attempt.ok) {
+      await closeFailedSessionStart(supabase, session.id);
+      return NextResponse.json(
+        { error: attempt.error, code: attempt.code },
+        { status: attempt.status },
+      );
+    }
+  }
+
   // Stage 6 — seed case_memory with dyad Adaptation carry + CI mind state (R-I1).
   // Best-effort; never blocks session create.
   // A continuing course already has case_memory for its case; keep it.
@@ -544,6 +637,8 @@ export async function POST(request: Request) {
     courseSessionNumber,
     skillTestId: null,
     testSessionNumber: null,
+    ladderPatientKey: ladder?.patient.key ?? null,
+    ladderLevel: ladder?.level ?? null,
   });
 }
 

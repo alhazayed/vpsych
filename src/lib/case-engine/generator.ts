@@ -8,6 +8,7 @@ import { validateCaseGeneration } from "@/lib/case-engine/validation";
 import type {
   CaseGenerationRequest,
   CaseInstanceSnapshot,
+  CaseRiskOverlay,
   CaseSeverity,
   DifficultyModifiers,
   RandomizedContext,
@@ -149,6 +150,63 @@ function applyDifficultyToDisclosure(
   });
 }
 
+const SI_ORDER: ClinicalCore["risk_profile"]["suicidal_ideation"][] = [
+  "none",
+  "passive",
+  "active_no_plan",
+  "active_with_plan",
+];
+
+const RISK_TOPIC =
+  /suicid|self[- ]?harm|\bSI\b|death wish|end (?:my|his|her|their) life|^risk$/i;
+
+/**
+ * Apply a case-level risk overlay. Risk only goes up (the higher ideation
+ * level wins, self-harm is OR-ed), and every suicide/self-harm disclosure rule
+ * takes the overlay's condition with its notes appended, so authored nuance is
+ * kept. "never" rules (no method or means detail) are left alone. When the
+ * case has no such rule, the overlay adds one.
+ */
+export function applyRiskOverlay(
+  core: ClinicalCore,
+  overlay: CaseRiskOverlay | null | undefined,
+): ClinicalCore {
+  if (!overlay) return core;
+  const current = core.risk_profile ?? { suicidal_ideation: "none" };
+  const si =
+    SI_ORDER.indexOf(overlay.suicidal_ideation) >
+    SI_ORDER.indexOf(current.suicidal_ideation)
+      ? overlay.suicidal_ideation
+      : current.suicidal_ideation;
+  const union = (a?: string[], b?: string[]) =>
+    [...new Set([...(a ?? []), ...(b ?? [])])];
+  const risk_profile: ClinicalCore["risk_profile"] = {
+    ...current,
+    suicidal_ideation: si,
+    self_harm: Boolean(current.self_harm || overlay.self_harm),
+    static_factors: union(current.static_factors, overlay.static_factors),
+    dynamic_factors: union(current.dynamic_factors, overlay.dynamic_factors),
+  };
+  let matched = false;
+  const disclosure_rules = core.disclosure_rules.map((rule) => {
+    if (rule.condition === "never" || !RISK_TOPIC.test(rule.topic)) return rule;
+    matched = true;
+    return {
+      ...rule,
+      condition: overlay.disclosure.condition,
+      notes: [rule.notes, overlay.disclosure.notes].filter(Boolean).join(" | "),
+    };
+  });
+  if (!matched) {
+    disclosure_rules.push({
+      topic: "suicidal thoughts and self-harm",
+      condition: overlay.disclosure.condition,
+      notes: overlay.disclosure.notes,
+    });
+  }
+  return { ...core, risk_profile, disclosure_rules };
+}
+
 function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
   const primary = req.primaryDisorder;
   const pkg = primary.package ?? {};
@@ -263,7 +321,7 @@ export function generateCaseInstance(
   const rng = createRng(seed);
   const randomized = randomizeContext(rng);
 
-  let clinical_core = mergeClinicalCore(req);
+  let clinical_core = applyRiskOverlay(mergeClinicalCore(req), req.riskOverlay);
   clinical_core = {
     ...clinical_core,
     disclosure_rules: applyDifficultyToDisclosure(
