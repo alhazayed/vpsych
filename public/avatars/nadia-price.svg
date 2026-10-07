@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Nadia Price">
+  <defs>
+    <linearGradient id="bg-nadia-price" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#efe2d8"/>
+      <stop offset="100%" stop-color="#e2e6ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-nadia-price)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#8a5a3a" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#8d5a3b"/>
+  <path d="M104 180c-8-66 30-124 96-124s104 58 96 124c-4 20-12 34-20 40 0-40-6-74-20-96-16 8-36 12-56 12s-40-4-56-12c-14 22-20 56-20 96-8-6-16-20-20-40z" fill="#1b1514"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#6e3f2c" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#8a5a3a"/>
+</svg>

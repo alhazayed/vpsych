@@ -133,9 +133,6 @@ export default async function TrainingPage() {
                     {t("progress", { cleared: p.progress.clearedCount })}
                   </p>
                   <LadderLevelList progress={p.progress} compact />
-                  {p.patient.provisional ? (
-                    <p className="text-xs text-[var(--on-surface-variant)]">{t("provisional")}</p>
-                  ) : null}
                   <Link href={`/training/${p.patient.key}`} className="btn-primary w-full">
                     <span className="material-symbols-outlined text-[20px]" aria-hidden>
                       stairs

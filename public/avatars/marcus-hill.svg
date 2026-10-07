@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Marcus Hill">
+  <defs>
+    <linearGradient id="bg-marcus-hill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e1e6ea"/>
+      <stop offset="100%" stop-color="#ebe5dc"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-marcus-hill)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#4f5f6b" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#7a4b31"/>
+  <path d="M116 165c4-70 42-106 84-106s80 36 84 106c-10-30-30-46-50-50-12 14-36 20-66 20-22 0-38 12-52 30z" fill="#161210"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#5e3524" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#4f5f6b"/>
+</svg>

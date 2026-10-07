@@ -100,6 +100,24 @@ describe("canonical-facts Layer A", () => {
     expect(block).toMatch(/instruction-level|طبقة تعليمات/i);
   });
 
+  it("the stopped 12-day SSRI is Jordan Hale's history only", () => {
+    for (const locale of ["en-US", "ar-JO"]) {
+      const jordan = formatCanonicalFactsForPrompt({
+        clinical_core: jordanCore,
+        avatarSlug: "jordan-hale",
+        locale,
+      });
+      expect(jordan).toMatch(/after 12 days|بعد ١٢ يوم/);
+      const other = formatCanonicalFactsForPrompt({
+        clinical_core: jordanCore,
+        avatarSlug: "ethan-cole",
+        locale,
+      });
+      expect(other).not.toMatch(/12 days|١٢ يوم/);
+      expect(other).toMatch(/correct immediately|صحّح فوراً/);
+    }
+  });
+
   it("sibling medication remains attributed to sibling", () => {
     const block = formatCanonicalFactsForPrompt({
       clinical_core: withPreservedCaseFile(jordanCore, "jordan-hale"),

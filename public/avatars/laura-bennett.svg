@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Laura Bennett">
+  <defs>
+    <linearGradient id="bg-laura-bennett" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dde6ee"/>
+      <stop offset="100%" stop-color="#ede6db"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-laura-bennett)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#3f5f7a" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#f0cdb2"/>
+  <path d="M108 175c6-80 46-118 92-118s86 38 92 118c4 50 0 92-12 110-6-40-12-78-14-118-22 10-44 14-66 14s-44-4-66-14c-2 40-8 78-14 118-12-18-16-60-12-110z" fill="#b9863f"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#c08b72" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#3f5f7a"/>
+</svg>

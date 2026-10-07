@@ -54,6 +54,7 @@ import {
   ladderProgress,
   ladderRiskOverlay,
   loadLadderAttempts,
+  loadLadderAvatarIds,
   startLadderAttempt,
 } from "@/lib/training-ladder";
 
@@ -176,13 +177,25 @@ export async function POST(request: Request) {
   const { data: avatar, error: avatarError } = await supabase
     .from("avatars")
     .select(
-      "id, name, disorder, age, gender, is_active, language, default_locale, slug, schema_version, clinical_core, personalities, voice_id, voice_id_ar, voice_profile_id, persona_prompt, ideal_guidelines, rubric",
+      "id, name, disorder, age, gender, is_active, language, default_locale, slug, schema_version, clinical_core, personalities, voice_id, voice_id_ar, voice_profile_id, persona_prompt, ideal_guidelines, rubric, human_personality",
     )
     .eq("id", body.avatarId)
     .single();
 
   if (avatarError || !avatar?.is_active) {
     return NextResponse.json({ error: "Avatar not found" }, { status: 404 });
+  }
+
+  // A Training Program patient's persona is written for the ladder (risk on
+  // every level), so it is only ever played through a ladder level.
+  if (!ladder && (await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {
+    return NextResponse.json(
+      {
+        error: "This patient is part of the Training Program. Start it from the Training Program page.",
+        code: "ladder_patient_only",
+      },
+      { status: 400 },
+    );
   }
 
   const typedAvatar = avatar as Avatar;

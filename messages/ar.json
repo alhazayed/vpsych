@@ -2617,7 +2617,6 @@
     "summary": "{patients, plural, zero {لا مرضى} one {مريض واحد} two {مريضان} few {# مرضى} many {# مريضًا} other {# مريض}} · {levels} مستوى",
     "unavailable": "برنامج التدريب غير متاح بعد. يرجى المحاولة لاحقًا.",
     "empty": "لا يوجد مرضى تدريب متاحون بعد.",
-    "provisional": "مريض للتمرين ريثما يُجهَّز مرضى البرنامج العشرة.",
     "patientNumber": "المريض {n}",
     "patientTitle": "المريض {n} — {name}",
     "identity": "{gender} · {age} سنة",
