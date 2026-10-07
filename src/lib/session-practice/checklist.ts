@@ -5,6 +5,7 @@
 
 import {
   PRACTICE_PATTERNS,
+  matchesPractice,
   type PracticeWindow,
 } from "@/lib/session-practice/patterns";
 import {
@@ -82,7 +83,7 @@ export function evaluateSessionPractice(
     const [from, to] = windowRange(p.window, therapistTurns.length);
     let turn_index: number | null = null;
     for (let i = from; i < to; i++) {
-      if (p.pattern.test(therapistTurns[i]!)) {
+      if (matchesPractice(p, therapistTurns[i]!)) {
         turn_index = i;
         break;
       }

@@ -140,8 +140,8 @@ trainee did.
 ## Trainee practice checklist (Phase 3)
 
 The session complete page (`/sessions/[id]/complete`) shows the trainee a
-"Practice checklist": the practices expected in that session, each marked done
-or not seen, grouped as on the admin panel. `buildTraineeChecklist`
+"Practice checklist": the practices expected in that session, each marked covered
+(green) or not performed (red), grouped as on the admin panel. `buildTraineeChecklist`
 (`trainee-checklist.ts`) reduces the `evaluateSessionPractice` result to
 `{ group, items: [{ id, done }] }` and drops checks that are not applicable
 (measures, follow-up checks in a first session, safety planning without risk).
@@ -149,3 +149,10 @@ or not seen, grouped as on the admin panel. `buildTraineeChecklist`
 It carries no score, count, coverage, excerpt or narrative; the performance
 report stays admin-only. Skill test sessions never reach it (the complete page
 returns early for them), so exam cases stay sealed.
+
+Arabic cues: each pattern may carry an `arabic` regex written in normalized
+spelling. `matchesPractice` tests the raw turn, then `normalizeArabic(turn)`
+(diacritics removed, أ/إ/آ → ا, ة → ه, ى → ي), so typed and transcribed
+variants ("اسبوعك", "الجلسه") count. Crisis steps that reuse practice patterns
+match the same way. `extractHomework` (course carry-over) still uses the raw
+pattern only.

@@ -572,9 +572,9 @@
       },
       "checklist": {
         "title": "Practice checklist",
-        "subtitle": "Practices you used in this session, and ones you could add next time.",
+        "subtitle": "Green: covered in this session. Red: not performed this time.",
         "done": "done",
-        "missed": "not seen",
+        "missed": "not performed",
         "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
       }
     },
