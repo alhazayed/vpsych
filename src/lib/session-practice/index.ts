@@ -53,3 +53,14 @@ export {
   type EvidenceReason,
   type ScoreEvidence,
 } from "@/lib/session-practice/evidence";
+export {
+  ALLIANCE_RATING_LIMITATIONS,
+  ALLIANCE_RATING_VERSION,
+  RUPTURE_TRUST_DROP,
+  UNREPAIRED_RUPTURE_PENALTY,
+  buildAllianceRating,
+  findRuptures,
+  sessionTraces,
+  type AllianceRating,
+  type AllianceRupture,
+} from "@/lib/session-practice/alliance-rating";
