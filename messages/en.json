@@ -567,6 +567,13 @@
         "done": "Your performance report has been prepared for your instructor.",
         "error": "The performance report could not be prepared yet. Your transcript is saved.",
         "retry": "Try again"
+      },
+      "checklist": {
+        "title": "Practice checklist",
+        "subtitle": "Practices you used in this session, and ones you could add next time.",
+        "done": "done",
+        "missed": "not seen",
+        "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
       }
     },
     "loadErrorTitle": "Sessions unavailable",
