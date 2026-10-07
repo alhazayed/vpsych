@@ -30,6 +30,7 @@ export {
 export {
   isRealtimeSimulationEnabled,
   isRealtimeStreamingEnabled,
+  isTherapyRoomStreamingEnabled,
 } from "@/lib/realtime/feature-flag";
 
 export { createVoiceGateway } from "@/lib/realtime/voice-gateway";

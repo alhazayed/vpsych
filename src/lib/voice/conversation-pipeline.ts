@@ -46,6 +46,8 @@ export type PipelineTurnResult = {
   aiSource?: string | null;
 };
 
+type SynthesisResult = Awaited<ReturnType<typeof synthesizeSpeech>>;
+
 export type SpeakHandlers = {
   onstart?: () => void;
   onend?: () => void;
@@ -257,6 +259,13 @@ export async function playPatientSpeech(params: {
   onUnavailable?: (info: { code: string; status?: number }) => void;
   /** Start playback on the first audio chunk where the browser supports it. */
   streamPlayback?: boolean;
+  /**
+   * Use the TTS route's per-sentence budget (`?progressive=1`, ≤ 400 chars)
+   * — for one part of a streamed reply.
+   */
+  progressive?: boolean;
+  /** TTS already requested (prefetched while an earlier part played). */
+  prefetched?: Promise<SynthesisResult>;
 }): Promise<PlaybackOutcome> {
   const handlers = params.handlers ?? {};
   const diag = params.onDiagnostic ?? (() => undefined);
@@ -287,22 +296,24 @@ export async function playPatientSpeech(params: {
   handlers.onstart?.();
 
   diag({ event: "tts_request_started" });
-  const result = await synthesizeSpeech({
-    text: params.text,
-    locale: params.locale,
-    voiceId: params.voiceId,
-    voiceIdAr: params.voiceIdAr,
-    voiceProfileId: params.voiceProfileId,
-    avatarId: params.avatarId,
-    speechPace: params.speechPace,
-    speechEnergy: params.speechEnergy,
-    disorderSlug: params.disorderSlug,
-    emotion: params.emotion,
-    stability: params.stability,
-    style: params.style,
-    signal: params.signal,
-    streamPlayback: params.streamPlayback,
-  });
+  const result = await (params.prefetched ??
+    synthesizeSpeech({
+      text: params.text,
+      locale: params.locale,
+      voiceId: params.voiceId,
+      voiceIdAr: params.voiceIdAr,
+      voiceProfileId: params.voiceProfileId,
+      avatarId: params.avatarId,
+      speechPace: params.speechPace,
+      speechEnergy: params.speechEnergy,
+      disorderSlug: params.disorderSlug,
+      emotion: params.emotion,
+      stability: params.stability,
+      style: params.style,
+      signal: params.signal,
+      streamPlayback: params.streamPlayback,
+      progressive: params.progressive,
+    }));
   diag({
     event: "tts_response",
     ok: result.mode === "elevenlabs",
@@ -572,6 +583,150 @@ export async function playPatientSpeech(params: {
     result.failure?.code ?? "TTS_FAILED",
     result.failure?.status,
   );
+}
+
+/** One part of a streamed patient reply, as spoken. */
+export type SpeechSegment = {
+  text: string;
+  /** Where `text` starts in the final (persisted) reply; for heard-portion. */
+  offset: number;
+  /** Aborts only this part (its draft was discarded); later parts still play. */
+  cut?: AbortSignal;
+};
+
+/** Yields the parts of a reply in order; resolves null when there are no more. */
+export type SpeechSegmentSource = {
+  next: () => Promise<SpeechSegment | null>;
+};
+
+/** Longest text the TTS route accepts on its per-sentence budget. */
+export const PROGRESSIVE_TTS_MAX_CHARS = 400;
+
+function eitherSignal(a?: AbortSignal, b?: AbortSignal): AbortSignal | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  const ctrl = new AbortController();
+  const abort = () => ctrl.abort();
+  if (a.aborted || b.aborted) ctrl.abort();
+  a.addEventListener("abort", abort, { once: true });
+  b.addEventListener("abort", abort, { once: true });
+  return ctrl.signal;
+}
+
+/**
+ * Speak a reply that arrives in parts (streamed reply): each part plays in
+ * order through `playPatientSpeech`, and the next part's TTS is requested as
+ * soon as its text is known, while the current part is still playing.
+ *
+ * `handlers.onstart` fires before the first part, `onend` / `onerror` once at
+ * the very end. A part whose `cut` signal aborts stops and the next part
+ * plays; the overall `signal` (barge-in / pause / end) stops everything.
+ * Outcome: "browser" if any part fell back to the browser voice, else
+ * "elevenlabs" if any part played, else "unavailable".
+ */
+export async function playPatientSpeechSegments(
+  params: Omit<
+    Parameters<typeof playPatientSpeech>[0],
+    "text" | "prefetched" | "progressive" | "pauseBeforeMs"
+  > & {
+    segments: SpeechSegmentSource;
+    /** A part is about to play (for heard-portion bookkeeping). */
+    onSegment?: (segment: SpeechSegment) => void;
+  },
+): Promise<PlaybackOutcome> {
+  const handlers = params.handlers ?? {};
+  const signal = params.signal;
+  type Prepared = { segment: SpeechSegment; synth: Promise<SynthesisResult> };
+
+  const synthesize = (segment: SpeechSegment): Promise<SynthesisResult> =>
+    synthesizeSpeech({
+      text: segment.text,
+      locale: params.locale,
+      voiceId: params.voiceId,
+      voiceIdAr: params.voiceIdAr,
+      voiceProfileId: params.voiceProfileId,
+      avatarId: params.avatarId,
+      speechPace: params.speechPace,
+      speechEnergy: params.speechEnergy,
+      disorderSlug: params.disorderSlug,
+      emotion: params.emotion,
+      stability: params.stability,
+      style: params.style,
+      signal: eitherSignal(signal, segment.cut),
+      streamPlayback: params.streamPlayback,
+      progressive: segment.text.length <= PROGRESSIVE_TTS_MAX_CHARS,
+    });
+  const prepareNext = (): Promise<Prepared | null> =>
+    params.segments.next().then((segment) =>
+      segment && segment.text.trim() && !signal?.aborted
+        ? { segment, synth: synthesize(segment) }
+        : null,
+    );
+  /** Free a prefetched clip that will never play. */
+  const release = (pending: Promise<Prepared | null> | null) => {
+    void pending
+      ?.then((p) => p?.synth)
+      .then((r) => {
+        if (r?.mode === "elevenlabs" && r.objectUrl) {
+          r.stream?.cancel();
+          URL.revokeObjectURL(r.objectUrl);
+        }
+      })
+      .catch(() => undefined);
+  };
+  const waitOrAbort = <T,>(p: Promise<T>): Promise<T | "aborted"> =>
+    new Promise((resolve) => {
+      if (signal?.aborted) return resolve("aborted");
+      const onAbort = () => resolve("aborted");
+      signal?.addEventListener("abort", onAbort, { once: true });
+      p.then(
+        (v) => {
+          signal?.removeEventListener("abort", onAbort);
+          resolve(v);
+        },
+        () => {
+          signal?.removeEventListener("abort", onAbort);
+          resolve(null as T);
+        },
+      );
+    });
+
+  let started = false;
+  let played: "elevenlabs" | "browser" | null = null;
+  let pending: Promise<Prepared | null> | null = prepareNext();
+  for (;;) {
+    const current = await waitOrAbort(pending);
+    if (current === "aborted") {
+      release(pending);
+      handlers.onerror?.();
+      return "interrupted";
+    }
+    if (!current) break;
+    // Ask for the following part now, so its TTS overlaps this playback.
+    pending = prepareNext();
+    if (!started) {
+      started = true;
+      handlers.onstart?.();
+    }
+    params.onSegment?.(current.segment);
+    const mode = await playPatientSpeech({
+      ...params,
+      text: current.segment.text,
+      prefetched: current.synth,
+      signal: eitherSignal(signal, current.segment.cut),
+      handlers: undefined,
+    });
+    if (signal?.aborted) {
+      release(pending);
+      handlers.onerror?.();
+      return "interrupted";
+    }
+    if (mode === "browser") played = "browser";
+    else if (mode === "elevenlabs" && played == null) played = "elevenlabs";
+  }
+  if (played) handlers.onend?.();
+  else handlers.onerror?.();
+  return played ?? "unavailable";
 }
 
 /**

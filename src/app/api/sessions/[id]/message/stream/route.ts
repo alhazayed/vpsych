@@ -24,6 +24,7 @@ import {
   createSseResponse,
   encodeSse,
   isRealtimeStreamingEnabled,
+  isTherapyRoomStreamingEnabled,
 } from "@/lib/realtime";
 import { realtimeMetrics } from "@/lib/realtime/observability";
 import type { StreamEventType } from "@/lib/realtime/types";
@@ -42,7 +43,7 @@ function sanitizeClientTurnId(raw: unknown): string | null {
 }
 
 export async function POST(request: Request, ctx: Params) {
-  if (!isRealtimeStreamingEnabled()) {
+  if (!isRealtimeStreamingEnabled() && !isTherapyRoomStreamingEnabled()) {
     return NextResponse.json(
       { error: "Realtime streaming is not enabled" },
       { status: 404 },

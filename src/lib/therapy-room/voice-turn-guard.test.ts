@@ -40,9 +40,19 @@ describe("TherapyRoomSession voice turn guardrails", () => {
   it("shows the patient text before TTS / playback starts", () => {
     const fn = body("processTherapistAudio");
     const text = fn.indexOf("setLastPatientText(turn.data.assistantMessage.content)");
-    const speak = fn.indexOf("await speakPatient(");
     expect(text).toBeGreaterThan(-1);
-    expect(text).toBeLessThan(speak);
+    // Every speak call (streamed and classic) is preceded by a patient-text
+    // update since the previous one.
+    let from = 0;
+    let speaks = 0;
+    for (;;) {
+      const speak = fn.indexOf("await speakPatient(", from);
+      if (speak === -1) break;
+      speaks += 1;
+      expect(fn.slice(from, speak)).toMatch(/setLastPatientText\(/);
+      from = speak + 1;
+    }
+    expect(speaks).toBeGreaterThan(0);
   });
 
   it("surfaces STT and message failures as a visible stage error", () => {
