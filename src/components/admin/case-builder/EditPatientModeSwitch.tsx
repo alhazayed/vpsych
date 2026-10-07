@@ -94,7 +94,12 @@ export function EditPatientModeSwitch({
   return (
     <GuidedCaseBuilder
       mode="edit"
-      voices={voices.map((v) => ({ id: v.id, voice_name: v.voice_name }))}
+      voices={voices.map((v) => ({
+        id: v.id,
+        voice_name: v.voice_name,
+        voice_id: v.voice_id,
+        gender: v.gender,
+      }))}
       caseIdentity={caseIdentity}
       initialDraft={initialDraft}
       initialReadiness={initialReadiness}

@@ -23,6 +23,7 @@ export {
 export {
   createVirtualPatientDraft,
   updateVirtualPatientDraft,
+  voiceGenderMismatchAfterUpdate,
   publishVirtualPatient,
   archiveVirtualPatient,
   restoreVirtualPatient,

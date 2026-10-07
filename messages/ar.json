@@ -1193,7 +1193,13 @@
         "warnings": "تحذيرات",
         "rawValidationJson": "JSON التحقق الخام",
         "fieldPathDetails": "مسار الحقل التقني",
-        "rawPayloadJson": "حمولة الكتابة الخام"
+        "rawPayloadJson": "حمولة الكتابة الخام",
+        "genders": {
+          "female": "أنثى",
+          "male": "ذكر"
+        },
+        "chooseGender": "اختر أنثى أو ذكر",
+        "voiceGenderHint": "تظهر فقط الأصوات المطابقة لجنس المريض: المريضة صوتها أنثوي، والمريض صوته ذكوري."
       },
       "loadErrorTitle": "مكتبة المرضى غير متاحة",
       "loadErrorDescription": "تعذّر تحميل المرضى الافتراضيين. حاول مجدداً أو راجع صحة النظام."
@@ -2010,7 +2016,9 @@
         "dependency": "اعتمادية",
         "intellectualization": "تثقيف زائد / عقلنة",
         "limited_insight": "بصيرة محدودة"
-      }
+      },
+      "chooseGender": "اختر أنثى أو ذكر",
+      "voiceGenderHint": "تظهر فقط الأصوات المطابقة لجنس المريض: المريضة صوتها أنثوي، والمريض صوته ذكوري."
     },
     "accounts": {
       "title": "الموافقة على الحسابات",

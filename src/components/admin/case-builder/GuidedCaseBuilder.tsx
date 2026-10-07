@@ -37,6 +37,13 @@ import {
 import { educatorAdminError } from "@/lib/admin/admin-product-errors";
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import type { SymptomProfileItem } from "@/lib/types";
+import {
+  isPatientGender,
+  PATIENT_GENDERS,
+  voiceProfileGender,
+  voicesForPatientGender,
+  type PatientGender,
+} from "@/lib/voice/voice-gender";
 
 type CataloguesPayload = {
   presentations: TrainingPresentation[];
@@ -53,7 +60,12 @@ export type GuidedCaseIdentity = {
 };
 
 type Props = {
-  voices: { id: string; voice_name: string }[];
+  voices: {
+    id: string;
+    voice_name: string;
+    voice_id?: string | null;
+    gender?: string | null;
+  }[];
   onSwitchAdvanced: () => void;
   mode?: GuidedBuilderMode;
   /** Required for edit mode — existing case identity banner. */
@@ -136,7 +148,8 @@ export function GuidedCaseBuilder({
       ? { ...initialDraft, mode }
       : emptyGuidedDraft({
           mode,
-          voiceProfileId: voices[0]?.id ?? null,
+          // No voice until a gender is chosen; the gender picks a matching one.
+          voiceProfileId: null,
         }),
   );
   const [approvals, setApprovals] = useState<GuidedChangeApprovals>({});
@@ -747,22 +760,44 @@ export function GuidedCaseBuilder({
                 {t("profile.gender")}
                 <select
                   className={fieldClass}
-                  value={draft.profile.gender}
+                  value={
+                    isPatientGender(draft.profile.gender)
+                      ? draft.profile.gender
+                      : ""
+                  }
                   onChange={(e) => {
+                    const gender = e.target.value as PatientGender;
+                    const current = voices.find(
+                      (v) => v.id === draft.voiceProfileId,
+                    );
                     patch({
                       profile: {
                         ...draft.profile,
-                        gender: e.target.value as GuidedCaseDraft["profile"]["gender"],
+                        gender,
                       },
                       sectionApprovals: {
                         ...draft.sectionApprovals,
                         profile: true,
                       },
+                      // Keep the voice only if it matches the new gender;
+                      // otherwise take the first voice that does.
+                      ...(current && voiceProfileGender(current) === gender
+                        ? {}
+                        : {
+                            voiceProfileId:
+                              voicesForPatientGender(voices, gender)[0]?.id ??
+                              null,
+                          }),
                     });
                     touchField("profile");
                   }}
                 >
-                  {["female", "male", "non-binary", "unspecified"].map((g) => (
+                  {!isPatientGender(draft.profile.gender) ? (
+                    <option value="" disabled>
+                      {t("chooseGender")}
+                    </option>
+                  ) : null}
+                  {PATIENT_GENDERS.map((g) => (
                     <option key={g} value={g}>
                       {t(`gender.${g}`)}
                     </option>
@@ -1344,12 +1379,15 @@ export function GuidedCaseBuilder({
                 }}
               >
                 <option value="">{t("voiceOptional")}</option>
-                {voices.map((v) => (
+                {voicesForPatientGender(voices, draft.profile.gender).map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.voice_name}
                   </option>
                 ))}
               </select>
+              <span className="mt-1 block text-xs text-[var(--on-surface-variant)]">
+                {t("voiceGenderHint")}
+              </span>
             </label>
           </section>
         )}

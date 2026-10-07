@@ -3,6 +3,10 @@ import { validateHumanPersonality } from "@/lib/personality-engine";
 import { assessVirtualPatientCompleteness } from "@/lib/admin/virtual-patient-completeness";
 import { isActiveVoiceProfile } from "@/lib/voice/registry";
 import type { VoiceProfile } from "@/lib/types";
+import {
+  findVoiceGenderMismatches,
+  isPatientGender,
+} from "@/lib/voice/voice-gender";
 
 export type ValidationIssue = {
   code: string;
@@ -130,16 +134,19 @@ function validateClinicalCore(
       }),
     );
   }
-  const genders = ["female", "male", "non-binary", "unspecified"];
-  if (!isNonEmptyString(core.gender) || !genders.includes(core.gender)) {
+  // A patient is male or female. "unspecified" (or empty) only means "not
+  // chosen yet" in a draft; any other value is rejected outright.
+  if (!isPatientGender(core.gender)) {
+    const notChosen =
+      !isNonEmptyString(core.gender) || core.gender === "unspecified";
     out.push(
       issue(
         "clinical_gender_required",
-        `clinical_core.gender must be one of: ${genders.join(", ")}`,
+        "clinical_core.gender must be female or male",
         {
           path: "clinical_core.gender",
           gate: "clinical",
-          severity: mode === "publish" ? "error" : "warning",
+          severity: mode === "draft" && notChosen ? "warning" : "error",
         },
       ),
     );
@@ -315,6 +322,13 @@ export function validateSlug(slug: unknown): ValidationIssue[] {
   return [];
 }
 
+/** Issue codes that block even a draft save (not just publish). */
+export const VOICE_GENDER_MISMATCH = "voice_gender_mismatch";
+const DRAFT_BLOCKING_CODES = new Set([
+  VOICE_GENDER_MISMATCH,
+  "clinical_gender_required",
+]);
+
 export type PublishContext = {
   voiceProfile?: VoiceProfile | null;
   defaultDisorderId?: string | null;
@@ -362,6 +376,27 @@ export function validateVirtualPatientWrite(
       mode,
     ),
   );
+
+  // The voice must match the patient's gender (female voice ⇒ female
+  // patient and vice versa). Blocking in drafts too, so a mismatch is never
+  // saved.
+  for (const m of findVoiceGenderMismatches({
+    gender: input.clinical_core?.gender,
+    voiceProfile: input.voice_profile_id ? ctx.voiceProfile : null,
+    voice_id: input.voice_id,
+    voice_id_ar: input.voice_id_ar,
+  })) {
+    issues.push(
+      issue(
+        VOICE_GENDER_MISMATCH,
+        `The ${m.voiceGender} voice does not match a ${input.clinical_core?.gender} patient; choose a ${input.clinical_core?.gender} voice`,
+        {
+          path: m.slot === "voice_profile" ? "voice_profile_id" : m.slot,
+          gate: "voice",
+        },
+      ),
+    );
+  }
 
   const completeness = assessVirtualPatientCompleteness({
     human_personality: input.human_personality as Avatar["human_personality"],
@@ -539,8 +574,11 @@ export function assessDraftWrite(
 ): ValidationResult {
   const draft = validateVirtualPatientWrite(input, "draft", ctx);
   const publish = assessPublishReadiness(input, ctx);
+  const blocked = draft.issues.some(
+    (i) => i.severity === "error" && DRAFT_BLOCKING_CODES.has(i.code),
+  );
   return {
-    ok: validateSlug(input.slug).length === 0,
+    ok: validateSlug(input.slug).length === 0 && !blocked,
     publishReady: publish.publishReady,
     issues: draft.issues,
     gates: publish.gates,
