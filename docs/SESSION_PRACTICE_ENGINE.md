@@ -118,7 +118,25 @@ appears on the admin report and the supervisor test page when the patient
 disclosed or the case carries risk. Phrase matching only, computed on read,
 not validated.
 
+## Crisis escalation (Phase 3)
+
+`crisis-escalation.ts` gives the existing Patient Agent one prompt block,
+injected in the shared clinical turn (`lib/sessions/clinical-turn.ts`), so
+text, voice and streaming behave the same. It applies only when the case's
+own risk profile has active suicidal ideation:
+
+- on the patient's 6th reply, the patient lets the therapist know the risk has
+  become urgent today: with a plan, "not sure I can keep myself safe
+  tonight"; without one, the thoughts are stronger and frightening, still no
+  plan. Method detail stays forbidden;
+- on later replies (or from the reply after an earlier disclosure), the
+  patient reacts to how the therapist handles it, without retracting or
+  escalating further.
+
+Cases with no or passive ideation never escalate and their prompts are
+byte-identical to before. The Crisis handling panel then shows what the
+trainee did.
+
 ## Next
 
-Phase 3: the patient escalating to imminent risk mid-session, and feedback the
-trainee can see (practice checklist only).
+Phase 3: feedback the trainee can see (practice checklist only).
