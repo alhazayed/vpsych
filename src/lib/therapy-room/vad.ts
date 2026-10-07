@@ -80,6 +80,11 @@ export type HandsFreeVadOptions = {
     onActivity?: (active: boolean) => void;
     /** Hard ceiling of trailing silence before auto-commit. */
     maxSilenceMs: number;
+    /**
+     * Trailing silence that reports a pause (stage 1). Defaults to
+     * `silenceMs`. Only starts speculative work; the caller decides commit.
+     */
+    pauseMs?: number;
     /** Continuous voiced time required to count as resumed speech. */
     resumeMinMs?: number;
   };
@@ -385,7 +390,7 @@ export async function startHandsFreeVad(
         totalSpeechMs,
         minSpeechMs,
         quietForMs: quietFor,
-        silenceMs,
+        silenceMs: twoStage?.pauseMs ?? silenceMs,
         elapsedMs: now - startedAt,
         maxMs,
       });

@@ -71,6 +71,8 @@ export async function transcribeTherapistSpeech(params: {
   /** session.language */
   locale: string;
   signal?: AbortSignal;
+  /** A pause transcript that may be discarded (own rate-limit bucket). */
+  speculative?: boolean;
 }): Promise<
   | { ok: true; transcript: string; provider?: string }
   | {
@@ -86,6 +88,7 @@ export async function transcribeTherapistSpeech(params: {
     audio: params.audio,
     locale: params.locale,
     signal: params.signal,
+    speculative: params.speculative,
   });
   if (!result.ok) {
     return {

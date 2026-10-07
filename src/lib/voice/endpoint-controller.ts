@@ -1,7 +1,7 @@
 /**
  * Two-stage endpoint controller (Human Conversation Fidelity).
  *
- * Stage 1 — the energy VAD reports a PAUSE (silence ≥ base budget) and keeps
+ * Stage 1 — the energy VAD reports a PAUSE (silence ≥ speculativePauseMs) and keeps
  *           the microphone open. The controller transcribes the audio so far
  *           speculatively.
  * Stage 2 — the speculative transcript is classified (complete / incomplete /
@@ -21,6 +21,7 @@
  */
 
 import {
+  ENDPOINT_TIMING,
   classifyUtteranceCompleteness,
   decideEndpoint,
   type EndpointLocale,
@@ -149,19 +150,39 @@ export function createEndpointController(params: {
     params.onCommit(reason);
   };
 
+  /** Commit once the silence reaches `ms`; never sooner (pause may be early). */
+  const commitAfterSilence = (
+    forVersion: number,
+    ms: number,
+    reason: EndpointCommitReason,
+  ) => {
+    const remainingMs = ms - (now() - silenceStartedAt);
+    if (remainingMs <= 0) {
+      commit(reason);
+      return;
+    }
+    clearPendingTimer();
+    timer = setTimer(() => {
+      timer = null;
+      if (forVersion === version && pending) commit(reason);
+    }, remainingMs);
+  };
+
   const evaluate = (forVersion: number, result: SpeculativeSttResult) => {
     if (committed || cancelled || forVersion !== version || !pending) return;
+    const floorMs = params.timing?.completeSilenceMs ?? ENDPOINT_TIMING.completeSilenceMs;
     if (!result.ok) {
       // Fall back to the classic path: commit and let the normal STT stage
-      // retry + surface errors through the existing FSM.
-      commit("stt_failed");
+      // retry + surface errors through the existing FSM. The pause can fire
+      // before a finished thought may commit, so wait for that floor.
+      commitAfterSilence(forVersion, floorMs, "stt_failed");
       return;
     }
     const transcript = result.transcript.trim();
     if (!transcript) {
       // Noise-only capture: no linguistic reason to wait longer.
       completeness = "complete";
-      commit("silence_budget_met");
+      commitAfterSilence(forVersion, floorMs, "silence_budget_met");
       return;
     }
     completeness = classifyUtteranceCompleteness(transcript);
@@ -178,15 +199,13 @@ export function createEndpointController(params: {
       completeness,
       requiredSilenceMs: decision.requiredSilenceMs,
     });
+    const reason: EndpointCommitReason =
+      completeness === "complete" ? "complete_thought" : "silence_budget_met";
     if (decision.action === "commit") {
-      commit(completeness === "complete" ? "complete_thought" : "silence_budget_met");
+      commit(reason);
       return;
     }
-    clearPendingTimer();
-    timer = setTimer(() => {
-      timer = null;
-      if (forVersion === version && pending) commit("silence_budget_met");
-    }, decision.remainingMs);
+    commitAfterSilence(forVersion, decision.requiredSilenceMs, reason);
   };
 
   return {

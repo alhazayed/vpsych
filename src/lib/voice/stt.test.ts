@@ -209,4 +209,48 @@ describe("transcribe route OpenAI-only behavior", () => {
     expect(speechToText.mock.calls[0]?.[0]).toMatchObject({ language: "en" });
     expect(speechToText.mock.calls[1]?.[0]).toMatchObject({ language: "ar" });
   });
+
+  it("rate-limits speculative pause transcripts in their own bucket", async () => {
+    vi.resetModules();
+    process.env.OPENAI_API_KEY = "test-key";
+    const keys: Array<[string, number]> = [];
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: "u1" } } }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      rateLimit: (key: string, limit: number) => {
+        keys.push([key, limit]);
+        return { ok: true };
+      },
+    }));
+    vi.doMock("@/lib/ai/openai", () => ({
+      hasOpenAIApiKey: () => true,
+      openAIService: {
+        speechToText: async () => ({
+          transcript: "hello",
+          model: "gpt-4o-transcribe",
+          provider: "openai" as const,
+          language: "en",
+        }),
+      },
+      OpenAIServiceError: class OpenAIServiceError extends Error {},
+    }));
+    const { POST } = await import("@/app/api/voice/transcribe/route");
+    const call = (url: string) => {
+      const form = new FormData();
+      form.append("audio", new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }), "t.wav");
+      form.append("locale", "en");
+      return POST(new Request(url, { method: "POST", body: form }));
+    };
+    expect((await call("http://localhost/api/voice/transcribe")).status).toBe(200);
+    expect((await call("http://localhost/api/voice/transcribe?speculative=1")).status).toBe(200);
+    expect(keys).toEqual([
+      ["stt:u1", 120],
+      ["stt-spec:u1", 240],
+    ]);
+  });
 });

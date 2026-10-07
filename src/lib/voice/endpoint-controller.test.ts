@@ -147,6 +147,7 @@ describe("two-stage endpoint controller", () => {
 
   it("speculative STT failure commits and defers to the classic STT stage", async () => {
     const h = harness();
+    h.setNow(1000);
     h.controller.pause({ wav: h.wav, speechMs: 2000, silenceStartedAt: 0 });
     h.pendingStt[0]!.resolve({
       ok: false,
@@ -157,6 +158,60 @@ describe("two-stage endpoint controller", () => {
     expect(h.commits).toEqual(["stt_failed"]);
     const fin = await h.controller.finalize();
     expect(fin.stt).toBeNull();
+  });
+
+  describe("early speculative pause (starts STT before a thought may commit)", () => {
+    it("a complete thought transcribed early still waits for the 850 ms floor", async () => {
+      const h = harness();
+      h.setNow(500);
+      h.controller.pause({ wav: h.wav, speechMs: 2500, silenceStartedAt: 0 });
+      h.setNow(700);
+      h.pendingStt[0]!.resolve({ ok: true, transcript: "How have you been sleeping?" });
+      await h.flush();
+      expect(h.commits).toEqual([]);
+      await h.advance(149);
+      expect(h.commits).toEqual([]);
+      await h.advance(1);
+      expect(h.commits).toEqual(["complete_thought"]);
+      const fin = await h.controller.finalize();
+      expect(fin.stt).toEqual({ ok: true, transcript: "How have you been sleeping?" });
+    });
+
+    it("speaking again before the floor cancels the commit and reuses nothing", async () => {
+      const h = harness();
+      h.setNow(500);
+      h.controller.pause({ wav: h.wav, speechMs: 2500, silenceStartedAt: 0 });
+      h.setNow(650);
+      h.pendingStt[0]!.resolve({ ok: true, transcript: "I wanted to ask." });
+      await h.flush();
+      h.controller.resumed();
+      await h.advance(1000);
+      expect(h.commits).toEqual([]);
+      const fin = await h.controller.finalize();
+      expect(fin.stt).toBeNull();
+    });
+
+    it("an early STT failure does not cut the speaker off before the floor", async () => {
+      const h = harness();
+      h.setNow(500);
+      h.controller.pause({ wav: h.wav, speechMs: 2000, silenceStartedAt: 0 });
+      h.pendingStt[0]!.resolve({ ok: false, error: "rate limited", unavailable: false });
+      await h.flush();
+      expect(h.commits).toEqual([]);
+      await h.advance(350);
+      expect(h.commits).toEqual(["stt_failed"]);
+    });
+
+    it("an early empty transcript (noise) waits for the floor too", async () => {
+      const h = harness();
+      h.setNow(500);
+      h.controller.pause({ wav: h.wav, speechMs: 2000, silenceStartedAt: 0 });
+      h.pendingStt[0]!.resolve({ ok: true, transcript: "  " });
+      await h.flush();
+      expect(h.commits).toEqual([]);
+      await h.advance(350);
+      expect(h.commits).toEqual(["silence_budget_met"]);
+    });
   });
 
   it("finalize awaits an in-flight speculative pass (VAD max-silence commit)", async () => {

@@ -253,12 +253,16 @@ export function TherapyRoomSession({
   /**
    * Latency of the current turn, for the diagnostics panel: the silence the
    * endpoint waited, when the turn was committed, and when TTS was requested.
-   * Timings only, never content.
+   * `lastWordAt` / `endpointCommitAt` / `speculativeSttMs` come from the
+   * listen loop (performance.now()). Timings only, never content.
    */
   const turnTimingRef = useRef<{
     endpointWaitMs: number | null;
     committedAt: number | null;
     ttsRequestedAt: number | null;
+    lastWordAt?: number | null;
+    endpointCommitAt?: number | null;
+    speculativeSttMs?: number | null;
   }>({ endpointWaitMs: null, committedAt: null, ttsRequestedAt: null });
   /** Interrupts the patient clip that is playing now (null when none). */
   const interruptPatientRef = useRef<(() => void) | null>(null);
@@ -625,6 +629,11 @@ export function TherapyRoomSession({
           });
           timing.committedAt = null;
         }
+        // What the trainee feels: their last word to the patient's first sound.
+        if (timing.lastWordAt != null) {
+          facts.last_word_to_audio_ms = Math.round(now - timing.lastWordAt);
+          timing.lastWordAt = null;
+        }
         setVoiceDiag((d) => markVoiceStage(d, "audio", d.stages.audio, facts));
       };
 
@@ -921,11 +930,20 @@ export function TherapyRoomSession({
 
       const speechEnd = dispatch("SPEECH_END");
       if (!speechEnd.ok) return;
-      const endpointWaitMs = turnTimingRef.current.endpointWaitMs;
+      const prevTiming = turnTimingRef.current;
+      const endpointWaitMs = prevTiming.endpointWaitMs;
+      const handedOverAt = performance.now();
+      // Time spent after the endpoint committed waiting for its transcript.
+      const transcriptWaitMs =
+        prevTiming.endpointCommitAt != null
+          ? Math.round(handedOverAt - prevTiming.endpointCommitAt)
+          : undefined;
+      const speculativeSttMs = prevTiming.speculativeSttMs ?? null;
       turnTimingRef.current = {
         endpointWaitMs: null,
-        committedAt: performance.now(),
+        committedAt: handedOverAt,
         ttsRequestedAt: null,
+        lastWordAt: prevTiming.lastWordAt ?? null,
       };
 
       turnIndexRef.current += 1;
@@ -937,6 +955,7 @@ export function TherapyRoomSession({
             blob_type: wav.type || "(none)",
             blob_duration_ms: wavDurationMs(wav.size),
             endpoint_wait_ms: endpointWaitMs ?? undefined,
+            transcript_wait_ms: transcriptWaitMs,
           }),
           "stt",
           "active",
@@ -966,7 +985,12 @@ export function TherapyRoomSession({
         stt = preStt;
         telemetryRef.current.record("speculative_stt_reused");
         setVoiceDiag((d) =>
-          markVoiceStage(d, "stt", d.stages.stt, { stt_ms: "reused" }),
+          markVoiceStage(d, "stt", d.stages.stt, {
+            stt_ms:
+              speculativeSttMs != null
+                ? `reused (${Math.round(speculativeSttMs)})`
+                : "reused",
+          }),
         );
       } else {
         const sttStarted = telemetryRef.current.mark();
@@ -1380,6 +1404,11 @@ export function TherapyRoomSession({
     }
 
     let endpoint: EndpointController | null = null;
+    // Fresh per-capture timings (a turn that never reached audio must not
+    // leak its last-word time into this one).
+    turnTimingRef.current.lastWordAt = null;
+    turnTimingRef.current.endpointCommitAt = null;
+    turnTimingRef.current.speculativeSttMs = null;
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
@@ -1397,10 +1426,13 @@ export function TherapyRoomSession({
             audio,
             locale: session.language ?? locale,
             signal,
+            speculative: true,
           });
           if (!signal.aborted) {
+            const sttMs = telemetryRef.current.elapsed(sttStarted);
+            turnTimingRef.current.speculativeSttMs = sttMs;
             telemetryRef.current.record("stt_latency_ms", {
-              valueMs: telemetryRef.current.elapsed(sttStarted),
+              valueMs: sttMs,
               code: "speculative",
             });
           }
@@ -1417,6 +1449,7 @@ export function TherapyRoomSession({
             telemetryRef.current.record("endpoint_resumed");
           } else if (event.type === "commit") {
             turnTimingRef.current.endpointWaitMs = Math.round(event.silenceMs);
+            turnTimingRef.current.endpointCommitAt = performance.now();
             telemetryRef.current.record("endpoint_commit_silence_ms", {
               valueMs: event.silenceMs,
               code: event.reason,
@@ -1467,6 +1500,9 @@ export function TherapyRoomSession({
         },
         twoStage: {
           maxSilenceMs: ENDPOINT_TIMING.maxSilenceMs,
+          // Start the transcript early so it is usually ready by the time a
+          // finished thought may commit (850 ms, unchanged).
+          pauseMs: ENDPOINT_TIMING.speculativePauseMs,
           resumeMinMs: ENDPOINT_TIMING.resumeMinMs,
           onPause: (info) => {
             if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
@@ -1478,6 +1514,8 @@ export function TherapyRoomSession({
               performance.now() - Math.max(0, Date.now() - info.silenceStartedAt);
             dispatch("PAUSE_DETECTED");
             setTherapistSpeaking(false);
+            turnTimingRef.current.lastWordAt = voicedAt;
+            turnTimingRef.current.speculativeSttMs = null;
             controller.pause({
               wav: info.wav,
               speechMs: info.speechMs,

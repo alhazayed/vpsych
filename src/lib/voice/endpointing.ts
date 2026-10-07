@@ -31,6 +31,12 @@ export type UtteranceCompleteness = "complete" | "incomplete" | "uncertain";
  * VAD force-commits regardless of transcript state.
  */
 export const ENDPOINT_TIMING = {
+  /**
+   * Silence that starts the speculative transcript (stage 1). Shorter than
+   * `completeSilenceMs` so the transcript is usually back by the time a
+   * finished thought may commit; it never commits anything by itself.
+   */
+  speculativePauseMs: 500,
   completeSilenceMs: 850,
   uncertainSilenceMs: 1500,
   incompleteSilenceMs: 2000,

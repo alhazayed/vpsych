@@ -122,3 +122,11 @@ describe("required endpoint silence", () => {
     ).toBe("commit");
   });
 });
+
+describe("speculative pause timing", () => {
+  it("starts the transcript before a finished thought may commit, and never moves the commit floor", () => {
+    expect(ENDPOINT_TIMING.speculativePauseMs).toBeLessThan(ENDPOINT_TIMING.completeSilenceMs);
+    expect(ENDPOINT_TIMING.completeSilenceMs).toBe(850);
+    expect(ENDPOINT_TIMING.maxSilenceMs).toBe(2200);
+  });
+});
