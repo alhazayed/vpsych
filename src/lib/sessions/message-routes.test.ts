@@ -128,12 +128,26 @@ describe("POST /api/sessions/:id/message/stream", () => {
     vi.stubEnv("FEATURE_REALTIME_STREAMING", "true");
   });
 
-  it("is off unless streaming is explicitly enabled", async () => {
+  it("is off when both the realtime and Therapy Room streaming flags are off", async () => {
     vi.stubEnv("FEATURE_REALTIME_STREAMING", "");
+    vi.stubEnv("THERAPY_ROOM_STREAMING", "false");
     state.supabase = fakeSupabase().client;
     const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
     const res = await POST(post("message/stream", { message: "hi" }), ctx);
     expect(res.status).toBe(404);
+  });
+
+  it("is on for the Therapy Room by default, without the realtime flags", async () => {
+    vi.stubEnv("FEATURE_REALTIME_SIMULATION", "");
+    vi.stubEnv("FEATURE_REALTIME_STREAMING", "");
+    state.supabase = fakeSupabase().client;
+    state.stream = async () => ({ text: "Okay.", aiSource: "gpt", interrupted: false });
+    const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
+    const res = await POST(post("message/stream", { message: "hi" }), ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(/text\/event-stream/);
+    const events = await readSse(res);
+    expect(events.at(-1)!.type).toBe("done");
   });
 
   it("delivers each token to the HTTP body before the model produces the next one", async () => {
@@ -225,5 +239,104 @@ describe("POST /api/sessions/:id/message/stream", () => {
     expect(res.status).toBe(409);
     expect(res.headers.get("content-type")).toMatch(/application\/json/);
     expect(db.inserts).toHaveLength(0);
+  });
+});
+
+/**
+ * The Therapy Room streams the patient's reply. Streaming may only change
+ * WHEN words are heard — never what the clinical turn does. Same therapist
+ * message + same model text must give the same model input, the same
+ * patient-engine state (rapport, emotion, decision plan, humanization) and the
+ * same writes on /message and /message/stream.
+ */
+describe("streamed vs classic turn — identical clinical turn", () => {
+  const HISTORY = [
+    { role: "user", content: "Hi, I'm the therapist you'll be seeing today." },
+    { role: "assistant", content: "Hi. I'm not really sure why I'm here." },
+    { role: "user", content: "That's okay. What made you book the appointment?" },
+    { role: "assistant", content: "My sister made me. I haven't been sleeping." },
+  ];
+  const THERAPIST = "That sounds exhausting. How long has the sleep been like this?";
+  const REPLY = "A few months, I guess. I lie there and my head just won't stop.";
+
+  async function runClassic() {
+    const db = fakeSupabase({ history: HISTORY });
+    state.supabase = db.client;
+    const inputs: Array<Record<string, unknown>> = [];
+    state.detailed.push((i) => (inputs.push(i), { text: REPLY, aiSource: "gpt", model: "gpt-5" }));
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    const res = await POST(post("message", { message: THERAPIST }), ctx);
+    expect(res.status).toBe(200);
+    return { db, input: inputs[0]!, body: (await res.json()) as Record<string, unknown> };
+  }
+
+  async function runStreamed() {
+    vi.stubEnv("FEATURE_REALTIME_SIMULATION", "");
+    vi.stubEnv("FEATURE_REALTIME_STREAMING", "");
+    const db = fakeSupabase({ history: HISTORY });
+    state.supabase = db.client;
+    const inputs: Array<Record<string, unknown>> = [];
+    state.stream = async (input) => {
+      inputs.push(input);
+      const onToken = input.onToken as (t: string, full: string) => void;
+      let text = "";
+      for (const word of REPLY.split(/(?<= )/)) {
+        text += word;
+        onToken(word, text);
+      }
+      return { text: REPLY, aiSource: "gpt", model: "gpt-5", interrupted: false };
+    };
+    const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
+    const res = await POST(post("message/stream", { message: THERAPIST }), ctx);
+    const events = await readSse(res);
+    const done = events.find((e) => e.type === "done");
+    expect(done).toBeDefined();
+    return { db, input: inputs[0]!, body: done!.payload, events };
+  }
+
+  it("gives the model the same prompt, history and per-turn cues", async () => {
+    const classic = await runClassic();
+    const streamed = await runStreamed();
+    for (const key of ["avatar", "history", "userMessage", "behaviourReinforcement"]) {
+      expect(streamed.input[key]).toEqual(classic.input[key]);
+    }
+  });
+
+  it("produces the same patient-engine state (rapport, emotion, decision, humanization)", async () => {
+    const classic = await runClassic();
+    const streamed = await runStreamed();
+    for (const key of [
+      "aiSource", "aiModel", "locale", "emotion", "cbeEnabled", "cbePrimary",
+      "cbeDisclosureGate", "cbeRapport", "decisionSpeak", "decisionAct",
+      "decisionDisclosure", "decisionCognitiveMove", "humanizationEnabled",
+      "humanization", "voiceHints",
+    ]) {
+      expect(streamed.body[key], key).toEqual(classic.body[key]);
+    }
+    expect((streamed.body.assistantMessage as { content: string }).content).toBe(REPLY);
+  });
+
+  it("saves the same therapist message and patient reply, once each, in order", async () => {
+    const classic = await runClassic();
+    const streamed = await runStreamed();
+    const shape = (db: ReturnType<typeof fakeSupabase>) => ({
+      inserts: db.inserts.map((i) => ({ table: i.table, role: i.row.role, content: i.row.content })),
+      replies: db.rpcCalls
+        .filter((c) => c.name === "insert_assistant_message")
+        .map((c) => ({ content: c.args.p_content, after: c.args.p_user_message_id })),
+    });
+    expect(shape(streamed.db)).toEqual(shape(classic.db));
+    expect(shape(streamed.db).replies).toEqual([{ content: REPLY, after: USER_MSG_ID }]);
+    // Nothing is persisted before the validated reply: "done" is the last event.
+    expect(streamed.events.at(-1)!.type).toBe("done");
+  });
+
+  it("releases the first sentence for speech before the reply is saved", async () => {
+    const streamed = await runStreamed();
+    const firstSentence = streamed.events.findIndex((e) => e.type === "sentence");
+    const done = streamed.events.findIndex((e) => e.type === "done");
+    expect(firstSentence).toBeGreaterThan(-1);
+    expect(firstSentence).toBeLessThan(done);
+    expect(streamed.events[firstSentence]!.payload.text).toBe("A few months, I guess.");
   });
 });

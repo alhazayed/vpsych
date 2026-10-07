@@ -6,6 +6,9 @@
 `src/lib/realtime/{client-pipeline,sse-parser,sentence-segmenter,progressive-tts,turn-fence}.ts`
 **Patient stream APIs:** `generatePatientReplyStream`, `openAIService.chatStream`
 **Flag:** `FEATURE_REALTIME_SIMULATION=true` **and** `FEATURE_REALTIME_STREAMING=true` (explicit; off by default)
+**Therapy Room:** voice turns use the SSE route by default
+(`THERAPY_ROOM_STREAMING` / `NEXT_PUBLIC_THERAPY_ROOM_STREAMING`, set `false` to
+opt out) — see *Therapy Room voice turns* below.
 
 ## One clinical pipeline, two transports
 
@@ -117,3 +120,27 @@ fallback.
 Mic press or a typed message while the patient is generating/speaking:
 abort TTS queue → abort SSE + LLM (turn fence) → generation++ → clear pending
 audio → capture → the next turn carries `therapistInterrupted: true`.
+
+## Therapy Room voice turns
+
+`TherapyRoomSession` calls `submitStreamingConversationTurn()` and voices the
+reply in at most two parts (`lib/voice/streamed-reply.ts` +
+`playPatientSpeechSegments` in `lib/voice/conversation-pipeline.ts`):
+
+1. the first sentence the server released (it passed the speech release gate),
+   after the persona's thinking pause, while the rest is still generating;
+2. the rest of the **final** persisted reply (`done`), synthesized while part 1
+   plays.
+
+A `regenerating` event cuts part 1 if it came from a discarded draft and the
+whole final reply is spoken instead; if nothing was released early, the final
+reply is spoken whole, as on `/message`. The cognition is the same
+`clinical-turn.ts` path, pinned by the "streamed vs classic turn" parity tests
+in `message-routes.test.ts`.
+
+Barge-in here stops the patient's **audio only**: the stream is not aborted,
+so the reply is validated and persisted exactly as on `/message`, and the next
+turn waits for it (`streamInFlightRef`) to keep turn order. The heard portion is
+reported against the final saved text. If the stream route returns 404/405/5xx
+before opening, the turn falls back to `/message`.
+

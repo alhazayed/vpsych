@@ -23,6 +23,14 @@ import {
 import { sanitizeProviderError } from "@/lib/safe-client-error";
 
 /**
+ * Speculative transcripts (`?speculative=1`): the Therapy Room transcribes the
+ * audio so far at each pause, before it knows whether the therapist is done,
+ * so one turn can take several calls. Their own bucket keeps that from
+ * exhausting the per-turn `stt` budget mid-session.
+ */
+const SPECULATIVE_STT_PER_HOUR = 240;
+
+/**
  * OpenAI Speech-to-Text — primary (and only server) STT pipeline.
  *
  * Voice Session contract (unchanged):
@@ -45,7 +53,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const limited = await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
+  const speculative =
+    new URL(request.url).searchParams.get("speculative") === "1";
+  const limited = speculative
+    ? await rateLimit(
+        `stt-spec:${user.id}`,
+        SPECULATIVE_STT_PER_HOUR,
+        60 * 60 * 1000,
+      )
+    : await rateLimit(`stt:${user.id}`, 120, 60 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Too many requests", retryAfterSec: limited.retryAfterSec },

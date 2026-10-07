@@ -31,6 +31,8 @@ export async function transcribeWithOpenAI(params: {
   /** session.language (en / ar / BCP-47). */
   locale: string;
   signal?: AbortSignal;
+  /** A pause transcript that may be discarded (own rate-limit bucket). */
+  speculative?: boolean;
 }): Promise<ClientTranscribeResult> {
   const blobType = params.audio.type || "";
   voiceLog("STT", "blob_ready", {
@@ -60,7 +62,10 @@ export async function transcribeWithOpenAI(params: {
 
   try {
     voiceLog("STT", "stt_request_started", { locale: params.locale });
-    const res = await fetch("/api/voice/transcribe", {
+    const url = params.speculative
+      ? "/api/voice/transcribe?speculative=1"
+      : "/api/voice/transcribe";
+    const res = await fetch(url, {
       method: "POST",
       body: form,
       signal: params.signal,
