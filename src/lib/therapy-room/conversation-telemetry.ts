@@ -26,7 +26,9 @@ export type ConversationTelemetryKind =
   /** Trailing silence actually waited before commit (ms); code = reason. */
   | "endpoint_commit_silence_ms"
   /** Speculative STT transcript reused for the message API (code = completeness). */
-  | "speculative_stt_reused";
+  | "speculative_stt_reused"
+  /** Turn committed → first audible patient sound (ms). */
+  | "first_audio_latency_ms";
 
 export type ConversationTelemetryEvent = {
   kind: ConversationTelemetryKind;

@@ -226,6 +226,16 @@ export function TherapyRoomSession({
   const endpointRef = useRef<EndpointController | null>(null);
   /** Open mic + captured onset from a voice barge-in, for the next listen. */
   const bargeInHandoffRef = useRef<BargeInHandoff | null>(null);
+  /**
+   * Latency of the current turn, for the diagnostics panel: the silence the
+   * endpoint waited, when the turn was committed, and when TTS was requested.
+   * Timings only, never content.
+   */
+  const turnTimingRef = useRef<{
+    endpointWaitMs: number | null;
+    committedAt: number | null;
+    ttsRequestedAt: number | null;
+  }>({ endpointWaitMs: null, committedAt: null, ttsRequestedAt: null });
   /** Interrupts the patient clip that is playing now (null when none). */
   const interruptPatientRef = useRef<(() => void) | null>(null);
   const ambienceRef = useRef<AmbienceController | null>(null);
@@ -499,6 +509,8 @@ export function TherapyRoomSession({
       // When audible playback began, for the heard-portion estimate.
       let audioStartedAt: number | null = null;
       let browserStartedAt: number | null = null;
+      // True while a streamed clip is still arriving (its length is partial).
+      let audioStreaming = false;
 
       // How much of the reply the therapist heard. Read before playback is
       // torn down: audio position for ElevenLabs, elapsed time for browser TTS.
@@ -507,11 +519,16 @@ export function TherapyRoomSession({
         const audio = audioRef.current;
         let progress: PlaybackProgress = { kind: "not_started" };
         if (audioStartedAt != null && audio) {
-          progress = {
-            kind: "audio",
-            currentTime: audio.currentTime,
-            duration: audio.duration,
-          };
+          // A streamed clip has no length until its last chunk arrives; use
+          // the time actually played instead.
+          progress =
+            !audioStreaming && Number.isFinite(audio.duration)
+            ? {
+                kind: "audio",
+                currentTime: audio.currentTime,
+                duration: audio.duration,
+              }
+            : { kind: "elapsed", elapsedMs: audio.currentTime * 1000 };
         } else if (browserStartedAt != null) {
           progress = {
             kind: "elapsed",
@@ -536,6 +553,25 @@ export function TherapyRoomSession({
         });
       };
       let ttsFailure: { status?: number; code?: string } | null = null;
+
+      // Time to the first audible patient sound: from TTS request, and from
+      // the moment the therapist's turn was committed.
+      const recordFirstAudio = () => {
+        const now = performance.now();
+        const timing = turnTimingRef.current;
+        const facts: Record<string, number> = {};
+        if (timing.ttsRequestedAt != null) {
+          facts.tts_first_audio_ms = Math.round(now - timing.ttsRequestedAt);
+        }
+        if (timing.committedAt != null) {
+          facts.first_audio_ms = Math.round(now - timing.committedAt);
+          telemetryRef.current.record("first_audio_latency_ms", {
+            valueMs: now - timing.committedAt,
+          });
+          timing.committedAt = null;
+        }
+        setVoiceDiag((d) => markVoiceStage(d, "audio", d.stages.audio, facts));
+      };
 
       const onBargeIn = (handoff?: BargeInHandoff) => {
         if (bargeInFired || endingRef.current) {
@@ -619,6 +655,7 @@ export function TherapyRoomSession({
         disorderSlug,
         audioRef,
         signal: abort.signal,
+        streamPlayback: true,
         handlers: {
           onend: disarmBargeIn,
           onerror: disarmBargeIn,
@@ -627,6 +664,7 @@ export function TherapyRoomSession({
           if (!fsmRef.current.isCurrent(generation)) return;
           switch (event.event) {
             case "tts_request_started":
+              turnTimingRef.current.ttsRequestedAt = performance.now();
               setVoiceDiag((d) => markVoiceStage(d, "tts", "active"));
               break;
             case "tts_response":
@@ -640,10 +678,25 @@ export function TherapyRoomSession({
                 }),
               );
               break;
+            case "audio_streaming":
+              audioStreaming = true;
+              break;
+            case "audio_stream_complete":
+              audioStreaming = false;
+              break;
+            case "audio_stream_fallback":
+              audioStreaming = false;
+              setVoiceDiag((d) =>
+                markVoiceStage(d, "audio", "active", {
+                  audio_stream_fallback: event.reason,
+                }),
+              );
+              break;
             case "audio_play_called":
               setVoiceDiag((d) => markVoiceStage(d, "audio", "active"));
               break;
             case "audio_playing":
+              if (audioStartedAt == null) recordFirstAudio();
               audioStartedAt ??= performance.now();
               if (audioRef.current) {
                 applyHtmlAudioModulation(audioRef.current, mod);
@@ -654,6 +707,9 @@ export function TherapyRoomSession({
               armBargeIn();
               break;
             case "browser_speech_started":
+              if (browserStartedAt == null && audioStartedAt == null) {
+                recordFirstAudio();
+              }
               browserStartedAt ??= performance.now();
               setVoiceDiag((d) =>
                 markVoiceStage(d, "audio", "active", { audio_mode: "browser" }),
@@ -796,6 +852,12 @@ export function TherapyRoomSession({
 
       const speechEnd = dispatch("SPEECH_END");
       if (!speechEnd.ok) return;
+      const endpointWaitMs = turnTimingRef.current.endpointWaitMs;
+      turnTimingRef.current = {
+        endpointWaitMs: null,
+        committedAt: performance.now(),
+        ttsRequestedAt: null,
+      };
 
       turnIndexRef.current += 1;
       setTherapistSpeaking(false);
@@ -805,6 +867,7 @@ export function TherapyRoomSession({
             blob_size: wav.size,
             blob_type: wav.type || "(none)",
             blob_duration_ms: wavDurationMs(wav.size),
+            endpoint_wait_ms: endpointWaitMs ?? undefined,
           }),
           "stt",
           "active",
@@ -833,6 +896,9 @@ export function TherapyRoomSession({
         // The two-stage endpoint already transcribed exactly this audio.
         stt = preStt;
         telemetryRef.current.record("speculative_stt_reused");
+        setVoiceDiag((d) =>
+          markVoiceStage(d, "stt", d.stages.stt, { stt_ms: "reused" }),
+        );
       } else {
         const sttStarted = telemetryRef.current.mark();
         try {
@@ -858,9 +924,11 @@ export function TherapyRoomSession({
 
         if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
-        telemetryRef.current.record("stt_latency_ms", {
-          valueMs: telemetryRef.current.elapsed(sttStarted),
-        });
+        const sttMs = telemetryRef.current.elapsed(sttStarted);
+        telemetryRef.current.record("stt_latency_ms", { valueMs: sttMs });
+        setVoiceDiag((d) =>
+          markVoiceStage(d, "stt", d.stages.stt, { stt_ms: Math.round(sttMs) }),
+        );
       }
 
       if (!stt.ok) {
@@ -974,9 +1042,13 @@ export function TherapyRoomSession({
 
       if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
 
-      telemetryRef.current.record("gpt_latency_ms", {
-        valueMs: telemetryRef.current.elapsed(gptStarted),
-      });
+      const messageMs = telemetryRef.current.elapsed(gptStarted);
+      telemetryRef.current.record("gpt_latency_ms", { valueMs: messageMs });
+      setVoiceDiag((d) =>
+        markVoiceStage(d, "message", d.stages.message, {
+          message_ms: Math.round(messageMs),
+        }),
+      );
 
       if (!turn.ok) {
         if (turn.expired) {
@@ -1112,6 +1184,7 @@ export function TherapyRoomSession({
           } else if (event.type === "resumed") {
             telemetryRef.current.record("endpoint_resumed");
           } else if (event.type === "commit") {
+            turnTimingRef.current.endpointWaitMs = Math.round(event.silenceMs);
             telemetryRef.current.record("endpoint_commit_silence_ms", {
               valueMs: event.silenceMs,
               code: event.reason,
@@ -1466,6 +1539,7 @@ export function TherapyRoomSession({
                   disorderSlug,
                   audioRef,
                   signal: abort.signal,
+                  streamPlayback: true,
                 });
                 playbackAbortRef.current = null;
                 if (

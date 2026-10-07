@@ -8,6 +8,12 @@ import {
   normalizeSpeechPace,
   type SpeechPace,
 } from "@/lib/voice/prosody";
+import {
+  canStreamPatientAudio,
+  pumpAudioStream,
+  STREAM_AUDIO_MIME,
+  type AudioStreamHandle,
+} from "@/lib/voice/stream-playback";
 import { voiceLog } from "@/lib/voice/voice-diagnostics";
 
 /** Why ElevenLabs audio was not returned (safe — no provider payloads). */
@@ -42,9 +48,16 @@ export async function synthesizeSpeech(params: {
   progressive?: boolean;
   /** Abort the TTS fetch (barge-in / stale turn). */
   signal?: AbortSignal;
+  /**
+   * Start playback on the first audio chunk (MediaSource) instead of after the
+   * whole clip has downloaded. Ignored where the browser cannot do it.
+   */
+  streamPlayback?: boolean;
 }): Promise<{
   mode: "elevenlabs" | "browser";
   objectUrl?: string;
+  /** Set when `objectUrl` is a MediaSource still being filled. */
+  stream?: AudioStreamHandle;
   /** Set when mode is "browser" because the TTS route did not return audio. */
   failure?: TtsFailure;
 }> {
@@ -85,6 +98,21 @@ export async function synthesizeSpeech(params: {
       content_type: contentType || "(none)",
       content_length: res.headers.get("Content-Length") ?? undefined,
     });
+
+    const mime = contentType.split(";")[0]?.trim().toLowerCase();
+    if (
+      params.streamPlayback &&
+      res.ok &&
+      res.body &&
+      mime === STREAM_AUDIO_MIME &&
+      canStreamPatientAudio()
+    ) {
+      const mediaSource = new MediaSource();
+      const stream = pumpAudioStream({ body: res.body, mediaSource });
+      const objectUrl = URL.createObjectURL(mediaSource);
+      voiceLog("TTS", "stream_playback_started");
+      return { mode: "elevenlabs", objectUrl, stream };
+    }
 
     if (res.ok && res.body && /^audio\//i.test(contentType)) {
       // Consume the (possibly streamed) body into a playable blob.

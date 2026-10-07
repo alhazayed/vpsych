@@ -20,6 +20,7 @@ import {
   PLAYBACK_WATCHDOG_INTERVAL_MS,
   playbackVerdict,
 } from "@/lib/voice/playback-watchdog";
+import type { AudioStreamHandle } from "@/lib/voice/stream-playback";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
 
@@ -205,6 +206,12 @@ export type PlaybackDiagnostic =
   | { event: "audio_paused_externally" }
   /** The clip stopped advancing or ran far past its length. */
   | { event: "audio_stalled"; reason: string }
+  /** The clip plays while still downloading; its length is not final yet. */
+  | { event: "audio_streaming" }
+  /** Every chunk of the streamed clip has arrived; its length is final. */
+  | { event: "audio_stream_complete" }
+  /** Streamed playback failed before audio began; the full clip plays instead. */
+  | { event: "audio_stream_fallback"; reason: string }
   | { event: "browser_fallback_started" }
   | { event: "browser_speech_started" }
   | { event: "browser_speech_failed" }
@@ -248,6 +255,8 @@ export async function playPatientSpeech(params: {
   onDiagnostic?: (d: PlaybackDiagnostic) => void;
   /** Called once when neither ElevenLabs nor browser speech could play. */
   onUnavailable?: (info: { code: string; status?: number }) => void;
+  /** Start playback on the first audio chunk where the browser supports it. */
+  streamPlayback?: boolean;
 }): Promise<PlaybackOutcome> {
   const handlers = params.handlers ?? {};
   const diag = params.onDiagnostic ?? (() => undefined);
@@ -292,6 +301,7 @@ export async function playPatientSpeech(params: {
     stability: params.stability,
     style: params.style,
     signal: params.signal,
+    streamPlayback: params.streamPlayback,
   });
   diag({
     event: "tts_response",
@@ -302,6 +312,7 @@ export async function playPatientSpeech(params: {
 
   if (params.signal?.aborted) {
     if (result.mode === "elevenlabs" && result.objectUrl) {
+      result.stream?.cancel();
       URL.revokeObjectURL(result.objectUrl);
     }
     handlers.onerror?.();
@@ -369,20 +380,36 @@ export async function playPatientSpeech(params: {
       );
     });
 
-  if (result.mode === "elevenlabs" && result.objectUrl) {
-    const objectUrl = result.objectUrl;
+  /**
+   * Play one ElevenLabs clip. `stream` is set when the clip is a MediaSource
+   * still being filled: playback starts on the first chunk, and data still
+   * arriving counts as progress for the stall watchdog.
+   */
+  const playClip = (
+    objectUrl: string,
+    stream?: AudioStreamHandle,
+  ): Promise<PlaybackOutcome | { fallback: string; started: boolean }> => {
     const audio = new Audio(objectUrl);
     diag({ event: "audio_created" });
     if (params.audioRef) params.audioRef.current = audio;
+    if (stream) {
+      diag({ event: "audio_streaming" });
+      void stream.fullClip.then((clip) => {
+        if (clip) diag({ event: "audio_stream_complete" });
+      });
+    }
 
-    const elevenOutcome = await new Promise<
-      PlaybackOutcome | { fallback: string }
+    return new Promise<
+      PlaybackOutcome | { fallback: string; started: boolean }
     >((resolve) => {
       let settled = false;
       let watchdog: ReturnType<typeof setInterval> | null = null;
-      const finish = (mode: PlaybackOutcome | { fallback: string }) => {
+      const finish = (
+        mode: PlaybackOutcome | { fallback: string; started: boolean },
+      ) => {
         if (settled) return;
         settled = true;
+        if (mode === "interrupted") stream?.cancel();
         if (watchdog != null) clearInterval(watchdog);
         params.signal?.removeEventListener("abort", onAbort);
         // Revoke only after playback is over — never before it starts.
@@ -422,6 +449,11 @@ export async function playPatientSpeech(params: {
           lastTime = audio.currentTime;
           lastProgressAt = now;
         }
+        // A streamed clip waiting for its next chunk is not stalled while
+        // bytes are still arriving.
+        if (stream && !stream.isComplete()) {
+          lastProgressAt = Math.max(lastProgressAt, stream.lastDataAt());
+        }
         if (audio.paused && !resumeTried) {
           resumeTried = true;
           diag({ event: "audio_paused_externally" });
@@ -448,7 +480,9 @@ export async function playPatientSpeech(params: {
           Number.isFinite(audio.duration) &&
           audio.duration > 0 &&
           audio.currentTime / audio.duration >= 0.85;
-        finish(nearlyDone ? "elevenlabs" : { fallback: "AUDIO_STALLED" });
+        finish(
+          nearlyDone ? "elevenlabs" : { fallback: "AUDIO_STALLED", started: true },
+        );
       };
 
       audio.onplaying = () => {
@@ -471,7 +505,7 @@ export async function playPatientSpeech(params: {
         }
         const code = audio.error?.code;
         diag({ event: "audio_error", reason: `media_error_${code ?? "unknown"}` });
-        finish({ fallback: "AUDIO_DECODE" });
+        finish({ fallback: "AUDIO_DECODE", started: playingAt != null });
       };
 
       params.signal?.addEventListener("abort", onAbort, { once: true });
@@ -497,12 +531,36 @@ export async function playPatientSpeech(params: {
           diag({ event: "audio_play_rejected", reason: name });
           finish({
             fallback: name === "NotAllowedError" ? "AUTOPLAY_BLOCKED" : "AUDIO_PLAY_FAILED",
+            started: playingAt != null,
           });
         });
     });
+  };
 
-    if (typeof elevenOutcome === "string") return elevenOutcome;
-    return browserFallback(elevenOutcome.fallback);
+  if (result.mode === "elevenlabs" && result.objectUrl) {
+    let outcome = await playClip(result.objectUrl, result.stream);
+    // The streamed (MediaSource) path failed before any audio was heard:
+    // play the complete ElevenLabs clip instead of the browser voice.
+    if (
+      typeof outcome !== "string" &&
+      result.stream &&
+      !outcome.started &&
+      outcome.fallback !== "AUTOPLAY_BLOCKED" &&
+      !params.signal?.aborted
+    ) {
+      const clip = await result.stream.fullClip;
+      if (params.signal?.aborted) {
+        handlers.onerror?.();
+        return "interrupted";
+      }
+      if (clip && clip.size > 0) {
+        diag({ event: "audio_stream_fallback", reason: outcome.fallback });
+        outcome = await playClip(URL.createObjectURL(clip));
+      }
+    }
+    if (typeof outcome === "string") return outcome;
+    result.stream?.cancel();
+    return browserFallback(outcome.fallback);
   }
 
   if (params.signal?.aborted) {
