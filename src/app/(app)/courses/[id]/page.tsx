@@ -4,15 +4,17 @@ import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import {
+  buildCaseFormulationKey,
   courseProgress,
   isPlanNew,
   loadCourseById,
 } from "@/lib/therapy-course";
-import type { TherapySession } from "@/lib/types";
+import { FIVE_PS, type TherapySession } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 import { TreatmentPlanForm } from "@/components/therapy-course/TreatmentPlanForm";
 import { EndCourseButton } from "@/components/therapy-course/EndCourseButton";
 import { SkillProgressChart } from "@/components/progress/SkillProgressChart";
+import { FormulationReviewPanel } from "@/components/admin/FormulationReviewPanel";
 import { normalizeReportLanguage } from "@/lib/ai/report-locale";
 import { buildSkillProgress, type SkillProgress } from "@/lib/skill-progress";
 
@@ -27,6 +29,7 @@ export default async function TherapyCoursePage({ params }: Props) {
   const { id } = await params;
   const { supabase, user, profile } = await requireProfile();
   const t = await getTranslations("course");
+  const tP = await getTranslations("course.fivePs");
   const format = await getFormatter();
 
   const course = await loadCourseById(supabase, id);
@@ -179,6 +182,21 @@ export default async function TherapyCoursePage({ params }: Props) {
             <p className="whitespace-pre-wrap text-[var(--on-surface)]">
               {plan.formulation}
             </p>
+            {plan.five_ps ? (
+              <div>
+                <h3 className="mb-1 font-semibold">{tP("title")}</h3>
+                <dl className="space-y-2">
+                  {FIVE_PS.map((p) => (
+                    <div key={p}>
+                      <dt className="font-medium text-[var(--on-surface-variant)]">
+                        {tP(p)}
+                      </dt>
+                      <dd className="whitespace-pre-wrap">{plan.five_ps?.[p]}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
             <div>
               <h3 className="mb-1 font-semibold">{t("goals")}</h3>
               <ol className="list-decimal space-y-1 ps-5">
@@ -255,6 +273,14 @@ export default async function TherapyCoursePage({ params }: Props) {
           )}
           <EndCourseButton courseId={course.id} patientName={name} />
         </section>
+      )}
+
+      {profile.role === "admin" && plan && (
+        <FormulationReviewPanel
+          courseId={course.id}
+          fivePs={plan.five_ps}
+          caseKey={buildCaseFormulationKey(course.clinical_snapshot)}
+        />
       )}
 
       {skillProgress && (

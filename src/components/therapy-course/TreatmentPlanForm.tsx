@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { TreatmentPlan } from "@/lib/types";
+import { FIVE_PS, type FivePsFormulation, type TreatmentPlan } from "@/lib/types";
 
 const MAX_GOALS = 6;
 const MAX_SESSIONS = 20;
@@ -14,7 +14,16 @@ type FieldError =
   | "interventions"
   | "expected_sessions"
   | "patient_expectations"
-  | "risk_formulation";
+  | "risk_formulation"
+  | "five_ps";
+
+const EMPTY_FIVE_PS: FivePsFormulation = {
+  presenting: "",
+  predisposing: "",
+  precipitating: "",
+  perpetuating: "",
+  protective: "",
+};
 
 export function TreatmentPlanForm({
   courseId,
@@ -41,6 +50,9 @@ export function TreatmentPlanForm({
     initialPlan?.patient_expectations ?? "",
   );
   const [risk, setRisk] = useState(initialPlan?.risk_formulation ?? "");
+  const [fivePs, setFivePs] = useState<FivePsFormulation>(
+    initialPlan?.five_ps ?? EMPTY_FIVE_PS,
+  );
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState<FieldError | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +75,7 @@ export function TreatmentPlanForm({
           expected_sessions: expectedSessions,
           patient_expectations: expectations,
           risk_formulation: risk,
+          five_ps: fivePs,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -120,6 +133,39 @@ export function TreatmentPlanForm({
         />
         {err("formulation")}
       </div>
+
+      <fieldset>
+        <legend className="block text-sm font-semibold">{t("fivePs.title")}</legend>
+        <p className="mb-2 text-xs text-[var(--on-surface-variant)]">
+          {t("fivePs.hint")}
+        </p>
+        <div className="space-y-3">
+          {FIVE_PS.map((p) => (
+            <div key={p}>
+              <label htmlFor={`plan-5p-${p}`} className="block text-sm font-medium">
+                {t(`fivePs.${p}`)}
+              </label>
+              <p className="mb-1 text-xs text-[var(--on-surface-variant)]">
+                {t(`fivePs.${p}Hint`)}
+              </p>
+              <textarea
+                id={`plan-5p-${p}`}
+                className={fieldClass}
+                rows={2}
+                maxLength={600}
+                value={fivePs[p]}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFivePs((prev) => ({ ...prev, [p]: value }));
+                }}
+                aria-invalid={fieldError === "five_ps" && fivePs[p].trim().length < 3}
+                dir="auto"
+              />
+            </div>
+          ))}
+        </div>
+        {err("five_ps")}
+      </fieldset>
 
       <fieldset>
         <legend className="block text-sm font-semibold">{t("fieldGoals")}</legend>
