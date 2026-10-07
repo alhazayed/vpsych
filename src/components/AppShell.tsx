@@ -23,11 +23,18 @@ type NavItem = {
   match?: (pathname: string) => boolean;
 };
 
-// Trainee menu: two ways to see patients (practice by choice, supervisor-
-// assigned skill tests) plus session history. Score dashboards are not listed:
-// assessment results are visible to admins and assigning supervisors only.
+// Trainee menu: the training program (patient ladders), two other ways to
+// see patients (practice by choice, supervisor-assigned skill tests) plus
+// session history. Score dashboards are not listed: report detail stays with
+// admins and assigning supervisors; the program shows only the level score.
 function therapistNav(t: (key: string) => string): NavItem[] {
   return [
+    {
+      href: "/training",
+      label: t("training"),
+      icon: "stairs",
+      match: (p) => p.startsWith("/training"),
+    },
     {
       href: "/avatars",
       label: t("patientLibrary"),
@@ -119,6 +126,7 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/admin/accounts")) return "accountApprovals";
   if (pathname.startsWith("/clinic")) return "clinic";
   if (pathname.startsWith("/tests")) return "skillTests";
+  if (pathname.startsWith("/training")) return "training";
   if (pathname.startsWith("/supervise")) return "supervise";
   if (pathname.startsWith("/sessions")) return "mySessions";
   return "patientLibrary";
@@ -190,6 +198,7 @@ export function AppShell({
     `pageTitle.${titleKey}` as
       | "pageTitle.overview"
       | "pageTitle.patientLibrary"
+      | "pageTitle.training"
       | "pageTitle.systemHealth"
       | "pageTitle.reportsLibrary"
       | "pageTitle.sessions"

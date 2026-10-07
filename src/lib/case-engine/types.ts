@@ -3,7 +3,7 @@
  * Personas never permanently own a psychiatric disorder.
  */
 
-import type { ClinicalCore, RubricItem } from "@/lib/types";
+import type { ClinicalCore, DisclosureRule, RubricItem } from "@/lib/types";
 
 export type CaseDifficulty = "beginner" | "intermediate" | "advanced" | "expert";
 
@@ -136,6 +136,20 @@ export type TherapyProfile = {
   is_active: boolean;
 };
 
+/**
+ * Case-level risk authored outside the disorder package (e.g. a training
+ * ladder level). It can only raise the package's risk, never lower it, and it
+ * sets how the risk is disclosed. DSM criteria and comorbidities are untouched.
+ */
+export type CaseRiskOverlay = {
+  suicidal_ideation: ClinicalCore["risk_profile"]["suicidal_ideation"];
+  self_harm?: boolean;
+  static_factors?: string[];
+  dynamic_factors?: string[];
+  /** Governs every suicide/self-harm disclosure rule in the case. */
+  disclosure: { condition: DisclosureRule["condition"]; notes: string };
+};
+
 /** Safe randomization — never mutates DSM criteria. */
 export type RandomizedContext = {
   recent_stressor: string;
@@ -168,6 +182,8 @@ export type CaseGenerationRequest = {
   avatarSlug?: string | null;
   avatarName?: string | null;
   avatarDisorder?: string | null;
+  /** Optional case-level risk (raises package risk; sets risk disclosure). */
+  riskOverlay?: CaseRiskOverlay | null;
 };
 
 /** Immutable CaseInstance snapshot stored on sessions.clinical_snapshot. */

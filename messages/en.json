@@ -87,7 +87,8 @@
       "skillTests": "Skill tests",
       "supervise": "Supervise",
       "supervisors": "Supervisors",
-      "accountApprovals": "Account approvals"
+      "accountApprovals": "Account approvals",
+      "training": "Training Program"
     },
     "adminTagline": "Administration",
     "therapistWorkspace": "Therapist workspace",
@@ -161,7 +162,8 @@
     "skillTests": "Skill tests",
     "supervise": "Supervise",
     "supervisors": "Supervisors",
-    "skillTestsAdmin": "Skill tests"
+    "skillTestsAdmin": "Skill tests",
+    "training": "Training Program"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -2609,5 +2611,105 @@
     "changeSinceFirst": "Change since the first assessed session",
     "tableView": "Show as a table",
     "colSkill": "Skill"
+  },
+  "training": {
+    "title": "My Training Progress",
+    "intro": "Each patient has five levels, from Easy to Expert. Pass a level to unlock the next one with the same patient.",
+    "summary": "{patients, plural, one {# patient} other {# patients}} · {levels} levels",
+    "unavailable": "The training program is not available yet. Please try again later.",
+    "empty": "No training patients are available yet.",
+    "provisional": "Practice patient while the program's ten patients are being prepared.",
+    "patientNumber": "Patient {n}",
+    "patientTitle": "Patient {n} — {name}",
+    "identity": "{gender} · {age} years",
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Patient"
+    },
+    "primary": "Primary presentation: {disorder}",
+    "currentLevel": "Current level: {level}",
+    "allCleared": "All five levels cleared",
+    "progress": "Progress: {cleared}/5 levels cleared",
+    "open": "Open patient",
+    "back": "All training patients",
+    "table": {
+      "patient": "Patient",
+      "primary": "Primary presentation",
+      "level": "Level",
+      "status": "Status"
+    },
+    "status": {
+      "notStarted": "Not started",
+      "inProgress": "In progress",
+      "completed": "Completed"
+    },
+    "levels": {
+      "easy": "Easy",
+      "basic": "Basic",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "expert": "Expert"
+    },
+    "levelPurpose": {
+      "easy": "Introductory: learn the basic presentation",
+      "basic": "Low to moderate: develop interviewing skills",
+      "intermediate": "Moderate: handle ambiguity and complexity",
+      "advanced": "High: manage interacting clinical problems",
+      "expert": "Very high: complex clinical reasoning"
+    },
+    "objectives": {
+      "easy": "Conduct a structured psychiatric assessment, identify the primary clinical presentation and assess risk.",
+      "basic": "Build enough rapport to get past minimising, take a full history and complete a risk assessment.",
+      "intermediate": "Identify the primary presentation, recognise comorbid features and complete an appropriate risk assessment.",
+      "advanced": "Integrate interacting problems and conflicting information into a formulation and a clear judgement of risk.",
+      "expert": "Reason clinically from a subtle presentation: find what the case does not tell you, weigh risk against protective factors and set priorities."
+    },
+    "levelState": {
+      "cleared": "Cleared",
+      "current": "Unlocked",
+      "locked": "Locked"
+    },
+    "nextObjective": "Next objective",
+    "completeTitle": "Patient completed",
+    "completeBody": "You cleared every level with this patient. You can replay any level for practice.",
+    "passMark": "Pass mark: a report score above 55%.",
+    "start": "Start {level}",
+    "replay": "Replay {level}",
+    "resume": "Resume session",
+    "starting": "Starting…",
+    "startFailed": "The session could not start. Please try again.",
+    "networkError": "Network error. Check your connection and try again.",
+    "attemptsTitle": "Previous attempts",
+    "attemptsEmpty": "No attempts yet.",
+    "attempts": {
+      "level": "Level",
+      "attempt": "Attempt",
+      "score": "Score",
+      "result": "Result"
+    },
+    "outcome": {
+      "passed": "Passed",
+      "failed": "Not passed",
+      "scoring": "Waiting for the report",
+      "in_session": "In session",
+      "no_report": "No report yet"
+    },
+    "score": "{score}%",
+    "result": {
+      "clearedTitle": "Level cleared",
+      "clearedBody": "You passed {name}: {level}.",
+      "nextUnlocked": "Next level unlocked: {level}",
+      "nextComplexity": "The next encounter brings more clinical complexity.",
+      "completedBody": "That was the last level. You have completed this patient.",
+      "notClearedTitle": "Level not cleared",
+      "required": "Required: more than 55%",
+      "remains": "{level} stays active.",
+      "retry": "Review your feedback and try again.",
+      "scoringTitle": "Scoring this level",
+      "scoringBody": "The level result appears once the report for this session is ready.",
+      "scoreLine": "Score: {score}%",
+      "toPatient": "Back to {name}"
+    }
   }
 }

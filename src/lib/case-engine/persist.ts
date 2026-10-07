@@ -9,6 +9,7 @@ import { generateCaseInstance } from "@/lib/case-engine/generator";
 import type {
   CaseDifficulty,
   CaseInstanceSnapshot,
+  CaseRiskOverlay,
   CaseSeverity,
   DisorderRow,
   PersonaRow,
@@ -59,6 +60,11 @@ export type StartCaseOptions = {
    * trainee cannot read the case they are examined on.
    */
   persist?: boolean;
+  /**
+   * Case-level risk (training ladder). Applies to the plain disorder path
+   * only; preset and template starts ignore it.
+   */
+  riskOverlay?: CaseRiskOverlay | null;
 };
 
 function personaFromAvatar(avatar: Avatar, dbPersona?: PersonaRow | null): PersonaRow {
@@ -816,6 +822,7 @@ export async function createCaseForSession(
     avatarSlug: opts.avatar.slug ?? null,
     avatarName: opts.avatar.name,
     avatarDisorder: opts.avatar.disorder,
+    riskOverlay: opts.riskOverlay ?? null,
   });
 
   if (!generated.ok) {

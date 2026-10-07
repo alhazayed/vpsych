@@ -23,6 +23,9 @@ import {
  * - Optional writer for Mission 4 `patient_long_term_memory` upsert on session end
  *   (falls back to the authenticated client; RLS enforces therapist ownership)
  * - Scheduled `GET /api/cron/expire-sessions` batch expiry (CRON_SECRET gated)
+ * - Optional writer for `start_training_ladder_attempt` in `POST /api/sessions`
+ *   (the RPC re-checks session, patient and unlocked level; non-service
+ *   callers must pass an HMAC p_sig)
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
