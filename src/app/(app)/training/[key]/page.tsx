@@ -140,9 +140,6 @@ export default async function TrainingPatientPage({ params }: Props) {
             ))}
           </div>
         )}
-        {patient.provisional ? (
-          <p className="text-xs text-[var(--on-surface-variant)]">{t("provisional")}</p>
-        ) : null}
       </section>
 
       <section className="clinical-card overflow-x-auto p-5">

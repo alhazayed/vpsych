@@ -4,9 +4,47 @@ A trainee chooses a **patient**, not a difficulty. Each program patient has a
 five-level ladder; passing a level unlocks the next encounter with the same
 person, and each encounter is harder to assess.
 
-Code: `src/lib/training-ladder/` · migration
-`20261007100000_training_ladder.sql` · pages `/training`, `/training/[key]` ·
+Code: `src/lib/training-ladder/` · migrations
+`20261007100000_training_ladder.sql` (engine) and
+`20261007160000_training_ladder_patients.sql` (the ten patients, generated) ·
+patient files `personas/ladder/*.json` · pages `/training`, `/training/[key]` ·
 result card on the session complete page.
+
+## The ten patients
+
+| # | Patient (EN / AR) | Primary | Comorbidities L3 → L5 |
+|---|---|---|---|
+| 1 | Ethan Cole / أحمد حدّاد | MDD, recurrent, moderate | GAD with panic · PTSD · PTSD + alcohol use |
+| 2 | Rachel Kim / رانية صالح | GAD with panic | MDD · alcohol use · MDD + alcohol use |
+| 3 | Laura Bennett / هدى خليل | PTSD | MDD · alcohol use · MDD + alcohol use |
+| 4 | Tyler Grant / عمر ناصر | Adult ADHD | GAD with panic (L3–L5) |
+| 5 | Karen Doyle / سميرة عودة | Alcohol use disorder | GAD with panic (L3–L5) |
+| 6 | Emily Shaw / دانا قاسم | Panic disorder | none authored in the catalogue |
+| 7 | Jake Moreno / كريم سعادة | Borderline personality disorder | MDD (L3–L5) |
+| 8 | Nadia Price / لينا منصور | Complex PTSD | none authored in the catalogue |
+| 9 | Marcus Hill / يزن حمدان | Schizophrenia | GAD with panic (L3–L5) |
+| 10 | Chris Walsh / طارق عزّام | Bipolar I, current episode manic | none authored in the catalogue |
+
+Each file in `personas/ladder/` is one person: an `en-US` and an `ar-JO`
+personality authored natively (different names, cities and idioms, same
+biography), human-personality traits for both, a language-neutral clinical
+core for the primary disorder, gender-matched approved voices and a portrait.
+The persona carries the life events every level's comorbidities need, and
+leaves the current state, risk disclosure and amounts to Module 1, so one
+persona holds all five levels. The patient's avatar `disorder` equals the
+catalogue name, so ladder cases are never treated as diagnosis overrides.
+
+`patient-files.test.ts` mints every level in both languages through the Case
+Engine and checks the publish gate, voices, sections, passive-only risk and
+the absence of method words. The migration is generated from the files
+(`WRITE_LADDER_PATIENTS_MIGRATION=1 npx vitest run
+src/lib/training-ladder/patient-files.test.ts`) and the test fails when it
+drifts. Every persona is `clinical_review: in_review` until a clinician signs
+it off.
+
+Program patients are hidden from the Patient Library, the practice and
+skill-test pickers and clinic days, and `/api/sessions` refuses a session on
+one that is not a ladder level (`ladder_patient_only`).
 
 ## Levels
 
@@ -73,13 +111,12 @@ admin-only.
 
 ## Phases
 
-1. **This version**: ladder engine, risk overlay, server-side grading and
-   unlock, trainee pages. One provisional patient (Maya, MDD) so the flow can
-   be tested end to end; her case file rules out the catalogue's other MDD
-   comorbidities, so her levels differ by difficulty and risk only.
-2. Author the program's ten patients (five female, five male, ten different
-   primary disorders, EN and AR authored natively, gender-matched voices) and
-   their comorbidity ladders.
+1. Ladder engine, risk overlay, server-side grading and unlock, trainee
+   pages, with Maya Chen as a provisional patient (#285).
+2. **This version**: the program's ten patients (five female, five male, ten
+   different primary disorders, EN and AR authored natively, gender-matched
+   voices) and their comorbidity ladders. Maya's ladder row is retired
+   (inactive, slot 99); her attempts stay, and she stays in the library.
 3. The Patient Library becomes the program; comorbidities sealed from the
    trainee's session row (as skill tests do); admin view of trainee ladders.
 

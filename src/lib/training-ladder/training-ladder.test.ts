@@ -28,8 +28,10 @@ import {
   normalizeLadderAttempt,
   numberAttempts,
   signLadderAttempt,
+  withoutLadderAvatars,
   type LadderLevel,
 } from "@/lib/training-ladder";
+import { LADDER_PATIENTS_MIGRATION } from "@/lib/training-ladder/patient-migration";
 
 const root = join(__dirname, "../../..");
 const read = (p: string) => readFileSync(join(root, p), "utf8");
@@ -111,7 +113,7 @@ describe("program", () => {
   });
 
   it("seeds every program patient in the database mirror", () => {
-    const sql = read(MIGRATION);
+    const sql = read(LADDER_PATIENTS_MIGRATION);
     for (const p of LADDER_PATIENTS) {
       expect(sql).toContain(`SELECT '${p.key}', ${p.slot}, a.id`);
       expect(sql).toContain(`WHERE a.slug = '${p.avatarSlug}'`);
@@ -340,6 +342,32 @@ describe("server-side unlock", () => {
     expect(route).toContain("await closeFailedSessionStart(supabase, session.id);");
     expect(route).toContain("riskOverlay: ladderRiskOverlay(ladder.level, ladder.patient.risk)");
     expect(route).not.toMatch(/body\.(score|unlocked|ladderStatus)/);
+  });
+
+  it("keeps program patients out of the library, pickers and clinic", () => {
+    expect(
+      withoutLadderAvatars(
+        [{ id: "a" }, { id: "ladder" }, { id: "b" }],
+        new Set(["ladder"]),
+      ),
+    ).toEqual([{ id: "a" }, { id: "b" }]);
+    for (const file of [
+      "src/app/(app)/avatars/page.tsx",
+      "src/app/(app)/supervise/new/page.tsx",
+      "src/app/(app)/clinic/page.tsx",
+      "src/app/api/clinic/day/route.ts",
+    ]) {
+      expect(read(file)).toContain("withoutLadderAvatars(");
+    }
+    expect(read("src/app/api/skill-tests/route.ts")).toContain(
+      'code: "ladder_patient_only"',
+    );
+    // A program patient is only ever played through a ladder level.
+    const route = read("src/app/api/sessions/route.ts");
+    expect(route).toContain(
+      "if (!ladder && (await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {",
+    );
+    expect(route).toContain('code: "ladder_patient_only"');
   });
 
   it("normalizes attempts loaded with their session", () => {

@@ -48,7 +48,7 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     group: "intake",
     window: "opening",
     pattern:
-      /my name is|i'?m (dr\.?|doctor) |i'?ll be your|i am (a|your) (therapist|psycholog|psychiatr|counsel|clinician|doctor)|i'?m (a|your) (therapist|psycholog|psychiatr|counsel|clinician)|اسمي|أنا الدكتور|انا الدكتور|أنا الدكتورة|انا الدكتورة|أنا المعالج|انا المعالج|أنا الأخصائي|انا الاخصائي/iu,
+      /my name is|i'?m (dr\.?|doctor) |(this|it)'?s? (is )?(dr\.?|doctor) |(dr\.?|doctor) \w+ (here|speaking)|\w+,? (your|the) (therapist|psycholog|counsel|clinician)|you can call me|i'?ll be your|i am (a|your) (therapist|psycholog|psychiatr|counsel|clinician|doctor)|i'?m (a|your) (therapist|psycholog|psychiatr|counsel|clinician)|اسمي|أنا الدكتور|انا الدكتور|أنا الدكتورة|انا الدكتورة|أنا المعالج|انا المعالج|أنا الأخصائي|انا الاخصائي/iu,
     arabic:
       /انا (اسمي|المعالج|الدكتور|الاخصائي|المختص|معالجك|معالجتك|المرشد)|معك (الدكتور|المعالج|الاخصائي)|رح اكون (معالجك|معالجتك)/u,
   },
@@ -77,7 +77,7 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     pattern:
       /who (do you live|lives) |live with|your (family|wife|husband|partner|kids|children|parents|friends|job|work)|anyone you can talk to|عيلتك|عائلتك|أهلك|اهلك|مين ساكن معك|مع مين ساكن|شغلك|عملك|زوجك|زوجتك|أصحابك|اصحابك|ولادك|أولادك/iu,
     arabic:
-      /عيلتك|عايلتك|اهلك|(مين|مع مين) (ساكن|ساكنه|عايش|عايشه)|شغلك|عملك|وظيفتك|زوجك|زوجتك|اصحابك|اصدقاوك|اصدقائك|ولادك|اولادك/u,
+      /عيلتك|عايلتك|اهلك|(بتشتغل|بتشتغلي|شو بتشتغل|وين بتشتغل|بتدرس|بتدرسي)|(متزوج|متزوجه|مرتبط|مرتبطه|مخطوب|مخطوبه)|(مين|مع مين) (ساكن|ساكنه|عايش|عايشه)|شغلك|عملك|وظيفتك|زوجك|زوجتك|اصحابك|اصدقاوك|اصدقائك|ولادك|اولادك/u,
   },
   {
     id: "expectations",

@@ -7,32 +7,39 @@ import {
   listDisorderOptions,
 } from "@/lib/skill-tests";
 import { SkillTestForm } from "@/components/skill-tests/SkillTestForm";
+import { loadLadderAvatarIds, withoutLadderAvatars } from "@/lib/training-ladder";
 
 export default async function NewSkillTestPage() {
   const { supabase } = await requireSupervisor();
   const t = await getTranslations("skillTests.supervise");
 
-  const [{ data: traineeRows, error: traineeErr }, { data: avatarRows }] =
-    await Promise.all([
-      supabase.rpc("list_skill_test_trainees"),
-      supabase
-        .from("avatars")
-        .select("id, name, age, gender")
-        .eq("is_active", true)
-        .order("name"),
-    ]);
+  const [
+    { data: traineeRows, error: traineeErr },
+    { data: avatarRows },
+    ladderAvatarIds,
+  ] = await Promise.all([
+    supabase.rpc("list_skill_test_trainees"),
+    supabase
+      .from("avatars")
+      .select("id, name, age, gender")
+      .eq("is_active", true)
+      .order("name"),
+    loadLadderAvatarIds(supabase),
+  ]);
   if (traineeErr) console.warn("[supervise/new] trainees:", traineeErr.message);
 
   const trainees = (
     (traineeRows ?? []) as Array<{ id: string; display_name: string; email: string }>
   ).map((r) => ({ id: r.id, displayName: r.display_name, email: r.email }));
-  const patients = (
+  // Training Program patients are written for the ladder, not for tests.
+  const patients = withoutLadderAvatars(
     (avatarRows ?? []) as Array<{
       id: string;
       name: string;
       age: number | null;
       gender: string | null;
-    }>
+    }>,
+    ladderAvatarIds,
   );
   const disorders = listDisorderOptions().map((d) => ({
     slug: d.slug,

@@ -16,6 +16,7 @@ import {
 import { chartSectionsForDifficulty } from "@/lib/therapy-room";
 import type { CaseDifficulty } from "@/lib/case-engine/types";
 import type { ClinicAppointmentCard } from "@/lib/therapy-room";
+import { loadLadderAvatarIds, withoutLadderAvatars } from "@/lib/training-ladder";
 
 export async function GET() {
   if (!isTherapyRoomEnabled()) {
@@ -63,15 +64,19 @@ export async function GET() {
       }
       clinicDayId = created.id;
 
-      const { data: avatars } = await supabase
+      const { data: avatarRows } = await supabase
         .from("avatars")
         .select("id, name, disorder, portrait_url, clinical_core")
         .eq("is_active", true)
-        .order("name")
-        .limit(6);
+        .order("name");
+      // Training Program patients are not booked into clinic days.
+      const avatars = withoutLadderAvatars(
+        avatarRows ?? [],
+        await loadLadderAvatarIds(supabase),
+      ).slice(0, 6);
 
       const dayStart = `${dayKey}T09:00:00.000Z`;
-      const rows = (avatars ?? []).map((av, index) => {
+      const rows = avatars.map((av, index) => {
         const core = av.clinical_core as
           | { risk_profile?: { suicidal_ideation?: string } }
           | null;

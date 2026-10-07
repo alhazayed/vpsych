@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Karen Doyle">
+  <defs>
+    <linearGradient id="bg-karen-doyle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ebe3d5"/>
+      <stop offset="100%" stop-color="#e3e8e0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-karen-doyle)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#5f6b4a" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#efc6a5"/>
+  <path d="M116 165c4-70 42-106 84-106s80 36 84 106c-10-30-30-46-50-50-12 14-36 20-66 20-22 0-38 12-52 30z" fill="#8a4b2a"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#b97f66" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#5f6b4a"/>
+</svg>

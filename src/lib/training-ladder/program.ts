@@ -35,30 +35,144 @@ export type LadderPatient = {
     readonly string[],
   ];
   risk: LadderRiskProfile;
-  /**
-   * True while the patient is a stand-in for testing the ladder flow, before
-   * the program's own patients are authored.
-   */
-  provisional?: boolean;
 };
 
 /**
- * Maya (MDD) is the provisional first patient. Her authored case file rules
- * out four of the five comorbidities the catalogue allows with MDD (GAD,
- * PTSD, alcohol use, borderline personality) and states no self-harm ever;
- * her passive ideation is authored. Panic disorder is not ruled out but is
- * not part of her authored picture either, so her stand-in ladder adds no
- * comorbidity and no self-harm history.
+ * The ten program patients (five female, five male), one primary disorder
+ * each. Their identities are authored natively in English and Arabic in
+ * `personas/ladder/<avatarSlug>.json`; `patient-files.test.ts` checks every
+ * file against the publish gate and mints each level's case from it.
+ *
+ * Panic disorder, complex PTSD and bipolar mania have no authored
+ * comorbidity in the catalogue, so their levels get harder through
+ * difficulty and risk assessment only. Delirium is the one catalogue
+ * disorder left out (a medical emergency, not a therapy ladder).
+ *
+ * Maya Chen was the provisional patient while these were written; she stays
+ * in the Patient Library and her ladder row is retired in the database.
  */
 export const LADDER_PATIENTS: readonly LadderPatient[] = [
   {
-    key: "maya",
+    key: "ethan",
     slot: 1,
-    avatarSlug: "maya-chen",
+    avatarSlug: "ethan-cole",
     primaryDisorderSlug: "mdd-recurrent-moderate",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["gad-with-panic"],
+      ["ptsd"],
+      ["ptsd", "alcohol-use-disorder"],
+    ],
+    risk: { selfHarmHistory: false },
+  },
+  {
+    key: "rachel",
+    slot: 2,
+    avatarSlug: "rachel-kim",
+    primaryDisorderSlug: "gad-with-panic",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["mdd-recurrent-moderate"],
+      ["alcohol-use-disorder"],
+      ["mdd-recurrent-moderate", "alcohol-use-disorder"],
+    ],
+    risk: { selfHarmHistory: false },
+  },
+  {
+    key: "laura",
+    slot: 3,
+    avatarSlug: "laura-bennett",
+    primaryDisorderSlug: "ptsd",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["mdd-recurrent-moderate"],
+      ["alcohol-use-disorder"],
+      ["mdd-recurrent-moderate", "alcohol-use-disorder"],
+    ],
+    risk: { selfHarmHistory: true },
+  },
+  {
+    key: "tyler",
+    slot: 4,
+    avatarSlug: "tyler-grant",
+    primaryDisorderSlug: "adult-adhd",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+    ],
+    risk: { selfHarmHistory: false },
+  },
+  {
+    key: "karen",
+    slot: 5,
+    avatarSlug: "karen-doyle",
+    primaryDisorderSlug: "alcohol-use-disorder",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+    ],
+    risk: { selfHarmHistory: false },
+  },
+  {
+    key: "emily",
+    slot: 6,
+    avatarSlug: "emily-shaw",
+    primaryDisorderSlug: "panic-disorder",
     comorbiditiesByLevel: [[], [], [], [], []],
     risk: { selfHarmHistory: false },
-    provisional: true,
+  },
+  {
+    key: "jake",
+    slot: 7,
+    avatarSlug: "jake-moreno",
+    primaryDisorderSlug: "bpd",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["mdd-recurrent-moderate"],
+      ["mdd-recurrent-moderate"],
+      ["mdd-recurrent-moderate"],
+    ],
+    risk: { selfHarmHistory: true },
+  },
+  {
+    key: "nadia",
+    slot: 8,
+    avatarSlug: "nadia-price",
+    primaryDisorderSlug: "complex-ptsd",
+    comorbiditiesByLevel: [[], [], [], [], []],
+    risk: { selfHarmHistory: true },
+  },
+  {
+    key: "marcus",
+    slot: 9,
+    avatarSlug: "marcus-hill",
+    primaryDisorderSlug: "schizophrenia",
+    comorbiditiesByLevel: [
+      [],
+      [],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+      ["gad-with-panic"],
+    ],
+    risk: { selfHarmHistory: false },
+  },
+  {
+    key: "chris",
+    slot: 10,
+    avatarSlug: "chris-walsh",
+    primaryDisorderSlug: "bipolar-mania",
+    comorbiditiesByLevel: [[], [], [], [], []],
+    risk: { selfHarmHistory: false },
   },
 ];
 

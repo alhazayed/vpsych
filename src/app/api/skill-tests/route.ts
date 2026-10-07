@@ -11,6 +11,7 @@ import {
   validateSkillTestInput,
   type SkillTestValidationError,
 } from "@/lib/skill-tests";
+import { loadLadderAvatarIds } from "@/lib/training-ladder";
 
 const VALIDATION_MESSAGES: Record<SkillTestValidationError, string> = {
   trainee_required: "Choose the trainee to assign this patient to.",
@@ -91,6 +92,18 @@ export async function POST(request: Request) {
   if (!avatar?.is_active) {
     return NextResponse.json(
       { error: VALIDATION_MESSAGES.patient_required, code: "patient_required" },
+      { status: 400 },
+    );
+  }
+  // Training Program patients are written for the ladder and are not offered
+  // in the picker; refuse a hand-crafted request for one too.
+  if ((await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {
+    return NextResponse.json(
+      {
+        error:
+          "This patient belongs to the Training Program and cannot be used in a test. Choose another patient.",
+        code: "ladder_patient_only",
+      },
       { status: 400 },
     );
   }
