@@ -137,6 +137,15 @@ Cases with no or passive ideation never escalate and their prompts are
 byte-identical to before. The Crisis handling panel then shows what the
 trainee did.
 
-## Next
+## Trainee practice checklist (Phase 3)
 
-Phase 3: feedback the trainee can see (practice checklist only).
+The session complete page (`/sessions/[id]/complete`) shows the trainee a
+"Practice checklist": the practices expected in that session, each marked done
+or not seen, grouped as on the admin panel. `buildTraineeChecklist`
+(`trainee-checklist.ts`) reduces the `evaluateSessionPractice` result to
+`{ group, items: [{ id, done }] }` and drops checks that are not applicable
+(measures, follow-up checks in a first session, safety planning without risk).
+
+It carries no score, count, coverage, excerpt or narrative; the performance
+report stays admin-only. Skill test sessions never reach it (the complete page
+returns early for them), so exam cases stay sealed.

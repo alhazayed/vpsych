@@ -84,3 +84,8 @@ export {
   injectCrisisEscalationIntoSystemPrompt,
   type CrisisEscalationPhase,
 } from "@/lib/session-practice/crisis-escalation";
+export {
+  buildTraineeChecklist,
+  type TraineeChecklistGroup,
+  type TraineeChecklistItem,
+} from "@/lib/session-practice/trainee-checklist";
