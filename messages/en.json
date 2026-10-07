@@ -930,6 +930,28 @@
         "repaired": "Repaired by turn {turn}",
         "notRepaired": "Not repaired",
         "limitation": "Simulated, not reported by a real client. Modelled on the Session Rating Scale's four areas but not the SRS, and not validated."
+      },
+      "crisis": {
+        "title": "Crisis handling",
+        "subtitle": "When the patient disclosed suicidal thoughts, which WHO mhGAP crisis steps the trainee took afterwards.",
+        "noDisclosure": "The patient did not disclose suicidal thoughts in this session.",
+        "disclosure": "Patient disclosure (patient turn {turn})",
+        "noResponse": "No later therapist turn responded to the risk.",
+        "respondedNext": "The trainee responded to the risk in the very next turn.",
+        "respondedAfter": "The trainee responded to the risk after {n, plural, one {# turn} other {# turns}}.",
+        "steps": {
+          "asked_directly": "Asked directly about suicide",
+          "assessed_immediacy": "Assessed how immediate the risk is (plan, intent, timing)",
+          "stayed_engaged": "Stayed with the person",
+          "means_safety": "Made the means safe",
+          "supports": "Involved family or other supports",
+          "specialist_help": "Involved crisis or specialist services",
+          "follow_up": "Arranged follow-up"
+        },
+        "turnsAfter": "{n, plural, one {# therapist turn} other {# therapist turns}} after the disclosure",
+        "done": "done",
+        "notSeen": "not seen",
+        "limitation": "Phrase matching on the transcript: it shows whether a step was visibly attempted, not how well. Not validated."
       }
     },
     "testTranscript": {

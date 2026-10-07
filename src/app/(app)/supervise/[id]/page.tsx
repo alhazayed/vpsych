@@ -6,12 +6,14 @@ import { isUuid, openSkillTestCase } from "@/lib/skill-tests";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { ReportView } from "@/components/ReportView";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
+import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
 import { CancelSkillTestButton } from "@/components/skill-tests/CancelSkillTestButton";
 import {
   buildIndicativeCtsr,
   buildScoreEvidence,
   caseHasRisk,
   deriveSelfReportProfile,
+  evaluateCrisisHandling,
   evaluateSessionPractice,
   reportAssessmentMode,
 } from "@/lib/session-practice";
@@ -210,6 +212,7 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
               practice,
               assessmentMode: reportAssessmentMode(report?.scores),
             });
+            const crisis = evaluateCrisisHandling(transcript);
             return (
               <section key={s.id} className="space-y-4" aria-label={t("sessionN", { n: s.test_session_number ?? index + 1 })}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -229,6 +232,9 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
                 )}
                 {transcript.length > 0 && (
                   <SessionPracticePanel practice={practice} ctsr={ctsr} selfReport={selfReport} />
+                )}
+                {transcript.length > 0 && (crisis || caseHasRisk(core?.risk_profile)) && (
+                  <CrisisHandlingPanel crisis={crisis} />
                 )}
                 <details className="clinical-card p-4">
                   <summary className="cursor-pointer text-sm font-semibold">

@@ -96,7 +96,29 @@ clinical brain and changes no patient behaviour. It is simulated, it is not
 the SRS, and it is not validated; the panel says so. Sessions with no trace
 show "no rating". Computed on read; nothing persisted.
 
+## Crisis handling (Phase 3)
+
+`crisis.ts` finds the first patient turn that discloses suicidal thoughts
+(specific phrases in English and Arabic; a denial just before the phrase, such
+as "I'd never kill myself", does not count) and then reads the therapist turns
+after it for the WHO mhGAP steps for imminent risk:
+
+- asked directly about suicide;
+- assessed immediacy (plan, intent, timing, access);
+- stayed with the person (at least 3 therapist turns after the disclosure);
+- made the means safe;
+- involved family or other supports;
+- involved crisis or specialist services;
+- arranged follow-up.
+
+Means safety, supports and specialist help reuse the safety-plan patterns,
+plus a few crisis phrases. The panel shows the disclosure, how many turns the
+trainee took to respond, and each step with the turn that showed it. It
+appears on the admin report and the supervisor test page when the patient
+disclosed or the case carries risk. Phrase matching only, computed on read,
+not validated.
+
 ## Next
 
-Phase 3: a patient-reported alliance rating, a 5 Ps formulation graded against
-the case, in-session crisis escalation, and feedback the trainee can see.
+Phase 3: the patient escalating to imminent risk mid-session, and feedback the
+trainee can see (practice checklist only).

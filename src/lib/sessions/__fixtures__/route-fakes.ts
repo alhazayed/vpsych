@@ -30,11 +30,17 @@ export const avatar: Avatar = {
 };
 
 export function fakeSupabase(
-  opts: { status?: string; owner?: string; snapshot?: Record<string, unknown> | null } = {},
+  opts: {
+    status?: string;
+    owner?: string;
+    snapshot?: Record<string, unknown> | null;
+    /** Earlier transcript rows already in the session. */
+    history?: Array<{ role: string; content: string }>;
+  } = {},
 ) {
   const rpcCalls: RpcCall[] = [];
   const inserts: Array<{ table: string; row: Record<string, unknown> }> = [];
-  const messages: Array<Record<string, unknown>> = [];
+  const messages: Array<Record<string, unknown>> = [...(opts.history ?? [])];
   const session = {
     id: SESSION_ID,
     therapist_id: opts.owner ?? USER_ID,
