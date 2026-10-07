@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Ethan Cole">
+  <defs>
+    <linearGradient id="bg-ethan-cole" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dfe6d8"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-ethan-cole)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#4a5d3a" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#e0b394"/>
+  <path d="M118 150c8-65 45-98 82-98 38 0 74 33 82 98-18-20-48-28-82-28s-64 8-82 28z" fill="#6b4a2f"/>
+  <path d="M140 196c6 40 30 54 60 54s54-14 60-54c-14 14-34 20-60 20s-46-6-60-20z" fill="#6b4a2f" opacity="0.85"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#b07a5e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#4a5d3a"/>
+</svg>

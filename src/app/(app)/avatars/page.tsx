@@ -14,6 +14,7 @@ import {
   normalizeCourseRow,
   type CourseProgress,
 } from "@/lib/therapy-course";
+import { loadLadderAvatarIds, withoutLadderAvatars } from "@/lib/training-ladder";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -66,13 +67,17 @@ export default async function AvatarsPage() {
   }
   const tCourse = await getTranslations("course");
 
-  const list =
+  // Training Program patients live on /training only.
+  const ladderAvatarIds = await loadLadderAvatarIds(supabase);
+  const list = withoutLadderAvatars(
     (avatars as
       | Omit<
           Avatar,
           "persona_prompt" | "rubric" | "created_at" | "updated_at"
         >[]
-      | null) ?? [];
+      | null) ?? [],
+    ladderAvatarIds,
+  );
 
   // Practice scenarios: every active disorder with the patients who can
   // present with it (age and gender limits from the Case Engine).

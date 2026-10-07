@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Jake Moreno">
+  <defs>
+    <linearGradient id="bg-jake-moreno" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e6dde3"/>
+      <stop offset="100%" stop-color="#dfe7ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-jake-moreno)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#2f3a4f" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#c58f68"/>
+  <path d="M122 150c6-62 40-92 78-92s72 30 78 92c-16-18-44-26-78-26s-62 8-78 26z" fill="#1e1916"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#94604a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#2f3a4f"/>
+</svg>

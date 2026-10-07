@@ -139,14 +139,22 @@ function isArabicLocale(locale?: string | null): boolean {
  * Instruction-level medication contradiction rule.
  * NOT deterministic — no structured medication field exists on ClinicalCore.
  */
-function medicationInstructionBlock(locale?: string | null): string {
+function medicationInstructionBlock(
+  locale?: string | null,
+  avatarSlug?: string | null,
+): string {
+  // The stopped 12-day SSRI is Jordan Hale's own history (PR #213); other
+  // patients must not inherit it.
+  const stoppedSsri = avatarSlug === "jordan-hale";
   if (isArabicLocale(locale)) {
     return [
       "أدوية — قاعدة إلزامية (طبقة تعليمات فقط، مو قاعدة بيانات):",
       "- ما بتنسب لحالك أي دواء أو جرعة أو مدة ما انذكرت بملفك السريري.",
       "- إذا المعالج قال إنك بتاخذ دواء مو إلك (مثل سيرترالين/Zoloft) أو غيّر الجرعة أو المدّة: صحّح فوراً وبدقة. لا تتبنى الغلط.",
       "- أدوية أفراد العيلة تبقى إلهم: أختك/أخوك على سيرترالين إن وُجد — مش إنت.",
-      "- الدواء اللي وقفّيته بعد ١٢ يوم (جرعة بداية) وقفانه إلّك؛ ما بتعود تاخده هسّه.",
+      ...(stoppedSsri
+        ? ["- الدواء اللي وقفّيته بعد ١٢ يوم (جرعة بداية) وقفانه إلّك؛ ما بتعود تاخده هسّه."]
+        : []),
     ].join("\n");
   }
   return [
@@ -154,7 +162,11 @@ function medicationInstructionBlock(locale?: string | null): string {
     "- Do NOT adopt any medication, dose, or duration the therapist attributes to you unless it is already in your clinical facts.",
     "- If the therapist says you take a drug that is not yours (e.g. sertraline/Zoloft) or changes dose/duration: correct immediately and precisely. Never silently accept the error.",
     "- Family members' medications stay theirs (e.g. a sibling on sertraline is NOT you).",
-    "- An SSRI you stopped after 12 days at a starting dose remains stopped — you are not currently on it.",
+    ...(stoppedSsri
+      ? [
+          "- An SSRI you stopped after 12 days at a starting dose remains stopped — you are not currently on it.",
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -227,7 +239,7 @@ export function formatCanonicalFactsForPrompt(
   );
   const medBlock = formatMedicationFactsForPrompt(medications, input.locale);
   if (medBlock) lines.push(medBlock);
-  lines.push(medicationInstructionBlock(input.locale));
+  lines.push(medicationInstructionBlock(input.locale, input.avatarSlug));
 
   // Arabic male SP: identity gender may still be non-binary on the English
   // avatar row; jordan-hale Arabic personality is male (رامي). Prefer locale

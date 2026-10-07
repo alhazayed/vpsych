@@ -254,10 +254,12 @@ function mergeClinicalCore(req: CaseGenerationRequest): ClinicalCore {
       pkg.risk_defaults?.harm_to_others ??
       legacy?.risk_profile?.harm_to_others ??
       false,
+    // A comorbid substance use disorder flags substance use too.
     substance_use:
-      pkg.risk_defaults?.substance_use ??
-      legacy?.risk_profile?.substance_use ??
-      false,
+      (pkg.risk_defaults?.substance_use ??
+        legacy?.risk_profile?.substance_use ??
+        false) ||
+      comorbidities.some((c) => c.package.risk_defaults?.substance_use === true),
     escalation_rules:
       pkg.risk_defaults?.escalation_rules ??
       legacy?.risk_profile?.escalation_rules,

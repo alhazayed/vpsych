@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Chris Walsh">
+  <defs>
+    <linearGradient id="bg-chris-walsh" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2e4d6"/>
+      <stop offset="100%" stop-color="#e4eaf0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg-chris-walsh)"/>
+  <ellipse cx="200" cy="312" rx="112" ry="40" fill="#8a2f3a" opacity="0.25"/>
+  <circle cx="200" cy="170" r="78" fill="#efc4a2"/>
+  <path d="M118 158c4-70 42-102 86-102 40 0 74 30 78 96-30-34-70-40-120-30-18 4-32 16-44 36z" fill="#c9a46a"/>
+  <circle cx="171" cy="168" r="6" fill="#2a2522"/>
+  <circle cx="229" cy="168" r="6" fill="#2a2522"/>
+  <path d="M180 206c12 8 28 8 40 0" fill="none" stroke="#b7795e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M128 250c22 74 122 74 144 0" fill="#8a2f3a"/>
+</svg>

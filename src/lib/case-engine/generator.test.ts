@@ -185,6 +185,30 @@ describe("Dynamic Clinical Case Engine", () => {
     expect(assessmentIds.size).toBe(100);
   });
 
+  it("flags substance use when alcohol use disorder is a comorbidity", () => {
+    const catalog = getBuiltinCatalog();
+    const base = {
+      persona: mayaPersona,
+      avatarId: "avatar-maya",
+      primaryDisorder: disorderById(DISORDER_IDS.mdd),
+      difficulty: "advanced" as const,
+      therapyModality: "cbt" as const,
+      locale: "en-US",
+      seed: "maya-mdd-aud",
+      difficultyProfile: findDifficulty("advanced", catalog),
+      therapyProfile: findTherapy("cbt", catalog),
+    };
+    const alone = generateCaseInstance({ ...base, comorbidities: [] });
+    const withAud = generateCaseInstance({
+      ...base,
+      comorbidities: [disorderById(DISORDER_IDS.aud)],
+    });
+    expect(alone.ok && withAud.ok).toBe(true);
+    if (!alone.ok || !withAud.ok) return;
+    expect(alone.snapshot.clinical_core.risk_profile.substance_use).toBe(false);
+    expect(withAud.snapshot.clinical_core.risk_profile.substance_use).toBe(true);
+  });
+
   it("keeps persona identity while swapping diagnosis via resolveAvatar", () => {
     const catalog = getBuiltinCatalog();
     const ptsd = disorderById(DISORDER_IDS.ptsd);

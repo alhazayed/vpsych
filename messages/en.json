@@ -2618,7 +2618,6 @@
     "summary": "{patients, plural, one {# patient} other {# patients}} · {levels} levels",
     "unavailable": "The training program is not available yet. Please try again later.",
     "empty": "No training patients are available yet.",
-    "provisional": "Practice patient while the program's ten patients are being prepared.",
     "patientNumber": "Patient {n}",
     "patientTitle": "Patient {n} — {name}",
     "identity": "{gender} · {age} years",

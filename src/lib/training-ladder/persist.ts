@@ -145,3 +145,32 @@ export async function loadLadderAttempts(
     ),
   };
 }
+
+/**
+ * Avatar ids of the active program patients. Their personas are written for
+ * the ladder (risk on every level), so they are kept out of the general
+ * Patient Library, practice and test pickers. An unreadable table (migration
+ * not applied) means no program patients.
+ */
+export async function loadLadderAvatarIds(
+  supabase: SupabaseClient,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("training_ladder_patients")
+    .select("avatar_id")
+    .eq("is_active", true);
+  if (error || !data) return new Set();
+  return new Set(
+    (data as { avatar_id: string | null }[])
+      .map((r) => r.avatar_id)
+      .filter((id): id is string => typeof id === "string"),
+  );
+}
+
+/** Drop program patients from a list of avatars (Library, pickers, clinic). */
+export function withoutLadderAvatars<T extends { id: string }>(
+  avatars: readonly T[],
+  ladderAvatarIds: ReadonlySet<string>,
+): T[] {
+  return avatars.filter((a) => !ladderAvatarIds.has(a.id));
+}
