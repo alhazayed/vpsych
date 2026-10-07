@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import type { TraineeChecklistGroup } from "@/lib/session-practice";
 
 /**
- * Trainee view: practices done or missed in this session. No scores, counts or
+ * Trainee view: every expected practice, green when covered and red when not
+ * performed in this session. No scores, counts or
  * narrative; the performance report stays admin-only. Practice labels are
  * shared with the admin Session practice panel.
  */
@@ -37,18 +38,23 @@ export async function TraineePracticeChecklist({
             </h3>
             <ul className="space-y-1.5 text-sm">
               {g.items.map((item) => (
-                <li key={item.id} className="flex items-start gap-2">
+                <li
+                  key={item.id}
+                  className={`flex items-start gap-2 rounded-lg px-2 py-1.5 ${
+                    item.done
+                      ? "bg-emerald-50 text-emerald-800"
+                      : "bg-[var(--error-container)] text-[var(--on-error-container)]"
+                  }`}
+                >
                   <span
                     className={`material-symbols-outlined text-[18px] ${
-                      item.done
-                        ? "text-[var(--primary)]"
-                        : "text-[var(--on-surface-variant)]"
+                      item.done ? "text-emerald-700" : "text-[var(--error)]"
                     }`}
                     aria-hidden
                   >
-                    {item.done ? "check_circle" : "radio_button_unchecked"}
+                    {item.done ? "check_circle" : "cancel"}
                   </span>
-                  <span className="text-[var(--on-surface)]">
+                  <span>
                     {tPractice(`checks.${item.id}`)}
                     <span className="sr-only">
                       {" "}
