@@ -8,7 +8,10 @@ import { requireAdmin } from "@/lib/auth";
 import { throwOnLoadError } from "@/lib/admin/page-load";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
+import { extractAdaptationFromMemory } from "@/lib/adaptation";
+import { AllianceRatingPanel } from "@/components/admin/AllianceRatingPanel";
 import {
+  buildAllianceRating,
   buildIndicativeCtsr,
   buildScoreEvidence,
   caseHasRisk,
@@ -16,6 +19,7 @@ import {
   evaluateSessionPractice,
   profileFromCourseSelfReport,
   reportAssessmentMode,
+  type AllianceRating,
 } from "@/lib/session-practice";
 import { openSkillTestCase } from "@/lib/skill-tests";
 import type {
@@ -43,6 +47,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
         ended_at,
         status,
         clinical_snapshot,
+        case_instance_id,
         skill_test_assignment_id,
         sealed_case,
         therapy_course_id,
@@ -66,6 +71,9 @@ export default async function AdminReportDetailPage({ params }: Props) {
   });
 
   const session = report.sessions as unknown as {
+    started_at: string;
+    ended_at: string | null;
+    case_instance_id: string | null;
     clinical_snapshot: {
       clinical_core?: ClinicalCore | null;
       therapy_course?: TherapyCourseSessionContext | null;
@@ -112,6 +120,21 @@ export default async function AdminReportDetailPage({ params }: Props) {
       ? deriveSelfReportProfile(core)
       : null;
 
+  // How the session felt to the patient, from the adaptation engine's trace.
+  let alliance: AllianceRating | null = null;
+  if (session?.case_instance_id) {
+    const { data: memoryRow } = await supabase
+      .from("case_memory")
+      .select("memory")
+      .eq("case_instance_id", session.case_instance_id)
+      .maybeSingle();
+    alliance = buildAllianceRating({
+      state: extractAdaptationFromMemory(memoryRow?.memory),
+      startedAt: session.started_at,
+      endedAt: session.ended_at,
+    });
+  }
+
   // Measurement-based care: questionnaire targets across the therapy course.
   let trajectory: Array<{ n: number; phq9: number; gad7: number }> = [];
   if (session?.therapy_course_id) {
@@ -157,6 +180,9 @@ export default async function AdminReportDetailPage({ params }: Props) {
       ) : null}
       <div className="mt-6">
         <ReportView report={report as SessionReport} evidence={evidence} />
+      </div>
+      <div className="mt-6">
+        <AllianceRatingPanel rating={alliance} />
       </div>
       <div className="mt-6">
         <SessionPracticePanel

@@ -438,7 +438,25 @@ export type TreatmentPlan = {
    * before this field existed.
    */
   risk_formulation: string;
+  /**
+   * Structured case formulation (the 5 Ps). Clinician-facing: never shown to
+   * the patient. Null on plans written before this field existed.
+   */
+  five_ps: FivePsFormulation | null;
 };
+
+export const FIVE_PS = [
+  "presenting",
+  "predisposing",
+  "precipitating",
+  "perpetuating",
+  "protective",
+] as const;
+
+export type FivePKey = (typeof FIVE_PS)[number];
+
+/** The trainee's 5 Ps formulation, one short paragraph per P. */
+export type FivePsFormulation = Record<FivePKey, string>;
 
 /**
  * One trainee working with one patient case across several sessions.

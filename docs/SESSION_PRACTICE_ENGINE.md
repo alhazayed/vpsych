@@ -74,6 +74,28 @@ results page as limited, some or strong evidence, with the reason:
 A label describes how much of the transcript backs a score, not whether the
 score is right, and the report says so. Computed on read; nothing persisted.
 
+## Patient-felt session rating (Phase 3)
+
+`alliance-rating.ts` reads the Patient Adaptation Engine's per-turn trace
+(`case_memory.memory.patient_adaptation.turn_traces`) for the session's time
+window and shows, on the admin report, how the session felt to the patient in
+four areas modelled on the Session Rating Scale (0 to 10 each):
+
+- felt heard and respected: rapport at the last turn;
+- talked about what mattered: mean disclosure readiness across the session;
+- approach fit them: trust at the last turn;
+- overall: the mean of those three, minus 0.5 per unrepaired rupture.
+
+A rupture is a trust drop of 5 or more points in one turn with a judgmental,
+confrontational, curt or interrupting cue (or 10 or more with none). It is
+repaired if trust returns to its earlier level later in the session. The
+report lists each rupture and whether it was repaired.
+
+It only reads state the existing engine already writes, so it adds no second
+clinical brain and changes no patient behaviour. It is simulated, it is not
+the SRS, and it is not validated; the panel says so. Sessions with no trace
+show "no rating". Computed on read; nothing persisted.
+
 ## Next
 
 Phase 3: a patient-reported alliance rating, a 5 Ps formulation graded against

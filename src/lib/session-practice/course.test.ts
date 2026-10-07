@@ -39,6 +39,7 @@ const plan: TreatmentPlan = {
   expected_sessions: 8,
   patient_expectations: "Weekly sessions",
   risk_formulation: "",
+  five_ps: null,
 };
 
 function convo(therapist: string[]) {

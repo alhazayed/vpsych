@@ -911,6 +911,25 @@
           "sessionN": "Session {n}",
           "note": "Simulated: scores move with session structure and homework under a fixed rule. Not a validated model of treatment response."
         }
+      },
+      "alliance": {
+        "title": "How the session felt to the patient",
+        "subtitle": "Simulated end-of-session rating in four areas (0–10), read from the virtual patient's rapport and trust during this session.",
+        "unavailable": "No patient trace for this session, so no rating.",
+        "dimensions": {
+          "relationship": "Felt heard and respected",
+          "goals_topics": "Talked about what mattered",
+          "approach": "Approach fit them",
+          "overall": "Overall"
+        },
+        "outOf10": "{value}/10",
+        "total": "Total {value}/40 over {turns} turns.",
+        "rupturesTitle": "Alliance ruptures",
+        "noRuptures": "No ruptures this session.",
+        "rupture": "Turn {turn}: trust fell from {before} to {after}",
+        "repaired": "Repaired by turn {turn}",
+        "notRepaired": "Not repaired",
+        "limitation": "Simulated, not reported by a real client. Modelled on the Session Rating Scale's four areas but not the SRS, and not validated."
       }
     },
     "testTranscript": {
@@ -2022,6 +2041,25 @@
       "saved": "Saved",
       "changeFailed": "The account could not be updated. Please try again.",
       "networkError": "Network error. Check your connection and try again."
+    },
+    "formulationReview": {
+      "title": "5 Ps formulation against the case",
+      "subtitle": "What the trainee wrote beside what this case was built with. Only admins see this.",
+      "noFivePs": "This treatment plan was written before the 5 Ps section, so there is nothing to compare.",
+      "caseKey": "Case",
+      "trainee": "Trainee",
+      "notSpecified": "The case does not specify this.",
+      "run": "Rate against the case",
+      "running": "Rating…",
+      "rerun": "Rate again",
+      "ratings": {
+        "matches": "Matches",
+        "partial": "Partly",
+        "missing": "Missing",
+        "contradicts": "Contradicts"
+      },
+      "error": "Could not rate the formulation. Try again later.",
+      "limitation": "Rated by the AI examiner against the simulated case's own facts. Not saved, not shown to the trainee, and not validated."
     }
   },
   "validation": {
@@ -2332,7 +2370,8 @@
       "patient_expectations": "Describe what the patient should expect (at least 10 characters).",
       "generic": "Could not save the treatment plan. Please try again.",
       "network": "Network error. Check your connection and try again.",
-      "risk_formulation": "Describe the risk and safety picture (at least 10 characters)."
+      "risk_formulation": "Describe the risk and safety picture (at least 10 characters).",
+      "five_ps": "Fill in all five Ps, each between 3 and 600 characters."
     },
     "startNext": "Start session {n}",
     "finalSessionNote": "Session {n} is the planned final session: the patient will expect to talk about ending therapy.",
@@ -2353,7 +2392,21 @@
     "fieldRisk": "Risk and safety formulation",
     "fieldRiskHint": "What raises and lowers risk for this patient, and the safety plan. Describe it rather than giving a low, medium or high label. The patient does not see this.",
     "risk": "Risk and safety",
-    "planPresentNote": "Present the plan to the patient at the start of the next session and agree the goals together. The patient may question or negotiate them."
+    "planPresentNote": "Present the plan to the patient at the start of the next session and agree the goals together. The patient may question or negotiate them.",
+    "fivePs": {
+      "title": "5 Ps formulation",
+      "hint": "Break your understanding of the case into the five Ps, a few sentences each. The patient does not see this.",
+      "presenting": "Presenting problem",
+      "presentingHint": "What brings them now: main symptoms, how long, how it affects daily life.",
+      "predisposing": "Predisposing factors",
+      "predisposingHint": "Long-standing vulnerabilities: history, temperament, early experiences, core beliefs.",
+      "precipitating": "Precipitating factors",
+      "precipitatingHint": "What set off this episode, and why now.",
+      "perpetuating": "Perpetuating factors",
+      "perpetuatingHint": "What keeps it going: thinking patterns, avoidance, coping, circumstances.",
+      "protective": "Protective factors",
+      "protectiveHint": "Strengths and supports that help: people, work, values, help-seeking."
+    }
   },
   "skillTests": {
     "trainee": {

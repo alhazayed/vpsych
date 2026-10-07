@@ -46,9 +46,32 @@ formulation, 1–6 goals, planned interventions, expected number of sessions
 (3–20, and at least one more than the sessions already held), what the
 patient should expect in plain words, and a risk and safety formulation
 (clinician-only, never given to the patient; described, not a
-low/medium/high label, per NICE NG225). The expected number of sessions sets
+low/medium/high label, per NICE NG225), and a 5 Ps formulation (presenting,
+predisposing, precipitating, perpetuating, protective; each 3–600 characters,
+clinician-only like the risk section). The expected number of sessions sets
 the course length. The plan can be revised; revisions apply from the next
-session.
+session. Plans written before the 5 Ps load with `five_ps: null`; revising
+one asks for them.
+
+## 5 Ps against the case
+
+Admins see a panel on the course page (`components/admin/FormulationReviewPanel`)
+with the trainee's 5 Ps beside the case's own. The case key
+(`formulation-key.ts`, `buildCaseFormulationKey`) is read from the course's
+frozen case snapshot, so no second clinical brain is involved:
+
+- presenting: diagnosis, severity, comorbidities, main symptoms, onset
+- predisposing: psychiatric history, core beliefs, attachment, temperament
+- precipitating: the randomized recent stressor and life circumstances
+- perpetuating: schema rules, coping bias, thinking patterns, defences
+- protective: protective factors and values
+
+"Rate against the case" (`POST /api/admin/courses/:id/formulation-review`,
+admin, 30/h) asks the existing AI provider to rate each P as matches,
+partial, missing or contradicts, with a one-line note in the admin's
+language (`formulation-review.ts`). The rating is not saved, never reaches
+the trainee, and is not validated. With no AI key, or unusable model output,
+it fails closed with a clear error.
 
 ## Patient Agent
 
@@ -76,7 +99,7 @@ not validated.
 
 ## Not in this version
 
-- The plan is not scored in the admin report.
+- The 5 Ps rating is not part of the session report or any score.
 - Clinic-day appointments still show session 1.
 - Symptom measures and homework carry-over live in the Session Practice
   Engine (`docs/SESSION_PRACTICE_ENGINE.md`, "Therapy courses").

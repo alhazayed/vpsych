@@ -69,6 +69,7 @@ const plan: TreatmentPlan = {
   expected_sessions: 6,
   patient_expectations: "Weekly sessions with practice at home.",
   risk_formulation: "No current risk; review if sleep worsens.",
+  five_ps: null,
 };
 
 type Course = Record<string, unknown>;
