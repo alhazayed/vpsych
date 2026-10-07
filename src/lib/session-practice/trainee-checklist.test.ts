@@ -94,3 +94,36 @@ describe("trainee checklist, Arabic spelling variants", () => {
     expect(groups.flatMap((g) => g.items).every((i) => !i.done)).toBe(true);
   });
 });
+
+describe("trainee checklist, self-introduction", () => {
+  it.each([
+    "Hello, hi, this is Dr. Zareb speaking.",
+    "This is Doctor Zaid speaking.",
+    "Hi, it's Dr. Haddad.",
+    "I'm Sara, your therapist for today.",
+  ])("counts %j as introducing self and role", (line) => {
+    const groups = buildTraineeChecklist(
+      evaluateSessionPractice({ messages: [t(line), p("Hi.")], sessionNumber: 1 }),
+    );
+    const intro = groups.flatMap((g) => g.items).find((i) => i.id === "role_intro");
+    expect(intro?.done).toBe(true);
+  });
+});
+
+describe("trainee checklist, Arabic intake", () => {
+  it("counts asking about work and marriage as social context", () => {
+    const groups = buildTraineeChecklist(
+      evaluateSessionPractice({
+        sessionNumber: 1,
+        messages: [
+          t("مرحبا يعطيكم العافية أنا اسمي دكتور علاء زايد أنا اختصاصي طب النفسي."),
+          p("أهلين دكتور."),
+          t("طيب مش مشكلة بسيطة عندي أديها عمرك شو بتشتغلي متزوجة أو لا؟"),
+        ],
+      }),
+    );
+    const items = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.id, i.done]));
+    expect(items.role_intro).toBe(true);
+    expect(items.social_context).toBe(true);
+  });
+});
