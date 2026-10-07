@@ -10,12 +10,14 @@ import { logSecurityEvent } from "@/lib/security-audit";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { extractAdaptationFromMemory } from "@/lib/adaptation";
 import { AllianceRatingPanel } from "@/components/admin/AllianceRatingPanel";
+import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
 import {
   buildAllianceRating,
   buildIndicativeCtsr,
   buildScoreEvidence,
   caseHasRisk,
   deriveSelfReportProfile,
+  evaluateCrisisHandling,
   evaluateSessionPractice,
   profileFromCourseSelfReport,
   reportAssessmentMode,
@@ -113,6 +115,10 @@ export default async function AdminReportDetailPage({ params }: Props) {
     practice,
     assessmentMode: reportAssessmentMode(report.scores),
   });
+  const crisis = evaluateCrisisHandling(
+    (messages ?? []) as Array<{ role: string; content: string }>,
+  );
+  const showCrisis = crisis !== null || caseHasRisk(core?.risk_profile);
   const courseSelfReport = session?.clinical_snapshot?.therapy_course?.self_report;
   const selfReport = courseSelfReport
     ? profileFromCourseSelfReport(courseSelfReport)
@@ -184,6 +190,11 @@ export default async function AdminReportDetailPage({ params }: Props) {
       <div className="mt-6">
         <AllianceRatingPanel rating={alliance} />
       </div>
+      {showCrisis ? (
+        <div className="mt-6">
+          <CrisisHandlingPanel crisis={crisis} />
+        </div>
+      ) : null}
       <div className="mt-6">
         <SessionPracticePanel
           practice={practice}

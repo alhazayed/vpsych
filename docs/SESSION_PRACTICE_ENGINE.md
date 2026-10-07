@@ -96,7 +96,47 @@ clinical brain and changes no patient behaviour. It is simulated, it is not
 the SRS, and it is not validated; the panel says so. Sessions with no trace
 show "no rating". Computed on read; nothing persisted.
 
+## Crisis handling (Phase 3)
+
+`crisis.ts` finds the first patient turn that discloses suicidal thoughts
+(specific phrases in English and Arabic; a denial just before the phrase, such
+as "I'd never kill myself", does not count) and then reads the therapist turns
+after it for the WHO mhGAP steps for imminent risk:
+
+- asked directly about suicide;
+- assessed immediacy (plan, intent, timing, access);
+- stayed with the person (at least 3 therapist turns after the disclosure);
+- made the means safe;
+- involved family or other supports;
+- involved crisis or specialist services;
+- arranged follow-up.
+
+Means safety, supports and specialist help reuse the safety-plan patterns,
+plus a few crisis phrases. The panel shows the disclosure, how many turns the
+trainee took to respond, and each step with the turn that showed it. It
+appears on the admin report and the supervisor test page when the patient
+disclosed or the case carries risk. Phrase matching only, computed on read,
+not validated.
+
+## Crisis escalation (Phase 3)
+
+`crisis-escalation.ts` gives the existing Patient Agent one prompt block,
+injected in the shared clinical turn (`lib/sessions/clinical-turn.ts`), so
+text, voice and streaming behave the same. It applies only when the case's
+own risk profile has active suicidal ideation:
+
+- on the patient's 6th reply, the patient lets the therapist know the risk has
+  become urgent today: with a plan, "not sure I can keep myself safe
+  tonight"; without one, the thoughts are stronger and frightening, still no
+  plan. Method detail stays forbidden;
+- on later replies (or from the reply after an earlier disclosure), the
+  patient reacts to how the therapist handles it, without retracting or
+  escalating further.
+
+Cases with no or passive ideation never escalate and their prompts are
+byte-identical to before. The Crisis handling panel then shows what the
+trainee did.
+
 ## Next
 
-Phase 3: a patient-reported alliance rating, a 5 Ps formulation graded against
-the case, in-session crisis escalation, and feedback the trainee can see.
+Phase 3: feedback the trainee can see (practice checklist only).

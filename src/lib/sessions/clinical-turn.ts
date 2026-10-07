@@ -39,6 +39,7 @@ import {
 } from "@/lib/adaptation";
 import { prepareMemoryForTurn } from "@/lib/patient-memory";
 import { injectTherapyCourseIntoSystemPrompt } from "@/lib/therapy-course";
+import { injectCrisisEscalationIntoSystemPrompt } from "@/lib/session-practice";
 import {
   isConversationBehaviourEnabled,
   planConversationBehaviour,
@@ -363,6 +364,22 @@ export async function prepareClinicalTurn(params: {
         system_prompt: `${avatarWithMemory.system_prompt}${emotionSystemExtra}`,
       }
     : avatarWithMemory;
+
+  // Crisis escalation — only for cases that already carry active suicidal
+  // ideation; every other session's prompt is unchanged.
+  const crisisPrompt = injectCrisisEscalationIntoSystemPrompt(
+    avatarForReply.system_prompt,
+    {
+      risk: snap?.clinical_core?.risk_profile ?? null,
+      replyNumber: turnIndex + 1,
+      previousReplies: historyRows
+        .filter((m) => m.role === "assistant")
+        .map((m) => m.content ?? ""),
+    },
+  );
+  if (crisisPrompt !== avatarForReply.system_prompt) {
+    avatarForReply = { ...avatarForReply, system_prompt: crisisPrompt };
+  }
 
   // Mission 7 — Conversation Behaviour Engine (best-effort; never blocks reply).
   let behaviourPlan: ConversationBehaviourPlan | null = null;
