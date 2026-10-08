@@ -36,6 +36,15 @@ export function InstructorGraphPanel() {
     setError(null);
     setMsg(null);
     if (!selected) return;
+    // These change a real trainee's competency record immediately.
+    const learner = learners.find((l) => l.id === selected);
+    const who = learner
+      ? `${learner.profession} learner (${learner.completed_case_count} cases)`
+      : "this learner";
+    const verb = action.replace(/_/g, " ");
+    if (!window.confirm(`Apply "${verb}" to ${competencyId} for ${who}?`)) {
+      return;
+    }
     const res = await fetch("/api/admin/cge", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -59,7 +59,11 @@ export default async function AdminSupervisorsPage() {
                     {u.email}
                   </p>
                 </div>
-                <SupervisorRoleToggle userId={u.id} isSupervisor={u.is_supervisor} />
+                <SupervisorRoleToggle
+                  userId={u.id}
+                  isSupervisor={u.is_supervisor}
+                  name={u.display_name}
+                />
               </li>
             ))}
           </ul>

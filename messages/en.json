@@ -796,7 +796,8 @@
         "errorAlreadyUpdated": "This report has already been updated. Reloading.",
         "errorRateLimited": "Too many regeneration attempts. Wait a while and try again.",
         "errorNetwork": "Network error. Check your connection and try again.",
-        "errorGeneric": "Could not regenerate the report. Try again."
+        "errorGeneric": "Could not regenerate the report. Try again.",
+        "regenerateConfirm": "Regenerate this report with the AI examiner? The current fallback report will be replaced, and this can only be done once."
       },
       "practice": {
         "title": "Session practice",
@@ -1306,7 +1307,9 @@
         "assign": "Could not assign voice to avatar.",
         "save": "Could not save clinical voice profile.",
         "liveSwitch": "Could not preview live emotion switch."
-      }
+      },
+      "disableConfirm": "Disable the voice \"{name}\"? Patients assigned to it will stop using it.",
+      "unassignConfirm": "Remove this voice from {name}? The patient will have no assigned voice until you choose another."
     },
     "integrations": {
       "title": "API Integrations",
@@ -2026,7 +2029,9 @@
       "saving": "Saving…",
       "saved": "Saved",
       "changeFailed": "The account could not be updated. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "rejectConfirm": "Reject {name}'s account? They will not be able to open VPsych.",
+      "revokeConfirm": "Revoke access for {name}? They will be signed out of every page until you approve them again."
     },
     "formulationReview": {
       "title": "5 Ps formulation against the case",
@@ -2307,7 +2312,8 @@
       "plan": "Improvement plan",
       "backToClinic": "Back to clinic",
       "backToDebrief": "Back to visit review"
-    }
+    },
+    "closeDayConfirm": "Close today's clinic day? This finishes the day's schedule and opens the end-of-day summary."
   },
   "course": {
     "courseTitle": "Therapy course with {name}",
@@ -2413,7 +2419,8 @@
       "startSession": "Start session {n}",
       "starting": "Starting…",
       "startFailed": "The session could not start. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "startConfirm": "Start session {n} of this test? It counts toward the test as soon as it starts."
     },
     "practice": {
       "title": "Practice scenarios",
@@ -2542,7 +2549,8 @@
       "saved": "Saved",
       "changeFailed": "The role could not be changed. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
-      "accountApprovalsLink": "New accounts waiting for approval are under Account approvals."
+      "accountApprovalsLink": "New accounts waiting for approval are under Account approvals.",
+      "revokeConfirm": "Remove the supervisor role from {name}? They will lose access to the tests they assigned."
     },
     "complete": {
       "badge": "Session submitted",

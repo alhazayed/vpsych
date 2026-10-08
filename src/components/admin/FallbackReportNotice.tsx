@@ -23,6 +23,8 @@ export function FallbackReportNotice({ sessionId }: { sessionId: string }) {
   const [done, setDone] = useState(false);
 
   async function regenerate() {
+    // Replacement happens at most once and cannot be undone.
+    if (!window.confirm(t("regenerateConfirm"))) return;
     setPending(true);
     setError(null);
     try {
