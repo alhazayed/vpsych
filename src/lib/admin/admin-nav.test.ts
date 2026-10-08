@@ -22,6 +22,7 @@ describe("admin-nav IA", () => {
     expect(hrefs).toContain("/admin/analytics");
     expect(hrefs).toContain("/admin/avatars");
     expect(hrefs).toContain("/admin/diagnostics");
+    expect(hrefs).toContain("/admin/accounts");
     expect(hrefs).not.toContain("/admin/integrations");
     expect(hrefs).not.toContain("/dashboard");
   });

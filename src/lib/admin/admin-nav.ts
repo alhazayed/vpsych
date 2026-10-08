@@ -50,6 +50,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         match: (p) => p.startsWith("/admin/learners"),
       },
       {
+        // Every new sign-up waits here, so it needs a permanent entry point.
+        href: "/admin/accounts",
+        labelKey: "accountApprovals",
+        icon: "how_to_reg",
+        keywords: ["accounts", "approve", "approvals", "sign-ups", "pending", "revoke"],
+        match: (p) => p.startsWith("/admin/accounts"),
+      },
+      {
         href: "/admin/curriculum",
         labelKey: "learnersProgress",
         icon: "timeline",
@@ -69,13 +77,6 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         icon: "supervisor_account",
         keywords: ["supervisors", "roles", "skill tests", "assign"],
         match: (p) => p.startsWith("/admin/supervisors"),
-      },
-      {
-        href: "/supervise",
-        labelKey: "skillTestsAdmin",
-        icon: "assignment_turned_in",
-        keywords: ["skill tests", "assigned patients", "exams", "results"],
-        match: (p) => p.startsWith("/supervise"),
       },
     ],
   },

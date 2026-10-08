@@ -163,7 +163,8 @@
     "supervise": "Supervise",
     "supervisors": "Supervisors",
     "skillTestsAdmin": "Skill tests",
-    "training": "Training Program"
+    "training": "Training Program",
+    "accountApprovals": "Account approvals"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -2551,7 +2552,8 @@
       "changeFailed": "The role could not be changed. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
       "accountApprovalsLink": "New accounts waiting for approval are under Account approvals.",
-      "revokeConfirm": "Remove the supervisor role from {name}? They will lose access to the tests they assigned."
+      "revokeConfirm": "Remove the supervisor role from {name}? They will lose access to the tests they assigned.",
+      "skillTestsLink": "Design and assign skill tests in the Supervise workspace."
     },
     "complete": {
       "badge": "Session submitted",

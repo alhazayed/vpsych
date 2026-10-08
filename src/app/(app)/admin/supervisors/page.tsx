@@ -29,6 +29,13 @@ export default async function AdminSupervisorsPage() {
           {t("accountApprovalsLink")}
         </Link>
       </p>
+      {/* Skill tests live outside /admin (the supervisor workspace), so they
+          are linked from here rather than from the admin sidebar. */}
+      <p className="mb-6 text-sm">
+        <Link href="/supervise" className="font-semibold text-[var(--primary)] underline-offset-2 hover:underline">
+          {t("skillTestsLink")}
+        </Link>
+      </p>
 
       {error ? (
         <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">

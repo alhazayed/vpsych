@@ -115,7 +115,10 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/learning/supervisor")) return "supervisorAi";
   if (pathname.startsWith("/learning/graph")) return "competencyGraph";
   if (pathname.startsWith("/learning")) return "adaptiveLearning";
-  if (pathname.startsWith("/admin/supervisor")) return "supervisorAi";
+  // Exact segment: "/admin/supervisors" is a different page (role assignment).
+  if (pathname === "/admin/supervisor" || pathname.startsWith("/admin/supervisor/")) {
+    return "supervisorAi";
+  }
   if (pathname.startsWith("/admin/enterprise")) return "enterprise";
   if (pathname.startsWith("/admin/cidp")) return "operations";
   if (pathname.startsWith("/admin/feedback")) return "feedbackQueue";
