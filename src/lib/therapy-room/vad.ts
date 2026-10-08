@@ -48,6 +48,11 @@ export type HandsFreeVadOptions = {
    */
   prerollMs?: number;
   onSpeechStart?: () => void;
+  /**
+   * Every captured frame (and the seeded barge-in preroll), at the audio
+   * context's sample rate — the live transcript streams these.
+   */
+  onFrame?: (samples: Float32Array, sampleRate: number) => void;
   onSpeechEnd?: () => void;
   onInterruptCheck?: (speechMs: number) => boolean;
   /** Optional pre-acquired stream (shared mic for barge-in → listen). */
@@ -288,13 +293,13 @@ export async function startHandsFreeVad(
   const startedAt = Date.now();
 
   if (options.preroll && options.preroll.samples.length > 0) {
-    chunks.push(
-      downsample(
-        options.preroll.samples,
-        options.preroll.sampleRate,
-        audioContext.sampleRate,
-      ),
+    const seeded = downsample(
+      options.preroll.samples,
+      options.preroll.sampleRate,
+      audioContext.sampleRate,
     );
+    chunks.push(seeded);
+    options.onFrame?.(seeded, audioContext.sampleRate);
     speaking = true;
     speechStartedAt = startedAt - Math.max(0, options.preroll.speechMs);
     lastSpeechAt = startedAt;
@@ -328,7 +333,9 @@ export async function startHandsFreeVad(
   processor.onaudioprocess = (event) => {
     if (stopped) return;
     const input = event.inputBuffer.getChannelData(0);
-    chunks.push(new Float32Array(input));
+    const frame = new Float32Array(input);
+    chunks.push(frame);
+    options.onFrame?.(frame, audioContext.sampleRate);
 
     const level = rms(input);
     const now = Date.now();

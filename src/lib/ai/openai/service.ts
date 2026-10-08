@@ -87,6 +87,20 @@ export type SpeechToTextResult = {
   language?: string;
 };
 
+export type LiveTranscriptionSecret = {
+  /** Ephemeral `ek_…` credential; safe to hand to the signed-in browser. */
+  value: string;
+  /** Unix seconds after which it can no longer open a session. */
+  expiresAt: number;
+  model: string;
+};
+
+/**
+ * How long a live-transcription secret can open a session. Short: the
+ * browser connects right away and the session outlives the secret.
+ */
+export const LIVE_TRANSCRIPTION_SECRET_TTL_SECONDS = 60;
+
 export type OpenAIHealthStatus = {
   ok: boolean;
   configured: boolean;
@@ -252,6 +266,43 @@ export const openAIService = {
         provider: "openai" as const,
         interrupted,
       };
+    } catch (error) {
+      throw toOpenAIServiceError(error);
+    }
+  },
+
+  /**
+   * Mints a short-lived client secret for a transcription-only Realtime
+   * session (same STT model as speechToText, manual commits, no server VAD).
+   * The browser streams microphone audio over it so a transcript is ready
+   * moments after the therapist pauses.
+   */
+  async createLiveTranscriptionSecret(params: {
+    language?: string;
+    model?: string;
+  }): Promise<LiveTranscriptionSecret> {
+    try {
+      const client = getOpenAIClient();
+      const model = sttModelId(params.model);
+      const language = languageHint(params.language);
+      const secret = await client.realtime.clientSecrets.create({
+        expires_after: {
+          anchor: "created_at",
+          seconds: LIVE_TRANSCRIPTION_SECRET_TTL_SECONDS,
+        },
+        session: {
+          type: "transcription",
+          audio: {
+            input: {
+              format: { type: "audio/pcm", rate: 24000 },
+              noise_reduction: { type: "near_field" },
+              transcription: { model, ...(language ? { language } : {}) },
+              turn_detection: null,
+            },
+          },
+        },
+      });
+      return { value: secret.value, expiresAt: secret.expires_at, model };
     } catch (error) {
       throw toOpenAIServiceError(error);
     }

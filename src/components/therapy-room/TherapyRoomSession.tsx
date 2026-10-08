@@ -64,6 +64,11 @@ import {
 import { submitStreamingConversationTurn } from "@/lib/realtime/client-pipeline";
 import { createStreamedReplySpeech } from "@/lib/voice/streamed-reply";
 import {
+  createLiveTranscriber,
+  hedgedTranscribe,
+  type LiveTranscriber,
+} from "@/lib/voice/live-transcriber";
+import {
   createEndpointController,
   type EndpointController,
   type SpeculativeSttResult,
@@ -115,6 +120,17 @@ const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN !== "false";
  */
 const STREAM_REPLY_ENABLED =
   process.env.NEXT_PUBLIC_THERAPY_ROOM_STREAMING?.trim().toLowerCase() !== "false";
+
+/**
+ * Live transcript: the therapist's audio is transcribed while they speak (an
+ * OpenAI Realtime transcription socket, same STT model), so the text is ready
+ * moments after they pause. The classic upload stays the fallback.
+ * NEXT_PUBLIC_VOICE_LIVE_TRANSCRIPT=false keeps the upload only.
+ */
+const LIVE_TRANSCRIPT_ENABLED =
+  process.env.NEXT_PUBLIC_VOICE_LIVE_TRANSCRIPT?.trim().toLowerCase() !== "false";
+/** Start the upload too if the live transcript is not back by then. */
+const LIVE_TRANSCRIPT_HEDGE_MS = 1500;
 
 /** What the patient says this turn: a saved reply, or a streamed one. */
 type PatientSpeech =
@@ -263,6 +279,7 @@ export function TherapyRoomSession({
     lastWordAt?: number | null;
     endpointCommitAt?: number | null;
     speculativeSttMs?: number | null;
+    speculativeSttSource?: "live" | "upload" | null;
   }>({ endpointWaitMs: null, committedAt: null, ttsRequestedAt: null });
   /** Interrupts the patient clip that is playing now (null when none). */
   const interruptPatientRef = useRef<(() => void) | null>(null);
@@ -283,6 +300,8 @@ export function TherapyRoomSession({
    * the session ends or the room unmounts.
    */
   const streamAbortRef = useRef<AbortController | null>(null);
+  /** Live transcript socket for this room (null until the first capture). */
+  const liveSttRef = useRef<LiveTranscriber | null>(null);
   /** Settles once the previous streamed reply is saved (or failed). */
   const streamInFlightRef = useRef<Promise<void> | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
@@ -452,6 +471,8 @@ export function TherapyRoomSession({
     releaseBargeInHandoff();
     cancelTurnWork();
     streamAbortRef.current?.abort();
+    liveSttRef.current?.close();
+    liveSttRef.current = null;
     stopPlayback();
     ambienceRef.current?.stop();
     ambienceRef.current = null;
@@ -939,6 +960,7 @@ export function TherapyRoomSession({
           ? Math.round(handedOverAt - prevTiming.endpointCommitAt)
           : undefined;
       const speculativeSttMs = prevTiming.speculativeSttMs ?? null;
+      const speculativeSttSource = prevTiming.speculativeSttSource ?? "upload";
       turnTimingRef.current = {
         endpointWaitMs: null,
         committedAt: handedOverAt,
@@ -987,9 +1009,11 @@ export function TherapyRoomSession({
         setVoiceDiag((d) =>
           markVoiceStage(d, "stt", d.stages.stt, {
             stt_ms:
-              speculativeSttMs != null
-                ? `reused (${Math.round(speculativeSttMs)})`
-                : "reused",
+              speculativeSttMs == null
+                ? "reused"
+                : speculativeSttSource === "live"
+                  ? `live (${Math.round(speculativeSttMs)})`
+                  : `reused (${Math.round(speculativeSttMs)})`,
           }),
         );
       } else {
@@ -1409,6 +1433,15 @@ export function TherapyRoomSession({
     turnTimingRef.current.lastWordAt = null;
     turnTimingRef.current.endpointCommitAt = null;
     turnTimingRef.current.speculativeSttMs = null;
+    turnTimingRef.current.speculativeSttSource = null;
+    if (LIVE_TRANSCRIPT_ENABLED && !liveSttRef.current) {
+      liveSttRef.current = createLiveTranscriber({
+        locale: session.language ?? locale,
+        onEvent: (event, facts) => voiceLog("STT", event, facts ?? {}),
+      });
+    }
+    const live = liveSttRef.current;
+    live?.startCapture();
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
@@ -1422,21 +1455,34 @@ export function TherapyRoomSession({
         locale: (session.language ?? locale).startsWith("ar") ? "ar" : "en",
         transcribe: async (audio, signal) => {
           const sttStarted = telemetryRef.current.mark();
-          const result = await transcribeTherapistSpeech({
-            audio,
-            locale: session.language ?? locale,
-            signal,
-            speculative: true,
+          // Live transcript first (usually ready moments after the pause);
+          // the upload starts as a hedge if it is slow or unavailable.
+          const hedged = await hedgedTranscribe({
+            live: live ? live.transcribe() : null,
+            upload: () =>
+              transcribeTherapistSpeech({
+                audio,
+                locale: session.language ?? locale,
+                signal,
+                speculative: true,
+              }),
+            hedgeAfterMs: LIVE_TRANSCRIPT_HEDGE_MS,
           });
+          const sttMs =
+            hedged.source === "live"
+              ? hedged.ms
+              : telemetryRef.current.elapsed(sttStarted);
           if (!signal.aborted) {
-            const sttMs = telemetryRef.current.elapsed(sttStarted);
             turnTimingRef.current.speculativeSttMs = sttMs;
+            turnTimingRef.current.speculativeSttSource = hedged.source;
             telemetryRef.current.record("stt_latency_ms", {
               valueMs: sttMs,
-              code: "speculative",
+              code: hedged.source === "live" ? "live" : "speculative",
             });
           }
-          return result;
+          return hedged.source === "live"
+            ? { ok: true, transcript: hedged.transcript }
+            : hedged.result;
         },
         onCommit: () => {
           commitRequested = true;
@@ -1475,6 +1521,9 @@ export function TherapyRoomSession({
               sampleRate: handoff.sampleRate,
               speechMs: handoff.speechMs,
             }
+          : undefined,
+        onFrame: live
+          ? (frame, sampleRate) => live.pushFrame(frame, sampleRate)
           : undefined,
         onSpeechStart: () => {
           voiceLog("MIC", "recording_started");
@@ -1519,6 +1568,7 @@ export function TherapyRoomSession({
             setTherapistSpeaking(false);
             turnTimingRef.current.lastWordAt = voicedAt;
             turnTimingRef.current.speculativeSttMs = null;
+            turnTimingRef.current.speculativeSttSource = null;
             controller.pause({
               wav: info.wav,
               speechMs: info.speechMs,
@@ -1698,6 +1748,8 @@ export function TherapyRoomSession({
       releaseBargeInHandoff();
       cancelTurnWork();
       streamAbortRef.current?.abort();
+      liveSttRef.current?.close();
+      liveSttRef.current = null;
       stopPlayback();
       ambienceRef.current?.stop();
       ambienceRef.current = null;
