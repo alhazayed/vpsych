@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -28,6 +29,7 @@ import {
   createImmersionTracker,
   DEFAULT_THERAPY_ROOM_THEME,
   HANDS_FREE_PERF_BUDGETS,
+  remainingThinkingMs,
   shouldPatientInterruptTherapist,
   startBargeInMonitor,
   startHandsFreeVad,
@@ -58,11 +60,18 @@ import {
   resolvePipelineLocale,
   submitConversationTurn,
   transcribeTherapistSpeech,
+  warmPatientSpeech,
   type PlaybackDiagnostic,
   type SpeechSegmentSource,
+  type WarmSpeech,
 } from "@/lib/voice/conversation-pipeline";
 import { submitStreamingConversationTurn } from "@/lib/realtime/client-pipeline";
 import { createStreamedReplySpeech } from "@/lib/voice/streamed-reply";
+import {
+  createLiveTranscriber,
+  hedgedTranscribe,
+  type LiveTranscriber,
+} from "@/lib/voice/live-transcriber";
 import {
   createEndpointController,
   type EndpointController,
@@ -116,6 +125,17 @@ const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN !== "false";
 const STREAM_REPLY_ENABLED =
   process.env.NEXT_PUBLIC_THERAPY_ROOM_STREAMING?.trim().toLowerCase() !== "false";
 
+/**
+ * Live transcript: the therapist's audio is transcribed while they speak (an
+ * OpenAI Realtime transcription socket, same STT model), so the text is ready
+ * moments after they pause. The classic upload stays the fallback.
+ * NEXT_PUBLIC_VOICE_LIVE_TRANSCRIPT=false keeps the upload only.
+ */
+const LIVE_TRANSCRIPT_ENABLED =
+  process.env.NEXT_PUBLIC_VOICE_LIVE_TRANSCRIPT?.trim().toLowerCase() !== "false";
+/** Start the upload too if the live transcript is not back by then. */
+const LIVE_TRANSCRIPT_HEDGE_MS = 1500;
+
 /** What the patient says this turn: a saved reply, or a streamed one. */
 type PatientSpeech =
   | { kind: "text"; text: string; messageId?: string }
@@ -124,6 +144,8 @@ type PatientSpeech =
       segments: SpeechSegmentSource;
       /** The saved reply once the turn completes; null if it failed. */
       final: Promise<{ messageId: string; text: string } | null>;
+      /** First part's TTS, requested during the thinking pause. */
+      warm?: WarmSpeech | null;
     };
 /** When enabled, barge-in arms only this long after audio is actually playing. */
 const BARGE_IN_ARM_DELAY_MS = 400;
@@ -186,6 +208,29 @@ export function TherapyRoomSession({
   const locale = resolvePipelineLocale(session.language, avatar.language);
   const disorderSlug = disorderSlugFrom(session, avatar);
   const speechProfile = speechHint ?? speechBehaviorForDisorder(disorderSlug);
+  /** The patient's TTS voice, shared by playback and the pause-time warm-up. */
+  const ttsVoice = useMemo(
+    () => ({
+      locale,
+      voiceId: avatar.voice_id,
+      voiceIdAr: avatar.voice_id_ar,
+      voiceProfileId: avatar.voice_profile_id,
+      avatarId: avatar.id,
+      speechPace: speechProfile.pace,
+      speechEnergy: speechProfile.energy,
+      disorderSlug,
+    }),
+    [
+      locale,
+      avatar.voice_id,
+      avatar.voice_id_ar,
+      avatar.voice_profile_id,
+      avatar.id,
+      speechProfile.pace,
+      speechProfile.energy,
+      disorderSlug,
+    ],
+  );
 
   const [messages, setMessages] = useState(initialMessages);
   const [remaining, setRemaining] = useState(() =>
@@ -263,6 +308,7 @@ export function TherapyRoomSession({
     lastWordAt?: number | null;
     endpointCommitAt?: number | null;
     speculativeSttMs?: number | null;
+    speculativeSttSource?: "live" | "upload" | null;
   }>({ endpointWaitMs: null, committedAt: null, ttsRequestedAt: null });
   /** Interrupts the patient clip that is playing now (null when none). */
   const interruptPatientRef = useRef<(() => void) | null>(null);
@@ -283,6 +329,8 @@ export function TherapyRoomSession({
    * the session ends or the room unmounts.
    */
   const streamAbortRef = useRef<AbortController | null>(null);
+  /** Live transcript socket for this room (null until the first capture). */
+  const liveSttRef = useRef<LiveTranscriber | null>(null);
   /** Settles once the previous streamed reply is saved (or failed). */
   const streamInFlightRef = useRef<Promise<void> | null>(null);
   const playbackEndedAtRef = useRef<number | null>(null);
@@ -452,6 +500,8 @@ export function TherapyRoomSession({
     releaseBargeInHandoff();
     cancelTurnWork();
     streamAbortRef.current?.abort();
+    liveSttRef.current?.close();
+    liveSttRef.current = null;
     stopPlayback();
     ambienceRef.current?.stop();
     ambienceRef.current = null;
@@ -708,14 +758,7 @@ export function TherapyRoomSession({
       };
 
       const playback = {
-        locale,
-        voiceId: avatar.voice_id,
-        voiceIdAr: avatar.voice_id_ar,
-        voiceProfileId: avatar.voice_profile_id,
-        avatarId: avatar.id,
-        speechPace: speechProfile.pace,
-        speechEnergy: speechProfile.energy,
-        disorderSlug,
+        ...ttsVoice,
         audioRef,
         signal: abort.signal,
         streamPlayback: true,
@@ -831,6 +874,7 @@ export function TherapyRoomSession({
           : await playPatientSpeechSegments({
               ...playback,
               segments: speech.segments,
+              warmFirst: speech.warm,
               onSegment: (segment) => {
                 segText = segment.text;
                 segOffset = segment.offset;
@@ -888,19 +932,13 @@ export function TherapyRoomSession({
       }
     },
     [
-      avatar.id,
-      avatar.voice_id,
-      avatar.voice_id_ar,
-      avatar.voice_profile_id,
       dispatch,
       disorderSlug,
-      locale,
       releaseBargeInHandoff,
       session.id,
       setPresence,
-      speechProfile.energy,
-      speechProfile.pace,
       stopPlayback,
+      ttsVoice,
     ],
   );
 
@@ -939,6 +977,7 @@ export function TherapyRoomSession({
           ? Math.round(handedOverAt - prevTiming.endpointCommitAt)
           : undefined;
       const speculativeSttMs = prevTiming.speculativeSttMs ?? null;
+      const speculativeSttSource = prevTiming.speculativeSttSource ?? "upload";
       turnTimingRef.current = {
         endpointWaitMs: null,
         committedAt: handedOverAt,
@@ -987,9 +1026,11 @@ export function TherapyRoomSession({
         setVoiceDiag((d) =>
           markVoiceStage(d, "stt", d.stages.stt, {
             stt_ms:
-              speculativeSttMs != null
-                ? `reused (${Math.round(speculativeSttMs)})`
-                : "reused",
+              speculativeSttMs == null
+                ? "reused"
+                : speculativeSttSource === "live"
+                  ? `live (${Math.round(speculativeSttMs)})`
+                  : `reused (${Math.round(speculativeSttMs)})`,
           }),
         );
       } else {
@@ -1099,9 +1140,18 @@ export function TherapyRoomSession({
         ),
       );
 
-      // Clinical thinking latency overlaps GPT request.
+      // Clinical thinking latency overlaps GPT request. It runs from the
+      // therapist's last word, so endpoint and transcript time count toward
+      // it rather than adding to the silence the trainee hears.
       const thinkPromise = new Promise<void>((resolve) => {
-        window.setTimeout(resolve, thinking.thinkingLatencyMs);
+        window.setTimeout(
+          resolve,
+          remainingThinkingMs({
+            thinkingLatencyMs: thinking.thinkingLatencyMs,
+            lastWordAt: turnTimingRef.current.lastWordAt,
+            now: performance.now(),
+          }),
+        );
       });
 
       setStatusKey("thinking");
@@ -1117,154 +1167,183 @@ export function TherapyRoomSession({
       const gptStarted = telemetryRef.current.mark();
 
       if (STREAM_REPLY_ENABLED) {
-        const speech = createStreamedReplySpeech({ notBefore: thinkPromise });
-        const streamAbort = new AbortController();
-        streamAbortRef.current = streamAbort;
-        let markFirst = () => {};
-        let firstText = "";
-        const firstSentence = new Promise<"first">((resolve) => {
-          markFirst = () => resolve("first");
-        });
-        const streamed = submitStreamingConversationTurn({
-          sessionId: session.id,
-          message: transcript,
-          clientTurnId: `t${turnIndexRef.current}-${Date.now().toString(36)}`,
-          // Not fenced by the turn generation: a barge-in stops the audio,
-          // never the reply, which is saved exactly as /message saves it.
-          isCurrent: () => !endingRef.current,
-          handlers: {
-            signal: streamAbort.signal,
-            onSentence: (sentence) => {
-              speech.sentence(sentence);
-              if (!firstText) firstText = sentence.text.trim();
-              markFirst();
+        // The patient's voice for the first sentence is requested during the
+        // thinking pause, so it is ready when the pause ends.
+        const warm: { current: WarmSpeech | null } = { current: null };
+        const warmAbort = new AbortController();
+        try {
+          const speech = createStreamedReplySpeech({ notBefore: thinkPromise });
+          const streamAbort = new AbortController();
+          streamAbortRef.current = streamAbort;
+          let markFirst = () => {};
+          let firstText = "";
+          const firstSentence = new Promise<"first">((resolve) => {
+            markFirst = () => resolve("first");
+          });
+          const streamed = submitStreamingConversationTurn({
+            sessionId: session.id,
+            message: transcript,
+            clientTurnId: `t${turnIndexRef.current}-${Date.now().toString(36)}`,
+            // Not fenced by the turn generation: a barge-in stops the audio,
+            // never the reply, which is saved exactly as /message saves it.
+            isCurrent: () => !endingRef.current,
+            handlers: {
+              signal: streamAbort.signal,
+              onSentence: (sentence) => {
+                speech.sentence(sentence);
+                if (!firstText) {
+                  firstText = sentence.text.trim();
+                  if (
+                    firstText &&
+                    !mutedRef.current &&
+                    fsmRef.current.isCurrent(generation)
+                  ) {
+                    warm.current = warmPatientSpeech({
+                      ...ttsVoice,
+                      text: firstText,
+                      signal: warmAbort.signal,
+                      streamPlayback: true,
+                    });
+                  }
+                }
+                markFirst();
+              },
+              onRegenerating: ({ attempt }) => speech.regenerating(attempt),
             },
-            onRegenerating: ({ attempt }) => speech.regenerating(attempt),
-          },
-        });
-        const saved = streamed.then((result) => {
-          if (streamAbortRef.current === streamAbort) streamAbortRef.current = null;
-          if (result.status !== "completed") {
-            speech.finish(null);
-            return null;
-          }
-          const reply = result.data.assistantMessage;
-          speech.finish(reply.content);
-          // The saved turn always joins the transcript, even after a barge-in.
-          appendTurnMessages(result.data.userMessage, reply);
-          const messageMs = telemetryRef.current.elapsed(gptStarted);
-          telemetryRef.current.record("gpt_latency_ms", { valueMs: messageMs });
-          if (fsmRef.current.isCurrent(generation)) {
-            setTherapistPending(false);
-            setLastTherapistText(result.data.userMessage.content);
-            setLastPatientText(reply.content);
-            setPatientFallback(result.aiSource === "persona_fallback");
-            setVoiceDiag((d) =>
-              markVoiceStage(
-                markVoiceStage(d, "message", "ok", {
-                  message_ms: Math.round(messageMs),
-                }),
-                "patientText",
-                "ok",
-                {
-                  ai_source: result.aiSource ?? "unknown",
-                  patient_text_length: reply.content.length,
-                },
-              ),
-            );
-          }
-          return { messageId: String(reply.id), text: reply.content };
-        });
-        streamInFlightRef.current = saved.then(() => undefined);
-
-        const first = await Promise.race([
-          firstSentence,
-          streamed.then(() => "result" as const),
-        ]);
-        if (endingRef.current) return;
-        const early = first === "result" ? await streamed : null;
-        const useClassic = early?.status === "failed" && early.fallbackToClassic;
-        if (!useClassic) {
-          if (early && early.status !== "completed") {
-            if (early.status === "stale" || early.status === "interrupted") return;
-            if (early.expired) {
-              await endSession();
-              return;
+          });
+          const saved = streamed.then((result) => {
+            if (streamAbortRef.current === streamAbort) streamAbortRef.current = null;
+            if (result.status !== "completed") {
+              speech.finish(null);
+              return null;
             }
-            if (!fsmRef.current.isCurrent(generation)) return;
-            telemetryRef.current.record("error", { code: "gpt_fail" });
-            setVoiceDiag((d) =>
-              failVoiceStage(d, {
-                stage: "message",
-                status: early.httpStatus,
-                message: describeVoiceError({
+            const reply = result.data.assistantMessage;
+            speech.finish(reply.content);
+            // The saved turn always joins the transcript, even after a barge-in.
+            appendTurnMessages(result.data.userMessage, reply);
+            const messageMs = telemetryRef.current.elapsed(gptStarted);
+            telemetryRef.current.record("gpt_latency_ms", { valueMs: messageMs });
+            if (fsmRef.current.isCurrent(generation)) {
+              setTherapistPending(false);
+              setLastTherapistText(result.data.userMessage.content);
+              setLastPatientText(reply.content);
+              setPatientFallback(result.aiSource === "persona_fallback");
+              setVoiceDiag((d) =>
+                markVoiceStage(
+                  markVoiceStage(d, "message", "ok", {
+                    message_ms: Math.round(messageMs),
+                  }),
+                  "patientText",
+                  "ok",
+                  {
+                    ai_source: result.aiSource ?? "unknown",
+                    patient_text_length: reply.content.length,
+                  },
+                ),
+              );
+            }
+            return { messageId: String(reply.id), text: reply.content };
+          });
+          streamInFlightRef.current = saved.then(() => undefined);
+
+          const first = await Promise.race([
+            firstSentence,
+            streamed.then(() => "result" as const),
+          ]);
+          if (endingRef.current) return;
+          const early = first === "result" ? await streamed : null;
+          const useClassic = early?.status === "failed" && early.fallbackToClassic;
+          if (!useClassic) {
+            if (early && early.status !== "completed") {
+              if (early.status === "stale" || early.status === "interrupted") return;
+              if (early.expired) {
+                await endSession();
+                return;
+              }
+              if (!fsmRef.current.isCurrent(generation)) return;
+              telemetryRef.current.record("error", { code: "gpt_fail" });
+              setVoiceDiag((d) =>
+                failVoiceStage(d, {
                   stage: "message",
                   status: early.httpStatus,
-                  message: early.error,
+                  message: describeVoiceError({
+                    stage: "message",
+                    status: early.httpStatus,
+                    message: early.error,
+                  }),
                 }),
+              );
+              dispatch("GPT_FAIL");
+              setStatusKey("error");
+              return;
+            }
+
+            // The clinical thinking pause still comes before the first word.
+            await thinkPromise;
+            if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+            setVoiceDiag((d) =>
+              markVoiceStage(d, "message", d.stages.message, {
+                first_text_ms: Math.round(telemetryRef.current.elapsed(gptStarted)),
               }),
             );
-            dispatch("GPT_FAIL");
-            setStatusKey("error");
-            return;
-          }
+            if (!dispatch("GPT_OK").ok) return;
+            // Text before audio, as on /message: the released first sentence
+            // now, replaced by the saved reply once it is persisted.
+            if (early?.status === "completed") {
+              setLastPatientText(early.data.assistantMessage.content);
+            } else if (firstText) {
+              setLastPatientText(firstText);
+            }
 
-          // The clinical thinking pause still comes before the first word.
-          await thinkPromise;
-          if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
-          setVoiceDiag((d) =>
-            markVoiceStage(d, "message", d.stages.message, {
-              first_text_ms: Math.round(telemetryRef.current.elapsed(gptStarted)),
-            }),
-          );
-          if (!dispatch("GPT_OK").ok) return;
-          // Text before audio, as on /message: the released first sentence
-          // now, replaced by the saved reply once it is persisted.
-          if (early?.status === "completed") {
-            setLastPatientText(early.data.assistantMessage.content);
-          } else if (firstText) {
-            setLastPatientText(firstText);
-          }
+            const ttsStarted = telemetryRef.current.mark();
+            await speakPatient(
+              {
+              kind: "stream",
+              segments: speech.source,
+              final: saved,
+              warm: warm.current,
+            },
+              generation,
+            );
+            telemetryRef.current.record("tts_latency_ms", {
+              valueMs: telemetryRef.current.elapsed(ttsStarted),
+            });
+            telemetryRef.current.record("turn_complete");
 
-          const ttsStarted = telemetryRef.current.mark();
-          await speakPatient(
-            { kind: "stream", segments: speech.source, final: saved },
-            generation,
-          );
-          telemetryRef.current.record("tts_latency_ms", {
-            valueMs: telemetryRef.current.elapsed(ttsStarted),
-          });
-          telemetryRef.current.record("turn_complete");
-
-          const result = await streamed;
-          if (result.status === "failed" && fsmRef.current.isCurrent(generation)) {
-            // Spoken in part, but the reply could not be saved.
-            telemetryRef.current.record("error", { code: "gpt_fail_after_speech" });
-            setVoiceDiag((d) =>
-              failVoiceStage(d, {
-                stage: "message",
-                status: result.httpStatus,
-                message: describeVoiceError({
+            const result = await streamed;
+            if (result.status === "failed" && fsmRef.current.isCurrent(generation)) {
+              // Spoken in part, but the reply could not be saved.
+              telemetryRef.current.record("error", { code: "gpt_fail_after_speech" });
+              setVoiceDiag((d) =>
+                failVoiceStage(d, {
                   stage: "message",
                   status: result.httpStatus,
-                  message: result.error,
+                  message: describeVoiceError({
+                    stage: "message",
+                    status: result.httpStatus,
+                    message: result.error,
+                  }),
                 }),
-              }),
-            );
-          }
+              );
+            }
 
-          if (
-            fsmRef.current.isCurrent(generation) &&
-            !endingRef.current &&
-            fsmRef.current.getState() === "LISTENING"
-          ) {
-            listenLoopRef.current();
+            if (
+              fsmRef.current.isCurrent(generation) &&
+              !endingRef.current &&
+              fsmRef.current.getState() === "LISTENING"
+            ) {
+              listenLoopRef.current();
+            }
+            return;
           }
-          return;
+          voiceLog("TURN", "stream_fallback_classic", {
+            status: early?.status === "failed" ? (early.httpStatus ?? 0) : 0,
+          });
+        } finally {
+          // Unused (muted, failed, classic fallback) or finished: free it.
+          warm.current?.release();
+          warmAbort.abort();
         }
-        voiceLog("TURN", "stream_fallback_classic", {
-          status: early?.status === "failed" ? (early.httpStatus ?? 0) : 0,
-        });
       }
 
       let turn;
@@ -1374,6 +1453,7 @@ export function TherapyRoomSession({
       session.language,
       setPresence,
       speakPatient,
+      ttsVoice,
     ],
   );
 
@@ -1409,6 +1489,15 @@ export function TherapyRoomSession({
     turnTimingRef.current.lastWordAt = null;
     turnTimingRef.current.endpointCommitAt = null;
     turnTimingRef.current.speculativeSttMs = null;
+    turnTimingRef.current.speculativeSttSource = null;
+    if (LIVE_TRANSCRIPT_ENABLED && !liveSttRef.current) {
+      liveSttRef.current = createLiveTranscriber({
+        locale: session.language ?? locale,
+        onEvent: (event, facts) => voiceLog("STT", event, facts ?? {}),
+      });
+    }
+    const live = liveSttRef.current;
+    live?.startCapture();
     try {
       const seed = `${session.id}:vad:${turnIndexRef.current}`;
       let interruptedByPatient = false;
@@ -1422,21 +1511,34 @@ export function TherapyRoomSession({
         locale: (session.language ?? locale).startsWith("ar") ? "ar" : "en",
         transcribe: async (audio, signal) => {
           const sttStarted = telemetryRef.current.mark();
-          const result = await transcribeTherapistSpeech({
-            audio,
-            locale: session.language ?? locale,
-            signal,
-            speculative: true,
+          // Live transcript first (usually ready moments after the pause);
+          // the upload starts as a hedge if it is slow or unavailable.
+          const hedged = await hedgedTranscribe({
+            live: live ? live.transcribe() : null,
+            upload: () =>
+              transcribeTherapistSpeech({
+                audio,
+                locale: session.language ?? locale,
+                signal,
+                speculative: true,
+              }),
+            hedgeAfterMs: LIVE_TRANSCRIPT_HEDGE_MS,
           });
+          const sttMs =
+            hedged.source === "live"
+              ? hedged.ms
+              : telemetryRef.current.elapsed(sttStarted);
           if (!signal.aborted) {
-            const sttMs = telemetryRef.current.elapsed(sttStarted);
             turnTimingRef.current.speculativeSttMs = sttMs;
+            turnTimingRef.current.speculativeSttSource = hedged.source;
             telemetryRef.current.record("stt_latency_ms", {
               valueMs: sttMs,
-              code: "speculative",
+              code: hedged.source === "live" ? "live" : "speculative",
             });
           }
-          return result;
+          return hedged.source === "live"
+            ? { ok: true, transcript: hedged.transcript }
+            : hedged.result;
         },
         onCommit: () => {
           commitRequested = true;
@@ -1448,7 +1550,10 @@ export function TherapyRoomSession({
           } else if (event.type === "resumed") {
             telemetryRef.current.record("endpoint_resumed");
           } else if (event.type === "commit") {
-            turnTimingRef.current.endpointWaitMs = Math.round(event.silenceMs);
+            // 0 = the capture ended without a pause (patient interrupted, or
+            // the length cap): there was no end-of-speech wait to report.
+            turnTimingRef.current.endpointWaitMs =
+              event.silenceMs > 0 ? Math.round(event.silenceMs) : null;
             turnTimingRef.current.endpointCommitAt = performance.now();
             telemetryRef.current.record("endpoint_commit_silence_ms", {
               valueMs: event.silenceMs,
@@ -1472,6 +1577,9 @@ export function TherapyRoomSession({
               sampleRate: handoff.sampleRate,
               speechMs: handoff.speechMs,
             }
+          : undefined,
+        onFrame: live
+          ? (frame, sampleRate) => live.pushFrame(frame, sampleRate)
           : undefined,
         onSpeechStart: () => {
           voiceLog("MIC", "recording_started");
@@ -1516,6 +1624,7 @@ export function TherapyRoomSession({
             setTherapistSpeaking(false);
             turnTimingRef.current.lastWordAt = voicedAt;
             turnTimingRef.current.speculativeSttMs = null;
+            turnTimingRef.current.speculativeSttSource = null;
             controller.pause({
               wav: info.wav,
               speechMs: info.speechMs,
@@ -1695,6 +1804,8 @@ export function TherapyRoomSession({
       releaseBargeInHandoff();
       cancelTurnWork();
       streamAbortRef.current?.abort();
+      liveSttRef.current?.close();
+      liveSttRef.current = null;
       stopPlayback();
       ambienceRef.current?.stop();
       ambienceRef.current = null;

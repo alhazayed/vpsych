@@ -605,6 +605,81 @@ export type SpeechSegmentSource = {
 /** Longest text the TTS route accepts on its per-sentence budget. */
 export const PROGRESSIVE_TTS_MAX_CHARS = 400;
 
+/**
+ * TTS for a streamed reply's first part, requested while the patient's
+ * thinking pause runs so the voice is ready when the pause ends. Playback
+ * claims it (same text) or it is released; never both.
+ */
+export type WarmSpeech = {
+  text: string;
+  /** Resolves to the synthesis once; null after release or a second claim. */
+  claim: (text: string) => Promise<SynthesisResult> | null;
+  release: () => void;
+};
+
+function releaseSynthesis(synth: Promise<SynthesisResult> | null | undefined) {
+  void synth
+    ?.then((r) => {
+      if (r?.mode === "elevenlabs" && r.objectUrl) {
+        r.stream?.cancel();
+        URL.revokeObjectURL(r.objectUrl);
+      }
+    })
+    .catch(() => undefined);
+}
+
+/** Start TTS for `text` now; see `WarmSpeech`. Aborting `signal` cancels it. */
+export function warmPatientSpeech(
+  params: Pick<
+    Parameters<typeof playPatientSpeech>[0],
+    | "locale"
+    | "voiceId"
+    | "voiceIdAr"
+    | "voiceProfileId"
+    | "avatarId"
+    | "speechPace"
+    | "speechEnergy"
+    | "disorderSlug"
+    | "emotion"
+    | "stability"
+    | "style"
+    | "streamPlayback"
+  > & { text: string; signal?: AbortSignal },
+  synthesize: typeof synthesizeSpeech = synthesizeSpeech,
+): WarmSpeech {
+  const text = params.text.trim();
+  let synth: Promise<SynthesisResult> | null = synthesize({
+    text,
+    locale: params.locale,
+    voiceId: params.voiceId,
+    voiceIdAr: params.voiceIdAr,
+    voiceProfileId: params.voiceProfileId,
+    avatarId: params.avatarId,
+    speechPace: params.speechPace,
+    speechEnergy: params.speechEnergy,
+    disorderSlug: params.disorderSlug,
+    emotion: params.emotion,
+    stability: params.stability,
+    style: params.style,
+    signal: params.signal,
+    streamPlayback: params.streamPlayback,
+    progressive: text.length <= PROGRESSIVE_TTS_MAX_CHARS,
+  });
+  return {
+    text,
+    claim(wanted) {
+      if (!synth || wanted.trim() !== text) return null;
+      const mine = synth;
+      synth = null;
+      return mine;
+    },
+    release() {
+      releaseSynthesis(synth);
+      synth = null;
+    },
+  };
+}
+
 function eitherSignal(a?: AbortSignal, b?: AbortSignal): AbortSignal | undefined {
   if (!a) return b;
   if (!b) return a;
@@ -635,6 +710,8 @@ export async function playPatientSpeechSegments(
     segments: SpeechSegmentSource;
     /** A part is about to play (for heard-portion bookkeeping). */
     onSegment?: (segment: SpeechSegment) => void;
+    /** TTS already requested for the first part (see `WarmSpeech`). */
+    warmFirst?: WarmSpeech | null;
   },
 ): Promise<PlaybackOutcome> {
   const handlers = params.handlers ?? {};
@@ -659,23 +736,23 @@ export async function playPatientSpeechSegments(
       streamPlayback: params.streamPlayback,
       progressive: segment.text.length <= PROGRESSIVE_TTS_MAX_CHARS,
     });
+  let warm = params.warmFirst ?? null;
   const prepareNext = (): Promise<Prepared | null> =>
-    params.segments.next().then((segment) =>
-      segment && segment.text.trim() && !signal?.aborted
-        ? { segment, synth: synthesize(segment) }
-        : null,
-    );
+    params.segments.next().then((segment) => {
+      // Only the first part can use the warm clip; release it otherwise.
+      const ready = warm;
+      warm = null;
+      if (!segment || !segment.text.trim() || signal?.aborted) {
+        ready?.release();
+        return null;
+      }
+      const claimed = segment.cut?.aborted ? null : ready?.claim(segment.text);
+      ready?.release();
+      return { segment, synth: claimed ?? synthesize(segment) };
+    });
   /** Free a prefetched clip that will never play. */
   const release = (pending: Promise<Prepared | null> | null) => {
-    void pending
-      ?.then((p) => p?.synth)
-      .then((r) => {
-        if (r?.mode === "elevenlabs" && r.objectUrl) {
-          r.stream?.cancel();
-          URL.revokeObjectURL(r.objectUrl);
-        }
-      })
-      .catch(() => undefined);
+    void pending?.then((p) => releaseSynthesis(p?.synth)).catch(() => undefined);
   };
   const waitOrAbort = <T,>(p: Promise<T>): Promise<T | "aborted"> =>
     new Promise((resolve) => {

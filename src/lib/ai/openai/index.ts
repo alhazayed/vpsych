@@ -25,4 +25,6 @@ export {
   type SpeechToTextParams,
   type SpeechToTextResult,
   type OpenAIHealthStatus,
+  type LiveTranscriptionSecret,
+  LIVE_TRANSCRIPTION_SECRET_TTL_SECONDS,
 } from "@/lib/ai/openai/service";

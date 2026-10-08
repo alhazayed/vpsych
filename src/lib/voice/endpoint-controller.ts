@@ -113,6 +113,8 @@ export function createEndpointController(params: {
   let committed = false;
   let cancelled = false;
   let silenceStartedAt = 0;
+  /** A pause is behind the current capture version (else no silence to report). */
+  let paused = false;
   let speechMs = 0;
   let timer: unknown = null;
   let abort: AbortController | null = null;
@@ -132,6 +134,10 @@ export function createEndpointController(params: {
     }
   };
 
+  /** Trailing silence at commit; 0 when the capture ended without a pause. */
+  const trailingSilenceMs = () =>
+    paused ? Math.max(0, Math.round(now() - silenceStartedAt)) : 0;
+
   const commit = (reason: EndpointCommitReason) => {
     if (committed || cancelled) return;
     if (activityHold) {
@@ -145,7 +151,7 @@ export function createEndpointController(params: {
       type: "commit",
       at: now(),
       reason,
-      silenceMs: Math.max(0, Math.round(now() - silenceStartedAt)),
+      silenceMs: trailingSilenceMs(),
     });
     params.onCommit(reason);
   };
@@ -212,6 +218,7 @@ export function createEndpointController(params: {
     pause({ wav, speechMs: voicedMs, silenceStartedAt: startedAt }) {
       if (committed || cancelled || pending) return;
       pending = true;
+      paused = true;
       activityHold = false;
       deferredCommit = null;
       silenceStartedAt = startedAt;
@@ -244,6 +251,7 @@ export function createEndpointController(params: {
     resumed() {
       if (committed || cancelled || !pending) return;
       pending = false;
+      paused = false;
       version += 1;
       clearPendingTimer();
       const hadSpeculativeStt = speculative != null;
@@ -277,7 +285,7 @@ export function createEndpointController(params: {
           type: "commit",
           at: now(),
           reason: "vad_finished",
-          silenceMs: Math.max(0, Math.round(now() - silenceStartedAt)),
+          silenceMs: trailingSilenceMs(),
         });
       }
       const entry = speculative;

@@ -273,4 +273,23 @@ describe("two-stage endpoint controller", () => {
     h.controller.activity(false);
     expect(h.commits).toEqual(["silence_budget_met"]);
   });
+
+  it("reports no trailing silence when the capture ends without a pause", async () => {
+    const h = harness();
+    h.setNow(27678);
+    await h.controller.finalize();
+    const commit = h.events.find((e) => e.type === "commit");
+    expect(commit).toMatchObject({ reason: "vad_finished", silenceMs: 0 });
+  });
+
+  it("reports no trailing silence when speech resumed after the last pause", async () => {
+    const h = harness();
+    h.setNow(1000);
+    h.controller.pause({ wav: h.wav, speechMs: 2000, silenceStartedAt: 400 });
+    h.controller.resumed();
+    h.setNow(9000);
+    await h.controller.finalize();
+    const commit = h.events.find((e) => e.type === "commit");
+    expect(commit).toMatchObject({ silenceMs: 0 });
+  });
 });
