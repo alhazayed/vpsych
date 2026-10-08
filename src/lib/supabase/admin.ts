@@ -23,6 +23,10 @@ import {
  * - Optional writer for Mission 4 `patient_long_term_memory` upsert on session end
  *   (falls back to the authenticated client; RLS enforces therapist ownership)
  * - Scheduled `GET /api/cron/expire-sessions` batch expiry (CRON_SECRET gated)
+ * - Optional writer (via `messageRpcClient`) for the Emotion Engine's
+ *   `case_memory.memory.emotion` state: the session-turn tick in
+ *   `lib/sessions/clinical-turn.ts` and the initial seed in
+ *   `GET /api/sessions/[id]/emotion` (both after a session-ownership check)
  * - Optional writer for `start_training_ladder_attempt` in `POST /api/sessions`
  *   (the RPC re-checks session, patient and unlocked level; non-service
  *   callers must pass an HMAC p_sig)
