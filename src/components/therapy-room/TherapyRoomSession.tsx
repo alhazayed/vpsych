@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AiAnalysisOverlay } from "@/components/AiAnalysisOverlay";
 import { ConversationStatus } from "@/components/therapy-room/ConversationStatus";
+import { EndSessionConfirm } from "@/components/therapy-room/EndSessionConfirm";
 import { FloatingControls } from "@/components/therapy-room/FloatingControls";
 import { LiveTranscript } from "@/components/therapy-room/LiveTranscript";
 import { PatientPresence } from "@/components/therapy-room/PatientPresence";
@@ -197,6 +198,7 @@ export function TherapyRoomSession({
   const [statusKey, setStatusKey] = useState<ConversationStatusKey>("ready");
   const [paused, setPaused] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
   const [notesOpen, setNotesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1841,7 +1843,8 @@ export function TherapyRoomSession({
           setNotesOpen(false);
           break;
         case "end":
-          void endSession();
+          // Ask first: ending is irreversible and starts the assessment.
+          setConfirmEnd(true);
           break;
         default:
           break;
@@ -1855,7 +1858,6 @@ export function TherapyRoomSession({
       cancelTurnWork,
       dispatch,
       disorderSlug,
-      endSession,
       lastPatientText,
       locale,
       releaseBargeInHandoff,
@@ -1884,6 +1886,7 @@ export function TherapyRoomSession({
         e.preventDefault();
         handleControl("interrupt");
       } else if (e.key === "Escape") {
+        setConfirmEnd(false);
         setNotesOpen(false);
         setSettingsOpen(false);
         setTranscriptOpen(false);
@@ -2137,6 +2140,15 @@ export function TherapyRoomSession({
           onClose={() => setSettingsOpen(false)}
         />
       </TherapyRoomScene>
+
+      <EndSessionConfirm
+        open={confirmEnd && !ending}
+        onCancel={() => setConfirmEnd(false)}
+        onConfirm={() => {
+          setConfirmEnd(false);
+          void endSession();
+        }}
+      />
 
       {ending && <AiAnalysisOverlay />}
     </div>

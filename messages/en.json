@@ -683,7 +683,8 @@
       "transcript": "Live transcript",
       "settings": "Settings",
       "end": "End session",
-      "ending": "Ending…"
+      "ending": "Ending…",
+      "more": "More controls"
     },
     "notes": {
       "title": "Private notes",
@@ -743,6 +744,12 @@
       "audioUnavailable": "Patient audio unavailable.",
       "playAudio": "Play patient audio",
       "fallbackVoice": "Played with the browser's fallback voice, not the patient's voice."
+    },
+    "endConfirm": {
+      "title": "End the session?",
+      "body": "The patient will leave and your session will be assessed. You can't continue this session afterwards.",
+      "keep": "Keep going",
+      "end": "End session"
     }
   },
   "analysis": {

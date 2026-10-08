@@ -794,6 +794,8 @@ a {
   border-color: rgba(240, 140, 120, 0.55);
   background: rgba(40, 16, 14, 0.72);
   pointer-events: auto;
+  /* Above the hidden text-fallback input so Retry stays clickable. */
+  z-index: 11;
 }
 .trm-status__mic {
   width: 0.55rem;
@@ -983,9 +985,13 @@ a {
   z-index: 9;
   width: min(420px, 88vw);
   opacity: 0.01;
+  /* Invisible until focused (Tab), so it must not swallow clicks meant for
+     the status pill or captions underneath. */
+  pointer-events: none;
 }
 .trm-a11y-input:focus-within {
   opacity: 1;
+  pointer-events: auto;
 }
 .trm-a11y-input input {
   width: 100%;
@@ -1090,10 +1096,119 @@ a {
   }
 }
 
+.trm-controls__slot {
+  display: contents;
+}
+.trm-controls__more,
+.trm-controls__menu {
+  display: none;
+}
+.trm-controls__menu {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  inset-inline-end: 0;
+  min-width: 12rem;
+  flex-direction: column;
+  padding: 0.35rem;
+  border-radius: 14px;
+  background: rgba(18, 24, 32, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.trm-controls__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: start;
+  cursor: pointer;
+}
+.trm-controls__menu-item:hover,
+.trm-controls__menu-item.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+.trm-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(8, 12, 18, 0.55);
+  backdrop-filter: blur(4px);
+}
+.trm-confirm__dialog {
+  width: min(400px, 100%);
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: rgba(18, 24, 32, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  color: #f5f7fa;
+}
+.trm-confirm__dialog h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.trm-confirm__dialog p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+.trm-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.trm-confirm__btn {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.trm-confirm__btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.trm-confirm__btn.is-danger {
+  border-color: rgba(240, 140, 120, 0.6);
+  background: rgba(180, 60, 50, 0.55);
+}
+.trm-confirm__btn.is-danger:hover {
+  background: rgba(180, 60, 50, 0.75);
+}
+.trm-confirm__btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
-  .trm-controls__btn {
-    width: 2.5rem;
-    height: 2.5rem;
+  /* Keep 44px targets; fold Notes / Repeat / Transcript / Settings into More. */
+  .trm-controls__btn.is-secondary {
+    display: none;
+  }
+  .trm-controls__more {
+    display: inline-flex;
+  }
+  .trm-controls__menu {
+    display: flex;
   }
   .trm-notes,
   .trm-transcript,
