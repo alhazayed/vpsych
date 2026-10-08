@@ -64,3 +64,8 @@ export {
   type ProcessEmotionTurnInput,
   type ProcessEmotionTurnResult,
 } from "@/lib/emotion/engine";
+
+export {
+  publicEmotionState,
+  type PublicEmotionState,
+} from "@/lib/emotion/public-view";

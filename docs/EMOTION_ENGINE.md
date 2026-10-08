@@ -91,8 +91,8 @@ The LLM **expresses** this state; it must not invent contradictory affect.
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /api/sessions/[id]/emotion` | Current state + expression (inits if missing) |
-| `POST /api/sessions/[id]/emotion` | Tick / simulate / reset |
+| `GET /api/sessions/[id]/emotion` | Current state + expression (inits if missing). The session owner gets the state without `disorder_slug` (skill tests keep the diagnosis sealed); admins get the full state. |
+| `POST /api/sessions/[id]/emotion` | Dry-run simulate / reset preview only; never persists |
 
 ### POST body
 
@@ -101,13 +101,18 @@ The LLM **expresses** this state; it must not invent contradictory affect.
   "message": "That makes sense — anyone would feel that way.",
   "intervention": "validation",
   "secondary": ["empathy"],
-  "simulate": false,
+  "simulate": true,
   "reset": false
 }
 ```
 
-- `simulate: true` — dry-run; no persist
-- `reset: true` — re-seed from disorder baseline
+- `simulate: true` — required. Without it the route returns 403
+  `EMOTION_READ_ONLY`: emotion state advances only through session turns
+  (`/message`, `/message/stream`), so a trainee cannot reset or steer the
+  patient from here.
+- `reset: true` — preview the baseline state; nothing is saved
+- `message` is capped at 4,000 characters, like a session turn
+- Responses never include `disorder_slug`
 - If `intervention` omitted, `message` is classified heuristically
 
 ### Session message integration

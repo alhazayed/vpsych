@@ -10,10 +10,11 @@ import {
   emotionSnapshot,
   initEmotionState,
   loadEmotionState,
-  processEmotionTurn,
+  publicEmotionState,
   tickEmotion,
   type TherapistIntervention,
 } from "@/lib/emotion";
+import { MAX_TURN_MESSAGE_CHARS } from "@/lib/sessions/clinical-turn";
 import { withSkillTestCase } from "@/lib/skill-tests";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { TherapySession } from "@/lib/types";
@@ -90,6 +91,7 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   const typed = session as TherapySession;
+  let adminView = false;
   if (typed.therapist_id !== user.id) {
     // Admins may inspect via requireApiAdmin paths later; therapists only own.
     const { data: profile } = await supabase
@@ -100,6 +102,7 @@ export async function GET(_request: Request, { params }: Params) {
     if (profile?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    adminView = true;
   }
 
   const disorderSlug = disorderFromSession(typed);
@@ -126,22 +129,25 @@ export async function GET(_request: Request, { params }: Params) {
     );
   }
 
+  // The owner never sees the diagnosis: a skill test keeps it sealed.
   const snap = emotionSnapshot(state);
   return NextResponse.json({
     emotionEngineVersion: EMOTION_ENGINE_VERSION,
-    ...snap,
+    state: adminView ? snap.state : publicEmotionState(snap.state),
+    expression: snap.expression,
   });
 }
 
 /**
- * POST — advance emotion state for a therapist turn, or dry-run simulate.
+ * POST — dry-run simulate only (`simulate: true`); nothing is persisted.
+ * Live emotion changes happen only in the session message routes.
  *
  * Body:
  *   message?: string
  *   intervention?: TherapistIntervention
  *   secondary?: TherapistIntervention[]
- *   simulate?: boolean  — if true, do not persist
- *   reset?: boolean     — re-init from disorder baseline
+ *   simulate: true      — required; anything else is 403 EMOTION_READ_ONLY
+ *   reset?: boolean     — preview the baseline state (not persisted)
  */
 export async function POST(request: Request, { params }: Params) {
   const { id: sessionId } = await params;
@@ -186,6 +192,30 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Emotion state advances only through real session turns (the message
+  // routes). A persisting reset or tick from here would let the trainee
+  // steer the patient, including in a skill test.
+  if (!body.simulate) {
+    return NextResponse.json(
+      {
+        error: "Patient emotion changes only through session turns",
+        code: "EMOTION_READ_ONLY",
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    body.message !== undefined &&
+    (typeof body.message !== "string" ||
+      body.message.length > MAX_TURN_MESSAGE_CHARS)
+  ) {
+    return NextResponse.json(
+      { error: `message too long (max ${MAX_TURN_MESSAGE_CHARS} characters)` },
+      { status: 400 },
+    );
+  }
+
   const disorderSlug = disorderFromSession(typed);
   const writer = messageRpcClient(supabase);
   const intervention = isIntervention(body.intervention)
@@ -201,82 +231,45 @@ export async function POST(request: Request, { params }: Params) {
       sessionId,
       disorderSlug,
     });
-    if (!body.simulate && typed.case_instance_id) {
-      const { saveEmotionState } = await import("@/lib/emotion/store");
-      await saveEmotionState(writer, typed.case_instance_id, fresh);
-    }
     const snap = emotionSnapshot(fresh);
     return NextResponse.json({
       emotionEngineVersion: EMOTION_ENGINE_VERSION,
-      reset: true,
-      persisted: !body.simulate && Boolean(typed.case_instance_id),
-      ...snap,
-    });
-  }
-
-  if (body.simulate) {
-    let state =
-      typed.case_instance_id
-        ? await loadEmotionState(writer, typed.case_instance_id)
-        : null;
-    state ??= initEmotionState({
-      caseInstanceId: typed.case_instance_id,
-      sessionId,
-      disorderSlug,
-    });
-
-    const classified =
-      !intervention && body.message
-        ? classifyTherapistIntervention(body.message)
-        : null;
-
-    const tick = tickEmotion({
-      state,
-      therapistMessage: body.message,
-      intervention: intervention ?? classified?.primary,
-      secondary: secondary ?? classified?.secondary,
-      disorderSlug,
-    });
-
-    return NextResponse.json({
-      emotionEngineVersion: EMOTION_ENGINE_VERSION,
       simulate: true,
+      reset: true,
       persisted: false,
-      applied: tick.applied,
-      state: tick.state,
-      expression: tick.expression,
+      state: publicEmotionState(snap.state),
+      expression: snap.expression,
     });
   }
 
-  if (!body.message && !intervention) {
-    return NextResponse.json(
-      { error: "message or intervention required" },
-      { status: 400 },
-    );
-  }
-
-  const result = await processEmotionTurn({
-    supabase: writer,
+  let state = typed.case_instance_id
+    ? await loadEmotionState(writer, typed.case_instance_id)
+    : null;
+  state ??= initEmotionState({
     caseInstanceId: typed.case_instance_id,
     sessionId,
     disorderSlug,
-    therapistMessage: body.message ?? "",
-    intervention,
-    elapsedSeconds: undefined,
   });
 
-  if (!result.ok) {
-    return NextResponse.json(
-      { error: clientSafeError(result.reason) },
-      { status: 500 },
-    );
-  }
+  const classified =
+    !intervention && body.message
+      ? classifyTherapistIntervention(body.message)
+      : null;
+
+  const tick = tickEmotion({
+    state,
+    therapistMessage: body.message,
+    intervention: intervention ?? classified?.primary,
+    secondary: secondary ?? classified?.secondary,
+    disorderSlug,
+  });
 
   return NextResponse.json({
     emotionEngineVersion: EMOTION_ENGINE_VERSION,
-    persisted: result.persisted,
-    applied: result.applied,
-    state: result.state,
-    expression: result.expression,
+    simulate: true,
+    persisted: false,
+    applied: tick.applied,
+    state: publicEmotionState(tick.state),
+    expression: tick.expression,
   });
 }
