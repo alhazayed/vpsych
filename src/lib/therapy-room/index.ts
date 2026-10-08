@@ -57,6 +57,7 @@ export {
 export {
   derivePatientBehavior,
   thinkingLatencyMs,
+  remainingThinkingMs,
   deterministicJitter,
 } from "./pme-bridge";
 

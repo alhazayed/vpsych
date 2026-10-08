@@ -325,3 +325,22 @@ export function thinkingLatencyMs(params: {
     seed: params.seed,
   }).thinkingLatencyMs;
 }
+
+/**
+ * What is left of the patient's thinking pause, which runs from the
+ * therapist's last word (`lastWordAt`, performance.now() clock). Time the
+ * platform already spent (endpoint silence, transcript) counts toward it, so
+ * the silence the trainee hears matches the persona's pause instead of
+ * pipeline time plus the pause. Without a last-word time the whole pause runs.
+ */
+export function remainingThinkingMs(params: {
+  thinkingLatencyMs: number;
+  lastWordAt?: number | null;
+  now: number;
+}): number {
+  const { thinkingLatencyMs: pause, lastWordAt, now } = params;
+  if (lastWordAt == null || !Number.isFinite(lastWordAt) || lastWordAt > now) {
+    return pause;
+  }
+  return Math.max(0, Math.round(pause - (now - lastWordAt)));
+}
