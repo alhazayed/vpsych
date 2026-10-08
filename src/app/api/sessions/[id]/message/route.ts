@@ -14,6 +14,9 @@ import {
   type ReplyDraftGenerator,
 } from "@/lib/sessions/clinical-turn";
 
+// Time budget: lib/ai/time-budget.ts (SESSION_ROUTE_MAX_DURATION_SEC).
+export const maxDuration = 300;
+
 type Params = { params: Promise<{ id: string }> };
 
 /** Classic (blocking) drafting: the authoritative, non-streaming generator. */

@@ -10,7 +10,8 @@ Budgets below mix **implemented limits** with **architectural targets**. Where n
 |----------|-------|--------|
 | Session duration | 40 minutes | `MAX_SESSION_SECONDS` |
 | Message body | 4000 chars | message route |
-| OpenAI request timeout | 60s default | `OPENAI_TIMEOUT_MS` |
+| OpenAI request timeout | patient 20s, examiner 90s, STT 25s per attempt | `lib/ai/time-budget.ts` |
+| Route maxDuration | message/stream/end 300s, transcribe 60s | route exports |
 | Rate: messages | 120 / user / h | rate-limit |
 | Rate: STT | 120 / user / h | |
 | Rate: TTS | 60 / user / h | |
@@ -28,7 +29,7 @@ End-to-end therapist → patient audio (voice mode):
 | STT | 500ms | 2s | OpenAI Whisper path |
 | Soft engines + resolve | 50–150ms | 400ms | CPU + DB loads |
 | Adaptation/Emotion persist | overlap | — | Emotion awaited; Adaptation void |
-| LLM completion | 1.5–4s | 12s | Dominates; 60s hard timeout |
+| LLM completion | 1.5–4s | 12s | Dominates; 20s per-attempt timeout |
 | Assistant persist | 50–150ms | 500ms | RPC |
 | TTS TTFB | 300ms–1s | 3s | ElevenLabs; no server timeout |
 | **E2E voice turn** | **3–6s** | **15s** | Soft target — not enforced |

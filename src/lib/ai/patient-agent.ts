@@ -14,6 +14,7 @@ import {
   type AiSource,
 } from "@/lib/ai/provider";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
+import { PATIENT_REPLY_TIMEOUT_MS } from "@/lib/ai/time-budget";
 
 const DEFAULT_FALLBACK_REPLIES = [
   "I'm not sure how to answer that… could you say a bit more?",
@@ -171,6 +172,7 @@ export async function generatePatientReplyDetailed(params: {
       messages,
       temperature: 0.85,
       maxOutputTokens: 220,
+      abortSignal: AbortSignal.timeout(PATIENT_REPLY_TIMEOUT_MS),
     });
     const trimmed = text.trim();
     if (!trimmed) return pickFallback(priorErrorKind);
@@ -199,6 +201,7 @@ export async function generatePatientReplyDetailed(params: {
       // Headroom so reasoning-model overhead doesn't starve the visible reply.
       maxCompletionTokens: 512,
       model,
+      timeoutMs: PATIENT_REPLY_TIMEOUT_MS,
     });
     const text = result.text.trim();
     if (!text) return pickFallback(priorErrorKind);
@@ -454,6 +457,7 @@ export async function generatePatientReplyStream(params: {
         temperature: 0.85,
         maxCompletionTokens: 512,
         model,
+        timeoutMs: PATIENT_REPLY_TIMEOUT_MS,
       },
       {
         onToken,
