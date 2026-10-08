@@ -111,6 +111,18 @@ describe("trainee checklist, self-introduction", () => {
 });
 
 describe("trainee checklist, Arabic intake", () => {
+  it.each([
+    "ليان أنت عايشة لحالك ولا في معك حدا عايش",
+    "ساكنة لوحدك؟",
+    "Do you live alone?",
+  ])("counts %j (living situation) as social context", (line) => {
+    const groups = buildTraineeChecklist(
+      evaluateSessionPractice({ messages: [t(line), p("مع أهلي.")], sessionNumber: 1 }),
+    );
+    const item = groups.flatMap((g) => g.items).find((i) => i.id === "social_context");
+    expect(item?.done).toBe(true);
+  });
+
   it("counts asking about work and marriage as social context", () => {
     const groups = buildTraineeChecklist(
       evaluateSessionPractice({

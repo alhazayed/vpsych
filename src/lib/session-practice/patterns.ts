@@ -75,9 +75,9 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     group: "intake",
     window: "any",
     pattern:
-      /who (do you live|lives) |live with|your (family|wife|husband|partner|kids|children|parents|friends|job|work)|anyone you can talk to|عيلتك|عائلتك|أهلك|اهلك|مين ساكن معك|مع مين ساكن|شغلك|عملك|زوجك|زوجتك|أصحابك|اصحابك|ولادك|أولادك/iu,
+      /who (do you live|lives) |live with|liv(e|ing) (alone|by yourself|on your own)|your (family|wife|husband|partner|kids|children|parents|friends|job|work)|anyone you can talk to|عيلتك|عائلتك|أهلك|اهلك|مين ساكن معك|مع مين ساكن|شغلك|عملك|زوجك|زوجتك|أصحابك|اصحابك|ولادك|أولادك/iu,
     arabic:
-      /عيلتك|عايلتك|اهلك|(بتشتغل|بتشتغلي|شو بتشتغل|وين بتشتغل|بتدرس|بتدرسي)|(متزوج|متزوجه|مرتبط|مرتبطه|مخطوب|مخطوبه)|(مين|مع مين) (ساكن|ساكنه|عايش|عايشه)|شغلك|عملك|وظيفتك|زوجك|زوجتك|اصحابك|اصدقاوك|اصدقائك|ولادك|اولادك/u,
+      /عيلتك|عايلتك|اهلك|(بتشتغل|بتشتغلي|شو بتشتغل|وين بتشتغل|بتدرس|بتدرسي)|(متزوج|متزوجه|مرتبط|مرتبطه|مخطوب|مخطوبه)|(مين|مع مين) (ساكن|ساكنه|عايش|عايشه)|(ساكن|ساكنه|عايش|عايشه) (لحالك|لوحدك|بحالك)|(في|فيه) معك حدا|حدا (ساكن|عايش) معك|شغلك|عملك|وظيفتك|زوجك|زوجتك|اصحابك|اصدقاوك|اصدقائك|ولادك|اولادك/u,
   },
   {
     id: "expectations",
