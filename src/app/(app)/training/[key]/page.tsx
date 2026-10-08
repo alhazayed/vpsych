@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import {
@@ -30,7 +30,7 @@ export default async function TrainingPatientPage({ params }: Props) {
   const tDisorders = await getTranslations("skillTests.disorders");
 
   await expireStaleSessionsForTherapist(supabase, user.id);
-  const overview = await loadLadderOverview(supabase, user.id);
+  const overview = await loadLadderOverview(supabase, user.id, await getLocale());
   if (!overview.available) {
     return (
       <main className="mx-auto max-w-[880px] px-4 py-8 md:px-8">
@@ -71,10 +71,10 @@ export default async function TrainingPatientPage({ params }: Props) {
       </Link>
 
       <section className="clinical-card mb-6 flex items-center gap-4 p-5 fade-in-up">
-        <PatientPortrait name={avatar.name} portraitUrl={avatar.portrait_url} size={80} />
+        <PatientPortrait name={avatar.display_name} portraitUrl={avatar.portrait_url} size={80} />
         <div className="min-w-0">
           <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold tracking-tight">
-            {t("patientTitle", { n: String(patient.slot).padStart(2, "0"), name: avatar.name })}
+            {t("patientTitle", { n: String(patient.slot).padStart(2, "0"), name: avatar.display_name })}
           </h1>
           <p className="text-sm text-[var(--on-surface-variant)]">
             {t("identity", { gender, age: avatar.age ?? "—" })}

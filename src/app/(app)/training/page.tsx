@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import {
@@ -22,7 +22,7 @@ export default async function TrainingPage() {
   const tDisorders = await getTranslations("skillTests.disorders");
 
   await expireStaleSessionsForTherapist(supabase, user.id);
-  const overview = await loadLadderOverview(supabase, user.id);
+  const overview = await loadLadderOverview(supabase, user.id, await getLocale());
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const disorderLabel = (slug: string) =>
@@ -82,7 +82,7 @@ export default async function TrainingPage() {
                     <tr key={p.patient.key} className="border-b border-[var(--outline-variant)] last:border-0">
                       <td className="px-4 py-3">
                         <Link href={`/training/${p.patient.key}`} className="font-semibold text-[var(--primary)] hover:underline">
-                          {t("patientTitle", { n: pad(p.patient.slot), name: p.avatar.name })}
+                          {t("patientTitle", { n: pad(p.patient.slot), name: p.avatar.display_name })}
                         </Link>
                       </td>
                       <td className="px-4 py-3">{disorderLabel(p.patient.primaryDisorderSlug)}</td>
@@ -105,10 +105,10 @@ export default async function TrainingPage() {
             {overview.patients.map((p) => (
               <article key={p.patient.key} className="clinical-card overflow-hidden">
                 <div className="flex items-center gap-4 border-b border-[var(--outline-variant)] p-5">
-                  <PatientPortrait name={p.avatar.name} portraitUrl={p.avatar.portrait_url} />
+                  <PatientPortrait name={p.avatar.display_name} portraitUrl={p.avatar.portrait_url} />
                   <div className="min-w-0">
                     <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-                      {t("patientTitle", { n: pad(p.patient.slot), name: p.avatar.name })}
+                      {t("patientTitle", { n: pad(p.patient.slot), name: p.avatar.display_name })}
                     </h2>
                     <p className="text-sm text-[var(--on-surface-variant)]">
                       {t("identity", {
