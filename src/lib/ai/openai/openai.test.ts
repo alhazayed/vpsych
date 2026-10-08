@@ -258,6 +258,51 @@ describe("openai service exports", () => {
     else process.env.OPENAI_API_KEY = prev;
   });
 
+  it("passes the per-request timeout and retry attempts through", async () => {
+    const prev = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const create = vi.fn(async () => {
+      throw new OpenAIServiceError("slow", {
+        code: "OPENAI_TIMEOUT",
+        kind: "timeout",
+        retryable: true,
+      });
+    });
+    (globalThis as Record<string, unknown>).__openaiMock = {
+      chat: { completions: { create } },
+    };
+    const { openAIService } = await import("@/lib/ai/openai");
+    await expect(
+      openAIService.chat({
+        model: "gpt-5",
+        messages: [{ role: "user", content: "hello" }],
+        timeoutMs: 1234,
+        retryAttempts: 1,
+      }),
+    ).rejects.toMatchObject({ kind: "timeout" });
+    // retryAttempts: 1 means one try even though timeouts are retryable.
+    expect(create).toHaveBeenCalledTimes(1);
+    expect((create.mock.calls[0] as unknown[])[1]).toEqual({ timeout: 1234 });
+    if (prev === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = prev;
+  });
+
+  it("defaults SDK retries to 0 so withOpenAIRetry is the only retry layer", async () => {
+    const actual = await vi.importActual<
+      typeof import("@/lib/ai/openai/client")
+    >("@/lib/ai/openai/client");
+    const prevKey = process.env.OPENAI_API_KEY;
+    const prevRetries = process.env.OPENAI_MAX_RETRIES;
+    process.env.OPENAI_API_KEY = "test-key";
+    delete process.env.OPENAI_MAX_RETRIES;
+    actual.resetOpenAIClient();
+    expect(actual.getOpenAIClient().maxRetries).toBe(0);
+    actual.resetOpenAIClient();
+    if (prevKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = prevKey;
+    if (prevRetries !== undefined) process.env.OPENAI_MAX_RETRIES = prevRetries;
+  });
+
   it("healthCheck reports unconfigured without key", async () => {
     const prev = process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_API_KEY;

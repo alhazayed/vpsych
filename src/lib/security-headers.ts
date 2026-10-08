@@ -30,6 +30,8 @@ export function buildContentSecurityPolicy(options?: {
     "https://*.supabase.co",
     "wss://*.supabase.co",
     "https://api.openai.com",
+    // Live transcript: Realtime transcription socket (ephemeral key).
+    "wss://api.openai.com",
     "https://api.elevenlabs.io",
     "https://*.vercel-insights.com",
     "https://vitals.vercel-insights.com",

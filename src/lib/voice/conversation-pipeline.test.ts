@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { resolvePipelineLocale } from "@/lib/voice/conversation-pipeline";
+import { resolvePipelineLocale, warmPatientSpeech } from "@/lib/voice/conversation-pipeline";
+import type { AudioStreamHandle } from "@/lib/voice/stream-playback";
 
 /** 16 kHz mono 16-bit WAV of `ms` silence-ish samples (header + PCM). */
 function fakeWav(ms = 500): Blob {
@@ -136,5 +137,49 @@ describe("conversation pipeline stages", () => {
     expect(urls.some((u) => u.includes("/transcribe"))).toBe(true);
     expect(urls.some((u) => u.includes("/message"))).toBe(true);
     expect(urls.some((u) => u.includes("/tts"))).toBe(false);
+  });
+});
+
+describe("warm patient speech (TTS during the thinking pause)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const voice = { locale: "ar" as const, voiceIdAr: "v_ar", avatarId: "a1", streamPlayback: true };
+
+  it("requests the first part's TTS at once with the playback voice", async () => {
+    const synth = vi.fn(async () => ({ mode: "elevenlabs" as const, objectUrl: "blob:x" }));
+    const warm = warmPatientSpeech({ ...voice, text: " أهلين دكتور. " }, synth);
+    expect(synth).toHaveBeenCalledTimes(1);
+    expect(synth).toHaveBeenCalledWith(
+      expect.objectContaining({ text: "أهلين دكتور.", locale: "ar", voiceIdAr: "v_ar", progressive: true }),
+    );
+    // Claimed once, for the same text only.
+    expect(warm.claim("something else")).toBeNull();
+    const clip = warm.claim("أهلين دكتور.");
+    await expect(clip).resolves.toMatchObject({ objectUrl: "blob:x" });
+    expect(warm.claim("أهلين دكتور.")).toBeNull();
+  });
+
+  it("releases an unclaimed clip and frees its audio", async () => {
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const cancel = vi.fn();
+    const synth = vi.fn(async () => ({
+      mode: "elevenlabs" as const,
+      objectUrl: "blob:y",
+      stream: { cancel } as unknown as AudioStreamHandle,
+    }));
+    const warm = warmPatientSpeech({ ...voice, text: "Hi." }, synth);
+    warm.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(revoke).toHaveBeenCalledWith("blob:y");
+    expect(cancel).toHaveBeenCalled();
+    expect(warm.claim("Hi.")).toBeNull();
+    // A claimed clip belongs to playback: release is then a no-op.
+    const other = warmPatientSpeech({ ...voice, text: "Hi." }, synth);
+    expect(other.claim("Hi.")).not.toBeNull();
+    other.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(revoke).toHaveBeenCalledTimes(1);
   });
 });

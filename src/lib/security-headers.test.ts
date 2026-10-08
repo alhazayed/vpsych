@@ -40,6 +40,9 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("https://*.supabase.co");
     expect(csp).toContain("https://api.elevenlabs.io");
     expect(csp).toContain("https://api.openai.com");
+    // Live transcript socket — OpenAI only, not a wildcard wss:.
+    expect(csp).toContain("wss://api.openai.com");
+    expect(csp).not.toMatch(/connect-src[^;]*\swss:(\s|;)/);
     expect(csp).toContain("media-src 'self' blob:");
   });
 });

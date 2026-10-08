@@ -26,6 +26,7 @@ import {
   deterministicJitter,
   NEW_SESSION_INTERACTION_MODE,
   parseInteractionMode,
+  remainingThinkingMs,
   resolveTherapyRoomTheme,
   shouldPatientInterruptTherapist,
   thinkingLatencyMs,
@@ -230,6 +231,16 @@ describe("PME bridge", () => {
       seed: "x",
     });
     expect(dep).toBeGreaterThan(mania);
+  });
+
+  it("runs the thinking pause from the therapist's last word", () => {
+    // 1.4 s of endpoint + transcript already passed: 0.8 s of a 2.2 s pause left.
+    expect(remainingThinkingMs({ thinkingLatencyMs: 2200, lastWordAt: 1000, now: 2400 })).toBe(800);
+    // Pipeline slower than the pause: no extra wait.
+    expect(remainingThinkingMs({ thinkingLatencyMs: 250, lastWordAt: 1000, now: 2400 })).toBe(0);
+    // No last-word time (typed turn, patient interrupt): the whole pause.
+    expect(remainingThinkingMs({ thinkingLatencyMs: 2200, lastWordAt: null, now: 2400 })).toBe(2200);
+    expect(remainingThinkingMs({ thinkingLatencyMs: 2200, lastWordAt: 5000, now: 2400 })).toBe(2200);
   });
 
   it("emits phase-specific cues from diagnosis", () => {

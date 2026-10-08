@@ -6,6 +6,7 @@ import {
 } from "@/lib/ai/openai/client";
 import { toOpenAIServiceError } from "@/lib/ai/openai/errors";
 import { withOpenAIRetry } from "@/lib/ai/openai/retry";
+import { STT_TIMEOUT_MS } from "@/lib/ai/time-budget";
 
 /** Default GPT-5 chat model; override with OPENAI_CHAT_MODEL. */
 export const DEFAULT_OPENAI_CHAT_MODEL = "gpt-5";
@@ -47,6 +48,10 @@ export type ChatCompletionParams = {
   maxCompletionTokens?: number;
   /** Request JSON object mode when the model supports it (assessment). */
   json?: boolean;
+  /** Per-request timeout; defaults to the client's `OPENAI_TIMEOUT_MS`. */
+  timeoutMs?: number;
+  /** `withOpenAIRetry` attempts (default 2). Streams are never retried. */
+  retryAttempts?: number;
 };
 
 export type ChatCompletionResult = {
@@ -86,6 +91,20 @@ export type SpeechToTextResult = {
   provider: "openai";
   language?: string;
 };
+
+export type LiveTranscriptionSecret = {
+  /** Ephemeral `ek_…` credential; safe to hand to the signed-in browser. */
+  value: string;
+  /** Unix seconds after which it can no longer open a session. */
+  expiresAt: number;
+  model: string;
+};
+
+/**
+ * How long a live-transcription secret can open a session. Short: the
+ * browser connects right away and the session outlives the secret.
+ */
+export const LIVE_TRANSCRIPTION_SECRET_TTL_SECONDS = 60;
 
 export type OpenAIHealthStatus = {
   ok: boolean;
@@ -173,7 +192,10 @@ export const openAIService = {
         if (params.json) {
           request.response_format = { type: "json_object" };
         }
-        const completion = await client.chat.completions.create(request);
+        const completion = await client.chat.completions.create(
+          request,
+          params.timeoutMs ? { timeout: params.timeoutMs } : undefined,
+        );
 
         const text = completion.choices[0]?.message?.content?.trim() ?? "";
         return {
@@ -191,7 +213,7 @@ export const openAIService = {
       } catch (error) {
         throw toOpenAIServiceError(error);
       }
-    });
+    }, { attempts: params.retryAttempts });
   },
 
   /**
@@ -227,6 +249,7 @@ export const openAIService = {
 
       const stream = await client.chat.completions.create(request, {
         signal: handlers.signal,
+        ...(params.timeoutMs ? { timeout: params.timeoutMs } : {}),
       });
 
       let text = "";
@@ -257,6 +280,43 @@ export const openAIService = {
     }
   },
 
+  /**
+   * Mints a short-lived client secret for a transcription-only Realtime
+   * session (same STT model as speechToText, manual commits, no server VAD).
+   * The browser streams microphone audio over it so a transcript is ready
+   * moments after the therapist pauses.
+   */
+  async createLiveTranscriptionSecret(params: {
+    language?: string;
+    model?: string;
+  }): Promise<LiveTranscriptionSecret> {
+    try {
+      const client = getOpenAIClient();
+      const model = sttModelId(params.model);
+      const language = languageHint(params.language);
+      const secret = await client.realtime.clientSecrets.create({
+        expires_after: {
+          anchor: "created_at",
+          seconds: LIVE_TRANSCRIPTION_SECRET_TTL_SECONDS,
+        },
+        session: {
+          type: "transcription",
+          audio: {
+            input: {
+              format: { type: "audio/pcm", rate: 24000 },
+              noise_reduction: { type: "near_field" },
+              transcription: { model, ...(language ? { language } : {}) },
+              turn_detection: null,
+            },
+          },
+        },
+      });
+      return { value: secret.value, expiresAt: secret.expires_at, model };
+    } catch (error) {
+      throw toOpenAIServiceError(error);
+    }
+  },
+
   /** Speech-to-text via OpenAI audio transcriptions. */
   async speechToText(
     params: SpeechToTextParams,
@@ -269,12 +329,15 @@ export const openAIService = {
         const file = await audioToUploadable(params.audio, filename);
         const language = languageHint(params.language);
 
-        const result = await client.audio.transcriptions.create({
-          file,
-          model,
-          ...(language ? { language } : {}),
-          ...(params.prompt ? { prompt: params.prompt } : {}),
-        });
+        const result = await client.audio.transcriptions.create(
+          {
+            file,
+            model,
+            ...(language ? { language } : {}),
+            ...(params.prompt ? { prompt: params.prompt } : {}),
+          },
+          { timeout: STT_TIMEOUT_MS },
+        );
 
         const transcript = String(
           (result as { text?: string }).text ?? result ?? "",

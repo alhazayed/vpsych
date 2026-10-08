@@ -92,3 +92,30 @@ Neither caption depends on TTS or playback.
   the next listen turn, so the transcript does not lose its opening words.
 - An Interrupt control (✋, or Space) appears while the patient is speaking and works even when
   voice barge-in is off or the device's echo cancellation is too weak for it.
+
+## Live transcript (Therapy Room, default on)
+
+Code: `lib/voice/live-transcript-protocol.ts`, `lib/voice/live-transcriber.ts`,
+`app/api/voice/live-transcript/route.ts`.
+
+- While a capture is open, every microphone frame (24 kHz pcm16) streams to a
+  transcription-only OpenAI Realtime session over a browser WebSocket
+  (`wss://api.openai.com/v1/realtime?intent=transcription`). The credential is
+  a 60 s ephemeral key minted per room by `/api/voice/live-transcript`
+  (approved users, `stt-live` 30/h); the server key never leaves the server.
+  Same `OPENAI_STT_MODEL` and language hint as `/api/voice/transcribe`.
+- No server VAD: at each endpoint pause the client commits the audio since
+  the last commit, so OpenAI transcribes only that stretch. A capture's
+  transcript is its segments joined in commit order; a new capture clears the
+  buffer and forgets old segments.
+- The endpoint controller's speculative transcript comes from the live
+  segments. If they are not back within 1.5 s, the classic upload of the same
+  WAV starts as a hedge and the first usable answer wins; if the socket is
+  closed, the token route is off (`VOICE_LIVE_TRANSCRIPT=false`) or the client
+  flag is off (`NEXT_PUBLIC_VOICE_LIVE_TRANSCRIPT=false`), the upload is used
+  as before. Commit thresholds (850 ms floor, 2.2 s ceiling) are unchanged.
+- The ephemeral key is not a hard transcription-only scope (OpenAI lets the
+  client override session settings), hence the short TTL, approval gate and
+  mint budget. CSP `connect-src` allows `wss://api.openai.com` only.
+- Diagnostics: `stt_ms` reads `live (N)` when the live transcript was used.
+

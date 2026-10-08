@@ -34,6 +34,9 @@ import {
 } from "@/lib/sessions/clinical-turn";
 import { runStreamingClinicalTurn } from "@/lib/sessions/stream-turn";
 
+// Time budget: lib/ai/time-budget.ts (SESSION_ROUTE_MAX_DURATION_SEC).
+export const maxDuration = 300;
+
 type Params = { params: Promise<{ id: string }> };
 
 /** Client-supplied turn id echoed on every event (stale-turn fencing). */

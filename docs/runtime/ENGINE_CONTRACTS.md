@@ -111,7 +111,7 @@ Per-runtime-subsystem contract card. Clinical field meaning lives in Stage 3 ont
 | **Dependencies** | OpenAI SDK / Gateway / persona fallback |
 | **Failure** | Fallback text preferred; unexpected throw → route 502 |
 | **Retries** | SDK maxRetries 3; app withOpenAIRetry 2; 429 → fallback model → gateway |
-| **Timeout** | `OPENAI_TIMEOUT_MS` default 60s |
+| **Timeout** | Per-call budgets in `lib/ai/time-budget.ts` (patient 20s, examiner 90s, STT 25s); `OPENAI_TIMEOUT_MS` 60s otherwise |
 | **Tokens** | OpenAI `maxCompletionTokens` 512; Gateway `maxOutputTokens` 220 |
 | **Streaming** | **None** (non-streaming completions) |
 | **Lifecycle** | After humanization (unless cbe_direct) |

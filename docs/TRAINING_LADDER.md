@@ -29,6 +29,10 @@ Each file in `personas/ladder/` is one person: an `en-US` and an `ar-JO`
 personality authored natively (different names, cities and idioms, same
 biography), human-personality traits for both, a language-neutral clinical
 core for the primary disorder, gender-matched approved voices and a portrait.
+The Program pages and My Sessions show the name from the personality that
+matches the UI language (أحمد حدّاد in Arabic, Ethan Cole in English) via
+`lib/avatars/localized-name.ts`; `avatars.name` stays the canonical English
+name and is the fallback.
 The persona carries the life events every level's comorbidities need, and
 leaves the current state, risk disclosure and amounts to Module 1, so one
 persona holds all five levels. The patient's avatar `disorder` equals the
