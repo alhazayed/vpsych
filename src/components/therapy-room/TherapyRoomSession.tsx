@@ -1448,7 +1448,10 @@ export function TherapyRoomSession({
           } else if (event.type === "resumed") {
             telemetryRef.current.record("endpoint_resumed");
           } else if (event.type === "commit") {
-            turnTimingRef.current.endpointWaitMs = Math.round(event.silenceMs);
+            // 0 = the capture ended without a pause (patient interrupted, or
+            // the length cap): there was no end-of-speech wait to report.
+            turnTimingRef.current.endpointWaitMs =
+              event.silenceMs > 0 ? Math.round(event.silenceMs) : null;
             turnTimingRef.current.endpointCommitAt = performance.now();
             telemetryRef.current.record("endpoint_commit_silence_ms", {
               valueMs: event.silenceMs,
