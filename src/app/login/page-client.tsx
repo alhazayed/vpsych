@@ -23,7 +23,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(
     authError === "recovery"
       ? t("recoveryLinkInvalid")
@@ -52,8 +51,6 @@ export default function LoginPage() {
       setError(signError.message);
       return;
     }
-    void remember;
-
     // Admins under MFA enforcement go to enroll/challenge before /admin.
     let destination = next;
     try {
@@ -161,27 +158,6 @@ export default function LoginPage() {
               <p className="mt-4 text-lg leading-relaxed text-[#35485f] opacity-90">
                 {t("heroBody")}
               </p>
-              <div className="mt-8 flex items-center gap-4">
-                <div className="flex -space-x-3 rtl:space-x-reverse">
-                  {["JD", "AS", "ML"].map((initials) => (
-                    <div
-                      key={initials}
-                      className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[var(--surface-container)] text-xs font-bold text-[var(--primary)]"
-                    >
-                      {initials}
-                    </div>
-                  ))}
-                </div>
-                <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--primary)]">
-                  <span
-                    className="material-symbols-outlined text-[16px]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    star
-                  </span>
-                  {t("trusted")}
-                </p>
-              </div>
             </div>
           </div>
         </section>
@@ -279,18 +255,6 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-
-              <label className="flex cursor-pointer items-center gap-2 px-1">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-[var(--outline-variant)] text-[var(--primary)]"
-                />
-                <span className="text-sm text-[var(--on-surface-variant)]">
-                  {t("rememberMe")}
-                </span>
-              </label>
 
               {info && (
                 <p

@@ -16,19 +16,15 @@ const FEATURE_KEYS = [
 
 const STEP_KEYS = ["1", "2", "3"] as const;
 
-const TESTIMONIAL_KEYS = [
-  { key: "1", initials: "SK" },
-  { key: "2", initials: "JW" },
-  { key: "3", initials: "LA" },
-] as const;
-
 const FAQ_KEYS = ["1", "2", "3", "4"] as const;
 
-const STAT_KEYS = [
-  { value: "10,000+", key: "sessions" },
-  { value: "500+", key: "cases" },
-  { value: "25+", key: "competencies" },
-  { value: "95%", key: "satisfaction" },
+// Plain facts about how the platform works. No usage numbers, testimonials
+// or prices: none of those exist yet, and a clinical-training product must
+// not present invented figures as evidence.
+const FACT_KEYS = [
+  { key: "approval", icon: "verified_user" },
+  { key: "bilingual", icon: "translate" },
+  { key: "notValidated", icon: "info" },
 ] as const;
 
 export default async function HomePage() {
@@ -60,18 +56,6 @@ export default async function HomePage() {
                 {t("nav.features")}
               </a>
               <a
-                href="#pricing"
-                className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
-              >
-                {t("nav.pricing")}
-              </a>
-              <a
-                href="#about"
-                className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
-              >
-                {t("nav.about")}
-              </a>
-              <a
                 href="#faq"
                 className="text-sm font-medium text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
               >
@@ -83,7 +67,7 @@ export default async function HomePage() {
             <LanguageSwitcher />
             <Link
               href="/login"
-              className="hidden rounded-lg px-4 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[color-mix(in_srgb,var(--primary-container)_10%,transparent)] sm:inline"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[color-mix(in_srgb,var(--primary-container)_10%,transparent)] sm:px-4"
             >
               {t("nav.login")}
             </Link>
@@ -98,7 +82,7 @@ export default async function HomePage() {
         <section className="relative mx-auto max-w-[1280px] overflow-hidden px-6 pb-20 pt-12 md:px-8 md:pt-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div className="z-10 fade-in-up">
-              <span className="mb-4 inline-block rounded-full bg-[var(--secondary-fixed)] px-4 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--on-secondary-fixed-variant)]">
+              <span className="mb-4 inline-block rounded-full bg-[var(--secondary-container)] px-4 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--on-secondary-container)]">
                 {t("hero.badge")}
               </span>
               <h1 className="font-[family-name:var(--font-headline)] text-4xl font-bold leading-tight tracking-tight text-[var(--primary)] md:text-5xl md:leading-[1.15]">
@@ -111,14 +95,13 @@ export default async function HomePage() {
                 <Link href="/signup" className="btn-primary px-8 py-3 shadow-lg">
                   {t("hero.startFree")}
                 </Link>
-                <a
-                  href="#features"
-                  className="btn-secondary px-8 py-3"
-                >
-                  <span className="material-symbols-outlined">play_circle</span>
-                  {t("hero.watchDemo")}
+                <a href="#how" className="btn-secondary px-8 py-3">
+                  {t("hero.howItWorks")}
                 </a>
               </div>
+              <p className="mt-4 max-w-xl text-sm text-[var(--on-surface-variant)]">
+                {t("hero.approvalNote")}
+              </p>
             </div>
             <div className="relative mt-4 lg:mt-0 fade-in-up">
               <div className="absolute -end-12 -top-12 -z-10 h-64 w-64 rounded-full bg-[color-mix(in_srgb,var(--secondary-container)_10%,transparent)] blur-3xl" />
@@ -158,6 +141,7 @@ export default async function HomePage() {
                   <span
                     className="material-symbols-outlined"
                     style={{ fontVariationSettings: "'FILL' 1" }}
+                    aria-hidden
                   >
                     {f.icon}
                   </span>
@@ -173,7 +157,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8">
+        <section
+          id="how"
+          className="mx-auto max-w-[1280px] px-6 py-16 text-center md:px-8"
+        >
           <h2 className="mb-10 font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)] md:text-2xl md:font-semibold">
             {t("how.title")}
           </h2>
@@ -188,9 +175,9 @@ export default async function HomePage() {
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-md">
                     {n}
                   </div>
-                  <h4 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
+                  <h3 className="mb-3 font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)]">
                     {t(`how.steps.${n}.title`)}
-                  </h4>
+                  </h3>
                   <p className="text-[var(--on-surface-variant)]">
                     {t(`how.steps.${n}.body`)}
                   </p>
@@ -210,133 +197,23 @@ export default async function HomePage() {
         </section>
 
         <section className="bg-[var(--primary)] py-16 text-white" id="about">
-          <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-8 px-6 text-center lg:grid-cols-4 md:px-8">
-            {STAT_KEYS.map((stat) => (
-              <div key={stat.key}>
-                <div className="font-[family-name:var(--font-headline)] text-4xl font-bold tracking-tight md:text-5xl">
-                  {stat.value}
-                </div>
-                <div className="mt-2 text-sm font-medium uppercase tracking-widest opacity-80">
-                  {t(`stats.${stat.key}`)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1280px] px-6 py-16 md:px-8">
-          <h2 className="mb-10 text-center font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
-            {t("testimonials.title")}
-          </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {TESTIMONIAL_KEYS.map((item) => (
-              <div
-                key={item.key}
-                className="rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-low)] p-6"
-              >
-                <p className="mb-6 italic text-[var(--on-surface-variant)]">
-                  &ldquo;{t(`testimonials.items.${item.key}.quote`)}&rdquo;
+          <div className="mx-auto grid max-w-[1280px] gap-8 px-6 md:grid-cols-3 md:px-8">
+            {FACT_KEYS.map((fact) => (
+              <div key={fact.key}>
+                <span
+                  className="material-symbols-outlined text-3xl opacity-90"
+                  aria-hidden
+                >
+                  {fact.icon}
+                </span>
+                <h3 className="mt-3 font-[family-name:var(--font-headline)] text-lg font-semibold">
+                  {t(`facts.${fact.key}.title`)}
+                </h3>
+                <p className="mt-2 text-sm leading-6 opacity-90">
+                  {t(`facts.${fact.key}.body`)}
                 </p>
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary-fixed)] font-bold text-[var(--primary)]">
-                    {item.initials}
-                  </div>
-                  <div>
-                    <div className="font-bold text-[var(--primary)]">
-                      {t(`testimonials.items.${item.key}.name`)}
-                    </div>
-                    <div className="text-xs text-[var(--on-surface-variant)]">
-                      {t(`testimonials.items.${item.key}.role`)}
-                    </div>
-                  </div>
-                </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section
-          id="pricing"
-          className="mx-auto max-w-[1280px] px-6 py-16 md:px-8"
-        >
-          <div className="mb-10 text-center">
-            <h2 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
-              {t("pricing.title")}
-            </h2>
-            <p className="mt-2 text-[var(--on-surface-variant)]">
-              {t("pricing.subtitle")}
-            </p>
-          </div>
-          <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
-            <div className="flex flex-col items-center rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface)] p-8">
-              <div className="mb-2 text-sm font-medium text-[var(--on-surface-variant)]">
-                {t("pricing.free.name")}
-              </div>
-              <div className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-bold text-[var(--primary)]">
-                {t("pricing.free.price")}
-              </div>
-              <ul className="mb-8 w-full space-y-2 text-[var(--on-surface-variant)]">
-                {(["1", "2", "3"] as const).map((n) => (
-                  <li key={n} className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-[var(--primary)]">
-                      check_circle
-                    </span>
-                    {t(`pricing.free.features.${n}`)}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup" className="btn-secondary w-full py-3">
-                {t("pricing.free.cta")}
-              </Link>
-            </div>
-
-            <div className="z-10 flex scale-105 flex-col items-center rounded-[14px] border-2 border-[var(--primary)] bg-[var(--surface-container-highest)] p-8 shadow-xl">
-              <div className="mb-2 rounded-full bg-[var(--secondary-container)] px-3 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
-                {t("pricing.mostPopular")}
-              </div>
-              <div className="mb-2 text-sm font-medium text-[var(--on-surface-variant)]">
-                {t("pricing.pro.name")}
-              </div>
-              <div className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-bold text-[var(--primary)]">
-                {t("pricing.pro.price")}
-                <span className="text-lg font-normal">{t("pricing.perMonth")}</span>
-              </div>
-              <ul className="mb-8 w-full space-y-2 text-[var(--on-surface-variant)]">
-                {(["1", "2", "3"] as const).map((n) => (
-                  <li key={n} className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-[var(--primary)]">
-                      check_circle
-                    </span>
-                    {t(`pricing.pro.features.${n}`)}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup" className="btn-primary w-full py-3 shadow-lg">
-                {t("pricing.pro.cta")}
-              </Link>
-            </div>
-
-            <div className="flex flex-col items-center rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface)] p-8">
-              <div className="mb-2 text-sm font-medium text-[var(--on-surface-variant)]">
-                {t("pricing.institution.name")}
-              </div>
-              <div className="mb-6 mt-2 font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
-                {t("pricing.institution.price")}
-              </div>
-              <ul className="mb-8 w-full space-y-2 text-[var(--on-surface-variant)]">
-                {(["1", "2", "3"] as const).map((n) => (
-                  <li key={n} className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-[var(--primary)]">
-                      check_circle
-                    </span>
-                    {t(`pricing.institution.features.${n}`)}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup" className="btn-secondary w-full py-3">
-                {t("pricing.institution.cta")}
-              </Link>
-            </div>
           </div>
         </section>
 
@@ -352,7 +229,10 @@ export default async function HomePage() {
               >
                 <summary className="flex list-none items-center justify-between font-bold text-[var(--primary)]">
                   {t(`faq.items.${key}.q`)}
-                  <span className="material-symbols-outlined transition group-open:rotate-180">
+                  <span
+                    className="material-symbols-outlined transition group-open:rotate-180"
+                    aria-hidden
+                  >
                     expand_more
                   </span>
                 </summary>
@@ -376,22 +256,17 @@ export default async function HomePage() {
             </p>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.product")}</h5>
+            <h2 className="mb-4 text-base font-bold text-[var(--primary)]">{t("footer.product")}</h2>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#features" className="hover:text-[var(--primary)]">
                   {t("footer.features")}
                 </a>
               </li>
-              <li>
-                <a href="#pricing" className="hover:text-[var(--primary)]">
-                  {t("footer.pricing")}
-                </a>
-              </li>
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.resources")}</h5>
+            <h2 className="mb-4 text-base font-bold text-[var(--primary)]">{t("footer.resources")}</h2>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
                 <a href="#faq" className="hover:text-[var(--primary)]">
@@ -406,11 +281,11 @@ export default async function HomePage() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-4 font-bold text-[var(--primary)]">{t("footer.company")}</h5>
+            <h2 className="mb-4 text-base font-bold text-[var(--primary)]">{t("footer.company")}</h2>
             <ul className="space-y-2 text-sm text-[var(--on-surface-variant)]">
               <li>
-                <a href="#about" className="hover:text-[var(--primary)]">
-                  {t("footer.aboutUs")}
+                <a href="#how" className="hover:text-[var(--primary)]">
+                  {t("footer.howItWorks")}
                 </a>
               </li>
               <li>
