@@ -88,6 +88,9 @@ async function completeCourseAfterSessionBestEffort(
   }
 }
 
+// Time budget: lib/ai/time-budget.ts (SESSION_ROUTE_MAX_DURATION_SEC).
+export const maxDuration = 300;
+
 type Params = { params: Promise<{ id: string }> };
 
 const SKIPPED_EDUCATION: Awaited<ReturnType<typeof runEducationAfterAssessment>> = {

@@ -40,6 +40,9 @@ const SPECULATIVE_STT_PER_HOUR = 240;
  *   Response JSON
  *     - { transcript, provider: "openai", model, locale, language }
  */
+// Time budget: lib/ai/time-budget.ts (STT_ROUTE_MAX_DURATION_SEC).
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const requestId = resolveRequestId(request);
   const supabase = await createClient();

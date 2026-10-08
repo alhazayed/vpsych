@@ -9,7 +9,12 @@ export function hasOpenAIApiKey(): boolean {
 
 /**
  * Shared official OpenAI SDK client.
- * Reads OPENAI_API_KEY from the environment. Built-in SDK retries enabled.
+ * Reads OPENAI_API_KEY from the environment.
+ *
+ * SDK retries default to 0: `withOpenAIRetry` is the single retry layer, so
+ * attempts don't multiply (3 SDK retries × 2 app attempts × 60 s used to let
+ * one call run ~8 minutes). Callers pass a per-request timeout from
+ * `lib/ai/time-budget.ts`.
  */
 export function getOpenAIClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -22,7 +27,7 @@ export function getOpenAIClient(): OpenAI {
   if (!client) {
     client = new OpenAI({
       apiKey,
-      maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 3),
+      maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 0),
       timeout: Number(process.env.OPENAI_TIMEOUT_MS ?? 60_000),
     });
   }

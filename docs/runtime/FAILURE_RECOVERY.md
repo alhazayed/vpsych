@@ -18,7 +18,7 @@ Evidence from patient-agent, openai client/retry, message/end routes, voice, rat
 | CBE fail | catch | Continue without plan | No gating/direct |
 | Humanization fail | catch | Continue | Less micro-realism |
 | OpenAI 429/quota | error kind | Fallback model → Gateway → persona_fallback | Degraded reply; aiSource set |
-| OpenAI timeout | SDK 60s | Retries then failover path | Latency / fallback |
+| OpenAI timeout | Per-call budget (`lib/ai/time-budget.ts`): patient 20s, examiner 90s, STT 25s | Failover path inside the route's `maxDuration` | Latency / fallback |
 | No AI keys | hasAnyAiKey | persona_fallback immediately | Safe degraded |
 | Unexpected agent throw | catch | 502 | User msg saved; no assistant |
 | Assistant RPC fail | error | 500 | Orphaned generation |
@@ -37,7 +37,7 @@ Evidence from patient-agent, openai client/retry, message/end routes, voice, rat
 
 | Layer | Policy |
 |-------|--------|
-| OpenAI SDK | `OPENAI_MAX_RETRIES` default **3** |
+| OpenAI SDK | `OPENAI_MAX_RETRIES` default **0** (no stacked retries) |
 | `withOpenAIRetry` | default **2** attempts, 250ms exp + jitter |
 | Patient agent model | Primary → `OPENAI_FALLBACK_CHAT_MODEL` (gpt-4o-mini) on 429 |
 | Patient agent provider | OpenAI → Gateway → persona |
@@ -51,7 +51,11 @@ Evidence from patient-agent, openai client/retry, message/end routes, voice, rat
 
 | Call | Timeout |
 |------|---------|
-| OpenAI SDK | `OPENAI_TIMEOUT_MS` default **60000** |
+| OpenAI patient reply | **20000** per attempt (`PATIENT_REPLY_TIMEOUT_MS`), Gateway too |
+| OpenAI examiner | **90000** per attempt, one attempt per model (`ASSESSMENT_TIMEOUT_MS`) |
+| OpenAI STT | **25000** per attempt (`STT_TIMEOUT_MS`) |
+| OpenAI other | `OPENAI_TIMEOUT_MS` default **60000** |
+| Route `maxDuration` | message, stream, end **300s**; transcribe **60s** (`time-budget.test.ts` checks the chains fit) |
 | ElevenLabs server fetch | **None** (AbortSignal not wired) |
 | Client fetch STT/message/TTS | Optional AbortSignal from TRM/pipeline |
 | Session wall clock | `MAX_SESSION_SECONDS` = **2400** |

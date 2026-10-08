@@ -1,5 +1,9 @@
 import { generateText, Output } from "ai";
 import {
+  ASSESSMENT_RETRY_ATTEMPTS,
+  ASSESSMENT_TIMEOUT_MS,
+} from "@/lib/ai/time-budget";
+import {
   buildExaminerSystemPrompt,
   heuristicCopy,
   localizeRubricLabel,
@@ -516,6 +520,8 @@ export async function assessSession(params: {
       maxCompletionTokens: 2500,
       model,
       json: true,
+      timeoutMs: ASSESSMENT_TIMEOUT_MS,
+      retryAttempts: ASSESSMENT_RETRY_ATTEMPTS,
     });
     try {
       const output = parseAssessmentModelText(result.text);
@@ -542,6 +548,7 @@ export async function assessSession(params: {
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.3,
+      abortSignal: AbortSignal.timeout(ASSESSMENT_TIMEOUT_MS),
     });
     if (!generated.output) {
       throw new Error("gateway assessment returned empty structured output");

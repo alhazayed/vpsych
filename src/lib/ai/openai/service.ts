@@ -6,6 +6,7 @@ import {
 } from "@/lib/ai/openai/client";
 import { toOpenAIServiceError } from "@/lib/ai/openai/errors";
 import { withOpenAIRetry } from "@/lib/ai/openai/retry";
+import { STT_TIMEOUT_MS } from "@/lib/ai/time-budget";
 
 /** Default GPT-5 chat model; override with OPENAI_CHAT_MODEL. */
 export const DEFAULT_OPENAI_CHAT_MODEL = "gpt-5";
@@ -47,6 +48,10 @@ export type ChatCompletionParams = {
   maxCompletionTokens?: number;
   /** Request JSON object mode when the model supports it (assessment). */
   json?: boolean;
+  /** Per-request timeout; defaults to the client's `OPENAI_TIMEOUT_MS`. */
+  timeoutMs?: number;
+  /** `withOpenAIRetry` attempts (default 2). Streams are never retried. */
+  retryAttempts?: number;
 };
 
 export type ChatCompletionResult = {
@@ -173,7 +178,10 @@ export const openAIService = {
         if (params.json) {
           request.response_format = { type: "json_object" };
         }
-        const completion = await client.chat.completions.create(request);
+        const completion = await client.chat.completions.create(
+          request,
+          params.timeoutMs ? { timeout: params.timeoutMs } : undefined,
+        );
 
         const text = completion.choices[0]?.message?.content?.trim() ?? "";
         return {
@@ -191,7 +199,7 @@ export const openAIService = {
       } catch (error) {
         throw toOpenAIServiceError(error);
       }
-    });
+    }, { attempts: params.retryAttempts });
   },
 
   /**
@@ -227,6 +235,7 @@ export const openAIService = {
 
       const stream = await client.chat.completions.create(request, {
         signal: handlers.signal,
+        ...(params.timeoutMs ? { timeout: params.timeoutMs } : {}),
       });
 
       let text = "";
@@ -269,12 +278,15 @@ export const openAIService = {
         const file = await audioToUploadable(params.audio, filename);
         const language = languageHint(params.language);
 
-        const result = await client.audio.transcriptions.create({
-          file,
-          model,
-          ...(language ? { language } : {}),
-          ...(params.prompt ? { prompt: params.prompt } : {}),
-        });
+        const result = await client.audio.transcriptions.create(
+          {
+            file,
+            model,
+            ...(language ? { language } : {}),
+            ...(params.prompt ? { prompt: params.prompt } : {}),
+          },
+          { timeout: STT_TIMEOUT_MS },
+        );
 
         const transcript = String(
           (result as { text?: string }).text ?? result ?? "",
