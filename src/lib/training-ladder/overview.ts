@@ -4,7 +4,10 @@
  * Read-only; RLS limits attempts to the trainee's own (or an admin's view).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
+import {
+  avatarDisplayName,
+  avatarLocalNameSelect,
+} from "@/lib/avatars/localized-name";
 import { loadLadderAttempts } from "@/lib/training-ladder/persist";
 import {
   LADDER_PATIENTS,
@@ -41,40 +44,6 @@ export type LadderOverview =
   | { available: true; patients: LadderPatientOverview[] }
   | { available: false };
 
-/**
- * Each avatar's own name in one personality locale
- * (`personalities[locale].identity.display_name`). Best effort: a failed
- * lookup leaves the canonical `avatars.name` in place.
- */
-async function loadLocalizedNames(
-  supabase: SupabaseClient,
-  avatarIds: string[],
-  uiLocale: string,
-): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
-  const locale = normalizeAvatarLocale(uiLocale);
-  if (avatarIds.length === 0 || !/^[a-z]{2}-[A-Z]{2}$/.test(locale)) return names;
-  const { data, error } = await supabase
-    .from("avatars")
-    .select(`id, local_name:personalities->${locale}->identity->>display_name`)
-    .in("id", avatarIds);
-  if (error) {
-    console.warn("[training-ladder] localized names load failed", {
-      locale,
-      error: error.message,
-    });
-    return names;
-  }
-  for (const row of (data ?? []) as unknown as Array<{
-    id: string;
-    local_name: string | null;
-  }>) {
-    const name = row.local_name?.trim();
-    if (name) names.set(row.id, name);
-  }
-  return names;
-}
-
 export async function loadLadderOverview(
   supabase: SupabaseClient,
   therapistId: string,
@@ -82,7 +51,9 @@ export async function loadLadderOverview(
 ): Promise<LadderOverview> {
   const { data: programRows, error } = await supabase
     .from("training_ladder_patients")
-    .select("key, avatar_id, avatars(id, name, age, gender, portrait_url, is_active)")
+    .select(
+      `key, avatar_id, avatars(id, name, age, gender, portrait_url, is_active, ${avatarLocalNameSelect(uiLocale)})`,
+    )
     .eq("is_active", true);
   if (error) {
     console.warn("[training-ladder] program load failed", {
@@ -90,27 +61,21 @@ export async function loadLadderOverview(
     });
     return { available: false };
   }
-  type AvatarRow = Omit<LadderAvatar, "display_name"> & { is_active: boolean };
+  type AvatarRow = Omit<LadderAvatar, "display_name"> & {
+    is_active: boolean;
+    local_name: string | null;
+  };
   const rows = (programRows ?? []) as unknown as Array<{
     key: string;
     avatars: AvatarRow | AvatarRow[] | null;
   }>;
-  const avatarOf = (row: (typeof rows)[number]) =>
-    Array.isArray(row.avatars) ? row.avatars[0] : row.avatars;
-  const avatarIds = rows.flatMap((row) => {
-    const id = avatarOf(row)?.id;
-    return id ? [id] : [];
-  });
-  const [attempts, localizedNames] = await Promise.all([
-    loadLadderAttempts(supabase, { therapistId }),
-    loadLocalizedNames(supabase, avatarIds, uiLocale),
-  ]);
+  const attempts = await loadLadderAttempts(supabase, { therapistId });
   if (!attempts.available) return { available: false };
 
   const patients: LadderPatientOverview[] = [];
   for (const row of rows) {
     const patient = LADDER_PATIENTS.find((p) => p.key === row.key);
-    const avatar = avatarOf(row);
+    const avatar = Array.isArray(row.avatars) ? row.avatars[0] : row.avatars;
     if (!patient || !avatar?.is_active) continue;
     const mine = attempts.attempts.filter((a) => a.patient_key === patient.key);
     patients.push({
@@ -118,7 +83,7 @@ export async function loadLadderOverview(
       avatar: {
         id: avatar.id,
         name: avatar.name,
-        display_name: localizedNames.get(avatar.id) ?? avatar.name,
+        display_name: avatarDisplayName(avatar),
         age: avatar.age ?? null,
         gender: avatar.gender ?? null,
         portrait_url: avatar.portrait_url ?? null,

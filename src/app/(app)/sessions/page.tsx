@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
+import {
+  avatarDisplayName,
+  avatarLocalNameSelect,
+} from "@/lib/avatars/localized-name";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
@@ -11,6 +15,8 @@ import { ErrorState } from "@/components/admin/AdminUi";
 export default async function SessionsListPage() {
   const { supabase, user, profile } = await requireProfile();
   const t = await getTranslations("sessions");
+  // Patients go by their own name in the UI language (Maya Chen is ليان خوري).
+  const localName = avatarLocalNameSelect(await getLocale());
 
   // Abandoned rooms past max_duration_sec should not linger as "active".
   await expireStaleSessionsForTherapist(supabase, user.id);
@@ -21,7 +27,7 @@ export default async function SessionsListPage() {
     .from("sessions")
     // `*` so therapy-course columns appear when present without 400-ing the
     // list on a database that has not applied that migration yet.
-    .select("*, avatars(name, disorder)")
+    .select(`*, avatars(name, disorder, ${localName})`)
     .eq("therapist_id", user.id)
     .order("started_at", { ascending: false });
   if (sessionsError) {
@@ -43,7 +49,7 @@ export default async function SessionsListPage() {
           | "course_session_number"
           | "skill_test_assignment_id"
         > & {
-          avatars: { name: string; disorder: string };
+          avatars: { name: string; disorder: string; local_name: string | null };
         })[]
       | null) ?? [];
 
@@ -64,16 +70,24 @@ export default async function SessionsListPage() {
   // Therapy courses (empty when the table is missing).
   const { data: courseRows } = await supabase
     .from("therapy_courses")
-    .select("id, status, planned_sessions, updated_at, avatars(name)")
+    .select(`id, status, planned_sessions, updated_at, avatars(name, ${localName})`)
     .eq("therapist_id", user.id)
     .order("updated_at", { ascending: false });
-  const courses = (courseRows ?? []).map((c) => {
-    const av = c.avatars as { name: string } | { name: string }[] | null;
+  type CourseAvatar = { name: string; local_name: string | null };
+  const courses = (
+    (courseRows ?? []) as unknown as Array<{
+      id: string;
+      status: string;
+      planned_sessions: number;
+      avatars: CourseAvatar | CourseAvatar[] | null;
+    }>
+  ).map((c) => {
+    const av = c.avatars;
     return {
-      id: c.id as string,
-      status: c.status as string,
-      planned: c.planned_sessions as number,
-      name: (Array.isArray(av) ? av[0]?.name : av?.name) ?? "",
+      id: c.id,
+      status: c.status,
+      planned: c.planned_sessions,
+      name: avatarDisplayName(Array.isArray(av) ? av[0] : av),
       held: list.filter((s) => s.therapy_course_id === c.id).length,
     };
   });
@@ -181,7 +195,7 @@ export default async function SessionsListPage() {
               >
                 <div className="min-w-0">
                   <p className="font-medium text-[var(--on-surface)]">
-                    {s.avatars?.name} · {s.avatars?.disorder}
+                    {avatarDisplayName(s.avatars)} · {s.avatars?.disorder}
                   </p>
                   <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                     {s.course_session_number
