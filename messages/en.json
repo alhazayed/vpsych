@@ -524,7 +524,8 @@
         "done": "done",
         "missed": "not performed",
         "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
-      }
+      },
+      "bodyNoDisorder": "Your session with {name} has ended. An admin-only performance report is being prepared from your transcript."
     },
     "loadErrorTitle": "Sessions unavailable",
     "loadErrorDescription": "Could not load your session history. Reload the page to try again."

@@ -8,6 +8,7 @@ import {
 import { isTherapyRoomEnabled } from "@/lib/features";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
+import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
 import { format } from "date-fns";
 import { ErrorState } from "@/components/admin/AdminUi";
@@ -92,6 +93,13 @@ export default async function SessionsListPage() {
     };
   });
   const tCourse = await getTranslations("course");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  // The session's own case, never the avatar's legacy default diagnosis.
+  const diagnosisLabel = (s: Parameters<typeof sessionDiagnosis>[0]) => {
+    const dx = sessionDiagnosis(s);
+    if (!dx) return null;
+    return dx.slug && tDisorders.has(dx.slug) ? tDisorders(dx.slug) : dx.name;
+  };
 
   function statusLabel(status: string) {
     if (status === "active") return t("status.active");
@@ -195,7 +203,8 @@ export default async function SessionsListPage() {
               >
                 <div className="min-w-0">
                   <p className="font-medium text-[var(--on-surface)]">
-                    {avatarDisplayName(s.avatars)} · {s.avatars?.disorder}
+                    {avatarDisplayName(s.avatars)}
+                    {diagnosisLabel(s) ? ` · ${diagnosisLabel(s)}` : ""}
                   </p>
                   <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                     {s.course_session_number
