@@ -15,6 +15,7 @@ import {
 } from "@/lib/ai/provider";
 import type { ResolvedAvatar, SessionMessage } from "@/lib/types";
 import { PATIENT_REPLY_TIMEOUT_MS } from "@/lib/ai/time-budget";
+import { reportDegradation } from "@/lib/ops/degradation";
 
 const DEFAULT_FALLBACK_REPLIES = [
   "I'm not sure how to answer that… could you say a bit more?",
@@ -130,6 +131,7 @@ export async function generatePatientReplyDetailed(params: {
       errorKind: errorKind ?? null,
       avatar: avatar.name,
     });
+    reportDegradation("patient_persona_fallback", { errorKind });
     return {
       text: fallbacks[idx]!,
       aiSource: "persona_fallback",
@@ -377,6 +379,7 @@ export async function generatePatientReplyStream(params: {
         userMessage.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
       ) % fallbacks.length;
     const text = fallbacks[idx]!;
+    reportDegradation("patient_persona_fallback", { errorKind, path: "stream" });
     reset();
     onToken(text, text);
     return {

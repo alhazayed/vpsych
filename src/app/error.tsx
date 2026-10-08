@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 
@@ -14,6 +15,7 @@ export default function RootError({
   const t = useTranslations("common.errorBoundary");
   useEffect(() => {
     console.error("[app-error]", error.digest ?? error.message);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

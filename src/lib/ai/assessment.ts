@@ -3,6 +3,7 @@ import {
   ASSESSMENT_RETRY_ATTEMPTS,
   ASSESSMENT_TIMEOUT_MS,
 } from "@/lib/ai/time-budget";
+import { reportDegradation } from "@/lib/ops/degradation";
 import {
   buildExaminerSystemPrompt,
   heuristicCopy,
@@ -217,6 +218,7 @@ function heuristicAssessment(
     errorKind: errorKind ?? null,
     failureDetail: failureDetail ?? null,
   });
+  reportDegradation("assessment_heuristic_fallback", { reason, errorKind });
   const provenance = buildAssessmentProvenance({
     aiSource: "persona_fallback",
     model: null,

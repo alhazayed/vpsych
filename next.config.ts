@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import createNextIntlPlugin from "next-intl/plugin";
 import { securityHeaders } from "./src/lib/security-headers";
 
@@ -31,4 +32,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: "vpsych",
+  project: "javascript-nextjs",
+  // Source maps upload only when SENTRY_AUTH_TOKEN is set in the build env.
+  silent: !process.env.CI,
+  telemetry: false,
+});

@@ -35,6 +35,8 @@ export function buildContentSecurityPolicy(options?: {
     "https://api.elevenlabs.io",
     "https://*.vercel-insights.com",
     "https://vitals.vercel-insights.com",
+    // Sentry error reporting (EU ingest region).
+    "https://*.ingest.de.sentry.io",
     ...(options?.extraConnectSrc ?? []),
   ];
 

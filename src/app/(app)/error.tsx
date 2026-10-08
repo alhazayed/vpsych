@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 
@@ -18,6 +19,7 @@ export default function AppSegmentError({
 
   useEffect(() => {
     console.error("[app-shell-error]", error.digest ?? error.message);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
