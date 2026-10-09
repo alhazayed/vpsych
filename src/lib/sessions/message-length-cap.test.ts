@@ -9,7 +9,7 @@ describe("therapist message length cap", () => {
   const sql = readFileSync(
     join(
       process.cwd(),
-      "supabase/migrations/20261009110000_session_messages_user_content_cap.sql",
+      "supabase/migrations/20261009185408_session_messages_user_content_cap.sql",
     ),
     "utf8",
   );
