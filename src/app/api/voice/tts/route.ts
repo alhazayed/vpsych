@@ -12,6 +12,7 @@ import {
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { VoiceLanguageError } from "@/lib/voice/voice-language";
 import { rateLimit } from "@/lib/rate-limit";
+import { reportDegradation } from "@/lib/ops/degradation";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
   elevenLabsSettingsFromEffective,
@@ -181,6 +182,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ElevenLabsError) {
       console.warn("[tts]", error.code, error.detail ?? error.message);
+      reportDegradation("tts_provider_failed", { code: error.code });
       return NextResponse.json(
         {
           error: "Text-to-speech failed",

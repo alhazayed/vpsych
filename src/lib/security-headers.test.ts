@@ -45,4 +45,10 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).not.toMatch(/connect-src[^;]*\swss:(\s|;)/);
     expect(csp).toContain("media-src 'self' blob:");
   });
+
+  it("allows the Sentry EU ingest host for error reporting", () => {
+    expect(buildContentSecurityPolicy()).toContain(
+      "https://*.ingest.de.sentry.io",
+    );
+  });
 });
