@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
+import { Inter, Montserrat, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
@@ -16,10 +17,15 @@ const body = Inter({
   subsets: ["latin"],
 });
 
-const arabic = Noto_Sans_Arabic({
+// Self-hosted (Noto Sans Arabic v33, arabic subset, weights 400-700; SIL OFL).
+// Fetching it from Google Fonts at build time broke Turbopack builds whenever
+// Google served /l/font?kit=…&skey=… URLs ("next/font/google queries have
+// exactly one entry").
+const arabic = localFont({
+  src: "./fonts/NotoSansArabic-arabic-variable.woff2",
   variable: "--font-arabic",
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
 const mono = Geist_Mono({
