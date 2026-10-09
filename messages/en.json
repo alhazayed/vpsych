@@ -446,21 +446,28 @@
         "passwordShort": "Password must be at least 8 characters.",
         "passwordPolicy": "Password must be at least 8 characters and include an uppercase letter, a number, and a special character."
       },
-      "checkEmail": "Check your email to confirm your account. An administrator must then approve it before you can sign in and start training.",
       "creating": "Creating…",
       "submit": "Create Account",
       "hasAccount": "Already have an account?",
       "signIn": "Sign In",
-      "unsaved": {
-        "title": "Unsaved Registration Data",
-        "discard": "Discard",
-        "saveContinue": "Save & Continue"
-      },
       "footer": {
         "copyright": "© {year} VPsych. All rights reserved.",
         "terms": "Terms of Service",
         "privacy": "Privacy Policy",
         "support": "Contact Support"
+      },
+      "approvalNotice": "Every new account is reviewed by an administrator. After you confirm your email, you can sign in as soon as your account is approved.",
+      "done": {
+        "title": "Check your email",
+        "sentTo": "We sent a confirmation link to",
+        "steps": {
+          "confirm": "Open the link in that email to confirm your address.",
+          "approval": "An administrator reviews and approves your account.",
+          "signIn": "Sign in and start training. Until approval, signing in shows a waiting screen."
+        },
+        "noEmail": "No email after a few minutes? Check your spam folder, or start again with the correct address.",
+        "toSignIn": "Go to sign in",
+        "startOver": "Use a different email"
       }
     },
     "pending": {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useMemo, useState, Suspense } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -64,8 +64,15 @@ function SignupForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const doneHeadingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    // Move focus to the confirmation so keyboard and screen-reader users
+    // land on what happens next instead of a form that is gone.
+    if (submittedEmail) doneHeadingRef.current?.focus();
+  }, [submittedEmail]);
 
   const checks = useMemo(() => passwordChecks(password), [password]);
   const strengthKey = useMemo(
@@ -73,20 +80,9 @@ function SignupForm() {
     [password],
   );
   const strength = useMemo(() => strengthMeta(strengthKey), [strengthKey]);
-  const dirty =
-    firstName ||
-    lastName ||
-    email ||
-    password ||
-    confirmPassword ||
-    country ||
-    profession ||
-    organization;
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setInfo(null);
 
     if (!acceptedTerms) {
       setError(t("errors.acceptTerms"));
@@ -125,12 +121,20 @@ function SignupForm() {
       setError(tErr(authErrorKey(signError)));
       return;
     }
+    // With email confirmation on, Supabase answers an already-registered
+    // address with a user that has no identities instead of an error.
+    if (data.user && data.user.identities?.length === 0) {
+      setError(tErr("alreadyRegistered"));
+      return;
+    }
     if (data.session) {
       router.push(next);
       router.refresh();
       return;
     }
-    setInfo(t("checkEmail"));
+    setSubmittedEmail(email.trim());
+    setPassword("");
+    setConfirmPassword("");
   }
 
   function resetForm() {
@@ -145,7 +149,7 @@ function SignupForm() {
     setAcceptedTerms(false);
     setNewsletter(false);
     setError(null);
-    setInfo(null);
+    setSubmittedEmail(null);
   }
 
   return (
@@ -199,8 +203,78 @@ function SignupForm() {
             <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
               {t("subtitle")}
             </p>
+            {!submittedEmail && (
+              <p className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--primary-fixed)] bg-[color-mix(in_srgb,var(--primary-fixed)_45%,transparent)] px-3 py-2 text-xs leading-relaxed text-[var(--on-surface)]">
+                <span
+                  className="material-symbols-outlined text-[18px] text-[var(--primary)]"
+                  aria-hidden
+                >
+                  verified_user
+                </span>
+                <span>{t("approvalNotice")}</span>
+              </p>
+            )}
           </div>
 
+          {submittedEmail ? (
+            <section
+              role="status"
+              aria-labelledby="signup-done-title"
+              className="space-y-5 p-6 md:p-8"
+            >
+              <span
+                className="material-symbols-outlined text-[40px] text-[var(--primary)]"
+                aria-hidden
+              >
+                mark_email_read
+              </span>
+              <h2
+                id="signup-done-title"
+                ref={doneHeadingRef}
+                tabIndex={-1}
+                className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)] focus:outline-none"
+              >
+                {t("done.title")}
+              </h2>
+              <p className="text-sm text-[var(--on-surface-variant)]">
+                {t("done.sentTo")}{" "}
+                <span className="font-semibold text-[var(--on-surface)]" dir="ltr">
+                  {submittedEmail}
+                </span>
+              </p>
+              <ol className="space-y-3 text-sm text-[var(--on-surface)]">
+                {(["confirm", "approval", "signIn"] as const).map((step, i) => (
+                  <li key={step} className="flex items-start gap-3">
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-semibold text-[var(--on-primary)]"
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
+                    <span>{t(`done.steps.${step}`)}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-[var(--on-surface-variant)]">
+                {t("done.noEmail")}
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href={`/login?next=${encodeURIComponent(next)}`}
+                  className="btn-primary flex-1 justify-center"
+                >
+                  {t("done.toSignIn")}
+                </Link>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="btn-secondary flex-1 justify-center"
+                >
+                  {t("done.startOver")}
+                </button>
+              </div>
+            </section>
+          ) : (
           <form className="space-y-6 p-6 md:p-8" onSubmit={onSubmit}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="block space-y-1 text-sm">
@@ -436,8 +510,11 @@ function SignupForm() {
               </label>
             </div>
 
-            {error && <p className="text-sm text-[var(--error)]">{error}</p>}
-            {info && <p className="text-sm text-[var(--primary)]">{info}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-[var(--error)]">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -445,11 +522,15 @@ function SignupForm() {
               className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[var(--primary)] text-sm font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-[var(--primary-container)] disabled:opacity-60"
             >
               {loading ? t("creating") : t("submit")}
-              <span className="material-symbols-outlined text-[20px]">
+              <span
+                className="material-symbols-outlined text-[20px] rtl:rotate-180"
+                aria-hidden
+              >
                 arrow_forward
               </span>
             </button>
           </form>
+          )}
 
           <div className="border-t border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-6 text-center">
             <p className="text-sm text-[var(--on-surface-variant)]">
@@ -464,41 +545,6 @@ function SignupForm() {
           </div>
         </div>
       </main>
-
-      {dirty && (
-        <div className="fixed bottom-0 start-0 end-0 z-[60] flex h-16 items-center justify-between border-t border-[color-mix(in_srgb,var(--primary)_20%,transparent)] bg-[#12273C]/95 px-4 backdrop-blur-md md:px-10">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[var(--primary-fixed-dim)]">
-              info
-            </span>
-            <p className="text-xs font-semibold text-white">
-              {t("unsaved.title")}
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-xs font-semibold text-white/70 hover:text-white"
-            >
-              {t("unsaved.discard")}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                (
-                  document.querySelector(
-                    "form",
-                  ) as HTMLFormElement | null
-                )?.requestSubmit()
-              }
-              className="rounded-[14px] bg-[var(--primary)] px-6 py-2 text-xs font-semibold text-white"
-            >
-              {t("unsaved.saveContinue")}
-            </button>
-          </div>
-        </div>
-      )}
 
       <footer className="w-full border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] py-4">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-3 px-4 md:flex-row md:px-10">
