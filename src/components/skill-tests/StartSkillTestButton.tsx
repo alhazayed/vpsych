@@ -18,6 +18,8 @@ export function StartSkillTestButton({
   const [error, setError] = useState<string | null>(null);
 
   async function start() {
+    // Each started session counts toward the test, even if abandoned.
+    if (!window.confirm(t("startConfirm", { n: sessionNumber }))) return;
     setLoading(true);
     setError(null);
     try {

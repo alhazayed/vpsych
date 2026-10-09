@@ -61,7 +61,11 @@ export default async function AdminAccountsPage() {
           </p>
         </div>
         {a.role !== "admin" && a.id !== user.id && (
-          <AccountApprovalActions userId={a.id} status={a.status} />
+          <AccountApprovalActions
+            userId={a.id}
+            status={a.status}
+            name={a.display_name}
+          />
         )}
       </li>
     );

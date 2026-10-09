@@ -109,6 +109,9 @@ export function VoiceManagementPanel({
   async function toggleActive(profile: VoiceProfile) {
     setError(null);
     const next = !profile.is_active;
+    if (!next && !window.confirm(t("disableConfirm", { name: profile.voice_name }))) {
+      return;
+    }
     const res = await fetch(`/api/admin/voice-profiles/${profile.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -613,12 +616,20 @@ export function VoiceManagementPanel({
                         key={avatar.id}
                         type="button"
                         disabled={pending || (!profile.is_active && !isAssigned)}
-                        onClick={() =>
+                        onClick={() => {
+                          if (
+                            isAssigned &&
+                            !window.confirm(
+                              t("unassignConfirm", { name: avatar.name }),
+                            )
+                          ) {
+                            return;
+                          }
                           void assignAvatar(
                             avatar.id,
                             isAssigned ? null : profile.id,
-                          )
-                        }
+                          );
+                        }}
                         className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                           isAssigned
                             ? "bg-[var(--primary)] text-[var(--on-primary)]"

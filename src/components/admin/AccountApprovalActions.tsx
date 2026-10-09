@@ -11,9 +11,12 @@ type Decision = "approve" | "reject";
 export function AccountApprovalActions({
   userId,
   status,
+  name,
 }: {
   userId: string;
   status: ApprovalStatus;
+  /** Shown in the confirmation so the admin knows whom they are locking out. */
+  name: string;
 }) {
   const router = useRouter();
   const t = useTranslations("admin.accounts");
@@ -22,6 +25,11 @@ export function AccountApprovalActions({
   const [done, setDone] = useState(false);
 
   async function decide(decision: Decision) {
+    // Rejecting or revoking locks the person out of every page; ask first.
+    if (decision === "reject") {
+      const key = status === "approved" ? "revokeConfirm" : "rejectConfirm";
+      if (!window.confirm(t(key, { name }))) return;
+    }
     setBusy(decision);
     setError(null);
     setDone(false);

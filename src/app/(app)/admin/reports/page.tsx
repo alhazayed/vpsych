@@ -38,6 +38,8 @@ export default async function AdminReportsPage() {
         ended_at,
         status,
         language,
+        skill_test_assignment_id,
+        dx_name:clinical_snapshot->primary_diagnosis->>name,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -95,6 +97,8 @@ export default async function AdminReportsPage() {
       started_at: string;
       status: string;
       language?: string | null;
+      skill_test_assignment_id?: string | null;
+      dx_name?: string | null;
       profiles: { display_name: string } | null;
       avatars: { name: string; disorder: string } | null;
     } | null;
@@ -106,7 +110,10 @@ export default async function AdminReportsPage() {
       sessionId: report.session_id,
       learner: session?.profiles?.display_name ?? t("fallbackTherapist"),
       patient: session?.avatars?.name ?? t("fallbackAvatar"),
-      disorder: session?.avatars?.disorder ?? "",
+      // The session's own case, not the avatar's default; sealed for skill tests.
+      disorder: session?.skill_test_assignment_id
+        ? ""
+        : (session?.dx_name ?? session?.avatars?.disorder ?? ""),
       language: lang,
       score: typeof overall === "number" ? overall : null,
       fallback: isHeuristicReportScores(report.scores),

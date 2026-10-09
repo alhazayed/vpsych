@@ -8,9 +8,11 @@ import { useState } from "react";
 export function SupervisorRoleToggle({
   userId,
   isSupervisor,
+  name,
 }: {
   userId: string;
   isSupervisor: boolean;
+  name: string;
 }) {
   const router = useRouter();
   const t = useTranslations("skillTests.admin");
@@ -19,6 +21,7 @@ export function SupervisorRoleToggle({
   const [done, setDone] = useState(false);
 
   async function change() {
+    if (isSupervisor && !window.confirm(t("revokeConfirm", { name }))) return;
     setBusy(true);
     setError(null);
     setDone(false);

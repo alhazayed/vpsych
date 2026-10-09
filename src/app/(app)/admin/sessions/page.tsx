@@ -81,6 +81,7 @@ export default async function AdminSessionsPage({
       difficulty,
       therapy_modality,
       clinical_snapshot,
+      skill_test_assignment_id,
       therapist_id,
       profiles ( display_name ),
       avatars ( name, disorder ),
@@ -161,7 +162,14 @@ export default async function AdminSessionsPage({
       learner: profile?.display_name ?? t("unknownLearner"),
       learnerId: s.therapist_id as string,
       patient: avatar?.name ?? t("unknownPatient"),
-      disorder: avatar?.disorder ?? "",
+      // The session's own case, not the avatar's default. Skill test rows keep
+      // the case sealed, so the list leaves their diagnosis blank.
+      disorder: s.skill_test_assignment_id
+        ? ""
+        : ((s.clinical_snapshot as { primary_diagnosis?: { name?: string } } | null)
+            ?.primary_diagnosis?.name ??
+          avatar?.disorder ??
+          ""),
       organization: institution?.name ?? null,
       institutionId: s.institution_id,
       durationLabel,

@@ -5,6 +5,7 @@ import { requireProfile } from "@/lib/auth";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
+import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
@@ -24,6 +25,7 @@ export default async function SessionCompletePage({ params }: Props) {
   const t = await getTranslations("sessions.complete");
   const tRoom = await getTranslations("therapyRoom.complete");
   const tTranscript = await getTranslations("therapyRoom.transcript");
+  const tDisorders = await getTranslations("skillTests.disorders");
 
   const { data: session } = await supabase
     .from("sessions")
@@ -57,6 +59,13 @@ export default async function SessionCompletePage({ params }: Props) {
       : null;
 
   const showRoomDebrief = typed.interaction_mode === "therapy_room";
+  // The session's own case, never the avatar's legacy default diagnosis.
+  const dx = sessionDiagnosis(typed);
+  const diagnosis = dx
+    ? dx.slug && tDisorders.has(dx.slug)
+      ? tDisorders(dx.slug)
+      : dx.name
+    : null;
 
   // Always load the transcript for the complete page — classic sessions also
   // promise review under My Sessions / this page (not therapy-room-only).
@@ -110,10 +119,12 @@ export default async function SessionCompletePage({ params }: Props) {
           {t("title")}
         </h1>
         <p className="mt-3 text-[var(--on-surface-variant)]">
-          {t("body", {
-            name: typed.avatars?.name ?? "",
-            disorder: typed.avatars?.disorder ?? "",
-          })}
+          {diagnosis
+            ? t("body", {
+                name: typed.avatars?.name ?? "",
+                disorder: diagnosis,
+              })
+            : t("bodyNoDisorder", { name: typed.avatars?.name ?? "" })}
         </p>
       </div>
 

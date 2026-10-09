@@ -246,7 +246,9 @@ export default async function AdminSessionDetailPage({
           learner: learnerName,
           learnerId,
           patient: avatar?.name ?? t("unknownPatient"),
-          disorder: avatar?.disorder ?? "",
+          // The session's own case (opened for skill tests), not the avatar's default.
+          disorder:
+            clinicalSnapshot?.primary_diagnosis?.name ?? avatar?.disorder ?? "",
           organization: institution?.name ?? null,
           difficulty: session.difficulty,
           modality: session.therapy_modality,

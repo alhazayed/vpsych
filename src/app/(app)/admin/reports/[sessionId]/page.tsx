@@ -77,6 +77,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
     ended_at: string | null;
     case_instance_id: string | null;
     clinical_snapshot: {
+      primary_diagnosis?: { name?: string | null } | null;
       clinical_core?: ClinicalCore | null;
       therapy_course?: TherapyCourseSessionContext | null;
     } | null;
@@ -100,6 +101,12 @@ export default async function AdminReportDetailPage({ params }: Props) {
     : null;
   const core =
     testCase?.clinical_core ?? session?.clinical_snapshot?.clinical_core ?? null;
+  // The session's own case (opened for skill tests), not the avatar's default.
+  const diagnosis =
+    testCase?.primary_diagnosis?.name ??
+    session?.clinical_snapshot?.primary_diagnosis?.name ??
+    session?.avatars?.disorder ??
+    "—";
   const practice = evaluateSessionPractice({
     messages: (messages ?? []) as Array<{ role: string; content: string }>,
     sessionNumber: session?.course_session_number ?? null,
@@ -166,14 +173,19 @@ export default async function AdminReportDetailPage({ params }: Props) {
         href="/admin/reports"
         className="inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:underline"
       >
-        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+        <span
+          className="material-symbols-outlined text-[18px] rtl:rotate-180"
+          aria-hidden
+        >
+          arrow_back
+        </span>
         {t("back")}
       </Link>
       <p className="mt-4 text-sm text-[var(--on-surface-variant)]">
         {t("meta", {
           therapist: session?.profiles?.display_name ?? "—",
           patient: session?.avatars?.name ?? "—",
-          disorder: session?.avatars?.disorder ?? "—",
+          disorder: diagnosis,
         })}
         {(report as SessionReport).language
           ? ` · ${(report as SessionReport).language}`

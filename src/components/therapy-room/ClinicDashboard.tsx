@@ -59,6 +59,7 @@ export function ClinicDashboard({
 
   async function closeDay() {
     if (!clinicDayId || closing) return;
+    if (!window.confirm(t("closeDayConfirm"))) return;
     setClosing(true);
     try {
       const res = await fetch(`/api/clinic/day/${clinicDayId}/close`, {

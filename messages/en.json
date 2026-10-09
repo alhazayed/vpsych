@@ -163,7 +163,8 @@
     "supervise": "Supervise",
     "supervisors": "Supervisors",
     "skillTestsAdmin": "Skill tests",
-    "training": "Training Program"
+    "training": "Training Program",
+    "accountApprovals": "Account approvals"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -202,8 +203,6 @@
   "landing": {
     "nav": {
       "features": "Features",
-      "pricing": "Pricing",
-      "about": "About",
       "resources": "Resources",
       "login": "Login",
       "getStarted": "Get Started"
@@ -212,33 +211,34 @@
       "badge": "Next-Gen Clinical Training",
       "title": "Practice Psychotherapy with AI Patients",
       "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
-      "startFree": "Start Free",
-      "watchDemo": "Watch Demo",
-      "imageAlt": "Therapist conducting a session with an AI patient avatar"
+      "startFree": "Request access",
+      "imageAlt": "Therapist conducting a session with an AI patient avatar",
+      "howItWorks": "See how it works",
+      "approvalNote": "New accounts are reviewed by an administrator before first sign-in."
     },
     "features": {
       "title": "Advanced Clinical Training Tools",
-      "subtitle": "Master complex therapeutic skills through our specialized simulation suite.",
+      "subtitle": "Practise core therapeutic skills with simulated patients before you see real ones.",
       "items": {
         "simulations": {
           "title": "Clinical Simulations",
-          "body": "Immersive scenarios covering anxiety, depression, PTSD, and complex personality disorders."
+          "body": "Practise with patients presenting common conditions such as anxiety, depression and PTSD."
         },
         "avatars": {
-          "title": "AI Patient Avatars",
-          "body": "Responsive avatars with dynamic facial expressions and realistic emotional vocal modulation."
+          "title": "Distinct Patients",
+          "body": "Each patient has their own personality, history and voice, authored separately in English and Arabic."
         },
         "feedback": {
-          "title": "Competency-Based Feedback",
-          "body": "Instant scoring on empathy, verbal reflections, and adherence to therapeutic modalities."
+          "title": "Supervisor-Reviewed Reports",
+          "body": "Every session produces a structured report for your supervisors. Scores are for training and are not yet validated."
         },
         "analytics": {
-          "title": "Performance Analytics",
-          "body": "Visualize your growth over time with detailed charts mapping your diagnostic accuracy."
+          "title": "Practice Checklist",
+          "body": "After each session, see which core interview steps you covered and which you missed."
         },
         "progress": {
-          "title": "Progress Tracking",
-          "body": "Curated learning paths that adapt based on your strengths and identified areas for improvement."
+          "title": "Training Program",
+          "body": "Work through a ladder of patients, from straightforward presentations to harder ones."
         },
         "bilingual": {
           "title": "Arabic & English Support",
@@ -251,79 +251,17 @@
       "imageAlt": "VPsych workflow from session creation to analysis",
       "steps": {
         "1": {
-          "title": "Create Session",
-          "body": "Select a clinical persona and start a timed voice assessment session."
+          "title": "Choose a Patient",
+          "body": "Pick a patient and start a timed voice session."
         },
         "2": {
           "title": "Conduct Therapy",
           "body": "Engage in natural conversation with the AI patient via voice or text input."
         },
         "3": {
-          "title": "Receive AI Report",
-          "body": "Get a comprehensive clinical analysis with specific feedback on your techniques."
+          "title": "Review and Improve",
+          "body": "See your practice checklist right away; your supervisor reviews the full report."
         }
-      }
-    },
-    "stats": {
-      "sessions": "Practice Sessions",
-      "cases": "AI Patient Cases",
-      "competencies": "Clinical Competencies",
-      "satisfaction": "User Satisfaction"
-    },
-    "testimonials": {
-      "title": "Trusted by Professionals",
-      "items": {
-        "1": {
-          "quote": "The diagnostic reasoning feedback is revolutionary. It catches nuances in interviewing technique that are often missed in traditional residency training.",
-          "name": "Dr. Sarah Khalil",
-          "role": "Senior Psychiatrist"
-        },
-        "2": {
-          "quote": "As a clinical psychologist, I find the AI's emotional responses incredibly authentic. It's an invaluable tool for mastering therapeutic alliance building.",
-          "name": "Dr. James Wilson",
-          "role": "Clinical Psychologist"
-        },
-        "3": {
-          "quote": "VPsych helped me build confidence before my first real-world clinical rotation. The progress tracking keeps me motivated to keep refining my skills.",
-          "name": "Layla Ahmed",
-          "role": "Medical Resident"
-        }
-      }
-    },
-    "pricing": {
-      "title": "Scale Your Expertise",
-      "subtitle": "Plans designed for individual learners and major medical institutions.",
-      "mostPopular": "Most Popular",
-      "perMonth": "/mo",
-      "free": {
-        "name": "Free",
-        "price": "$0",
-        "features": {
-          "1": "Practice sessions with preset avatars",
-          "2": "Voice-first training",
-          "3": "Admin-only assessments"
-        },
-        "cta": "Select Plan"
-      },
-      "pro": {
-        "name": "Professional",
-        "price": "$29",
-        "features": {
-          "1": "Unlimited sessions",
-          "2": "Full performance reports",
-          "3": "Expanded patient library"
-        },
-        "cta": "Get Started"
-      },
-      "institution": {
-        "name": "Institution",
-        "price": "Custom",
-        "features": {
-          "1": "Supervisor dashboards",
-          "2": "Custom case creation",
-          "3": "Enterprise support"
-        },
-        "cta": "Contact Sales"
       }
     },
     "faq": {
@@ -353,12 +291,25 @@
       "resources": "Resources",
       "company": "Company",
       "features": "Features",
-      "pricing": "Pricing",
       "faq": "FAQ",
       "signIn": "Sign in",
-      "aboutUs": "About Us",
       "getStarted": "Get Started",
-      "copyright": "© {year} VPsych. All rights reserved."
+      "copyright": "© {year} VPsych. All rights reserved.",
+      "howItWorks": "How it works"
+    },
+    "facts": {
+      "approval": {
+        "title": "Approved accounts",
+        "body": "Sign-ups are reviewed by an administrator, so only approved trainees and supervisors can practise."
+      },
+      "bilingual": {
+        "title": "English and Arabic",
+        "body": "The interface and the patients work in both languages, with right-to-left layout in Arabic."
+      },
+      "notValidated": {
+        "title": "Honest about scores",
+        "body": "Competency scores support supervision and practice. They are not yet validated measures."
+      }
     }
   },
   "auth": {
@@ -370,7 +321,6 @@
       "heroAlt": "Therapist practicing with an AI patient simulation",
       "heroTitle": "Improve Your Clinical Skills with AI-Powered Practice",
       "heroBody": "Practice psychotherapy with realistic AI patients and receive structured competency feedback after every session.",
-      "trusted": "Trusted by clinicians worldwide",
       "welcome": "Welcome Back",
       "subtitle": "Sign in to continue your clinical training.",
       "email": "Email",
@@ -386,7 +336,6 @@
       "recoveryLinkInvalid": "That password reset link is invalid or has expired. Request a new one.",
       "hidePassword": "Hide password",
       "showPassword": "Show password",
-      "rememberMe": "Remember me for 30 days",
       "authenticating": "Authenticating…",
       "signIn": "Sign in",
       "noAccount": "Don't have an account?",
@@ -576,7 +525,8 @@
         "done": "done",
         "missed": "not performed",
         "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
-      }
+      },
+      "bodyNoDisorder": "Your session with {name} has ended. An admin-only performance report is being prepared from your transcript."
     },
     "loadErrorTitle": "Sessions unavailable",
     "loadErrorDescription": "Could not load your session history. Reload the page to try again."
@@ -683,7 +633,8 @@
       "transcript": "Live transcript",
       "settings": "Settings",
       "end": "End session",
-      "ending": "Ending…"
+      "ending": "Ending…",
+      "more": "More controls"
     },
     "notes": {
       "title": "Private notes",
@@ -743,6 +694,12 @@
       "audioUnavailable": "Patient audio unavailable.",
       "playAudio": "Play patient audio",
       "fallbackVoice": "Played with the browser's fallback voice, not the patient's voice."
+    },
+    "endConfirm": {
+      "title": "End the session?",
+      "body": "The patient will leave and your session will be assessed. You can't continue this session afterwards.",
+      "keep": "Keep going",
+      "end": "End session"
     }
   },
   "analysis": {
@@ -841,7 +798,8 @@
         "errorAlreadyUpdated": "This report has already been updated. Reloading.",
         "errorRateLimited": "Too many regeneration attempts. Wait a while and try again.",
         "errorNetwork": "Network error. Check your connection and try again.",
-        "errorGeneric": "Could not regenerate the report. Try again."
+        "errorGeneric": "Could not regenerate the report. Try again.",
+        "regenerateConfirm": "Regenerate this report with the AI examiner? The current fallback report will be replaced, and this can only be done once."
       },
       "practice": {
         "title": "Session practice",
@@ -1351,7 +1309,9 @@
         "assign": "Could not assign voice to avatar.",
         "save": "Could not save clinical voice profile.",
         "liveSwitch": "Could not preview live emotion switch."
-      }
+      },
+      "disableConfirm": "Disable the voice \"{name}\"? Patients assigned to it will stop using it.",
+      "unassignConfirm": "Remove this voice from {name}? The patient will have no assigned voice until you choose another."
     },
     "integrations": {
       "title": "API Integrations",
@@ -2071,7 +2031,9 @@
       "saving": "Saving…",
       "saved": "Saved",
       "changeFailed": "The account could not be updated. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "rejectConfirm": "Reject {name}'s account? They will not be able to open VPsych.",
+      "revokeConfirm": "Revoke access for {name}? They will be signed out of every page until you approve them again."
     },
     "formulationReview": {
       "title": "5 Ps formulation against the case",
@@ -2352,7 +2314,8 @@
       "plan": "Improvement plan",
       "backToClinic": "Back to clinic",
       "backToDebrief": "Back to visit review"
-    }
+    },
+    "closeDayConfirm": "Close today's clinic day? This finishes the day's schedule and opens the end-of-day summary."
   },
   "course": {
     "courseTitle": "Therapy course with {name}",
@@ -2458,7 +2421,8 @@
       "startSession": "Start session {n}",
       "starting": "Starting…",
       "startFailed": "The session could not start. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "startConfirm": "Start session {n} of this test? It counts toward the test as soon as it starts."
     },
     "practice": {
       "title": "Practice scenarios",
@@ -2587,7 +2551,9 @@
       "saved": "Saved",
       "changeFailed": "The role could not be changed. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
-      "accountApprovalsLink": "New accounts waiting for approval are under Account approvals."
+      "accountApprovalsLink": "New accounts waiting for approval are under Account approvals.",
+      "revokeConfirm": "Remove the supervisor role from {name}? They will lose access to the tests they assigned.",
+      "skillTestsLink": "Design and assign skill tests in the Supervise workspace."
     },
     "complete": {
       "badge": "Session submitted",
