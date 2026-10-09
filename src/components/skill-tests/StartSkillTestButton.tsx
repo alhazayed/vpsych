@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { sessionStartErrorKey } from "@/lib/session-start-error";
 
 /** Starts the next session of an assigned skill test. */
 export function StartSkillTestButton({
@@ -14,6 +15,7 @@ export function StartSkillTestButton({
 }) {
   const router = useRouter();
   const t = useTranslations("skillTests.trainee");
+  const tStart = useTranslations("session.start");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +32,14 @@ export function StartSkillTestButton({
       });
       const data = (await res.json().catch(() => ({}))) as {
         sessionId?: string;
-        error?: string;
+        code?: string;
       };
       if (!res.ok || !data.sessionId) {
-        setError(data.error ?? t("startFailed"));
+        setError(
+          res.ok
+            ? t("startFailed")
+            : tStart(sessionStartErrorKey(res.status, data.code)),
+        );
         setLoading(false);
         return;
       }

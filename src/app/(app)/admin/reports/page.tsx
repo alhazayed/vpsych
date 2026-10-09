@@ -1,5 +1,4 @@
-import { format } from "date-fns";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -19,6 +18,7 @@ export default async function AdminReportsPage() {
   const tHome = await getTranslations("admin.home");
   const tSessions = await getTranslations("admin.sessions");
   const tCommon = await getTranslations("common");
+  const format = await getFormatter();
 
   const {
     data: reports,
@@ -120,7 +120,10 @@ export default async function AdminReportsPage() {
       status,
       statusLabel: statusLabelFor(status),
       createdAt: report.created_at,
-      createdAtLabel: format(new Date(report.created_at), "MMM d, yyyy HH:mm"),
+      createdAtLabel: format.dateTime(new Date(report.created_at), {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
     };
   });
 

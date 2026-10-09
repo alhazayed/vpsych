@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { localeNativeNames } from "@/lib/locale-names";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 import { PracticeScenarioPicker } from "@/components/skill-tests/PracticeScenarioPicker";
@@ -21,6 +22,11 @@ export default async function AvatarsPage() {
   const t = await getTranslations("avatars");
   const tCommon = await getTranslations("common");
   const tPractice = await getTranslations("skillTests.practice");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const genderLabel = (g: string) => {
+    const key = `genders.${g.trim().toLowerCase()}`;
+    return t.has(key) ? t(key) : g;
+  };
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
@@ -158,9 +164,9 @@ export default async function AvatarsPage() {
                     {avatar.name}
                   </h3>
                   <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                    {avatar.disorder}
+                    {disorderNameText(avatar.disorder, tDisorders)}
                     {avatar.age ? ` · ${avatar.age}` : ""}
-                    {avatar.gender ? ` · ${avatar.gender}` : ""}
+                    {avatar.gender ? ` · ${genderLabel(avatar.gender)}` : ""}
                   </p>
                 </div>
                 <span className="status-chip status-chip-active">
