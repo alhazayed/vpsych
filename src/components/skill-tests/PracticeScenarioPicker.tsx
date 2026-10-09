@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { sessionStartErrorKey } from "@/lib/session-start-error";
 
 export type PracticeDisorder = {
   slug: string;
@@ -29,6 +30,7 @@ export function PracticeScenarioPicker({
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("skillTests.practice");
+  const tStart = useTranslations("session.start");
   const tD = useTranslations("skillTests.disorders");
   const tLevel = useTranslations("skillTests.difficulty");
   const [disorder, setDisorder] = useState<string>(disorders[0]?.slug ?? "");
@@ -64,10 +66,14 @@ export function PracticeScenarioPicker({
       });
       const data = (await res.json().catch(() => ({}))) as {
         sessionId?: string;
-        error?: string;
+        code?: string;
       };
       if (!res.ok || !data.sessionId) {
-        setError(data.error ?? t("startFailed"));
+        setError(
+          res.ok
+            ? t("startFailed")
+            : tStart(sessionStartErrorKey(res.status, data.code)),
+        );
         setLoading(false);
         return;
       }

@@ -8,6 +8,8 @@ import {
   resolvePatientNonverbal,
 } from "@/lib/therapy-room";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import { getLocale, getTranslations } from "next-intl/server";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -93,13 +95,18 @@ export async function GET(_request: Request, { params }: Props) {
   );
 
   try {
+    const locale = await getLocale();
+    const tDisorders = await getTranslations("skillTests.disorders");
     const briefing = buildSupervisorBriefing({
       sessionId: id,
       coach,
       nonverbal,
       patientDisplay: avatarRow?.name?.split(/\s+/)[0] ?? "Patient",
-      diagnosisLabel:
-        snapshot?.primary_diagnosis?.name ?? avatarRow?.disorder ?? null,
+      diagnosisLabel: sessionDiagnosisText(
+        { ...typed, avatars: avatarRow },
+        tDisorders,
+      ),
+      locale,
     });
 
     const { data: messages } = await supabase

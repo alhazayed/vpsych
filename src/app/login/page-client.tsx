@@ -12,11 +12,13 @@ import {
   resolveAdminPostLoginPath,
 } from "@/lib/admin-mfa";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { authErrorKey } from "@/lib/auth-error";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("auth.login");
+  const tErr = useTranslations("auth.errors");
   const next = safeRedirectPath(searchParams.get("next"));
   const authError = searchParams.get("error");
   const resetOk = searchParams.get("reset") === "1";
@@ -48,7 +50,7 @@ export default function LoginPage() {
     });
     if (signError) {
       setLoading(false);
-      setError(signError.message);
+      setError(tErr(authErrorKey(signError)));
       return;
     }
     // Admins under MFA enforcement go to enroll/challenge before /admin.

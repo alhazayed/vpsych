@@ -7,6 +7,8 @@ import {
   type SupervisorBriefing,
 } from "@/lib/therapy-room";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import { getLocale, getTranslations } from "next-intl/server";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
@@ -61,13 +63,18 @@ export default async function ClinicDebriefPage({ params }: Props) {
     snapshot,
     snapshot?.primary_diagnosis?.slug,
   );
+  const locale = await getLocale();
+  const tDisorders = await getTranslations("skillTests.disorders");
   const briefing: SupervisorBriefing = buildSupervisorBriefing({
     sessionId,
     coach,
     nonverbal,
     patientDisplay: avatar?.name?.split(/\s+/)[0] ?? "Patient",
-    diagnosisLabel:
-      snapshot?.primary_diagnosis?.name ?? avatar?.disorder ?? null,
+    diagnosisLabel: sessionDiagnosisText(
+      { ...session, avatars: avatar },
+      tDisorders,
+    ),
+    locale,
   });
 
   const { data: messages } = await supabase

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sessionDiagnosis } from "./diagnosis-label";
+import {
+  disorderNameText,
+  sessionDiagnosis,
+  sessionDiagnosisText,
+} from "./diagnosis-label";
 
 const primary = {
   id: "d1",
@@ -35,5 +39,36 @@ describe("sessionDiagnosis", () => {
       sessionDiagnosis({ clinical_snapshot: null, avatars: { disorder: "PTSD" } }),
     ).toEqual({ slug: null, name: "PTSD" });
     expect(sessionDiagnosis({ clinical_snapshot: null, avatars: null })).toBeNull();
+  });
+});
+
+describe("diagnosis display text", () => {
+  const labels: Record<string, string> = { ptsd: "اضطراب ما بعد الصدمة" };
+  const t = Object.assign((k: string) => labels[k], {
+    has: (k: string) => k in labels,
+  });
+
+  it("translates a stored English name that matches the catalogue", () => {
+    expect(disorderNameText("Posttraumatic Stress Disorder", t)).toBe(
+      "اضطراب ما بعد الصدمة",
+    );
+    expect(disorderNameText("Alcoholic", t)).toBe("Alcoholic");
+    expect(disorderNameText("  ", t)).toBeNull();
+  });
+
+  it("translates a session's diagnosis by slug and hides it for tests", () => {
+    const snap = { primary_diagnosis: { slug: "ptsd", name: "PTSD" } };
+    expect(
+      sessionDiagnosisText(
+        { clinical_snapshot: snap as never },
+        t,
+      ),
+    ).toBe("اضطراب ما بعد الصدمة");
+    expect(
+      sessionDiagnosisText(
+        { clinical_snapshot: snap as never, skill_test_assignment_id: "a1" },
+        t,
+      ),
+    ).toBeNull();
   });
 });

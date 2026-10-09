@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import {
   avatarDisplayName,
@@ -10,7 +10,6 @@ import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
-import { format } from "date-fns";
 import { ErrorState } from "@/components/admin/AdminUi";
 
 export default async function SessionsListPage() {
@@ -94,6 +93,7 @@ export default async function SessionsListPage() {
   });
   const tCourse = await getTranslations("course");
   const tDisorders = await getTranslations("skillTests.disorders");
+  const format = await getFormatter();
   // The session's own case, never the avatar's legacy default diagnosis.
   const diagnosisLabel = (s: Parameters<typeof sessionDiagnosis>[0]) => {
     const dx = sessionDiagnosis(s);
@@ -210,7 +210,10 @@ export default async function SessionsListPage() {
                     {s.course_session_number
                       ? `${tCourse("sessionBadge", { n: s.course_session_number })} · `
                       : ""}
-                    {format(new Date(s.started_at), "MMM d, yyyy · HH:mm")}
+                    {format.dateTime(new Date(s.started_at), {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                     {adminTest ? ` · ${t("adminTestHint")}` : ""}
                   </p>
                 </div>

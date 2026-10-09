@@ -476,6 +476,16 @@
       "signOut": "Sign out",
       "signingOut": "Signing out…",
       "signOutFailed": "Sign out failed. Please try again."
+    },
+    "errors": {
+      "invalidCredentials": "That email and password don't match. Check them and try again.",
+      "emailNotConfirmed": "Confirm your email first. Open the link we sent you, then sign in.",
+      "alreadyRegistered": "An account with this email already exists. Sign in instead, or reset your password.",
+      "weakPassword": "This password is too weak. Choose a stronger one.",
+      "invalidEmail": "Enter a valid email address.",
+      "signupDisabled": "New sign-ups are closed right now.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "failed": "Something went wrong. Try again in a moment."
     }
   },
   "avatars": {
@@ -486,7 +496,11 @@
     "persona": "persona",
     "personas": "personas",
     "loadErrorTitle": "Patients unavailable",
-    "loadErrorDescription": "Could not load the patient library. Reload the page to try again."
+    "loadErrorDescription": "Could not load the patient library. Reload the page to try again.",
+    "genders": {
+      "female": "Female",
+      "male": "Male"
+    }
   },
   "sessions": {
     "title": "My Sessions",
@@ -589,7 +603,17 @@
       "starting": "Starting…",
       "signedOut": "Your sign-in has expired. Sign in again to start a session.",
       "rateLimited": "You have started many sessions recently. Wait a while and try again.",
-      "patientUnavailable": "This patient is not available right now. Choose another patient."
+      "patientUnavailable": "This patient is not available right now. Choose another patient.",
+      "ladderLocked": "This level is still locked. Pass the previous level first.",
+      "ladderUnavailable": "The training program is not available right now. Try again later.",
+      "ladderPatientOnly": "This patient is part of the Training Program. Start it from the Training Program page.",
+      "treatmentPlanRequired": "Write the treatment plan for this patient before starting session 3.",
+      "courseLengthReached": "This course has reached its planned number of sessions. End or extend it from the course page.",
+      "testNotAssigned": "This test patient is not assigned to you.",
+      "testClosed": "This skill test is closed.",
+      "testSessionActive": "A session for this test is still open. Finish it before starting the next one.",
+      "testSessionsUsed": "All required sessions for this test have been held.",
+      "testUnavailable": "This test can't be started right now. Ask your supervisor to check it."
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
@@ -2365,7 +2389,11 @@
       "generic": "Could not save the treatment plan. Please try again.",
       "network": "Network error. Check your connection and try again.",
       "risk_formulation": "Describe the risk and safety picture (at least 10 characters).",
-      "five_ps": "Fill in all five Ps, each between 3 and 600 characters."
+      "five_ps": "Fill in all five Ps, each between 3 and 600 characters.",
+      "courseCompleted": "This therapy course has ended, so the plan can't be changed.",
+      "tooEarly": "The treatment plan is written after the second session.",
+      "signedOut": "Your sign-in has expired. Sign in again, then save the plan.",
+      "rateLimited": "Too many saves in a short time. Wait a moment and try again."
     },
     "startNext": "Start session {n}",
     "finalSessionNote": "Session {n} is the planned final session: the patient will expect to talk about ending therapy.",
@@ -2675,6 +2703,83 @@
       "scoringBody": "The level result appears once the report for this session is ready.",
       "scoreLine": "Score: {score}%",
       "toPatient": "Back to {name}"
+    }
+  },
+  "feedback": {
+    "title": "Institutional feedback",
+    "intro": "Tell the pilot team what worked and what didn't. Severity, category, how often it happens and what you suggest help us sort reports quickly.",
+    "noPhi": "Do not enter real patient names, record numbers or any other patient information. Refer to sessions by their ID only.",
+    "fields": {
+      "role": "Your role",
+      "institution": "Institution",
+      "department": "Department (optional)",
+      "category": "Category",
+      "severity": "Severity",
+      "reproducibility": "How often does it happen?",
+      "title": "Title",
+      "body": "Description",
+      "suggestedAction": "Suggested action (optional)"
+    },
+    "roles": {
+      "faculty": "Faculty",
+      "resident": "Resident",
+      "student": "Student",
+      "supervisor": "Supervisor",
+      "clinician": "Clinician",
+      "researcher": "Researcher",
+      "administrator": "Administrator",
+      "institution": "Institution representative",
+      "it": "IT"
+    },
+    "severities": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "wishlist": "Wish list",
+      "suggestion": "Suggestion"
+    },
+    "reproducibility": {
+      "always": "Always",
+      "often": "Often",
+      "sometimes": "Sometimes",
+      "rare": "Rarely",
+      "unknown": "Not sure"
+    },
+    "categories": {
+      "clinical_realism": "Clinical realism",
+      "educational_value": "Educational value",
+      "conversation_quality": "Conversation quality",
+      "clinical_simulation": "Clinical simulation",
+      "assessment": "Assessment",
+      "assessment_report": "Assessment report",
+      "curriculum": "Curriculum",
+      "supervisor": "Supervisor",
+      "supervisor_tools": "Supervisor tools",
+      "analytics": "Analytics",
+      "research_export": "Research export",
+      "authentication": "Sign-in and accounts",
+      "performance": "Speed and performance",
+      "voice_realtime": "Voice",
+      "security": "Security",
+      "security_privacy": "Security and privacy",
+      "enterprise_admin": "Institution administration",
+      "deployment": "Deployment",
+      "documentation": "Documentation",
+      "usability": "Ease of use",
+      "bug": "Bug",
+      "critical_safety": "Critical safety issue",
+      "other": "Other"
+    },
+    "submit": "Submit feedback",
+    "submitting": "Submitting…",
+    "submitted": "Thank you. Your feedback was sent to the pilot team.",
+    "errors": {
+      "invalid": "Check the form: institution, a title of at least 3 characters and a description of at least 10 characters are required.",
+      "rateLimited": "You've sent a lot of feedback recently. Wait a while and try again.",
+      "signedOut": "Your sign-in has expired. Sign in again, then resend.",
+      "failed": "Your feedback couldn't be sent. Try again in a moment.",
+      "network": "Network error. Check your connection and try again."
     }
   }
 }

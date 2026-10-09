@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_REPRODUCIBILITY,
@@ -16,6 +17,7 @@ export function InstitutionalFeedbackForm({
 }: {
   defaultRole?: FeedbackRole;
 }) {
+  const t = useTranslations("feedback");
   const [submitterRole, setSubmitterRole] =
     useState<FeedbackRole>(defaultRole);
   const [institutionName, setInstitutionName] = useState("");
@@ -52,9 +54,19 @@ export function InstitutionalFeedbackForm({
           suggested_action: suggestedAction,
         }),
       });
-      const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Submit failed");
+        // The API's messages are English; pick the copy from the status.
+        setError(
+          t(
+            res.status === 400
+              ? "errors.invalid"
+              : res.status === 401
+                ? "errors.signedOut"
+                : res.status === 429
+                  ? "errors.rateLimited"
+                  : "errors.failed",
+          ),
+        );
         return;
       }
       setOk(true);
@@ -62,7 +74,7 @@ export function InstitutionalFeedbackForm({
       setBody("");
       setSuggestedAction("");
     } catch {
-      setError("Network error");
+      setError(t("errors.network"));
     } finally {
       setBusy(false);
     }
@@ -74,12 +86,11 @@ export function InstitutionalFeedbackForm({
   return (
     <form onSubmit={onSubmit} className="max-w-2xl space-y-4">
       <p className="text-xs text-[var(--on-surface-variant)]">
-        Do not enter real patient names, MRNs, or other PHI. Use fictional
-        session IDs only.
+        {t("noPhi")}
       </p>
 
       <label className="block text-sm">
-        Role
+        {t("fields.role")}
         <select
           className={field}
           value={submitterRole}
@@ -87,14 +98,14 @@ export function InstitutionalFeedbackForm({
         >
           {FEEDBACK_ROLES.map((r) => (
             <option key={r} value={r}>
-              {r}
+              {t(`roles.${r}`)}
             </option>
           ))}
         </select>
       </label>
 
       <label className="block text-sm">
-        Institution
+        {t("fields.institution")}
         <input
           className={field}
           value={institutionName}
@@ -105,7 +116,7 @@ export function InstitutionalFeedbackForm({
       </label>
 
       <label className="block text-sm">
-        Department
+        {t("fields.department")}
         <input
           className={field}
           value={department}
@@ -116,7 +127,7 @@ export function InstitutionalFeedbackForm({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="block text-sm">
-          Category
+          {t("fields.category")}
           <select
             className={field}
             value={category}
@@ -124,13 +135,13 @@ export function InstitutionalFeedbackForm({
           >
             {FEEDBACK_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c.replaceAll("_", " ")}
+                {t(`categories.${c}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="block text-sm">
-          Severity
+          {t("fields.severity")}
           <select
             className={field}
             value={severity}
@@ -138,13 +149,13 @@ export function InstitutionalFeedbackForm({
           >
             {FEEDBACK_SEVERITIES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {t(`severities.${s}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="block text-sm">
-          Reproducibility
+          {t("fields.reproducibility")}
           <select
             className={field}
             value={reproducibility}
@@ -154,7 +165,7 @@ export function InstitutionalFeedbackForm({
           >
             {FEEDBACK_REPRODUCIBILITY.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {t(`reproducibility.${r}`)}
               </option>
             ))}
           </select>
@@ -162,7 +173,7 @@ export function InstitutionalFeedbackForm({
       </div>
 
       <label className="block text-sm">
-        Title
+        {t("fields.title")}
         <input
           className={field}
           value={title}
@@ -174,7 +185,7 @@ export function InstitutionalFeedbackForm({
       </label>
 
       <label className="block text-sm">
-        Description
+        {t("fields.body")}
         <textarea
           className={`${field} min-h-[120px]`}
           value={body}
@@ -186,7 +197,7 @@ export function InstitutionalFeedbackForm({
       </label>
 
       <label className="block text-sm">
-        Suggested action
+        {t("fields.suggestedAction")}
         <textarea
           className={`${field} min-h-[80px]`}
           value={suggestedAction}
@@ -196,10 +207,14 @@ export function InstitutionalFeedbackForm({
       </label>
 
       {error ? (
-        <p className="text-sm text-[var(--error)]">{error}</p>
+        <p role="alert" className="text-sm text-[var(--error)]">
+          {error}
+        </p>
       ) : null}
       {ok ? (
-        <p className="text-sm text-[var(--primary)]">Feedback submitted.</p>
+        <p role="status" className="text-sm text-[var(--primary)]">
+          {t("submitted")}
+        </p>
       ) : null}
 
       <button
@@ -207,7 +222,7 @@ export function InstitutionalFeedbackForm({
         disabled={busy}
         className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)] disabled:opacity-60"
       >
-        {busy ? "Submitting…" : "Submit feedback"}
+        {busy ? t("submitting") : t("submit")}
       </button>
     </form>
   );
