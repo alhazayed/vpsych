@@ -13,6 +13,7 @@ import {
   passwordStrengthLevel,
 } from "@/lib/password-policy";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { authErrorKey } from "@/lib/auth-error";
 
 const COUNTRIES = [
   { value: "US", key: "us" },
@@ -48,6 +49,7 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const next = safeRedirectPath(searchParams.get("next"));
   const t = useTranslations("auth.signup");
+  const tErr = useTranslations("auth.errors");
   const tLogin = useTranslations("auth.login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -120,7 +122,7 @@ function SignupForm() {
     });
     setLoading(false);
     if (signError) {
-      setError(signError.message);
+      setError(tErr(authErrorKey(signError)));
       return;
     }
     if (data.session) {

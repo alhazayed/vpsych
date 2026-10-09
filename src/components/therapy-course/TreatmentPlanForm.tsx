@@ -79,14 +79,14 @@ export function TreatmentPlanForm({
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
+        code?: string;
         field?: FieldError;
       };
       if (!res.ok) {
         if (data.field) {
           setFieldError(data.field);
         } else {
-          setError(data.error ?? t("errors.generic"));
+          setError(t(planErrorKey(res.status, data.code)));
         }
         setSaving(false);
         return;
@@ -311,4 +311,13 @@ export function TreatmentPlanForm({
       )}
     </form>
   );
+}
+
+/** The API's error text is English; pick the learner copy from code/status. */
+function planErrorKey(status: number, code?: string) {
+  if (code === "course_completed") return "errors.courseCompleted" as const;
+  if (code === "plan_too_early") return "errors.tooEarly" as const;
+  if (status === 401) return "errors.signedOut" as const;
+  if (status === 429) return "errors.rateLimited" as const;
+  return "errors.generic" as const;
 }

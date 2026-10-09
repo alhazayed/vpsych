@@ -36,9 +36,12 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
       // A proxy/edge error page is not JSON; don't misreport it as offline.
       const data = (await res.json().catch(() => ({}))) as {
         sessionId?: string;
+        code?: string;
       };
       if (!res.ok || !data.sessionId) {
-        setError(t(res.ok ? "failed" : sessionStartErrorKey(res.status)));
+        setError(
+          t(res.ok ? "failed" : sessionStartErrorKey(res.status, data.code)),
+        );
         setLoading(false);
         return;
       }

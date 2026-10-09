@@ -167,6 +167,24 @@ describe("therapy-room supervisor + daily summary", () => {
     expect(briefing.missedOpportunities[0]).toMatch(/trauma/i);
     expect(briefing.relevantLiterature).toContain("SAFE-T");
 
+    const arabic = buildSupervisorBriefing({
+      sessionId: "s2",
+      patientDisplay: "ليان",
+      coach: null,
+      diagnosisLabel: "الاكتئاب",
+      locale: "ar",
+    });
+    expect(arabic.whatHappened).toContain("ليان");
+    expect(arabic.whyPatientBehaved).toContain("الاكتئاب");
+    for (const line of [
+      arabic.whatHappened,
+      arabic.improvementPlan,
+      ...arabic.clinicalPearls,
+      ...arabic.reflectiveQuestions,
+    ]) {
+      expect(line).toMatch(/[\u0600-\u06FF]/);
+    }
+
     const day = buildDailyClinicSummary({
       clinicDayId: "d1",
       date: "2026-08-06",

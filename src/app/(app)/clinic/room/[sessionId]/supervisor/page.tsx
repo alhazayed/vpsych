@@ -7,6 +7,8 @@ import {
   type SupervisorBriefing,
 } from "@/lib/therapy-room";
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import { getLocale, getTranslations } from "next-intl/server";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import { SupervisorOffice } from "@/components/therapy-room/SupervisorOffice";
 
 type Props = { params: Promise<{ sessionId: string }> };
@@ -18,7 +20,9 @@ export default async function ClinicSupervisorPage({ params }: Props) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, therapist_id, clinical_snapshot, avatars(name, disorder)")
+    .select(
+      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, avatars(name, disorder)",
+    )
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -58,13 +62,18 @@ export default async function ClinicSupervisorPage({ params }: Props) {
     snapshot,
     snapshot?.primary_diagnosis?.slug,
   );
+  const locale = await getLocale();
+  const tDisorders = await getTranslations("skillTests.disorders");
   const briefing: SupervisorBriefing = buildSupervisorBriefing({
     sessionId,
     coach,
     nonverbal,
     patientDisplay: avatar?.name?.split(/\s+/)[0] ?? "Patient",
-    diagnosisLabel:
-      snapshot?.primary_diagnosis?.name ?? avatar?.disorder ?? null,
+    diagnosisLabel: sessionDiagnosisText(
+      { ...session, avatars: avatar },
+      tDisorders,
+    ),
+    locale,
   });
 
   return <SupervisorOffice briefing={briefing} sessionId={sessionId} />;
