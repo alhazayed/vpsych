@@ -64,6 +64,10 @@ function SignupForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which field the current error is about, so it can be marked invalid.
+  const [errorField, setErrorField] = useState<
+    "password" | "confirm" | "terms" | "email" | null
+  >(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const doneHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -83,17 +87,21 @@ function SignupForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
 
     if (!acceptedTerms) {
       setError(t("errors.acceptTerms"));
+      setErrorField("terms");
       return;
     }
     if (password !== confirmPassword) {
       setError(t("errors.passwordMismatch"));
+      setErrorField("confirm");
       return;
     }
     if (!isPasswordPolicySatisfied(password)) {
       setError(t("errors.passwordPolicy"));
+      setErrorField("password");
       return;
     }
 
@@ -118,13 +126,22 @@ function SignupForm() {
     });
     setLoading(false);
     if (signError) {
-      setError(tErr(authErrorKey(signError)));
+      const key = authErrorKey(signError);
+      setError(tErr(key));
+      setErrorField(
+        key === "weakPassword"
+          ? "password"
+          : key === "invalidEmail" || key === "alreadyRegistered"
+            ? "email"
+            : null,
+      );
       return;
     }
     // With email confirmation on, Supabase answers an already-registered
     // address with a user that has no identities instead of an error.
     if (data.user && data.user.identities?.length === 0) {
       setError(tErr("alreadyRegistered"));
+      setErrorField("email");
       return;
     }
     if (data.session) {
@@ -149,6 +166,7 @@ function SignupForm() {
     setAcceptedTerms(false);
     setNewsletter(false);
     setError(null);
+    setErrorField(null);
     setSubmittedEmail(null);
   }
 
@@ -194,7 +212,11 @@ function SignupForm() {
         </div>
       </nav>
 
-      <main className="flex flex-grow items-center justify-center px-5 py-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex flex-grow items-center justify-center px-5 py-8 focus:outline-none"
+      >
         <div className="w-full max-w-[560px] overflow-hidden rounded-[14px] border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] shadow-sm fade-in-up">
           <div className="border-b border-[var(--outline-variant)] bg-[color-mix(in_srgb,var(--surface-container-low)_50%,transparent)] p-6 md:p-8">
             <h1 className="font-[family-name:var(--font-headline)] text-3xl font-bold tracking-tight text-[#12273C]">
@@ -283,6 +305,7 @@ function SignupForm() {
                 </span>
                 <input
                   required
+                  autoComplete="given-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder={t("placeholders.firstName")}
@@ -295,6 +318,7 @@ function SignupForm() {
                 </span>
                 <input
                   required
+                  autoComplete="family-name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder={t("placeholders.lastName")}
@@ -307,82 +331,124 @@ function SignupForm() {
               <span className="text-xs font-semibold text-[var(--on-surface)]">
                 {t("fields.email")}
               </span>
-              <div className="relative">
+              {/* Email is always left-to-right, so the icon sits on the right
+                  in Arabic too instead of covering the placeholder. */}
+              <div className="relative" dir="ltr">
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("placeholders.email")}
+                  aria-invalid={errorField === "email" || undefined}
+                  aria-describedby={
+                    errorField === "email" ? "signup-error" : undefined
+                  }
                   className="field-input h-11 pe-10"
                 />
-                <span className="material-symbols-outlined absolute end-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--outline-variant)]">
+                <span
+                  className="material-symbols-outlined pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--on-surface-variant)]"
+                  aria-hidden
+                >
                   mail
                 </span>
               </div>
             </label>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label className="block space-y-1 text-sm">
-                <span className="text-xs font-semibold text-[var(--on-surface)]">
+              <div className="space-y-1 text-sm">
+                <label
+                  htmlFor="signup-password"
+                  className="block text-xs font-semibold text-[var(--on-surface)]"
+                >
                   {t("fields.password")}
-                </span>
+                </label>
                 <div className="relative">
                   <input
+                    id="signup-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    aria-invalid={errorField === "password" || undefined}
+                    aria-describedby={
+                      errorField === "password"
+                        ? "signup-error signup-password-checks"
+                        : "signup-password-checks"
+                    }
                     className="field-input h-11 pe-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--outline-variant)]"
+                    aria-controls="signup-password"
+                    aria-pressed={showPassword}
+                    className="absolute end-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--on-surface-variant)]"
                     aria-label={
                       showPassword
                         ? tLogin("hidePassword")
                         : tLogin("showPassword")
                     }
                   >
-                    <span className="material-symbols-outlined text-[20px]">
+                    <span
+                      className="material-symbols-outlined text-[20px]"
+                      aria-hidden
+                    >
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="text-xs font-semibold text-[var(--on-surface)]">
+              </div>
+              <div className="space-y-1 text-sm">
+                <label
+                  htmlFor="signup-confirm"
+                  className="block text-xs font-semibold text-[var(--on-surface)]"
+                >
                   {t("fields.confirmPassword")}
-                </span>
+                </label>
                 <div className="relative">
                   <input
+                    id="signup-confirm"
                     type={showConfirm ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
+                    aria-invalid={errorField === "confirm" || undefined}
+                    aria-describedby={
+                      errorField === "confirm"
+                        ? "signup-error"
+                        : undefined
+                    }
                     className="field-input h-11 pe-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--outline-variant)]"
+                    aria-controls="signup-confirm"
+                    aria-pressed={showConfirm}
+                    className="absolute end-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--on-surface-variant)]"
                     aria-label={
                       showConfirm
                         ? tLogin("hidePassword")
                         : tLogin("showPassword")
                     }
                   >
-                    <span className="material-symbols-outlined text-[20px]">
+                    <span
+                      className="material-symbols-outlined text-[20px]"
+                      aria-hidden
+                    >
                       {showConfirm ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
-              </label>
+              </div>
             </div>
 
             <div className="space-y-2 rounded-lg border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] bg-[var(--surface-container-low)] p-4">
@@ -406,7 +472,10 @@ function SignupForm() {
                   }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-y-1 pt-1 text-[11px] font-semibold">
+              <ul
+                id="signup-password-checks"
+                className="grid grid-cols-2 gap-y-1 pt-1 text-[11px] font-semibold"
+              >
                 {(
                   [
                     ["length", "length"],
@@ -415,7 +484,7 @@ function SignupForm() {
                     ["special", "special"],
                   ] as const
                 ).map(([key, checkKey]) => (
-                  <div
+                  <li
                     key={key}
                     className={`flex items-center gap-1.5 ${
                       checks[key]
@@ -423,13 +492,19 @@ function SignupForm() {
                         : "text-[var(--on-surface-variant)]"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[14px]">
+                    <span
+                      className="material-symbols-outlined text-[14px]"
+                      aria-hidden
+                    >
                       {checks[key] ? "check_circle" : "radio_button_unchecked"}
                     </span>
                     {t(`checks.${checkKey}`)}
-                  </div>
+                    <span className="sr-only">
+                      {checks[key] ? t("checks.met") : t("checks.notMet")}
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -438,6 +513,7 @@ function SignupForm() {
                   {t("fields.country")}
                 </span>
                 <select
+                  autoComplete="country"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                   className="field-input h-11"
@@ -477,6 +553,7 @@ function SignupForm() {
                 </span>
               </span>
               <input
+                autoComplete="organization"
                 value={organization}
                 onChange={(e) => setOrganization(e.target.value)}
                 placeholder={t("placeholders.organization")}
@@ -490,6 +567,10 @@ function SignupForm() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  aria-invalid={errorField === "terms" || undefined}
+                  aria-describedby={
+                    errorField === "terms" ? "signup-error" : undefined
+                  }
                   className="mt-0.5 h-5 w-5 rounded border-[var(--outline-variant)] text-[var(--primary)]"
                   required
                 />
@@ -511,7 +592,11 @@ function SignupForm() {
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-[var(--error)]">
+              <p
+                id="signup-error"
+                role="alert"
+                className="text-sm text-[var(--error)]"
+              >
                 {error}
               </p>
             )}

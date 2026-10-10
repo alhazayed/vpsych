@@ -42,7 +42,7 @@ export function EndCourseButton({
         onClick={() => void end()}
         disabled={ending}
       >
-        <span className="material-symbols-outlined text-[20px]">flag</span>
+        <span aria-hidden className="material-symbols-outlined text-[20px]">flag</span>
         {ending ? t("endingCourse") : t("endCourse")}
       </button>
       {error && (

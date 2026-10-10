@@ -221,7 +221,7 @@ export function VirtualPatientLibrary({
           className="btn-primary"
           onClick={() => setShowCreateHint(true)}
         >
-          <span className="material-symbols-outlined text-[20px]">add</span>
+          <span aria-hidden className="material-symbols-outlined text-[20px]">add</span>
           {labels.create}
         </button>
       </div>

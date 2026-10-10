@@ -58,7 +58,7 @@ export function AiAnalysisOverlay() {
 
       <main className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-6">
         <div className="mb-2 flex items-center gap-2">
-          <span
+          <span aria-hidden
             className="material-symbols-outlined text-[28px] text-[var(--primary)]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
@@ -94,7 +94,7 @@ export function AiAnalysisOverlay() {
               />
             </svg>
             <div className="flex h-24 w-24 animate-[micPulse_2s_ease-in-out_infinite] items-center justify-center rounded-full bg-[var(--primary-container)] text-[var(--on-primary-container)]">
-              <span
+              <span aria-hidden
                 className="material-symbols-outlined text-[48px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
@@ -131,7 +131,7 @@ export function AiAnalysisOverlay() {
                           : "bg-[var(--surface-container-highest)] text-[var(--on-surface-variant)]"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span aria-hidden className="material-symbols-outlined text-[18px]">
                       {done
                         ? "check"
                         : active
@@ -154,7 +154,7 @@ export function AiAnalysisOverlay() {
           </div>
 
           <div className="flex items-center justify-center gap-1 rounded-lg bg-[var(--surface-container-low)] px-4 py-2 text-[var(--on-surface-variant)]">
-            <span className="material-symbols-outlined text-[16px]">
+            <span aria-hidden className="material-symbols-outlined text-[16px]">
               schedule
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider">
@@ -165,7 +165,7 @@ export function AiAnalysisOverlay() {
 
         <div className="flex w-full max-w-sm items-center gap-4 rounded-xl border border-[color-mix(in_srgb,var(--outline-variant)_50%,transparent)] bg-white/85 p-4 shadow-[0_12px_40px_rgba(18,39,60,0.08)] backdrop-blur-md">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#a13f00] text-[#ffcdb8]">
-            <span
+            <span aria-hidden
               className="material-symbols-outlined"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >

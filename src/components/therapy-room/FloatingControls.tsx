@@ -121,7 +121,7 @@ export function FloatingControls({
               aria-expanded={moreOpen}
               aria-controls="trm-controls-more"
             >
-              <span className="material-symbols-outlined">more_horiz</span>
+              <span aria-hidden className="material-symbols-outlined">more_horiz</span>
             </button>
           )}
           <button
@@ -133,7 +133,7 @@ export function FloatingControls({
             aria-label={item.label}
             aria-pressed={item.active}
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <span aria-hidden className="material-symbols-outlined">{item.icon}</span>
           </button>
         </span>
       ))}

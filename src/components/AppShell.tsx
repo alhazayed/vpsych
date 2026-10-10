@@ -237,7 +237,15 @@ export function AppShell({
   const contentOffset = collapsed ? "md:ms-[4.5rem]" : "md:ms-64";
 
   if (isImmersiveSession) {
-    return <div className="min-h-screen bg-[var(--background)]">{children}</div>;
+    return (
+      <div
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen bg-[var(--background)] focus:outline-none"
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -510,7 +518,13 @@ export function AppShell({
           </div>
         </header>
 
-        <div className="pb-24 pt-16 md:pb-0 md:pt-0">{children}</div>
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className="pb-24 pt-16 focus:outline-none md:pb-0 md:pt-0"
+        >
+          {children}
+        </div>
       </div>
 
       <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">

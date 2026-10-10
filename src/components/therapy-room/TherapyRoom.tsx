@@ -503,7 +503,7 @@ export function TherapyRoom({
               if (speaking) interruptPatient();
             }}
           >
-            <span className="material-symbols-outlined text-[32px]">
+            <span aria-hidden className="material-symbols-outlined text-[32px]">
               {listening ? "stop" : "mic"}
             </span>
           </button>
@@ -676,24 +676,24 @@ function TherapyToolbar({
       <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-[var(--outline-variant)] bg-[color-mix(in_srgb,var(--surface-container-lowest)_92%,transparent)] px-3 py-2 backdrop-blur-md">
         {paused ? (
           <button type="button" className={btn} aria-label={t("resume")} onClick={onResume}>
-            <span className="material-symbols-outlined">play_arrow</span>
+            <span aria-hidden className="material-symbols-outlined">play_arrow</span>
           </button>
         ) : (
           <button type="button" className={btn} aria-label={t("pause")} onClick={onPause}>
-            <span className="material-symbols-outlined">pause</span>
+            <span aria-hidden className="material-symbols-outlined">pause</span>
           </button>
         )}
         <button type="button" className={btn} aria-label={t("notes")} onClick={onNotes}>
-          <span className="material-symbols-outlined">edit_note</span>
+          <span aria-hidden className="material-symbols-outlined">edit_note</span>
         </button>
         <button type="button" className={btn} aria-label={t("risk")} onClick={onRisk}>
-          <span className="material-symbols-outlined">flag</span>
+          <span aria-hidden className="material-symbols-outlined">flag</span>
         </button>
         <button type="button" className={btn} aria-label={t("emergency")} onClick={onEmergency}>
-          <span className="material-symbols-outlined">emergency</span>
+          <span aria-hidden className="material-symbols-outlined">emergency</span>
         </button>
         <button type="button" className={btn} aria-label={t("repeat")} onClick={onRepeat}>
-          <span className="material-symbols-outlined">replay</span>
+          <span aria-hidden className="material-symbols-outlined">replay</span>
         </button>
         <button
           type="button"
@@ -702,12 +702,12 @@ function TherapyToolbar({
           aria-pressed={muted}
           onClick={onMute}
         >
-          <span className="material-symbols-outlined">
+          <span aria-hidden className="material-symbols-outlined">
             {muted ? "volume_off" : "volume_up"}
           </span>
         </button>
         <button type="button" className={btn} aria-label={t("settings")} onClick={onSettings}>
-          <span className="material-symbols-outlined">settings</span>
+          <span aria-hidden className="material-symbols-outlined">settings</span>
         </button>
         <button
           type="button"
@@ -716,7 +716,7 @@ function TherapyToolbar({
           disabled={ending}
           onClick={onEnd}
         >
-          <span className="material-symbols-outlined">logout</span>
+          <span aria-hidden className="material-symbols-outlined">logout</span>
         </button>
       </div>
     </nav>

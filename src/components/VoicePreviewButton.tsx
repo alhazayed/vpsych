@@ -95,7 +95,7 @@ export function VoicePreviewButton({
         disabled={busy}
         className="btn-secondary h-9 px-3 text-xs"
       >
-        <span className="material-symbols-outlined text-[18px]">
+        <span aria-hidden className="material-symbols-outlined text-[18px]">
           {busy ? "hourglass_top" : "play_arrow"}
         </span>
         {busy ? "Playing…" : label}

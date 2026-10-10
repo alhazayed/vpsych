@@ -48,6 +48,7 @@ export default async function RootLayout({
 }>) {
   const locale = (await getLocale()) as AppLocale;
   const messages = await getMessages();
+  const tCommon = await getTranslations("common");
   const dir = localeDirection(locale);
 
   return (
@@ -61,6 +62,10 @@ export default async function RootLayout({
           locale === "ar" ? "font-arabic" : ""
         }`}
       >
+        {/* Pages mark their main content with id="main-content". */}
+        <a href="#main-content" className="skip-link">
+          {tCommon("skipToContent")}
+        </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>

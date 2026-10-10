@@ -180,7 +180,7 @@ export default async function AvatarsPage() {
                       key={name}
                       className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-container-high)] px-2.5 py-1 text-[11px] font-semibold text-[var(--on-surface-variant)]"
                     >
-                      <span className="material-symbols-outlined text-[14px]">
+                      <span aria-hidden className="material-symbols-outlined text-[14px]">
                         translate
                       </span>
                       {name}
@@ -193,7 +193,7 @@ export default async function AvatarsPage() {
                   .slice(0, 3)
                   .map((goal) => (
                     <li key={goal} className="flex gap-2">
-                      <span className="material-symbols-outlined mt-0.5 text-[18px] text-[var(--primary)]">
+                      <span aria-hidden className="material-symbols-outlined mt-0.5 text-[18px] text-[var(--primary)]">
                         check_circle
                       </span>
                       <span>{goal}</span>
@@ -229,7 +229,7 @@ export default async function AvatarsPage() {
                         href={`/courses/${course.id}#plan`}
                         className="btn-primary w-full"
                       >
-                        <span className="material-symbols-outlined text-[20px]">
+                        <span aria-hidden className="material-symbols-outlined text-[20px]">
                           assignment
                         </span>
                         {progress.planRequired

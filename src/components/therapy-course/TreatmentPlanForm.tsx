@@ -195,7 +195,7 @@ export function TreatmentPlanForm({
                   onClick={() => setGoals((g) => g.filter((_, j) => j !== i))}
                   aria-label={t("removeGoal", { n: i + 1 })}
                 >
-                  <span className="material-symbols-outlined text-[18px]">close</span>
+                  <span aria-hidden className="material-symbols-outlined text-[18px]">close</span>
                 </button>
               )}
             </li>
@@ -207,7 +207,7 @@ export function TreatmentPlanForm({
             className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)]"
             onClick={() => setGoals((g) => [...g, ""])}
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span aria-hidden className="material-symbols-outlined text-[18px]">add</span>
             {t("addGoal")}
           </button>
         )}
@@ -296,7 +296,7 @@ export function TreatmentPlanForm({
       </div>
 
       <button type="submit" className="btn-primary h-11 w-full" disabled={saving}>
-        <span className="material-symbols-outlined text-[20px]">assignment</span>
+        <span aria-hidden className="material-symbols-outlined text-[20px]">assignment</span>
         {saving ? t("saving") : initialPlan ? t("savePlan") : t("submitPlan")}
       </button>
       {error && (

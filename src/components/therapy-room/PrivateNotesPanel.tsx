@@ -26,7 +26,7 @@ export function PrivateNotesPanel({
         <h2>{t("title")}</h2>
         <p>{t("privacy")}</p>
         <button type="button" onClick={onClose} aria-label={t("close")}>
-          <span className="material-symbols-outlined">close</span>
+          <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
       </header>
       <textarea

@@ -55,7 +55,7 @@ export async function CourseProgressCard({
             href={`/courses/${course.id}#plan`}
             className="btn-primary mt-3 h-11 w-full"
           >
-            <span className="material-symbols-outlined text-[20px]">assignment</span>
+            <span aria-hidden className="material-symbols-outlined text-[20px]">assignment</span>
             {t("planRequiredCta")}
           </Link>
         </>
@@ -64,7 +64,7 @@ export async function CourseProgressCard({
           href={`/courses/${course.id}`}
           className="btn-secondary mt-3 h-11 w-full"
         >
-          <span className="material-symbols-outlined text-[20px]">timeline</span>
+          <span aria-hidden className="material-symbols-outlined text-[20px]">timeline</span>
           {t("openCourse")}
         </Link>
       )}

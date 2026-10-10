@@ -106,7 +106,7 @@ export default async function TherapyCoursePage({ params }: Props) {
         href="/avatars"
         className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--primary)] hover:underline"
       >
-        <span className="material-symbols-outlined text-[18px] rtl:rotate-180">
+        <span aria-hidden className="material-symbols-outlined text-[18px] rtl:rotate-180">
           arrow_back
         </span>
         {t("backToPatients")}

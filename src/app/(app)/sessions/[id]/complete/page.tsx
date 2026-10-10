@@ -194,7 +194,7 @@ export default async function SessionCompletePage({ params }: Props) {
 
       <section className="clinical-card mb-4 p-5 fade-in-up">
         <div className="mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[var(--primary)]">
+          <span aria-hidden className="material-symbols-outlined text-[var(--primary)]">
             verified
           </span>
           <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
@@ -203,13 +203,13 @@ export default async function SessionCompletePage({ params }: Props) {
         </div>
         <ul className="space-y-3 text-sm text-[var(--on-surface-variant)]">
           <li className="flex gap-3">
-            <span className="material-symbols-outlined text-[20px] text-[var(--primary)]">
+            <span aria-hidden className="material-symbols-outlined text-[20px] text-[var(--primary)]">
               lock
             </span>
             <span>{t("next1")}</span>
           </li>
           <li className="flex gap-3">
-            <span className="material-symbols-outlined text-[20px] text-[var(--secondary)]">
+            <span aria-hidden className="material-symbols-outlined text-[20px] text-[var(--secondary)]">
               trending_up
             </span>
             <span>{t("next2")}</span>
@@ -219,11 +219,11 @@ export default async function SessionCompletePage({ params }: Props) {
 
       <div className="flex flex-col gap-3 fade-in-up">
         <Link href="/avatars" className="btn-primary h-12 w-full">
-          <span className="material-symbols-outlined">play_circle</span>
+          <span aria-hidden className="material-symbols-outlined">play_circle</span>
           {t("practiceAgain")}
         </Link>
         <Link href="/sessions" className="btn-secondary h-12 w-full">
-          <span className="material-symbols-outlined">clinical_notes</span>
+          <span aria-hidden className="material-symbols-outlined">clinical_notes</span>
           {t("mySessions")}
         </Link>
         {profile.role === "admin" && (
@@ -231,7 +231,7 @@ export default async function SessionCompletePage({ params }: Props) {
             href={`/admin/reports/${id}`}
             className="btn-secondary h-12 w-full"
           >
-            <span className="material-symbols-outlined">folder_shared</span>
+            <span aria-hidden className="material-symbols-outlined">folder_shared</span>
             {t("viewReport")}
           </Link>
         )}

@@ -32,7 +32,8 @@
       "notFoundTitle": "Page not found",
       "notFoundBody": "The page you requested does not exist or is no longer available.",
       "home": "Home"
-    }
+    },
+    "skipToContent": "Skip to main content"
   },
   "shell": {
     "tagline": "Clinical Intelligence",
@@ -417,7 +418,9 @@
         "length": "8 Characters",
         "upper": "Uppercase",
         "number": "Number",
-        "special": "Special Character"
+        "special": "Special Character",
+        "met": "(done)",
+        "notMet": "(not yet)"
       },
       "countries": {
         "us": "United States",
