@@ -11,8 +11,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"
+# shellcheck source=scripts/lib/local-supabase.sh
+. "$REPO/scripts/lib/local-supabase.sh"
 
-SUPABASE_CLI="${SUPABASE_CLI:-npx --yes supabase@2.110.0}"
 WORKDIR="$(mktemp -d)"
 DB_PORT="${RLS_DB_PORT:-54422}"
 
@@ -26,36 +27,20 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Empty migrations dir: the CLI must not apply anything itself, because the
-# hosted default privileges have to be in place before the first migration.
-(cd "$WORKDIR" && $SUPABASE_CLI init --force >/dev/null)
+init_local_project "$WORKDIR" vpsych-rls-test
 sed -i.bak \
-  -e 's/^project_id = .*/project_id = "vpsych-rls-test"/' \
   -e "/^\[db\]/,/^\[/ s/^port = .*/port = $DB_PORT/" \
   -e "/^\[db\]/,/^\[/ s/^shadow_port = .*/shadow_port = $((DB_PORT + 1))/" \
   "$WORKDIR/supabase/config.toml"
 (cd "$WORKDIR" && $SUPABASE_CLI db start)
 
 export PGHOST=127.0.0.1 PGPORT="$DB_PORT" PGUSER=postgres PGPASSWORD=postgres PGDATABASE=postgres
-run_sql() { psql -X -q -v ON_ERROR_STOP=1 -o /dev/null "$@"; }
-
-run_sql -f "$REPO/supabase/tests/rls/00_hosted_default_privileges.sql"
-
-count=0
-for f in "$REPO"/supabase/migrations/*.sql; do
-  if ! run_sql -f "$f" 2>"$WORKDIR/migration.err"; then
-    echo "Migration failed: $(basename "$f")" >&2
-    cat "$WORKDIR/migration.err" >&2
-    exit 1
-  fi
-  count=$((count + 1))
-done
-echo "Applied $count migrations."
+apply_schema
 
 status=0
 for t in "$REPO"/supabase/tests/rls/[1-9]*.sql; do
   echo "== $(basename "$t")"
-  if ! run_sql -f "$t" 2>&1 | sed -e 's/^psql:[^ ]* //' -e 's/^NOTICE:  //'; then
+  if ! psql -X -q -v ON_ERROR_STOP=1 -o /dev/null -f "$t" 2>&1 | sed -e 's/^psql:[^ ]* //' -e 's/^NOTICE:  //'; then
     status=1
   fi
 done

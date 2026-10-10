@@ -26,6 +26,7 @@ npm test               # vitest run  (894 tests / 98 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
 npm run test:db-rls    # replay all migrations on a throwaway local Supabase DB + RLS checks (needs Docker)
+npm run test:e2e       # Playwright: sign in → session → end → admin report on a local Supabase stack (needs Docker)
 npm run test:reliability # assessment reliability harness (synthetic fixture)
 npm run audit:deps     # npm audit --omit=dev --audit-level=high
 npm run test:perf-smoke # performance smoke check
@@ -41,6 +42,15 @@ when you add or change an RLS policy. Newer Supabase images no longer grant
 table privileges to `anon`/`authenticated` by default, so
 `00_hosted_default_privileges.sql` recreates the production project's defaults
 before the first migration.
+
+An `e2e` job runs `npm run test:e2e` (`scripts/test-e2e.sh`, specs in `e2e/`):
+local Supabase auth + DB + REST, the production build pointed at it, two fresh
+accounts (trainee, admin), then Playwright. No AI or ElevenLabs keys there, so
+the patient reply must come back as `persona_fallback` and the report is the
+heuristic one. The admin enrolls TOTP on the way in (`e2e/totp.ts`). The browser
+context uses `bypassCSP` because the production CSP only allows
+`*.supabase.co`. Locally, set `PLAYWRIGHT_CHROMIUM_PATH` if the bundled browser
+differs from `@playwright/test`'s.
 
 `npm run test:migrations` also compares `supabase_migrations.schema_migrations`
 against git when `SUPABASE_DB_URL` is set; without it, only local structure is
