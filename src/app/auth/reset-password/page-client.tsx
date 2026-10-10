@@ -16,7 +16,7 @@ import {
 function strengthMeta(level: ReturnType<typeof passwordStrengthLevel>) {
   if (!level) return { width: "0%", color: "var(--primary)" };
   if (level === "weak") return { width: "25%", color: "var(--error)" };
-  if (level === "fair") return { width: "50%", color: "#F3650A" };
+  if (level === "fair") return { width: "50%", color: "var(--strength-fair)" };
   if (level === "good") return { width: "75%", color: "var(--primary)" };
   return { width: "100%", color: "var(--primary)" };
 }
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                     aria-invalid={error ? true : undefined}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)]"
+                    className="h-12 w-full rounded-xl border-2 border-[var(--field-border)] bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)]"
                   />
                   <button
                     type="button"
@@ -200,7 +200,7 @@ export default function ResetPasswordPage() {
                   aria-invalid={error ? true : undefined}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 text-base outline-none transition focus:border-[var(--primary)]"
+                  className="h-12 w-full rounded-xl border-2 border-[var(--field-border)] bg-white px-4 text-base outline-none transition focus:border-[var(--primary)]"
                 />
               </div>
 

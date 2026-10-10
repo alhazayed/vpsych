@@ -22,8 +22,15 @@
   --surface-container-highest: #e0e3e5;
   --on-surface: #191c1e;
   --on-surface-variant: #41474f;
-  --outline: #717880;
+  /* Text-safe grey: >= 4.5:1 on every light surface up to surface-container. */
+  --outline: #5f666e;
   --outline-variant: #c1c7d0;
+  /* Form field borders need 3:1 against the field (WCAG 1.4.11);
+     outline-variant is decorative only (1.7:1). */
+  --field-border: #80878f;
+  --success: #166534;
+  /* Password "fair" meter: 4.2:1 against its track. */
+  --strength-fair: #c2410c;
   --primary: #004a77;
   --on-primary: #ffffff;
   --primary-container: #1d6296;
@@ -179,7 +186,7 @@ a {
 .field-input {
   width: 100%;
   border-radius: 0.5rem;
-  border: 1px solid var(--outline-variant);
+  border: 1px solid var(--field-border);
   background: var(--surface-container-lowest);
   color: var(--on-surface);
   padding: 0.625rem 0.75rem;
@@ -241,7 +248,7 @@ a {
 
 .status-chip-done {
   background: color-mix(in srgb, #16a34a 12%, transparent);
-  color: #15803d;
+  color: var(--success);
 }
 
 .status-chip-warn {

@@ -205,7 +205,7 @@ export default function LoginPage() {
                   className={`h-12 w-full rounded-xl border-2 bg-white px-4 text-base outline-none transition focus:border-[var(--primary)] ${
                     error
                       ? "border-[var(--error)]"
-                      : "border-[var(--outline-variant)]"
+                      : "border-[var(--field-border)]"
                   }`}
                 />
               </div>
@@ -242,7 +242,7 @@ export default function LoginPage() {
                     className={`h-12 w-full rounded-xl border-2 bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)] ${
                       error
                         ? "border-[var(--error)]"
-                        : "border-[var(--outline-variant)]"
+                        : "border-[var(--field-border)]"
                     }`}
                   />
                   <button
@@ -328,20 +328,20 @@ export default function LoginPage() {
                   {t("createAccount")}
                 </Link>
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 opacity-60">
+              <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[var(--on-surface-variant)]">
                 <Link
                   href="/privacy"
-                  className="text-[11px] font-medium hover:underline"
+                  className="text-xs font-medium hover:underline"
                 >
                   {t("privacy")}
                 </Link>
                 <Link
                   href="/terms"
-                  className="text-[11px] font-medium hover:underline"
+                  className="text-xs font-medium hover:underline"
                 >
                   {t("terms")}
                 </Link>
-                <span className="text-[11px] font-medium">
+                <span className="text-xs font-medium">
                   {t("copyright", { year: new Date().getFullYear() })}
                 </span>
               </div>
