@@ -25,6 +25,7 @@ npm run typecheck      # tsc --noEmit
 npm test               # vitest run  (894 tests / 98 files)
 npm run test:watch
 npm run test:migrations # migration filename/version integrity + optional remote parity
+npm run test:db-rls    # replay all migrations on a throwaway local Supabase DB + RLS checks (needs Docker)
 npm run test:reliability # assessment reliability harness (synthetic fixture)
 npm run audit:deps     # npm audit --omit=dev --audit-level=high
 npm run test:perf-smoke # performance smoke check
@@ -33,7 +34,13 @@ npm run test:perf-smoke # performance smoke check
 CI (`.github/workflows/ci.yml`, Node 22) runs, in order: **audit:deps → lint →
 typecheck → test → migration parity → perf smoke → build**. Run all seven
 locally before pushing — the build step is the one most likely to catch what the
-others miss.
+others miss. A separate `database-rules` job runs `npm run test:db-rls`: it
+rebuilds the schema from every migration on a local Supabase CLI database and
+runs `supabase/tests/rls/` (role switching as PostgREST does). Add a check there
+when you add or change an RLS policy. Newer Supabase images no longer grant
+table privileges to `anon`/`authenticated` by default, so
+`00_hosted_default_privileges.sql` recreates the production project's defaults
+before the first migration.
 
 `npm run test:migrations` also compares `supabase_migrations.schema_migrations`
 against git when `SUPABASE_DB_URL` is set; without it, only local structure is
