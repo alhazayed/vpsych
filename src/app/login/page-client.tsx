@@ -133,9 +133,6 @@ export default function LoginPage() {
         <div className="flex items-center gap-4 md:gap-8">
           <LanguageSwitcher />
           <div className="hidden items-center gap-8 md:flex">
-            <span className="text-base font-medium text-[var(--on-surface-variant)]">
-              {t("support")}
-            </span>
             <Link href="/signup" className="btn-primary rounded-xl px-6">
               {t("requestAccess")}
             </Link>

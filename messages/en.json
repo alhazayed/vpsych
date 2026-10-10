@@ -317,7 +317,6 @@
     "loading": "Loading…",
     "login": {
       "platformName": "VPsych Clinical Assessment Platform",
-      "support": "Support",
       "requestAccess": "Request Access",
       "heroAlt": "Therapist practicing with an AI patient simulation",
       "heroTitle": "Improve Your Clinical Skills with AI-Powered Practice",
@@ -382,8 +381,7 @@
     },
     "signup": {
       "nav": {
-        "solutions": "Solutions",
-        "clinicalTools": "Clinical Tools",
+        "features": "Features",
         "signIn": "Sign In"
       },
       "title": "Create Your Account",
@@ -442,7 +440,6 @@
         "other": "Other"
       },
       "termsAgree": "I agree to the Terms of Service and Privacy Policy regarding clinical training data.",
-      "newsletter": "Subscribe to our Clinical Intelligence newsletter for training tips.",
       "errors": {
         "acceptTerms": "Please accept the Terms of Service and Privacy Policy.",
         "passwordMismatch": "Passwords do not match.",
@@ -456,8 +453,7 @@
       "footer": {
         "copyright": "© {year} VPsych. All rights reserved.",
         "terms": "Terms of Service",
-        "privacy": "Privacy Policy",
-        "support": "Contact Support"
+        "privacy": "Privacy Policy"
       },
       "approvalNotice": "Every new account is reviewed by an administrator. After you confirm your email, you can sign in as soon as your account is approved.",
       "done": {

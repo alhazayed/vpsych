@@ -71,7 +71,7 @@ export default async function HomePage() {
             >
               {t("nav.login")}
             </Link>
-            <Link href="/signup" className="btn-primary">
+            <Link href="/signup" className="btn-primary whitespace-nowrap">
               {t("nav.getStarted")}
             </Link>
           </div>
