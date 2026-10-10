@@ -62,7 +62,6 @@ function SignupForm() {
   const [profession, setProfession] = useState("");
   const [organization, setOrganization] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [newsletter, setNewsletter] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Which field the current error is about, so it can be marked invalid.
   const [errorField, setErrorField] = useState<
@@ -119,7 +118,6 @@ function SignupForm() {
           country: country || null,
           profession: profession || null,
           organization: organization || null,
-          newsletter,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
@@ -164,7 +162,6 @@ function SignupForm() {
     setProfession("");
     setOrganization("");
     setAcceptedTerms(false);
-    setNewsletter(false);
     setError(null);
     setErrorField(null);
     setSubmittedEmail(null);
@@ -193,13 +190,7 @@ function SignupForm() {
                 href="/#features"
                 className="text-sm font-semibold tracking-wide text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
               >
-                {t("nav.solutions")}
-              </Link>
-              <Link
-                href="/#features"
-                className="text-sm font-semibold tracking-wide text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
-              >
-                {t("nav.clinicalTools")}
+                {t("nav.features")}
               </Link>
               <Link
                 href={`/login?next=${encodeURIComponent(next)}`}
@@ -578,17 +569,6 @@ function SignupForm() {
                   {t("termsAgree")}
                 </span>
               </label>
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={newsletter}
-                  onChange={(e) => setNewsletter(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 rounded border-[var(--field-border)] text-[var(--primary)]"
-                />
-                <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
-                  {t("newsletter")}
-                </span>
-              </label>
             </div>
 
             {error && (
@@ -648,7 +628,6 @@ function SignupForm() {
             <Link href="/privacy" className="hover:underline">
               {t("footer.privacy")}
             </Link>
-            <span>{t("footer.support")}</span>
           </div>
         </div>
       </footer>
