@@ -60,7 +60,7 @@ export function StartSessionButton({ avatarId }: { avatarId: string }) {
         disabled={loading}
         className="btn-primary w-full"
       >
-        <span className="material-symbols-outlined text-[20px]">
+        <span aria-hidden className="material-symbols-outlined text-[20px]">
           meeting_room
         </span>
         {loading ? t("starting") : tRoom("cta")}

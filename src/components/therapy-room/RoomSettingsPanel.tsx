@@ -27,7 +27,7 @@ export function RoomSettingsPanel({
       <header className="trm-settings__header">
         <h2>{t("settings.title")}</h2>
         <button type="button" onClick={onClose} aria-label={t("settings.close")}>
-          <span className="material-symbols-outlined">close</span>
+          <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
       </header>
 

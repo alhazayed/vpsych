@@ -78,7 +78,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
         <section className="relative mx-auto max-w-[1280px] overflow-hidden px-6 pb-20 pt-12 md:px-8 md:pt-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div className="z-10 fade-in-up">

@@ -193,6 +193,35 @@ a {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
+.field-input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+/* One visible keyboard focus style everywhere. :where() keeps specificity at
+   zero, so components with their own focus ring (field-input, trm-*) win. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: fixed;
+  inset-inline-start: 1rem;
+  top: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -222,6 +251,12 @@ a {
 
 .fade-in-up {
   animation: fadeInUp 0.55s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up {
+    animation: none;
+  }
 }
 
 @keyframes fadeInUp {

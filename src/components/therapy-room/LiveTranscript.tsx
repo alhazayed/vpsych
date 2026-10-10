@@ -23,7 +23,7 @@ export function LiveTranscript({
       <header className="trm-transcript__header">
         <h2>{t("title")}</h2>
         <button type="button" onClick={onClose} aria-label={t("close")}>
-          <span className="material-symbols-outlined">close</span>
+          <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
       </header>
       <ul className="trm-transcript__list">

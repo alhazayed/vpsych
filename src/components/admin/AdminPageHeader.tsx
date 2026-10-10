@@ -24,7 +24,7 @@ export function AdminPageHeader({
           {breadcrumbs.map((crumb, i) => (
             <span key={`${crumb.label}-${i}`} className="flex items-center gap-1">
               {i > 0 ? (
-                <span className="material-symbols-outlined text-[14px] opacity-60 rtl:rotate-180">
+                <span aria-hidden className="material-symbols-outlined text-[14px] opacity-60 rtl:rotate-180">
                   chevron_right
                 </span>
               ) : null}

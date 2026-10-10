@@ -143,7 +143,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="flex min-h-screen w-full">
+      <main id="main-content" className="flex min-h-screen w-full">
         <section className="relative hidden flex-col justify-end overflow-hidden bg-[var(--primary-fixed)] p-16 md:flex md:w-[60%]">
           <Image
             src="/stitch/login-hero.png"
@@ -196,6 +196,9 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   required
+                  autoComplete="email"
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("emailPlaceholder")}
@@ -205,14 +208,6 @@ export default function LoginPage() {
                       : "border-[var(--outline-variant)]"
                   }`}
                 />
-                {error && (
-                  <p
-                    className="ms-1 text-xs font-medium text-[var(--error)]"
-                    role="alert"
-                  >
-                    {error}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -238,25 +233,46 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     required
                     minLength={6}
+                    autoComplete="current-password"
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "login-error" : undefined}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)]"
+                    className={`h-12 w-full rounded-xl border-2 bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)] ${
+                      error
+                        ? "border-[var(--error)]"
+                        : "border-[var(--outline-variant)]"
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)]"
+                    aria-controls="password"
+                    aria-pressed={showPassword}
+                    className="absolute end-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--on-surface-variant)]"
                     aria-label={
                       showPassword ? t("hidePassword") : t("showPassword")
                     }
                   >
-                    <span className="material-symbols-outlined">
+                    <span className="material-symbols-outlined" aria-hidden>
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
               </div>
+
+              {/* One message for both fields: a wrong password is not an
+                  email problem, so it is not shown under the email box. */}
+              {error && (
+                <p
+                  id="login-error"
+                  className="rounded-xl border border-[var(--error)]/30 bg-[var(--error-container)]/40 px-3 py-2 text-sm text-[var(--error)]"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              )}
 
               {info && (
                 <p
@@ -275,6 +291,7 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <svg
+                      aria-hidden
                       className="h-5 w-5 animate-spin text-white"
                       fill="none"
                       viewBox="0 0 24 24"

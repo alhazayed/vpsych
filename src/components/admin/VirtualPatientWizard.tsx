@@ -1095,7 +1095,7 @@ function ValidationPanel({
           <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface)]">
             {errors.map((issue: ValidationIssue, idx) => (
               <li key={`${issue.code}-${idx}`} className="flex gap-2">
-                <span className="material-symbols-outlined text-[16px] text-[var(--error)]">
+                <span aria-hidden className="material-symbols-outlined text-[16px] text-[var(--error)]">
                   error
                 </span>
                 <span>
@@ -1123,7 +1123,7 @@ function ValidationPanel({
           <ul className="mt-2 space-y-1 text-sm text-[var(--on-surface)]">
             {warnings.map((issue: ValidationIssue, idx) => (
               <li key={`${issue.code}-${idx}`} className="flex gap-2">
-                <span className="material-symbols-outlined text-[16px]">
+                <span aria-hidden className="material-symbols-outlined text-[16px]">
                   warning
                 </span>
                 <span>{issue.message}</span>

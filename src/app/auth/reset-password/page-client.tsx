@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
         <LanguageSwitcher />
       </header>
 
-      <main className="flex min-h-screen w-full items-center justify-center px-6 py-24">
+      <main id="main-content" className="flex min-h-screen w-full items-center justify-center px-6 py-24">
         <div className="w-full max-w-md fade-in-up">
           <div className="mb-10 text-center md:text-start">
             <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
@@ -157,6 +157,11 @@ export default function ResetPasswordPage() {
                     type={showPassword ? "text" : "password"}
                     required
                     minLength={8}
+                    autoComplete="new-password"
+                    aria-describedby={
+                      error ? "reset-error reset-checks" : "reset-checks"
+                    }
+                    aria-invalid={error ? true : undefined}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 pe-12 text-base outline-none transition focus:border-[var(--primary)]"
@@ -164,12 +169,14 @@ export default function ResetPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)]"
+                    aria-controls="password confirmPassword"
+                    aria-pressed={showPassword}
+                    className="absolute end-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--on-surface-variant)]"
                     aria-label={
                       showPassword ? t("hidePassword") : t("showPassword")
                     }
                   >
-                    <span className="material-symbols-outlined">
+                    <span className="material-symbols-outlined" aria-hidden>
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
@@ -188,6 +195,9 @@ export default function ResetPasswordPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={8}
+                  autoComplete="new-password"
+                  aria-describedby={error ? "reset-error" : undefined}
+                  aria-invalid={error ? true : undefined}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-12 w-full rounded-xl border-2 border-[var(--outline-variant)] bg-white px-4 text-base outline-none transition focus:border-[var(--primary)]"
@@ -212,7 +222,10 @@ export default function ResetPasswordPage() {
                     }}
                   />
                 </div>
-                <ul className="mt-2 grid grid-cols-2 gap-1 text-xs text-[var(--on-surface-variant)]">
+                <ul
+                  id="reset-checks"
+                  className="mt-2 grid grid-cols-2 gap-1 text-xs text-[var(--on-surface-variant)]"
+                >
                   {(
                     [
                       ["length", checks.length],
@@ -222,7 +235,11 @@ export default function ResetPasswordPage() {
                     ] as const
                   ).map(([key, ok]) => (
                     <li key={key} className={ok ? "text-[var(--primary)]" : ""}>
-                      {ok ? "✓" : "○"} {tSignup(`checks.${key}`)}
+                      <span aria-hidden>{ok ? "✓" : "○"}</span>{" "}
+                      {tSignup(`checks.${key}`)}
+                      <span className="sr-only">
+                        {ok ? tSignup("checks.met") : tSignup("checks.notMet")}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -230,6 +247,7 @@ export default function ResetPasswordPage() {
 
               {error && (
                 <p
+                  id="reset-error"
                   className="rounded-xl border border-[var(--error)]/30 bg-[var(--error-container)]/40 px-3 py-2 text-sm text-[var(--error)]"
                   role="alert"
                 >

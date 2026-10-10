@@ -32,7 +32,7 @@ export function AdvancedDetails({
         onClick={() => setOpen((v) => !v)}
       >
         <span className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-[var(--on-surface-variant)]">
+          <span aria-hidden className="material-symbols-outlined text-[18px] text-[var(--on-surface-variant)]">
             {open ? "expand_less" : "expand_more"}
           </span>
           {title}

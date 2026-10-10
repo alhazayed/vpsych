@@ -90,7 +90,7 @@ export function PrivateNotebook({
           <p className="text-xs text-[var(--on-surface-variant)]">{t("private")}</p>
         </div>
         <button type="button" aria-label={t("close")} onClick={onClose}>
-          <span className="material-symbols-outlined">close</span>
+          <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
       </div>
 

@@ -75,7 +75,7 @@ export default function PendingApprovalScreen({
         <LanguageSwitcher />
       </header>
 
-      <main className="flex min-h-screen w-full items-center justify-center px-4 py-24">
+      <main id="main-content" className="flex min-h-screen w-full items-center justify-center px-4 py-24">
         <section className="w-full max-w-md rounded-2xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-8 shadow-sm">
           <span
             className="material-symbols-outlined text-[40px] text-[var(--primary)]"

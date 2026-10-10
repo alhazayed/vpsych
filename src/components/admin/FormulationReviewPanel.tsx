@@ -129,7 +129,7 @@ export function FormulationReviewPanel({
             onClick={() => void run()}
             disabled={running}
           >
-            <span className="material-symbols-outlined text-[18px]">fact_check</span>
+            <span aria-hidden className="material-symbols-outlined text-[18px]">fact_check</span>
             {running ? t("running") : items ? t("rerun") : t("run")}
           </button>
           {error && (

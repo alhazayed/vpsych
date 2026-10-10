@@ -29,7 +29,7 @@ export function RoomTimer({
         onClick={onToggleHidden}
         aria-label={t("show")}
       >
-        <span className="material-symbols-outlined text-[16px]">schedule</span>
+        <span aria-hidden className="material-symbols-outlined text-[16px]">schedule</span>
       </button>
     );
   }
@@ -62,7 +62,7 @@ export function RoomTimer({
         onClick={onToggleHidden}
         aria-label={t("hide")}
       >
-        <span className="material-symbols-outlined text-[14px]">visibility_off</span>
+        <span aria-hidden className="material-symbols-outlined text-[14px]">visibility_off</span>
       </button>
     </div>
   );

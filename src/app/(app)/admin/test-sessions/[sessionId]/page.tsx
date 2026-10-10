@@ -192,7 +192,7 @@ export default async function AdminTestTranscriptPage({ params }: Props) {
           href={`/admin/avatars/${typed.avatar_id}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:underline"
         >
-          <span className="material-symbols-outlined text-[18px] rtl:rotate-180">
+          <span aria-hidden className="material-symbols-outlined text-[18px] rtl:rotate-180">
             arrow_back
           </span>
           {t("backToAvatar")}
