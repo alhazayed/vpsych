@@ -39,7 +39,7 @@ const PROFESSIONS = [
 function strengthMeta(level: ReturnType<typeof passwordStrengthLevel>) {
   if (!level) return { width: "0%", color: "var(--primary)" };
   if (level === "weak") return { width: "25%", color: "var(--error)" };
-  if (level === "fair") return { width: "50%", color: "#F3650A" };
+  if (level === "fair") return { width: "50%", color: "var(--strength-fair)" };
   if (level === "good") return { width: "75%", color: "var(--primary)" };
   return { width: "100%", color: "var(--primary)" };
 }
@@ -463,7 +463,7 @@ function SignupForm() {
                   {strengthKey ? t(`strength.${strengthKey}`) : ""}
                 </span>
               </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-variant)]">
+              <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-container-highest)]">
                 <div
                   className="h-full transition-all duration-300"
                   style={{
@@ -571,7 +571,7 @@ function SignupForm() {
                   aria-describedby={
                     errorField === "terms" ? "signup-error" : undefined
                   }
-                  className="mt-0.5 h-5 w-5 rounded border-[var(--outline-variant)] text-[var(--primary)]"
+                  className="mt-0.5 h-5 w-5 rounded border-[var(--field-border)] text-[var(--primary)]"
                   required
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
@@ -583,7 +583,7 @@ function SignupForm() {
                   type="checkbox"
                   checked={newsletter}
                   onChange={(e) => setNewsletter(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 rounded border-[var(--outline-variant)] text-[var(--primary)]"
+                  className="mt-0.5 h-5 w-5 rounded border-[var(--field-border)] text-[var(--primary)]"
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
                   {t("newsletter")}

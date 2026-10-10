@@ -45,7 +45,7 @@ export function LanguageSwitcher({
 
   return (
     <div
-      className={`inline-flex items-center rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-0.5 ${
+      className={`inline-flex items-center rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] ${
         compact ? "text-[10px]" : "text-xs"
       }`}
       role="group"
@@ -55,7 +55,7 @@ export function LanguageSwitcher({
         type="button"
         disabled={pending}
         onClick={() => void switchLocale("en")}
-        className={`rounded-md px-2.5 py-1.5 font-semibold transition ${
+        className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2.5 font-semibold transition ${
           locale === "en"
             ? "bg-[var(--primary)] text-white"
             : "text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
@@ -68,7 +68,7 @@ export function LanguageSwitcher({
         type="button"
         disabled={pending}
         onClick={() => void switchLocale("ar")}
-        className={`rounded-md px-2.5 py-1.5 font-semibold transition ${
+        className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2.5 font-semibold transition ${
           locale === "ar"
             ? "bg-[var(--primary)] text-white"
             : "text-[var(--on-surface-variant)] hover:text-[var(--primary)]"

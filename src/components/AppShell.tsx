@@ -413,7 +413,7 @@ export function AppShell({
           {isAdminArea ? (
             <button
               type="button"
-              className="rounded-lg border border-[var(--outline-variant)] p-2 text-[var(--on-surface-variant)]"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--outline-variant)] text-[var(--on-surface-variant)]"
               aria-label={tShell("commandPalette.title")}
               onClick={() => setCommandOpen(true)}
             >
@@ -426,7 +426,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => void signOut()}
-            className="rounded-lg border border-[var(--outline-variant)] px-3 py-1.5 text-xs font-medium text-[var(--on-surface-variant)]"
+            className="inline-flex min-h-11 items-center rounded-lg border border-[var(--outline-variant)] px-3 text-xs font-medium text-[var(--on-surface-variant)]"
           >
             {tShell("signOut")}
           </button>
