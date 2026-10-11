@@ -109,6 +109,12 @@ const SKIPPED_SUPERVISOR: Awaited<ReturnType<typeof runSupervisorAfterAssessment
   error: null,
 };
 
+const SKIPPED_ENTERPRISE: Awaited<ReturnType<typeof runEnterpriseAfterAssessment>> = {
+  ok: false,
+  bundle: null,
+  error: null,
+};
+
 export async function POST(_request: Request, { params }: Params) {
   const { id: sessionId } = await params;
   const supabase = await createClient();
@@ -395,7 +401,11 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   // Stage 10 Enterprise Platform — tenancy analytics only; soft-fail; never touches patient mind.
-  const enterprise = await runEnterpriseAfterAssessment(supabase, {
+  // Skipped for tests: its certificate count would tell the trainee whether
+  // they scored 85 or higher.
+  const enterprise = isSkillTest
+    ? SKIPPED_ENTERPRISE
+    : await runEnterpriseAfterAssessment(supabase, {
     userId: user.id,
     sessionId,
     overall: assessment.scores.overall,

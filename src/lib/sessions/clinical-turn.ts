@@ -832,9 +832,15 @@ export function buildTurnResponse(
   replyMeta: PatientReplyResult,
   assistantMsg: SessionMessage,
 ): { body: Record<string, unknown>; headers: Record<string, string> } {
-  const { session: typed, resolved, behaviourPlan, decisionPlan, humanization } =
-    turn;
-  const emotionPayload = turn.emotionPayload;
+  const { session: typed, resolved, humanization } = turn;
+  // A skill test keeps its case sealed. The engine numbers start from
+  // per-disorder and per-difficulty priors, so a trainee could match them
+  // against practice sessions and name the hidden disorder. No client reads
+  // them, so a test turn carries none of them.
+  const examTurn = Boolean(typed.skill_test_assignment_id);
+  const emotionPayload = examTurn ? null : turn.emotionPayload;
+  const behaviourPlan = examTurn ? null : turn.behaviourPlan;
+  const decisionPlan = examTurn ? null : turn.decisionPlan;
   const humanizationHints = humanizationHintsFor(turn);
 
   return {
@@ -865,7 +871,8 @@ export function buildTurnResponse(
       decisionCognitiveMove: decisionPlan?.cognitive_move ?? null,
       // Mission 10 — Humanization Engine (additive; clients may ignore).
       humanizationEnabled: Boolean(humanization),
-      humanization: humanizationHints,
+      // A test keeps the voice hints the patient's speech needs, not the affect.
+      humanization: examTurn ? null : humanizationHints,
       voiceHints: humanizationHints?.voiceHints ?? null,
     },
     headers: {
@@ -881,7 +888,7 @@ export function buildTurnResponse(
       ...(decisionPlan?.act
         ? { "X-CI-Act": String(decisionPlan.act) }
         : {}),
-      ...(humanization
+      ...(humanization && !examTurn
         ? { "X-Humanization": humanization.behaviors.join(",") }
         : {}),
     },

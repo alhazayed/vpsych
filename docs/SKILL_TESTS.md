@@ -61,6 +61,16 @@ database, not just the UI (`src/lib/skill-tests/exam.ts`, `seal.ts`):
   prompts, rubric, clinical core or disorder, plus the voice's pace and energy
   (`traineeSafeAvatar`, `examSpeechHint`). The start response and the trainee
   coaching endpoint return nothing about the case.
+- The patient engines start from per-disorder and per-difficulty priors, so
+  their numbers would let a trainee match a test against practice sessions. In
+  a test, each turn's response leaves out the emotion, rapport, disclosure,
+  decision and affect packets and keeps only the voice hints the patient's
+  speech needs (`buildTurnResponse`). `/api/sessions/[id]/emotion` returns 404
+  to the trainee.
+- Ending a test skips education, coaching and the enterprise stage (whose
+  certificate count would reveal a score of 85 or more). The clinic room,
+  debrief and supervisor pages send a test session to `/sessions/[id]` and its
+  completion page.
 - Trade-offs: the nonverbal engine in the browser uses its generic baseline in
   a test (the patient's emotions still drive it turn by turn), and test sessions
   have no `case_memory` (adaptation carries over through the existing dyad
