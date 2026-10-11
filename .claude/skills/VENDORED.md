@@ -27,8 +27,8 @@ All bundled scripts use the Python standard library only: no network calls, no s
   generic names don't collide with other skills.
 - `pw-coverage` / `pw-fix`: references to playwright-pro's `templates/`, `/pw:generate` and
   `/debug`, which were not vendored, replaced with `e2e/` and `npx playwright show-trace`.
-- `security-guidance`: plugin install instructions replaced with how to register the vendored
-  hook in `.claude/settings.json`.
+- `security-guidance`: plugin install instructions replaced; the vendored hook is registered in
+  `.claude/settings.json`.
 - Not vendored: playwright-pro's hooks (its post-write check matches `*.test.ts`, so it would
   flag Vitest files) and its BrowserStack/TestRail integrations (external services, credentials).
 

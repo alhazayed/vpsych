@@ -47,23 +47,9 @@ The hook scans both:
 
 ## Installation
 
-In vpsych the hook script is vendored at `.claude/hooks/security_reminder_hook.py`. It only runs
-once it is registered as a `PreToolUse` hook in `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/security_reminder_hook.py\"" }
-        ]
-      }
-    ]
-  }
-}
-```
+In vpsych the hook script is vendored at `.claude/hooks/security_reminder_hook.py` and registered
+as a `PreToolUse` hook (matcher `Edit|Write|MultiEdit`) in `.claude/settings.json`. No plugin
+install is needed.
 
 ## Configuration
 
