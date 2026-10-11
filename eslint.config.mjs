@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Supabase edge functions run on Deno (URL imports, Deno globals).
     "supabase/**",
+    // Vendored Claude Code skills (sample snippets, not app code).
+    ".claude/**",
   ]),
 ]);
 
