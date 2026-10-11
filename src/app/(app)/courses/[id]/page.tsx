@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
-import { isTherapyRoomEnabled } from "@/lib/features";
 import {
   buildCaseFormulationKey,
   courseProgress,
@@ -55,16 +54,14 @@ export default async function TherapyCoursePage({ params }: Props) {
   const name = (avatar?.name as string | undefined) ?? "";
   const progress = courseProgress(course, sessions);
   const plan = course.treatment_plan;
-  const therapyRoom = isTherapyRoomEnabled();
   const date = (iso: string) =>
     format.dateTime(new Date(iso), { dateStyle: "medium" });
 
+  // Same pages as My Sessions: /clinic/room is the admin-only clinic day.
   function sessionHref(s: CourseSessionRow) {
-    const room = therapyRoom && s.interaction_mode === "therapy_room";
-    if (s.status === "active") {
-      return room ? `/clinic/room/${s.id}` : `/sessions/${s.id}`;
-    }
-    return room ? `/clinic/room/${s.id}/debrief` : `/sessions/${s.id}/complete`;
+    return s.status === "active"
+      ? `/sessions/${s.id}`
+      : `/sessions/${s.id}/complete`;
   }
 
   const active = course.status === "active";

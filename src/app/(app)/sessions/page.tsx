@@ -5,7 +5,6 @@ import {
   avatarDisplayName,
   avatarLocalNameSelect,
 } from "@/lib/avatars/localized-name";
-import { isTherapyRoomEnabled } from "@/lib/features";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
@@ -65,7 +64,6 @@ export default async function SessionsListPage() {
             !s.skill_test_assignment_id,
         );
 
-  const therapyRoom = isTherapyRoomEnabled();
 
   // Therapy courses (empty when the table is missing).
   const { data: courseRows } = await supabase
@@ -110,18 +108,14 @@ export default async function SessionsListPage() {
 
   function sessionHref(s: (typeof list)[number]) {
     const adminTest = isAdminTestSnapshot(s.clinical_snapshot);
-    const isRoom = s.interaction_mode === "therapy_room";
+    // The Therapy Room at /sessions/[id] is the only session UI. The
+    // /clinic/room pages belong to the admin-only clinic day; sending trainees
+    // there gave them a second debrief and a dead "Back to clinic" link.
     if (s.status === "active") {
-      if (therapyRoom && isRoom) {
-        return `/clinic/room/${s.id}`;
-      }
       return `/sessions/${s.id}`;
     }
     if (adminTest) {
       return `/admin/avatars/${s.avatar_id}`;
-    }
-    if (therapyRoom && isRoom) {
-      return `/clinic/room/${s.id}/debrief`;
     }
     return `/sessions/${s.id}/complete`;
   }

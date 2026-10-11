@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
@@ -10,6 +10,11 @@ import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
 import { LadderResultCard } from "@/components/training/LadderResultCard";
+import { findLadderPatient } from "@/lib/training-ladder";
+import {
+  avatarDisplayName,
+  avatarLocalNameSelect,
+} from "@/lib/avatars/localized-name";
 import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
 import {
   buildTraineeChecklist,
@@ -27,15 +32,16 @@ export default async function SessionCompletePage({ params }: Props) {
   const tTranscript = await getTranslations("therapyRoom.transcript");
   const tDisorders = await getTranslations("skillTests.disorders");
 
+  const localName = avatarLocalNameSelect(await getLocale());
   const { data: session } = await supabase
     .from("sessions")
-    .select("*, avatars(name, disorder)")
+    .select(`*, avatars(name, disorder, ${localName})`)
     .eq("id", id)
     .single();
 
   if (!session) notFound();
-  const typed = session as TherapySession & {
-    avatars: { name: string; disorder: string };
+  const typed = session as unknown as TherapySession & {
+    avatars: { name: string; disorder: string; local_name: string | null };
   };
   if (typed.therapist_id !== user.id && profile.role !== "admin") {
     redirect("/avatars");
@@ -45,6 +51,9 @@ export default async function SessionCompletePage({ params }: Props) {
   if (isAdminTestSnapshot(typed.clinical_snapshot)) {
     redirect(`/admin/avatars/${typed.avatar_id}`);
   }
+
+  // The name this patient goes by in the UI language (أحمد, not Ethan).
+  const patientName = avatarDisplayName(typed.avatars);
 
   // Skill test: the transcript and results go to the assigning supervisor.
   if (typed.skill_test_assignment_id) {
@@ -109,6 +118,17 @@ export default async function SessionCompletePage({ params }: Props) {
     needsReport = !hasReportError && hasReport === false;
   }
 
+  // Ladder attempts lead back to that patient's levels, not the library.
+  const { data: ladderAttempt } = await supabase
+    .from("training_ladder_attempts")
+    .select("patient_key")
+    .eq("session_id", id)
+    .maybeSingle();
+  const ladderPatient = ladderAttempt
+    ? findLadderPatient(String(ladderAttempt.patient_key))
+    : null;
+  const tTraining = await getTranslations("training.result");
+
   return (
     <main className="mx-auto max-w-lg px-4 py-12 md:py-16">
       <div className="mb-8 text-center fade-in-up">
@@ -121,18 +141,22 @@ export default async function SessionCompletePage({ params }: Props) {
         <p className="mt-3 text-[var(--on-surface-variant)]">
           {diagnosis
             ? t("body", {
-                name: typed.avatars?.name ?? "",
+                name: patientName,
                 disorder: diagnosis,
               })
-            : t("bodyNoDisorder", { name: typed.avatars?.name ?? "" })}
+            : t("bodyNoDisorder", { name: patientName })}
         </p>
       </div>
 
-      {needsReport ? <FinalizeSessionReport sessionId={id} /> : null}
+      {/* Refresh once the report exists so the ladder result replaces
+          "Scoring this level" without a manual reload. */}
+      {needsReport ? (
+        <FinalizeSessionReport sessionId={id} refreshOnDone />
+      ) : null}
       <LadderResultCard
         supabase={supabase}
         sessionId={id}
-        patientName={typed.avatars?.name ?? ""}
+        patientName={patientName}
       />
       <CourseProgressCard
         supabase={supabase}
@@ -218,10 +242,20 @@ export default async function SessionCompletePage({ params }: Props) {
       </section>
 
       <div className="flex flex-col gap-3 fade-in-up">
-        <Link href="/avatars" className="btn-primary h-12 w-full">
-          <span aria-hidden className="material-symbols-outlined">play_circle</span>
-          {t("practiceAgain")}
-        </Link>
+        {ladderPatient ? (
+          <Link
+            href={`/training/${ladderPatient.key}`}
+            className="btn-primary h-12 w-full"
+          >
+            <span aria-hidden className="material-symbols-outlined">stairs</span>
+            {tTraining("toPatient", { name: patientName })}
+          </Link>
+        ) : (
+          <Link href="/avatars" className="btn-primary h-12 w-full">
+            <span aria-hidden className="material-symbols-outlined">play_circle</span>
+            {t("practiceAgain")}
+          </Link>
+        )}
         <Link href="/sessions" className="btn-secondary h-12 w-full">
           <span aria-hidden className="material-symbols-outlined">clinical_notes</span>
           {t("mySessions")}

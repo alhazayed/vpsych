@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -16,7 +15,7 @@ import {
  * Post-session ladder result: level cleared (and what unlocked), not cleared
  * (with the pass mark), or still scoring. Renders nothing for sessions that
  * are not ladder attempts. The result was decided by the database when the
- * report was written.
+ * report was written. The page's main button leads back to the patient.
  */
 export async function LadderResultCard({
   supabase,
@@ -42,14 +41,6 @@ export async function LadderResultCard({
   const level = attempt.level as LadderLevel;
   const levelName = t(`levels.${ladderLevelDef(level).key}`);
   const outcome = attemptOutcome(attempt);
-  const back = (
-    <Link href={`/training/${patient.key}`} className="btn-secondary mt-3 h-11 w-full">
-      <span className="material-symbols-outlined text-[20px]" aria-hidden>
-        stairs
-      </span>
-      {t("result.toPatient", { name: patientName })}
-    </Link>
-  );
 
   if (outcome === "passed") {
     const next =
@@ -79,7 +70,6 @@ export async function LadderResultCard({
         ) : (
           <p className="mt-2 text-sm">{t("result.completedBody")}</p>
         )}
-        {back}
       </section>
     );
   }
@@ -96,7 +86,6 @@ export async function LadderResultCard({
         <p className="text-sm">{t("result.required")}</p>
         <p className="mt-2 text-sm">{t("result.remains", { level: levelName })}</p>
         <p className="text-sm text-[var(--on-surface-variant)]">{t("result.retry")}</p>
-        {back}
       </section>
     );
   }
@@ -109,7 +98,6 @@ export async function LadderResultCard({
       <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
         {t("result.scoringBody")}
       </p>
-      {back}
     </section>
   );
 }
