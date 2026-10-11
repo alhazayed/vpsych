@@ -42,6 +42,7 @@ import {
   aviInputFromAssessment,
 } from "@/lib/avi";
 import { withHeardText } from "@/lib/sessions/heard-text";
+import { fenceTranscript } from "@/lib/ai/prompt-fence";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -475,21 +476,19 @@ export async function assessSession(params: {
     return heuristicAssessment(rubric, messages, language, "unconfigured");
   }
 
-  const therapistLabel = language === "ar" ? "المعالج" : "THERAPIST";
-  const patientLabel = language === "ar" ? "المريض" : "PATIENT";
-  const systemLabel = language === "ar" ? "النظام" : "SYSTEM";
-
-  const transcript = messages
-    .map((m) => {
-      const who =
+  // Each turn is fenced with a platform-set speaker so trainee text cannot
+  // pose as the patient, the system, or the examiner's instructions.
+  const transcript = fenceTranscript(
+    messages.map((m) => ({
+      speaker:
         m.role === "user"
-          ? therapistLabel
+          ? "therapist"
           : m.role === "assistant"
-            ? patientLabel
-            : systemLabel;
-      return `${who}: ${m.content}`;
-    })
-    .join("\n");
+            ? "patient"
+            : "system",
+      content: m.content,
+    })),
+  );
 
   const goals = avatar.ideal_guidelines?.session_goals?.join("; ") ?? "";
   const approach = avatar.ideal_guidelines?.ideal_approach ?? "";
@@ -505,8 +504,8 @@ export async function assessSession(params: {
   });
   const userPrompt =
     language === "ar"
-      ? `نص المحادثة:\n${transcript || "(فارغ)"}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
-      : `Transcript:\n${transcript || "(empty)"}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
+      ? `نص المحادثة:\n${transcript}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
+      : `Transcript:\n${transcript}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
 
   const viaOpenAi = async (model?: string): Promise<ModelAttempt> => {
     const result = await openAIService.chat({
