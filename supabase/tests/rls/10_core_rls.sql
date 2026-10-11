@@ -15,8 +15,11 @@ begin
     perform set_config('request.jwt.claims', '{"role":"anon"}', true);
     perform set_config('role', 'anon', true);
   else
+    -- Signed-in users pass two-step login (aal2) unless a check sets
+    -- vpsych.test_aal to 'aal1' (password only).
     perform set_config('request.jwt.claims',
-      json_build_object('sub', uid, 'role', 'authenticated')::text, true);
+      json_build_object('sub', uid, 'role', 'authenticated',
+        'aal', coalesce(nullif(current_setting('vpsych.test_aal', true), ''), 'aal2'))::text, true);
     perform set_config('role', 'authenticated', true);
   end if;
 end $$;
@@ -134,6 +137,11 @@ update public.sessions set status = 'completed', ended_at = now()
   where id = 'a2000000-0000-4000-8000-000000000000';
 insert into public.session_reports (session_id, narrative)
   values ('a2000000-0000-4000-8000-000000000000', 'report');
+-- A has a learner profile (an engine table whose admin policy used to inline
+-- the role check instead of calling is_admin()).
+set local session_replication_role = replica;
+insert into public.learner_profiles (user_id) values ('aaaaaaaa-0000-4000-8000-000000000001');
+set local session_replication_role = origin;
 
 -- ── every public table has RLS on ──────────────────────────────────────────
 do $$
@@ -268,5 +276,42 @@ select pg_temp.expect_count('trainee cannot delete own messages',
   'aaaaaaaa-0000-4000-8000-000000000001',
   $q$with d as (delete from public.session_messages
      where session_id = 'a1000000-0000-4000-8000-000000000000' returning 1) select count(*) from d$q$, 0);
+
+-- ── admin two-step login ───────────────────────────────────────────────────
+-- An admin signed in with a password only (aal1) gets no admin powers in the
+-- database, the same as the app's admin pages.
+do $$
+begin
+  if exists (select 1 from pg_policies where schemaname = 'public'
+             and (coalesce(qual, '') || coalesce(with_check, '')) ~* $p$role\s*=\s*'admin'$p$) then
+    raise exception 'FAIL admin policies: a policy checks profiles.role inline; call is_admin()';
+  end if;
+  raise notice 'ok   every admin policy goes through is_admin()';
+end $$;
+
+select set_config('vpsych.test_aal', 'aal1', true);
+select pg_temp.expect_count('admin without two-step cannot read reports',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.session_reports', 0);
+select pg_temp.expect_count('admin without two-step cannot read trainee sessions',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.sessions', 0);
+select pg_temp.expect_count('admin without two-step sees only own profile',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.profiles', 1);
+select pg_temp.expect_count('admin without two-step cannot read learner profiles',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.learner_profiles', 0);
+select pg_temp.expect_count('admin without two-step cannot edit another profile',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$with u as (update public.profiles set display_name = 'x'
+     where id = 'aaaaaaaa-0000-4000-8000-000000000001' returning 1) select count(*) from u$q$, 0);
+select pg_temp.expect_error('admin without two-step cannot list account approvals',
+  'cccccccc-0000-4000-8000-000000000003',
+  'select count(*) from public.list_account_approvals()', '%forbidden%');
+
+select set_config('vpsych.test_aal', 'aal2', true);
+select pg_temp.expect_count('admin with two-step can read learner profiles',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.learner_profiles', 1);
+select pg_temp.expect_count('admin with two-step can read trainee sessions',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.sessions', 3);
+select pg_temp.expect_ok('admin with two-step can list account approvals',
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.list_account_approvals()');
 
 rollback;

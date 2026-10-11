@@ -207,6 +207,11 @@ Write rules that RLS enforces and application code must respect:
   `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`.
 - New RLS policies must wrap `auth.uid()` / `is_admin()` in `(select …)` so they
   evaluate once per statement rather than per row.
+- Admin checks in SQL call `is_admin()`, never an inline `profiles.role =
+  'admin'` subquery. `is_admin()` is true only for a token that passed two-step
+  login (aal2), matching the app's admin pages, so a password-only admin gets
+  no admin rows through PostgREST. Locally, enroll TOTP (`/auth/mfa/enroll`)
+  before using admin data. `supabase/tests/rls/` fails on an inline check.
 
 Use `messageRpcClient(userClient)` (`lib/supabase/admin.ts`) rather than
 requiring a service role — it prefers service role when configured and falls
