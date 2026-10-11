@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import {
   isAccountApproved,
   isApprovalExemptPath,
+  classifyDeleteAccountError,
   isMissingApprovalColumnError,
+  parseAccountEdit,
   parseApprovalDecision,
   resolveApprovalStatus,
 } from "./account-approval";
@@ -85,5 +87,55 @@ describe("approval gate wiring", () => {
     expect(sql).toMatch(/ON public\.sessions\s+AS RESTRICTIVE/);
     expect(sql).toMatch(/ON public\.session_messages\s+AS RESTRICTIVE/);
     expect(sql).toContain("(select public.is_approved())");
+  });
+});
+
+describe("parseAccountEdit", () => {
+  it("accepts a trimmed display name and a known role", () => {
+    expect(parseAccountEdit({ displayName: "  Ghina   Rimawi ", role: "admin" })).toEqual({
+      ok: true,
+      edit: { displayName: "Ghina Rimawi", role: "admin" },
+    });
+    expect(parseAccountEdit({ role: "therapist" })).toEqual({
+      ok: true,
+      edit: { role: "therapist" },
+    });
+  });
+
+  it("refuses empty, too long, wrong-typed or unknown values", () => {
+    expect(parseAccountEdit({}).ok).toBe(false);
+    expect(parseAccountEdit({ displayName: "   " }).ok).toBe(false);
+    expect(parseAccountEdit({ displayName: "x".repeat(81) }).ok).toBe(false);
+    expect(parseAccountEdit({ displayName: 42 }).ok).toBe(false);
+    expect(parseAccountEdit({ role: "supervisor" }).ok).toBe(false);
+  });
+});
+
+describe("classifyDeleteAccountError", () => {
+  it("maps the RPC's refusals onto stable codes", () => {
+    expect(classifyDeleteAccountError({ code: "P0001", message: "cannot_delete_self" })).toEqual({ status: 400, code: "SELF" });
+    expect(classifyDeleteAccountError({ code: "P0002", message: "account_not_found" })).toEqual({ status: 404, code: "NOT_FOUND" });
+    expect(classifyDeleteAccountError({ code: "P0001", message: "account_supervises_taken_tests" })).toEqual({ status: 409, code: "SUPERVISED_TESTS" });
+    expect(classifyDeleteAccountError({ code: "42501", message: "forbidden" })).toEqual({ status: 403, code: "FORBIDDEN" });
+    expect(classifyDeleteAccountError({ code: "XX000", message: "boom" })).toEqual({ status: 500, code: "FAILED" });
+  });
+});
+
+describe("account management wiring", () => {
+  it("the accounts API refuses self-deletion and self role changes before the database", () => {
+    const src = read("src/app/api/admin/accounts/route.ts");
+    expect(src).toMatch(/export async function PATCH/);
+    expect(src).toMatch(/export async function DELETE/);
+    expect(src).toContain("You cannot change your own role");
+    expect(src).toContain("You cannot delete your own account");
+    expect(src).toContain('rpc("admin_delete_account"');
+  });
+
+  it("delete migration is admin-only, refuses self and protects other trainees' exams", () => {
+    const sql = read("supabase/migrations/20261011170000_admin_delete_account.sql");
+    expect(sql).toMatch(/IF NOT public\.is_admin\(\) THEN/);
+    expect(sql).toContain("target_id = auth.uid()");
+    expect(sql).toContain("account_supervises_taken_tests");
+    expect(sql).toMatch(/REVOKE EXECUTE ON FUNCTION public\.admin_delete_account\(uuid\) FROM public, anon/);
   });
 });

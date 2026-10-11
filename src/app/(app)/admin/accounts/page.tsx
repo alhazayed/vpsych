@@ -13,7 +13,10 @@ type AccountRow = {
   approval_decided_at: string | null;
 };
 
-/** Superadmin approves or rejects every new account before it can be used. */
+/**
+ * Superadmin approves or rejects every new account before it can be used, and
+ * can edit (name, role), revoke or delete any account but their own.
+ */
 export default async function AdminAccountsPage() {
   const { supabase, user } = await requireAdmin();
   const t = await getTranslations("admin.accounts");
@@ -52,6 +55,9 @@ export default async function AdminAccountsPage() {
             {a.role === "admin" && (
               <span className="status-chip ms-2">{t("adminBadge")}</span>
             )}
+            {a.id === user.id && (
+              <span className="status-chip ms-2">{t("youBadge")}</span>
+            )}
           </p>
           <p className="truncate text-sm text-[var(--on-surface-variant)]" dir="ltr">
             {a.email ?? "—"}
@@ -60,13 +66,14 @@ export default async function AdminAccountsPage() {
             {t("signedUp", { date: dateFmt.format(new Date(a.created_at)) })}
           </p>
         </div>
-        {a.role !== "admin" && a.id !== user.id && (
-          <AccountApprovalActions
-            userId={a.id}
-            status={a.status}
-            name={a.display_name}
-          />
-        )}
+        <AccountApprovalActions
+          userId={a.id}
+          status={a.status}
+          name={a.display_name}
+          email={a.email}
+          role={a.role === "admin" ? "admin" : "therapist"}
+          isSelf={a.id === user.id}
+        />
       </li>
     );
   }
