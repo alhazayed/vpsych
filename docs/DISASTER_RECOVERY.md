@@ -98,7 +98,7 @@ Tag reference: `rc1-pp-1.0-baseline` is historical preview baseline — use only
 
 Every value matched. There had been no new activity since the backup, so production's current counts were identical as well.
 
-- **PITR:** not yet confirmed (Point in time tab not checked). Without it, the worst-case data loss is everything written since the last nightly backup (RPO ≤ 24 h).
+- **PITR:** not enabled. The owner declined it on cost (2026-10-11). The worst-case data loss is everything written since the last nightly backup (RPO ≤ 24 h). Revisit before real trainees use the platform.
 - **Not covered:** Storage objects (Supabase does not include them in database backups), Vercel env, and repointing the app at a restored project.
 - **Clean-up:** pause or delete `vpsych-restore-drill` after the drill. Never point Vercel env at it.
 
