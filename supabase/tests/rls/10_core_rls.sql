@@ -212,6 +212,43 @@ select pg_temp.expect_error('trainee cannot write a report',
      values ('a1000000-0000-4000-8000-000000000000', 'self-graded')$q$,
   '%row-level security%');
 
+-- ── account management (admin_delete_account) ─────────────────────────────
+select pg_temp.expect_error('trainee cannot delete an account',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select public.admin_delete_account('bbbbbbbb-0000-4000-8000-000000000002')$q$,
+  '%forbidden%');
+select pg_temp.expect_error('anon cannot delete an account', null,
+  $q$select public.admin_delete_account('bbbbbbbb-0000-4000-8000-000000000002')$q$,
+  '%permission denied%');
+select pg_temp.expect_error('admin cannot delete their own account',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$select public.admin_delete_account('cccccccc-0000-4000-8000-000000000003')$q$,
+  '%cannot_delete_self%');
+-- Deleting A removes the sign-in, the profile, and A's sessions, messages and
+-- report; B is untouched. Rolled back afterwards.
+do $$
+begin
+  begin
+    perform pg_temp.become('cccccccc-0000-4000-8000-000000000003');
+    perform public.admin_delete_account('aaaaaaaa-0000-4000-8000-000000000001');
+    perform pg_temp.unbecome();
+    if exists (select 1 from auth.users where id = 'aaaaaaaa-0000-4000-8000-000000000001')
+       or exists (select 1 from public.profiles where id = 'aaaaaaaa-0000-4000-8000-000000000001')
+       or exists (select 1 from public.sessions where therapist_id = 'aaaaaaaa-0000-4000-8000-000000000001')
+       or exists (select 1 from public.session_reports where session_id = 'a2000000-0000-4000-8000-000000000000') then
+      raise exception 'FAIL admin delete: account rows remain';
+    end if;
+    if not exists (select 1 from public.sessions where id = 'b1000000-0000-4000-8000-000000000000') then
+      raise exception 'FAIL admin delete: another trainee''s session was removed';
+    end if;
+    raise exception using errcode = 'P0098', message = 'rollback';
+  exception when sqlstate 'P0098' then
+    null;
+  end;
+  perform pg_temp.unbecome();
+  raise notice 'ok   admin can delete an account and its records';
+end $$;
+
 -- ── account and session writes ─────────────────────────────────────────────
 select pg_temp.expect_error('trainee cannot make themselves admin',
   'aaaaaaaa-0000-4000-8000-000000000001',
