@@ -31,7 +31,7 @@
 ### Database
 
 1. Prefer **forward fix** migrations over restore when data loss risk is high.  
-2. If restore required: Supabase Dashboard → Database → Backups → restore to point-in-time (PITR) or daily backup.  
+2. If restore required: Supabase Dashboard → Database → Backups. Prefer **Restore to new project** (proven 2026-10-11, §6.1) and repoint the app only after verifying the copy. The **Restore** buttons on *Scheduled backups* overwrite production in place.  
 3. After restore: run `npm run test:migrations` with `SUPABASE_DB_URL` against restored project.  
 4. Re-apply any git migrations newer than restored `schema_migrations`.  
 5. Validate RPC grants on `insert_assistant_message` / `insert_system_message` / `create_session_report`.
@@ -73,6 +73,34 @@ Tag reference: `rc1-pp-1.0-baseline` is historical preview baseline — use only
 | Credential Verification Gate | Every cert wave | RDL |
 
 **Status at Stage 12:** Procedures **documented**; quarterly restore drill remains an ops residual (does not block RC; blocks “DR certified” marketing claims).
+
+**Status 2026-10-11:** first database restore drill passed (§6.1). Next drill due by 2027-01-11, and after any large migration.
+
+### 6.1 Restore drill log
+
+#### 2026-10-11 — daily backup → new project (first proven restore)
+
+- **Backups available:** 7 daily physical backups, 2026-10-04 to 2026-10-10 (Pro retention). Newest: 2026-10-10 10:44:29 UTC.
+- **Method:** Database → Backups → *Restore to new project* (beta) on the 2026-10-10 backup, into a new project `vpsych-restore-drill` (us-east-1, nano compute). Production was not touched.
+- **Duration:** restore started 09:00:30 UTC; the project was reported healthy by 09:26 UTC. That gives an upper bound of about 26 minutes; the exact healthy time was not captured.
+- **Verification:** the same read-only query was run on both projects. For production, the counts were also taken as of the backup time.
+
+| Check | Restored copy | Production at backup time |
+|---|---|---|
+| profiles / auth users | 17 / 17 | 17 / 17 |
+| sessions | 714 | 714 |
+| session_messages | 4791 | 4791 |
+| session_reports | 565 | 565 |
+| avatars (patients) | 56 | 56 |
+| schema_migrations rows / latest | 88 / `20261009185408` | 88 / `20261009185408` |
+| newest session | 2026-10-09 11:21:35 UTC | 2026-10-09 11:21:35 UTC |
+| Vault `report_write_key` present | yes | yes |
+
+Every value matched. There had been no new activity since the backup, so production's current counts were identical as well.
+
+- **PITR:** not enabled. The owner declined it on cost (2026-10-11). The worst-case data loss is everything written since the last nightly backup (RPO ≤ 24 h). Revisit before real trainees use the platform.
+- **Not covered:** Storage objects (Supabase does not include them in database backups), Vercel env, and repointing the app at a restored project.
+- **Clean-up:** pause or delete `vpsych-restore-drill` after the drill. Never point Vercel env at it.
 
 ## 7. Contacts / escalation
 
