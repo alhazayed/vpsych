@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
-import type { NoteFormat } from "@/lib/therapy-room";
+import { isNoteFormat, parseVoiceUrl } from "@/lib/therapy-room";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -99,13 +99,26 @@ export async function POST(request: Request, { params }: Props) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const body = (await request.json()) as {
-    format?: NoteFormat;
-    body?: string;
-    voiceUrl?: string | null;
-  };
+  const body = (await request.json().catch(() => null)) as {
+    format?: unknown;
+    body?: unknown;
+    voiceUrl?: unknown;
+  } | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   const format = body.format ?? "free";
+  if (!isNoteFormat(format)) {
+    return NextResponse.json({ error: "Invalid note format" }, { status: 400 });
+  }
+  const voiceUrl = parseVoiceUrl(body.voiceUrl);
+  if (!voiceUrl.ok) {
+    return NextResponse.json(
+      { error: "Voice note link must be an https URL" },
+      { status: 400 },
+    );
+  }
   const text = typeof body.body === "string" ? body.body.slice(0, 20000) : "";
 
   const { data, error } = await supabase
@@ -115,7 +128,7 @@ export async function POST(request: Request, { params }: Props) {
       therapist_id: user.id,
       format,
       body: text,
-      voice_url: body.voiceUrl ?? null,
+      voice_url: voiceUrl.value,
     })
     .select("id, session_id, format, body, voice_url, created_at, updated_at")
     .single();

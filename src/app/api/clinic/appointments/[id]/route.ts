@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { isAppointmentStatus, isUuid } from "@/lib/therapy-room";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -28,15 +29,41 @@ export async function PATCH(request: Request, { params }: Props) {
     );
   }
 
-  const body = (await request.json()) as {
-    status?: string;
-    sessionId?: string | null;
-  };
+  const body = (await request.json().catch(() => null)) as {
+    status?: unknown;
+    sessionId?: unknown;
+  } | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (body.status !== undefined && !isAppointmentStatus(body.status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+  if (
+    body.sessionId !== undefined &&
+    body.sessionId !== null &&
+    !isUuid(body.sessionId)
+  ) {
+    return NextResponse.json({ error: "Invalid session" }, { status: 400 });
+  }
+
+  // An appointment may only point at one of the therapist's own sessions.
+  if (typeof body.sessionId === "string") {
+    const { data: ownSession } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("id", body.sessionId)
+      .eq("therapist_id", user.id)
+      .maybeSingle();
+    if (!ownSession) {
+      return NextResponse.json({ error: "Invalid session" }, { status: 400 });
+    }
+  }
 
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (body.status) patch.status = body.status;
+  if (body.status !== undefined) patch.status = body.status;
   if (body.sessionId !== undefined) patch.session_id = body.sessionId;
 
   const { data, error } = await supabase

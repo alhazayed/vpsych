@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientSafeError } from "@/lib/api-errors";
+import { isImmersionMetrics } from "@/lib/therapy-room";
 import type { TherapySession } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -9,6 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 /**
  * Persist Therapy Room private notes + immersion metrics.
  * Notes never flow into the patient agent — this route only writes session columns.
+ * Only while the session is active: the room saves before it calls /end.
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { id: sessionId } = await params;
@@ -42,6 +44,12 @@ export async function PATCH(request: Request, { params }: Params) {
   if (typed.therapist_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (typed.status !== "active") {
+    return NextResponse.json(
+      { error: "Session is not active" },
+      { status: 409 },
+    );
+  }
 
   const body = (await request.json().catch(() => ({}))) as {
     privateNotes?: unknown;
@@ -54,7 +62,13 @@ export async function PATCH(request: Request, { params }: Params) {
     patch.private_notes = body.privateNotes.slice(0, 20000);
   }
 
-  if (body.immersionMetrics != null && typeof body.immersionMetrics === "object") {
+  if (body.immersionMetrics != null) {
+    if (!isImmersionMetrics(body.immersionMetrics)) {
+      return NextResponse.json(
+        { error: "Invalid immersion metrics" },
+        { status: 400 },
+      );
+    }
     patch.immersion_metrics = body.immersionMetrics;
   }
 
