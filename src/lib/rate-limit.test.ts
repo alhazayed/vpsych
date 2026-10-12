@@ -42,6 +42,21 @@ describe("rateLimitMemory", () => {
   });
 });
 
+describe("rateLimitMemory with a cost", () => {
+  it("spends the budget by cost and refuses a request that would overrun it", () => {
+    const key = `c-${Math.random()}`;
+    expect(rateLimitMemory(key, 100, 60_000, 60).ok).toBe(true);
+    expect(rateLimitMemory(key, 100, 60_000, 50).ok).toBe(false);
+    // A refused request spends nothing, so a smaller one still fits.
+    expect(rateLimitMemory(key, 100, 60_000, 40).ok).toBe(true);
+    expect(rateLimitMemory(key, 100, 60_000, 1).ok).toBe(false);
+  });
+
+  it("refuses a single request larger than the whole budget", () => {
+    expect(rateLimitMemory(`big-${Math.random()}`, 100, 60_000, 101).ok).toBe(false);
+  });
+});
+
 describe("rateLimit (async facade)", () => {
   it("uses the in-memory path when Upstash env is unset", async () => {
     vi.stubEnv("UPSTASH_REDIS_REST_URL", "");

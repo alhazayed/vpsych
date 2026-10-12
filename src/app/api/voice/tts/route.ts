@@ -12,6 +12,10 @@ import {
 import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
 import { VoiceLanguageError } from "@/lib/voice/voice-language";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  chargeDailyTtsChars,
+  TTS_DAILY_LIMIT_CODE,
+} from "@/lib/voice/tts-budget";
 import { reportDegradation } from "@/lib/ops/degradation";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
@@ -106,6 +110,24 @@ export async function POST(request: Request) {
         code: "TTS_CHUNK_TOO_LONG",
       },
       { status: 400, headers: requestIdHeaders(requestId) },
+    );
+  }
+
+  const daily = await chargeDailyTtsChars(user.id, text);
+  if (!daily.ok) {
+    return NextResponse.json(
+      {
+        error: "Daily voice allowance used up",
+        code: TTS_DAILY_LIMIT_CODE,
+        retryAfterSec: daily.retryAfterSec,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(daily.retryAfterSec),
+          ...requestIdHeaders(requestId),
+        },
+      },
     );
   }
 

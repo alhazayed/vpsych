@@ -112,8 +112,10 @@ chunk, capped at 400 chars, never dropped or reordered), strict in-order
 playback, abort-all on barge-in, object URLs revoked, nothing plays once the
 turn fence moved. Chunks call `/api/voice/tts?progressive=1` (own bucket
 `tts-chunk` 360/h, 400-char cap — same character ceiling as the classic
-60 × 2500 bucket). Classic full-response TTS (`playPatientSpeech`) remains the
-fallback.
+60 × 2500 bucket). Both also draw on one daily allowance per account, 150,000
+characters (`lib/voice/tts-budget.ts`); past it the route answers 429
+`TTS_DAILY_LIMIT` and the browser voice takes over. Classic full-response TTS
+(`playPatientSpeech`) remains the fallback.
 
 ## Barge-in (VoiceSession, realtime mode)
 

@@ -247,7 +247,8 @@ These are load-bearing; several were fixed findings (see
 - Every Route Handler rate-limits before doing work: `await rateLimit(key, limit,
   windowMs)` and return 429 with a `Retry-After` header. Existing budgets are
   per-user per-hour — e.g. `msg` 120, `stt` 120, `tts` 60, `start` 30, `end` 20,
-  admin previews 30. Uses Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN`
+  admin previews 30. Patient voice also has a daily allowance per account
+  (150,000 characters, `lib/voice/tts-budget.ts`). Uses Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN`
   are set, in-memory otherwise (not horizontally safe).
 - Security headers (CSP, HSTS, COOP/CORP, Permissions-Policy) are a pure data
   module, `lib/security-headers.ts`, applied via `next.config.ts`. Adding a new
