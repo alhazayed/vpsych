@@ -10,11 +10,13 @@
 //                             hook (looks like `v1,whsec_...`)
 //   AUTH_EMAIL_FROM         — verified sender, e.g. `vpsych <no-reply@yourdomain>`
 // Optional:
-//   APP_URL                 — canonical app origin for confirm links
-//                             (default https://vpsych.vercel.app). Prefer this
-//                             over GoTrue /auth/v1/verify redirects so a
-//                             misconfigured Auth Site URL cannot send users to
-//                             http://localhost:3000 (blank page).
+//   APP_URL                 — canonical https app origin for confirm links
+//                             (default https://vpsych.vercel.app). Links never
+//                             take their origin from the request's redirect_to
+//                             or site_url, so neither a misconfigured Auth Site
+//                             URL (http://localhost:3000, a blank page) nor a
+//                             wildcard redirect allow-list can point them
+//                             anywhere else.
 // SUPABASE_URL is injected automatically by the platform.
 //
 // Deployed with verify_jwt = false: the request is authenticated by the
@@ -93,30 +95,26 @@ function isLoopbackHost(hostname: string): boolean {
 }
 
 /**
- * Resolve the public app origin for confirm links.
- * Never return a loopback origin — that is what produced blank pages when
- * Auth Site URL was left at http://localhost:3000.
+ * Resolve the public app origin for confirm links: APP_URL when it is a
+ * non-loopback https origin, otherwise the production default. Fails closed:
+ * the request's own redirect_to / site_url are never used, since a wildcard
+ * redirect allow-list would let a sign-up choose where the link points.
+ * Never a loopback origin — that is what produced blank pages when Auth Site
+ * URL was left at http://localhost:3000.
  */
-function appOrigin(data: EmailData): string {
+function appOrigin(): string {
   const configured = (Deno.env.get("APP_URL") ?? "").trim().replace(/\/$/, "");
   if (configured) {
     try {
       const u = new URL(configured);
-      if (!isLoopbackHost(u.hostname)) return u.origin;
+      if (u.protocol === "https:" && !isLoopbackHost(u.hostname)) {
+        return u.origin;
+      }
     } catch {
       // fall through
     }
+    console.error("APP_URL is not a public https origin; using the default");
   }
-
-  for (const candidate of [data.redirect_to, data.site_url]) {
-    try {
-      const u = new URL(candidate);
-      if (!isLoopbackHost(u.hostname)) return u.origin;
-    } catch {
-      // try next
-    }
-  }
-
   return DEFAULT_APP_URL;
 }
 
@@ -136,7 +134,7 @@ function confirmUrl(data: EmailData): string {
     type: data.email_action_type,
     next: nextPathForAction(data.email_action_type),
   });
-  return `${appOrigin(data)}/auth/confirm?${params.toString()}`;
+  return `${appOrigin()}/auth/confirm?${params.toString()}`;
 }
 
 function renderHtml(
@@ -220,8 +218,9 @@ Deno.serve(async (req) => {
   if (!res.ok) {
     const detail = await res.text();
     console.error("Resend send failed", res.status, detail);
-    // Signal a retriable error back to Supabase Auth.
-    return json({ error: "Failed to send email", detail }, 502);
+    // Signal a retriable error back to Supabase Auth; the provider's own
+    // error text stays in the function log.
+    return json({ error: "Failed to send email" }, 502);
   }
 
   return json({}, 200);
