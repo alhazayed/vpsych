@@ -10,6 +10,18 @@ import {
 import { ensureLearnerProfile } from "@/lib/ace/persist";
 import { rateLimit } from "@/lib/rate-limit";
 
+const RCA_ACTIONS = ["rca", "remediation", "next", "supervisor", "mastery"] as const;
+type RcaAction = (typeof RCA_ACTIONS)[number];
+
+function isRcaAction(value: unknown): value is RcaAction {
+  return (RCA_ACTIONS as readonly unknown[]).includes(value);
+}
+
+/** Graph node ids are snake_case slugs (`diagnostic_interview`). */
+function isCompetencyNodeId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(value);
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -27,10 +39,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as {
-    observedFailure?: string;
-    action?: "rca" | "remediation" | "next" | "supervisor" | "mastery";
-  };
+  const body = (await request.json().catch(() => null)) as {
+    observedFailure?: unknown;
+    action?: unknown;
+  } | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (
+    body.observedFailure !== undefined &&
+    !isCompetencyNodeId(body.observedFailure)
+  ) {
+    return NextResponse.json({ error: "Invalid competency" }, { status: 400 });
+  }
+  if (body.action !== undefined && !isRcaAction(body.action)) {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  }
 
   const profile = await ensureLearnerProfile(supabase, user.id);
   const states = statesFromAceCompetencies(profile.competencies);
