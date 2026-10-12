@@ -6,10 +6,10 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
 import "./globals.css";
 
-// "Case file" design: a serif for names and headings (Newsreader, with Noto
-// Naskh Arabic for Arabic) over a plain sans for text (Source Sans 3, with
-// Noto Sans Arabic). globals.css builds --font-headline from the two serif
-// faces so Arabic headings fall through to Naskh glyph by glyph.
+// "Case file" design: Newsreader serif for English headings and names, Noto
+// Kufi Arabic for Arabic headings, Source Sans 3 and Noto Sans Arabic for
+// text. globals.css builds --font-headline from Newsreader then Kufi so
+// Arabic headings fall through to Kufi glyph by glyph.
 const serifLatin = Newsreader({
   variable: "--font-serif-latin",
   subsets: ["latin"],
@@ -22,7 +22,7 @@ const body = Source_Sans_3({
   weight: ["400", "500", "600", "700"],
 });
 
-// Self-hosted (Noto Sans Arabic v33 and Noto Naskh Arabic v44, arabic
+// Self-hosted (Noto Sans Arabic v33 and Noto Kufi Arabic v27, arabic
 // subset, variable 400-700; SIL OFL). Fetching Arabic from Google Fonts at
 // build time broke Turbopack builds whenever Google served
 // /l/font?kit=…&skey=… URLs ("next/font/google queries have exactly one
@@ -34,9 +34,9 @@ const arabic = localFont({
   display: "swap",
 });
 
-const serifArabic = localFont({
-  src: "./fonts/NotoNaskhArabic-arabic-variable.woff2",
-  variable: "--font-serif-arabic",
+const headlineArabic = localFont({
+  src: "./fonts/NotoKufiArabic-arabic-variable.woff2",
+  variable: "--font-headline-arabic",
   weight: "400 700",
   display: "swap",
 });
@@ -68,7 +68,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${serifLatin.variable} ${serifArabic.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
+      className={`${serifLatin.variable} ${headlineArabic.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
     >
       <body
         className={`min-h-full flex flex-col font-[family-name:var(--font-body)] ${
