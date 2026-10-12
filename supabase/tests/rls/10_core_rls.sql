@@ -174,6 +174,52 @@ select pg_temp.expect_count('admin can read reports',
   $q$select count(*) from public.session_reports where session_id = 'a2000000-0000-4000-8000-000000000000'$q$, 1);
 select pg_temp.expect_count('pending account cannot read sessions',
   'dddddddd-0000-4000-8000-000000000004', 'select count(*) from public.sessions', 0);
+select pg_temp.expect_count('trainee can read active patients',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  'select (count(*) > 0)::int from public.avatars', 1);
+select pg_temp.expect_count('pending account cannot read patients',
+  'dddddddd-0000-4000-8000-000000000004', 'select count(*) from public.avatars', 0);
+select pg_temp.expect_count('pending account still reads its own profile',
+  'dddddddd-0000-4000-8000-000000000004', 'select count(*) from public.profiles', 1);
+-- An account waiting for approval (or rejected) reads nothing else at all.
+do $$
+declare t text; got bigint; leaked text;
+begin
+  for t in
+    select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'p', 'v') and c.relname <> 'profiles'
+      and has_table_privilege('authenticated', c.oid, 'select')
+    order by 1
+  loop
+    perform pg_temp.become('dddddddd-0000-4000-8000-000000000004');
+    execute format('select count(*) from public.%I', t) into got;
+    perform pg_temp.unbecome();
+    if got > 0 then
+      leaked := concat_ws(', ', leaked, format('%s (%s)', t, got));
+    end if;
+  end loop;
+  if leaked is not null then
+    raise exception 'FAIL pending account reads rows from %', leaked;
+  end if;
+  raise notice 'ok   pending account reads no table but its own profile';
+end $$;
+-- New tables need the same rule, whether or not they have rows here.
+do $$
+declare missing text;
+begin
+  select string_agg(c.relname, ', ' order by c.relname) into missing
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind in ('r', 'p') and c.relname <> 'profiles'
+    and not exists (
+      select 1 from pg_policies p
+      where p.schemaname = 'public' and p.tablename = c.relname
+        and p.permissive = 'RESTRICTIVE' and p.cmd in ('SELECT', 'ALL')
+        and 'authenticated' = any (p.roles) and p.qual ~ 'is_approved\(\)');
+  if missing is not null then
+    raise exception 'FAIL approval rule: no "Approved accounts only" policy on %', missing;
+  end if;
+  raise notice 'ok   every public table but profiles requires an approved account';
+end $$;
 select pg_temp.expect_error('anon cannot read profiles', null,
   'select count(*) from public.profiles', '%permission denied%');
 select pg_temp.expect_error('anon cannot read sessions', null,
@@ -258,10 +304,12 @@ select pg_temp.expect_error('pending account cannot approve itself',
   'dddddddd-0000-4000-8000-000000000004',
   $q$update public.profiles set approval_status = 'approved' where id = 'dddddddd-0000-4000-8000-000000000004'$q$,
   '%Cannot change account approval%');
+-- The avatar id is read here, as postgres: the pending account cannot see it.
 select pg_temp.expect_error('pending account cannot start a session',
   'dddddddd-0000-4000-8000-000000000004',
-  $q$insert into public.sessions (therapist_id, avatar_id)
-     select 'dddddddd-0000-4000-8000-000000000004', id from public.avatars limit 1$q$,
+  format($q$insert into public.sessions (therapist_id, avatar_id)
+     values ('dddddddd-0000-4000-8000-000000000004', %L)$q$,
+     (select id from public.avatars order by id limit 1)),
   '%row-level security%');
 select pg_temp.expect_error('trainee cannot start a session for someone else',
   'aaaaaaaa-0000-4000-8000-000000000001',
