@@ -19,6 +19,31 @@ import {
   USER_MSG_ID,
 } from "@/lib/sessions/__fixtures__/route-fakes";
 
+const TEST_ID = "44444444-4444-4444-8444-444444444444";
+const EXAM_CASE = {
+  version: 2,
+  assessment_id: "VPSY-T",
+  locale: "en-US",
+  primary_diagnosis: { id: "d1", slug: "ptsd", name: "Posttraumatic stress disorder" },
+  comorbidities: [],
+} as unknown as CaseInstanceSnapshot;
+
+/**
+ * A skill test of EXAM_CASE: the row holds only the locale and the case is
+ * sealed. `fullSnapshot` runs the same case as a practice session.
+ */
+function examSession() {
+  const sealedCase = sealSkillTestCase(TEST_ID, EXAM_CASE);
+  expect(sealedCase).toBeTruthy();
+  return {
+    fullSnapshot: EXAM_CASE as unknown as Record<string, unknown>,
+    rowOpts: {
+      snapshot: { locale: "en-US" },
+      sessionExtra: { skill_test_assignment_id: TEST_ID, sealed_case: sealedCase },
+    },
+  };
+}
+
 const state = vi.hoisted(() => ({
   supabase: null as unknown,
   detailed: [] as Array<(input: Record<string, unknown>) => unknown>,
@@ -124,16 +149,7 @@ describe("POST /api/sessions/:id/message (classic regression)", () => {
   });
 
   it("sends no engine numbers that could hint at a skill test's sealed case", async () => {
-    const TEST_ID = "44444444-4444-4444-8444-444444444444";
-    const CASE = {
-      version: 2,
-      assessment_id: "VPSY-T",
-      locale: "en-US",
-      primary_diagnosis: { id: "d1", slug: "ptsd", name: "PTSD" },
-      comorbidities: [],
-    } as unknown as CaseInstanceSnapshot;
-    const sealedCase = sealSkillTestCase(TEST_ID, CASE);
-    expect(sealedCase).toBeTruthy();
+    const exam = examSession();
     const { POST } = await import("@/app/api/sessions/[id]/message/route");
     const turn = async (opts: Parameters<typeof fakeSupabase>[0]) => {
       state.supabase = fakeSupabase(opts).client;
@@ -145,28 +161,51 @@ describe("POST /api/sessions/:id/message (classic regression)", () => {
 
     // The same case as a practice turn carries the engine packets, so the
     // exam assertions below are not vacuous.
-    const practice = await turn({ snapshot: CASE as unknown as Record<string, unknown> });
+    const practice = await turn({ snapshot: exam.fullSnapshot });
     expect(practice.json.emotion).toMatchObject({ variables: expect.any(Object) });
     expect(practice.json.humanization).not.toBeNull();
     expect(practice.json.voiceHints).not.toBeNull();
 
-    // A test session row holds only the locale; the case is sealed.
-    const exam = await turn({
-      snapshot: { locale: "en-US" },
-      sessionExtra: { skill_test_assignment_id: TEST_ID, sealed_case: sealedCase },
-    });
-    expect((exam.json.assistantMessage as { content: string }).content).toBe("I don't sleep much.");
+    const test = await turn(exam.rowOpts);
+    expect((test.json.assistantMessage as { content: string }).content).toBe("I don't sleep much.");
     for (const key of [
       "emotion", "cbePrimary", "cbeDisclosureGate", "cbeRapport", "decisionSpeak",
       "decisionAct", "decisionDisclosure", "decisionCognitiveMove", "humanization",
     ]) {
-      expect(exam.json[key], key).toBeNull();
+      expect(test.json[key], key).toBeNull();
     }
     // The patient's voice still gets its pacing.
-    expect(exam.json.voiceHints).toEqual(practice.json.voiceHints);
+    expect(test.json.voiceHints).toEqual(practice.json.voiceHints);
     for (const header of ["X-CBE-Primary", "X-CI-Speak", "X-CI-Act", "X-Humanization"]) {
-      expect(exam.res.headers.get(header), header).toBeNull();
+      expect(test.res.headers.get(header), header).toBeNull();
     }
+  });
+
+  it("redrafts a skill-test reply that names the sealed diagnosis; practice keeps it", async () => {
+    // CBE may answer with a direct stall; turn it off so the model path runs.
+    vi.stubEnv("CBE_ENABLED", "false");
+    const exam = examSession();
+    const NAMED = "My doctor said it was PTSD.";
+    const CLEAN = "I'd rather not put a label on it. I just don't sleep.";
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    const ask = { message: "Has anyone ever given you a diagnosis?" };
+
+    const practiceDb = fakeSupabase({ snapshot: exam.fullSnapshot });
+    state.supabase = practiceDb.client;
+    state.detailed.push(() => ({ text: NAMED, aiSource: "gpt" }));
+    const practice = (await (await POST(post("message", ask), ctx)).json()) as Record<string, unknown>;
+    expect((practice.assistantMessage as { content: string }).content).toBe(NAMED);
+
+    const seen: Array<Record<string, unknown>> = [];
+    const testDb = fakeSupabase(exam.rowOpts);
+    state.supabase = testDb.client;
+    state.detailed.push((i) => (seen.push(i), { text: NAMED, aiSource: "gpt" }));
+    state.detailed.push((i) => (seen.push(i), { text: CLEAN, aiSource: "gpt" }));
+    const test = (await (await POST(post("message", ask), ctx)).json()) as Record<string, unknown>;
+    expect((test.assistantMessage as { content: string }).content).toBe(CLEAN);
+    expect(String(seen[1]!.behaviourReinforcement)).toMatch(/named a diagnosis/);
+    const saved = testDb.rpcCalls.filter((c) => c.name === "insert_assistant_message");
+    expect(saved.map((c) => c.args.p_content)).toEqual([CLEAN]);
   });
 });
 
@@ -196,6 +235,49 @@ describe("POST /api/sessions/:id/message/stream", () => {
     expect(res.headers.get("content-type")).toMatch(/text\/event-stream/);
     const events = await readSse(res);
     expect(events.at(-1)!.type).toBe("done");
+  });
+
+  it("in a skill test, sends no draft text and never speaks a sentence naming the diagnosis", async () => {
+    vi.stubEnv("CBE_ENABLED", "false");
+    const exam = examSession();
+    const drafts = [
+      ["I don't sleep. ", "My doctor said it was PTSD."],
+      ["I'd rather not put a label on it. ", "I just don't sleep."],
+    ];
+    const run = async (opts: Parameters<typeof fakeSupabase>[0]) => {
+      state.supabase = fakeSupabase(opts).client;
+      let call = 0;
+      state.stream = async (input) => {
+        const onToken = input.onToken as (t: string, full: string) => void;
+        const parts = drafts[call++]!;
+        let full = "";
+        for (const part of parts) onToken(part, (full += part));
+        return { text: full, aiSource: "gpt", interrupted: false };
+      };
+      const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
+      const res = await POST(
+        post("message/stream", { message: "Has anyone ever given you a diagnosis?" }),
+        ctx,
+      );
+      return readSse(res);
+    };
+
+    const test = await run(exam.rowOpts);
+    expect(test.filter((e) => e.type === "token")).toEqual([]);
+    const spoken = test.filter((e) => e.type === "sentence").map((e) => String(e.payload.text));
+    expect(spoken.join(" ")).not.toContain("PTSD");
+    const done = test.at(-1)!;
+    expect(done.type).toBe("done");
+    expect((done.payload.assistantMessage as { content: string }).content).toBe(
+      "I'd rather not put a label on it. I just don't sleep.",
+    );
+
+    // Practice streams the draft as before and keeps the reply.
+    const practice = await run({ snapshot: exam.fullSnapshot });
+    expect(practice.some((e) => e.type === "token")).toBe(true);
+    expect(
+      (practice.at(-1)!.payload.assistantMessage as { content: string }).content,
+    ).toBe("I don't sleep. My doctor said it was PTSD.");
   });
 
   it("delivers each token to the HTTP body before the model produces the next one", async () => {

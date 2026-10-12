@@ -67,6 +67,12 @@ database, not just the UI (`src/lib/skill-tests/exam.ts`, `seal.ts`):
   decision and affect packets and keeps only the voice hints the patient's
   speech needs (`buildTurnResponse`). `/api/sessions/[id]/emotion` returns 404
   to the trainee.
+- The patient model still knows its diagnosis, so the reply gate rejects a
+  test reply that names the diagnosis or a comorbidity (formal labels and
+  abbreviations, English and Arabic; `lib/ai/diagnosis-labels.ts`) and the
+  model redrafts without it. Symptom words stay allowed. The speech gate holds
+  any streamed sentence with a label until the reply is checked, and a test
+  stream sends no draft tokens.
 - Ending a test skips education, coaching and the enterprise stage (whose
   certificate count would reveal a score of 85 or more). The clinic room,
   debrief and supervisor pages send a test session to `/sessions/[id]` and its

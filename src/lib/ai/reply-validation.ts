@@ -17,13 +17,15 @@ import {
   enforceableIn,
   type MedicationFact,
 } from "@/lib/ai/medication-facts";
+import { namesSealedDiagnosis } from "@/lib/ai/diagnosis-labels";
 
 export type ReplyValidationReason =
   | "empty"
   | "punctuation_only"
   | "ellipsis_only"
   | "age_contradiction"
-  | "medication_contradiction";
+  | "medication_contradiction"
+  | "diagnosis_named";
 
 export type ReplyValidationResult =
   | { ok: true }
@@ -42,6 +44,11 @@ export type CanonicalReplyFacts = {
    * the most common adoption shape is undetectable.
    */
   therapistMessage?: string | null;
+  /**
+   * Skill tests only: diagnosis labels the patient must never say, since the
+   * trainee has to work the case out (see `sealedDiagnosisLabels`).
+   */
+  sealedDiagnosisLabels?: readonly string[];
 };
 
 const ARABIC_LETTER = /\p{Script=Arabic}/u;
@@ -356,9 +363,10 @@ export function detectMedicationContradiction(
  */
 export function hasCanonicalFactExposure(
   text: string,
-  facts?: Pick<CanonicalReplyFacts, "medications"> | null,
+  facts?: Pick<CanonicalReplyFacts, "medications" | "sealedDiagnosisLabels"> | null,
 ): boolean {
   if (!text) return false;
+  if (namesSealedDiagnosis(text, facts?.sealedDiagnosisLabels)) return true;
   const norm = normalizeForFacts(text);
   if (/\d/.test(norm)) return true;
   // Spoken Arabic numerals attached to doses/durations are fact-bearing too.
@@ -415,6 +423,9 @@ export function validatePatientReply(
     );
     if (medHit !== null) {
       return { ok: false, reason: "medication_contradiction", detail: medHit };
+    }
+    if (namesSealedDiagnosis(trimmed, facts.sealedDiagnosisLabels)) {
+      return { ok: false, reason: "diagnosis_named" };
     }
   }
 
