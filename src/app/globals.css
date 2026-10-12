@@ -9,38 +9,40 @@
 }
 
 :root {
-  /* Clinical Intelligence System */
-  --background: #f7f9fb;
-  --on-background: #191c1e;
-  --surface: #f7f9fb;
-  --surface-dim: #d8dadc;
-  --surface-bright: #f7f9fb;
+  /* "Consulting room" palette: green-grey walls, ink text, sage actions and
+     one warm lamp (secondary-container) for the patient-speaking cue.
+     Contrast pairs are guarded by src/lib/design-tokens.test.ts. */
+  --background: #eef1ef;
+  --on-background: #1f2d33;
+  --surface: #eef1ef;
+  --surface-dim: #cfd6d2;
+  --surface-bright: #f4f6f5;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f2f4f6;
-  --surface-container: #eceef0;
-  --surface-container-high: #e6e8ea;
-  --surface-container-highest: #e0e3e5;
-  --on-surface: #191c1e;
-  --on-surface-variant: #41474f;
+  --surface-container-low: #f4f6f5;
+  --surface-container: #e6eae8;
+  --surface-container-high: #dfe4e1;
+  --surface-container-highest: #d8dedb;
+  --on-surface: #1f2d33;
+  --on-surface-variant: #3e4b48;
   /* Text-safe grey: >= 4.5:1 on every light surface up to surface-container. */
-  --outline: #5f666e;
-  --outline-variant: #c1c7d0;
+  --outline: #55625e;
+  --outline-variant: #cad3ce;
   /* Form field borders need 3:1 against the field (WCAG 1.4.11);
-     outline-variant is decorative only (1.7:1). */
-  --field-border: #80878f;
+     outline-variant is decorative only. */
+  --field-border: #7a8682;
   --success: #166534;
-  /* Password "fair" meter: 4.2:1 against its track. */
+  /* Password "fair" meter: 3.8:1 against its track. */
   --strength-fair: #c2410c;
-  --primary: #004a77;
+  --primary: #3d6a5b;
   --on-primary: #ffffff;
-  --primary-container: #1d6296;
-  --on-primary-container: #bcdbff;
-  --primary-fixed: #cfe5ff;
-  --secondary: #a23f00;
+  --primary-container: #2f5649;
+  --on-primary-container: #d6e8df;
+  --primary-fixed: #dce7e1;
+  --secondary: #875a12;
   --on-secondary: #ffffff;
-  --secondary-container: #fd6c15;
-  --on-secondary-container: #581f00;
-  --tertiary: #38475c;
+  --secondary-container: #d29433;
+  --on-secondary-container: #3b2604;
+  --tertiary: #3e4b48;
   --error: #ba1a1a;
   --error-container: #ffdad6;
   --on-error-container: #93000a;
