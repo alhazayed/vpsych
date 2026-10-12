@@ -9,43 +9,46 @@
 }
 
 :root {
-  /* "Consulting room" palette: green-grey walls, ink text, sage actions and
-     one warm lamp (secondary-container) for the patient-speaking cue.
+  /* "Case file" palette: cool sheet greys, navy ink, oxblood for actions
+     and what is current, highlighter yellow (secondary-container) for marks.
      Contrast pairs are guarded by src/lib/design-tokens.test.ts. */
-  --background: #eef1ef;
-  --on-background: #1f2d33;
-  --surface: #eef1ef;
-  --surface-dim: #cfd6d2;
-  --surface-bright: #f4f6f5;
+  --background: #f4f6f8;
+  --on-background: #1b2a41;
+  --surface: #f4f6f8;
+  --surface-dim: #d3dae2;
+  --surface-bright: #f8f9fb;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f4f6f5;
-  --surface-container: #e6eae8;
-  --surface-container-high: #dfe4e1;
-  --surface-container-highest: #d8dedb;
-  --on-surface: #1f2d33;
-  --on-surface-variant: #3e4b48;
+  --surface-container-low: #f8f9fb;
+  --surface-container: #eaeef2;
+  --surface-container-high: #e4e9ef;
+  --surface-container-highest: #dbe1e8;
+  --on-surface: #1b2a41;
+  --on-surface-variant: #3c4a5c;
   /* Text-safe grey: >= 4.5:1 on every light surface up to surface-container. */
-  --outline: #55625e;
-  --outline-variant: #cad3ce;
+  --outline: #566375;
+  --outline-variant: #d3dae2;
   /* Form field borders need 3:1 against the field (WCAG 1.4.11);
      outline-variant is decorative only. */
-  --field-border: #7a8682;
+  --field-border: #7b8696;
   --success: #166534;
-  /* Password "fair" meter: 3.8:1 against its track. */
+  /* Password "fair" meter: 3.9:1 against its track. */
   --strength-fair: #c2410c;
-  --primary: #3d6a5b;
+  --primary: #8c2f39;
   --on-primary: #ffffff;
-  --primary-container: #2f5649;
-  --on-primary-container: #d6e8df;
-  --primary-fixed: #dce7e1;
-  --secondary: #875a12;
+  --primary-container: #1b2a41;
+  --on-primary-container: #c9d3e0;
+  --primary-fixed: #f3e3e5;
+  --secondary: #6e5200;
   --on-secondary: #ffffff;
-  --secondary-container: #d29433;
-  --on-secondary-container: #3b2604;
-  --tertiary: #3e4b48;
+  --secondary-container: #f3e27c;
+  --on-secondary-container: #3d3200;
+  --tertiary: #3c4a5c;
   --error: #ba1a1a;
   --error-container: #ffdad6;
   --on-error-container: #93000a;
+  /* Headings: Newsreader for Latin, Noto Naskh Arabic for Arabic glyphs. */
+  --font-headline: var(--font-serif-latin), var(--font-serif-arabic), Georgia,
+    serif;
   --clinical-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
   --clinical-shadow-hover: 0px 10px 30px rgba(0, 0, 0, 0.06);
 
