@@ -36,6 +36,8 @@ export function fakeSupabase(
     snapshot?: Record<string, unknown> | null;
     /** Earlier transcript rows already in the session. */
     history?: Array<{ role: string; content: string }>;
+    /** Extra session columns (e.g. a skill test's assignment and sealed case). */
+    sessionExtra?: Record<string, unknown>;
   } = {},
 ) {
   const rpcCalls: RpcCall[] = [];
@@ -52,6 +54,7 @@ export function fakeSupabase(
     case_instance_id: null,
     clinical_snapshot: opts.snapshot ?? null,
     avatars: avatar,
+    ...opts.sessionExtra,
   };
 
   const from = (table: string) => {

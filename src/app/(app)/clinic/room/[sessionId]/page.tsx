@@ -27,6 +27,10 @@ export default async function ClinicRoomPage({ params }: Props) {
   if (typed.therapist_id !== user.id) {
     redirect("/clinic");
   }
+  // Skill tests run only in the exam room, which keeps the case off the page.
+  if (typed.skill_test_assignment_id) {
+    redirect(`/sessions/${sessionId}`);
+  }
 
   if (await expireStaleSession(supabase, typed)) {
     redirect(`/clinic/room/${sessionId}/debrief`);

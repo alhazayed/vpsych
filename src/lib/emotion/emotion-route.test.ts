@@ -19,14 +19,16 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: async () => ({ ok: true, retryAfterSec: 0 }),
 }));
 
-function fakeSupabase(opts: { role?: string; userId?: string } = {}) {
+function fakeSupabase(
+  opts: { role?: string; userId?: string; skillTestId?: string } = {},
+) {
   const session = {
     id: SESSION,
     therapist_id: OWNER,
     status: "active",
     case_instance_id: null,
     clinical_snapshot: { primary_diagnosis: { slug: SLUG } },
-    skill_test_assignment_id: null,
+    skill_test_assignment_id: opts.skillTestId ?? null,
     sealed_case: null,
     started_at: new Date().toISOString(),
     max_duration_sec: 2400,
@@ -110,6 +112,14 @@ describe("GET /api/sessions/:id/emotion", () => {
     const json = (await res.json()) as { state: { disorder_slug: string } };
     expect(json.state.disorder_slug).toBe(SLUG);
   });
+
+  it("gives a skill test's trainee nothing, since the numbers follow the disorder", async () => {
+    state.supabase = fakeSupabase({ skillTestId: "t1" }).client;
+    const { GET } = await import("@/app/api/sessions/[id]/emotion/route");
+    const res = await GET(req(), ctx);
+    expect(res.status).toBe(404);
+    expect(await res.text()).not.toMatch(/variables|expression|mode/);
+  });
 });
 
 describe("POST /api/sessions/:id/emotion", () => {
@@ -141,6 +151,15 @@ describe("POST /api/sessions/:id/emotion", () => {
     const text = await res.text();
     expect(text).not.toContain(SLUG);
     expect(JSON.parse(text)).toMatchObject({ simulate: true, persisted: false });
+    expect(db.writes).toEqual([]);
+  });
+
+  it("refuses a simulation in a skill test", async () => {
+    const db = fakeSupabase({ skillTestId: "t1" });
+    state.supabase = db.client;
+    const { POST } = await import("@/app/api/sessions/[id]/emotion/route");
+    const res = await POST(req({ simulate: true, reset: true }), ctx);
+    expect(res.status).toBe(404);
     expect(db.writes).toEqual([]);
   });
 

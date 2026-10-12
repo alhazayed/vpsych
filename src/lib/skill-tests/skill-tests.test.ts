@@ -235,6 +235,28 @@ describe("skill test guardrails (source)", () => {
     expect(end).toContain("const isSkillTest = Boolean(typed.skill_test_assignment_id);");
     expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_EDUCATION/);
     expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_SUPERVISOR/);
+    // Enterprise issues a certificate at 85+, so its count would leak the score.
+    expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_ENTERPRISE/);
+  });
+
+  it("sends skill tests from the clinic room pages to the exam pages", () => {
+    const room = read("src/app/(app)/clinic/room/[sessionId]/page.tsx");
+    expect(room).toMatch(
+      /if \(typed\.skill_test_assignment_id\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}`\);/,
+    );
+    // The test check runs before the room loads the patient for the page.
+    expect(room.indexOf("typed.skill_test_assignment_id")).toBeLessThan(
+      room.indexOf("resolveAvatar("),
+    );
+    for (const page of ["debrief", "supervisor"]) {
+      const src = read(`src/app/(app)/clinic/room/[sessionId]/${page}/page.tsx`);
+      expect(src, page).toMatch(
+        /if \(session\.skill_test_assignment_id\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}\/complete`\);/,
+      );
+      expect(src.indexOf("session.skill_test_assignment_id"), page).toBeLessThan(
+        src.indexOf("buildSupervisorBriefing({"),
+      );
+    }
   });
 
   it("returns nothing about the case when a skill test session starts", () => {

@@ -8,6 +8,8 @@
  * the model calls in patient-agent.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
+import { sealSkillTestCase } from "@/lib/skill-tests";
 import {
   ctx,
   fakeSupabase,
@@ -119,6 +121,52 @@ describe("POST /api/sessions/:id/message (classic regression)", () => {
     state.supabase = fakeSupabase({ owner: "someone-else" }).client;
     expect((await POST(post("message", { message: "hi" }), ctx)).status).toBe(403);
     expect((await POST(post("message", { message: "  " }), ctx)).status).toBe(400);
+  });
+
+  it("sends no engine numbers that could hint at a skill test's sealed case", async () => {
+    const TEST_ID = "44444444-4444-4444-8444-444444444444";
+    const CASE = {
+      version: 2,
+      assessment_id: "VPSY-T",
+      locale: "en-US",
+      primary_diagnosis: { id: "d1", slug: "ptsd", name: "PTSD" },
+      comorbidities: [],
+    } as unknown as CaseInstanceSnapshot;
+    const sealedCase = sealSkillTestCase(TEST_ID, CASE);
+    expect(sealedCase).toBeTruthy();
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    const turn = async (opts: Parameters<typeof fakeSupabase>[0]) => {
+      state.supabase = fakeSupabase(opts).client;
+      state.detailed.push(() => ({ text: "I don't sleep much.", aiSource: "gpt" }));
+      const res = await POST(post("message", { message: "How have you been sleeping?" }), ctx);
+      expect(res.status).toBe(200);
+      return { res, json: (await res.json()) as Record<string, unknown> };
+    };
+
+    // The same case as a practice turn carries the engine packets, so the
+    // exam assertions below are not vacuous.
+    const practice = await turn({ snapshot: CASE as unknown as Record<string, unknown> });
+    expect(practice.json.emotion).toMatchObject({ variables: expect.any(Object) });
+    expect(practice.json.humanization).not.toBeNull();
+    expect(practice.json.voiceHints).not.toBeNull();
+
+    // A test session row holds only the locale; the case is sealed.
+    const exam = await turn({
+      snapshot: { locale: "en-US" },
+      sessionExtra: { skill_test_assignment_id: TEST_ID, sealed_case: sealedCase },
+    });
+    expect((exam.json.assistantMessage as { content: string }).content).toBe("I don't sleep much.");
+    for (const key of [
+      "emotion", "cbePrimary", "cbeDisclosureGate", "cbeRapport", "decisionSpeak",
+      "decisionAct", "decisionDisclosure", "decisionCognitiveMove", "humanization",
+    ]) {
+      expect(exam.json[key], key).toBeNull();
+    }
+    // The patient's voice still gets its pacing.
+    expect(exam.json.voiceHints).toEqual(practice.json.voiceHints);
+    for (const header of ["X-CBE-Primary", "X-CI-Speak", "X-CI-Act", "X-Humanization"]) {
+      expect(exam.res.headers.get(header), header).toBeNull();
+    }
   });
 });
 

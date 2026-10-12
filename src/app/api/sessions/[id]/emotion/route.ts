@@ -103,6 +103,10 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     adminView = true;
+  } else if (typed.skill_test_assignment_id) {
+    // The patient's emotion numbers start from per-disorder priors, so in a
+    // skill test they would hint at the sealed diagnosis.
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const disorderSlug = disorderFromSession(typed);
@@ -190,6 +194,10 @@ export async function POST(request: Request, { params }: Params) {
   const typed = session as TherapySession;
   if (typed.therapist_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  // A preview from the disorder baseline would hint at a sealed diagnosis.
+  if (typed.skill_test_assignment_id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Emotion state advances only through real session turns (the message

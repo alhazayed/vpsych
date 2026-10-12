@@ -30,6 +30,11 @@ export default async function ClinicDebriefPage({ params }: Props) {
   if (!session || session.therapist_id !== user.id) {
     redirect("/clinic");
   }
+  // A skill test's results are for the supervisor; the trainee gets the
+  // exam's own completion page.
+  if (session.skill_test_assignment_id) {
+    redirect(`/sessions/${sessionId}/complete`);
+  }
 
   const avatarRaw = session.avatars as
     | { name: string; disorder: string }
