@@ -21,6 +21,18 @@ describe("password recovery flow", () => {
     );
   });
 
+  it("email hook takes the link origin only from APP_URL or the default", () => {
+    const hook = readFileSync(
+      join(root, "supabase/functions/send-email-hook/index.ts"),
+      "utf8",
+    );
+    // A wildcard redirect allow-list must not let a sign-up pick the origin.
+    expect(hook).not.toMatch(/data\.redirect_to|data\.site_url/);
+    expect(hook).toMatch(/u\.protocol === "https:"/);
+    // Resend's error text stays in the function log.
+    expect(hook).not.toMatch(/json\(\{[^}]*\bdetail\b[^}]*\}/);
+  });
+
   it("exposes confirm + reset-password routes", () => {
     expect(() =>
       readFileSync(join(root, "src/app/auth/confirm/route.ts"), "utf8"),
