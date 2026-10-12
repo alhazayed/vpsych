@@ -171,6 +171,8 @@ const CODE_EXPLANATION: Record<string, string> = {
   TTS_FAILED: "the ElevenLabs voice service returned an error",
   TTS_AUTH: "ElevenLabs rejected the server's API key (ELEVENLABS_API_KEY)",
   TTS_QUOTA: "the ElevenLabs character quota is used up",
+  TTS_DAILY_LIMIT:
+    "this account's daily patient-voice allowance is used up; it renews within a day",
   TTS_PLAN_REQUIRED: "this ElevenLabs voice needs a paid plan",
   VOICE_LANGUAGE_UNAVAILABLE:
     "no approved ElevenLabs voice is configured for this language",

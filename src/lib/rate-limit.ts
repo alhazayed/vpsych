@@ -53,26 +53,28 @@ export function windowMsToDuration(
 
 /**
  * In-memory limiter (per server instance). Exported for unit tests and as the
- * offline fallback path.
+ * offline fallback path. `cost` is how much of the budget this request uses
+ * (1 per request by default; e.g. characters for a character budget).
  */
 export function rateLimitMemory(
   key: string,
   limit: number,
   windowMs: number,
+  cost = 1,
 ): RateLimitResult {
   const now = Date.now();
-  const existing = buckets.get(key);
-  if (!existing || existing.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true };
+  let bucket = buckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    buckets.set(key, bucket);
   }
-  if (existing.count >= limit) {
+  if (bucket.count + cost > limit) {
     return {
       ok: false,
-      retryAfterSec: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
+      retryAfterSec: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
     };
   }
-  existing.count += 1;
+  bucket.count += cost;
   return { ok: true };
 }
 
@@ -96,9 +98,10 @@ async function rateLimitUpstash(
   key: string,
   limit: number,
   windowMs: number,
+  cost: number,
 ): Promise<RateLimitResult> {
   const limiter = getUpstashLimiter(limit, windowMs);
-  const result = await limiter.limit(key);
+  const result = await limiter.limit(key, cost === 1 ? undefined : { rate: cost });
   if (result.success) return { ok: true };
   return {
     ok: false,
@@ -119,6 +122,8 @@ export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  /** Budget this request uses; 1 per request unless the budget is in other units. */
+  cost = 1,
 ): Promise<RateLimitResult> {
   if (!hasUpstashRedis()) {
     if (
@@ -131,16 +136,16 @@ export async function rateLimit(
         "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN unset in production; using per-instance memory limits (not horizontally safe)",
       );
     }
-    return rateLimitMemory(key, limit, windowMs);
+    return rateLimitMemory(key, limit, windowMs, cost);
   }
 
   try {
-    return await rateLimitUpstash(key, limit, windowMs);
+    return await rateLimitUpstash(key, limit, windowMs, cost);
   } catch (err) {
     console.warn(
       "[rate-limit] Upstash unavailable; falling back to memory:",
       err instanceof Error ? err.message : String(err),
     );
-    return rateLimitMemory(key, limit, windowMs);
+    return rateLimitMemory(key, limit, windowMs, cost);
   }
 }
