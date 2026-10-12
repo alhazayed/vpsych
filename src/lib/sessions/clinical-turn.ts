@@ -19,6 +19,7 @@
  */
 
 import { withSkillTestCase } from "@/lib/skill-tests";
+import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { messageRpcClient, prepareMessageRpc } from "@/lib/supabase/admin";
 import type { PatientReplyResult } from "@/lib/ai/patient-agent";
@@ -621,6 +622,9 @@ export type ValidatedReplyHooks = {
 export function canonicalCorrectionCue(
   reason: Extract<ReplyValidationResult, { ok: false }>["reason"],
 ): string {
+  if (reason === "diagnosis_named") {
+    return "Your previous draft named a diagnosis. In this session you never say a diagnosis name or abbreviation, even if asked what a doctor called it or what you think you have. Say you'd rather not put a label on it, and describe what you have been going through in your own words.";
+  }
   return reason === "age_contradiction" ||
     reason === "medication_contradiction"
     ? "Your previous draft accepted a clinical fact the therapist stated that contradicts your authored history. Correct the therapist plainly, restate YOUR fact, and carry on. Never invent a new fact, and never take on a family member's medication."
@@ -651,6 +655,14 @@ export function buildCanonicalFacts(
     ),
     locale: avatarForReply.locale,
     therapistMessage: turn.message,
+    // A skill test hides the diagnosis, so the patient may not name it.
+    ...(turn.session.skill_test_assignment_id
+      ? {
+          sealedDiagnosisLabels: sealedDiagnosisLabels(
+            turn.session.clinical_snapshot,
+          ),
+        }
+      : {}),
   };
 }
 

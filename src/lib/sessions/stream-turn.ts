@@ -123,8 +123,14 @@ function createAttemptPresenter(params: {
   emit: StreamTurnEmit;
   facts: CanonicalReplyFacts;
   signal: AbortSignal;
+  /**
+   * False in a skill test: an unchecked draft may name the sealed diagnosis
+   * before the gate rejects it, so only gated sentences and the final reply
+   * reach the browser. The Therapy Room never renders tokens.
+   */
+  sendDraftTokens: boolean;
 }) {
-  const { emit, facts, signal } = params;
+  const { emit, facts, signal, sendDraftTokens } = params;
   let attempt = 0;
   let text = "";
   let sentenceIndex = 0;
@@ -157,7 +163,7 @@ function createAttemptPresenter(params: {
     if (signal.aborted || !delta) return;
     if (attempt === 0) attempt = 1;
     text += delta;
-    emit("token", { attempt, token: delta, text });
+    if (sendDraftTokens) emit("token", { attempt, token: delta, text });
     for (const sentence of segmenter.push(delta)) {
       for (const released of gate.offer(sentence)) {
         emitSentence(released, false);
@@ -184,7 +190,9 @@ function createAttemptPresenter(params: {
     }
     beginAttempt(reason);
     text = finalText;
-    emit("token", { attempt, token: finalText, text: finalText });
+    if (sendDraftTokens) {
+      emit("token", { attempt, token: finalText, text: finalText });
+    }
     for (const sentence of segmenter.push(finalText)) emitSentence(sentence, true);
     for (const sentence of segmenter.flush()) emitSentence(sentence, true);
   };
@@ -223,6 +231,7 @@ export async function runStreamingClinicalTurn(params: {
     emit,
     facts: buildCanonicalFacts(turn),
     signal,
+    sendDraftTokens: !turn.session.skill_test_assignment_id,
   });
 
   const interrupted = (stage: string): StreamTurnOutcome => {
