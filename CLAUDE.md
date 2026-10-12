@@ -207,6 +207,11 @@ Write rules that RLS enforces and application code must respect:
   `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`.
 - New RLS policies must wrap `auth.uid()` / `is_admin()` in `(select …)` so they
   evaluate once per statement rather than per row.
+- Accounts awaiting approval read only their own `profiles` row. Every other
+  public table carries a RESTRICTIVE `Approved accounts only` policy on
+  `(select is_approved())` (read-only as `… (read)`, or `FOR ALL` on `sessions`
+  and `session_messages`). Give any new table the same rule;
+  `supabase/tests/rls/` fails on a table without it.
 - Admin checks in SQL call `is_admin()`, never an inline `profiles.role =
   'admin'` subquery. `is_admin()` is true only for a token that passed two-step
   login (aal2), matching the app's admin pages, so a password-only admin gets
