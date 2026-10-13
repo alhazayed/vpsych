@@ -740,6 +740,36 @@ a {
   align-items: center;
 }
 
+/* Keyboard focus inside the room. The site-wide ring (--primary) is dark on
+   the dark room, so it is invisible here (WCAG 2.4.7). A white ring with a
+   dark halo shows on every room theme. */
+.trm-root :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(11, 18, 32, 0.9);
+}
+
+/* "5 minutes left" warning; stays mounted (empty) so it is announced. */
+.trm-time-warning {
+  position: absolute;
+  top: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  max-width: min(90vw, 28rem);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(15, 20, 28, 0.8);
+  border: 1px solid rgba(240, 196, 176, 0.6);
+  color: #ffffff;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.trm-time-warning:empty {
+  padding: 0;
+  border: 0;
+}
+
 /* Floating controls */
 .trm-controls {
   position: absolute;

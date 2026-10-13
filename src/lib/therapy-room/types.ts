@@ -163,6 +163,11 @@ export type TherapyRoomSettings = {
    * and Space still interrupt.
    */
   bargeInByVoice: boolean;
+  /**
+   * P (pause), N (notes) and R (retry) work as single keys. Off: they do
+   * nothing, so speech input or stray typing can't trigger them (WCAG 2.1.4).
+   */
+  singleKeyShortcuts: boolean;
 };
 
 /* ─── Virtual Mental Health Center (VMHC) ─────────────────────────────── */

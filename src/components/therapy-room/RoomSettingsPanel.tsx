@@ -114,6 +114,22 @@ export function RoomSettingsPanel({
           </small>
         </span>
       </label>
+
+      <label className="trm-settings__toggle">
+        <input
+          type="checkbox"
+          checked={settings.singleKeyShortcuts}
+          onChange={(e) =>
+            onChange({ ...settings, singleKeyShortcuts: e.target.checked })
+          }
+        />
+        <span>
+          {t("settings.singleKeyShortcuts")}
+          <small className="trm-settings__hint">
+            {t("settings.singleKeyShortcutsHint")}
+          </small>
+        </span>
+      </label>
     </aside>
   );
 }

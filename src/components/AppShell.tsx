@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useDialogFocus } from "@/components/use-dialog-focus";
 import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
 import {
   AdminMobilePrimaryNav,
@@ -151,6 +152,9 @@ export function AppShell({
   const tShell = useTranslations("shell");
   const [commandOpen, setCommandOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const closeDrawer = useCallback(() => setMobileDrawerOpen(false), []);
+  useDialogFocus(mobileDrawerOpen, drawerRef, closeDrawer);
   const {
     collapsed,
     toggleCollapsed,
@@ -277,7 +281,7 @@ export function AppShell({
                   <p className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
                     VPsych
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)] opacity-70">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)]">
                     {isAdminArea ? tShell("adminTagline") : tShell("tagline")}
                   </p>
                 </div>
@@ -442,16 +446,23 @@ export function AppShell({
             aria-label={tShell("sidebar.closeMenu")}
             onClick={() => setMobileDrawerOpen(false)}
           />
-          <div className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-[var(--surface-container-lowest)] shadow-lg">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={tShell("sidebar.menuTitle")}
+            className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-[var(--surface-container-lowest)] shadow-lg"
+          >
             <div className="flex items-center justify-between border-b border-[var(--outline-variant)] px-4 py-3">
               <p className="font-[family-name:var(--font-headline)] font-bold text-[var(--primary)]">
                 VPsych
               </p>
               <button
                 type="button"
-                className="rounded-lg p-2"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2"
                 aria-label={tShell("sidebar.closeMenu")}
                 onClick={() => setMobileDrawerOpen(false)}
+                autoFocus
               >
                 <span className="material-symbols-outlined" aria-hidden>
                   close

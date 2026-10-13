@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MAX_SESSION_SECONDS } from "./types";
-import { formatTimer, remainingSeconds } from "./session-timer";
+import { dueTimeWarning, formatTimer, remainingSeconds } from "./session-timer";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -35,5 +35,26 @@ describe("remainingSeconds", () => {
     const now = new Date("2026-01-01T00:00:00.000Z");
     vi.setSystemTime(now);
     expect(remainingSeconds(now.toISOString())).toBe(MAX_SESSION_SECONDS);
+  });
+});
+
+describe("dueTimeWarning", () => {
+  it("stays quiet before five minutes are left", () => {
+    expect(dueTimeWarning(301, null)).toBeNull();
+  });
+
+  it("warns at five minutes, then at one minute, once each", () => {
+    expect(dueTimeWarning(300, null)).toBe(5);
+    expect(dueTimeWarning(299, 5)).toBeNull();
+    expect(dueTimeWarning(60, 5)).toBe(1);
+    expect(dueTimeWarning(30, 1)).toBeNull();
+  });
+
+  it("gives only the nearest warning when the room opens late", () => {
+    expect(dueTimeWarning(45, null)).toBe(1);
+  });
+
+  it("says nothing once time is up", () => {
+    expect(dueTimeWarning(0, null)).toBeNull();
   });
 });

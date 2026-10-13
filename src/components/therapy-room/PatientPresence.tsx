@@ -1,7 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import type { PatientBehaviorState } from "@/lib/therapy-room";
+import { useLocale, useTranslations } from "next-intl";
+import {
+  describedPatientCues,
+  type PatientBehaviorState,
+} from "@/lib/therapy-room";
 
 /**
  * Patient presence — always visible, nonverbal cues from PME + NBE only.
@@ -18,8 +22,20 @@ export function PatientPresence({
   behavior: PatientBehaviorState;
   muted?: boolean;
 }) {
+  const t = useTranslations("therapyRoom.patientCues");
+  const locale = useLocale();
   const cues = new Set(behavior.activeCues);
   const phase = behavior.phase;
+  // Text alternative for the body language the picture shows (WCAG 1.1.1).
+  const described = describedPatientCues(behavior).map((cue) => t(cue));
+  const label = described.length
+    ? t("label", {
+        name,
+        cues: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+          described,
+        ),
+      })
+    : name;
   const anim = new Set(behavior.animationClasses ?? []);
 
   const cueClass = [
@@ -86,7 +102,7 @@ export function PatientPresence({
       data-phase={phase}
       data-nbe={behavior.animationClasses?.length ? "1" : "0"}
       role="img"
-      aria-label={name}
+      aria-label={label}
     >
       <div className="trm-patient__chair" aria-hidden />
       <div className="trm-patient__body">
