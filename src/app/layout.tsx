@@ -1,26 +1,33 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat, Geist_Mono } from "next/font/google";
+import { Newsreader, Source_Sans_3, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { localeDirection, type AppLocale } from "@/i18n/config";
 import "./globals.css";
 
-const headline = Montserrat({
-  variable: "--font-headline",
+// "Case file" design: Newsreader serif for English headings and names, Noto
+// Kufi Arabic for Arabic headings, Source Sans 3 and Noto Sans Arabic for
+// text. Kufi is declared in globals.css, not here: --font-headline puts it
+// first, limited to Arabic code points, because next/font's "Newsreader
+// Fallback" is local(Times New Roman), which has Arabic glyphs on Windows and
+// macOS and would otherwise catch Arabic headings before Kufi.
+const serifLatin = Newsreader({
+  variable: "--font-serif-latin",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const body = Inter({
+const body = Source_Sans_3({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-// Self-hosted (Noto Sans Arabic v33, arabic subset, weights 400-700; SIL OFL).
-// Fetching it from Google Fonts at build time broke Turbopack builds whenever
-// Google served /l/font?kit=…&skey=… URLs ("next/font/google queries have
-// exactly one entry").
+// Self-hosted (Noto Sans Arabic v33, arabic subset, variable 400-700; SIL
+// OFL). Fetching Arabic from Google Fonts at build time broke Turbopack
+// builds whenever Google served /l/font?kit=…&skey=… URLs ("next/font/google
+// queries have exactly one entry").
 const arabic = localFont({
   src: "./fonts/NotoSansArabic-arabic-variable.woff2",
   variable: "--font-arabic",
@@ -55,7 +62,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${headline.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
+      className={`${serifLatin.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
     >
       <body
         className={`min-h-full flex flex-col font-[family-name:var(--font-body)] ${
