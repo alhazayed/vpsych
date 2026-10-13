@@ -8,6 +8,21 @@
   src: url("/fonts/material-symbols-outlined.ttf") format("truetype");
 }
 
+/* Arabic headings: Noto Kufi Arabic v27 (arabic subset, variable 400-700;
+   SIL OFL), self-hosted. unicode-range keeps it to Arabic so it can sit first
+   in --font-headline without touching English headings. */
+@font-face {
+  font-family: "Headline Arabic";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/NotoKufiArabic-arabic-variable.woff2") format("woff2");
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1,
+    U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF,
+    U+FE70-FE74, U+FE76-FEFC;
+}
+
 :root {
   /* "Case file" palette: cool sheet greys, navy ink, oxblood for actions
      and what is current, highlighter yellow (secondary-container) for marks.
@@ -46,9 +61,10 @@
   --error: #ba1a1a;
   --error-container: #ffdad6;
   --on-error-container: #93000a;
-  /* Headings: Newsreader for Latin, Noto Kufi Arabic for Arabic glyphs. */
-  --font-headline: var(--font-serif-latin), var(--font-headline-arabic),
-    Georgia, serif;
+  /* Headings: Noto Kufi Arabic for Arabic glyphs, Newsreader for Latin.
+     Kufi goes first because Newsreader's fallback face (Times New Roman)
+     has Arabic glyphs on Windows and macOS. */
+  --font-headline: "Headline Arabic", var(--font-serif-latin), Georgia, serif;
   --clinical-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
   --clinical-shadow-hover: 0px 10px 30px rgba(0, 0, 0, 0.06);
 

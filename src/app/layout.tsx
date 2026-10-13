@@ -8,8 +8,10 @@ import "./globals.css";
 
 // "Case file" design: Newsreader serif for English headings and names, Noto
 // Kufi Arabic for Arabic headings, Source Sans 3 and Noto Sans Arabic for
-// text. globals.css builds --font-headline from Newsreader then Kufi so
-// Arabic headings fall through to Kufi glyph by glyph.
+// text. Kufi is declared in globals.css, not here: --font-headline puts it
+// first, limited to Arabic code points, because next/font's "Newsreader
+// Fallback" is local(Times New Roman), which has Arabic glyphs on Windows and
+// macOS and would otherwise catch Arabic headings before Kufi.
 const serifLatin = Newsreader({
   variable: "--font-serif-latin",
   subsets: ["latin"],
@@ -22,21 +24,13 @@ const body = Source_Sans_3({
   weight: ["400", "500", "600", "700"],
 });
 
-// Self-hosted (Noto Sans Arabic v33 and Noto Kufi Arabic v27, arabic
-// subset, variable 400-700; SIL OFL). Fetching Arabic from Google Fonts at
-// build time broke Turbopack builds whenever Google served
-// /l/font?kit=…&skey=… URLs ("next/font/google queries have exactly one
-// entry").
+// Self-hosted (Noto Sans Arabic v33, arabic subset, variable 400-700; SIL
+// OFL). Fetching Arabic from Google Fonts at build time broke Turbopack
+// builds whenever Google served /l/font?kit=…&skey=… URLs ("next/font/google
+// queries have exactly one entry").
 const arabic = localFont({
   src: "./fonts/NotoSansArabic-arabic-variable.woff2",
   variable: "--font-arabic",
-  weight: "400 700",
-  display: "swap",
-});
-
-const headlineArabic = localFont({
-  src: "./fonts/NotoKufiArabic-arabic-variable.woff2",
-  variable: "--font-headline-arabic",
   weight: "400 700",
   display: "swap",
 });
@@ -68,7 +62,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${serifLatin.variable} ${headlineArabic.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
+      className={`${serifLatin.variable} ${body.variable} ${arabic.variable} ${mono.variable} h-full antialiased`}
     >
       <body
         className={`min-h-full flex flex-col font-[family-name:var(--font-body)] ${
