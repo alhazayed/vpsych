@@ -651,6 +651,9 @@
       "tryAgain": "Please try speaking again.",
       "micDenied": "Microphone access is needed for hands-free conversation."
     },
+    "header": {
+      "title": "Session with {name}"
+    },
     "controls": {
       "aria": "Session controls",
       "interrupt": "Interrupt the patient (Space)",
