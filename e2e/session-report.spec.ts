@@ -62,7 +62,10 @@ test("trainee session ends in a report only an admin can read", async ({
     expect(body.assistantMessage?.role).toBe("assistant");
     expect(body.assistantMessage?.content?.length).toBeGreaterThan(0);
     // No AI key here: the reply must be labelled as a fallback, never as GPT.
-    expect(body.aiSource).toBe("persona_fallback");
+    // The behaviour engine, seeded by the (random) session id, sometimes
+    // answers with a scripted silence instead ("cbe_direct"); that is not a
+    // model reply either.
+    expect(["persona_fallback", "cbe_direct"]).toContain(body.aiSource);
   });
 
   await test.step("ending the session reaches the complete page", async () => {
