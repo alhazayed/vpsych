@@ -27,6 +27,35 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { VoiceProfile } from "@/lib/types";
 
+/**
+ * The patient's voice could not be looked up. Speaking anyway would use the
+ * default voice, possibly the other gender, as if it were the patient's own,
+ * so the TTS route answers 503 and the client plays the labelled browser voice.
+ */
+export class VoiceLookupError extends Error {
+  readonly code = "VOICE_LOOKUP_FAILED";
+  readonly status = 503;
+
+  constructor(what: string) {
+    super(`Voice lookup failed: ${what}`);
+    this.name = "VoiceLookupError";
+  }
+}
+
+function lookupFailed(
+  what: string,
+  error: { code?: string; message: string },
+  ids: Record<string, string | null | undefined>,
+): never {
+  console.error("[tts] voice lookup failed", {
+    what,
+    ...ids,
+    code: error.code,
+    error: error.message,
+  });
+  throw new VoiceLookupError(what);
+}
+
 /** Every voice_id known to the app: the registry plus any avatar-level ids. */
 async function loadAllowedVoiceIds(
   supabase: SupabaseClient,
@@ -40,10 +69,16 @@ async function loadAllowedVoiceIds(
     ].filter((v): v is string => Boolean(v?.trim())),
   );
 
-  const [{ data: profiles }, { data: avatars }] = await Promise.all([
+  const [
+    { data: profiles, error: profilesError },
+    { data: avatars, error: avatarsError },
+  ] = await Promise.all([
     supabase.from("voice_profiles").select("voice_id"),
     supabase.from("avatars").select("voice_id, voice_id_ar"),
   ]);
+  // A failed read would drop the avatar's real voice from the allow-list.
+  if (profilesError) lookupFailed("voice_allow_list", profilesError, {});
+  if (avatarsError) lookupFailed("voice_allow_list", avatarsError, {});
 
   for (const row of profiles ?? []) {
     if (row.voice_id) allowed.add(row.voice_id as string);
@@ -71,13 +106,14 @@ export async function resolveTtsVoice(params: {
   const supabase = await createClient();
 
   if (params.avatarId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("avatars")
       .select(
         "voice_profile_id, voice_id, voice_id_ar, voice_profile:voice_profiles(*)",
       )
       .eq("id", params.avatarId)
       .maybeSingle();
+    if (error) lookupFailed("avatar", error, { avatarId: params.avatarId });
 
     if (data) {
       profileId = profileId ?? (data.voice_profile_id as string | null);
@@ -90,11 +126,12 @@ export async function resolveTtsVoice(params: {
   }
 
   if (!profile && profileId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("voice_profiles")
       .select("*")
       .eq("id", profileId)
       .maybeSingle();
+    if (error) lookupFailed("voice_profile", error, { voiceProfileId: profileId });
     profile = (data as VoiceProfile | null) ?? null;
   }
 

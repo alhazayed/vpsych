@@ -47,6 +47,11 @@ export type ElevenLabsSynthesizeResult = {
   modelId: string;
   cached: boolean;
   streamed: boolean;
+  /**
+   * The avatar's own voice was rejected or invalid and the account default
+   * spoke instead (possibly the other gender). Callers must say so.
+   */
+  substituted: boolean;
 };
 
 export class ElevenLabsError extends Error {
@@ -320,6 +325,10 @@ export const elevenLabsService = {
       // request path (guards env/DB-derived candidates too).
       if (!isValidElevenLabsVoiceId(voiceId)) {
         lastDetail = `invalid voice id: ${voiceId}`;
+        console.warn("[elevenlabs] skipped invalid voice id", {
+          primary: i === 0,
+          locale: params.locale,
+        });
         continue;
       }
 
@@ -341,6 +350,7 @@ export const elevenLabsService = {
           modelId: cached.modelId,
           cached: true,
           streamed: false,
+          substituted: voiceId !== primaryVoiceId,
         };
       }
 
@@ -416,6 +426,7 @@ export const elevenLabsService = {
           modelId: model,
           cached: false,
           streamed: wantStream,
+          substituted: voiceId !== primaryVoiceId,
         };
       }
 

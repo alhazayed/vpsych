@@ -200,7 +200,11 @@
     },
     "supervisor": {
       "title": "Supervisor AI",
-      "subtitle": "Structured educational supervision — skills, modalities, portfolio, and reflective practice. Observes sessions only; never changes the patient."
+      "subtitle": "Structured educational supervision — skills, modalities, portfolio, and reflective practice. Observes sessions only; never changes the patient.",
+      "loading": "Loading supervision…",
+      "loadFailed": "Couldn't load supervision. Please try again.",
+      "rateLimited": "Too many requests. Wait a few minutes and try again.",
+      "networkError": "Network error. Check your connection and try again."
     },
     "dashboard": {
       "loading": "Loading…",
@@ -219,7 +223,8 @@
       "primaryFocus": "Primary focus:",
       "sessionsToThreshold": "about {count} sessions to threshold",
       "generateNext": "Generate adaptive next case",
-      "achievements": "Achievements"
+      "achievements": "Achievements",
+      "rateLimited": "Too many requests. Wait a few minutes and try again."
     }
   },
   "landing": {
@@ -803,7 +808,35 @@
       "fallbackReply": "Fallback reply (AI unavailable)",
       "audioUnavailable": "Patient audio unavailable.",
       "playAudio": "Play patient audio",
-      "fallbackVoice": "Played with the browser's fallback voice, not the patient's voice."
+      "fallbackVoice": "Played with the browser's fallback voice, not the patient's voice.",
+      "errorLine": "{stage} failed: {cause}",
+      "stages": {
+        "mic": "Microphone",
+        "recording": "Recording",
+        "stt": "Speech-to-text",
+        "transcript": "Transcript",
+        "message": "Patient reply",
+        "patientText": "Patient text",
+        "tts": "Patient voice",
+        "audio": "Audio playback"
+      },
+      "causes": {
+        "rateLimited": "too many requests in a short time. Wait a few minutes and try again.",
+        "signedOut": "your sign-in has expired. Sign in again.",
+        "dailyLimit": "today's patient-voice allowance is used up. It renews within a day; you can keep going in text.",
+        "serviceSetup": "the voice service is not set up correctly. You can continue in text; tell your administrator.",
+        "serviceFailed": "the service did not respond properly. Try again, or continue in text.",
+        "noSpeech": "no speech was heard. Speak a little louder and try again.",
+        "recordingRejected": "the recording could not be used. Try a shorter turn.",
+        "micDenied": "microphone access was blocked. Allow the microphone in your browser settings, then try again.",
+        "micMissing": "no microphone was found. Connect one and try again.",
+        "micFailed": "the microphone could not be opened. Close other apps using it and try again.",
+        "autoplayBlocked": "the browser blocked audio until you click. Use Play patient audio.",
+        "playbackFailed": "the browser could not play the patient audio. The reply is shown as text.",
+        "network": "the connection dropped. Check your internet and try again.",
+        "generic": "something went wrong. Try again, or continue in text."
+      },
+      "standInVoice": "Played with a stand-in voice; the patient's own voice is unavailable right now."
     },
     "endConfirm": {
       "title": "End the session?",
@@ -1358,13 +1391,17 @@
       "title": "Templates",
       "subtitle": "Reusable clinical scenario templates for generating standardized patients.",
       "library": "Template library",
-      "preview": "Generate sample patient"
+      "preview": "Generate sample patient",
+      "cloned": "Cloned as {slug}"
     },
     "presets": {
       "title": "Presets",
       "subtitle": "Instructor presets for learner level, objectives, and adaptive patient generation.",
       "library": "Preset library",
-      "preview": "Generate case / report preview"
+      "preview": "Generate case / report preview",
+      "cloned": "Cloned as {slug}",
+      "archived": "Preset archived",
+      "versioned": "Versioned to v{version}"
     },
     "curriculum": {
       "title": "Learners & Progress",
@@ -2200,6 +2237,15 @@
       },
       "error": "Could not rate the formulation. Try again later.",
       "limitation": "Rated by the AI examiner against the simulated case's own facts. Not saved, not shown to the trainee, and not validated."
+    },
+    "actionErrors": {
+      "mfaRequired": "Sign in with two-step login before doing this.",
+      "forbidden": "You do not have permission to do this.",
+      "notFound": "That item could not be found. Refresh the page.",
+      "rateLimited": "Too many requests. Wait a few minutes and try again.",
+      "invalid": "This was not accepted. Check the details and try again.",
+      "failed": "Something went wrong on the server. Please try again.",
+      "network": "Network error. Check your connection and try again."
     }
   },
   "validation": {
@@ -2259,7 +2305,9 @@
       "invalidCode": "That invitation code is not recognized.",
       "networkError": "Could not verify the code. Check your connection and try again.",
       "orAccount": "Already invited with an account?",
-      "createAccount": "Create account"
+      "createAccount": "Create account",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "verifyFailed": "The code could not be checked right now. Please try again."
     },
     "launch": {
       "title": "Begin blinded evaluation",
@@ -2411,7 +2459,12 @@
         "unmute": "Unmute",
         "settings": "Settings",
         "end": "End session"
-      }
+      },
+      "rateLimited": "Too many turns in a short time. Wait a moment and try again.",
+      "sttFailed": "Couldn't hear that clearly. Try again, or type your turn.",
+      "voiceUnavailable": "The patient's voice is unavailable right now, so their reply is shown below.",
+      "browserVoice": "Playing the patient's reply in the browser's voice; their own voice is unavailable.",
+      "fallbackReply": "The AI patient is unavailable, so this was a scripted fallback reply."
     },
     "notes": {
       "title": "Private notebook",
@@ -2649,7 +2702,28 @@
       "submit": "Assign test patient",
       "saveFailed": "The test could not be assigned. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
-      "noTrainees": "There are no trainees to assign a test to yet."
+      "noTrainees": "There are no trainees to assign a test to yet.",
+      "errors": {
+        "signedOut": "Your sign-in has expired. Sign in again, then assign the test.",
+        "forbidden": "Only supervisors can assign skill tests.",
+        "rateLimited": "Too many tests assigned in the last hour. Wait a few minutes and try again.",
+        "traineeRequired": "Choose the trainee to assign this patient to.",
+        "patientRequired": "Choose a patient.",
+        "titleInvalid": "Give the test a title of up to 120 characters.",
+        "languageInvalid": "Choose English or Arabic.",
+        "disorderInvalid": "Choose a disorder from the list.",
+        "comorbidityInvalid": "Choose up to two comorbidities the case engine supports with this disorder.",
+        "difficultyInvalid": "Choose a difficulty.",
+        "severityInvalid": "Choose a severity from the list.",
+        "sessionsInvalid": "Required sessions must be between 1 and 12.",
+        "instructionsTooLong": "Instructions can be up to 1000 characters.",
+        "dueDateInvalid": "The due date must be today or later.",
+        "ladderUnavailable": "Could not check the Training Program patients. Try again in a moment.",
+        "ladderPatientOnly": "This patient belongs to the Training Program and cannot be used in a test. Choose another patient.",
+        "patientIncompatible": "This patient's age or gender does not fit the chosen disorder. Choose another patient or disorder.",
+        "testUnavailable": "Skill tests can't be created right now. Ask the site administrator to check the server setup.",
+        "failed": "The test could not be assigned. Please try again."
+      }
     },
     "supervise": {
       "title": "Supervise",
@@ -2688,7 +2762,11 @@
       "cancelConfirm": "Cancel this test? The trainee will no longer see it. Results so far are kept.",
       "cancelFailed": "The test could not be cancelled. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
-      "caseUnreadable": "This test's sealed case could not be opened on this server, so the risk checks below may be incomplete. Ask an admin to check the skill-test seal key."
+      "caseUnreadable": "This test's sealed case could not be opened on this server, so the risk checks below may be incomplete. Ask an admin to check the skill-test seal key.",
+      "cancelClosed": "This test is already closed.",
+      "cancelNotFound": "This test no longer exists. Refresh the page.",
+      "cancelForbidden": "Only the supervisor who assigned this test, or an admin, can cancel it.",
+      "rateLimited": "Too many requests in the last hour. Wait a few minutes and try again."
     },
     "admin": {
       "title": "Supervisors",
@@ -2705,7 +2783,10 @@
       "networkError": "Network error. Check your connection and try again.",
       "accountApprovalsLink": "New accounts waiting for approval are under Account approvals.",
       "revokeConfirm": "Remove the supervisor role from {name}? They will lose access to the tests they assigned.",
-      "skillTestsLink": "Design and assign skill tests in the Supervise workspace."
+      "skillTestsLink": "Design and assign skill tests in the Supervise workspace.",
+      "mfaRequired": "Sign in with two-step login before changing roles.",
+      "notApplied": "The change did not save. Refresh the page and try again.",
+      "rateLimited": "Too many changes in the last hour. Wait a few minutes and try again."
     },
     "complete": {
       "badge": "Session submitted",

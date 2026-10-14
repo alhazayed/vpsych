@@ -108,6 +108,8 @@ export function TherapyRoom({
   const [riskFlagged, setRiskFlagged] = useState(false);
   const [status, setStatus] = useState(() => t("ready"));
   const [lastPatientLine, setLastPatientLine] = useState<string | null>(null);
+  /** The patient could not be heard, so their last line is shown as text. */
+  const [showPatientText, setShowPatientText] = useState(false);
   const [ending, setEnding] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -205,8 +207,7 @@ export function TherapyRoom({
         method: "POST",
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setStatus(data.error ?? t("endFailed"));
+        setStatus(t("endFailed"));
         endingRef.current = false;
         setEnding(false);
         return;
@@ -252,6 +253,13 @@ export function TherapyRoom({
     };
   }, [stopPlayback]);
 
+  // The patient's audio failed: say so instead of leaving "ready" on screen.
+  const speechUnavailable = useCallback(() => {
+    setSpeaking(false);
+    setShowPatientText(true);
+    setStatus(t("voiceUnavailable"));
+  }, [t]);
+
   const speak = useCallback(
     async (text: string) => {
       if (muted) return;
@@ -259,7 +267,7 @@ export function TherapyRoom({
       setSpeaking(true);
       lastAssistantRef.current = text;
       setLastPatientLine(text);
-      await playPatientSpeech({
+      const mode = await playPatientSpeech({
         text,
         locale,
         voiceId: avatar.voice_id,
@@ -273,7 +281,9 @@ export function TherapyRoom({
           onend: () => setSpeaking(false),
           onerror: () => setSpeaking(false),
         },
+        onUnavailable: speechUnavailable,
       });
+      if (mode === "browser") setStatus(t("browserVoice"));
     },
     [
       avatar.id,
@@ -283,7 +293,9 @@ export function TherapyRoom({
       avatar.voice_profile_id,
       locale,
       muted,
+      speechUnavailable,
       stopPlayback,
+      t,
     ],
   );
 
@@ -292,6 +304,7 @@ export function TherapyRoom({
       const trimmed = text.trim();
       if (!trimmed || pending || endingRef.current || paused) return;
       setPending(true);
+      setShowPatientText(false);
       setStatus(t("patientThinking"));
       try {
         const turn = await submitConversationTurn({
@@ -303,16 +316,18 @@ export function TherapyRoom({
             await endSession();
             return;
           }
-          setStatus(turn.error || t("sendFailed"));
+          setStatus(t(turn.status === 429 ? "rateLimited" : "sendFailed"));
           return;
         }
+        // A scripted fallback is never passed off as the AI patient's reply.
+        const fallback = turn.data.aiSource === "persona_fallback";
         if (!muted) {
           void speak(turn.data.assistantMessage.content);
         } else {
           lastAssistantRef.current = turn.data.assistantMessage.content;
           setLastPatientLine(turn.data.assistantMessage.content);
         }
-        setStatus(t("ready"));
+        setStatus(fallback ? t("fallbackReply") : t("ready"));
       } catch {
         setStatus(t("networkError"));
       } finally {
@@ -331,6 +346,7 @@ export function TherapyRoom({
     if (!recorder) return;
 
     setStatus(t("transcribing"));
+    setShowPatientText(false);
     setPending(true);
     try {
       const wav = await recorder.stop();
@@ -352,18 +368,30 @@ export function TherapyRoom({
           onend: () => setSpeaking(false),
           onerror: () => setSpeaking(false),
         },
+        onSpeechUnavailable: speechUnavailable,
+        onBrowserVoice: () => setStatus(t("browserVoice")),
       });
       if (!result.ok) {
         if (result.expired) {
           await endSession();
           return;
         }
-        setStatus(result.error || t("sendFailed"));
+        setStatus(
+          t(
+            result.status === 429
+              ? "rateLimited"
+              : result.stage === "stt"
+                ? "sttFailed"
+                : "sendFailed",
+          ),
+        );
         return;
       }
       lastAssistantRef.current = result.turn.assistantMessage.content;
       setLastPatientLine(result.turn.assistantMessage.content);
-      setStatus(t("ready"));
+      setStatus(
+        result.turn.aiSource === "persona_fallback" ? t("fallbackReply") : t("ready"),
+      );
     } catch {
       setStatus(t("networkError"));
     } finally {
@@ -484,6 +512,14 @@ export function TherapyRoom({
         >
           {paused ? t("paused") : status}
         </p>
+        {showPatientText && lastPatientLine && (
+          <p
+            dir="auto"
+            className="mt-3 max-w-md text-center text-base text-[var(--on-surface)]"
+          >
+            {lastPatientLine}
+          </p>
+        )}
 
         {/* Hands-free hint — no transcript bubbles */}
         {inConsult && !notesOpen && (

@@ -83,3 +83,45 @@ function looksTechnical(msg: string): boolean {
     ) || /^[a-z]+_[a-z_]+$/.test(msg.trim())
   );
 }
+
+/** Keys under `admin.actionErrors`, for admin tools whose routes answer in English. */
+export type AdminActionErrorKey =
+  | "mfaRequired"
+  | "forbidden"
+  | "notFound"
+  | "rateLimited"
+  | "invalid"
+  | "failed";
+
+/** Picks the localized message for a failed admin request by code or status. */
+export function adminActionErrorKey(
+  status: number,
+  code?: unknown,
+): AdminActionErrorKey {
+  if (code === "MFA_REQUIRED" || code === "mfa_required") return "mfaRequired";
+  if (status === 401 || status === 403) return "forbidden";
+  if (status === 404) return "notFound";
+  if (status === 429) return "rateLimited";
+  if (status === 400 || status === 422) return "invalid";
+  return "failed";
+}
+
+/**
+ * Validation issues a preview/save route returned (400 with an `error` array),
+ * so the admin can see what to fix. Server text is shown as-is; it is the
+ * validator's own output, never a database or provider message.
+ */
+export function adminValidationIssues(body: unknown): string[] {
+  const error = (body as { error?: unknown } | null)?.error;
+  if (!Array.isArray(error)) return [];
+  return error
+    .map((issue) =>
+      typeof issue === "string"
+        ? issue
+        : issue && typeof issue === "object" && "message" in issue
+          ? String((issue as { message: unknown }).message)
+          : "",
+    )
+    .filter(Boolean)
+    .slice(0, 10);
+}

@@ -41,6 +41,11 @@ export async function POST(request: Request, { params }: Params) {
     if (/forbidden/.test(error.message)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    console.error("[skill-tests] cancel failed", {
+      assignmentId: id,
+      code: error.code,
+      error: error.message,
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not cancel the test", error) },
       { status: 500 },

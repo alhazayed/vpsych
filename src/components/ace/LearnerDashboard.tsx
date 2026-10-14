@@ -50,11 +50,14 @@ export function LearnerDashboard() {
     (async () => {
       try {
         const res = await fetch("/api/ace/profile");
-        const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? t("loadFailed"));
+          // Server text is English; choose the localized message by status.
+          if (!cancelled) {
+            setError(res.status === 429 ? t("rateLimited") : t("loadFailed"));
+          }
           return;
         }
+        const json = await res.json();
         if (!cancelled) setData(json);
       } catch {
         if (!cancelled) setError(t("networkError"));
@@ -75,11 +78,11 @@ export function LearnerDashboard() {
         headers: { "Content-Type": "application/json" },
         body: "{}",
       });
-      const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? t("generateFailed"));
+        setError(res.status === 429 ? t("rateLimited") : t("generateFailed"));
         return;
       }
+      const json = await res.json();
       setNextCase(JSON.stringify(json.case, null, 2));
     } catch {
       setError(t("networkError"));

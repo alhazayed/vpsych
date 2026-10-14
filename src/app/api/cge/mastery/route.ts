@@ -37,7 +37,14 @@ export async function GET(request: Request) {
 
   const userId =
     targetUserId && me?.role === "admin" ? targetUserId : user.id;
-  const profile = await ensureLearnerProfile(supabase, userId);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, userId).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const graph = getBuiltinGraph();
   const states = statesFromAceCompetencies(profile.competencies, graph);
   const byId = new Map(states.map((s) => [s.competency_id, s]));
@@ -82,7 +89,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const graph = getBuiltinGraph();
   const states = statesFromAceCompetencies(profile.competencies, graph);
   const next = updateCompetencyScore(

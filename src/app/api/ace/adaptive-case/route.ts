@@ -25,7 +25,14 @@ export async function POST(request: Request) {
     seed?: string;
   };
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const { data: history } = await supabase
     .from("adaptive_case_history")
     .select("fingerprint")

@@ -208,6 +208,16 @@ function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): stri
  * Explicit conversation FSM; mic opens automatically after Start / TTS end.
  * Does not replace VoiceSession; mounted only when interaction_mode=therapy_room.
  */
+/** getUserMedia failure names: the only errors that mean "microphone problem". */
+const MIC_ERROR_NAMES = new Set([
+  "NotAllowedError",
+  "NotFoundError",
+  "NotReadableError",
+  "OverconstrainedError",
+  "SecurityError",
+  "AbortError",
+]);
+
 export function TherapyRoomSession({
   session,
   avatar,
@@ -816,12 +826,13 @@ export function TherapyRoomSession({
               ttsFailure = event.ok
                 ? null
                 : { status: event.status, code: event.code };
-              setVoiceDiag((d) =>
-                markVoiceStage(d, "tts", event.ok ? "ok" : "fail", {
+              setVoiceDiag((d) => ({
+                ...markVoiceStage(d, "tts", event.ok ? "ok" : "fail", {
                   tts_status: event.status,
                   tts_code: event.code,
                 }),
-              );
+                ...(event.substituted ? { voiceSubstituted: true } : {}),
+              }));
               break;
             case "audio_streaming":
               audioStreaming = true;
@@ -1753,23 +1764,39 @@ export function TherapyRoomSession({
         err && typeof err === "object" && "name" in err
           ? String((err as { name: unknown }).name)
           : "error";
-      voiceLog("MIC", "mic_error", { name });
+      // Only real getUserMedia failures are microphone errors. Anything else
+      // thrown while setting up listening is our bug: log it in production
+      // too and report it as a recording failure, not "fix your mic".
+      const isMicError = MIC_ERROR_NAMES.has(name);
+      if (isMicError) {
+        voiceLog("MIC", "mic_error", { name });
+      } else {
+        console.error("[VOICE][LISTEN] unexpected setup failure", {
+          name,
+          stage: "listen_setup",
+          locale,
+        });
+      }
       setVoiceDiag((d) =>
         failVoiceStage(d, {
-          stage: "mic",
-          code: name,
+          stage: isMicError ? "mic" : "recording",
+          code: isMicError ? name : "UNEXPECTED",
           message: describeVoiceError({
-            stage: "mic",
+            stage: isMicError ? "mic" : "recording",
             message:
               name === "NotAllowedError"
                 ? "microphone permission was denied"
                 : name === "NotFoundError"
                   ? "no microphone was found"
-                  : `could not open the microphone (${name})`,
+                  : isMicError
+                    ? `could not open the microphone (${name})`
+                    : "unexpected client error",
           }),
         }),
       );
-      telemetryRef.current.record("error", { code: "mic_denied" });
+      telemetryRef.current.record("error", {
+        code: isMicError ? "mic_denied" : "listen_unexpected",
+      });
       dispatch("ERROR");
       setStatusKey("error");
       setPresence("idle", "mic-error");
@@ -1953,7 +1980,10 @@ export function TherapyRoomSession({
                 setStatusKey("avatarSpeaking");
                 const abort = new AbortController();
                 playbackAbortRef.current = abort;
-                await playPatientSpeech({
+                // A failed replay must show the same notices as a normal turn,
+                // not leave the trainee pressing Repeat with nothing happening.
+                let replayFailure: { status?: number; code?: string } | null = null;
+                const mode = await playPatientSpeech({
                   text: lastPatientText,
                   locale,
                   voiceId: avatar.voice_id,
@@ -1966,8 +1996,43 @@ export function TherapyRoomSession({
                   audioRef,
                   signal: abort.signal,
                   streamPlayback: true,
+                  onDiagnostic: (event: PlaybackDiagnostic) => {
+                    if (event.event === "tts_response" && !event.ok) {
+                      replayFailure = { status: event.status, code: event.code };
+                    }
+                  },
+                  onUnavailable: ({ code, status }: { code: string; status?: number }) => {
+                    const { stage, message } = describeAudioUnavailable({ code, status });
+                    voiceLog("TURN", "repeat_unavailable", { code, status });
+                    setVoiceDiag((d) =>
+                      markAudioUnavailable(markVoiceStage(d, "audio", "fail"), {
+                        stage,
+                        code,
+                        status,
+                        message,
+                      }),
+                    );
+                  },
                 });
                 playbackAbortRef.current = null;
+                if (mode === "browser") {
+                  const failure = replayFailure as { status?: number; code?: string } | null;
+                  setVoiceDiag((d) => ({
+                    ...markVoiceStage(d, "audio", "ok", { audio_mode: "browser" }),
+                    audioDegraded: failure
+                      ? {
+                          stage: "tts",
+                          code: failure.code,
+                          status: failure.status,
+                          message: describeVoiceError({
+                            stage: "tts",
+                            code: failure.code,
+                            status: failure.status,
+                          }),
+                        }
+                      : null,
+                  }));
+                }
                 if (
                   fsmRef.current.isCurrent(gen) &&
                   fsmRef.current.getState() === "LISTENING" &&

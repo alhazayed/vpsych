@@ -9,7 +9,7 @@ import {
   elevenLabsService,
   ElevenLabsError,
 } from "@/lib/voice/elevenlabs";
-import { resolveTtsVoice } from "@/lib/voice/resolve-tts-voice";
+import { resolveTtsVoice, VoiceLookupError } from "@/lib/voice/resolve-tts-voice";
 import { VoiceLanguageError } from "@/lib/voice/voice-language";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -178,6 +178,18 @@ export async function POST(request: Request) {
       style: body.style,
     });
 
+    if (result.substituted) {
+      // The patient is not speaking in their own voice: flag it for ops and
+      // tell the client so the trainee is not misled.
+      console.warn("[tts] avatar voice substituted", {
+        requestId,
+        avatarId: body.avatarId ?? null,
+        locale,
+        source: resolved.source,
+      });
+      reportDegradation("tts_voice_substituted", { locale });
+    }
+
     return new NextResponse(result.body, {
       status: 200,
       headers: {
@@ -191,6 +203,7 @@ export async function POST(request: Request) {
         "X-Voice-Cached": result.cached ? "1" : "0",
         "X-Voice-Streamed": result.streamed ? "1" : "0",
         "X-Voice-Source": resolved.source,
+        ...(result.substituted ? { "X-Voice-Substituted": "1" } : {}),
         ...requestIdHeaders(requestId),
         ...(body.speechPace
           ? { "X-Voice-Speech-Pace": String(body.speechPace) }
@@ -203,7 +216,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ElevenLabsError) {
-      console.warn("[tts]", error.code, error.detail ?? error.message);
+      console.warn("[tts]", error.code, {
+        requestId,
+        locale,
+        status: error.status,
+        detail: error.detail ?? error.message,
+      });
       reportDegradation("tts_provider_failed", { code: error.code });
       return NextResponse.json(
         {
@@ -213,16 +231,31 @@ export async function POST(request: Request) {
         { status: error.status, headers: requestIdHeaders(requestId) },
       );
     }
-    console.warn("[tts]", error instanceof Error ? error.message : error);
-    if (error instanceof VoiceLanguageError) {
-      // No approved voice for this language: say so instead of a generic 502.
+    if (error instanceof VoiceLookupError) {
+      // Already logged with the avatar / profile id.
+      reportDegradation("tts_voice_lookup_failed");
       return NextResponse.json(
         { error: "Text-to-speech failed", code: error.code },
         { status: error.status, headers: requestIdHeaders(requestId) },
       );
     }
+    if (error instanceof VoiceLanguageError) {
+      // No approved voice for this language: say so instead of a generic 502.
+      console.warn("[tts]", error.code, { requestId, locale: error.locale });
+      return NextResponse.json(
+        { error: "Text-to-speech failed", code: error.code },
+        { status: error.status, headers: requestIdHeaders(requestId) },
+      );
+    }
+    // Our own bug, not the provider: keep it apart from TTS_FAILED.
+    console.error("[tts] unexpected failure", {
+      requestId,
+      locale,
+      error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+    });
+    reportDegradation("tts_provider_failed", { code: "TTS_INTERNAL" });
     return NextResponse.json(
-      { error: "TTS failed", code: "TTS_FAILED" },
+      { error: "TTS failed", code: "TTS_INTERNAL" },
       { status: 502, headers: requestIdHeaders(requestId) },
     );
   }

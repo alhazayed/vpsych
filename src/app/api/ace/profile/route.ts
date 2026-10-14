@@ -7,6 +7,7 @@ import {
 } from "@/lib/ace";
 import { ensureLearnerProfile } from "@/lib/ace/persist";
 import { rateLimit } from "@/lib/rate-limit";
+import { clientSafeError } from "@/lib/api-errors";
 
 /** Fields learners may self-update (instructor/scoring controls are admin-only). */
 const LEARNER_PATCH_KEYS = [
@@ -35,7 +36,14 @@ export async function GET() {
     );
   }
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const analytics = buildAnalytics(profile);
   const certifications = evaluateCertifications(profile);
   const plan = generateLearningPlan(profile);
@@ -113,7 +121,14 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -134,12 +149,16 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (error) {
-    console.warn("[ace/profile] update failed:", error.message);
-    return NextResponse.json({
-      ok: true,
-      profile: { ...profile, ...body },
-      source: "memory",
+    // Never answer "ok" for a change that was not saved.
+    console.error("[ace/profile] update failed", {
+      userId: user.id,
+      code: error.code,
+      error: error.message,
     });
+    return NextResponse.json(
+      { error: clientSafeError("Could not save your learning settings", error) },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true, profile: data ?? profile });

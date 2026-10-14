@@ -1,6 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+import {
+  adminActionErrorKey,
+  adminValidationIssues,
+} from "@/lib/admin/admin-product-errors";
 
 type TemplateOption = {
   id: string;
@@ -17,15 +22,26 @@ export function TemplateEnginePanel({
 }: {
   templates: TemplateOption[];
 }) {
+  const tErr = useTranslations("admin.actionErrors");
+  const t = useTranslations("admin.templates");
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [issues, setIssues] = useState<string[]>([]);
   const [json, setJson] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+
+  /** Localized failure; a non-JSON body (proxy timeout page) is not a network error. */
+  async function failed(res: Response) {
+    const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
+    setError(tErr(adminActionErrorKey(res.status, body?.code)));
+    setIssues(res.status === 400 ? adminValidationIssues(body) : []);
+  }
 
   async function preview() {
     setLoading(true);
     setError(null);
+    setIssues([]);
     setMsg(null);
     try {
       const res = await fetch("/api/admin/templates/preview", {
@@ -33,18 +49,14 @@ export function TemplateEnginePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : JSON.stringify(data.error ?? "Preview failed"),
-        );
+        await failed(res);
         return;
       }
+      const data = await res.json();
       setJson(JSON.stringify(data.patient, null, 2));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
@@ -53,20 +65,21 @@ export function TemplateEnginePanel({
   async function cloneTemplate() {
     setLoading(true);
     setError(null);
+    setIssues([]);
     try {
       const res = await fetch("/api/admin/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clone", templateId }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Clone failed");
+        await failed(res);
         return;
       }
-      setMsg(`Cloned as ${data.template?.slug}`);
+      const data = await res.json();
+      setMsg(t("cloned", { slug: String(data.template?.slug ?? "") }));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
@@ -129,7 +142,18 @@ export function TemplateEnginePanel({
         </button>
       </div>
 
-      {error && <p className="text-sm text-[var(--error)]">{error}</p>}
+      {error && (
+        <div className="text-sm text-[var(--error)]" role="alert">
+          <p>{error}</p>
+          {issues.length > 0 && (
+            <ul dir="ltr" className="mt-1 list-disc ps-5 text-xs">
+              {issues.map((issue, i) => (
+                <li key={i}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {msg && <p className="text-sm text-[var(--primary)]">{msg}</p>}
 
       {json && (

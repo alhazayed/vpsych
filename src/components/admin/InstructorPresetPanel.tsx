@@ -1,6 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+import {
+  adminActionErrorKey,
+  adminValidationIssues,
+} from "@/lib/admin/admin-product-errors";
 
 type PresetOption = {
   id: string;
@@ -18,15 +23,30 @@ export function InstructorPresetPanel({
 }: {
   presets: PresetOption[];
 }) {
+  const tErr = useTranslations("admin.actionErrors");
+  const t = useTranslations("admin.presets");
   const [presetId, setPresetId] = useState(presets[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [issues, setIssues] = useState<string[]>([]);
   const [json, setJson] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function preview() {
+  /** Localized failure; a non-JSON body (proxy timeout page) is not a network error. */
+  async function failed(res: Response) {
+    const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
+    setError(tErr(adminActionErrorKey(res.status, body?.code)));
+    setIssues(res.status === 400 ? adminValidationIssues(body) : []);
+  }
+
+  function begin() {
     setLoading(true);
     setError(null);
+    setIssues([]);
+  }
+
+  async function preview() {
+    begin();
     setMsg(null);
     try {
       const res = await fetch("/api/admin/presets/preview", {
@@ -37,70 +57,62 @@ export function InstructorPresetPanel({
           generateReport: true,
         }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : JSON.stringify(data.error ?? "Preview failed"),
-        );
+        await failed(res);
         return;
       }
+      const data = await res.json();
       setJson(JSON.stringify(data, null, 2));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
   }
 
   async function clonePreset() {
-    setLoading(true);
-    setError(null);
+    begin();
     try {
       const res = await fetch("/api/admin/presets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clone", presetId }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Clone failed");
+        await failed(res);
         return;
       }
-      setMsg(`Cloned as ${data.preset?.slug}`);
+      const data = await res.json();
+      setMsg(t("cloned", { slug: String(data.preset?.slug ?? "") }));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
   }
 
   async function archivePreset() {
-    setLoading(true);
-    setError(null);
+    begin();
     try {
       const res = await fetch("/api/admin/presets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "archive", presetId }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Archive failed");
+        await failed(res);
         return;
       }
-      setMsg("Preset archived");
+      setMsg(t("archived"));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
   }
 
   async function versionPreset() {
-    setLoading(true);
-    setError(null);
+    begin();
     try {
       const res = await fetch("/api/admin/presets", {
         method: "POST",
@@ -111,14 +123,14 @@ export function InstructorPresetPanel({
           changeNotes: "Admin version bump",
         }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Version failed");
+        await failed(res);
         return;
       }
-      setMsg(`Versioned to v${data.version}`);
+      const data = await res.json();
+      setMsg(t("versioned", { version: String(data.version ?? "") }));
     } catch {
-      setError("Network error");
+      setError(tErr("network"));
     } finally {
       setLoading(false);
     }
@@ -198,9 +210,16 @@ export function InstructorPresetPanel({
       </div>
 
       {error && (
-        <p className="text-sm text-[var(--error)]" role="alert">
-          {error}
-        </p>
+        <div className="text-sm text-[var(--error)]" role="alert">
+          <p>{error}</p>
+          {issues.length > 0 && (
+            <ul dir="ltr" className="mt-1 list-disc ps-5 text-xs">
+              {issues.map((issue, i) => (
+                <li key={i}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {msg && <p className="text-sm text-[var(--primary)]">{msg}</p>}
       {json && (

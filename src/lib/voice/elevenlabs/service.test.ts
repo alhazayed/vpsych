@@ -180,6 +180,8 @@ describe("elevenLabsService", () => {
       voiceId: "hpp4J3VqNfWAUOO0d1Us",
     });
     expect(result.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
+    // The trainee is told a stand-in voice spoke (X-Voice-Substituted).
+    expect(result.substituted).toBe(true);
     expect(calls.length).toBe(2);
     expect(calls[0]).toContain("hpp4J3VqNfWAUOO0d1Us");
     expect(calls[1]).toContain("EXAVITQu4vr4xnSDxMaL");

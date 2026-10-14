@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { skillTestCancelErrorKey } from "@/lib/skill-tests/client-errors";
 
 export function CancelSkillTestButton({ skillTestId }: { skillTestId: string }) {
   const router = useRouter();
@@ -18,9 +19,9 @@ export function CancelSkillTestButton({ skillTestId }: { skillTestId: string }) 
       const res = await fetch(`/api/skill-tests/${skillTestId}/cancel`, {
         method: "POST",
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? t("cancelFailed"));
+        const data = (await res.json().catch(() => ({}))) as { code?: string };
+        setError(t(skillTestCancelErrorKey(res.status, data.code)));
         setBusy(false);
         return;
       }

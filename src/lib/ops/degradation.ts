@@ -11,7 +11,9 @@ import * as Sentry from "@sentry/nextjs";
 export type Degradation =
   | "patient_persona_fallback"
   | "assessment_heuristic_fallback"
-  | "tts_provider_failed";
+  | "tts_provider_failed"
+  | "tts_voice_substituted"
+  | "tts_voice_lookup_failed";
 
 export function reportDegradation(
   event: Degradation,

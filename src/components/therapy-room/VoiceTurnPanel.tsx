@@ -3,9 +3,11 @@
 import { useTranslations } from "next-intl";
 import {
   VOICE_STAGES,
+  voiceErrorCause,
   voiceStageLabel,
   type VoiceStageStatus,
   type VoiceTurnDiagnostics,
+  type VoiceTurnError,
 } from "@/lib/voice/voice-diagnostics";
 
 const STAGE_MARK: Record<VoiceStageStatus, string> = {
@@ -47,6 +49,13 @@ export function VoiceTurnPanel({
   const error = diagnostics.error;
   const audioUnavailable = diagnostics.audioUnavailable;
   const audioDegraded = diagnostics.audioDegraded;
+  // Learner-facing line in the UI language. The English technical sentence
+  // (err.message) is shown only with voice debugging on.
+  const line = (err: VoiceTurnError) =>
+    t("errorLine", {
+      stage: t(`stages.${err.stage}`),
+      cause: t(`causes.${voiceErrorCause(err)}`),
+    });
 
   return (
     <>
@@ -78,17 +87,33 @@ export function VoiceTurnPanel({
         </div>
       )}
 
+      {!error && !audioUnavailable && !audioDegraded && diagnostics.voiceSubstituted && (
+        <div className="trm-voice-alert" role="status" data-testid="voice-substituted">
+          <p>{t("standInVoice")}</p>
+        </div>
+      )}
+
       {(error || audioUnavailable || audioDegraded) && (
         <div className="trm-voice-alert" role="alert" data-testid="voice-alert">
-          {error && <p data-testid="voice-error">{error.message}</p>}
+          {error && (
+            <p data-testid="voice-error">
+              {line(error)}
+              {debug && <span dir="ltr"> ({error.message})</span>}
+            </p>
+          )}
           {!error && !audioUnavailable && audioDegraded && (
             <p data-testid="voice-audio-degraded">
-              {t("fallbackVoice")} {audioDegraded.message}
+              {t("fallbackVoice")}
+              {audioDegraded.code ? ` ${line(audioDegraded)}` : ""}
+              {debug && audioDegraded.message && (
+                <span dir="ltr"> ({audioDegraded.message})</span>
+              )}
             </p>
           )}
           {!error && audioUnavailable && (
             <p data-testid="voice-audio-unavailable">
-              {t("audioUnavailable")} {audioUnavailable.message}
+              {t("audioUnavailable")} {line(audioUnavailable)}
+              {debug && <span dir="ltr"> ({audioUnavailable.message})</span>}
               {onPlayAudio && (
                 <button
                   type="button"

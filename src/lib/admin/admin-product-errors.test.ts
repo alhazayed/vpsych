@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
+  adminActionErrorKey,
+  adminValidationIssues,
   educatorAdminError,
   extractAdminProductErrorCode,
 } from "./admin-product-errors";
@@ -59,5 +62,37 @@ describe("admin-product-errors", () => {
     expect(
       educatorAdminError("postgres exception: duplicate key", (k) => LABELS[k], "Safe"),
     ).toBe("Safe");
+  });
+});
+
+describe("adminActionErrorKey", () => {
+  const load = (l: string) =>
+    JSON.parse(readFileSync(`messages/${l}.json`, "utf8")) as {
+      admin: { actionErrors: Record<string, string> };
+    };
+
+  it("never echoes the English server text; every key has EN and AR copy", () => {
+    const keys = [
+      adminActionErrorKey(403, "MFA_REQUIRED"),
+      adminActionErrorKey(403),
+      adminActionErrorKey(404),
+      adminActionErrorKey(429),
+      adminActionErrorKey(400),
+      adminActionErrorKey(500),
+      "network",
+    ];
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const l of ["en", "ar"]) {
+      for (const key of keys) {
+        expect(load(l).admin.actionErrors[key], `${l}:${key}`).toEqual(expect.any(String));
+      }
+    }
+  });
+
+  it("keeps only the validator's issue text for a 400", () => {
+    expect(
+      adminValidationIssues({ error: [{ code: "x", message: "Name is required" }, "Bad slug"] }),
+    ).toEqual(["Name is required", "Bad slug"]);
+    expect(adminValidationIssues({ error: "relation does not exist" })).toEqual([]);
   });
 });
