@@ -1950,7 +1950,9 @@
       "sessionsSampleHint": "Most recent 100 sessions for this learner (sample). Not a complete lifetime history.",
       "viewAllSessions": "View all in Sessions",
       "performanceNote": "Performance lists overall scores from existing session_reports for this learner’s recent sessions. Scores are educational simulation assessments — not validated clinical grades.",
-      "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory."
+      "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory.",
+      "viewTraining": "Training Program ladder",
+      "trainingLink": "Training Program progress"
     },
     "contextualHelp": {
       "close": "Close",
@@ -2253,6 +2255,34 @@
       "invalid": "This was not accepted. Check the details and try again.",
       "failed": "Something went wrong on the server. Please try again.",
       "network": "Network error. Check your connection and try again."
+    },
+    "training": {
+      "title": "Training Program",
+      "subtitle": "Every trainee's progress with the ten program patients. A level counts once the database grades it from the session report.",
+      "detailSubtitle": "Levels with each program patient, every attempt, and its session and report.",
+      "statTrainees": "Trainees in the program",
+      "statTraineesHint": "Started at least one level",
+      "statCleared": "Levels cleared",
+      "statClearedHint": "Across all trainees; {total} levels per trainee",
+      "statAwaiting": "Waiting for a report",
+      "statAwaitingHint": "Fallback reports count once an admin regenerates them",
+      "loadErrorTitle": "Training progress could not be loaded",
+      "loadErrorDescription": "Refresh the page and try again.",
+      "namesFailed": "Trainee names could not be loaded, so trainees show without a name.",
+      "truncated": "Showing the first {count} attempts. Later attempts are not in these totals.",
+      "emptyTitle": "No trainee has started the program yet",
+      "emptyDescription": "A trainee appears here after starting their first level.",
+      "colTrainee": "Trainee",
+      "colLastAttempt": "Last attempt",
+      "colStarted": "Started",
+      "colLinks": "Open",
+      "cellLabel": "{patient}: {cleared} of 5 levels cleared",
+      "cellNotStarted": "{patient}: not started",
+      "legend": "Patients",
+      "unnamed": "Unnamed trainee",
+      "notStarted": "Not started",
+      "report": "Report",
+      "session": "Session"
     }
   },
   "validation": {

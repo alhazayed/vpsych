@@ -118,6 +118,7 @@ function pageTitleKey(pathname: string): string {
   if (pathname.startsWith("/admin/templates")) return "templates";
   if (pathname.startsWith("/admin/presets")) return "presets";
   if (pathname.startsWith("/admin/learners")) return "learners";
+  if (pathname.startsWith("/admin/training")) return "training";
   if (pathname.startsWith("/admin/curriculum")) return "learnersProgress";
   if (pathname.startsWith("/admin/graph")) return "competencies";
   if (pathname.startsWith("/learning/supervisor")) return "supervisorAi";
