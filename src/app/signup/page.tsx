@@ -174,7 +174,7 @@ function SignupForm() {
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/vpsych-logo.png"
-              alt="VPsych"
+              alt=""
               width={32}
               height={32}
               className="h-8 w-8 rounded-md object-cover"
@@ -553,7 +553,7 @@ function SignupForm() {
             </label>
 
             <div className="space-y-3 pt-2">
-              <label className="flex cursor-pointer items-start gap-3">
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 py-1">
                 <input
                   type="checkbox"
                   checked={acceptedTerms}
@@ -562,7 +562,7 @@ function SignupForm() {
                   aria-describedby={
                     errorField === "terms" ? "signup-error" : undefined
                   }
-                  className="mt-0.5 h-5 w-5 rounded border-[var(--field-border)] text-[var(--primary)]"
+                  className="mt-0.5 h-6 w-6 shrink-0 rounded border-[var(--field-border)] text-[var(--primary)]"
                   required
                 />
                 <span className="text-xs leading-relaxed text-[var(--on-surface-variant)]">
