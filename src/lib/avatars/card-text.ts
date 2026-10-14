@@ -21,7 +21,6 @@ function keysByText(entries: Record<string, string>): Map<string, string> {
   );
 }
 
-const DISORDER_KEYS = keysByText(enMessages.avatars.defaultDisorders);
 const GOAL_KEYS = keysByText(enMessages.avatars.sessionGoals);
 
 function storedText(
@@ -43,11 +42,7 @@ export function defaultDisorderText(
   catalogue: Translator,
   defaults: Translator,
 ): string | null {
-  const trimmed = name?.trim();
-  if (!trimmed) return null;
-  const catalogued = disorderNameText(trimmed, catalogue);
-  if (catalogued && catalogued !== trimmed) return catalogued;
-  return storedText(trimmed, DISORDER_KEYS, defaults);
+  return disorderNameText(name, catalogue, defaults);
 }
 
 /** A session goal (trainee teaching target) as display text. */

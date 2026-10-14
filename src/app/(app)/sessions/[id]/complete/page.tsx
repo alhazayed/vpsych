@@ -5,7 +5,7 @@ import { requireProfile } from "@/lib/auth";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
-import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import { sessionElapsedLabel } from "@/lib/sessions/elapsed";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
@@ -32,6 +32,7 @@ export default async function SessionCompletePage({ params }: Props) {
   const tRoom = await getTranslations("therapyRoom.complete");
   const tTranscript = await getTranslations("therapyRoom.transcript");
   const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
   const localName = avatarLocalNameSelect(await getLocale());
   const { data: session, error: sessionError } = await supabase
@@ -78,12 +79,7 @@ export default async function SessionCompletePage({ params }: Props) {
 
   const showRoomDebrief = typed.interaction_mode === "therapy_room";
   // The session's own case, never the avatar's legacy default diagnosis.
-  const dx = sessionDiagnosis(typed);
-  const diagnosis = dx
-    ? dx.slug && tDisorders.has(dx.slug)
-      ? tDisorders(dx.slug)
-      : dx.name
-    : null;
+  const diagnosis = sessionDiagnosisText(typed, tDisorders, tDefaultDisorders);
 
   // Always load the transcript for the complete page — classic sessions also
   // promise review under My Sessions / this page (not therapy-room-only).
