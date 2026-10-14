@@ -31,16 +31,12 @@ type NavItem = {
 function therapistNav(t: (key: string) => string): NavItem[] {
   return [
     {
-      href: "/training",
-      label: t("training"),
-      icon: "stairs",
-      match: (p) => p.startsWith("/training"),
-    },
-    {
+      // The Library opens with the Training Program; a program patient's
+      // levels (/training/[key]) belong to it.
       href: "/avatars",
       label: t("patientLibrary"),
       icon: "library_books",
-      match: (p) => p.startsWith("/avatars"),
+      match: (p) => p.startsWith("/avatars") || p.startsWith("/training/"),
     },
     {
       href: "/tests",
@@ -52,7 +48,8 @@ function therapistNav(t: (key: string) => string): NavItem[] {
       href: "/sessions",
       label: t("mySessions"),
       icon: "clinical_notes",
-      match: (p) => p.startsWith("/sessions"),
+      // Training progress is the other tab of the trainee's records.
+      match: (p) => p.startsWith("/sessions") || p === "/training",
     },
     {
       href: "/feedback",

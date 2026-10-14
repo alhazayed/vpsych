@@ -550,8 +550,14 @@
   },
   "avatars": {
     "welcomeBack": "Welcome back",
-    "intro": "Choose a virtual patient to begin a timed voice practice session.",
+    "intro": "Start with the Training Program, or choose any patient below for free practice.",
     "title": "Virtual Patient Library",
+    "freePracticeTitle": "Free practice",
+    "program": {
+      "title": "Training Program",
+      "intro": "Ten patients, five levels each. Pass a level to unlock the next encounter with the same patient.",
+      "progressLink": "My training progress"
+    },
     "count": "{count} active {persona}",
     "persona": "persona",
     "personas": "personas",

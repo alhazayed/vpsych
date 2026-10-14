@@ -20,7 +20,14 @@ import {
   normalizeCourseRow,
   type CourseProgress,
 } from "@/lib/therapy-course";
-import { loadLadderAvatarIds, withoutLadderAvatars } from "@/lib/training-ladder";
+import {
+  ladderLevelDef,
+  loadLadderAvatarIds,
+  loadLadderOverview,
+  withoutLadderAvatars,
+} from "@/lib/training-ladder";
+import { LadderLevelList } from "@/components/training/LadderLevelList";
+import { PatientPortrait } from "@/components/training/PatientPortrait";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -30,6 +37,8 @@ export default async function AvatarsPage() {
   const tDisorders = await getTranslations("skillTests.disorders");
   const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
   const tGoals = await getTranslations("avatars.sessionGoals");
+  const tTraining = await getTranslations("training");
+  const locale = await getLocale();
   const genderLabel = (g: string) => {
     const key = `genders.${g.trim().toLowerCase()}`;
     return t.has(key) ? t(key) : g;
@@ -37,7 +46,7 @@ export default async function AvatarsPage() {
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
-      `id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales, ${avatarLocalNameSelect(await getLocale())}`,
+      `id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales, ${avatarLocalNameSelect(locale)}`,
     )
     .eq("is_active", true)
     .order("name");
@@ -88,7 +97,9 @@ export default async function AvatarsPage() {
   }
   const tCourse = await getTranslations("course");
 
-  // Training Program patients live on /training only.
+  // The Training Program comes first; its patients are played only through
+  // their levels, so they are left out of free practice below.
+  const program = await loadLadderOverview(supabase, profile.id, locale);
   const ladderAvatarIds = await loadLadderAvatarIds(supabase);
   const list = withoutLadderAvatars(
     (avatars as
@@ -128,10 +139,82 @@ export default async function AvatarsPage() {
         </p>
       </section>
 
+      <section className="mb-12 fade-in-up" aria-labelledby="program-title">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2
+              id="program-title"
+              className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]"
+            >
+              {t("program.title")}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-[var(--on-surface-variant)]">
+              {t("program.intro")}
+            </p>
+          </div>
+          <Link href="/training" className="btn-secondary">
+            <span aria-hidden className="material-symbols-outlined text-[20px]">
+              stairs
+            </span>
+            {t("program.progressLink")}
+          </Link>
+        </div>
+        {!program.available ? (
+          <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
+            {tTraining("unavailable")}
+          </p>
+        ) : program.patients.length === 0 ? (
+          <p className="clinical-card p-5 text-sm text-[var(--on-surface-variant)]">
+            {tTraining("empty")}
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {program.patients.map((p) => (
+              <article key={p.patient.key} className="clinical-card space-y-3 p-5">
+                <div className="flex items-center gap-4">
+                  <PatientPortrait
+                    name={p.avatar.display_name}
+                    portraitUrl={p.avatar.portrait_url}
+                  />
+                  <div className="min-w-0">
+                    <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
+                      {tTraining("patientTitle", {
+                        n: String(p.patient.slot).padStart(2, "0"),
+                        name: p.avatar.display_name,
+                      })}
+                    </h3>
+                    <p className="text-sm text-[var(--on-surface-variant)]">
+                      {tTraining("primary", {
+                        disorder: tDisorders.has(p.patient.primaryDisorderSlug)
+                          ? tDisorders(p.patient.primaryDisorderSlug)
+                          : p.patient.primaryDisorderSlug,
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm font-semibold">
+                  {p.progress.completed
+                    ? tTraining("allCleared")
+                    : tTraining("currentLevel", {
+                        level: tTraining(
+                          `levels.${ladderLevelDef(p.progress.currentLevel).key}`,
+                        ),
+                      })}
+                </p>
+                <LadderLevelList progress={p.progress} compact />
+                <Link href={`/training/${p.patient.key}`} className="btn-primary w-full">
+                  {tTraining("open")}
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
-            {t("title")}
+            {t("freePracticeTitle")}
           </h2>
           {avatarsError ? null : (
             <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
