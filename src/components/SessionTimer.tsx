@@ -20,10 +20,10 @@ export function SessionTimer({
           ? "bg-[color-mix(in_srgb,var(--secondary)_12%,transparent)] text-[var(--secondary)]"
           : "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]"
       }`}
-      aria-live="polite"
+      role="timer"
       aria-label={t("ariaLabel", { time })}
     >
-      <span className="me-2 inline-block h-2 w-2 rounded-full bg-current opacity-80" />
+      <span aria-hidden className="me-2 inline-block h-2 w-2 rounded-full bg-current opacity-80" />
       {time}
     </div>
   );

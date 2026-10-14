@@ -278,7 +278,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="mx-auto mt-10 flex max-w-[1280px] flex-col items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] px-6 pt-6 md:flex-row md:px-8">
-          <p className="text-xs text-[var(--on-surface-variant)] opacity-70">
+          <p className="text-xs text-[var(--on-surface-variant)]">
             {t("footer.copyright", { year })}
           </p>
         </div>

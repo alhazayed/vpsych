@@ -825,6 +825,38 @@ a {
   align-items: center;
 }
 
+/* Keyboard focus inside the room (WCAG 2.4.7): oxblood ring (7.5:1 on the
+   paper sheet) with a white gap, so it still shows around filled oxblood
+   buttons and over the patient portrait. */
+.trm-root :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
+}
+
+/* "5 minutes left" warning; stays mounted (empty) so it is announced. */
+.trm-time-warning {
+  position: absolute;
+  top: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  max-width: min(90vw, 28rem);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--primary);
+  color: var(--on-surface);
+  font-size: 0.875rem;
+  text-align: center;
+  box-shadow: var(--clinical-shadow-hover);
+}
+.trm-time-warning:empty {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
 /* Floating controls */
 .trm-controls {
   position: absolute;

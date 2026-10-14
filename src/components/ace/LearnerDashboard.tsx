@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type RadarItem = { competency_id: string; score: number };
 
 export function LearnerDashboard() {
+  const t = useTranslations("learning.dashboard");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -50,12 +52,12 @@ export function LearnerDashboard() {
         const res = await fetch("/api/ace/profile");
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load profile");
+          if (!cancelled) setError(json.error ?? t("loadFailed"));
           return;
         }
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(t("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -63,7 +65,7 @@ export function LearnerDashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   async function generateNext() {
     setError(null);
@@ -75,17 +77,17 @@ export function LearnerDashboard() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Failed to generate case");
+        setError(json.error ?? t("generateFailed"));
         return;
       }
       setNextCase(JSON.stringify(json.case, null, 2));
     } catch {
-      setError("Network error");
+      setError(t("networkError"));
     }
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--on-surface-variant)]">Loading…</p>;
+    return <p className="text-sm text-[var(--on-surface-variant)]">{t("loading")}</p>;
   }
   if (error && !data) {
     return <p className="text-sm text-[var(--error)]">{error}</p>;
@@ -99,56 +101,56 @@ export function LearnerDashboard() {
     <div className="space-y-8">
       <section className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--on-surface-variant)]">
-          Competency graph shows prerequisites, blocked skills, and root-cause
-          remediation.
+          {t("graphIntro")}
         </p>
         <Link
           href="/learning/graph"
           className="rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[var(--surface-container-low)]"
         >
-          Open competency graph
+          {t("openGraph")}
         </Link>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <Stat
-          label="Confidence"
+          label={t("confidence")}
           value={`${data?.analytics?.confidence_score ?? 0}`}
         />
         <Stat
-          label="Learning velocity"
+          label={t("velocity")}
           value={`${data?.analytics?.learning_velocity ?? 0}`}
         />
         <Stat
-          label="Cases completed"
+          label={t("casesCompleted")}
           value={`${data?.profile?.completed_case_count ?? 0}`}
         />
       </section>
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Competency radar (top / gaps)
+          {t("radarTitle")}
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <CompetencyBars title="Strengths" items={top} />
-          <CompetencyBars title="Focus areas" items={weak} accent />
+          <CompetencyBars title={t("strengths")} items={top} />
+          <CompetencyBars title={t("focusAreas")} items={weak} accent />
         </div>
       </section>
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Learning plan
+          {t("planTitle")}
         </h2>
         <p className="text-sm text-[var(--on-surface-variant)]">
-          Primary focus:{" "}
+          {t("primaryFocus")}{" "}
           <span className="text-[var(--on-surface)]">
             {(data?.plan?.primary_focus ?? "—").replace(/_/g, " ")}
           </span>
           {" · "}
-          ~{data?.plan?.estimated_sessions_to_threshold ?? "—"} sessions to
-          threshold
+          {t("sessionsToThreshold", {
+            count: String(data?.plan?.estimated_sessions_to_threshold ?? "—"),
+          })}
         </p>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+        <ul className="mt-3 list-disc space-y-1 ps-5 text-sm">
           {(data?.plan?.goals ?? []).map((g) => (
             <li key={g}>{g}</li>
           ))}
@@ -158,7 +160,7 @@ export function LearnerDashboard() {
           onClick={generateNext}
           className="mt-4 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
         >
-          Generate adaptive next case
+          {t("generateNext")}
         </button>
         {error && (
           <p className="mt-2 text-sm text-[var(--error)]" role="alert">
@@ -174,7 +176,7 @@ export function LearnerDashboard() {
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Achievements
+          {t("achievements")}
         </h2>
         <ul className="space-y-2 text-sm">
           {(data?.certifications ?? []).map((c) => (
