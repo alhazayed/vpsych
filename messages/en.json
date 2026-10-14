@@ -98,7 +98,8 @@
       "collapse": "Collapse sidebar",
       "expand": "Expand sidebar",
       "openMenu": "Open navigation",
-      "closeMenu": "Close navigation"
+      "closeMenu": "Close navigation",
+      "menuTitle": "Admin navigation"
     },
     "commandPalette": {
       "title": "Search VPsych",
@@ -199,6 +200,25 @@
     "supervisor": {
       "title": "Supervisor AI",
       "subtitle": "Structured educational supervision — skills, modalities, portfolio, and reflective practice. Observes sessions only; never changes the patient."
+    },
+    "dashboard": {
+      "loading": "Loading…",
+      "loadFailed": "Couldn't load the learner profile.",
+      "generateFailed": "Couldn't generate the next case.",
+      "networkError": "Network error. Check your connection and try again.",
+      "graphIntro": "The competency graph shows prerequisites, blocked skills and root-cause remediation.",
+      "openGraph": "Open competency graph",
+      "confidence": "Confidence",
+      "velocity": "Learning velocity",
+      "casesCompleted": "Cases completed",
+      "radarTitle": "Competency radar (top / gaps)",
+      "strengths": "Strengths",
+      "focusAreas": "Focus areas",
+      "planTitle": "Learning plan",
+      "primaryFocus": "Primary focus:",
+      "sessionsToThreshold": "about {count} sessions to threshold",
+      "generateNext": "Generate adaptive next case",
+      "achievements": "Achievements"
     }
   },
   "landing": {
@@ -710,7 +730,8 @@
       "elapsedAria": "Time elapsed {time}",
       "toggleMode": "Switch elapsed / remaining",
       "hide": "Hide timer",
-      "show": "Show timer"
+      "show": "Show timer",
+      "warning": "{minutes, plural, one {1 minute} other {# minutes}} left. The session ends automatically when time runs out."
     },
     "settings": {
       "title": "Room settings",
@@ -723,7 +744,9 @@
       "elapsed": "Elapsed",
       "ambience": "Subtle room ambience",
       "bargeInByVoice": "Interrupt the patient by speaking",
-      "bargeInByVoiceHint": "Turn off if the patient voice is silent or very quiet on your device (often Bluetooth headsets). You can still interrupt with the hand button or Space."
+      "bargeInByVoiceHint": "Turn off if the patient voice is silent or very quiet on your device (often Bluetooth headsets). You can still interrupt with the hand button or Space.",
+      "singleKeyShortcuts": "Single-key shortcuts (P, N, R)",
+      "singleKeyShortcutsHint": "P pauses, N opens notes, R retries. Turn off if you use speech input or keep pressing them by accident."
     },
     "themes": {
       "modernClinic": "Modern Clinic",
@@ -756,6 +779,21 @@
       "body": "The patient will leave and your session will be assessed. You can't continue this session afterwards.",
       "keep": "Keep going",
       "end": "End session"
+    },
+    "patientCues": {
+      "label": "{name}: {cues}",
+      "tears": "tearful",
+      "lookAway": "avoiding eye contact",
+      "headDown": "head lowered",
+      "crossArms": "arms crossed",
+      "agitated": "visibly agitated",
+      "fidget": "fidgeting",
+      "slow": "moving slowly",
+      "handTremor": "hands trembling",
+      "sigh": "sighing",
+      "laughter": "laughing",
+      "smile": "smiling",
+      "eyeContact": "making eye contact"
     }
   },
   "analysis": {

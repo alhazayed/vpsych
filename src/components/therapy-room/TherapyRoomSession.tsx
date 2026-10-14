@@ -22,7 +22,7 @@ import { RoomTimer } from "@/components/therapy-room/RoomTimer";
 import { TherapyRoomScene } from "@/components/therapy-room/TherapyRoomScene";
 import { VoiceTurnPanel } from "@/components/therapy-room/VoiceTurnPanel";
 import { AdminTestBanner } from "@/components/admin/AdminTestBanner";
-import { remainingSeconds } from "@/lib/session-timer";
+import { dueTimeWarning, remainingSeconds } from "@/lib/session-timer";
 import {
   applyHtmlAudioModulation,
   createConversationFsm,
@@ -174,6 +174,27 @@ function writeBargeInByVoice(on: boolean): void {
   }
 }
 
+/** Per-device choice: P / N single-key shortcuts (WCAG 2.1.4 off switch). */
+const SINGLE_KEY_SHORTCUTS_KEY = "vpsych.therapyRoom.singleKeyShortcuts";
+
+function readSingleKeyShortcuts(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(SINGLE_KEY_SHORTCUTS_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function writeSingleKeyShortcuts(on: boolean): void {
+  try {
+    if (on) window.localStorage.removeItem(SINGLE_KEY_SHORTCUTS_KEY);
+    else window.localStorage.setItem(SINGLE_KEY_SHORTCUTS_KEY, "off");
+  } catch {
+    /* storage blocked — the choice lasts for this session only */
+  }
+}
+
 function disorderSlugFrom(session: TherapySession, avatar: ResolvedAvatar): string {
   return (
     session.clinical_snapshot?.primary_diagnosis?.slug ||
@@ -234,6 +255,9 @@ export function TherapyRoomSession({
   );
 
   const [messages, setMessages] = useState(initialMessages);
+  /** Minutes-left mark last announced (5, then 1); the session ends at 0. */
+  const lastTimeWarningRef = useRef<number | null>(null);
+  const [timeWarning, setTimeWarning] = useState<number | null>(null);
   const [remaining, setRemaining] = useState(() =>
     remainingSeconds(session.started_at, session.max_duration_sec),
   );
@@ -271,6 +295,7 @@ export function TherapyRoomSession({
     ambienceEnabled: true,
     ambienceVolume: 0.02,
     bargeInByVoice: readBargeInByVoice(),
+    singleKeyShortcuts: readSingleKeyShortcuts(),
   }));
 
   const [behavior, setBehavior] = useState<PatientBehaviorState>(() => {
@@ -290,6 +315,8 @@ export function TherapyRoomSession({
   const bargeInStopRef = useRef<(() => void) | null>(null);
   /** Settings toggle: open the barge-in mic while the patient speaks. */
   const bargeInByVoiceRef = useRef(true);
+  /** Settings toggle: P / N / R work without a modifier key. */
+  const singleKeyShortcutsRef = useRef(true);
   /**
    * Two-stage endpoint for the open capture: a pause starts a speculative
    * transcript while the mic stays open, so a mid-thought pause is not sent.
@@ -360,6 +387,16 @@ export function TherapyRoomSession({
     bargeInByVoiceRef.current = settings.bargeInByVoice;
     writeBargeInByVoice(settings.bargeInByVoice);
   }, [settings.bargeInByVoice]);
+  useEffect(() => {
+    // The spoken warning is enough; don't leave the banner over the room.
+    if (timeWarning === null) return;
+    const id = window.setTimeout(() => setTimeWarning(null), 10_000);
+    return () => window.clearTimeout(id);
+  }, [timeWarning]);
+  useEffect(() => {
+    singleKeyShortcutsRef.current = settings.singleKeyShortcuts;
+    writeSingleKeyShortcuts(settings.singleKeyShortcuts);
+  }, [settings.singleKeyShortcuts]);
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
@@ -1762,6 +1799,11 @@ export function TherapyRoomSession({
         session.max_duration_sec,
       );
       setRemaining(left);
+      const warning = dueTimeWarning(left, lastTimeWarningRef.current);
+      if (warning !== null) {
+        lastTimeWarningRef.current = warning;
+        setTimeWarning(warning);
+      }
       const elapsedSec = Math.max(0, session.max_duration_sec - left);
       setElapsed(elapsedSec);
       if (left <= 0 && !endingRef.current) {
@@ -1985,10 +2027,13 @@ export function TherapyRoomSession({
     const onKey = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLInputElement
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLSelectElement
       ) {
         return;
       }
+      const singleKey =
+        singleKeyShortcutsRef.current && !e.altKey && !e.ctrlKey && !e.metaKey;
       if (
         e.code === "Space" &&
         interruptPatientRef.current &&
@@ -2001,16 +2046,16 @@ export function TherapyRoomSession({
         setNotesOpen(false);
         setSettingsOpen(false);
         setTranscriptOpen(false);
-      } else if (e.key === "p" || e.key === "P") {
+      } else if (singleKey && (e.key === "p" || e.key === "P")) {
         handleControl(
           fsmRef.current.getState() === "PAUSED" ? "resume" : "pause",
         );
-      } else if (e.key === "n" || e.key === "N") {
+      } else if (singleKey && (e.key === "n" || e.key === "N")) {
         handleControl("notes");
       } else if (e.key === "e" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         handleControl("end");
-      } else if ((e.key === "r" || e.key === "R") && fsmRef.current.getState() === "ERROR") {
+      } else if (singleKey && (e.key === "r" || e.key === "R") && fsmRef.current.getState() === "ERROR") {
         handleRetry();
       }
     };
@@ -2161,6 +2206,13 @@ export function TherapyRoomSession({
             setSettings((s) => ({ ...s, showTimer: !s.showTimer }))
           }
         />
+
+        {/* Always mounted so screen readers hear the change (WCAG 2.2.1). */}
+        <div className="trm-time-warning" role="alert">
+          {timeWarning !== null && !ending
+            ? t("timer.warning", { minutes: timeWarning })
+            : null}
+        </div>
 
         <div className="trm-stage">
           <PatientPresence

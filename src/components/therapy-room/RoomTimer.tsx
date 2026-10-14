@@ -41,7 +41,7 @@ export function RoomTimer({
   return (
     <div
       className={`trm-timer ${urgent ? "trm-timer--urgent" : ""} ${paused ? "trm-timer--paused" : ""}`}
-      aria-live="polite"
+      role="timer"
       aria-label={
         mode === "remaining"
           ? t("remainingAria", { time })
@@ -53,6 +53,7 @@ export function RoomTimer({
         className="trm-timer__value"
         onClick={onToggleMode}
         title={t("toggleMode")}
+        aria-label={t("toggleMode")}
       >
         {time}
       </button>

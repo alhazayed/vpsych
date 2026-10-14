@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 const STEP_IDS = [
@@ -20,6 +20,12 @@ export function AiAnalysisOverlay() {
   const [progress, setProgress] = useState(18);
   const [tipIndex, setTipIndex] = useState(0);
   const [tipVisible, setTipVisible] = useState(true);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    // The room behind is gone; move screen-reader and keyboard focus here.
+    titleRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const stepTimer = window.setInterval(() => {
@@ -47,7 +53,12 @@ export function AiAnalysisOverlay() {
   const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="fixed inset-0 z-[100] flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[var(--background)] px-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-analysis-title"
+      aria-busy="true"
+      className="fixed inset-0 z-[100] flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[var(--background)] px-4">
       <div
         className="pointer-events-none absolute inset-0 opacity-50"
         style={{
@@ -56,7 +67,7 @@ export function AiAnalysisOverlay() {
         }}
       />
 
-      <main className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-6">
+      <div className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-6">
         <div className="mb-2 flex items-center gap-2">
           <span aria-hidden
             className="material-symbols-outlined text-[28px] text-[var(--primary)]"
@@ -104,7 +115,12 @@ export function AiAnalysisOverlay() {
           </div>
 
           <div className="mb-8 text-center">
-            <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)]">
+            <h1
+              id="ai-analysis-title"
+              ref={titleRef}
+              tabIndex={-1}
+              className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--primary)] outline-none"
+            >
               {t("title")}
             </h1>
             <p className="mx-auto mt-2 max-w-lg text-base text-[var(--on-surface-variant)]">
@@ -112,7 +128,15 @@ export function AiAnalysisOverlay() {
             </p>
           </div>
 
-          <div className="mb-6 w-full space-y-4 border-t border-[var(--outline-variant)] pt-8">
+          {/* Announces each step as it starts (WCAG 4.1.3). */}
+          <p className="sr-only" role="status">
+            {t(`steps.${STEP_IDS[activeStep]}`)}
+          </p>
+
+          <div
+            className="mb-6 w-full space-y-4 border-t border-[var(--outline-variant)] pt-8"
+            aria-hidden
+          >
             {STEP_IDS.map((stepId, index) => {
               const done = index < activeStep;
               const active = index === activeStep;
@@ -189,7 +213,7 @@ export function AiAnalysisOverlay() {
         <p className="text-center text-xs font-semibold text-[var(--on-surface-variant)] opacity-60">
           {t("doNotClose")}
         </p>
-      </main>
+      </div>
     </div>
   );
 }

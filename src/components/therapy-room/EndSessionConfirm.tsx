@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useDialogFocus } from "@/components/use-dialog-focus";
 
 /**
  * Ending a session is irreversible (it marks the session complete and starts
@@ -19,6 +20,10 @@ export function EndSessionConfirm({
 }) {
   const t = useTranslations("therapyRoom.endConfirm");
   const keepRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  // Escape is handled by the room's own key handler; this keeps Tab inside
+  // the dialog and puts focus back on End when it closes.
+  useDialogFocus(open, dialogRef);
 
   useEffect(() => {
     // Default focus on the safe choice so a stray Enter keeps the session.
@@ -30,6 +35,7 @@ export function EndSessionConfirm({
   return (
     <div className="trm-confirm" role="presentation" onClick={onCancel}>
       <div
+        ref={dialogRef}
         className="trm-confirm__dialog"
         role="alertdialog"
         aria-modal="true"
