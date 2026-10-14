@@ -1,3 +1,4 @@
+import { mergeCaseMemory } from "@/lib/case-memory";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prepareMessageRpc } from "@/lib/supabase/admin";
@@ -598,18 +599,17 @@ export async function POST(request: Request) {
           caseInstanceId: newCaseId,
           formulation: caseResult.snapshot.clinical_core?.formulation ?? null,
         });
-      let memory: Record<string, unknown> = {};
-      if (carry.adaptation) {
-        memory = embedAdaptationInMemory(memory, carry.adaptation);
-      }
-      memory = embedMindState(memory, {
-        ...mind,
-        case_instance_id: newCaseId,
-      });
-      void supabase.from("case_memory").upsert({
-        case_instance_id: newCaseId,
-        memory,
-        updated_at: new Date().toISOString(),
+      // Merged into the row the case engine just created (never replaces it).
+      // Awaited: an un-awaited Supabase builder never sends its request.
+      await mergeCaseMemory(supabase, newCaseId, "session_seed", (current) => {
+        let memory: Record<string, unknown> = current;
+        if (carry.adaptation) {
+          memory = embedAdaptationInMemory(memory, carry.adaptation);
+        }
+        return embedMindState(memory, {
+          ...mind,
+          case_instance_id: newCaseId,
+        });
       });
     } catch (err) {
       console.warn("[sessions] clinical intelligence seed soft-fail", {

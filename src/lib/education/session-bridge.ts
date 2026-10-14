@@ -99,6 +99,8 @@ export async function runEducationAfterAssessment(
   analytics: ReturnType<typeof buildEducationAnalytics> | null;
   longitudinal: ReturnType<typeof projectLongitudinalLearning> | null;
 }> {
+  // Set once ACE has run, so the fallback below never counts the session twice.
+  let aceResult: Awaited<ReturnType<typeof runAceAfterAssessment>> | null = null;
   try {
     const ace = await runAceAfterAssessment(supabase, {
       userId: opts.userId,
@@ -112,13 +114,18 @@ export async function runEducationAfterAssessment(
       durationSec: opts.durationSec,
       timeLimitSec: opts.timeLimitSec,
     });
+    aceResult = ace;
 
     let profile = null;
     try {
       profile = await ensureLearnerProfile(supabase, opts.userId, {
         language: opts.language ?? undefined,
       });
-    } catch {
+    } catch (err) {
+      console.warn("[education] learner profile unavailable", {
+        sessionId: opts.sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       profile = null;
     }
 
@@ -168,9 +175,10 @@ export async function runEducationAfterAssessment(
       sessionId: opts.sessionId,
       error: err instanceof Error ? err.message : String(err),
     });
-    // Still try ACE alone so existing behaviour is preserved
+    // Still try ACE alone so existing behaviour is preserved — but only if
+    // it has not already run for this session.
     try {
-      const ace = await runAceAfterAssessment(supabase, opts);
+      const ace = aceResult ?? (await runAceAfterAssessment(supabase, opts));
       return {
         ok: false,
         ace,

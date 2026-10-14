@@ -58,15 +58,19 @@ async function sealLedgerBestEffort(opts: {
         opts.session.clinical_snapshot?.instructor_preset?.version ?? null,
       createdBy: opts.userId,
     });
-    if (result?.ok) return result.ledger.id;
-    if (result) {
-      console.warn("[sessions/end] quality ledger:", result.error);
-    }
+    // Only a ledger that reached the database has an id worth returning: an
+    // in-memory one is gone when this server instance stops.
+    if (result?.ok && result.persisted === "database") return result.ledger.id;
+    console.warn("[sessions/end] quality ledger not durable", {
+      sessionId: opts.sessionId,
+      persisted: result?.persisted ?? null,
+      error: result?.error ?? null,
+    });
   } catch (e) {
-    console.warn(
-      "[sessions/end] quality ledger error:",
-      e instanceof Error ? e.message : e,
-    );
+    console.warn("[sessions/end] quality ledger error", {
+      sessionId: opts.sessionId,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
   return null;
 }
@@ -357,6 +361,110 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
+  // The report is saved first. Everything after it is best-effort, and a
+  // retry after a failed save (the learner's complete page) must not run the
+  // ACE / education / patient-memory hooks a second time.
+  let reportId: string | null = null;
+  let ledgerWriter = supabase;
+  const admin = createServiceClient();
+  if (admin) {
+    const { data: inserted, error: insertError } = await admin
+      .from("session_reports")
+      .insert({
+        session_id: sessionId,
+        scores: assessment.scores,
+        narrative,
+        excerpts: assessment.excerpts,
+        language: assessment.language ?? resolved.locale,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (insertError) {
+      // Unique violation → already created (race); treat as success.
+      if (insertError.code === "23505") {
+        return NextResponse.json({
+          ok: true,
+          alreadyExists: true,
+          aiSource: assessment.aiSource,
+          aiModel: assessment.model ?? null,
+          aiErrorKind: assessment.errorKind ?? null,
+        });
+      }
+      console.error("[session-end] report insert failed", {
+        sessionId,
+        code: insertError.code,
+        error: insertError.message,
+      });
+      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
+    }
+    reportId = inserted?.id ?? null;
+    ledgerWriter = admin;
+  } else {
+    if (!getReportWriteKey()) {
+      console.error("[session-end] no report writer configured", { sessionId });
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 },
+      );
+    }
+
+    let sig: string;
+    try {
+      sig = signSessionReport({
+        sessionId,
+        narrative,
+        scoresJson,
+        excerptsJson,
+      });
+    } catch (e) {
+      console.error("[session-end] sign failed", {
+        sessionId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      return NextResponse.json(
+        { error: "Report signing failed" },
+        { status: 500 },
+      );
+    }
+
+    const { data: rpcReportId, error: rpcError } = await supabase.rpc(
+      "create_session_report",
+      {
+        p_session_id: sessionId,
+        p_scores_json: scoresJson,
+        p_narrative: narrative,
+        p_excerpts_json: excerptsJson,
+        p_sig: sig,
+      },
+    );
+
+    if (rpcError) {
+      console.error("[session-end] report rpc failed", {
+        sessionId,
+        code: rpcError.code,
+        error: rpcError.message,
+      });
+      return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
+    }
+    reportId = typeof rpcReportId === "string" ? rpcReportId : null;
+
+    const privileged = createServiceClient();
+    if (reportId && privileged) {
+      const { error: langErr } = await privileged
+        .from("session_reports")
+        .update({ language: resolved.locale })
+        .eq("id", reportId);
+      if (langErr) {
+        console.warn("[session-end] report language update failed", {
+          sessionId,
+          error: langErr.message,
+        });
+      }
+    }
+    if (privileged) ledgerWriter = privileged;
+  }
+
   // Skill test results are for the assigning supervisor and admins only, so
   // they never feed the trainee-facing learning, coach, or end payload.
   const isSkillTest = Boolean(typed.skill_test_assignment_id);
@@ -467,121 +575,10 @@ export async function POST(_request: Request, { params }: Params) {
     });
   }
 
-  const admin = createServiceClient();
-  if (admin) {
-    const { data: inserted, error: insertError } = await admin
-      .from("session_reports")
-      .insert({
-        session_id: sessionId,
-        scores: assessment.scores,
-        narrative,
-        excerpts: assessment.excerpts,
-        language: assessment.language ?? resolved.locale,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (insertError) {
-      // Unique violation → already created (race); treat as success.
-      if (insertError.code === "23505") {
-        return NextResponse.json({
-          ok: true,
-          alreadyExists: true,
-          aiSource: assessment.aiSource,
-          aiModel: assessment.model ?? null,
-          aiErrorKind: assessment.errorKind ?? null,
-        });
-      }
-      console.warn("[session-end] report insert:", insertError.message);
-      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
-    }
-
-    const ledgerId = await sealLedgerBestEffort({
-      supabase: admin,
-      sessionId,
-      reportId: inserted?.id,
-      userId: user.id,
-      assessment,
-      session: typed,
-      messages: (messages ?? []) as Pick<SessionMessage, "role" | "content">[],
-      durationSec,
-      locale: resolved.locale,
-    });
-
-    return NextResponse.json(
-      educationEndPayload({
-        reportId: inserted?.id,
-        ledgerId,
-        assessment,
-        education,
-        supervisor,
-        enterprise,
-        realtime,
-      }),
-      {
-        headers: educationEndHeaders(
-          assessment,
-          ledgerId,
-          validation.run?.id ?? null,
-          supervisor.bundle?.session_id ?? null,
-          enterprise.bundle?.context.organization_id ?? null,
-          realtime.bundle?.version.realtime_version ?? null,
-        ),
-      },
-    );
-  }
-
-  if (!getReportWriteKey()) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
-
-  let sig: string;
-  try {
-    sig = signSessionReport({
-      sessionId,
-      narrative,
-      scoresJson,
-      excerptsJson,
-    });
-  } catch (e) {
-    console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
-    return NextResponse.json(
-      { error: "Report signing failed" },
-      { status: 500 },
-    );
-  }
-
-  const { data: reportId, error: rpcError } = await supabase.rpc(
-    "create_session_report",
-    {
-      p_session_id: sessionId,
-      p_scores_json: scoresJson,
-      p_narrative: narrative,
-      p_excerpts_json: excerptsJson,
-      p_sig: sig,
-    },
-  );
-
-  if (rpcError) {
-    console.warn("[session-end] report rpc:", rpcError.message);
-    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
-  }
-
-  const privileged = createServiceClient();
-  if (reportId && privileged) {
-    await privileged
-      .from("session_reports")
-      .update({ language: resolved.locale })
-      .eq("id", reportId);
-  }
-
   const ledgerId = await sealLedgerBestEffort({
-    supabase: privileged ?? supabase,
+    supabase: ledgerWriter,
     sessionId,
-    reportId: typeof reportId === "string" ? reportId : null,
+    reportId,
     userId: user.id,
     assessment,
     session: typed,

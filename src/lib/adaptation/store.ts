@@ -6,6 +6,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PatientAdaptationState } from "@/lib/adaptation/types";
 import { ADAPTATION_VERSION } from "@/lib/adaptation/types";
+import { mergeCaseMemory } from "@/lib/case-memory";
 
 export type CaseMemoryBlob = {
   turns?: unknown[];
@@ -56,33 +57,35 @@ export async function loadAdaptationState(
     .select("memory")
     .eq("case_instance_id", caseInstanceId)
     .maybeSingle();
-  if (error || !data) return { state: null, raw: null };
+  if (error) {
+    console.warn("[adaptation] case_memory load failed", {
+      caseInstanceId,
+      error: error.message,
+    });
+    return { state: null, raw: null };
+  }
+  if (!data) return { state: null, raw: null };
   const raw = (data.memory ?? {}) as CaseMemoryBlob;
   return { state: extractAdaptationFromMemory(raw), raw };
 }
 
 /**
  * Best-effort persist. Never throws — adaptation must not block replies.
+ *
+ * Merges into the current case_memory row (see `mergeCaseMemory`) so a save
+ * started early in the turn never reverts emotion or mind state saved later.
+ * `alsoApply` adds other namespaces in the same write (e.g. a carried mind
+ * state seed).
  */
 export async function saveAdaptationState(
   supabase: SupabaseClient,
   caseInstanceId: string | null | undefined,
   state: PatientAdaptationState,
-  previousRaw?: CaseMemoryBlob | null,
+  alsoApply?: (memory: CaseMemoryBlob) => CaseMemoryBlob,
 ): Promise<boolean> {
   if (!caseInstanceId) return false;
-  const memory = embedAdaptationInMemory(previousRaw, state);
-  const { error } = await supabase.from("case_memory").upsert(
-    {
-      case_instance_id: caseInstanceId,
-      memory,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "case_instance_id" },
-  );
-  if (error) {
-    console.warn("[adaptation] case_memory save failed:", error.message);
-    return false;
-  }
-  return true;
+  return mergeCaseMemory(supabase, caseInstanceId, "adaptation", (current) => {
+    const withAdaptation = embedAdaptationInMemory(current as CaseMemoryBlob, state);
+    return alsoApply ? alsoApply(withAdaptation) : withAdaptation;
+  });
 }

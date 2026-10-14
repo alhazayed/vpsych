@@ -8,6 +8,16 @@ import type {
   LearnerProfile,
 } from "./types";
 
+/** Missing ACE tables (migration not applied) are the one tolerated error. */
+function isMissingTable(error: { code?: string; message?: string }): boolean {
+  return error.code === "42P01" || Boolean(error.message?.includes("does not exist"));
+}
+
+/**
+ * Throws when an existing learner profile cannot be read. Returning a blank
+ * in-memory profile there would show default analytics as the learner's own
+ * and, after a session, write those defaults over the real competency rows.
+ */
 export async function ensureLearnerProfile(
   supabase: SupabaseClient,
   userId: string,
@@ -17,11 +27,18 @@ export async function ensureLearnerProfile(
     training_level?: LearnerProfile["training_level"];
   },
 ): Promise<LearnerProfile> {
-  const { data: existing } = await supabase
+  const { data: existing, error: readErr } = await supabase
     .from("learner_profiles")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
+  if (readErr && !isMissingTable(readErr)) {
+    console.error("[ace] learner_profiles read failed", {
+      userId,
+      error: readErr.message,
+    });
+    throw new Error("learner_profile_unavailable");
+  }
 
   if (existing) {
     const competencies = await loadCompetencies(supabase, existing.id);
@@ -53,11 +70,17 @@ export async function ensureLearnerProfile(
 
   if (error || !inserted) {
     // Migration not applied — return in-memory profile
+    if (error && !isMissingTable(error)) {
+      console.warn("[ace] learner_profiles insert failed; using in-memory profile", {
+        userId,
+        error: error.message,
+      });
+    }
     return draft;
   }
 
   // Seed competency rows
-  await supabase.from("learner_competencies").insert(
+  const { error: seedErr } = await supabase.from("learner_competencies").insert(
     COMPETENCY_IDS.map((id) => ({
       learner_id: inserted.id,
       competency_id: id,
@@ -66,6 +89,12 @@ export async function ensureLearnerProfile(
       trend: 0,
     })),
   );
+  if (seedErr) {
+    console.warn("[ace] learner_competencies seed failed", {
+      learnerId: inserted.id,
+      error: seedErr.message,
+    });
+  }
 
   return mapProfile(inserted, createLearnerProfile({ user_id: userId }).competencies);
 }
@@ -74,10 +103,17 @@ async function loadCompetencies(
   supabase: SupabaseClient,
   learnerId: string,
 ): Promise<LearnerCompetency[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("learner_competencies")
     .select("competency_id, score, samples, trend, last_assessed_at, mastered_at")
     .eq("learner_id", learnerId);
+  if (error && !isMissingTable(error)) {
+    console.error("[ace] learner_competencies read failed", {
+      learnerId,
+      error: error.message,
+    });
+    throw new Error("learner_competencies_unavailable");
+  }
   if (!data?.length) {
     return createLearnerProfile({ user_id: "x" }).competencies;
   }
@@ -139,7 +175,11 @@ export async function persistLearnerUpdate(
     focus?: string[];
     adaptation?: Record<string, unknown>;
   },
-): Promise<void> {
+): Promise<{ failed: string[] }> {
+  const failed: string[] = [];
+  const note = (op: string, err: { message?: string } | null) => {
+    if (err) failed.push(`${op}: ${err.message ?? "error"}`);
+  };
   const { error } = await supabase
     .from("learner_profiles")
     .update({
@@ -154,16 +194,20 @@ export async function persistLearnerUpdate(
 
   if (error) {
     // Table missing — soft fail
-    if (error.message?.includes("does not exist") || error.code === "42P01") {
-      return;
+    if (isMissingTable(error)) {
+      return { failed };
     }
-    console.warn("[ace] learner_profiles update failed:", error.message);
-    return;
+    console.warn("[ace] learner_profiles update failed", {
+      learnerId: profile.id,
+      sessionId: opts?.sessionId ?? null,
+      error: error.message,
+    });
+    return { failed: [`learner_profiles: ${error.message}`] };
   }
 
   for (const c of profile.competencies) {
     if (c.samples <= 0) continue;
-    await supabase.from("learner_competencies").upsert(
+    const { error: compErr } = await supabase.from("learner_competencies").upsert(
       {
         learner_id: profile.id,
         competency_id: c.competency_id,
@@ -175,20 +219,22 @@ export async function persistLearnerUpdate(
       },
       { onConflict: "learner_id,competency_id" },
     );
+    note("learner_competencies", compErr);
 
     if (opts?.sessionId) {
-      await supabase.from("competency_scores").insert({
+      const { error: scoreErr } = await supabase.from("competency_scores").insert({
         learner_id: profile.id,
         competency_id: c.competency_id,
         session_id: opts.sessionId,
         score: c.score,
         evidence: { source: "session_assessment" },
       });
+      note("competency_scores", scoreErr);
     }
   }
 
   if (opts?.coach && opts.sessionId) {
-    await supabase.from("coach_feedback").insert({
+    const { error: coachErr } = await supabase.from("coach_feedback").insert({
       learner_id: profile.id,
       session_id: opts.sessionId,
       supervisor_feedback: opts.coach.supervisor_feedback,
@@ -199,10 +245,11 @@ export async function persistLearnerUpdate(
       learning_goals: opts.coach.learning_goals,
       improvement_plan: opts.coach.improvement_plan,
     });
+    note("coach_feedback", coachErr);
   }
 
   if (opts?.nextFingerprint) {
-    await supabase.from("adaptive_case_history").upsert(
+    const { error: historyErr } = await supabase.from("adaptive_case_history").upsert(
       {
         learner_id: profile.id,
         session_id: opts.sessionId ?? null,
@@ -214,9 +261,10 @@ export async function persistLearnerUpdate(
       },
       { onConflict: "learner_id,fingerprint", ignoreDuplicates: true },
     );
+    note("adaptive_case_history", historyErr);
   }
 
-  await supabase.from("performance_trends").upsert(
+  const { error: trendErr } = await supabase.from("performance_trends").upsert(
     {
       learner_id: profile.id,
       window_label: "rolling_10",
@@ -233,4 +281,14 @@ export async function persistLearnerUpdate(
     },
     { onConflict: "learner_id,window_label" },
   );
+  note("performance_trends", trendErr);
+
+  if (failed.length > 0) {
+    console.warn("[ace] learner update partly failed", {
+      learnerId: profile.id,
+      sessionId: opts?.sessionId ?? null,
+      failed,
+    });
+  }
+  return { failed };
 }

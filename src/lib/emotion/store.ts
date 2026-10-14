@@ -9,6 +9,7 @@ import {
   parseEmotionState,
 } from "@/lib/emotion/state-machine";
 import type { EmotionState } from "@/lib/emotion/types";
+import { mergeCaseMemory } from "@/lib/case-memory";
 
 type MemoryRow = {
   case_instance_id: string;
@@ -19,23 +20,40 @@ export async function loadEmotionState(
   supabase: SupabaseClient,
   caseInstanceId: string,
 ): Promise<EmotionState | null> {
+  return (await readEmotionState(supabase, caseInstanceId)).state;
+}
+
+async function readEmotionState(
+  supabase: SupabaseClient,
+  caseInstanceId: string,
+): Promise<{ state: EmotionState | null; failed: boolean }> {
   try {
     const { data, error } = await supabase
       .from("case_memory")
       .select("case_instance_id, memory")
       .eq("case_instance_id", caseInstanceId)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) {
+      console.warn("[emotion] load failed", { caseInstanceId, error: error.message });
+      return { state: null, failed: true };
+    }
+    if (!data) return { state: null, failed: false };
     const row = data as MemoryRow;
     const mem = row.memory ?? {};
-    return parseEmotionState(mem.emotion);
-  } catch {
-    return null;
+    return { state: parseEmotionState(mem.emotion), failed: false };
+  } catch (err) {
+    console.warn("[emotion] load threw", {
+      caseInstanceId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { state: null, failed: true };
   }
 }
 
 /**
  * Load existing emotion state or initialize from disorder prior and persist.
+ * Returns null when the read fails (callers already treat null as
+ * "emotion unavailable"), so a transient error never resets the stored state.
  */
 export async function ensureEmotionState(
   supabase: SupabaseClient,
@@ -45,7 +63,9 @@ export async function ensureEmotionState(
     disorderSlug?: string | null;
   },
 ): Promise<EmotionState | null> {
-  const existing = await loadEmotionState(supabase, opts.caseInstanceId);
+  const loaded = await readEmotionState(supabase, opts.caseInstanceId);
+  if (loaded.failed) return null;
+  const existing = loaded.state;
   if (existing) {
     if (!existing.session_id) {
       existing.session_id = opts.sessionId;
@@ -58,8 +78,8 @@ export async function ensureEmotionState(
     sessionId: opts.sessionId,
     disorderSlug: opts.disorderSlug,
   });
-  const saved = await saveEmotionState(supabase, opts.caseInstanceId, state);
-  return saved ? state : state; // return in-memory even if persist soft-fails
+  await saveEmotionState(supabase, opts.caseInstanceId, state);
+  return state; // in-memory even if persist soft-fails
 }
 
 export async function saveEmotionState(
@@ -67,55 +87,10 @@ export async function saveEmotionState(
   caseInstanceId: string,
   state: EmotionState,
 ): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from("case_memory")
-      .select("memory")
-      .eq("case_instance_id", caseInstanceId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn("[emotion] load for save failed:", error.message);
-      return false;
-    }
-
-    const prev =
-      data && typeof data.memory === "object" && data.memory
-        ? (data.memory as Record<string, unknown>)
-        : {};
-
-    const nextMemory = {
-      ...prev,
-      emotion: state,
-    };
-
-    if (!data) {
-      const { error: insertErr } = await supabase.from("case_memory").insert({
-        case_instance_id: caseInstanceId,
-        memory: nextMemory,
-      });
-      if (insertErr) {
-        console.warn("[emotion] insert failed:", insertErr.message);
-        return false;
-      }
-      return true;
-    }
-
-    const { error: updateErr } = await supabase
-      .from("case_memory")
-      .update({ memory: nextMemory, updated_at: new Date().toISOString() })
-      .eq("case_instance_id", caseInstanceId);
-
-    if (updateErr) {
-      console.warn("[emotion] update failed:", updateErr.message);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.warn(
-      "[emotion] save exception:",
-      err instanceof Error ? err.message : String(err),
-    );
-    return false;
-  }
+  // Shared read-modify-write: merges `emotion` into the current blob and is
+  // queued with the adaptation / mind-state saves for the same case.
+  return mergeCaseMemory(supabase, caseInstanceId, "emotion", (current) => ({
+    ...current,
+    emotion: state,
+  }));
 }

@@ -32,7 +32,6 @@ import { resolveMedicationFacts } from "@/lib/ai/medication-facts";
 import { resolveCaseFile } from "@/lib/ai/canonical-facts";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import {
-  embedAdaptationInMemory,
   loadAdaptationState,
   processTherapistTurn,
   saveAdaptationState,
@@ -57,6 +56,7 @@ import {
   expressionPromptBlock,
   processEmotionTurn,
 } from "@/lib/emotion";
+import { mergeCaseMemory } from "@/lib/case-memory";
 import {
   appendDecisionTrace,
   buildBehaviorProfile,
@@ -242,13 +242,28 @@ export async function prepareClinicalTurn(params: {
   const adapted = processTherapistTurn(adaptation, message);
   adaptation = adapted.state;
   let memoryRaw: CaseMemoryBlob = loaded.raw ?? {};
-  if (carriedMind && !extractMindState(memoryRaw)) {
+  const seedMind =
+    carriedMind && !extractMindState(memoryRaw) ? carriedMind : null;
+  if (seedMind) {
     memoryRaw = embedMindState(memoryRaw, {
-      ...carriedMind,
+      ...seedMind,
       case_instance_id: caseInstanceId,
     }) as CaseMemoryBlob;
   }
-  void saveAdaptationState(supabase, caseInstanceId, adaptation, memoryRaw);
+  void saveAdaptationState(
+    supabase,
+    caseInstanceId,
+    adaptation,
+    seedMind
+      ? (memory) =>
+          (extractMindState(memory)
+            ? memory
+            : embedMindState(memory, {
+                ...seedMind,
+                case_instance_id: caseInstanceId,
+              })) as CaseMemoryBlob
+      : undefined,
+  );
 
   // Case Engine: diagnosis from immutable session snapshot when present.
   const resolved = resolveAvatar(typed.avatars, typed.language, {
@@ -494,15 +509,12 @@ export async function prepareClinicalTurn(params: {
           alliance,
         );
       }
-      const patched = embedMindState(
-        embedAdaptationInMemory(memoryRaw, adaptation),
-        mind,
+      // Queued behind the adaptation save and merged into the current row,
+      // so it never reverts the emotion state saved earlier in this turn.
+      const mindToSave = mind;
+      void mergeCaseMemory(supabase, caseInstanceId, "mind_state", (current) =>
+        embedMindState(current, mindToSave),
       );
-      void supabase.from("case_memory").upsert({
-        case_instance_id: caseInstanceId,
-        memory: patched,
-        updated_at: new Date().toISOString(),
-      });
       // Keep BehaviorProfile construction referenced for observability.
       void buildBehaviorProfile({
         plan: decisionPlan,

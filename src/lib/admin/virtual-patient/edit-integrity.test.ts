@@ -398,6 +398,42 @@ describe("Phase 10C-1 edit integrity — lifecycle mutability", () => {
   });
 });
 
+describe("personality save never drops the other locale", () => {
+  it("refuses to save when the current personality map cannot be read", async () => {
+    const updates: unknown[] = [];
+    const from = vi.fn((table: string) => {
+      if (table !== "avatars") throw new Error(table);
+      return {
+        select: (cols: string) => ({
+          eq: () => ({
+            maybeSingle: async () =>
+              cols === "human_personality"
+                ? { data: null, error: { message: "timeout" } }
+                : {
+                    data: { id: "a1", lifecycle_status: "draft", is_active: false },
+                    error: null,
+                  },
+          }),
+        }),
+        update: (patch: unknown) => {
+          updates.push(patch);
+          return { eq: async () => ({ error: null }) };
+        },
+      };
+    });
+
+    const profile = getBuiltinPersonality("jordan-hale", "en-US")!;
+    const result = await saveHumanPersonalityProfile(mockClient({ from }), {
+      avatarId: "a1",
+      locale: "en-US",
+      profile: { ...profile, locale: "en-US", avatar_slug: "x" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(503);
+    expect(updates).toHaveLength(0);
+  });
+});
+
 describe("Phase 10C-1 edit integrity — data preservation contract", () => {
   it("partial update payload does not replace unspecified clinical blobs", () => {
     const payload = buildRpcPayload(

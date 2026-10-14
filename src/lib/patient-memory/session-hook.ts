@@ -45,18 +45,21 @@ export async function prepareMemoryForTurn(
   },
 ): Promise<MemoryContextForTurn> {
   try {
-    let { store } = await loadPatientMemory(supabase, {
+    const loaded = await loadPatientMemory(supabase, {
       therapistId: opts.therapistId,
       avatarId: opts.avatarId,
       personaId: opts.personaId,
       longitudinalGroupId: opts.longitudinalGroupId,
     });
+    let store = loaded.store;
 
     if (opts.identity && store.entries.every((e) => e.source !== "persona_seed")) {
       const seeds = seedFromPersonaIdentity(opts.identity);
       const seeded = appendMemoryEntries(store, seeds);
       store = seeded.store;
-      if (seeded.added.length > 0) {
+      // Never save over a row we could not read: it would replace the real
+      // long-term memory with the seeds alone.
+      if (seeded.added.length > 0 && !loaded.loadFailed) {
         await savePatientMemory(supabase, store);
       }
     }
@@ -118,12 +121,25 @@ export async function runPatientMemoryAfterSession(
   error?: string;
 }> {
   try {
-    let { store } = await loadPatientMemory(supabase, {
+    const loaded = await loadPatientMemory(supabase, {
       therapistId: opts.therapistId,
       avatarId: opts.avatarId,
       personaId: opts.personaId,
       longitudinalGroupId: opts.longitudinalGroupId,
     });
+    if (loaded.loadFailed) {
+      console.warn("[patient-memory] after session: memory unreadable; session not added", {
+        sessionId: opts.sessionId,
+      });
+      return {
+        ok: false,
+        addedCount: 0,
+        compressed: false,
+        persisted: "skipped",
+        error: "memory_load_failed",
+      };
+    }
+    let store = loaded.store;
 
     if (opts.identity) {
       const seeds = seedFromPersonaIdentity(opts.identity);

@@ -361,3 +361,43 @@ describe("session hooks (best-effort)", () => {
     expect(turn.retrieval.promptBlock.length).toBeGreaterThan(0);
   });
 });
+
+describe("session hooks never save over an unreadable row", () => {
+  function failingDb() {
+    const writes: unknown[] = [];
+    const q = {
+      select: () => q,
+      eq: () => q,
+      maybeSingle: async () => ({ data: null, error: { message: "timeout" } }),
+      upsert: async (row: unknown) => {
+        writes.push(row);
+        return { error: null };
+      },
+    };
+    return { writes, client: { from: () => q } as never };
+  }
+
+  it("prepareMemoryForTurn does not write seeds over a row it could not read", async () => {
+    const { writes, client } = failingDb();
+    await prepareMemoryForTurn(client, {
+      therapistId: "t9",
+      avatarId: "a9",
+      userMessage: "Hello",
+      systemPrompt: "You are Maya.",
+      identity: { occupation: "Graphic designer" },
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it("runPatientMemoryAfterSession skips the save and reports it", async () => {
+    const { writes, client } = failingDb();
+    const result = await runPatientMemoryAfterSession(client, {
+      therapistId: "t9",
+      avatarId: "a9",
+      sessionId: "s9",
+      messages: [{ role: "assistant", content: "I'm still on sertraline." }],
+    });
+    expect(writes).toHaveLength(0);
+    expect(result).toMatchObject({ ok: false, persisted: "skipped" });
+  });
+});
