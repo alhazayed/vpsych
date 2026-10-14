@@ -24,6 +24,8 @@ export default function GlobalError({
   return (
     <html lang="en" className={`${fontVariables} h-full antialiased`}>
       <body className="flex min-h-full items-center justify-center px-4 py-16">
+        {/* React hoists this into <head>; the root layout's metadata is gone. */}
+        <title>VPsych unavailable</title>
         {/* The root layout (and next-intl) failed, so show both locales. */}
         <main className="w-full max-w-md rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-8 shadow-[0_10px_30px_rgba(27,42,65,0.08)]">
           <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">

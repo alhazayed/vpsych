@@ -148,9 +148,9 @@ export default function LoginPage() {
         {/* Case file sign-in: a typographic referral sheet instead of a picture. */}
         <section className="hidden items-center justify-center border-e border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-16 md:flex md:w-[60%]">
           <div className="w-full max-w-xl fade-in-up">
-            <h1 className="max-w-[16ch] font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--on-surface)] lg:text-5xl">
+            <p className="max-w-[16ch] font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--on-surface)] lg:text-5xl">
               {t("heroTitle")}
-            </h1>
+            </p>
             <p className="mt-4 max-w-[42ch] text-lg leading-relaxed text-[var(--on-surface-variant)]">
               {t("heroBody", { minutes: SESSION_MINUTES })}
             </p>
@@ -185,9 +185,9 @@ export default function LoginPage() {
             </div>
             <div className="mb-10 text-center md:text-start">
               <span className="cf-stamp mb-4">{t("stamp")}</span>
-              <h2 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
+              <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
                 {t("welcome")}
-              </h2>
+              </h1>
               <p className="mt-2 text-base text-[var(--on-surface-variant)]">
                 {t("subtitle")}
               </p>
