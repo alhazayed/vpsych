@@ -10,6 +10,7 @@ import {
 } from "@/lib/training-ladder";
 import { LadderLevelList } from "@/components/training/LadderLevelList";
 import { PatientPortrait } from "@/components/training/PatientPortrait";
+import { RecordTabs } from "@/components/RecordTabs";
 
 /**
  * Training program dashboard: every program patient with the trainee's level
@@ -55,17 +56,18 @@ export default async function TrainingPage() {
         ) : null}
       </section>
 
+      <RecordTabs current="training" />
       {!overview.available ? (
-        <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
+        <p role="alert" className="clinical-card cf-sheet p-5 text-sm text-[var(--error)]">
           {t("unavailable")}
         </p>
       ) : overview.patients.length === 0 ? (
-        <p className="clinical-card p-5 text-sm text-[var(--on-surface-variant)]">
+        <p className="clinical-card cf-sheet p-5 text-sm text-[var(--on-surface-variant)]">
           {t("empty")}
         </p>
       ) : (
         <>
-          <section className="clinical-card mb-6 overflow-x-auto">
+          <section className="clinical-card cf-sheet mb-6 overflow-x-auto">
             <table className="w-full text-start text-sm">
               <thead className="text-xs uppercase tracking-wider text-[var(--on-surface-variant)]">
                 <tr className="border-b border-[var(--outline-variant)]">
@@ -87,9 +89,12 @@ export default async function TrainingPage() {
                       </td>
                       <td className="px-4 py-3">{disorderLabel(p.patient.primaryDisorderSlug)}</td>
                       <td className="px-4 py-3">
-                        {p.progress.completed
-                          ? t("allCleared")
-                          : t(`levels.${ladderLevelDef(p.progress.currentLevel).key}`)}
+                        <LadderLevelList progress={p.progress} compact />
+                        <span className="mt-1 block text-xs text-[var(--on-surface-variant)]">
+                          {p.progress.completed
+                            ? t("allCleared")
+                            : t(`levels.${ladderLevelDef(p.progress.currentLevel).key}`)}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`status-chip ${s.chip}`}>{s.label}</span>

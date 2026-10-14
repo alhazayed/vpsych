@@ -6,6 +6,7 @@ import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
+import { sessionElapsedLabel } from "@/lib/sessions/elapsed";
 import type { SessionMessage, TherapySession } from "@/lib/types";
 import { CourseProgressCard } from "@/components/therapy-course/CourseProgressCard";
 import { SkillTestSubmitted } from "@/components/skill-tests/SkillTestSubmitted";
@@ -188,18 +189,35 @@ export default async function SessionCompletePage({ params }: Props) {
             {tTranscript("empty")}
           </p>
         ) : (
-          <ul className="max-h-80 space-y-3 overflow-auto text-sm">
+          <ol className="max-h-80 overflow-auto text-sm">
             {transcript.map((m) => (
-              <li key={m.id}>
-                <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+              <li
+                key={m.id}
+                className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-2 border-b border-[var(--outline-variant)] py-2.5 last:border-0 sm:grid-cols-[3rem_5rem_minmax(0,1fr)]"
+              >
+                <time
+                  dateTime={m.created_at}
+                  className="row-span-2 text-xs tabular-nums text-[var(--outline)] sm:row-span-1"
+                >
+                  {sessionElapsedLabel(typed.started_at, m.created_at)}
+                </time>
+                <span
+                  className={`text-xs font-semibold ${
+                    m.role === "user"
+                      ? "text-[var(--on-surface-variant)]"
+                      : "text-[var(--primary)]"
+                  }`}
+                >
                   {m.role === "user"
                     ? tTranscript("you")
                     : tTranscript("patient")}
                 </span>
-                <span className="text-[var(--on-surface)]">{m.content}</span>
+                <span className="text-[var(--on-surface)]" dir="auto">
+                  {m.content}
+                </span>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
         {showRoomDebrief && typed.private_notes?.trim() ? (
           <div className="mt-4 border-t border-[var(--outline-variant)] pt-4">
