@@ -23,6 +23,22 @@
     U+FE70-FE74, U+FE76-FEFC;
 }
 
+/* Arabic text: Noto Sans Arabic v33 (arabic subset, variable 400-700; SIL
+   OFL), self-hosted. Same unicode-range idea: it sits first in --font-text,
+   ahead of Source Sans 3, whose fallback face (Arial) has Arabic glyphs on
+   Windows and macOS and would otherwise catch Arabic in buttons. */
+@font-face {
+  font-family: "Body Arabic";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/NotoSansArabic-arabic-variable.woff2") format("woff2");
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1,
+    U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF,
+    U+FE70-FE74, U+FE76-FEFC;
+}
+
 :root {
   /* "Case file" palette: cool sheet greys, navy ink, oxblood for actions
      and what is current, highlighter yellow (secondary-container) for marks.
@@ -65,6 +81,10 @@
      Kufi goes first because Newsreader's fallback face (Times New Roman)
      has Arabic glyphs on Windows and macOS. */
   --font-headline: "Headline Arabic", var(--font-serif-latin), Georgia, serif;
+  /* Text in both languages: Noto Sans Arabic for Arabic glyphs, Source Sans 3
+     for Latin and digits. */
+  --font-text: "Body Arabic", var(--font-body), ui-sans-serif, system-ui,
+    sans-serif;
   --clinical-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
   --clinical-shadow-hover: 0px 10px 30px rgba(0, 0, 0, 0.06);
 
@@ -89,7 +109,7 @@
   --color-surface: var(--surface);
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-text);
   --font-display: var(--font-headline);
   --font-mono: var(--font-geist-mono);
 }
@@ -97,19 +117,8 @@
 body {
   background: var(--background);
   color: var(--on-surface);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-text);
   min-height: 100vh;
-}
-
-html[lang="ar"] body,
-body.font-arabic {
-  font-family: var(--font-arabic), var(--font-body), ui-sans-serif, system-ui,
-    sans-serif;
-}
-
-html[lang="ar"] {
-  font-family: var(--font-arabic), var(--font-body), ui-sans-serif, system-ui,
-    sans-serif;
 }
 
 a {
@@ -160,7 +169,7 @@ a {
   border-radius: 0.5rem;
   background: var(--primary);
   color: var(--on-primary);
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-text);
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25rem;
@@ -372,7 +381,7 @@ a {
   background: var(--surface);
   color: var(--on-surface);
   overflow: hidden;
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-text);
 }
 
 .trm-header {
