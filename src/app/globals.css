@@ -888,6 +888,12 @@ a.cf-tab:hover {
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--surface-container-lowest);
 }
+/* Panel headings take focus only so screen readers start there; they are
+   not controls, so no ring. */
+.trm-root h2[tabindex="-1"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 
 /* "5 minutes left" warning; stays mounted (empty) so it is announced. */
 .trm-time-warning {
