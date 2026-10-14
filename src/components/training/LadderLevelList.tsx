@@ -28,8 +28,14 @@ export async function LadderLevelList({
           </span>
         );
         if (compact) {
+          // relative keeps the sr-only text inside the table's scroll box;
+          // without it the page scrolls sideways on narrow phones.
           return (
-            <li key={key} title={`${t(`levels.${key}`)}: ${t(`levelState.${state}`)}`}>
+            <li
+              key={key}
+              className="relative"
+              title={`${t(`levels.${key}`)}: ${t(`levelState.${state}`)}`}
+            >
               {box}
               <span className="sr-only">
                 {t(`levels.${key}`)}: {t(`levelState.${state}`)}
