@@ -184,7 +184,7 @@ export function AdminNavLink({
           ? "min-w-0 flex-1 basis-0 flex-col gap-1 px-0.5 py-2 text-[10px]"
           : collapsed
             ? "justify-center gap-3 px-2 py-3"
-            : "gap-3 px-3 py-2.5 text-sm"
+            : "gap-3 px-3 py-2.5 font-[family-name:var(--font-nav)] text-sm"
       }`}
     >
       <span

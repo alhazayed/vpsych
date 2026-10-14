@@ -85,6 +85,10 @@
      for Latin and digits. */
   --font-text: "Body Arabic", var(--font-body), ui-sans-serif, system-ui,
     sans-serif;
+  /* Sidebar menu items: Noto Kufi Arabic for Arabic (like the headings),
+     Source Sans 3 for Latin, so English menus look the same as body text. */
+  --font-nav: "Headline Arabic", var(--font-body), ui-sans-serif, system-ui,
+    sans-serif;
   --clinical-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
   --clinical-shadow-hover: 0px 10px 30px rgba(0, 0, 0, 0.06);
 
