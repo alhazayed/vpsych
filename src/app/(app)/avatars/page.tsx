@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireProfile } from "@/lib/auth";
 import { localeNativeNames } from "@/lib/locale-names";
-import { disorderNameText } from "@/lib/sessions/diagnosis-label";
+import {
+  avatarDisplayName,
+  avatarLocalNameSelect,
+} from "@/lib/avatars/localized-name";
+import { defaultDisorderText, sessionGoalText } from "@/lib/avatars/card-text";
 import type { Avatar } from "@/lib/types";
 import { StartSessionButton } from "@/components/StartSessionButton";
 import { PracticeScenarioPicker } from "@/components/skill-tests/PracticeScenarioPicker";
@@ -23,6 +27,8 @@ export default async function AvatarsPage() {
   const tCommon = await getTranslations("common");
   const tPractice = await getTranslations("skillTests.practice");
   const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
+  const tGoals = await getTranslations("avatars.sessionGoals");
   const genderLabel = (g: string) => {
     const key = `genders.${g.trim().toLowerCase()}`;
     return t.has(key) ? t(key) : g;
@@ -30,7 +36,7 @@ export default async function AvatarsPage() {
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
-      "id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales",
+      `id, name, disorder, age, gender, portrait_url, ideal_guidelines, is_active, available_locales, ${avatarLocalNameSelect(await getLocale())}`,
     )
     .eq("is_active", true)
     .order("name");
@@ -77,13 +83,13 @@ export default async function AvatarsPage() {
   const ladderAvatarIds = await loadLadderAvatarIds(supabase);
   const list = withoutLadderAvatars(
     (avatars as
-      | Omit<
+      | (Omit<
           Avatar,
           "persona_prompt" | "rubric" | "created_at" | "updated_at"
-        >[]
+        > & { local_name?: string | null })[]
       | null) ?? [],
     ladderAvatarIds,
-  );
+  ).map((a) => ({ ...a, name: avatarDisplayName(a) }));
 
   // Practice scenarios: every active disorder with the patients who can
   // present with it (age and gender limits from the Case Engine).
@@ -164,7 +170,7 @@ export default async function AvatarsPage() {
                     {avatar.name}
                   </h3>
                   <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                    {disorderNameText(avatar.disorder, tDisorders)}
+                    {defaultDisorderText(avatar.disorder, tDisorders, tDefaultDisorders)}
                     {avatar.age ? ` · ${avatar.age}` : ""}
                     {avatar.gender ? ` · ${genderLabel(avatar.gender)}` : ""}
                   </p>
@@ -196,7 +202,7 @@ export default async function AvatarsPage() {
                       <span aria-hidden className="material-symbols-outlined mt-0.5 text-[18px] text-[var(--primary)]">
                         check_circle
                       </span>
-                      <span>{goal}</span>
+                      <span>{sessionGoalText(goal, tGoals)}</span>
                     </li>
                   ))}
               </ul>

@@ -2141,6 +2141,10 @@ export function TherapyRoomSession({
     >
       <AdminTestBanner clinicalSnapshot={session.clinical_snapshot} />
       <TherapyRoomScene themeId={settings.themeId}>
+        <header className="trm-header">
+          <h1>{t("header.title", { name: avatar.name })}</h1>
+        </header>
+
         <RoomTimer
           remaining={remaining}
           elapsed={elapsed}
