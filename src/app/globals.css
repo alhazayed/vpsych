@@ -833,8 +833,8 @@ a.cf-tab:hover {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.65rem;
+  gap: 0.15rem;
+  padding: 0 0.25rem;
   border-radius: 6px;
   background: var(--surface-container-lowest);
   color: var(--on-surface);
@@ -853,7 +853,10 @@ a.cf-tab:hover {
   color: var(--outline);
 }
 .trm-timer--hidden {
-  padding: 0.4rem;
+  padding: 0;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  justify-content: center;
   cursor: pointer;
 }
 .trm-timer__value,
@@ -862,9 +865,13 @@ a.cf-tab:hover {
   border: 0;
   color: inherit;
   cursor: pointer;
-  padding: 0;
+  padding: 0 0.4rem;
+  /* 44px touch targets (WCAG 2.5.5). */
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
 }
 
 /* Keyboard focus inside the room (WCAG 2.4.7): oxblood ring (7.5:1 on the
@@ -1076,12 +1083,13 @@ a.cf-tab:hover {
   box-shadow: 0 16px 40px rgba(27, 42, 65, 0.14);
   animation: trmPanelIn 0.25s ease;
 }
+/* Logical sides so the panels mirror in Arabic (WCAG 1.3.2). */
 .trm-notes {
-  left: 1rem;
+  inset-inline-start: 1rem;
 }
 .trm-transcript,
 .trm-settings {
-  right: 1rem;
+  inset-inline-end: 1rem;
 }
 .trm-notes__header,
 .trm-transcript__header,
@@ -1461,8 +1469,7 @@ a.cf-tab:hover {
   .trm-notes,
   .trm-transcript,
   .trm-settings {
-    left: 0.5rem;
-    right: 0.5rem;
+    inset-inline: 0.5rem;
     width: auto;
   }
   /* Leave room for the captions under the portrait. */
@@ -1521,6 +1528,13 @@ a.cf-tab:hover {
   background: var(--surface-container-lowest);
   box-shadow: 0 8px 24px rgba(27, 42, 65, 0.1);
   pointer-events: none;
+}
+/* Empty until the first caption; stays mounted as a live region. */
+.trm-captions:empty {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .trm-captions__line {
   margin: 0;
