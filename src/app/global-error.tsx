@@ -2,10 +2,13 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { fontVariables } from "./fonts";
+import "./globals.css";
 
 /**
  * Last-resort error UI when the root layout itself fails.
- * Must define its own <html>/<body> (Next.js requirement).
+ * Must define its own <html>/<body> (Next.js requirement), so it brings its
+ * own fonts and globals.css to keep the Case file look.
  */
 export default function GlobalError({
   error,
@@ -19,56 +22,30 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
-      <body
-        style={{
-          fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif",
-          margin: 0,
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: "#f6f4f1",
-          color: "#1c1917",
-        }}
-      >
-        <main style={{ maxWidth: 420, padding: 24, textAlign: "center" }}>
-          {/* The root layout (and next-intl) failed, so show both locales. */}
-          <h1 style={{ fontSize: 22, marginBottom: 8 }}>VPsych unavailable</h1>
-          <p style={{ fontSize: 14, opacity: 0.75, marginBottom: 12 }}>
+    <html lang="en" className={`${fontVariables} h-full antialiased`}>
+      <body className="flex min-h-full items-center justify-center px-4 py-16">
+        {/* The root layout (and next-intl) failed, so show both locales. */}
+        <main className="w-full max-w-md rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-8 shadow-[0_10px_30px_rgba(27,42,65,0.08)]">
+          <h1 className="font-[family-name:var(--font-headline)] text-2xl font-semibold text-[var(--on-surface)]">
+            VPsych unavailable
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">
             A critical error occurred. Reload to try again.
           </p>
-          <h2 dir="rtl" lang="ar" style={{ fontSize: 20, marginBottom: 8 }}>
-            تعذّر تشغيل VPsych
-          </h2>
-          <p
-            dir="rtl"
-            lang="ar"
-            style={{ fontSize: 14, opacity: 0.75, marginBottom: 12 }}
-          >
-            حدث خطأ جسيم. أعد التحميل للمحاولة مجدداً.
-          </p>
+          <div dir="rtl" lang="ar" className="mt-6 border-t border-[var(--outline-variant)] pt-6">
+            <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
+              تعذّر تشغيل VPsych
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">
+              حدث خطأ جسيم. أعد التحميل للمحاولة مجدداً.
+            </p>
+          </div>
           {error.digest ? (
-            <p
-              dir="ltr"
-              style={{ fontSize: 12, opacity: 0.6, marginBottom: 20, fontFamily: "monospace" }}
-            >
+            <p dir="ltr" className="mt-6 font-mono text-xs text-[var(--outline)]">
               {error.digest}
             </p>
           ) : null}
-          <button
-            type="button"
-            onClick={reset}
-            style={{
-              border: 0,
-              borderRadius: 8,
-              padding: "10px 16px",
-              background: "#0f766e",
-              color: "#fff",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
+          <button type="button" onClick={reset} className="btn-primary mt-6 w-full">
             Reload · إعادة التحميل
           </button>
         </main>
