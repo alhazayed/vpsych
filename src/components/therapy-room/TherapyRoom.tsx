@@ -623,12 +623,11 @@ export function TherapyRoom({
         </div>
       )}
 
-      {/* Last patient utterance available to screen readers only — not a chat UI */}
-      {lastPatientLine && (
-        <p className="sr-only" aria-live="polite">
-          {lastPatientLine}
-        </p>
-      )}
+      {/* Last patient utterance available to screen readers only — not a chat
+          UI. Always mounted so the first reply is announced (WCAG 4.1.3). */}
+      <p className="sr-only" aria-live="polite">
+        {lastPatientLine ?? ""}
+      </p>
     </div>
   );
 }

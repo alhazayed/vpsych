@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 export type Breadcrumb = { label: string; href?: string };
 
@@ -14,11 +15,12 @@ export function AdminPageHeader({
   breadcrumbs?: Breadcrumb[];
   actions?: ReactNode;
 }) {
+  const t = useTranslations("shell");
   return (
     <section className="mb-8 fade-in-up">
       {breadcrumbs && breadcrumbs.length > 0 ? (
         <nav
-          aria-label="Breadcrumb"
+          aria-label={t("breadcrumb")}
           className="mb-3 flex flex-wrap items-center gap-1 text-xs text-[var(--on-surface-variant)]"
         >
           {breadcrumbs.map((crumb, i) => (
