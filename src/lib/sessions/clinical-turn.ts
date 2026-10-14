@@ -18,7 +18,7 @@
  * persona with two different minds.
  */
 
-import { withSkillTestCase } from "@/lib/skill-tests";
+import { isCaseSealed, withSkillTestCase } from "@/lib/skill-tests";
 import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { messageRpcClient, prepareMessageRpc } from "@/lib/supabase/admin";
@@ -182,13 +182,14 @@ export async function prepareClinicalTurn(params: {
   if ((session as TherapySession).therapist_id !== user.id) {
     return { ok: false, status: 403, body: { error: "Forbidden" } };
   }
-  // A skill test session keeps its case sealed; open it for the Patient Agent.
+  // A skill test or ladder session keeps its case sealed; open it for the
+  // Patient Agent.
   const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
   if (!opened.ok) {
     return {
       ok: false,
       status: 500,
-      body: { error: "This test session could not be loaded. Please try again." },
+      body: { error: "This session could not be loaded. Please try again." },
     };
   }
   const typed = opened.session;
@@ -883,11 +884,12 @@ export function buildTurnResponse(
   assistantMsg: SessionMessage,
 ): { body: Record<string, unknown>; headers: Record<string, string> } {
   const { session: typed, resolved, humanization } = turn;
-  // A skill test keeps its case sealed. The engine numbers start from
-  // per-disorder and per-difficulty priors, so a trainee could match them
-  // against practice sessions and name the hidden disorder. No client reads
-  // them, so a test turn carries none of them.
-  const examTurn = Boolean(typed.skill_test_assignment_id);
+  // A skill test or ladder level keeps its case sealed. The engine numbers
+  // start from per-disorder and per-difficulty priors, and the plans name what
+  // the patient discloses, so a trainee could read the hidden diagnosis or
+  // comorbidities from them. No client reads them, so a sealed turn carries
+  // none of them.
+  const examTurn = isCaseSealed(typed);
   const emotionPayload = examTurn ? null : turn.emotionPayload;
   const behaviourPlan = examTurn ? null : turn.behaviourPlan;
   const decisionPlan = examTurn ? null : turn.decisionPlan;

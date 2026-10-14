@@ -17,6 +17,7 @@ import {
   avatarLocalNameSelect,
 } from "@/lib/avatars/localized-name";
 import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
+import { withSkillTestCase } from "@/lib/skill-tests";
 import {
   buildTraineeChecklist,
   caseHasRisk,
@@ -103,6 +104,13 @@ export default async function SessionCompletePage({ params }: Props) {
   }
   const transcript = (messages ?? []) as SessionMessage[];
 
+  // A ladder level keeps its case sealed in the row; open it here only to
+  // know whether the patient carried risk (every level does).
+  const opened = withSkillTestCase(typed);
+  const caseSnapshot = opened.ok
+    ? opened.session.clinical_snapshot
+    : typed.clinical_snapshot;
+
   // Practices done or missed, for the trainee. No scores: reports stay admin-only.
   const checklist = transcript.some((m) => m.role === "user")
     ? buildTraineeChecklist(
@@ -110,7 +118,7 @@ export default async function SessionCompletePage({ params }: Props) {
           messages: transcript,
           sessionNumber: typed.course_session_number ?? null,
           riskPresent: caseHasRisk(
-            typed.clinical_snapshot?.clinical_core?.risk_profile,
+            caseSnapshot?.clinical_core?.risk_profile,
           ),
         }),
       )

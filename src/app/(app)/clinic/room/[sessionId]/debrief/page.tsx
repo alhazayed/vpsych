@@ -9,6 +9,7 @@ import {
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { getLocale, getTranslations } from "next-intl/server";
 import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
+import { isCaseSealed } from "@/lib/skill-tests";
 import { SessionDebrief } from "@/components/therapy-room/SessionDebrief";
 import { FinalizeSessionReport } from "@/components/FinalizeSessionReport";
 import { shouldOfferReportFinalize } from "@/lib/session-finalize";
@@ -30,9 +31,9 @@ export default async function ClinicDebriefPage({ params }: Props) {
   if (!session || session.therapist_id !== user.id) {
     redirect("/clinic");
   }
-  // A skill test's results are for the supervisor; the trainee gets the
-  // exam's own completion page.
-  if (session.skill_test_assignment_id) {
+  // A sealed case (skill test or ladder level) stays sealed after the
+  // session too; the trainee gets the session's own completion page.
+  if (isCaseSealed(session)) {
     redirect(`/sessions/${sessionId}/complete`);
   }
 

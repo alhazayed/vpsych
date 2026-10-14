@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/auth";
 import { isTherapyRoomEnabled } from "@/lib/features";
 import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
+import { isCaseSealed } from "@/lib/skill-tests";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 import { TherapyRoom } from "@/components/therapy-room/TherapyRoom";
 
@@ -27,8 +28,9 @@ export default async function ClinicRoomPage({ params }: Props) {
   if (typed.therapist_id !== user.id) {
     redirect("/clinic");
   }
-  // Skill tests run only in the exam room, which keeps the case off the page.
-  if (typed.skill_test_assignment_id) {
+  // Skill tests and ladder levels run only in the session room, which keeps
+  // the sealed case off the page.
+  if (isCaseSealed(typed)) {
     redirect(`/sessions/${sessionId}`);
   }
 

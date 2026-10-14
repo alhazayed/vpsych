@@ -5,6 +5,7 @@ import { resolveAvatar } from "@/lib/avatars/resolve";
 import { expireStaleSession } from "@/lib/session-expiry";
 import {
   examSpeechHint,
+  isCaseSealed,
   traineeSafeAvatar,
   traineeSafeSession,
   withSkillTestCase,
@@ -48,9 +49,10 @@ export default async function SessionPage({ params }: Props) {
     caseSnapshot: typed.clinical_snapshot,
   });
 
-  // Skill test: an exam. The browser gets the patient's name, portrait and
-  // voice, plus how they speak; the case, prompts and labels stay here.
-  if (typed.skill_test_assignment_id) {
+  // Skill test or ladder level: the case is sealed. The browser gets the
+  // patient's name, portrait and voice, plus how they speak; the case,
+  // prompts and labels stay here.
+  if (isCaseSealed(typed)) {
     const opened = withSkillTestCase(typed);
     const speechHint = examSpeechHint(
       opened.ok ? opened.session.clinical_snapshot : null,

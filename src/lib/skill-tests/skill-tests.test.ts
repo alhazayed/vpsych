@@ -239,21 +239,21 @@ describe("skill test guardrails (source)", () => {
     expect(end).toMatch(/isSkillTest\s*\?\s*SKIPPED_ENTERPRISE/);
   });
 
-  it("sends skill tests from the clinic room pages to the exam pages", () => {
+  it("sends sealed sessions from the clinic room pages to the exam pages", () => {
     const room = read("src/app/(app)/clinic/room/[sessionId]/page.tsx");
     expect(room).toMatch(
-      /if \(typed\.skill_test_assignment_id\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}`\);/,
+      /if \(isCaseSealed\(typed\)\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}`\);/,
     );
-    // The test check runs before the room loads the patient for the page.
-    expect(room.indexOf("typed.skill_test_assignment_id")).toBeLessThan(
+    // The sealed check runs before the room loads the patient for the page.
+    expect(room.indexOf("isCaseSealed(typed)")).toBeLessThan(
       room.indexOf("resolveAvatar("),
     );
     for (const page of ["debrief", "supervisor"]) {
       const src = read(`src/app/(app)/clinic/room/[sessionId]/${page}/page.tsx`);
       expect(src, page).toMatch(
-        /if \(session\.skill_test_assignment_id\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}\/complete`\);/,
+        /if \(isCaseSealed\(session\)\) \{\s+redirect\(`\/sessions\/\$\{sessionId\}\/complete`\);/,
       );
-      expect(src.indexOf("session.skill_test_assignment_id"), page).toBeLessThan(
+      expect(src.indexOf("isCaseSealed(session)"), page).toBeLessThan(
         src.indexOf("buildSupervisorBriefing({"),
       );
     }
@@ -278,8 +278,23 @@ describe("skill test guardrails (source)", () => {
     const page = read("src/app/(app)/sessions/[id]/page.tsx");
     expect(page).toContain("avatar={traineeSafeAvatar(resolved)}");
     expect(page).toContain("session={traineeSafeSession(typed)}");
+    expect(page).toContain("if (isCaseSealed(typed)) {");
     const coach = read("src/app/api/sessions/[id]/supervisor/route.ts");
-    expect(coach).toContain("session.skill_test_assignment_id");
+    expect(coach).toContain("isCaseSealed(session)");
+  });
+
+  it("keeps a ladder level's comorbidities out of the trainee's rows", () => {
+    const start = read("src/app/api/sessions/route.ts");
+    // The row stores only what the program shows; the case is sealed and
+    // bound to the session id chosen before the insert.
+    expect(start).toMatch(/: ladder\s+\? ladderVisibleSnapshot\(baseSnapshot\)/);
+    expect(start).toContain("sealLadderCase(ladderSessionId, baseSnapshot)");
+    expect(start).toContain("insertPayload.id = ladderSessionId;");
+    expect(start).toContain("insertPayload.sealed_case = ladderSealedCase;");
+    // Its case_instances row is not readable by the trainee.
+    const rls = read("supabase/migrations/20261014161500_ladder_sealed_case_instances.sql");
+    expect(rls).toContain("AND NOT public.case_instance_sealed(id)");
+    expect(rls).toContain("OR public.owns_case_instance(case_instance_id, true)");
   });
 
   it("gives trainees their tests without the case", () => {

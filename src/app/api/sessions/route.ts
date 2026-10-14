@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { mergeCaseMemory } from "@/lib/case-memory";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -35,7 +36,10 @@ import {
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import {
   buildSkillTestSessionContext,
+  canSealSkillTests,
+  ladderVisibleSnapshot,
   loadSkillTestStart,
+  sealLadderCase,
   skillTestDbError,
   SKILL_TEST_SEAL_UNAVAILABLE,
   sealSkillTestCase,
@@ -137,7 +141,9 @@ export async function POST(request: Request) {
           patientKey: ladder.patient.key,
         })
       : null;
-    if (!programRow || !attempts?.available) {
+    // The level's case is sealed into the session row (comorbidities stay
+    // hidden), which needs the same server secret as skill tests.
+    if (!programRow || !attempts?.available || !canSealSkillTests()) {
       return NextResponse.json(
         {
           error: "The training program is not available right now.",
@@ -412,6 +418,21 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  // A ladder level keeps its comorbidities, risk and history sealed too. The
+  // seal is bound to the session id, so the id is chosen here.
+  const ladderSessionId = ladder ? randomUUID() : null;
+  const ladderSealedCase = ladderSessionId
+    ? sealLadderCase(ladderSessionId, baseSnapshot)
+    : null;
+  if (ladder && !ladderSealedCase) {
+    return NextResponse.json(
+      {
+        error: "The training program is not available right now.",
+        code: "ladder_unavailable",
+      },
+      { status: 503 },
+    );
+  }
   // Session Practice Engine — homework from the previous course session and
   // PHQ-9 / GAD-7 levels moved by its quality. If the previous session cannot
   // be read, stop: starting anyway would silently reset the patient's scores.
@@ -444,6 +465,8 @@ export async function POST(request: Request) {
           requiredSessions: test.assignment.required_sessions,
         }),
       })
+    : ladder
+    ? ladderVisibleSnapshot(baseSnapshot)
     : course && courseSessionNumber
       ? {
           ...baseSnapshot,
@@ -479,6 +502,10 @@ export async function POST(request: Request) {
   if (test) {
     insertPayload.skill_test_assignment_id = test.assignment.id;
     insertPayload.sealed_case = sealedCase;
+  }
+  if (ladderSessionId) {
+    insertPayload.id = ladderSessionId;
+    insertPayload.sealed_case = ladderSealedCase;
   }
   if (course && courseSessionNumber) {
     insertPayload.therapy_course_id = course.id;

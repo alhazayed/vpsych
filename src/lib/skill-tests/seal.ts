@@ -11,7 +11,8 @@
  *
  * Each blob is bound to its assignment and kind ("spec" or "case") through
  * the GCM additional data, so a blob copied onto another assignment, or a
- * spec passed off as a case, fails to open.
+ * spec passed off as a case, fails to open. Training ladder sessions seal
+ * their level's case the same way ("ladder"), bound to the session id.
  */
 
 import {
@@ -21,7 +22,7 @@ import {
   randomBytes,
 } from "crypto";
 
-export type SealKind = "spec" | "case";
+export type SealKind = "spec" | "case" | "ladder";
 
 const VERSION = "v1";
 const SALT = "vpsych-skill-test-seal";

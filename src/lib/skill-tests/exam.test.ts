@@ -3,8 +3,12 @@ import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { ResolvedAvatar } from "@/lib/types";
 import {
   examSpeechHint,
+  isCaseSealed,
+  ladderVisibleSnapshot,
+  openLadderCase,
   openSkillTestCase,
   openSkillTestSpec,
+  sealLadderCase,
   sealSkillTestCase,
   sealSkillTestSpec,
   traineeSafeAvatar,
@@ -153,5 +157,56 @@ describe("what a trainee can see of a test", () => {
   it("gives the voice a pace and energy, not the disorder", () => {
     const hint = examSpeechHint(CASE);
     expect(Object.keys(hint).sort()).toEqual(["energy", "pace"]);
+  });
+});
+
+describe("what a trainee can see of a training ladder level", () => {
+  beforeEach(() => vi.stubEnv("REPORT_WRITE_KEY", "test-report-key"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  const LEVEL = {
+    ...CASE,
+    difficulty: "advanced",
+    comorbidities: [{ id: "d2", slug: "alcohol-use-disorder", name: "Alcohol use disorder" }],
+    clinical_core: { disorder: "ptsd", risk_profile: { suicidal_ideation: "passive" } },
+  } as unknown as CaseInstanceSnapshot;
+
+  it("keeps the primary presentation and level, and seals the rest", () => {
+    const visible = ladderVisibleSnapshot(LEVEL);
+    expect(Object.keys(visible).sort()).toEqual([
+      "case_sealed",
+      "difficulty",
+      "locale",
+      "primary_diagnosis",
+    ]);
+    expect(JSON.stringify(visible)).not.toMatch(/alcohol|risk|suicid/i);
+
+    const sealed = sealLadderCase(A, LEVEL)!;
+    expect(sealed).not.toMatch(/alcohol|ptsd/i);
+    expect(openLadderCase(A, sealed)?.comorbidities[0]?.slug).toBe("alcohol-use-disorder");
+    // Bound to its session, and not interchangeable with a skill test case.
+    expect(openLadderCase(B, sealed)).toBeNull();
+    expect(openSkillTestCase(A, sealed)).toBeNull();
+    expect(openLadderCase(A, sealSkillTestCase(A, LEVEL))).toBeNull();
+  });
+
+  it("opens the level's case on the server, and fails rather than run without it", () => {
+    const row = {
+      id: A,
+      skill_test_assignment_id: null,
+      sealed_case: sealLadderCase(A, LEVEL),
+      clinical_snapshot: ladderVisibleSnapshot(LEVEL),
+    };
+    expect(isCaseSealed(row)).toBe(true);
+    const opened = withSkillTestCase(row);
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) return;
+    expect(opened.session.clinical_snapshot?.comorbidities).toHaveLength(1);
+    expect(opened.session.clinical_snapshot?.clinical_core.risk_profile).toBeTruthy();
+
+    // A reader that skipped sealed_case, or a blob moved to another session.
+    expect(withSkillTestCase({ ...row, sealed_case: undefined }).ok).toBe(false);
+    expect(withSkillTestCase({ ...row, id: B }).ok).toBe(false);
+    expect(isCaseSealed({ clinical_snapshot: LEVEL })).toBe(false);
   });
 });

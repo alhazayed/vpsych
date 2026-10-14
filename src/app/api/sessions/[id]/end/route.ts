@@ -151,14 +151,15 @@ export async function POST(_request: Request, { params }: Params) {
   if ((session as TherapySession).therapist_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  // A skill test session keeps its case sealed; open it for the assessment.
+  // A skill test or ladder session keeps its case sealed; open it for the
+  // assessment.
   const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
   if (!opened.ok) {
-    console.error("[sessions/end] sealed test case could not be opened", {
+    console.error("[sessions/end] sealed case could not be opened", {
       sessionId,
     });
     return NextResponse.json(
-      { error: "This test session could not be loaded. Please try again." },
+      { error: "This session could not be loaded. Please try again." },
       { status: 500 },
     );
   }
