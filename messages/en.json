@@ -99,7 +99,8 @@
       "expand": "Expand sidebar",
       "openMenu": "Open navigation",
       "closeMenu": "Close navigation",
-      "menuTitle": "Admin navigation"
+      "menuTitle": "Admin navigation",
+      "mainNav": "Main navigation"
     },
     "commandPalette": {
       "title": "Search VPsych",
@@ -107,7 +108,8 @@
       "trigger": "Search",
       "empty": "No matching destinations.",
       "hint": "Navigate only — results are real admin destinations, not fabricated records."
-    }
+    },
+    "breadcrumb": "Breadcrumb"
   },
   "nav": {
     "patientLibrary": "Patient Library",
@@ -1351,7 +1353,8 @@
         "voiceGenderHint": "Only voices that match the patient's gender are shown. A female patient has a female voice and a male patient a male voice."
       },
       "loadErrorTitle": "Patient library unavailable",
-      "loadErrorDescription": "Could not load virtual patients. Try again or check System Health."
+      "loadErrorDescription": "Could not load virtual patients. Try again or check System Health.",
+      "detailTabsLabel": "Virtual patient sections"
     },
     "personality": {
       "title": "Personality",
@@ -1781,7 +1784,8 @@
         "errorEmpty": "This session has no therapist turns to assess.",
         "errorNetwork": "Network error. Check your connection and try again.",
         "errorGeneric": "Could not generate the report. Try again."
-      }
+      },
+      "detailTabsLabel": "Session detail"
     },
     "contentHub": {
       "title": "Content library",
@@ -1944,7 +1948,8 @@
       "sessionsSampleHint": "Most recent 100 sessions for this learner (sample). Not a complete lifetime history.",
       "viewAllSessions": "View all in Sessions",
       "performanceNote": "Performance lists overall scores from existing session_reports for this learner’s recent sessions. Scores are educational simulation assessments — not validated clinical grades.",
-      "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory."
+      "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory.",
+      "detailTabsLabel": "Learner profile"
     },
     "contextualHelp": {
       "close": "Close",

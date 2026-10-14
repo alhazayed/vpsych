@@ -38,6 +38,12 @@ const EVIDENCE_COPY: Record<
   },
 };
 
+/** Rubric item weight, in the report's language (WCAG 1.3.1: not a bare "w3"). */
+const WEIGHT_LABEL: Record<"en" | "ar", (weight: number) => string> = {
+  en: (weight) => `weight ${weight}`,
+  ar: (weight) => `الوزن ${weight}`,
+};
+
 const EVIDENCE_TONE: Record<EvidenceLevel, string> = {
   limited: "border-[var(--outline-variant)] text-[var(--on-surface-variant)]",
   some: "border-[var(--primary)] text-[var(--primary)]",
@@ -141,7 +147,7 @@ export async function ReportView({
                   <p className="font-mono text-sm text-[var(--primary)]">
                     {item.score}/{item.max}
                     <span className="ms-2 text-[var(--on-surface-variant)]">
-                      w{item.weight}
+                      {WEIGHT_LABEL[isAr ? "ar" : "en"](item.weight)}
                     </span>
                   </p>
                 </div>
