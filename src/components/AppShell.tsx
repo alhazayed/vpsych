@@ -242,13 +242,13 @@ export function AppShell({
 
   if (isImmersiveSession) {
     return (
-      <div
+      <main
         id="main-content"
         tabIndex={-1}
         className="min-h-screen bg-[var(--background)] focus:outline-none"
       >
         {children}
-      </div>
+      </main>
     );
   }
 
@@ -270,7 +270,7 @@ export function AppShell({
             >
               <Image
                 src="/vpsych-logo.png"
-                alt="VPsych"
+                alt={collapsed ? "VPsych" : ""}
                 width={40}
                 height={40}
                 className="h-10 w-10 shrink-0 rounded-lg object-cover"
@@ -403,7 +403,7 @@ export function AppShell({
           >
             <Image
               src="/vpsych-logo.png"
-              alt="VPsych"
+              alt=""
               width={32}
               height={32}
               className="h-8 w-8 rounded-md object-cover"
