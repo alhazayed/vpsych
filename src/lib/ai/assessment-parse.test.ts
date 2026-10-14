@@ -37,6 +37,13 @@ describe("assessment JSON parsing", () => {
     });
   });
 
+  it("rejects a null or blank score instead of turning it into 0", () => {
+    for (const score of [null, "", "  "]) {
+      const bad = { ...valid, items: [{ id: "alliance", score, feedback: "x" }] };
+      expect(() => parseAssessmentModelText(JSON.stringify(bad))).toThrow();
+    }
+  });
+
   it("rejects empty responses", () => {
     expect(() => parseAssessmentModelText("   ")).toThrow(/empty/i);
   });

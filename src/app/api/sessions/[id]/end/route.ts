@@ -291,7 +291,23 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
-  const { data: messages } = await loadAssessmentMessages(supabase, sessionId);
+  // A failed transcript read must stop here: the report is insert-once and an
+  // AI-examiner report is never regenerated, so grading an empty transcript
+  // would be permanent. The learner's complete page retries via /end.
+  const { data: messages, error: messagesErr } = await loadAssessmentMessages(
+    supabase,
+    sessionId,
+  );
+  if (messagesErr) {
+    console.error("[session-end] transcript load failed", {
+      sessionId,
+      error: messagesErr.message,
+    });
+    return NextResponse.json(
+      { error: "Could not load the transcript", code: "transcript_unavailable" },
+      { status: 503 },
+    );
+  }
 
   const endedAt = typed.ended_at ?? new Date().toISOString();
   const durationSec = Math.floor(

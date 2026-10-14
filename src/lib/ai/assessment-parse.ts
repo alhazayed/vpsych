@@ -22,10 +22,14 @@ export const assessmentSchema = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      score: z.coerce.number().transform((n) => {
-        if (Number.isNaN(n)) return 0;
-        return Math.min(5, Math.max(0, n));
-      }),
+      // A null or blank score is a missing score, not a 0: Number(null) === 0
+      // would otherwise turn it into a real-looking failing mark.
+      score: z
+        .preprocess(
+          (v) => (v === null || (typeof v === "string" && !v.trim()) ? undefined : v),
+          z.coerce.number(),
+        )
+        .transform((n) => Math.min(5, Math.max(0, n))),
       feedback: z.string().catch(""),
     }),
   ),

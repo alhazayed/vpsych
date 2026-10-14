@@ -563,16 +563,31 @@ export async function assessSession(params: {
     model: string,
     errorKind?: OpenAIErrorKind,
   ): SessionAssessment => {
+    // A rubric item the examiner did not score must not become a silent 0 in
+    // an AI-examiner report (insert-once, never regenerated). Throwing here
+    // sends the attempt into the existing mini → gateway → heuristic failover.
+    const missing = rubric
+      .filter((r) => !output.items.some((i) => i.id === r.id))
+      .map((r) => r.id);
+    if (missing.length > 0) {
+      console.warn("[assessment]", {
+        event: "assessment_items_missing",
+        aiSource,
+        model,
+        missing,
+      });
+      throw new Error(`assessment missing rubric items: ${missing.join(",")}`);
+    }
     const items: ScoreEntry[] = rubric.map((r) => {
-      const found = output.items.find((i) => i.id === r.id);
+      const found = output.items.find((i) => i.id === r.id)!;
       return {
         id: r.id,
         label: r.label,
-        score: Math.min(r.max, Math.max(0, found?.score ?? 0)),
+        score: Math.min(r.max, Math.max(0, found.score)),
         max: r.max,
         weight: r.weight,
         feedback:
-          found?.feedback ??
+          found.feedback ||
           (language === "ar" ? "لا توجد ملاحظات." : "No feedback provided."),
       };
     });

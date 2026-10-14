@@ -52,6 +52,10 @@ const goodJson = JSON.stringify({
     { id: "interventions", score: 2, feedback: "Mostly supportive listening." },
     { id: "safety", score: 2, feedback: "No safety screen yet." },
     { id: "structure", score: 3, feedback: "Clear opening question." },
+    { id: "clinical_formulation", score: 2, feedback: "Early formulation only." },
+    { id: "differential_diagnosis", score: 2, feedback: "Few alternatives considered." },
+    { id: "risk_formulation", score: 2, feedback: "Risk not yet formulated." },
+    { id: "educational_competency", score: 3, feedback: "Reflective stance shown." },
   ],
   narrative:
     "Therapist opened with mood inquiry; patient reported fatigue and work stress.",
@@ -104,6 +108,44 @@ describe("assessSession parse failover", () => {
     };
     expect(second.model).toBe("gpt-4o-mini");
     expect(second.json).toBe(true);
+  });
+
+  it("does not score a missing rubric item as 0; fails over instead", async () => {
+    const partial = JSON.parse(goodJson) as { items: { id: string }[] };
+    partial.items = partial.items.filter((i) => i.id !== "risk_formulation");
+    chatMock
+      .mockResolvedValueOnce({ text: JSON.stringify(partial), model: "gpt-5" })
+      .mockResolvedValueOnce({ text: goodJson, model: "gpt-4o-mini" });
+    const { assessSession } = await import("@/lib/ai/assessment");
+    const result = await assessSession({
+      avatar,
+      messages,
+      durationSec: 120,
+      language: "en",
+    });
+    expect(result.aiSource).toBe("gpt");
+    expect(result.model).toBe("gpt-4o-mini");
+    expect(
+      result.scores.items.find((i) => i.id === "risk_formulation")?.score,
+    ).toBe(2);
+  });
+
+  it("marks the report heuristic when every model leaves rubric items out", async () => {
+    const partial = JSON.parse(goodJson) as { items: { id: string }[] };
+    partial.items = partial.items.slice(0, 7);
+    chatMock.mockResolvedValue({ text: JSON.stringify(partial), model: "gpt-5" });
+    const { assessSession } = await import("@/lib/ai/assessment");
+    const result = await assessSession({
+      avatar,
+      messages,
+      durationSec: 120,
+      language: "en",
+    });
+    expect(result.aiSource).toBe("persona_fallback");
+    expect(
+      (result.scores.scientific_provenance as { assessment_mode?: string })
+        .assessment_mode,
+    ).toBe("heuristic_fallback");
   });
 
   it("accepts markdown-fenced JSON from primary without heuristic", async () => {
