@@ -213,9 +213,29 @@
       "title": "Practice Psychotherapy with AI Patients",
       "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
       "startFree": "Request access",
-      "imageAlt": "Therapist conducting a session with an AI patient avatar",
+      "imageAlt": "Example session record: a practice patient's referral notes and the first lines of the session",
       "howItWorks": "See how it works",
-      "approvalNote": "New accounts are reviewed by an administrator before first sign-in."
+      "approvalNote": "New accounts are reviewed by an administrator before first sign-in.",
+      "sample": {
+        "tabs": {
+          "first": "Maya Chen",
+          "second": "Jordan Hale",
+          "third": "Ethan Cole"
+        },
+        "name": "Maya Chen",
+        "meta": "Female · 28 · Practice session",
+        "referralTitle": "Referral notes",
+        "referral": "Freelance designer. Low mood since March, tired all the time, has stopped painting.",
+        "you": "You",
+        "patient": "Maya",
+        "time1": "00:42",
+        "question": "What brings you in today?",
+        "time2": "00:51",
+        "answer": "I've just been… tired. Not sleepy tired, more like everything feels heavy.",
+        "status": "Session in progress",
+        "timer": "33:12",
+        "end": "End session"
+      }
     },
     "features": {
       "title": "Advanced Clinical Training Tools",
@@ -249,7 +269,6 @@
     },
     "how": {
       "title": "How VPsych Works",
-      "imageAlt": "VPsych workflow from session creation to analysis",
       "steps": {
         "1": {
           "title": "Choose a Patient",
@@ -318,9 +337,8 @@
     "login": {
       "platformName": "VPsych Clinical Assessment Platform",
       "requestAccess": "Request Access",
-      "heroAlt": "Therapist practicing with an AI patient simulation",
-      "heroTitle": "Improve Your Clinical Skills with AI-Powered Practice",
-      "heroBody": "Practice psychotherapy with realistic AI patients and receive structured competency feedback after every session.",
+      "heroTitle": "Simulated patients for supervised practice.",
+      "heroBody": "Each session is a {minutes}-minute appointment. Your supervisor reviews the report.",
       "welcome": "Welcome Back",
       "subtitle": "Sign in to continue your clinical training.",
       "email": "Email",
@@ -342,7 +360,16 @@
       "createAccount": "Create Account",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
-      "copyright": "© {year} VPsych"
+      "copyright": "© {year} VPsych",
+      "stamp": "Training use only",
+      "facts": {
+        "lengthLabel": "Session length",
+        "lengthValue": "{minutes} min",
+        "languagesLabel": "Languages",
+        "languagesValue": "English, Arabic",
+        "accessLabel": "Access",
+        "accessValue": "Approved accounts"
+      }
     },
     "resetPassword": {
       "platformName": "VPsych Clinical Assessment Platform",

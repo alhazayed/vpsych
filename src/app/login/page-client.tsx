@@ -13,6 +13,10 @@ import {
 } from "@/lib/admin-mfa";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { authErrorKey } from "@/lib/auth-error";
+import { MAX_SESSION_SECONDS } from "@/lib/types";
+
+const SESSION_MINUTES = MAX_SESSION_SECONDS / 60;
+const FACT_KEYS = ["length", "languages", "access"] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -141,23 +145,30 @@ export default function LoginPage() {
       </header>
 
       <main id="main-content" className="flex min-h-screen w-full">
-        <section className="relative hidden flex-col justify-end overflow-hidden bg-[var(--primary-fixed)] p-16 md:flex md:w-[60%]">
-          <Image
-            src="/stitch/login-hero.png"
-            alt={t("heroAlt")}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="relative z-10 max-w-2xl fade-in-up">
-            <div className="rounded-3xl border border-white/30 bg-white/40 p-10 shadow-2xl backdrop-blur-md">
-              <h1 className="font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--primary)] lg:text-5xl">
-                {t("heroTitle")}
-              </h1>
-              <p className="mt-4 text-lg leading-relaxed text-[#35485f] opacity-90">
-                {t("heroBody")}
-              </p>
-            </div>
+        {/* Case file sign-in: a typographic referral sheet instead of a picture. */}
+        <section className="hidden items-center justify-center border-e border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-16 md:flex md:w-[60%]">
+          <div className="w-full max-w-xl fade-in-up">
+            <h1 className="max-w-[16ch] font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--on-surface)] lg:text-5xl">
+              {t("heroTitle")}
+            </h1>
+            <p className="mt-4 max-w-[42ch] text-lg leading-relaxed text-[var(--on-surface-variant)]">
+              {t("heroBody", { minutes: SESSION_MINUTES })}
+            </p>
+            <dl className="mt-10 border-t border-[var(--on-surface)]">
+              {FACT_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="flex items-baseline justify-between gap-4 border-b border-[var(--outline-variant)] py-3"
+                >
+                  <dt className="text-sm text-[var(--on-surface-variant)]">
+                    {t(`facts.${key}Label`)}
+                  </dt>
+                  <dd className="text-base font-semibold text-[var(--on-surface)]">
+                    {t(`facts.${key}Value`, { minutes: SESSION_MINUTES })}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 
@@ -173,6 +184,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="mb-10 text-center md:text-start">
+              <span className="cf-stamp mb-4">{t("stamp")}</span>
               <h2 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
                 {t("welcome")}
               </h2>

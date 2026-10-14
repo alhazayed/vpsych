@@ -213,6 +213,45 @@ a {
   opacity: 0.5;
 }
 
+/* Case file pieces for the public pages: an oxblood rubber stamp, a
+   highlighter mark under a line of text, and a folder tab. */
+.cf-stamp {
+  display: inline-block;
+  border: 1.5px solid var(--primary);
+  border-radius: 4px;
+  padding: 0.125rem 0.5rem;
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  transform: rotate(-2deg);
+}
+.cf-mark {
+  background: linear-gradient(
+    transparent 58%,
+    var(--secondary-container) 58%
+  );
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.cf-tab {
+  border: 1px solid var(--outline-variant);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--surface-container-high);
+  padding: 0.4rem 0.9rem;
+  color: var(--on-surface-variant);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.cf-tab--open {
+  position: relative;
+  top: 1px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
 .field-input {
   width: 100%;
   border-radius: 0.5rem;

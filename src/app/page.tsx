@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { CaseFileSample } from "@/components/landing/CaseFileSample";
 
 const FEATURE_KEYS = [
   { key: "simulations", icon: "psychology" },
@@ -104,17 +104,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="relative mt-4 lg:mt-0 fade-in-up">
-              <div className="absolute -end-12 -top-12 -z-10 h-64 w-64 rounded-full bg-[color-mix(in_srgb,var(--secondary-container)_10%,transparent)] blur-3xl" />
-              <div className="overflow-hidden rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_20%,transparent)] shadow-2xl">
-                <Image
-                  src="/stitch/landing-hero.png"
-                  alt={t("hero.imageAlt")}
-                  width={1376}
-                  height={768}
-                  className="h-auto w-full object-cover"
-                  priority
-                />
-              </div>
+              <CaseFileSample />
             </div>
           </div>
         </section>
@@ -184,15 +174,6 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
-          <div className="mx-auto mt-10 max-w-4xl overflow-hidden rounded-[14px] border border-[color-mix(in_srgb,var(--outline-variant)_25%,transparent)] shadow-lg">
-            <Image
-              src="/stitch/workflow.png"
-              alt={t("how.imageAlt")}
-              width={1376}
-              height={768}
-              className="h-auto w-full object-cover"
-            />
           </div>
         </section>
 
