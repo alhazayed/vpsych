@@ -81,6 +81,7 @@ import type {
   TherapySession,
 } from "@/lib/types";
 import { MAX_SESSION_SECONDS } from "@/lib/types";
+import { spokenConversation } from "@/lib/sessions/heard-text";
 import { reportFailure } from "@/lib/ops/degradation";
 
 /** Max therapist turn length, shared by both transports. */
@@ -317,12 +318,21 @@ export async function prepareClinicalTurn(params: {
   // Without the history the patient would answer with no memory of the
   // session and the crisis turn count would restart, while the reply still
   // looks like a normal model reply. Retry once, then fail visibly.
-  const loadHistory = () =>
-    supabase
+  // heard_chars marks replies the therapist never heard; the old column list
+  // is the fallback so a missing migration never costs the patient its memory.
+  const loadHistory = async () => {
+    const withHeard = await supabase
+      .from("session_messages")
+      .select("role, content, heard_chars")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+    if (!withHeard.error) return withHeard;
+    return supabase
       .from("session_messages")
       .select("role, content")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true });
+  };
   let { data: history, error: historyError } = await loadHistory();
   if (historyError) {
     ({ data: history, error: historyError } = await loadHistory());
@@ -345,12 +355,17 @@ export async function prepareClinicalTurn(params: {
     };
   }
 
-  const historyRows = (history ?? []) as Pick<
+  const allRows = (history ?? []) as Pick<
     SessionMessage,
-    "role" | "content"
+    "role" | "content" | "heard_chars"
   >[];
   // History includes the user message just inserted; assistant count ≈ prior turns.
-  const turnIndex = historyRows.filter((m) => m.role === "assistant").length;
+  const turnIndex = allRows.filter((m) => m.role === "assistant").length;
+  // What the patient remembers saying: replies never voiced are left out, so
+  // an addition the therapist made while the patient was thinking is answered
+  // together with the question before it.
+  const historyRows: Pick<SessionMessage, "role" | "content">[] =
+    spokenConversation(allRows).map(({ role, content }) => ({ role, content }));
 
   // Prefer service role; fall back to authenticated client with HMAC p_sig
   // (Phase 8.2 / CQG-011). RPC bodies still enforce ownership / turn order.

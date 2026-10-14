@@ -112,3 +112,23 @@ describe("floor control wiring (Therapy Room)", () => {
     expect(src.match(/startFloorMonitor\(\s*generation,/g)?.length).toBe(2);
   });
 });
+
+describe("floor control: the patient answers both parts", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/therapy-room/TherapyRoomSession.tsx"),
+    "utf8",
+  );
+
+  it("waits for the unheard record before sending the therapist's addition", () => {
+    const sendStart = src.indexOf("const gptStarted = telemetryRef.current.mark();");
+    const wait = src.indexOf("await unheard;");
+    expect(wait).toBeGreaterThan(-1);
+    expect(wait).toBeLessThan(sendStart);
+  });
+
+  it("removes a never-spoken reply from the room transcript", () => {
+    const fn = src.slice(src.indexOf("const markReplyUnheard"), src.indexOf("const playHeldReply"));
+    expect(fn).toMatch(/setMessages\(\(prev\) => prev\.filter/);
+    expect(src).toMatch(/useState\(\(\) =>\s*spokenConversation\(initialMessages\)/);
+  });
+});

@@ -77,7 +77,11 @@ again, the patient yields instead of answering over them: the room returns to
 listening with the captured onset. The reply is still saved. It is voiced
 (`HELD_REPLY`) only if what the therapist said turns out to be empty and it is
 under 20 s old; otherwise it is recorded as unheard (`heard_chars = 0`), so
-assessment does not judge words the therapist never heard. It follows the same
+assessment does not judge words the therapist never heard. An unheard reply is
+also left out of the patient's own history (`spokenConversation`,
+`lib/sessions/heard-text.ts`) and the room transcript, and the room waits for
+that record before sending the therapist's next words. The patient therefore
+answers the first question and the addition together, as one reply. It follows the same
 switches as barge-in: `NEXT_PUBLIC_VOICE_BARGE_IN` and the trainee's
 "Interrupt the patient by speaking" setting.
 

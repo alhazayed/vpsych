@@ -87,6 +87,7 @@ import { ENDPOINT_TIMING } from "@/lib/voice/endpointing";
 import {
   heardCharsFromFraction,
   playbackFraction,
+  spokenConversation,
   type PlaybackProgress,
 } from "@/lib/sessions/heard-text";
 import {
@@ -272,7 +273,10 @@ export function TherapyRoomSession({
     ],
   );
 
-  const [messages, setMessages] = useState(initialMessages);
+  // A reply the therapist never heard (the patient yielded) was never said.
+  const [messages, setMessages] = useState(() =>
+    spokenConversation(initialMessages),
+  );
   /** Minutes-left mark last announced (5, then 1); the session ends at 0. */
   const lastTimeWarningRef = useRef<number | null>(null);
   const [timeWarning, setTimeWarning] = useState<number | null>(null);
@@ -353,6 +357,8 @@ export function TherapyRoomSession({
   const heldReplyRef = useRef<{ reply: SavedReply; heldAt: number } | null>(
     null,
   );
+  /** Settles once an unvoiced reply is recorded as unheard. */
+  const unheardPendingRef = useRef<Promise<unknown> | null>(null);
   /**
    * Latency of the current turn, for the diagnostics panel: the silence the
    * endpoint waited, when the turn was committed, and when TTS was requested.
@@ -1093,7 +1099,11 @@ export function TherapyRoomSession({
     (reply: SavedReply, code: "superseded" | "stale") => {
       telemetryRef.current.record("held_reply_dropped", { code });
       voiceLog("TURN", "held_reply_dropped", { code });
-      void reportHeardPortion({
+      // Never said, so it leaves the room transcript too.
+      setMessages((prev) => prev.filter((m) => String(m.id) !== reply.messageId));
+      // The next turn waits for this, so the patient answers the earlier
+      // question together with the new words.
+      unheardPendingRef.current = reportHeardPortion({
         sessionId: session.id,
         messageId: reply.messageId,
         heardChars: 0,
@@ -1471,6 +1481,15 @@ export function TherapyRoomSession({
       // the transcript and the patient engines keep strict turn order.
       if (streamInFlightRef.current) {
         await streamInFlightRef.current;
+        if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      }
+      // A yielded reply that just arrived is marked unheard (same tick as the
+      // save) before this turn is sent, so the patient answers both parts.
+      await Promise.resolve();
+      const unheard = unheardPendingRef.current;
+      unheardPendingRef.current = null;
+      if (unheard) {
+        await unheard;
         if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       }
 
