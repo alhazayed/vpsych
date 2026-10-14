@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -95,6 +96,7 @@ export function VirtualPatientDetail({
     statusExpired: string;
   };
 }) {
+  const tTabs = useTranslations("admin.avatars");
   const [tab, setTab] = useState<TabId>("overview");
   // Server-authoritative: page.tsx computes readiness; router.refresh() after
   // lifecycle actions reloads the prop. No client-side authz mirror.
@@ -178,7 +180,7 @@ export function VirtualPatientDetail({
 
       <div
         role="tablist"
-        aria-label="Virtual patient sections"
+        aria-label={tTabs("detailTabsLabel")}
         className="mb-6 flex flex-wrap gap-2 border-b border-[var(--outline-variant)] pb-3"
       >
         {TABS.map((tabItem) => {

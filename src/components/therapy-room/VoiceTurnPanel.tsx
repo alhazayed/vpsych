@@ -59,33 +59,33 @@ export function VoiceTurnPanel({
 
   return (
     <>
-      {(therapistText || patientText) && (
-        <div className="trm-captions" aria-live="polite" data-testid="voice-captions">
-          {therapistText && (
-            <p
-              className={`trm-captions__line trm-captions__line--you ${
-                therapistPending ? "is-pending" : ""
-              }`}
-              data-testid="caption-therapist"
-            >
-              <span className="trm-captions__who">{t("you")}</span>
-              <span dir="auto">{therapistText}</span>
-            </p>
-          )}
-          {patientText && (
-            <p
-              className="trm-captions__line trm-captions__line--patient"
-              data-testid="caption-patient"
-            >
-              <span className="trm-captions__who">{t("patient")}</span>
-              <span dir="auto">{patientText}</span>
-              {patientFallback && (
-                <span className="trm-captions__tag">{t("fallbackReply")}</span>
-              )}
-            </p>
-          )}
-        </div>
-      )}
+      {/* Always mounted (empty and invisible until the first line) so screen
+          readers announce the first patient reply (WCAG 4.1.3). */}
+      <div className="trm-captions" aria-live="polite" data-testid="voice-captions">
+        {therapistText && (
+          <p
+            className={`trm-captions__line trm-captions__line--you ${
+              therapistPending ? "is-pending" : ""
+            }`}
+            data-testid="caption-therapist"
+          >
+            <span className="trm-captions__who">{t("you")}</span>
+            <span dir="auto">{therapistText}</span>
+          </p>
+        )}
+        {patientText && (
+          <p
+            className="trm-captions__line trm-captions__line--patient"
+            data-testid="caption-patient"
+          >
+            <span className="trm-captions__who">{t("patient")}</span>
+            <span dir="auto">{patientText}</span>
+            {patientFallback && (
+              <span className="trm-captions__tag">{t("fallbackReply")}</span>
+            )}
+          </p>
+        )}
+      </div>
 
       {!error && !audioUnavailable && !audioDegraded && diagnostics.voiceSubstituted && (
         <div className="trm-voice-alert" role="status" data-testid="voice-substituted">

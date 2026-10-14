@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/AdminUi";
 import {
@@ -92,6 +93,7 @@ export function LearnerDetailTabs({
   };
   locale: string;
 }) {
+  const tTabs = useTranslations("admin.learners");
   const [tab, setTab] = useState<TabId>("overview");
   const time = useMemo(
     () =>
@@ -149,7 +151,7 @@ export function LearnerDetailTabs({
     <div>
       <div
         role="tablist"
-        aria-label="Learner profile"
+        aria-label={tTabs("detailTabsLabel")}
         className="mb-6 flex flex-wrap gap-1 border-b border-[var(--outline-variant)]"
       >
         {tabs.map((t) => {

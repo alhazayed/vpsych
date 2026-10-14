@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 type ControlId =
@@ -36,6 +36,22 @@ export function FloatingControls({
 }) {
   const t = useTranslations("therapyRoom.controls");
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // More menu keyboard support (WCAG 2.1.1): focus the first item on open,
+  // Escape closes it and returns focus to the More button.
+  useEffect(() => {
+    if (!moreOpen) return;
+    menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setMoreOpen(false);
+      moreRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
 
   const items: Array<{
     id: ControlId;
@@ -113,6 +129,7 @@ export function FloatingControls({
           {/* Phones: the More button sits just before End. */}
           {i === endIndex && (
             <button
+              ref={moreRef}
               type="button"
               className={`trm-controls__btn trm-controls__more ${moreOpen ? "is-active" : ""}`}
               onClick={() => setMoreOpen((v) => !v)}
@@ -138,13 +155,16 @@ export function FloatingControls({
         </span>
       ))}
       {moreOpen && (
-        <div id="trm-controls-more" className="trm-controls__menu">
+        <div id="trm-controls-more" ref={menuRef} className="trm-controls__menu">
           {secondary.map((item) => (
             <button
               key={item.id}
               type="button"
               className={`trm-controls__menu-item ${item.active ? "is-active" : ""}`}
               onClick={() => {
+                // Hand focus to the More button first, so the panel this
+                // opens can return focus there when it closes.
+                moreRef.current?.focus();
                 setMoreOpen(false);
                 onAction(item.id);
               }}
