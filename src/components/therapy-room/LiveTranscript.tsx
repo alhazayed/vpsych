@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import type { SessionMessage } from "@/lib/types";
+import { usePanelFocus } from "@/components/therapy-room/usePanelFocus";
 
 /** Optional live transcript — OFF by default. No speech bubbles in the room. */
 export function LiveTranscript({
@@ -15,6 +16,7 @@ export function LiveTranscript({
 }) {
   const t = useTranslations("therapyRoom.transcript");
   const locale = useLocale();
+  const headingRef = usePanelFocus<HTMLHeadingElement>(open);
   if (!open) return null;
 
   const visible = messages.filter((m) => m.role === "user" || m.role === "assistant");
@@ -26,7 +28,9 @@ export function LiveTranscript({
   return (
     <aside className="trm-transcript" aria-label={t("title")}>
       <header className="trm-transcript__header">
-        <h2>{t("title")}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {t("title")}
+        </h2>
         <button type="button" onClick={onClose} aria-label={t("close")}>
           <span aria-hidden className="material-symbols-outlined">close</span>
         </button>

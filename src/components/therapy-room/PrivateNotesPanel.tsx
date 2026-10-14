@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { usePanelFocus } from "@/components/therapy-room/usePanelFocus";
 
 /**
  * Private clinical notes — never sent to the patient agent,
@@ -21,6 +22,10 @@ export function PrivateNotesPanel({
   saveFailed?: boolean;
 }) {
   const t = useTranslations("therapyRoom.notes");
+  const inputRef = usePanelFocus<HTMLTextAreaElement>(open, {
+    // The notes box always took focus on open (also via the N shortcut).
+    always: true,
+  });
   if (!open) return null;
 
   return (
@@ -33,13 +38,13 @@ export function PrivateNotesPanel({
         </button>
       </header>
       <textarea
+        ref={inputRef}
         className="trm-notes__input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("placeholder")}
         maxLength={20000}
         spellCheck
-        autoFocus
       />
       {saveFailed && (
         <p role="status" className="trm-notes__warning">

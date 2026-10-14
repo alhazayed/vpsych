@@ -149,6 +149,7 @@ export function SkillTestForm({
         <legend className="mb-2 text-sm font-semibold">{t("disorder")}</legend>
         <select
           className="field-input"
+          aria-label={t("disorder")}
           value={disorderSlug}
           onChange={(e) => {
             setDisorderSlug(e.target.value);
@@ -179,12 +180,17 @@ export function SkillTestForm({
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggleComorbidity(slug)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${
                     on
                       ? "border-[var(--primary)] bg-[var(--surface-container)] text-[var(--primary)]"
                       : "border-[var(--outline-variant)] text-[var(--on-surface-variant)]"
                   }`}
                 >
+                  {on && (
+                    <span className="material-symbols-outlined text-sm" aria-hidden="true">
+                      check
+                    </span>
+                  )}
                   {tD(slug)}
                 </button>
               );

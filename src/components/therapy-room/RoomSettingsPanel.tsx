@@ -7,6 +7,7 @@ import {
   type TherapyRoomSettings,
   type TherapyRoomThemeId,
 } from "@/lib/therapy-room";
+import { usePanelFocus } from "@/components/therapy-room/usePanelFocus";
 
 export function RoomSettingsPanel({
   open,
@@ -20,12 +21,15 @@ export function RoomSettingsPanel({
   onClose: () => void;
 }) {
   const t = useTranslations("therapyRoom");
+  const headingRef = usePanelFocus<HTMLHeadingElement>(open);
   if (!open) return null;
 
   return (
     <aside className="trm-settings" aria-label={t("settings.title")}>
       <header className="trm-settings__header">
-        <h2>{t("settings.title")}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {t("settings.title")}
+        </h2>
         <button type="button" onClick={onClose} aria-label={t("settings.close")}>
           <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
