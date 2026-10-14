@@ -61,6 +61,8 @@ Start → FSM LISTENING → continuous VAD
   → silence (700–1000 ms) / max / patient-interrupt ends turn
   → PROCESSING_STT → OpenAI STT
   → WAITING_GPT → /api/sessions/:id/message (unchanged)
+  → floor monitor (therapist speaks again ≥450 ms → patient yields,
+    THERAPIST_RESUMED → LISTENING; the saved reply is held)
   → diagnosis-linked thinking latency + look-away
   → AVATAR_SPEAKING → ElevenLabs / browser TTS (AbortSignal + onended)
   → barge-in monitor (therapist may interrupt → LISTENING immediately)
@@ -68,6 +70,16 @@ Start → FSM LISTENING → continuous VAD
 ```
 
 Therapist controls: **Pause**, **Resume**, **End Session** only (plus notes/settings).
+
+**Floor control** (`lib/therapy-room/floor-control.ts`). While the reply is
+still being generated, the mic is watched. If the therapist starts speaking
+again, the patient yields instead of answering over them: the room returns to
+listening with the captured onset. The reply is still saved. It is voiced
+(`HELD_REPLY`) only if what the therapist said turns out to be empty and it is
+under 20 s old; otherwise it is recorded as unheard (`heard_chars = 0`), so
+assessment does not judge words the therapist never heard. It follows the same
+switches as barge-in: `NEXT_PUBLIC_VOICE_BARGE_IN` and the trainee's
+"Interrupt the patient by speaking" setting.
 
 See `docs/HANDS_FREE_THERAPY_ROOM.md` for FSM diagrams, telemetry, browser notes,
 and `docs/HANDS_FREE_THERAPY_ROOM_CERTIFICATION.md` for production sign-off.
