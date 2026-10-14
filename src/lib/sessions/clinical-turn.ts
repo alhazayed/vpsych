@@ -81,6 +81,7 @@ import type {
   TherapySession,
 } from "@/lib/types";
 import { MAX_SESSION_SECONDS } from "@/lib/types";
+import { reportFailure } from "@/lib/ops/degradation";
 
 /** Max therapist turn length, shared by both transports. */
 export const MAX_TURN_MESSAGE_CHARS = 4000;
@@ -330,6 +331,10 @@ export async function prepareClinicalTurn(params: {
     console.error("[sessions/message] history load failed", {
       sessionId,
       error: historyError.message,
+    });
+    reportFailure("conversation_history_unavailable", {
+      sessionId,
+      code: historyError.code,
     });
     return {
       ok: false,

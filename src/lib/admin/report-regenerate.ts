@@ -115,7 +115,7 @@ async function loadAndAssess(
     .eq("id", sessionId)
     .maybeSingle();
   if (sessionErr) {
-    console.warn("[report-regenerate] session read:", sessionErr.message);
+    console.warn("[report-regenerate] session read failed", { sessionId, error: sessionErr.message });
     return fail(500, "db_error", "Could not load session");
   }
   if (!session || !(session as { avatars?: unknown }).avatars) {
@@ -139,7 +139,7 @@ async function loadAndAssess(
     sessionId,
   );
   if (msgErr) {
-    console.warn("[report-regenerate] messages read:", msgErr.message);
+    console.warn("[report-regenerate] messages read failed", { sessionId, error: msgErr.message });
     return fail(500, "db_error", "Could not load transcript");
   }
   const rows = messages;
@@ -190,7 +190,7 @@ export async function regenerateHeuristicReport(
     .eq("session_id", sessionId)
     .maybeSingle();
   if (reportErr) {
-    console.warn("[report-regenerate] report read:", reportErr.message);
+    console.warn("[report-regenerate] report read failed", { sessionId, error: reportErr.message });
     return fail(500, "db_error", "Could not load report");
   }
   if (!report) {
@@ -234,7 +234,7 @@ export async function regenerateHeuristicReport(
     .select("id")
     .maybeSingle();
   if (updateErr) {
-    console.warn("[report-regenerate] update:", updateErr.message);
+    console.warn("[report-regenerate] update failed", { sessionId, error: updateErr.message });
     return fail(500, "db_error", "Could not save report");
   }
   if (!updated) {
@@ -271,7 +271,7 @@ export async function generateMissingReport(
     .eq("session_id", sessionId)
     .maybeSingle();
   if (existingErr) {
-    console.warn("[report-generate] report read:", existingErr.message);
+    console.warn("[report-generate] report read failed", { sessionId, error: existingErr.message });
     return fail(500, "db_error", "Could not load report");
   }
   if (existing) {
@@ -311,7 +311,7 @@ export async function generateMissingReport(
       p_sig: sig,
     });
     if (error) {
-      console.warn("[report-generate] rpc:", error.message);
+      console.warn("[report-generate] rpc failed", { sessionId, error: error.message });
       return fail(500, "db_error", "Could not save report");
     }
     reportId = typeof data === "string" ? data : null;
@@ -331,7 +331,7 @@ export async function generateMissingReport(
       if (error.code === "23505") {
         return fail(409, "report_exists", "This session already has a report");
       }
-      console.warn("[report-generate] insert:", error.message);
+      console.warn("[report-generate] insert failed", { sessionId, error: error.message });
       return fail(500, "db_error", "Could not save report");
     }
     reportId = data?.id ? String(data.id) : null;

@@ -296,7 +296,20 @@ export async function submitStreamingConversationTurn(params: {
         stop();
         return signal?.aborted ? interrupted() : { status: "stale" };
       }
-      const { done, value } = await reader.read();
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch {
+        // The connection dropped mid-turn (network, server restart).
+        if (signal?.aborted) return interrupted();
+        return {
+          status: "failed",
+          error: "stream_disconnected",
+          fallbackToClassic: false,
+          userMessage,
+        };
+      }
+      const { done, value } = chunk;
       if (!isCurrent()) {
         stop();
         return signal?.aborted ? interrupted() : { status: "stale" };
@@ -307,6 +320,11 @@ export async function submitStreamingConversationTurn(params: {
         try {
           event = JSON.parse(msg.data) as StreamEvent;
         } catch {
+          // Our own server sent a frame we can't read: say so, don't hide it.
+          console.warn("[stream] unreadable event skipped", {
+            event: msg.event ?? null,
+            bytes: msg.data.length,
+          });
           continue;
         }
         if (!event || typeof event !== "object") continue;
@@ -322,11 +340,16 @@ export async function submitStreamingConversationTurn(params: {
         }
       }
     }
-  } catch {
+  } catch (err) {
     if (signal?.aborted) return interrupted();
+    // Not a dropped connection (reads are caught above): a bug in handling
+    // the events. Log it instead of passing it off as "stream disconnected".
+    console.error("[stream] client handler failed", {
+      error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    });
     return {
       status: "failed",
-      error: "stream_disconnected",
+      error: "stream_client_error",
       fallbackToClassic: false,
       userMessage,
     };

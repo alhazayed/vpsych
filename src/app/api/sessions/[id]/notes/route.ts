@@ -54,6 +54,7 @@ export async function GET(_request: Request, { params }: Props) {
     .order("created_at", { ascending: true });
 
   if (error) {
+    console.error("[notes] load failed", { sessionId: id, error: error.message });
     return NextResponse.json(
       { error: clientSafeError("Could not load notes", error) },
       { status: 500 },
@@ -134,6 +135,10 @@ export async function POST(request: Request, { params }: Props) {
     .single();
 
   if (error || !data) {
+    console.error("[notes] save failed", {
+      sessionId: id,
+      error: error?.message ?? "no row returned",
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not save note", error) },
       { status: 500 },

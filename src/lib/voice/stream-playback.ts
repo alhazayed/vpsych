@@ -41,6 +41,8 @@ export type AudioStreamHandle = {
   isComplete(): boolean;
   /** True when the MediaSource path failed (decode / append error). */
   failed(): boolean;
+  /** True when the network cut the body off: what played was partial. */
+  truncated?(): boolean;
   /** Resolves with the complete clip once the body has been read. */
   fullClip: Promise<Blob | null>;
   /** Stop reading (barge-in / stale turn). Safe to call more than once. */
@@ -113,6 +115,7 @@ export function pumpAudioStream(params: {
   let complete = false;
   let failed = false;
   let cancelled = false;
+  let truncated = false;
 
   // The MediaSource side: appends wait for "sourceopen" and run strictly in
   // order. A failure here stops appending but never stops reading — the
@@ -162,7 +165,9 @@ export function pumpAudioStream(params: {
       }
     } catch {
       if (cancelled) return null;
-      // Network cut mid-clip: play what arrived; the blob below is partial.
+      // Network cut mid-clip: play what arrived, but flag it so the trainee
+      // is told the patient was cut off rather than hearing it as complete.
+      truncated = true;
     }
     if (cancelled) return null;
     await appendChain;
@@ -184,6 +189,7 @@ export function pumpAudioStream(params: {
     lastDataAt: () => lastDataAt,
     isComplete: () => complete,
     failed: () => failed,
+    truncated: () => truncated,
     fullClip,
     cancel: () => {
       if (cancelled) return;

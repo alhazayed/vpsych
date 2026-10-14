@@ -286,6 +286,7 @@ export function TherapyRoomSession({
   const [lastTherapistText, setLastTherapistText] = useState<string | null>(null);
   const [therapistPending, setTherapistPending] = useState(false);
   const [patientFallback, setPatientFallback] = useState(false);
+  const [notesSaveFailed, setNotesSaveFailed] = useState(false);
   const [voiceDiag, setVoiceDiag] = useState<VoiceTurnDiagnostics>(() =>
     initialVoiceDiagnostics(),
   );
@@ -517,9 +518,11 @@ export function TherapyRoomSession({
 
   const persistSessionMeta = useCallback(
     async (immersion: ReturnType<ImmersionTracker["finalize"]> | null) => {
+      // Best effort (never blocks end), but a failed save is shown in the
+      // notes panel so the trainee knows their notes are not stored yet.
       try {
         const telemetry = telemetryRef.current.countersOnly();
-        await fetch(`/api/sessions/${session.id}/therapy-room`, {
+        const res = await fetch(`/api/sessions/${session.id}/therapy-room`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -529,8 +532,15 @@ export function TherapyRoomSession({
               : { conversationTelemetry: telemetry },
           }),
         });
+        if (!res.ok) {
+          console.warn("[therapy-room] notes save failed", {
+            sessionId: session.id,
+            status: res.status,
+          });
+        }
+        setNotesSaveFailed(!res.ok);
       } catch {
-        /* best-effort — never block end */
+        setNotesSaveFailed(true);
       }
     },
     [session.id],
@@ -786,18 +796,34 @@ export function TherapyRoomSession({
           if (abort.signal.aborted || !fsmRef.current.isCurrent(generation)) {
             return;
           }
-          void startBargeInMonitor({ onBargeIn }).then((stop) => {
-            if (abort.signal.aborted || playbackAbortRef.current !== abort) {
-              stop();
-              return;
-            }
-            bargeInStopRef.current = stop;
+          // If the mic can't open, speaking won't interrupt: record it rather
+          // than leaving the diagnostics saying barge-in is listening.
+          const bargeInUnavailable = (reason: string) => {
+            voiceLog("MIC", "barge_in_unavailable", { reason });
             setVoiceDiag((d) =>
               markVoiceStage(d, "audio", d.stages.audio, {
-                barge_in_mic: "open",
+                barge_in_mic: "unavailable",
               }),
             );
-          });
+          };
+          void startBargeInMonitor({ onBargeIn, onUnavailable: bargeInUnavailable })
+            .then((stop) => {
+              if (abort.signal.aborted || playbackAbortRef.current !== abort) {
+                stop();
+                return;
+              }
+              bargeInStopRef.current = stop;
+              setVoiceDiag((d) =>
+                d.facts.barge_in_mic === "unavailable"
+                  ? d
+                  : markVoiceStage(d, "audio", d.stages.audio, {
+                      barge_in_mic: "open",
+                    }),
+              );
+            })
+            .catch((err: unknown) => {
+              bargeInUnavailable(err instanceof Error ? err.name : "monitor_failed");
+            });
         }, BARGE_IN_ARM_DELAY_MS);
       };
       const disarmBargeIn = () => {
@@ -839,6 +865,17 @@ export function TherapyRoomSession({
               break;
             case "audio_stream_complete":
               audioStreaming = false;
+              break;
+            case "audio_stream_truncated":
+              audioStreaming = false;
+              voiceLog("TTS", "audio_stream_truncated");
+              setVoiceDiag((d) =>
+                markAudioUnavailable(d, {
+                  stage: "audio",
+                  code: "AUDIO_TRUNCATED",
+                  message: "The patient's audio was cut off by a network drop.",
+                }),
+              );
               break;
             case "audio_stream_fallback":
               audioStreaming = false;
@@ -2349,6 +2386,7 @@ export function TherapyRoomSession({
           value={notes}
           onChange={setNotes}
           onClose={() => setNotesOpen(false)}
+          saveFailed={notesSaveFailed}
         />
         <LiveTranscript
           open={transcriptOpen}

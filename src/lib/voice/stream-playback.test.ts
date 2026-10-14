@@ -112,6 +112,7 @@ describe("pumpAudioStream", () => {
     expect(ms.ended).toEqual([undefined]);
     expect(handle.isComplete()).toBe(true);
     expect(handle.failed()).toBe(false);
+    expect(handle.truncated?.()).toBe(false);
     expect(handle.lastDataAt()).toBeGreaterThan(0);
     expect(clip?.size).toBe(6);
     expect(clip?.type).toBe("audio/mpeg");
@@ -130,6 +131,26 @@ describe("pumpAudioStream", () => {
     // Appending stopped at the failure, but every byte was still collected.
     expect(appended).toEqual([[1], [2]]);
     expect(clip?.size).toBe(3);
+  });
+
+  it("flags a clip the network cut off instead of passing it as complete", async () => {
+    const { sb } = fakeSourceBuffer();
+    const ms = fakeMediaSource(sb, true);
+    let sent = false;
+    const body = new ReadableStream<Uint8Array<ArrayBuffer>>({
+      pull(controller) {
+        if (!sent) {
+          sent = true;
+          controller.enqueue(new Uint8Array([1, 2]));
+        } else {
+          controller.error(new TypeError("network error"));
+        }
+      },
+    });
+    const handle = pumpAudioStream({ body, mediaSource: ms });
+    const clip = await handle.fullClip;
+    expect(clip?.size).toBe(2);
+    expect(handle.truncated?.()).toBe(true);
   });
 
   it("stops reading on cancel (barge-in) and yields no clip", async () => {

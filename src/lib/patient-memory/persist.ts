@@ -13,6 +13,7 @@ import {
   isPatientMemoryStore,
 } from "./store";
 import type { PatientMemoryStore } from "./types";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type PersistMemoryResult = {
   ok: boolean;
@@ -69,6 +70,10 @@ export async function loadPatientMemory(
         therapistId: opts.therapistId,
         avatarId: opts.avatarId,
         error: error.message,
+      });
+      reportFailure("patient_memory_load_failed", {
+        avatarId: opts.avatarId,
+        code: error.code,
       });
       return fallback(true);
     }

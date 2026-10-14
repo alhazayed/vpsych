@@ -1145,6 +1145,11 @@ a.cf-tab:hover {
   font: inherit;
   line-height: 1.6em;
 }
+.trm-notes__warning {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--error);
+}
 /* Transcript as time-stamped case notes. */
 .trm-transcript__list {
   list-style: none;

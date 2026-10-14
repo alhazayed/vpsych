@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
 import type { HumanPersonalityMap, HumanPersonalityProfile } from "./types";
 import { validateHumanPersonality } from "./validation";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type PersistPersonalityResult =
   | { ok: true; map: HumanPersonalityMap }
@@ -28,6 +29,7 @@ async function readHumanPersonalityMap(
     .maybeSingle();
   if (error) {
     console.warn("[personality] load failed", { avatarId, error: error.message });
+    reportFailure("personality_read_failed", { avatarId, code: error.code });
     return { map: null, error: error.message };
   }
   if (!data) return { map: null, error: null };

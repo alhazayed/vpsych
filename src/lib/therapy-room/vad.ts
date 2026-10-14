@@ -569,6 +569,8 @@ const BARGE_IN_LEAD_IN_MS = 250;
 export async function startBargeInMonitor(
   opts: BargeInDetectorOptions & {
     onBargeIn: (handoff: BargeInHandoff) => void;
+    /** The mic could not be opened, so speaking will not interrupt. */
+    onUnavailable?: (reason: string) => void;
   },
 ): Promise<() => void> {
   let stream: MediaStream;
@@ -576,7 +578,8 @@ export async function startBargeInMonitor(
     stream = await navigator.mediaDevices.getUserMedia({
       audio: BARGE_IN_AUDIO_CONSTRAINTS,
     });
-  } catch {
+  } catch (err) {
+    opts.onUnavailable?.(err instanceof Error ? err.name : "getUserMedia_failed");
     return () => undefined;
   }
 

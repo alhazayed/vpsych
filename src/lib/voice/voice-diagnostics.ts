@@ -269,6 +269,7 @@ const CAUSE_BY_CODE: Record<string, VoiceErrorCause> = {
   NETWORK: "network",
   network_error: "network",
   stream_disconnected: "network",
+  AUDIO_TRUNCATED: "network",
   RATE_LIMITED: "rateLimited",
 };
 

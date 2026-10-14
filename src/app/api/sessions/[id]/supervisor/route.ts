@@ -41,13 +41,24 @@ export async function GET(_request: Request, { params }: Props) {
     );
   }
 
-  const { data: session } = await supabase
+  const { data: session, error: sessionError } = await supabase
     .from("sessions")
     .select(
       "id, therapist_id, clinical_snapshot, skill_test_assignment_id, avatars(name, disorder)",
     )
     .eq("id", id)
     .maybeSingle();
+  // A failed read is not "this session does not exist".
+  if (sessionError) {
+    console.error("[supervisor] session read failed", {
+      sessionId: id,
+      error: sessionError.message,
+    });
+    return NextResponse.json(
+      { error: clientSafeError("Supervisor unavailable", sessionError) },
+      { status: 503 },
+    );
+  }
 
   // Skill test results (and the case) are for the assigning supervisor and
   // admins only, so the trainee gets no coaching view of a test session.
@@ -67,15 +78,23 @@ export async function GET(_request: Request, { params }: Props) {
   };
   const avatarRow = Array.isArray(typed.avatars) ? typed.avatars[0] : typed.avatars;
 
-  const { data: lp } = await supabase
+  // Coaching notes are optional extras: a failed read shows the briefing
+  // without them, but is logged.
+  const { data: lp, error: lpError } = await supabase
     .from("learner_profiles")
     .select("id")
     .eq("user_id", user.id)
     .maybeSingle();
+  if (lpError) {
+    console.warn("[supervisor] learner profile read failed", {
+      sessionId: id,
+      error: lpError.message,
+    });
+  }
 
   let coach = null;
   if (lp?.id) {
-    const { data } = await supabase
+    const { data, error: coachError } = await supabase
       .from("coach_feedback")
       .select(
         "supervisor_feedback, reflective_questions, missed_opportunities, suggested_reading, suggested_next_cases, learning_goals, improvement_plan",
@@ -85,6 +104,12 @@ export async function GET(_request: Request, { params }: Props) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (coachError) {
+      console.warn("[supervisor] coach feedback read failed", {
+        sessionId: id,
+        error: coachError.message,
+      });
+    }
     coach = data;
   }
 
@@ -109,12 +134,14 @@ export async function GET(_request: Request, { params }: Props) {
       locale,
     });
 
-    const { data: messages } = await supabase
+    const { data: messages, error: messagesError } = await supabase
       .from("session_messages")
       .select("id, role, content, created_at")
       .eq("session_id", id)
       .neq("role", "system")
       .order("created_at", { ascending: true });
+    // An empty transcript here would read as "nothing was said".
+    if (messagesError) throw messagesError;
 
     return NextResponse.json({
       briefing,
@@ -123,6 +150,9 @@ export async function GET(_request: Request, { params }: Props) {
       report: null,
     });
   } catch (e) {
+    const message =
+      e instanceof Error ? e.message : (e as { message?: string } | null)?.message;
+    console.error("[supervisor] briefing failed", { sessionId: id, error: message });
     return NextResponse.json(
       { error: clientSafeError("Supervisor unavailable", e instanceof Error ? e : null) },
       { status: 500 },

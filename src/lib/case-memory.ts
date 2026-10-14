@@ -14,6 +14,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type CaseMemoryRecord = Record<string, unknown>;
 
@@ -54,6 +55,7 @@ async function writeMerged(
         caseInstanceId,
         error: error.message,
       });
+      reportFailure("case_memory_read_failed", { op, code: error.code });
       return false;
     }
     const row = data as { memory?: unknown } | null;

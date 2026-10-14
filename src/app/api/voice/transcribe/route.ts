@@ -86,7 +86,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const form = await request.formData();
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch (error) {
+    // A cut-off or malformed upload: answer like an empty recording instead
+    // of an unhandled 500 the client can't read.
+    console.warn("[stt] unreadable upload", {
+      requestId,
+      error: error instanceof Error ? error.name : String(error),
+    });
+    const err = emptyAudioError();
+    return NextResponse.json(
+      { error: err.error, code: err.code },
+      { status: err.status, headers: requestIdHeaders(requestId) },
+    );
+  }
   const audio = form.get("audio");
   // Automatically follow session.language via the client-supplied locale field.
   const localeRaw = String(form.get("locale") ?? "en");
@@ -135,13 +150,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(body, { headers: requestIdHeaders(requestId) });
   } catch (error) {
-    console.warn(
-      "[stt]",
-      error instanceof Error ? error.message : String(error),
-      error instanceof OpenAIServiceError
-        ? { kind: error.kind, providerCode: error.providerCode ?? null }
-        : "",
-    );
+    console.warn("[stt] transcription failed", {
+      requestId,
+      language,
+      bytes: audio.size,
+      mime: audio.type || null,
+      error: error instanceof Error ? error.message : String(error),
+      ...(error instanceof OpenAIServiceError
+        ? { kind: error.kind, status: error.status, providerCode: error.providerCode ?? null }
+        : {}),
+    });
     const mapped =
       error instanceof OpenAIServiceError
         ? sttProviderFailure(error)

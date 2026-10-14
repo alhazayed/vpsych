@@ -752,7 +752,8 @@
       "title": "Private notes",
       "privacy": "Visible only to you. Never shown to the patient. Never influences the patient.",
       "placeholder": "Clinical observations, hypotheses, process notes…",
-      "close": "Close notes"
+      "close": "Close notes",
+      "saveFailed": "Your notes have not been saved yet. They will be saved again shortly."
     },
     "transcript": {
       "title": "Live transcript",
@@ -2475,7 +2476,9 @@
       "saving": "Saving…",
       "saveFailed": "Could not save note.",
       "networkError": "Network error.",
-      "count": "{count} entries"
+      "count": "{count} entries",
+      "loadFailed": "Could not load earlier notes. New notes can still be saved.",
+      "rateLimited": "Too many saves in a short time. Wait a moment and try again."
     },
     "debrief": {
       "badge": "After the visit",

@@ -7,6 +7,7 @@ import type {
   LearnerCompetency,
   LearnerProfile,
 } from "./types";
+import { reportFailure } from "@/lib/ops/degradation";
 
 /** Missing ACE tables (migration not applied) are the one tolerated error. */
 function isMissingTable(error: { code?: string; message?: string }): boolean {
@@ -37,6 +38,7 @@ export async function ensureLearnerProfile(
       userId,
       error: readErr.message,
     });
+    reportFailure("learner_profile_read_failed", { code: readErr.code });
     throw new Error("learner_profile_unavailable");
   }
 

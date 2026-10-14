@@ -90,12 +90,13 @@ export async function POST(request: Request) {
       { headers },
     );
   } catch (error) {
-    console.warn(
-      "[stt-live]",
-      error instanceof OpenAIServiceError
-        ? { kind: error.kind, providerCode: error.providerCode ?? null }
-        : "unexpected",
-    );
+    console.warn("[stt-live] token failed", {
+      requestId,
+      locale,
+      ...(error instanceof OpenAIServiceError
+        ? { kind: error.kind, status: error.status, providerCode: error.providerCode ?? null }
+        : { unexpected: error instanceof Error ? `${error.name}: ${error.message}` : String(error) }),
+    });
     const mapped =
       error instanceof OpenAIServiceError
         ? sttProviderFailure(error)

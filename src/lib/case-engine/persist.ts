@@ -29,6 +29,7 @@ import {
 } from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
 import { withPreservedCaseFile } from "@/lib/ai/canonical-facts";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type StartCaseOptions = {
   avatar: Avatar;
@@ -418,6 +419,7 @@ export async function createCaseForSession(
       avatarId: opts.avatar.id,
       error: personaErr.message,
     });
+    reportFailure("case_unavailable", { avatarId: opts.avatar.id, what: "persona" });
     return { ok: false, error: "Case unavailable", status: 503 };
   }
 
@@ -902,5 +904,6 @@ function disorderUnavailable(
     avatarId,
     error: error.message,
   });
+  reportFailure("case_unavailable", { avatarId, what: "disorder" });
   return { ok: false, error: "Case unavailable", status: 503 };
 }

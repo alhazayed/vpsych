@@ -203,6 +203,8 @@ export type PlaybackDiagnostic =
       substituted?: boolean;
     }
   | { event: "audio_created" }
+  /** The network cut the patient's audio off part-way. */
+  | { event: "audio_stream_truncated" }
   | { event: "audio_play_called" }
   | { event: "audio_play_resolved" }
   | { event: "audio_play_rejected"; reason: string }
@@ -412,7 +414,8 @@ export async function playPatientSpeech(params: {
     if (stream) {
       diag({ event: "audio_streaming" });
       void stream.fullClip.then((clip) => {
-        if (clip) diag({ event: "audio_stream_complete" });
+        if (stream.truncated?.()) diag({ event: "audio_stream_truncated" });
+        else if (clip) diag({ event: "audio_stream_complete" });
       });
     }
 

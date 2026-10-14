@@ -26,6 +26,7 @@ import {
 } from "@/lib/admin/admin-test-session";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 import { withSkillTestCase } from "@/lib/skill-tests";
+import { reportFailure } from "@/lib/ops/degradation";
 
 async function sealLedgerBestEffort(opts: {
   supabase: Parameters<typeof sealAssessmentQualityLedger>[0];
@@ -85,10 +86,10 @@ async function completeCourseAfterSessionBestEffort(
       await completeCourse(supabase, course.id, "course_length");
     }
   } catch (e) {
-    console.warn(
-      "[sessions/end] therapy course soft-fail:",
-      e instanceof Error ? e.message : e,
-    );
+    console.warn("[sessions/end] therapy course soft-fail", {
+      courseId: opts.courseId,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }
 
@@ -190,7 +191,10 @@ export async function POST(_request: Request, { params }: Params) {
       .maybeSingle();
 
     if (updateError) {
-      console.warn("[session-end] status update:", updateError.message);
+      console.warn("[session-end] status update failed", {
+        sessionId,
+        error: updateError.message,
+      });
       return NextResponse.json(
         { error: sanitizeDbError(updateError.message) },
         { status: 500 },
@@ -285,7 +289,10 @@ export async function POST(_request: Request, { params }: Params) {
     { p_session_id: sessionId },
   );
   if (hasErr) {
-    console.warn("[session-end] session_has_report:", hasErr.message);
+    console.warn("[session-end] session_has_report failed", {
+      sessionId,
+      error: hasErr.message,
+    });
     return NextResponse.json(
       { error: sanitizeDbError(hasErr.message) },
       { status: 500 },
@@ -307,6 +314,7 @@ export async function POST(_request: Request, { params }: Params) {
       sessionId,
       error: messagesErr.message,
     });
+    reportFailure("session_transcript_unavailable", { sessionId });
     return NextResponse.json(
       { error: "Could not load the transcript", code: "transcript_unavailable" },
       { status: 503 },
@@ -501,7 +509,7 @@ export async function POST(_request: Request, { params }: Params) {
     clinicalSnapshot: typed.clinical_snapshot ?? null,
   });
   if (!validation.ok) {
-    console.warn("[sessions/end] validation soft-fail:", validation.error);
+    console.warn("[sessions/end] validation soft-fail", { sessionId, error: validation.error });
   }
 
   // Stage 9 Supervisor AI — evaluates therapist only; soft-fail; never touches patient mind.
@@ -521,7 +529,7 @@ export async function POST(_request: Request, { params }: Params) {
     validationRun: validation.run,
   });
   if (!supervisor.ok) {
-    console.warn("[sessions/end] supervisor soft-fail:", supervisor.error);
+    console.warn("[sessions/end] supervisor soft-fail", { sessionId, error: supervisor.error });
   }
 
   // Stage 10 Enterprise Platform — tenancy analytics only; soft-fail; never touches patient mind.
@@ -536,7 +544,7 @@ export async function POST(_request: Request, { params }: Params) {
     organizationId: typed.institution_id ?? null,
   });
   if (!enterprise.ok) {
-    console.warn("[sessions/end] enterprise soft-fail:", enterprise.error);
+    console.warn("[sessions/end] enterprise soft-fail", { sessionId, error: enterprise.error });
   }
 
   // Stage 11 Realtime — presentation metrics only; soft-fail; never touches patient mind.
@@ -546,7 +554,7 @@ export async function POST(_request: Request, { params }: Params) {
     locale: assessment.language ?? resolved.locale,
   });
   if (!realtime.ok) {
-    console.warn("[sessions/end] realtime soft-fail:", realtime.error);
+    console.warn("[sessions/end] realtime soft-fail", { sessionId, error: realtime.error });
   }
 
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
@@ -565,7 +573,10 @@ export async function POST(_request: Request, { params }: Params) {
     identity: resolved.personality?.identity ?? null,
   });
   if (!patientMemory.ok) {
-    console.warn("[sessions/end] patient memory:", patientMemory.error);
+    console.warn("[sessions/end] patient memory not saved", {
+      sessionId,
+      error: patientMemory.error,
+    });
   } else {
     console.info("[sessions/end] patient memory", {
       sessionId,
