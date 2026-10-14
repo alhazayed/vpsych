@@ -10,6 +10,7 @@ import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
 import { ErrorState } from "@/components/admin/AdminUi";
+import { RecordTabs } from "@/components/RecordTabs";
 
 export default async function SessionsListPage() {
   const { supabase, user, profile } = await requireProfile();
@@ -181,7 +182,8 @@ export default async function SessionsListPage() {
         </section>
       )}
 
-      <section className="clinical-card overflow-hidden">
+      <RecordTabs current="sessions" />
+      <section className="clinical-card cf-sheet overflow-hidden">
         <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-6 py-4">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
             {t("history")}

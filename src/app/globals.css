@@ -252,6 +252,44 @@ a {
   font-weight: 600;
 }
 
+a.cf-tab:hover {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+}
+
+/* The sheet under a row of folder tabs: square where the first tab joins. */
+.cf-sheet {
+  border-start-start-radius: 0;
+}
+
+/* Numbered level boxes (1 to 5): cleared filled in ink, current outlined in
+   oxblood, locked plain. */
+.cf-level {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: 3px;
+  color: var(--outline);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.cf-level--cleared {
+  border-color: var(--on-surface);
+  background: var(--on-surface);
+  color: var(--surface-container-lowest);
+}
+
+.cf-level--current {
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .field-input {
   width: 100%;
   border-radius: 0.5rem;
