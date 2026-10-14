@@ -35,7 +35,6 @@ export function TherapyRoomScene({
       <div className="trm-scene__wall" aria-hidden />
       <div className="trm-scene__floor" aria-hidden />
       <div className="trm-scene__light" aria-hidden />
-      <div className="trm-scene__desk" aria-hidden />
       <div className="trm-scene__content">{children}</div>
     </div>
   );

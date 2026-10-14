@@ -526,6 +526,29 @@
     "genders": {
       "female": "Female",
       "male": "Male"
+    },
+    "defaultDisorders": {
+      "mdd-recurrent-anxious-distress": "Major Depressive Disorder, recurrent episode, with anxious distress",
+      "gad-with-panic-attacks": "Generalized Anxiety Disorder, with panic attacks"
+    },
+    "sessionGoals": {
+      "build-therapeutic-alliance": "Build therapeutic alliance",
+      "assess-mood-sleep-appetite-anhedonia": "Assess mood, sleep, appetite, anhedonia",
+      "explore-passive-si-safety": "Explore passive suicidal ideation and safety",
+      "identify-treatment-targets": "Collaboratively identify 1–2 treatment targets",
+      "agree-between-session-experiment": "Agree on a small between-session experiment",
+      "hold-bereavement": "Elicit and hold the bereavement rather than converting it immediately into a behavioural task",
+      "screen-bipolarity": "Screen for bipolarity given the family history before any antidepressant discussion",
+      "understand-medication-barrier": "Understand the barrier to medication in her own words rather than arguing with it",
+      "alliance-normalize-anxiety": "Build alliance and normalize anxiety",
+      "map-worry-themes": "Map worry themes, triggers, and bodily symptoms",
+      "productive-vs-unproductive-worry": "Differentiate productive vs unproductive worry",
+      "grounding-or-worry-time": "Introduce brief grounding or worry-time concept",
+      "set-one-homework": "Set one concrete homework (e.g. worry log)",
+      "screen-risk-want-it-to-stop": "Screen risk explicitly enough to clarify what 'I want it to stop' means",
+      "safety-behaviours-maintain": "Identify the safety behaviours — checking, reassurance-seeking, over-preparation — as maintaining factors rather than coping",
+      "medication-history-ssri": "Take an accurate medication history and recognise that the SSRI trial was inadequate",
+      "sedatives-alcohol-sleep": "Ask about sedative and alcohol use for sleep without moralising"
     }
   },
   "sessions": {
@@ -670,6 +693,9 @@
       "interrupted": "Patient paused",
       "tryAgain": "Please try speaking again.",
       "micDenied": "Microphone access is needed for hands-free conversation."
+    },
+    "header": {
+      "title": "Session with {name}"
     },
     "controls": {
       "aria": "Session controls",
