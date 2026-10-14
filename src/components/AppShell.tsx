@@ -84,7 +84,7 @@ function TherapistNavLink({
       } ${
         compact
           ? "min-w-0 flex-1 basis-0 flex-col gap-1 px-0.5 py-2 text-[10px]"
-          : "gap-3 px-4 py-3 text-sm"
+          : "gap-3 px-4 py-3 font-[family-name:var(--font-nav)] text-sm"
       }`}
     >
       <span
