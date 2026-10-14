@@ -51,13 +51,16 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
   const tTranscript = await getTranslations("therapyRoom.transcript");
   const locale = await getLocale();
 
-  const { data: row } = await supabase
+  // Every read on this page goes to the error page when it fails: a supervisor
+  // must never grade from a page that only looks complete.
+  const { data: row, error: rowError } = await supabase
     .from("skill_test_assignments")
     .select(
       "*, trainee:profiles!skill_test_assignments_trainee_id_fkey(display_name), avatars(name)",
     )
     .eq("id", id)
     .maybeSingle();
+  if (rowError) throw loadFailed("assignment", id, rowError);
   if (!row) notFound();
   const test = row as unknown as AssignmentRow;
 
@@ -68,18 +71,22 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
     resourceId: id,
   });
 
-  const { data: sessionRows } = await supabase
+  const { data: sessionRows, error: sessionsError } = await supabase
     .from("sessions")
     .select("id, status, started_at, ended_at, test_session_number")
     .eq("skill_test_assignment_id", id)
     .order("started_at", { ascending: true });
+  if (sessionsError) throw loadFailed("sessions", id, sessionsError);
   const sessions = (sessionRows ?? []) as Pick<
     TherapySession,
     "id" | "status" | "started_at" | "ended_at" | "test_session_number"
   >[];
   const sessionIds = sessions.map((s) => s.id);
 
-  const [{ data: reportRows }, { data: messageRows }] = sessionIds.length
+  const [
+    { data: reportRows, error: reportsError },
+    { data: messageRows, error: messagesError },
+  ] = sessionIds.length
     ? await Promise.all([
         supabase.from("session_reports").select("*").in("session_id", sessionIds),
         supabase
@@ -89,7 +96,12 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
           .in("role", ["user", "assistant"])
           .order("created_at", { ascending: true }),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+  if (reportsError) throw loadFailed("reports", id, reportsError);
+  if (messagesError) throw loadFailed("transcripts", id, messagesError);
   const reports = new Map(
     ((reportRows ?? []) as SessionReport[]).map((r) => [r.session_id, r]),
   );
@@ -98,6 +110,12 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
   const pinnedCase = test.sealed_case
     ? openSkillTestCase(test.id, test.sealed_case)
     : null;
+  // A sealed case this server cannot open (missing or rotated key) would make
+  // the risk checks read "no risk"; warn the supervisor instead of hiding it.
+  const caseUnreadable = Boolean(test.sealed_case) && !pinnedCase;
+  if (caseUnreadable) {
+    console.error("[supervise] sealed case could not be opened", { assignmentId: id });
+  }
   const core = pinnedCase?.clinical_core ?? null;
   const selfReport = core ? deriveSelfReportProfile(core) : null;
   const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
@@ -188,6 +206,11 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
         {t("resultsTitle")}
       </h2>
       <p className="mb-4 text-xs text-[var(--on-surface-variant)]">{t("resultsPrivacy")}</p>
+      {caseUnreadable && (
+        <p role="alert" className="clinical-card mb-4 p-4 text-sm text-[var(--error)]">
+          {t("caseUnreadable")}
+        </p>
+      )}
 
       {sessions.length === 0 ? (
         <p className="clinical-card p-5 text-sm text-[var(--on-surface-variant)]">
@@ -266,4 +289,9 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
       )}
     </main>
   );
+}
+
+function loadFailed(what: string, assignmentId: string, error: { message: string }): Error {
+  console.error(`[supervise] ${what} load failed`, { assignmentId, error: error.message });
+  return new Error(`skill_test_${what}_unavailable`);
 }

@@ -28,9 +28,20 @@ export async function requireProfile() {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (error || !profile) {
+  // A read error is not "signed out": redirecting to /login here loops with
+  // the middleware (signed-in users on /login go back to the app). Throw so
+  // the error page shows a localized retry and Sentry records it.
+  if (error) {
+    console.error("[auth] profile read failed", {
+      userId: user.id,
+      code: error.code,
+      error: error.message,
+    });
+    throw new Error("profile_unavailable");
+  }
+  if (!profile) {
     redirect("/login");
   }
 
@@ -88,7 +99,12 @@ export async function requireAdmin() {
       const { data } =
         await ctx.supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       currentLevel = data?.currentLevel ?? null;
-    } catch {
+    } catch (err) {
+      // Fails closed (treated as no two-step login); keep the cause.
+      console.warn("[auth] assurance level read failed", {
+        userId: ctx.user.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
       currentLevel = null;
     }
     const mfa = evaluateAdminMfa({

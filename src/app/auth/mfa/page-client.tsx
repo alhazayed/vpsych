@@ -48,7 +48,8 @@ export default function MfaChallengePage({
     });
     setLoading(false);
     if (verifyError) {
-      setError(t("invalidCode"));
+      // A rate-limited attempt is not a wrong code; say to wait instead.
+      setError(verifyError.status === 429 ? t("tooManyAttempts") : t("invalidCode"));
       setCode("");
       return;
     }

@@ -425,7 +425,8 @@
       "invalidFormat": "Enter a six-digit code.",
       "invalidCode": "That code is invalid. Try again.",
       "challengeFailed": "Could not start verification. Try again.",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "tooManyAttempts": "Too many attempts. Wait a few minutes, then try a new code."
     },
     "signup": {
       "nav": {
@@ -1614,7 +1615,9 @@
       "openDiagnostics": "System Health",
       "actionSessions": "View sessions",
       "statusVerified": "Verified",
-      "pendingAccounts": "{count, plural, one {# new account is waiting for your approval} other {# new accounts are waiting for your approval}}"
+      "pendingAccounts": "{count, plural, one {# new account is waiting for your approval} other {# new accounts are waiting for your approval}}",
+      "loadErrorTitle": "Some figures could not be loaded",
+      "loadErrorBody": "Counts on this page may be shown as zero, including accounts awaiting approval. Refresh the page; if this keeps happening, check the server logs."
     },
     "diagnostics": {
       "title": "System Health",
@@ -2175,7 +2178,9 @@
       "deleteForever": "Delete permanently",
       "deleting": "Deleting…",
       "deleteFailed": "The account could not be deleted. Please try again.",
-      "deleteSupervisedTests": "This account assigned skill tests that other trainees have already taken, so it can't be deleted without losing their results. Revoke access instead."
+      "deleteSupervisedTests": "This account assigned skill tests that other trainees have already taken, so it can't be deleted without losing their results. Revoke access instead.",
+      "rateLimited": "Too many changes in a short time. Wait a few minutes and try again.",
+      "mfaRequired": "Sign in again with two-step verification to change accounts."
     },
     "formulationReview": {
       "title": "5 Ps formulation against the case",
@@ -2682,7 +2687,8 @@
       "cancelling": "Cancelling…",
       "cancelConfirm": "Cancel this test? The trainee will no longer see it. Results so far are kept.",
       "cancelFailed": "The test could not be cancelled. Please try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "caseUnreadable": "This test's sealed case could not be opened on this server, so the risk checks below may be incomplete. Ask an admin to check the skill-test seal key."
     },
     "admin": {
       "title": "Supervisors",

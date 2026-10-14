@@ -107,7 +107,13 @@ export function openSkillTestValue<T>(
   const tag = parts[1];
   if (tag !== "r" && tag !== "s") return null;
   const key = keyFor(tag);
-  if (!key) return null;
+  if (!key) {
+    console.warn("[skill-tests] seal key not configured; sealed value unreadable", {
+      kind,
+      assignmentId,
+    });
+    return null;
+  }
   try {
     const iv = Buffer.from(parts[2]!, "base64url");
     const body = Buffer.from(parts[3]!, "base64url");
@@ -122,6 +128,8 @@ export function openSkillTestValue<T>(
     ]).toString("utf8");
     return JSON.parse(json) as T;
   } catch {
+    // Wrong key, tampered blob, or bound to another assignment. Never log the blob.
+    console.warn("[skill-tests] sealed value could not be opened", { kind, assignmentId });
     return null;
   }
 }

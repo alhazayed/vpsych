@@ -76,6 +76,11 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error) {
+    console.error("[admin/accounts] update failed", {
+      userId,
+      code: error.code,
+      error: error.message,
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not update the account", error) },
       { status: 500 },
@@ -142,6 +147,11 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (error) {
+    console.error("[admin/accounts] update failed", {
+      userId,
+      code: error.code,
+      error: error.message,
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not update the account", error) },
       { status: 500 },
@@ -189,11 +199,17 @@ export async function DELETE(request: Request) {
   const { error } = await supabase.rpc("admin_delete_account", { target_id: userId });
   if (error) {
     const { status, code } = classifyDeleteAccountError(error);
+    console.error("[admin/accounts] delete failed", {
+      userId,
+      code: error.code,
+      error: error.message,
+    });
     await logSecurityEvent({
       action: "admin.account.delete",
       outcome: "failure",
       resourceType: "profile",
       resourceId: userId,
+      metadata: { db_code: error.code ?? null, code },
       request,
     });
     return NextResponse.json(

@@ -5,7 +5,6 @@ import { clientSafeError } from "@/lib/api-errors";
 import {
   buildEnterpriseAdminOverview,
   listEnterpriseBundles,
-  runEnterpriseEngine,
 } from "@/lib/enterprise";
 
 /**
@@ -33,30 +32,23 @@ export async function GET() {
   }
 
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("primary_institution_id, role")
       .eq("id", user.id)
       .maybeSingle();
+    // A failed read is not "no organization".
+    if (profileError) throw new Error(`profile read: ${profileError.message}`);
 
     const organizationId =
       (profile?.primary_institution_id as string | null) ?? null;
 
-    let bundles = organizationId
+    const bundles = organizationId
       ? listEnterpriseBundles(organizationId)
       : [];
-    let latest = bundles[bundles.length - 1] ?? null;
-
-    if (!latest && organizationId) {
-      latest = runEnterpriseEngine({
-        organization_id: organizationId,
-        user_id: user.id,
-        profile_role: profile?.role === "admin" ? "admin" : "therapist",
-        overall: 50,
-        session_count: 0,
-      });
-      bundles = [latest];
-    }
+    // No sessions yet means no dashboard. A made-up one (overall 50) would
+    // read as a real result.
+    const latest = bundles[bundles.length - 1] ?? null;
 
     const overview = organizationId
       ? buildEnterpriseAdminOverview({
@@ -69,6 +61,7 @@ export async function GET() {
       ok: true,
       organizationId,
       overview,
+      empty: latest === null,
       dashboard: latest?.dashboard ?? null,
       longitudinal: latest?.longitudinal ?? null,
       role: latest?.context.membership_role ?? null,
@@ -76,6 +69,10 @@ export async function GET() {
         "Tenant-scoped formative view. Reports remain admin-only. Enterprise never modifies patient state.",
     });
   } catch (e) {
+    console.error("[enterprise/summary] failed", {
+      userId: user.id,
+      error: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json(
       {
         error: clientSafeError(
