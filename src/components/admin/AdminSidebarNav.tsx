@@ -175,16 +175,16 @@ export function AdminNavLink({
       href={item.href}
       title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-3 rounded-lg transition-colors duration-200 ${
+      className={`group flex items-center rounded-lg transition-colors duration-200 ${
         active
           ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
           : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--primary)]"
       } ${
         compact
-          ? "flex-col gap-1 px-2 py-2 text-[10px]"
+          ? "min-w-0 flex-1 basis-0 flex-col gap-1 px-0.5 py-2 text-[10px]"
           : collapsed
-            ? "justify-center px-2 py-3"
-            : "px-3 py-2.5 text-sm"
+            ? "justify-center gap-3 px-2 py-3"
+            : "gap-3 px-3 py-2.5 text-sm"
       }`}
     >
       <span
@@ -195,7 +195,13 @@ export function AdminNavLink({
         {item.icon}
       </span>
       {!collapsed || compact ? (
-        <span className={compact ? "font-medium tracking-wide" : "truncate"}>
+        <span
+          className={
+            compact
+              ? "max-w-full break-words text-center font-medium leading-tight tracking-wide"
+              : "truncate"
+          }
+        >
           {label}
         </span>
       ) : (

@@ -77,11 +77,15 @@ function TherapistNavLink({
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200 ${
+      className={`flex items-center rounded-lg transition-colors duration-200 ${
         active
           ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
           : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--primary)]"
-      } ${compact ? "flex-col gap-1 px-2 py-2 text-[10px]" : "text-sm"}`}
+      } ${
+        compact
+          ? "min-w-0 flex-1 basis-0 flex-col gap-1 px-0.5 py-2 text-[10px]"
+          : "gap-3 px-4 py-3 text-sm"
+      }`}
     >
       <span
         className="material-symbols-outlined text-[22px]"
@@ -90,7 +94,13 @@ function TherapistNavLink({
       >
         {item.icon}
       </span>
-      <span className={compact ? "font-medium tracking-wide" : ""}>
+      <span
+        className={
+          compact
+            ? "max-w-full break-words text-center font-medium leading-tight tracking-wide"
+            : ""
+        }
+      >
         {item.label}
       </span>
     </Link>
@@ -538,7 +548,9 @@ export function AppShell({
         </div>
       </div>
 
-      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-center justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
+      {/* Five equal columns, labels wrap to two lines and icons stay in one
+          row, so the bar fits a 320px screen (400% zoom). */}
+      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-start justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-1 pt-1 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
         {isAdminArea ? (
           <AdminMobilePrimaryNav />
         ) : (
