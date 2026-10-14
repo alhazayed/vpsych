@@ -16,6 +16,7 @@ import { ErrorState } from "@/components/admin/AdminUi";
 import {
   COURSE_COLUMNS,
   courseProgress,
+  isCourseSchemaMissing,
   normalizeCourseRow,
   type CourseProgress,
 } from "@/lib/therapy-course";
@@ -45,15 +46,18 @@ export default async function AvatarsPage() {
   }
 
   // Open therapy courses, keyed by patient. Empty when the table is missing.
-  const { data: courseRows } = await supabase
+  const { data: courseRows, error: courseError } = await supabase
     .from("therapy_courses")
     .select(COURSE_COLUMNS)
     .eq("therapist_id", profile.id)
     .eq("status", "active");
+  if (courseError && !isCourseSchemaMissing(courseError)) {
+    console.error("[avatars] courses load failed", { error: courseError.message });
+  }
   const courses = (courseRows ?? []).map((r) =>
     normalizeCourseRow(r as Record<string, unknown>),
   );
-  const { data: courseSessionRows } = courses.length
+  const { data: courseSessionRows, error: courseSessionsError } = courses.length
     ? await supabase
         .from("sessions")
         .select("status, therapy_course_id")
@@ -61,7 +65,12 @@ export default async function AvatarsPage() {
           "therapy_course_id",
           courses.map((c) => c.id),
         )
-    : { data: [] };
+    : { data: [], error: null };
+  if (courseSessionsError) {
+    console.error("[avatars] course sessions load failed", {
+      error: courseSessionsError.message,
+    });
+  }
   const courseByAvatar = new Map<
     string,
     { id: string; planned: number; progress: CourseProgress }

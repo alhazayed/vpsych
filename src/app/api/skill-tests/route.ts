@@ -97,7 +97,16 @@ export async function POST(request: Request) {
   }
   // Training Program patients are written for the ladder and are not offered
   // in the picker; refuse a hand-crafted request for one too.
-  if ((await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {
+  let ladderAvatarIds: Set<string>;
+  try {
+    ladderAvatarIds = await loadLadderAvatarIds(supabase);
+  } catch {
+    return NextResponse.json(
+      { error: "Could not check the Training Program patients", code: "ladder_unavailable" },
+      { status: 503 },
+    );
+  }
+  if (ladderAvatarIds.has(avatar.id as string)) {
     return NextResponse.json(
       {
         error:

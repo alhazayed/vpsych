@@ -348,13 +348,25 @@ export function pickPersonality(
     }
   }
 
+  // Past this point the patient speaks a different language than the one
+  // asked for (e.g. the English patient in an Arabic session). Say so in logs.
   const fallback = personalities[defaultLocale];
   if (isPersonality(fallback) && fallback.is_active !== false) {
+    console.warn("[resolve] personality language fallback", {
+      avatarId: avatar.id,
+      wanted,
+      used: defaultLocale,
+    });
     return { locale: defaultLocale, personality: fallback };
   }
 
   for (const [key, value] of Object.entries(personalities)) {
     if (isPersonality(value) && value.is_active !== false) {
+      console.warn("[resolve] personality language fallback", {
+        avatarId: avatar.id,
+        wanted,
+        used: key,
+      });
       return { locale: key, personality: value };
     }
   }

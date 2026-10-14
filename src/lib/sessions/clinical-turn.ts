@@ -313,11 +313,32 @@ export async function prepareClinicalTurn(params: {
     };
   }
 
-  const { data: history } = await supabase
-    .from("session_messages")
-    .select("role, content")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
+  // Without the history the patient would answer with no memory of the
+  // session and the crisis turn count would restart, while the reply still
+  // looks like a normal model reply. Retry once, then fail visibly.
+  const loadHistory = () =>
+    supabase
+      .from("session_messages")
+      .select("role, content")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+  let { data: history, error: historyError } = await loadHistory();
+  if (historyError) {
+    ({ data: history, error: historyError } = await loadHistory());
+  }
+  if (historyError) {
+    console.error("[sessions/message] history load failed", {
+      sessionId,
+      error: historyError.message,
+    });
+    return {
+      ok: false,
+      status: 503,
+      body: {
+        error: clientSafeError("Could not load the conversation", historyError),
+      },
+    };
+  }
 
   const historyRows = (history ?? []) as Pick<
     SessionMessage,

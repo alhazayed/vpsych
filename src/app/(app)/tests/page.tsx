@@ -38,7 +38,7 @@ export default async function SkillTestsPage() {
 
   const mine = await loadMySkillTests(supabase);
   if (!mine.ok) {
-    console.warn("[tests] list failed");
+    console.warn("[tests] skill test list failed", { userId: user.id });
   }
   const assigned = (mine.ok ? mine.rows : []).filter(
     (x) => x.status !== "cancelled",
@@ -60,7 +60,7 @@ export default async function SkillTestsPage() {
     avatars: avatarById.get(x.avatar_id) ?? null,
   }));
 
-  const { data: sessionRows } = tests.length
+  const { data: sessionRows, error: sessionsError } = tests.length
     ? await supabase
         .from("sessions")
         .select("id, status, started_at, max_duration_sec, skill_test_assignment_id")
@@ -70,7 +70,16 @@ export default async function SkillTestsPage() {
           tests.map((x) => x.id),
         )
         .order("started_at", { ascending: true })
-    : { data: [] };
+    : { data: [], error: null };
+  // Without the sessions every test would show "0 held" and Start instead of
+  // Resume mid-exam; show the load error instead.
+  if (sessionsError) {
+    console.warn("[tests] sessions load failed", {
+      userId: user.id,
+      error: sessionsError.message,
+    });
+  }
+  const loadFailed = !mine.ok || Boolean(sessionsError);
   const sessions = (sessionRows ?? []) as TestSessionRow[];
 
   const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
@@ -88,7 +97,7 @@ export default async function SkillTestsPage() {
         </p>
       </section>
 
-      {!mine.ok ? (
+      {loadFailed ? (
         <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
           {t("loadError")}
         </p>

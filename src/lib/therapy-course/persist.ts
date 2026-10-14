@@ -72,6 +72,10 @@ export async function loadActiveCourse(
 export async function loadCourseById(
   supabase: SupabaseClient,
   courseId: string,
+  opts?: {
+    /** Throw on a read error (other than a missing table) instead of null, so a page shows its error state rather than a 404. */
+    throwOnError?: boolean;
+  },
 ): Promise<TherapyCourse | null> {
   const { data, error } = await supabase
     .from("therapy_courses")
@@ -80,7 +84,8 @@ export async function loadCourseById(
     .maybeSingle();
   if (error) {
     if (!isCourseSchemaMissing(error)) {
-      console.warn("[therapy-course] load:", error.message);
+      console.warn("[therapy-course] load failed", { courseId, error: error.message });
+      if (opts?.throwOnError) throw new Error("course_unavailable");
     }
     return null;
   }

@@ -149,8 +149,8 @@ export async function loadLadderAttempts(
 /**
  * Avatar ids of the active program patients. Their personas are written for
  * the ladder (risk on every level), so they are kept out of the general
- * Patient Library, practice and test pickers. An unreadable table (migration
- * not applied) means no program patients.
+ * Patient Library, practice and test pickers. A missing table (migration
+ * not applied) means no program patients; any other read error throws.
  */
 export async function loadLadderAvatarIds(
   supabase: SupabaseClient,
@@ -159,7 +159,16 @@ export async function loadLadderAvatarIds(
     .from("training_ladder_patients")
     .select("avatar_id")
     .eq("is_active", true);
-  if (error || !data) return new Set();
+  if (error) {
+    if (isTableMissing(error)) return new Set();
+    // Failing closed: an empty set here would put program patients back in
+    // the Library and pickers and let them be assigned to a test.
+    console.error("[training-ladder] program patient ids load failed", {
+      error: error.message,
+    });
+    throw new Error("ladder_patients_unavailable");
+  }
+  if (!data) return new Set();
   return new Set(
     (data as { avatar_id: string | null }[])
       .map((r) => r.avatar_id)
@@ -173,4 +182,8 @@ export function withoutLadderAvatars<T extends { id: string }>(
   ladderAvatarIds: ReadonlySet<string>,
 ): T[] {
   return avatars.filter((a) => !ladderAvatarIds.has(a.id));
+}
+
+function isTableMissing(error: { code?: string }): boolean {
+  return error.code === "42P01" || error.code === "PGRST205";
 }

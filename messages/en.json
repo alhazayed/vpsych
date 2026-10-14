@@ -690,7 +690,9 @@
       "testClosed": "This skill test is closed.",
       "testSessionActive": "A session for this test is still open. Finish it before starting the next one.",
       "testSessionsUsed": "All required sessions for this test have been held.",
-      "testUnavailable": "This test can't be started right now. Ask your supervisor to check it."
+      "testUnavailable": "This test can't be started right now. Ask your supervisor to check it.",
+      "startCheckFailed": "Could not check this patient right now. Try again in a moment.",
+      "courseUnavailable": "Could not load this course's previous session. Try again in a moment."
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
