@@ -141,38 +141,51 @@ export function buildCourseCarryOver(opts: {
 
 /**
  * Load the latest earlier session of a course (its number, transcript and
- * frozen course context). Best-effort: returns null on any error so session
- * start never fails because of carry-over.
+ * frozen course context). Returns null when the course has no earlier
+ * session. Throws when it cannot be read: carrying on would reset PHQ-9 /
+ * GAD-7 to baseline and drop homework, or score the previous session from an
+ * empty transcript, with nobody told.
  */
 export async function loadPreviousCourseSession(
   supabase: SupabaseClient,
   courseId: string,
 ): Promise<PreviousCourseSession | null> {
-  try {
-    const { data: prev, error } = await supabase
-      .from("sessions")
-      .select("id, course_session_number, clinical_snapshot")
-      .eq("therapy_course_id", courseId)
-      .order("course_session_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error || !prev) return null;
-    const row = prev as {
-      id: string;
-      course_session_number: number | null;
-      clinical_snapshot: { therapy_course?: TherapyCourseSessionContext } | null;
-    };
-    const { data: messages } = await supabase
-      .from("session_messages")
-      .select("role, content")
-      .eq("session_id", row.id)
-      .order("created_at", { ascending: true });
-    return {
-      sessionNumber: row.course_session_number ?? 1,
-      messages: (messages ?? []) as Array<{ role: string; content: string }>,
-      context: row.clinical_snapshot?.therapy_course ?? null,
-    };
-  } catch {
-    return null;
+  const { data: prev, error } = await supabase
+    .from("sessions")
+    .select("id, course_session_number, clinical_snapshot")
+    .eq("therapy_course_id", courseId)
+    .order("course_session_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error("[session-practice] previous course session load failed", {
+      courseId,
+      error: error.message,
+    });
+    throw new Error("previous_course_session_unavailable");
   }
+  if (!prev) return null;
+  const row = prev as {
+    id: string;
+    course_session_number: number | null;
+    clinical_snapshot: { therapy_course?: TherapyCourseSessionContext } | null;
+  };
+  const { data: messages, error: messagesError } = await supabase
+    .from("session_messages")
+    .select("role, content")
+    .eq("session_id", row.id)
+    .order("created_at", { ascending: true });
+  if (messagesError) {
+    console.error("[session-practice] previous course transcript load failed", {
+      courseId,
+      sessionId: row.id,
+      error: messagesError.message,
+    });
+    throw new Error("previous_course_session_unavailable");
+  }
+  return {
+    sessionNumber: row.course_session_number ?? 1,
+    messages: (messages ?? []) as Array<{ role: string; content: string }>,
+    context: row.clinical_snapshot?.therapy_course ?? null,
+  };
 }

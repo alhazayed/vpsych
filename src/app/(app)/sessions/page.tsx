@@ -10,6 +10,7 @@ import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
 import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
 import { ErrorState } from "@/components/admin/AdminUi";
+import { isCourseSchemaMissing } from "@/lib/therapy-course";
 import { RecordTabs } from "@/components/RecordTabs";
 
 export default async function SessionsListPage() {
@@ -67,11 +68,14 @@ export default async function SessionsListPage() {
 
 
   // Therapy courses (empty when the table is missing).
-  const { data: courseRows } = await supabase
+  const { data: courseRows, error: courseError } = await supabase
     .from("therapy_courses")
     .select(`id, status, planned_sessions, updated_at, avatars(name, ${localName})`)
     .eq("therapist_id", user.id)
     .order("updated_at", { ascending: false });
+  if (courseError && !isCourseSchemaMissing(courseError)) {
+    console.error("[sessions] courses load failed", { error: courseError.message });
+  }
   type CourseAvatar = { name: string; local_name: string | null };
   const courses = (
     (courseRows ?? []) as unknown as Array<{

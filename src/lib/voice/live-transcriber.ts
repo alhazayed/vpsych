@@ -55,13 +55,25 @@ const MAX_PENDING_CHUNKS = 400;
 /** Stop asking for tokens after this many failed connections. */
 const MAX_CONNECT_FAILURES = 3;
 
+/** A token request that may work next time (rate limit, server error). */
+class LiveTokenError extends Error {
+  readonly status: number;
+  constructor(status: number) {
+    super(`live transcript token failed: ${status}`);
+    this.status = status;
+  }
+}
+
 async function defaultFetchToken(locale: string) {
   const res = await fetch("/api/voice/live-transcript", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ locale }),
   });
-  if (!res.ok) return null;
+  // 404 / 501: live transcription is off here, so stop asking. Anything else
+  // is a failed attempt that counts toward MAX_CONNECT_FAILURES.
+  if (res.status === 404 || res.status === 501) return null;
+  if (!res.ok) throw new LiveTokenError(res.status);
   const data = (await res.json().catch(() => null)) as {
     clientSecret?: unknown;
     url?: unknown;
@@ -140,9 +152,13 @@ export function createLiveTranscriber(opts: LiveTranscriberOptions): LiveTranscr
       };
       ws.addEventListener("close", lost);
       ws.addEventListener("error", lost);
-    } catch {
+    } catch (err) {
       failures += 1;
       if (failures >= MAX_CONNECT_FAILURES) disabled = true;
+      emit("live_stt_connect_failed", {
+        failures,
+        ...(err instanceof LiveTokenError ? { status: err.status } : {}),
+      });
     } finally {
       connecting = false;
     }

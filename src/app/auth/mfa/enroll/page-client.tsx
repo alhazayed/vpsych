@@ -33,6 +33,9 @@ export default function MfaEnrollPage({ nextPath }: { nextPath: string }) {
       const supabase = createClient();
 
       // Clear orphan unverified factors so enroll can mint a fresh QR.
+      // No console output in this file (it handles the TOTP secret). A failed
+      // list or unenroll surfaces as the localized enrollFailed message if the
+      // enroll below then fails.
       const { data: existing } = await supabase.auth.mfa.listFactors();
       const orphans =
         existing?.all?.filter(
@@ -64,7 +67,12 @@ export default function MfaEnrollPage({ nextPath }: { nextPath: string }) {
       setBooting(false);
     }
 
-    void startEnroll();
+    // A thrown error (network) must not leave the spinner running forever.
+    startEnroll().catch(() => {
+      if (cancelled) return;
+      setBootError(t("enrollFailed"));
+      setBooting(false);
+    });
     return () => {
       cancelled = true;
     };
@@ -97,7 +105,8 @@ export default function MfaEnrollPage({ nextPath }: { nextPath: string }) {
     });
     setLoading(false);
     if (verifyError) {
-      setError(t("invalidCode"));
+      // A rate-limited attempt is not a wrong code; say to wait instead.
+      setError(verifyError.status === 429 ? t("tooManyAttempts") : t("invalidCode"));
       setCode("");
       return;
     }

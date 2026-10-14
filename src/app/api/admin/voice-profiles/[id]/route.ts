@@ -1,3 +1,4 @@
+import { clientSafeError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
@@ -53,11 +54,15 @@ export async function PATCH(request: Request, { params }: Params) {
     .eq("id", id)
     .maybeSingle();
 
-  if (loadError || !existing) {
+  if (loadError) {
+    console.error("[admin/voice-profiles] load failed", { id, error: loadError.message });
     return NextResponse.json(
-      { error: loadError?.message ?? "Voice profile not found" },
-      { status: loadError ? 500 : 404 },
+      { error: clientSafeError("Update failed", loadError) },
+      { status: 500 },
     );
+  }
+  if (!existing) {
+    return NextResponse.json({ error: "Voice profile not found" }, { status: 404 });
   }
 
   const patch: Record<string, unknown> = {};
@@ -148,8 +153,12 @@ export async function PATCH(request: Request, { params }: Params) {
     .single();
 
   if (error || !data) {
+    console.error("[admin/voice-profiles] update failed", {
+      id,
+      error: error?.message ?? "no row",
+    });
     return NextResponse.json(
-      { error: error?.message ?? "Update failed" },
+      { error: clientSafeError("Update failed", error) },
       { status: 500 },
     );
   }

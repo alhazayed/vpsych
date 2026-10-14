@@ -29,6 +29,7 @@ import {
 } from "@/lib/instructor-presets";
 import type { Avatar, ClinicalCore } from "@/lib/types";
 import { withPreservedCaseFile } from "@/lib/ai/canonical-facts";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type StartCaseOptions = {
   avatar: Avatar;
@@ -405,11 +406,22 @@ export async function createCaseForSession(
 > {
   const catalog = getBuiltinCatalog();
 
-  const { data: dbPersona } = await supabase
+  // A failed read here must stop the session start. Carrying on would build
+  // the case from a fallback disorder and empty traits, freeze that into the
+  // immutable snapshot, and assess it as if it were the authored patient.
+  const { data: dbPersona, error: personaErr } = await supabase
     .from("personas")
     .select("*")
     .eq("avatar_id", opts.avatar.id)
     .maybeSingle();
+  if (personaErr) {
+    console.error("[case-engine] persona load failed", {
+      avatarId: opts.avatar.id,
+      error: personaErr.message,
+    });
+    reportFailure("case_unavailable", { avatarId: opts.avatar.id, what: "persona" });
+    return { ok: false, error: "Case unavailable", status: 503 };
+  }
 
   const personaBase = personaFromAvatar(
     opts.avatar,
@@ -724,18 +736,20 @@ export async function createCaseForSession(
 
   if (opts.disorderSlug || disorderSlug) {
     const slug = opts.disorderSlug ?? disorderSlug!;
-    const { data: drow } = await supabase
+    const { data: drow, error: disorderErr } = await supabase
       .from("disorders")
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
+    if (disorderErr) return disorderUnavailable(opts.avatar.id, disorderErr);
     primary = drow ? mapDbDisorder(drow) : findDisorderBySlug(slug, catalog);
   } else if (dbPersona?.default_disorder_id) {
-    const { data: drow } = await supabase
+    const { data: drow, error: disorderErr } = await supabase
       .from("disorders")
       .select("*")
       .eq("id", dbPersona.default_disorder_id)
       .maybeSingle();
+    if (disorderErr) return disorderUnavailable(opts.avatar.id, disorderErr);
     primary = drow
       ? mapDbDisorder(drow)
       : catalog.disorders.find((d) => d.id === dbPersona.default_disorder_id);
@@ -769,11 +783,12 @@ export async function createCaseForSession(
 
   const comorbidities: DisorderRow[] = [];
   for (const slug of opts.comorbiditySlugs ?? []) {
-    const { data: drow } = await supabase
+    const { data: drow, error: disorderErr } = await supabase
       .from("disorders")
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
+    if (disorderErr) return disorderUnavailable(opts.avatar.id, disorderErr);
     const d = drow ? mapDbDisorder(drow) : findDisorderBySlug(slug, catalog);
     if (!d) {
       return { ok: false, error: `Unknown comorbidity: ${slug}`, status: 400 };
@@ -879,4 +894,16 @@ export function isCaseSnapshot(value: unknown): value is CaseInstanceSnapshot {
   if (!value || typeof value !== "object") return false;
   const v = value as CaseInstanceSnapshot;
   return v.version === 2 && Boolean(v.clinical_core?.disorder) && Boolean(v.assessment_id);
+}
+
+function disorderUnavailable(
+  avatarId: string,
+  error: { message: string },
+): { ok: false; error: string; status: number } {
+  console.error("[case-engine] disorder load failed", {
+    avatarId,
+    error: error.message,
+  });
+  reportFailure("case_unavailable", { avatarId, what: "disorder" });
+  return { ok: false, error: "Case unavailable", status: 503 };
 }

@@ -34,12 +34,20 @@ export default async function SessionCompletePage({ params }: Props) {
   const tDisorders = await getTranslations("skillTests.disorders");
 
   const localName = avatarLocalNameSelect(await getLocale());
-  const { data: session } = await supabase
+  const { data: session, error: sessionError } = await supabase
     .from("sessions")
     .select(`*, avatars(name, disorder, ${localName})`)
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
+  // A failed read goes to the error page (logged, with a retry), not a 404.
+  if (sessionError) {
+    console.error("[sessions/complete] session load failed", {
+      sessionId: id,
+      error: sessionError.message,
+    });
+    throw new Error("session_unavailable");
+  }
   if (!session) notFound();
   const typed = session as unknown as TherapySession & {
     avatars: { name: string; disorder: string; local_name: string | null };
@@ -79,12 +87,20 @@ export default async function SessionCompletePage({ params }: Props) {
 
   // Always load the transcript for the complete page — classic sessions also
   // promise review under My Sessions / this page (not therapy-room-only).
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from("session_messages")
     .select("*")
     .eq("session_id", id)
     .in("role", ["user", "assistant"])
     .order("created_at", { ascending: true });
+  // An empty-looking transcript would also hide the report finalize card.
+  if (messagesError) {
+    console.error("[sessions/complete] transcript load failed", {
+      sessionId: id,
+      error: messagesError.message,
+    });
+    throw new Error("transcript_unavailable");
+  }
   const transcript = (messages ?? []) as SessionMessage[];
 
   // Practices done or missed, for the trainee. No scores: reports stay admin-only.
@@ -116,7 +132,15 @@ export default async function SessionCompletePage({ params }: Props) {
       "session_has_report",
       { p_session_id: id },
     );
-    needsReport = !hasReportError && hasReport === false;
+    // Finalizing is idempotent (/end returns alreadyExists), so when the check
+    // itself fails, offer it rather than leave the session without a report.
+    if (hasReportError) {
+      console.warn("[sessions/complete] session_has_report failed", {
+        sessionId: id,
+        error: hasReportError.message,
+      });
+    }
+    needsReport = Boolean(hasReportError) || hasReport === false;
   }
 
   // Ladder attempts lead back to that patient's levels, not the library.

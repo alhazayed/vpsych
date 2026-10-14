@@ -41,12 +41,19 @@ export async function GET() {
 
   try {
     const dayKey = clinicDayDateKey();
-    const { data: existing } = await supabase
+    const { data: existing, error: existingErr } = await supabase
       .from("clinic_days")
       .select("id, day_date, summary, reflection_journal, closed_at")
       .eq("therapist_id", user.id)
       .eq("day_date", dayKey)
       .maybeSingle();
+    if (existingErr) {
+      console.error("[clinic/day] day read failed", { userId: user.id, error: existingErr.message });
+      return NextResponse.json(
+        { error: clientSafeError("Could not open clinic day", existingErr) },
+        { status: 500 },
+      );
+    }
 
     let clinicDayId = existing?.id as string | undefined;
 
@@ -57,6 +64,10 @@ export async function GET() {
         .select("id, day_date, summary, reflection_journal, closed_at")
         .single();
       if (error || !created) {
+        console.error("[clinic/day] day create failed", {
+          userId: user.id,
+          error: error?.message ?? "no row",
+        });
         return NextResponse.json(
           { error: clientSafeError("Could not open clinic day", error) },
           { status: 500 },
@@ -64,16 +75,36 @@ export async function GET() {
       }
       clinicDayId = created.id;
 
-      const { data: avatarRows } = await supabase
+      // The day row exists from here on, and later requests never seed it
+      // again, so a failed seed must remove it rather than leave the trainee
+      // an empty schedule for the whole day.
+      const undoDay = async (step: string, err: unknown) => {
+        console.error("[clinic/day] seed failed", {
+          clinicDayId,
+          step,
+          error: err instanceof Error ? err.message : (err as { message?: string })?.message,
+        });
+        await supabase.from("clinic_days").delete().eq("id", clinicDayId);
+        return NextResponse.json(
+          { error: clientSafeError("Could not open clinic day") },
+          { status: 500 },
+        );
+      };
+
+      const { data: avatarRows, error: avatarsErr } = await supabase
         .from("avatars")
         .select("id, name, disorder, portrait_url, clinical_core")
         .eq("is_active", true)
         .order("name");
+      if (avatarsErr) return undoDay("avatars", avatarsErr);
       // Training Program patients are not booked into clinic days.
-      const avatars = withoutLadderAvatars(
-        avatarRows ?? [],
-        await loadLadderAvatarIds(supabase),
-      ).slice(0, 6);
+      let ladderIds: Set<string>;
+      try {
+        ladderIds = await loadLadderAvatarIds(supabase);
+      } catch (err) {
+        return undoDay("ladder_patients", err);
+      }
+      const avatars = withoutLadderAvatars(avatarRows ?? [], ladderIds).slice(0, 6);
 
       const dayStart = `${dayKey}T09:00:00.000Z`;
       const rows = avatars.map((av, index) => {
@@ -107,7 +138,8 @@ export async function GET() {
       });
 
       if (rows.length) {
-        await supabase.from("clinic_appointments").insert(rows);
+        const { error: insErr } = await supabase.from("clinic_appointments").insert(rows);
+        if (insErr) return undoDay("appointments", insErr);
       }
     }
 
@@ -182,6 +214,10 @@ export async function GET() {
       ),
     });
   } catch (e) {
+    console.error("[clinic/day] failed", {
+      userId: user.id,
+      error: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json(
       { error: clientSafeError("Clinic unavailable", e instanceof Error ? e : null) },
       { status: 500 },

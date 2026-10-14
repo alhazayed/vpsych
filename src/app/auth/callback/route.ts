@@ -18,6 +18,10 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(new URL(next, request.url));
     }
+    console.warn("[auth/callback] code exchange failed", {
+      status: error.status ?? null,
+      code: error.code ?? null,
+    });
     const dest =
       nextParam && next.startsWith("/auth/reset-password")
         ? "/login?error=recovery"

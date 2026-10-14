@@ -199,8 +199,12 @@ export type PlaybackDiagnostic =
       ok: boolean;
       status?: number;
       code?: string;
+      /** Audio came back in a stand-in voice, not the patient's own. */
+      substituted?: boolean;
     }
   | { event: "audio_created" }
+  /** The network cut the patient's audio off part-way. */
+  | { event: "audio_stream_truncated" }
   | { event: "audio_play_called" }
   | { event: "audio_play_resolved" }
   | { event: "audio_play_rejected"; reason: string }
@@ -322,6 +326,7 @@ export async function playPatientSpeech(params: {
     ok: result.mode === "elevenlabs",
     status: result.failure?.status,
     code: result.failure?.code,
+    ...(result.substituted ? { substituted: true } : {}),
   });
 
   if (params.signal?.aborted) {
@@ -409,7 +414,8 @@ export async function playPatientSpeech(params: {
     if (stream) {
       diag({ event: "audio_streaming" });
       void stream.fullClip.then((clip) => {
-        if (clip) diag({ event: "audio_stream_complete" });
+        if (stream.truncated?.()) diag({ event: "audio_stream_truncated" });
+        else if (clip) diag({ event: "audio_stream_complete" });
       });
     }
 
@@ -857,14 +863,25 @@ export async function runVoiceConversationTurn(params: {
   onTranscript?: (transcript: string) => void;
   onMessages?: (user: SessionMessage, assistant: SessionMessage) => void;
   speakHandlers?: SpeakHandlers;
+  /**
+   * Patient audio could not be produced (TTS and browser voice both failed).
+   * Without it the caller cannot tell the trainee why the patient is silent.
+   */
+  onSpeechUnavailable?: (info: { code: string; status?: number }) => void;
+  /** The patient was heard in the browser's voice, not their own. */
+  onBrowserVoice?: () => void;
 }): Promise<
   | { ok: true; turn: PipelineTurnResult; transcript: string }
   | {
       ok: false;
       stage: "stt" | "message";
+      /** English diagnostic text; callers show a localized message instead. */
       error: string;
       unavailable?: boolean;
       expired?: boolean;
+      /** HTTP status of the failing request, when there was one. */
+      status?: number;
+      code?: string;
     }
 > {
   const stt = await transcribeTherapistSpeech({
@@ -878,6 +895,8 @@ export async function runVoiceConversationTurn(params: {
       stage: "stt",
       error: stt.error,
       unavailable: stt.unavailable,
+      status: stt.status,
+      code: stt.code,
     };
   }
 
@@ -903,6 +922,8 @@ export async function runVoiceConversationTurn(params: {
       stage: "message",
       error: turn.error,
       expired: turn.expired,
+      status: turn.status,
+      code: turn.code,
     };
   }
 
@@ -910,6 +931,8 @@ export async function runVoiceConversationTurn(params: {
 
   if (params.voiceEnabled) {
     const hints = turn.data.voiceHints;
+    // Playback runs on after the turn returns; its failure is reported through
+    // onSpeechUnavailable / onBrowserVoice rather than dropped.
     void playPatientSpeech({
       text: turn.data.assistantMessage.content,
       locale: params.locale,
@@ -926,7 +949,12 @@ export async function runVoiceConversationTurn(params: {
       pauseBeforeMs: hints?.pause_before_ms ?? null,
       audioRef: params.audioRef,
       handlers: params.speakHandlers,
-    });
+      onUnavailable: params.onSpeechUnavailable,
+    })
+      .then((mode) => {
+        if (mode === "browser") params.onBrowserVoice?.();
+      })
+      .catch(() => params.onSpeechUnavailable?.({ code: "PLAYBACK_FAILED" }));
   }
 
   return { ok: true, turn: turn.data, transcript };

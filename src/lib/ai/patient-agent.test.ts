@@ -48,6 +48,40 @@ describe("generatePatientReply resilience", () => {
     expect(reply.model).toBe("gpt-5");
   });
 
+  it("tries the gateway when the model returns an empty reply", async () => {
+    process.env.AI_GATEWAY_API_KEY = "gw-key";
+    chatMock.mockResolvedValue({ text: "   ", model: "gpt-5" });
+    const { generateText } = await import("ai");
+    vi.mocked(generateText).mockResolvedValue({
+      text: "I don't really know where to start.",
+    } as Awaited<ReturnType<typeof generateText>>);
+    const { generatePatientReplyDetailed } = await import(
+      "@/lib/ai/patient-agent"
+    );
+    const reply = await generatePatientReplyDetailed({
+      avatar,
+      history: [],
+      userMessage: "How are you?",
+    });
+    // Before: an empty completion skipped straight to a persona line.
+    expect(reply.aiSource).toBe("gateway");
+    expect(reply.text).toBe("I don't really know where to start.");
+  });
+
+  it("falls back to persona only after an empty reply has nowhere else to go", async () => {
+    chatMock.mockResolvedValue({ text: "", model: "gpt-5" });
+    const { generatePatientReplyDetailed } = await import(
+      "@/lib/ai/patient-agent"
+    );
+    const reply = await generatePatientReplyDetailed({
+      avatar,
+      history: [],
+      userMessage: "How are you?",
+    });
+    expect(reply.aiSource).toBe("persona_fallback");
+    expect(avatar.fallback_replies).toContain(reply.text);
+  });
+
   it("falls back (does not throw) and exposes persona_fallback", async () => {
     chatMock.mockRejectedValue(
       new OpenAIServiceError("OpenAI rate limit exceeded.", {

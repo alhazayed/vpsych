@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { supervisorRoleErrorKey } from "@/lib/skill-tests/client-errors";
 
 /** Superadmin grants or revokes the supervisor role for one user. */
 export function SupervisorRoleToggle({
@@ -31,9 +32,9 @@ export function SupervisorRoleToggle({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, grant: !isSupervisor }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? t("changeFailed"));
+        const data = (await res.json().catch(() => ({}))) as { code?: string };
+        setError(t(supervisorRoleErrorKey(res.status, data.code)));
         setBusy(false);
         return;
       }

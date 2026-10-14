@@ -176,6 +176,13 @@ export async function updateSession(request: NextRequest) {
         .maybeSingle());
       approval = "approved";
     } else {
+      if (error) {
+        // Fails closed (503 below); keep the cause for debugging.
+        console.error("[middleware] approval status read failed", {
+          userId: user.id,
+          error: error.message,
+        });
+      }
       approval = error ? "unknown" : resolveApprovalStatus(profile);
     }
 

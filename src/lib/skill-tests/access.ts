@@ -26,8 +26,18 @@ export async function loadIsSupervisor(
       .select("user_id")
       .eq("user_id", userId)
       .maybeSingle();
-    return !error && Boolean(data);
-  } catch {
+    if (error) {
+      // Fails closed, but a real supervisor locked out by an outage must be
+      // traceable (it would otherwise look like "not a supervisor").
+      console.error("[skill-tests] supervisor check failed", { userId, error: error.message });
+      return false;
+    }
+    return Boolean(data);
+  } catch (err) {
+    console.error("[skill-tests] supervisor check threw", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return false;
   }
 }

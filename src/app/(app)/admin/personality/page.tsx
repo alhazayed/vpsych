@@ -12,12 +12,16 @@ export default async function AdminPersonalityPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.personality");
 
-  const { data: avatars } = await supabase
+  const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
       "id, name, slug, disorder, age, gender, is_active, human_personality, personalities, schema_version, default_locale, clinical_core, persona_prompt, ideal_guidelines, rubric, portrait_url, created_at, updated_at",
     )
     .order("name");
+  if (avatarsError) {
+    console.error("[admin/personality] list failed", { error: avatarsError.message });
+    throw new Error("personality_list_unavailable");
+  }
 
   const list = ((avatars as Avatar[] | null) ?? []).map((avatar) => {
     const locale =

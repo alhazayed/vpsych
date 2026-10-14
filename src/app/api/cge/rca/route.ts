@@ -56,7 +56,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const states = statesFromAceCompetencies(profile.competencies);
   const observed =
     body.observedFailure ??

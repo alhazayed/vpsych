@@ -51,11 +51,22 @@ export async function POST(request: Request, { params }: Props) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { data: message } = await supabase
+  const { data: message, error: messageError } = await supabase
     .from("session_messages")
     .select("id, session_id")
     .eq("id", messageId)
     .maybeSingle();
+  if (messageError) {
+    console.error("[heard] message read failed", {
+      sessionId: id,
+      messageId,
+      error: messageError.message,
+    });
+    return NextResponse.json(
+      { error: clientSafeError("Could not record the interruption", messageError) },
+      { status: 503 },
+    );
+  }
   if (!message || message.session_id !== id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -65,6 +76,12 @@ export async function POST(request: Request, { params }: Props) {
     p_heard_chars: heardChars,
   });
   if (error) {
+    console.warn("[heard] not recorded", {
+      sessionId: id,
+      messageId,
+      code: error.code,
+      error: error.message,
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not record the interruption", error) },
       { status: 409 },

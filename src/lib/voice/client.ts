@@ -60,6 +60,8 @@ export async function synthesizeSpeech(params: {
   stream?: AudioStreamHandle;
   /** Set when mode is "browser" because the TTS route did not return audio. */
   failure?: TtsFailure;
+  /** The server spoke with a stand-in voice; the patient's own was rejected. */
+  substituted?: boolean;
 }> {
   let failure: TtsFailure = { status: 0, code: "NETWORK" };
   try {
@@ -99,6 +101,7 @@ export async function synthesizeSpeech(params: {
       content_length: res.headers.get("Content-Length") ?? undefined,
     });
 
+    const substituted = res.headers.get("X-Voice-Substituted") === "1";
     const mime = contentType.split(";")[0]?.trim().toLowerCase();
     if (
       params.streamPlayback &&
@@ -111,7 +114,7 @@ export async function synthesizeSpeech(params: {
       const stream = pumpAudioStream({ body: res.body, mediaSource });
       const objectUrl = URL.createObjectURL(mediaSource);
       voiceLog("TTS", "stream_playback_started");
-      return { mode: "elevenlabs", objectUrl, stream };
+      return { mode: "elevenlabs", objectUrl, stream, substituted };
     }
 
     if (res.ok && res.body && /^audio\//i.test(contentType)) {
@@ -127,7 +130,7 @@ export async function synthesizeSpeech(params: {
             : new Blob([raw], { type: contentType.split(";")[0] });
         const objectUrl = URL.createObjectURL(blob);
         voiceLog("TTS", "object_url_created");
-        return { mode: "elevenlabs", objectUrl };
+        return { mode: "elevenlabs", objectUrl, substituted };
       }
       failure = { status: res.status, code: "TTS_BAD_CONTENT" };
     } else if (res.ok) {

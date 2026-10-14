@@ -26,6 +26,7 @@ import {
 } from "@/lib/admin/admin-test-session";
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 import { withSkillTestCase } from "@/lib/skill-tests";
+import { reportFailure } from "@/lib/ops/degradation";
 
 async function sealLedgerBestEffort(opts: {
   supabase: Parameters<typeof sealAssessmentQualityLedger>[0];
@@ -58,15 +59,19 @@ async function sealLedgerBestEffort(opts: {
         opts.session.clinical_snapshot?.instructor_preset?.version ?? null,
       createdBy: opts.userId,
     });
-    if (result?.ok) return result.ledger.id;
-    if (result) {
-      console.warn("[sessions/end] quality ledger:", result.error);
-    }
+    // Only a ledger that reached the database has an id worth returning: an
+    // in-memory one is gone when this server instance stops.
+    if (result?.ok && result.persisted === "database") return result.ledger.id;
+    console.warn("[sessions/end] quality ledger not durable", {
+      sessionId: opts.sessionId,
+      persisted: result?.persisted ?? null,
+      error: result?.error ?? null,
+    });
   } catch (e) {
-    console.warn(
-      "[sessions/end] quality ledger error:",
-      e instanceof Error ? e.message : e,
-    );
+    console.warn("[sessions/end] quality ledger error", {
+      sessionId: opts.sessionId,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
   return null;
 }
@@ -81,10 +86,10 @@ async function completeCourseAfterSessionBestEffort(
       await completeCourse(supabase, course.id, "course_length");
     }
   } catch (e) {
-    console.warn(
-      "[sessions/end] therapy course soft-fail:",
-      e instanceof Error ? e.message : e,
-    );
+    console.warn("[sessions/end] therapy course soft-fail", {
+      courseId: opts.courseId,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }
 
@@ -186,7 +191,10 @@ export async function POST(_request: Request, { params }: Params) {
       .maybeSingle();
 
     if (updateError) {
-      console.warn("[session-end] status update:", updateError.message);
+      console.warn("[session-end] status update failed", {
+        sessionId,
+        error: updateError.message,
+      });
       return NextResponse.json(
         { error: sanitizeDbError(updateError.message) },
         { status: 500 },
@@ -281,7 +289,10 @@ export async function POST(_request: Request, { params }: Params) {
     { p_session_id: sessionId },
   );
   if (hasErr) {
-    console.warn("[session-end] session_has_report:", hasErr.message);
+    console.warn("[session-end] session_has_report failed", {
+      sessionId,
+      error: hasErr.message,
+    });
     return NextResponse.json(
       { error: sanitizeDbError(hasErr.message) },
       { status: 500 },
@@ -291,7 +302,24 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ ok: true, alreadyExists: true });
   }
 
-  const { data: messages } = await loadAssessmentMessages(supabase, sessionId);
+  // A failed transcript read must stop here: the report is insert-once and an
+  // AI-examiner report is never regenerated, so grading an empty transcript
+  // would be permanent. The learner's complete page retries via /end.
+  const { data: messages, error: messagesErr } = await loadAssessmentMessages(
+    supabase,
+    sessionId,
+  );
+  if (messagesErr) {
+    console.error("[session-end] transcript load failed", {
+      sessionId,
+      error: messagesErr.message,
+    });
+    reportFailure("session_transcript_unavailable", { sessionId });
+    return NextResponse.json(
+      { error: "Could not load the transcript", code: "transcript_unavailable" },
+      { status: 503 },
+    );
+  }
 
   const endedAt = typed.ended_at ?? new Date().toISOString();
   const durationSec = Math.floor(
@@ -341,6 +369,110 @@ export async function POST(_request: Request, { params }: Params) {
   const excerptsJson = JSON.stringify(assessment.excerpts);
   const narrative = assessment.narrative;
 
+  // The report is saved first. Everything after it is best-effort, and a
+  // retry after a failed save (the learner's complete page) must not run the
+  // ACE / education / patient-memory hooks a second time.
+  let reportId: string | null = null;
+  let ledgerWriter = supabase;
+  const admin = createServiceClient();
+  if (admin) {
+    const { data: inserted, error: insertError } = await admin
+      .from("session_reports")
+      .insert({
+        session_id: sessionId,
+        scores: assessment.scores,
+        narrative,
+        excerpts: assessment.excerpts,
+        language: assessment.language ?? resolved.locale,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (insertError) {
+      // Unique violation → already created (race); treat as success.
+      if (insertError.code === "23505") {
+        return NextResponse.json({
+          ok: true,
+          alreadyExists: true,
+          aiSource: assessment.aiSource,
+          aiModel: assessment.model ?? null,
+          aiErrorKind: assessment.errorKind ?? null,
+        });
+      }
+      console.error("[session-end] report insert failed", {
+        sessionId,
+        code: insertError.code,
+        error: insertError.message,
+      });
+      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
+    }
+    reportId = inserted?.id ?? null;
+    ledgerWriter = admin;
+  } else {
+    if (!getReportWriteKey()) {
+      console.error("[session-end] no report writer configured", { sessionId });
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 },
+      );
+    }
+
+    let sig: string;
+    try {
+      sig = signSessionReport({
+        sessionId,
+        narrative,
+        scoresJson,
+        excerptsJson,
+      });
+    } catch (e) {
+      console.error("[session-end] sign failed", {
+        sessionId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      return NextResponse.json(
+        { error: "Report signing failed" },
+        { status: 500 },
+      );
+    }
+
+    const { data: rpcReportId, error: rpcError } = await supabase.rpc(
+      "create_session_report",
+      {
+        p_session_id: sessionId,
+        p_scores_json: scoresJson,
+        p_narrative: narrative,
+        p_excerpts_json: excerptsJson,
+        p_sig: sig,
+      },
+    );
+
+    if (rpcError) {
+      console.error("[session-end] report rpc failed", {
+        sessionId,
+        code: rpcError.code,
+        error: rpcError.message,
+      });
+      return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
+    }
+    reportId = typeof rpcReportId === "string" ? rpcReportId : null;
+
+    const privileged = createServiceClient();
+    if (reportId && privileged) {
+      const { error: langErr } = await privileged
+        .from("session_reports")
+        .update({ language: resolved.locale })
+        .eq("id", reportId);
+      if (langErr) {
+        console.warn("[session-end] report language update failed", {
+          sessionId,
+          error: langErr.message,
+        });
+      }
+    }
+    if (privileged) ledgerWriter = privileged;
+  }
+
   // Skill test results are for the assigning supervisor and admins only, so
   // they never feed the trainee-facing learning, coach, or end payload.
   const isSkillTest = Boolean(typed.skill_test_assignment_id);
@@ -377,7 +509,7 @@ export async function POST(_request: Request, { params }: Params) {
     clinicalSnapshot: typed.clinical_snapshot ?? null,
   });
   if (!validation.ok) {
-    console.warn("[sessions/end] validation soft-fail:", validation.error);
+    console.warn("[sessions/end] validation soft-fail", { sessionId, error: validation.error });
   }
 
   // Stage 9 Supervisor AI — evaluates therapist only; soft-fail; never touches patient mind.
@@ -397,7 +529,7 @@ export async function POST(_request: Request, { params }: Params) {
     validationRun: validation.run,
   });
   if (!supervisor.ok) {
-    console.warn("[sessions/end] supervisor soft-fail:", supervisor.error);
+    console.warn("[sessions/end] supervisor soft-fail", { sessionId, error: supervisor.error });
   }
 
   // Stage 10 Enterprise Platform — tenancy analytics only; soft-fail; never touches patient mind.
@@ -412,7 +544,7 @@ export async function POST(_request: Request, { params }: Params) {
     organizationId: typed.institution_id ?? null,
   });
   if (!enterprise.ok) {
-    console.warn("[sessions/end] enterprise soft-fail:", enterprise.error);
+    console.warn("[sessions/end] enterprise soft-fail", { sessionId, error: enterprise.error });
   }
 
   // Stage 11 Realtime — presentation metrics only; soft-fail; never touches patient mind.
@@ -422,7 +554,7 @@ export async function POST(_request: Request, { params }: Params) {
     locale: assessment.language ?? resolved.locale,
   });
   if (!realtime.ok) {
-    console.warn("[sessions/end] realtime soft-fail:", realtime.error);
+    console.warn("[sessions/end] realtime soft-fail", { sessionId, error: realtime.error });
   }
 
   // Mission 4 — Long-Term Patient Memory (best-effort; never blocks report).
@@ -441,7 +573,10 @@ export async function POST(_request: Request, { params }: Params) {
     identity: resolved.personality?.identity ?? null,
   });
   if (!patientMemory.ok) {
-    console.warn("[sessions/end] patient memory:", patientMemory.error);
+    console.warn("[sessions/end] patient memory not saved", {
+      sessionId,
+      error: patientMemory.error,
+    });
   } else {
     console.info("[sessions/end] patient memory", {
       sessionId,
@@ -451,121 +586,10 @@ export async function POST(_request: Request, { params }: Params) {
     });
   }
 
-  const admin = createServiceClient();
-  if (admin) {
-    const { data: inserted, error: insertError } = await admin
-      .from("session_reports")
-      .insert({
-        session_id: sessionId,
-        scores: assessment.scores,
-        narrative,
-        excerpts: assessment.excerpts,
-        language: assessment.language ?? resolved.locale,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (insertError) {
-      // Unique violation → already created (race); treat as success.
-      if (insertError.code === "23505") {
-        return NextResponse.json({
-          ok: true,
-          alreadyExists: true,
-          aiSource: assessment.aiSource,
-          aiModel: assessment.model ?? null,
-          aiErrorKind: assessment.errorKind ?? null,
-        });
-      }
-      console.warn("[session-end] report insert:", insertError.message);
-      return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
-    }
-
-    const ledgerId = await sealLedgerBestEffort({
-      supabase: admin,
-      sessionId,
-      reportId: inserted?.id,
-      userId: user.id,
-      assessment,
-      session: typed,
-      messages: (messages ?? []) as Pick<SessionMessage, "role" | "content">[],
-      durationSec,
-      locale: resolved.locale,
-    });
-
-    return NextResponse.json(
-      educationEndPayload({
-        reportId: inserted?.id,
-        ledgerId,
-        assessment,
-        education,
-        supervisor,
-        enterprise,
-        realtime,
-      }),
-      {
-        headers: educationEndHeaders(
-          assessment,
-          ledgerId,
-          validation.run?.id ?? null,
-          supervisor.bundle?.session_id ?? null,
-          enterprise.bundle?.context.organization_id ?? null,
-          realtime.bundle?.version.realtime_version ?? null,
-        ),
-      },
-    );
-  }
-
-  if (!getReportWriteKey()) {
-    return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
-    );
-  }
-
-  let sig: string;
-  try {
-    sig = signSessionReport({
-      sessionId,
-      narrative,
-      scoresJson,
-      excerptsJson,
-    });
-  } catch (e) {
-    console.warn("[session-end] sign:", e instanceof Error ? e.message : e);
-    return NextResponse.json(
-      { error: "Report signing failed" },
-      { status: 500 },
-    );
-  }
-
-  const { data: reportId, error: rpcError } = await supabase.rpc(
-    "create_session_report",
-    {
-      p_session_id: sessionId,
-      p_scores_json: scoresJson,
-      p_narrative: narrative,
-      p_excerpts_json: excerptsJson,
-      p_sig: sig,
-    },
-  );
-
-  if (rpcError) {
-    console.warn("[session-end] report rpc:", rpcError.message);
-    return NextResponse.json({ error: sanitizeDbError(rpcError.message) }, { status: 500 });
-  }
-
-  const privileged = createServiceClient();
-  if (reportId && privileged) {
-    await privileged
-      .from("session_reports")
-      .update({ language: resolved.locale })
-      .eq("id", reportId);
-  }
-
   const ledgerId = await sealLedgerBestEffort({
-    supabase: privileged ?? supabase,
+    supabase: ledgerWriter,
     sessionId,
-    reportId: typeof reportId === "string" ? reportId : null,
+    reportId,
     userId: user.id,
     assessment,
     session: typed,

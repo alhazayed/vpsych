@@ -13,12 +13,19 @@ import {
   isPatientMemoryStore,
 } from "./store";
 import type { PatientMemoryStore } from "./types";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type PersistMemoryResult = {
   ok: boolean;
   store: PatientMemoryStore;
   persisted: "database" | "memory";
   error?: string;
+  /**
+   * The database row could not be read (error, or a stored document this
+   * version does not recognise). Callers must not save over it: the store
+   * returned is a stand-in, and saving it would replace the real memory.
+   */
+  loadFailed?: boolean;
 };
 
 /**
@@ -33,10 +40,10 @@ export async function loadPatientMemory(
     longitudinalGroupId?: string | null;
   },
 ): Promise<PersistMemoryResult> {
-  const fallback = (): PersistMemoryResult => {
+  const fallback = (loadFailed = false): PersistMemoryResult => {
     const cached = getMemoryStoreMemory(opts.therapistId, opts.avatarId);
     if (cached) {
-      return { ok: true, store: cached, persisted: "memory" };
+      return { ok: true, store: cached, persisted: "memory", loadFailed };
     }
     const empty = emptyPatientMemoryStore({
       therapistId: opts.therapistId,
@@ -44,7 +51,7 @@ export async function loadPatientMemory(
       personaId: opts.personaId,
       longitudinalGroupId: opts.longitudinalGroupId,
     });
-    return { ok: true, store: empty, persisted: "memory" };
+    return { ok: true, store: empty, persisted: "memory", loadFailed };
   };
 
   if (!supabase) return fallback();
@@ -58,9 +65,17 @@ export async function loadPatientMemory(
       .maybeSingle();
 
     if (error) {
-      // Table missing / RLS — degrade silently.
-      console.warn("[patient-memory] load:", error.message);
-      return fallback();
+      // Table missing / RLS / transient: degrade, and never save over the row.
+      console.warn("[patient-memory] load failed", {
+        therapistId: opts.therapistId,
+        avatarId: opts.avatarId,
+        error: error.message,
+      });
+      reportFailure("patient_memory_load_failed", {
+        avatarId: opts.avatarId,
+        code: error.code,
+      });
+      return fallback(true);
     }
 
     if (data?.memory && isPatientMemoryStore(data.memory)) {
@@ -78,13 +93,22 @@ export async function loadPatientMemory(
       return { ok: true, store, persisted: "database" };
     }
 
+    if (data?.memory) {
+      console.warn("[patient-memory] stored document not recognised; not saving over it", {
+        therapistId: opts.therapistId,
+        avatarId: opts.avatarId,
+      });
+      return fallback(true);
+    }
+
     return fallback();
   } catch (e) {
-    console.warn(
-      "[patient-memory] load error:",
-      e instanceof Error ? e.message : e,
-    );
-    return fallback();
+    console.warn("[patient-memory] load threw", {
+      therapistId: opts.therapistId,
+      avatarId: opts.avatarId,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return fallback(true);
   }
 }
 

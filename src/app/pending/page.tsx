@@ -22,7 +22,15 @@ export default async function PendingApprovalPage() {
 
   let status: ApprovalStatus | "unknown";
   if (isMissingApprovalColumnError(error)) status = "approved";
-  else if (error || !profile) status = "unknown";
+  else if (error || !profile) {
+    if (error) {
+      console.error("[pending] approval status read failed", {
+        userId: user.id,
+        error: error.message,
+      });
+    }
+    status = "unknown";
+  }
   else status = resolveApprovalStatus(profile);
 
   if (status === "approved") redirect("/avatars");

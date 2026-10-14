@@ -1,6 +1,7 @@
 import { generateText, streamText } from "ai";
 import { openAIService } from "@/lib/ai/openai";
 import {
+  OpenAIServiceError,
   isOpenAIServiceError,
   openaiErrorKind,
   type OpenAIErrorKind,
@@ -48,6 +49,18 @@ function logPatientAgent(
   details: Record<string, unknown>,
 ): void {
   console.warn("[patient-agent]", { event, ...details });
+}
+
+/**
+ * A model answered with no text. Thrown (not turned straight into a persona
+ * line) so the chain still tries the backup model and gateway, and the reason
+ * is logged at each step.
+ */
+function emptyReplyError(source: string): OpenAIServiceError {
+  return new OpenAIServiceError(`${source} returned an empty patient reply`, {
+    code: "OPENAI_API",
+    kind: "api",
+  });
 }
 
 function isRateLimitedOrQuota(err: unknown): boolean {
@@ -177,9 +190,9 @@ export async function generatePatientReplyDetailed(params: {
       abortSignal: AbortSignal.timeout(PATIENT_REPLY_TIMEOUT_MS),
     });
     const trimmed = text.trim();
-    if (!trimmed) return pickFallback(priorErrorKind);
+    if (!trimmed) throw emptyReplyError("gateway");
     // Soft contentless check — hard gate + single regen lives in the message
-    // route so TTS never sees invalid text. Empty string already falls back.
+    // route so TTS never sees invalid text. An empty string fails over.
     logPatientAgent("reply_ok", { aiSource: "gateway", model });
     return {
       text: trimmed,
@@ -206,7 +219,7 @@ export async function generatePatientReplyDetailed(params: {
       timeoutMs: PATIENT_REPLY_TIMEOUT_MS,
     });
     const text = result.text.trim();
-    if (!text) return pickFallback(priorErrorKind);
+    if (!text) throw emptyReplyError(result.model ?? "openai");
     logPatientAgent("reply_ok", {
       aiSource: "gpt",
       model: result.model,
@@ -435,7 +448,7 @@ export async function generatePatientReplyStream(params: {
       return interruptedResult(text, "gateway", model, priorErrorKind);
     }
     const trimmed = text.trim();
-    if (!trimmed) return pickFallback(priorErrorKind);
+    if (!trimmed) throw emptyReplyError("gateway");
     return {
       text: trimmed,
       aiSource: "gateway",
@@ -471,7 +484,7 @@ export async function generatePatientReplyStream(params: {
       return interruptedResult(result.text, "gpt", result.model, priorErrorKind);
     }
     const text = result.text.trim();
-    if (!text) return pickFallback(priorErrorKind);
+    if (!text) throw emptyReplyError(result.model ?? "openai");
     return {
       text,
       aiSource: "gpt",
@@ -508,7 +521,10 @@ export async function generatePatientReplyStream(params: {
         } catch (miniErr) {
           if (miniErr instanceof PatientStreamUnavailableError) throw miniErr;
           if (abortedNow()) return interruptedResult("", "gpt");
-          // fall through
+          logPatientAgent("openai_stream_fallback_model_failed", {
+            model: openAiFallbackChatModel(),
+            ...errorDetails(miniErr),
+          });
         }
       }
       if (hasGatewayKey()) {
@@ -519,6 +535,10 @@ export async function generatePatientReplyStream(params: {
             throw gatewayErr;
           }
           if (abortedNow()) return interruptedResult("", "gateway");
+          logPatientAgent("gateway_stream_failed", {
+            ...errorDetails(gatewayErr),
+            next: allowPersonaFallback ? "persona_fallback" : "caller",
+          });
           return pickFallback(kind);
         }
       }

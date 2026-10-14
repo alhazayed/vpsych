@@ -104,4 +104,33 @@ describe("resolveTtsVoice", () => {
     expect(result.voiceId).toBeTruthy();
     expect(result.source).toBe("env_default");
   });
+
+  it("refuses to guess a voice when the avatar row cannot be read", async () => {
+    const warn = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    createClientMock.mockResolvedValue({
+      from() {
+        const api = {
+          select: () => api,
+          eq: () => api,
+          maybeSingle: async () => ({
+            data: null,
+            error: { code: "57014", message: "canceling statement due to statement timeout" },
+          }),
+        };
+        return api;
+      },
+    });
+    const { resolveTtsVoice, VoiceLookupError } = await import("./resolve-tts-voice");
+
+    // Falling through would speak in the default voice, possibly the other
+    // gender, as if it were the patient's own.
+    await expect(
+      resolveTtsVoice({ locale: "en", avatarId: "avatar-1" }),
+    ).rejects.toBeInstanceOf(VoiceLookupError);
+    expect(warn).toHaveBeenCalledWith(
+      "[tts] voice lookup failed",
+      expect.objectContaining({ what: "avatar", avatarId: "avatar-1" }),
+    );
+    warn.mockRestore();
+  });
 });

@@ -1,3 +1,4 @@
+import { clientSafeError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
 import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
@@ -84,11 +85,13 @@ export async function PATCH(request: Request, { params }: Params) {
 
     // The voice must match the patient's gender (female voice ⇒ female
     // patient and vice versa).
-    const { data: current } = await supabase
+    const { data: current, error: currentErr } = await supabase
       .from("avatars")
       .select("clinical_core, voice_id, voice_id_ar, voice_profile:voice_profiles(*)")
       .eq("id", avatarId)
       .maybeSingle();
+    // Without the current row the gender check cannot run; never skip it.
+    if (currentErr) return avatarReadFailed(avatarId, currentErr);
     const mismatch = current
       ? voiceGenderMismatchAfterUpdate(
           current as unknown as Avatar,
@@ -103,11 +106,13 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
   } else {
-    const { data: current } = await supabase
+    const { data: current, error: currentErr } = await supabase
       .from("avatars")
       .select("voice_profile_id, voice_profile:voice_profiles(*)")
       .eq("id", avatarId)
       .maybeSingle();
+    // Without the current row the old legacy voice columns would stay set.
+    if (currentErr) return avatarReadFailed(avatarId, currentErr);
     const previous = coerceVoiceProfile(
       current?.voice_profile as VoiceProfile | VoiceProfile[] | null,
     );
@@ -130,8 +135,12 @@ export async function PATCH(request: Request, { params }: Params) {
     .single();
 
   if (error || !data) {
+    console.error("[admin/avatars/voice] assign failed", {
+      avatarId,
+      error: error?.message ?? "no row",
+    });
     return NextResponse.json(
-      { error: error?.message ?? "Assign failed" },
+      { error: clientSafeError("Assign failed", error) },
       { status: 500 },
     );
   }
@@ -146,4 +155,15 @@ export async function PATCH(request: Request, { params }: Params) {
   });
 
   return NextResponse.json({ avatar: data });
+}
+
+function avatarReadFailed(avatarId: string, error: { message: string }) {
+  console.error("[admin/avatars/voice] avatar read failed", {
+    avatarId,
+    error: error.message,
+  });
+  return NextResponse.json(
+    { error: clientSafeError("Assign failed", error) },
+    { status: 500 },
+  );
 }

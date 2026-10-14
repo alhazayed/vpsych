@@ -7,25 +7,33 @@ export default async function AdminCasesPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.cases");
 
-  const { data: avatars } = await supabase
+  const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select("id, name, slug, is_active")
     .eq("is_active", true)
     .order("name");
 
-  const { data: disorders } = await supabase
+  const { data: disorders, error: disordersError } = await supabase
     .from("disorders")
     .select("id, slug, name, dsm5_code, icd11_code, is_active")
     .eq("is_active", true)
     .order("name");
 
-  const { data: recent } = await supabase
+  const { data: recent, error: recentError } = await supabase
     .from("case_instances")
     .select(
       "id, assessment_id, locale, difficulty, therapy_modality, severity, created_at, clinical_snapshot",
     )
     .order("created_at", { ascending: false })
     .limit(20);
+  // Failed reads must not look like empty data or the built-in catalog.
+  const failed = [avatarsError, disordersError, recentError].filter(Boolean);
+  if (failed.length > 0) {
+    console.error("[admin/cases] load failed", {
+      errors: failed.map((e) => e?.message),
+    });
+    throw new Error("cases_unavailable");
+  }
 
   const catalog = getBuiltinCatalog();
   const disorderList =

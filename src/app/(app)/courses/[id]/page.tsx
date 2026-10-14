@@ -31,14 +31,14 @@ export default async function TherapyCoursePage({ params }: Props) {
   const tP = await getTranslations("course.fivePs");
   const format = await getFormatter();
 
-  const course = await loadCourseById(supabase, id);
+  const course = await loadCourseById(supabase, id, { throwOnError: true });
   if (!course) notFound();
   if (course.therapist_id !== user.id && profile.role !== "admin") {
     redirect("/avatars");
   }
   const isOwner = course.therapist_id === user.id;
 
-  const [{ data: avatar }, { data: sessionRows }] = await Promise.all([
+  const [{ data: avatar }, { data: sessionRows, error: sessionsError }] = await Promise.all([
     supabase
       .from("avatars")
       .select("id, name")
@@ -50,6 +50,15 @@ export default async function TherapyCoursePage({ params }: Props) {
       .eq("therapy_course_id", course.id)
       .order("started_at", { ascending: true }),
   ]);
+  // Without the sessions the page would show "Session 1" and hide the
+  // treatment plan form; show the error page instead.
+  if (sessionsError) {
+    console.error("[courses] sessions load failed", {
+      courseId: course.id,
+      error: sessionsError.message,
+    });
+    throw new Error("course_sessions_unavailable");
+  }
   const sessions = (sessionRows ?? []) as CourseSessionRow[];
   const name = (avatar?.name as string | undefined) ?? "";
   const progress = courseProgress(course, sessions);

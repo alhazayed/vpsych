@@ -44,8 +44,11 @@ export function ValidationPortal({
         if (typeof data.invitesConfigured === "boolean") {
           setInvitesConfigured(data.invitesConfigured);
         }
-      } catch {
-        // Cookie check is best-effort; form still works.
+      } catch (err) {
+        // Cookie check is best-effort; the form still works without it.
+        console.warn("[validation] invite status check failed", {
+          error: err instanceof Error ? err.name : "unknown",
+        });
       }
     })();
     return () => {
@@ -65,14 +68,20 @@ export function ValidationPortal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
         });
-        const data = (await res.json()) as { error?: string; unlocked?: boolean };
         if (!res.ok) {
           if (res.status === 503) {
             setInvitesConfigured(false);
             setInviteError(t("access.invitesUnavailable"));
             return;
           }
-          setInviteError(data.error ?? t("access.invalidCode"));
+          // Server text is English; pick the localized message by status.
+          setInviteError(
+            res.status === 429
+              ? t("access.rateLimited")
+              : res.status === 400 || res.status === 401
+                ? t("access.invalidCode")
+                : t("access.verifyFailed"),
+          );
           return;
         }
         setUnlocked(true);

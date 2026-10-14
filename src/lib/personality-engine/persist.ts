@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAvatarContentMutable } from "@/lib/admin/virtual-patient/mutability";
 import type { HumanPersonalityMap, HumanPersonalityProfile } from "./types";
 import { validateHumanPersonality } from "./validation";
+import { reportFailure } from "@/lib/ops/degradation";
 
 export type PersistPersonalityResult =
   | { ok: true; map: HumanPersonalityMap }
@@ -14,15 +15,27 @@ export async function loadAvatarHumanPersonalityMap(
   client: SupabaseClient,
   avatarId: string,
 ): Promise<HumanPersonalityMap | null> {
+  return (await readHumanPersonalityMap(client, avatarId)).map;
+}
+
+async function readHumanPersonalityMap(
+  client: SupabaseClient,
+  avatarId: string,
+): Promise<{ map: HumanPersonalityMap | null; error: string | null }> {
   const { data, error } = await client
     .from("avatars")
     .select("human_personality")
     .eq("id", avatarId)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) {
+    console.warn("[personality] load failed", { avatarId, error: error.message });
+    reportFailure("personality_read_failed", { avatarId, code: error.code });
+    return { map: null, error: error.message };
+  }
+  if (!data) return { map: null, error: null };
   const map = (data as { human_personality?: HumanPersonalityMap | null })
     .human_personality;
-  return map && typeof map === "object" ? map : null;
+  return { map: map && typeof map === "object" ? map : null, error: null };
 }
 
 /**
@@ -61,8 +74,16 @@ export async function saveHumanPersonalityProfile(
     locale: params.locale,
   };
 
-  const existing = await loadAvatarHumanPersonalityMap(client, params.avatarId);
-  const map: HumanPersonalityMap = { ...(existing ?? {}), [params.locale]: profile };
+  // Each locale is a separately authored person. If the current map cannot be
+  // read, saving one locale would delete the others, so stop here.
+  const existing = await readHumanPersonalityMap(client, params.avatarId);
+  if (existing.error) {
+    return { ok: false, error: existing.error, status: 503 };
+  }
+  const map: HumanPersonalityMap = {
+    ...(existing.map ?? {}),
+    [params.locale]: profile,
+  };
 
   const { error: avatarErr } = await client
     .from("avatars")
@@ -74,11 +95,17 @@ export async function saveHumanPersonalityProfile(
   }
 
   // Best-effort mirror onto personas.traits (table may be empty for legacy).
-  const { data: persona } = await client
+  const { data: persona, error: personaErr } = await client
     .from("personas")
     .select("id, traits")
     .eq("avatar_id", params.avatarId)
     .maybeSingle();
+  if (personaErr) {
+    console.warn("[personality] persona mirror read failed; mirror not updated", {
+      avatarId: params.avatarId,
+      error: personaErr.message,
+    });
+  }
 
   if (persona?.id) {
     const traits =
@@ -91,7 +118,16 @@ export async function saveHumanPersonalityProfile(
       attachment_style: profile.attachment_style,
       temperament: profile.temperament,
     };
-    await client.from("personas").update({ traits: nextTraits }).eq("id", persona.id);
+    const { error: mirrorErr } = await client
+      .from("personas")
+      .update({ traits: nextTraits })
+      .eq("id", persona.id);
+    if (mirrorErr) {
+      console.warn("[personality] persona mirror update failed", {
+        avatarId: params.avatarId,
+        error: mirrorErr.message,
+      });
+    }
   }
 
   return { ok: true, map };

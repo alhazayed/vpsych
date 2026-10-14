@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   casResult: null as Row | null,
   freshAfterCasMiss: null as Row | null,
   hasReport: false,
+  messagesError: null as { message: string } | null,
   updates: [] as Row[],
   assessCalls: 0,
 }));
@@ -50,6 +51,10 @@ vi.mock("@/lib/supabase/server", () => ({
       const q = {
         select: () => q,
         eq: () => q,
+        order: async () => ({
+          data: [],
+          error: table === "session_messages" ? state.messagesError : null,
+        }),
         update: (patch: Row) => {
           isUpdate = true;
           state.updates.push(patch);
@@ -103,6 +108,7 @@ beforeEach(() => {
   state.casResult = null;
   state.freshAfterCasMiss = null;
   state.hasReport = false;
+  state.messagesError = null;
   state.updates = [];
   state.assessCalls = 0;
 });
@@ -183,6 +189,14 @@ describe("POST /api/sessions/:id/end", () => {
     state.freshAfterCasMiss = { status: "active", ended_at: null };
     const res = await POST(req(), ctx);
     expect(res.status).toBe(409);
+    expect(state.assessCalls).toBe(0);
+  });
+
+  it("returns 503 and does not grade when the transcript cannot be loaded", async () => {
+    state.messagesError = { message: "connection reset" };
+    const res = await POST(req(), ctx);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ code: "transcript_unavailable" });
     expect(state.assessCalls).toBe(0);
   });
 });

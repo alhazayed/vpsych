@@ -46,6 +46,8 @@ export type VoiceTurnDiagnostics = {
   audioUnavailable: VoiceTurnError | null;
   /** Audio played, but only through the browser's fallback voice. */
   audioDegraded: VoiceTurnError | null;
+  /** Audio played in a stand-in voice because the patient's own was rejected. */
+  voiceSubstituted?: boolean;
   /** Safe numeric/shape facts (sizes, statuses, lengths) for the debug panel. */
   facts: Record<string, string | number | boolean>;
 };
@@ -208,6 +210,89 @@ export function describeVoiceError(input: {
     input.message?.trim() ||
     "unknown error";
   return `${label} failed${httpPart}: ${cause}.`;
+}
+
+/**
+ * Learner-facing cause for a voice error, as a message key under
+ * `therapyRoom.voiceTurn.causes` (EN + AR). `describeVoiceError` stays the
+ * English line for the debug panel and logs; trainees see this instead, so
+ * they never get English-only text or server setup details (key names).
+ */
+export type VoiceErrorCause =
+  | "rateLimited"
+  | "signedOut"
+  | "dailyLimit"
+  | "serviceSetup"
+  | "serviceFailed"
+  | "noSpeech"
+  | "recordingRejected"
+  | "micDenied"
+  | "micMissing"
+  | "micFailed"
+  | "autoplayBlocked"
+  | "playbackFailed"
+  | "network"
+  | "generic";
+
+const CAUSE_BY_CODE: Record<string, VoiceErrorCause> = {
+  OPENAI_QUOTA_EXHAUSTED: "serviceSetup",
+  OPENAI_AUTH: "serviceSetup",
+  STT_UNAVAILABLE: "serviceSetup",
+  TTS_UNAVAILABLE: "serviceSetup",
+  TTS_CONFIG: "serviceSetup",
+  TTS_AUTH: "serviceSetup",
+  TTS_QUOTA: "serviceSetup",
+  TTS_PLAN_REQUIRED: "serviceSetup",
+  VOICE_LANGUAGE_UNAVAILABLE: "serviceSetup",
+  OPENAI_RATE_LIMIT: "serviceFailed",
+  OPENAI_TIMEOUT: "serviceFailed",
+  OPENAI_STT_FAILED: "serviceFailed",
+  STT_LIVE_FAILED: "serviceFailed",
+  TTS_TIMEOUT: "serviceFailed",
+  TTS_FAILED: "serviceFailed",
+  TTS_BAD_CONTENT: "serviceFailed",
+  TTS_INTERNAL: "serviceFailed",
+  VOICE_LOOKUP_FAILED: "serviceFailed",
+  stream_incomplete: "serviceFailed",
+  TTS_DAILY_LIMIT: "dailyLimit",
+  NO_AUDIO: "noSpeech",
+  EMPTY_RECORDING: "noSpeech",
+  NO_SPEECH: "noSpeech",
+  AUDIO_TOO_LARGE: "recordingRejected",
+  AUDIO_TYPE: "recordingRejected",
+  AUTOPLAY_BLOCKED: "autoplayBlocked",
+  AUDIO_PLAY_FAILED: "playbackFailed",
+  AUDIO_DECODE: "playbackFailed",
+  AUDIO_STALLED: "playbackFailed",
+  BROWSER_SPEECH_FAILED: "playbackFailed",
+  BROWSER_SPEECH_UNSUPPORTED: "playbackFailed",
+  NETWORK: "network",
+  network_error: "network",
+  stream_disconnected: "network",
+  AUDIO_TRUNCATED: "network",
+  RATE_LIMITED: "rateLimited",
+};
+
+export function voiceErrorCause(input: {
+  stage?: VoiceStage;
+  code?: string;
+  status?: number;
+}): VoiceErrorCause {
+  if (input.stage === "mic") {
+    if (input.code === "NotAllowedError" || input.code === "SecurityError") {
+      return "micDenied";
+    }
+    if (input.code === "NotFoundError" || input.code === "OverconstrainedError") {
+      return "micMissing";
+    }
+    return "micFailed";
+  }
+  if (input.code && Object.hasOwn(CAUSE_BY_CODE, input.code)) {
+    return CAUSE_BY_CODE[input.code]!;
+  }
+  if (input.status === 429) return "rateLimited";
+  if (input.status === 401) return "signedOut";
+  return "generic";
 }
 
 const PLAYBACK_CODES = new Set([

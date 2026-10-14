@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { clientSafeError } from "@/lib/api-errors";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import {
   listBuiltinPresets,
@@ -155,14 +157,16 @@ export async function POST(request: Request) {
       created_by: user.id,
     });
     if (verErr) {
-      return NextResponse.json({ error: verErr.message }, { status: 500 });
+      console.error("[admin/presets] version insert failed", { presetId: src.id, error: verErr.message });
+      return NextResponse.json({ error: clientSafeError("Version failed", verErr) }, { status: 500 });
     }
     const { error: updErr } = await supabase
       .from("instructor_presets")
       .update({ version: nextVersion, updated_at: new Date().toISOString() })
       .eq("id", src.id);
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      console.error("[admin/presets] version update failed", { presetId: src.id, error: updErr.message });
+      return NextResponse.json({ error: clientSafeError("Version failed", updErr) }, { status: 500 });
     }
     return NextResponse.json({ ok: true, version: nextVersion });
   }
@@ -173,7 +177,19 @@ export async function POST(request: Request) {
       .select("*")
       .eq("id", body.presetId)
       .single();
-    if (error || !src) {
+    // PGRST116 = no row: the id may be a built-in preset. Any other error is
+    // a failed read, not a built-in.
+    if (error && error.code !== "PGRST116") {
+      console.error("[admin/presets] clone source read failed", {
+        presetId: body.presetId,
+        error: error.message,
+      });
+      return NextResponse.json(
+        { error: clientSafeError("Clone failed", error), code: "CLONE_FAILED" },
+        { status: 500 },
+      );
+    }
+    if (!src) {
       const builtin = findPresetById(body.presetId);
       if (!builtin) {
         return NextResponse.json({ error: "Preset not found" }, { status: 404 });
@@ -210,42 +226,41 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (cloneErr || !cloned) {
+      console.error("[admin/presets] clone insert failed", {
+        sourceId: body.presetId,
+        error: cloneErr?.message ?? "no row",
+      });
       return NextResponse.json(
-        { error: cloneErr?.message ?? "Clone failed" },
+        { error: clientSafeError("Clone failed", cloneErr), code: "CLONE_FAILED" },
         { status: 500 },
       );
     }
 
-    // Copy child rows
-    const { data: objectives } = await supabase
-      .from("preset_objectives")
-      .select("objective, is_primary, sort_order")
-      .eq("preset_id", body.presetId);
-    if (objectives?.length) {
-      await supabase.from("preset_objectives").insert(
-        objectives.map((o) => ({ ...o, preset_id: cloned.id })),
+    // Copy child rows. A half-copied preset (no grading, no competencies)
+    // would grade sessions on defaults while the panel said "Cloned", so any
+    // failure removes the new preset and reports the error.
+    const childFailure = await copyPresetChildren(supabase, body.presetId, cloned.id);
+    if (childFailure) {
+      console.error("[admin/presets] clone children failed", {
+        sourceId: body.presetId,
+        cloneId: cloned.id,
+        step: childFailure.step,
+        error: childFailure.error.message,
+      });
+      const { error: rollbackErr } = await supabase
+        .from("instructor_presets")
+        .delete()
+        .eq("id", cloned.id);
+      if (rollbackErr) {
+        console.error("[admin/presets] clone rollback failed", {
+          cloneId: cloned.id,
+          error: rollbackErr.message,
+        });
+      }
+      return NextResponse.json(
+        { error: clientSafeError("Clone failed", childFailure.error), code: "CLONE_FAILED" },
+        { status: 500 },
       );
-    }
-    const { data: competencies } = await supabase
-      .from("preset_competencies")
-      .select("competency_id, label, required, weight, max_score, sort_order")
-      .eq("preset_id", body.presetId);
-    if (competencies?.length) {
-      await supabase.from("preset_competencies").insert(
-        competencies.map((c) => ({ ...c, preset_id: cloned.id })),
-      );
-    }
-    const { data: grading } = await supabase
-      .from("preset_grading")
-      .select(
-        "pass_threshold, outstanding_threshold, critical_mistakes, automatic_deductions, dimensions, report_sections",
-      )
-      .eq("preset_id", body.presetId)
-      .maybeSingle();
-    if (grading) {
-      await supabase
-        .from("preset_grading")
-        .insert({ ...grading, preset_id: cloned.id });
     }
 
     return NextResponse.json({ ok: true, preset: cloned });
@@ -429,39 +444,107 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.warn("[api]", error.message);
+      console.error("[admin/presets] create failed", { error: error.message });
       return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
     }
 
-    await supabase.from("preset_objectives").insert({
-      preset_id: data.id,
-      objective: draft.primary_objective,
-      is_primary: true,
-      sort_order: 1,
-    });
-    for (let i = 0; i < draft.secondary_objectives.length; i++) {
-      await supabase.from("preset_objectives").insert({
-        preset_id: data.id,
-        objective: draft.secondary_objectives[i],
-        is_primary: false,
-        sort_order: i + 2,
-      });
+    const childRows: Array<[string, Record<string, unknown> | Record<string, unknown>[]]> = [
+      [
+        "preset_objectives",
+        [
+          {
+            preset_id: data.id,
+            objective: draft.primary_objective,
+            is_primary: true,
+            sort_order: 1,
+          },
+          ...draft.secondary_objectives.map((objective, i) => ({
+            preset_id: data.id,
+            objective,
+            is_primary: false,
+            sort_order: i + 2,
+          })),
+        ],
+      ],
+      [
+        "preset_grading",
+        { preset_id: data.id, pass_threshold: 60, outstanding_threshold: 85 },
+      ],
+      [
+        "preset_versions",
+        {
+          preset_id: data.id,
+          version: 1,
+          snapshot: data,
+          change_notes: "Initial create",
+          created_by: user.id,
+        },
+      ],
+    ];
+    for (const [table, rows] of childRows) {
+      const { error: childErr } = await supabase.from(table).insert(rows);
+      if (childErr) {
+        // No half-created preset: remove it and say the create failed.
+        console.error("[admin/presets] create children failed", {
+          presetId: data.id,
+          table,
+          error: childErr.message,
+        });
+        await supabase.from("instructor_presets").delete().eq("id", data.id);
+        return NextResponse.json(
+          { error: sanitizeDbError(childErr.message), code: "CREATE_FAILED" },
+          { status: 500 },
+        );
+      }
     }
-    await supabase.from("preset_grading").insert({
-      preset_id: data.id,
-      pass_threshold: 60,
-      outstanding_threshold: 85,
-    });
-    await supabase.from("preset_versions").insert({
-      preset_id: data.id,
-      version: 1,
-      snapshot: data,
-      change_notes: "Initial create",
-      created_by: user.id,
-    });
 
     return NextResponse.json({ ok: true, preset: data });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}
+
+/** Copy objectives, competencies and grading; returns the first failure. */
+async function copyPresetChildren(
+  supabase: SupabaseClient,
+  sourceId: string,
+  targetId: string,
+): Promise<{ step: string; error: { message: string } } | null> {
+  const objectives = await supabase
+    .from("preset_objectives")
+    .select("objective, is_primary, sort_order")
+    .eq("preset_id", sourceId);
+  if (objectives.error) return { step: "objectives_read", error: objectives.error };
+  if (objectives.data?.length) {
+    const { error } = await supabase
+      .from("preset_objectives")
+      .insert(objectives.data.map((o) => ({ ...o, preset_id: targetId })));
+    if (error) return { step: "objectives_insert", error };
+  }
+  const competencies = await supabase
+    .from("preset_competencies")
+    .select("competency_id, label, required, weight, max_score, sort_order")
+    .eq("preset_id", sourceId);
+  if (competencies.error) return { step: "competencies_read", error: competencies.error };
+  if (competencies.data?.length) {
+    const { error } = await supabase
+      .from("preset_competencies")
+      .insert(competencies.data.map((c) => ({ ...c, preset_id: targetId })));
+    if (error) return { step: "competencies_insert", error };
+  }
+  const grading = await supabase
+    .from("preset_grading")
+    .select(
+      "pass_threshold, outstanding_threshold, critical_mistakes, automatic_deductions, dimensions, report_sections",
+    )
+    .eq("preset_id", sourceId)
+    .maybeSingle();
+  if (grading.error) return { step: "grading_read", error: grading.error };
+  if (grading.data) {
+    const { error } = await supabase
+      .from("preset_grading")
+      .insert({ ...grading.data, preset_id: targetId });
+    if (error) return { step: "grading_insert", error };
+  }
+  return null;
 }

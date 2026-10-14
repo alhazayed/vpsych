@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type HeatCell = { id: string; score: number; level: string };
 type Rec = { id: string; title: string; priority: string; practice_suggestion: string };
 
 export function SupervisorDashboardPanel() {
+  const t = useTranslations("learning.supervisor");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -47,14 +49,17 @@ export function SupervisorDashboardPanel() {
     (async () => {
       try {
         const res = await fetch("/api/supervisor/summary");
-        const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load supervision");
+          // Server text is English; choose the localized message by status.
+          if (!cancelled) {
+            setError(res.status === 429 ? t("rateLimited") : t("loadFailed"));
+          }
           return;
         }
+        const json = await res.json();
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(t("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -62,17 +67,21 @@ export function SupervisorDashboardPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
       <p className="text-sm text-[var(--on-surface-variant)]">
-        Loading supervision…
+        {t("loading")}
       </p>
     );
   }
   if (error) {
-    return <p className="text-sm text-[var(--error)]">{error}</p>;
+    return (
+      <p role="alert" className="text-sm text-[var(--error)]">
+        {error}
+      </p>
+    );
   }
   if (!data) return null;
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiAdmin } from "@/lib/api-auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { clientSafeError } from "@/lib/api-errors";
 import { sanitizeDbError } from "@/lib/safe-client-error";
 import { listBuiltinTemplates } from "@/lib/scenario-templates/catalog";
 import { rateLimit } from "@/lib/rate-limit";
@@ -110,7 +112,17 @@ export async function POST(request: Request) {
       .select("*")
       .eq("id", body.templateId)
       .single();
-    if (error || !src) {
+    if (error && error.code !== "PGRST116") {
+      console.error("[admin/templates] clone source read failed", {
+        templateId: body.templateId,
+        error: error.message,
+      });
+      return NextResponse.json(
+        { error: clientSafeError("Clone failed", error), code: "CLONE_FAILED" },
+        { status: 500 },
+      );
+    }
+    if (!src) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
     const {
@@ -135,15 +147,28 @@ export async function POST(request: Request) {
       .select("id, slug, name")
       .single();
     if (cloneErr) {
-      return NextResponse.json({ error: cloneErr.message }, { status: 500 });
+      console.error("[admin/templates] clone failed", {
+        templateId: body.templateId,
+        error: cloneErr.message,
+      });
+      return NextResponse.json(
+        { error: clientSafeError("Clone failed", cloneErr), code: "CLONE_FAILED" },
+        { status: 500 },
+      );
     }
-    await supabase.from("template_versions").insert({
-      template_id: cloned.id,
-      version: 1,
-      snapshot: { cloned_from: body.templateId },
-      change_notes: "Cloned template",
-      created_by: user.id,
-    });
+    const childFailure = await insertTemplateChildren(supabase, cloned.id, [
+      [
+        "template_versions",
+        {
+          template_id: cloned.id,
+          version: 1,
+          snapshot: { cloned_from: body.templateId },
+          change_notes: "Cloned template",
+          created_by: user.id,
+        },
+      ],
+    ]);
+    if (childFailure) return childFailure;
     return NextResponse.json({ ok: true, template: cloned });
   }
 
@@ -177,30 +202,73 @@ export async function POST(request: Request) {
     .single();
 
   if (createErr) {
-    return NextResponse.json({ error: createErr.message }, { status: 500 });
+    console.error("[admin/templates] create failed", { error: createErr.message });
+    return NextResponse.json(
+      { error: clientSafeError("Create failed", createErr), code: "CREATE_FAILED" },
+      { status: 500 },
+    );
   }
 
-  await supabase.from("template_versions").insert({
-    template_id: created.id,
-    version: 1,
-    snapshot: { created: true },
-    change_notes: "Initial version",
-    created_by: user.id,
-  });
-  await supabase.from("template_objectives").insert({
-    template_id: created.id,
-    category: "skills",
-    statement: "Complete a structured clinical assessment",
-    sort_order: 1,
-  });
-  await supabase.from("template_competencies").insert({
-    template_id: created.id,
-    competency_id: "alliance",
-    label: "Therapeutic alliance",
-    weight: 1,
-    max_score: 5,
-    sort_order: 1,
-  });
+  const childFailure = await insertTemplateChildren(supabase, created.id, [
+    [
+      "template_versions",
+      {
+        template_id: created.id,
+        version: 1,
+        snapshot: { created: true },
+        change_notes: "Initial version",
+        created_by: user.id,
+      },
+    ],
+    [
+      "template_objectives",
+      {
+        template_id: created.id,
+        category: "skills",
+        statement: "Complete a structured clinical assessment",
+        sort_order: 1,
+      },
+    ],
+    [
+      "template_competencies",
+      {
+        template_id: created.id,
+        competency_id: "alliance",
+        label: "Therapeutic alliance",
+        weight: 1,
+        max_score: 5,
+        sort_order: 1,
+      },
+    ],
+  ]);
+  if (childFailure) return childFailure;
 
   return NextResponse.json({ ok: true, template: created }, { status: 201 });
+}
+
+/**
+ * Insert a new template's child rows. On the first failure the new template
+ * is removed (no half-made template) and a sanitized 500 is returned.
+ */
+async function insertTemplateChildren(
+  supabase: SupabaseClient,
+  templateId: string,
+  rows: Array<[string, Record<string, unknown>]>,
+): Promise<NextResponse | null> {
+  for (const [table, row] of rows) {
+    const { error } = await supabase.from(table).insert(row);
+    if (error) {
+      console.error("[admin/templates] child insert failed", {
+        templateId,
+        table,
+        error: error.message,
+      });
+      await supabase.from("clinical_templates").delete().eq("id", templateId);
+      return NextResponse.json(
+        { error: clientSafeError("Save failed", error), code: "TEMPLATE_INCOMPLETE" },
+        { status: 500 },
+      );
+    }
+  }
+  return null;
 }

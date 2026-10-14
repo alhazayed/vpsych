@@ -7,13 +7,19 @@ export default async function AdminPresetsPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.presets");
 
-  const { data: presets } = await supabase
+  const { data: presets, error: presetsError } = await supabase
     .from("instructor_presets")
     .select(
       "id, slug, name, description, specialty, target_learner, learning_level, assessment_type, primary_objective, difficulty, time_limit_minutes, language, therapy_modality, grading_mode, feedback_mode, allow_hints, enabled, version",
     )
     .is("archived_at", null)
     .order("name");
+  // A failed read must not look like "no presets yet" (the built-ins would
+  // show in their place, and Clone/Archive would then fail with Not found).
+  if (presetsError) {
+    console.error("[admin/presets] list failed", { error: presetsError.message });
+    throw new Error("presets_unavailable");
+  }
 
   const list =
     presets && presets.length > 0

@@ -11,11 +11,14 @@ export function PrivateNotesPanel({
   value,
   onChange,
   onClose,
+  saveFailed = false,
 }: {
   open: boolean;
   value: string;
   onChange: (v: string) => void;
   onClose: () => void;
+  /** The last autosave did not reach the server. */
+  saveFailed?: boolean;
 }) {
   const t = useTranslations("therapyRoom.notes");
   if (!open) return null;
@@ -38,6 +41,11 @@ export function PrivateNotesPanel({
         spellCheck
         autoFocus
       />
+      {saveFailed && (
+        <p role="status" className="trm-notes__warning">
+          {t("saveFailed")}
+        </p>
+      )}
     </aside>
   );
 }

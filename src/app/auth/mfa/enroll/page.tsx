@@ -22,7 +22,10 @@ export default async function Page({
   try {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     currentLevel = data?.currentLevel ?? null;
-  } catch {
+  } catch (err) {
+    console.warn("[mfa/enroll] assurance level read failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     currentLevel = null;
   }
 
@@ -30,7 +33,11 @@ export default async function Page({
     redirect(next);
   }
 
-  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+  if (factorsError) {
+    console.error("[mfa/enroll] listFactors failed", { error: factorsError.message });
+    throw new Error("mfa_unavailable");
+  }
   const verified = factors?.totp?.filter((f) => f.status === "verified") ?? [];
   if (verified.length > 0) {
     redirect(adminMfaChallengeHref(next));

@@ -4,6 +4,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   AlertPanel,
+  ErrorState,
   MetricCard,
   QuickActions,
 } from "@/components/admin/AdminUi";
@@ -11,6 +12,7 @@ import { assessVirtualPatientCompleteness } from "@/lib/admin/virtual-patient-co
 import { readLifecycleFromRow } from "@/lib/admin/virtual-patient-lifecycle";
 import { PACKAGE_VERSION } from "@/lib/ops/versions";
 import { expireStaleSessionsVisible } from "@/lib/session-expiry";
+import { isMissingApprovalColumnError } from "@/lib/account-approval";
 import { getTranslations } from "next-intl/server";
 
 function startOfUtcDay(d = new Date()) {
@@ -35,15 +37,7 @@ export default async function AdminHomePage() {
   const todayStart = startOfUtcDay();
   const weekStart = daysAgoIso(7);
 
-  const [
-    { data: avatars },
-    { data: reports },
-    { count: openFeedbackCount },
-    { data: recentSessions },
-    { count: sessionsToday },
-    { data: weekSessions },
-    { count: reportsTotal },
-  ] = await Promise.all([
+  const overview = await Promise.all([
     supabase
       .from("avatars")
       .select(
@@ -84,15 +78,38 @@ export default async function AdminHomePage() {
       .from("session_reports")
       .select("id", { count: "exact", head: true }),
   ]);
+  const [
+    { data: avatars },
+    { data: reports },
+    { count: openFeedbackCount },
+    { data: recentSessions },
+    { count: sessionsToday },
+    { data: weekSessions },
+    { count: reportsTotal },
+  ] = overview;
 
   const openFeedback = openFeedbackCount ?? 0;
 
   // Accounts waiting for superadmin approval (0 if the column is not there yet).
-  const { count: pendingAccountsCount } = await supabase
+  const { count: pendingAccountsCount, error: pendingError } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("approval_status", "pending");
   const pendingAccounts = pendingAccountsCount ?? 0;
+
+  // A failed query must not read as zero (above all the pending-accounts
+  // banner, which would vanish and leave new sign-ups waiting unseen).
+  const failedQueries = [
+    ...overview
+      .map((r, i) => (r.error ? `overview_${i}: ${r.error.message}` : null))
+      .filter((x): x is string => x !== null),
+    ...(pendingError && !isMissingApprovalColumnError(pendingError)
+      ? [`pending_accounts: ${pendingError.message}`]
+      : []),
+  ];
+  if (failedQueries.length > 0) {
+    console.error("[admin] overview queries failed", { failedQueries });
+  }
 
   const avatarNameById = new Map(
     (avatars ?? []).map((a) => [a.id, a.name] as const),
@@ -171,6 +188,12 @@ export default async function AdminHomePage() {
           </p>
         }
       />
+
+      {failedQueries.length > 0 && (
+        <div className="mb-6">
+          <ErrorState title={t("loadErrorTitle")} description={t("loadErrorBody")} />
+        </div>
+      )}
 
       {pendingAccounts > 0 && (
         <Link

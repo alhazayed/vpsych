@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { skillTestFormErrorKey } from "@/lib/skill-tests/client-errors";
 
 export type FormTrainee = { id: string; displayName: string; email: string };
 export type FormPatient = { id: string; name: string };
@@ -90,10 +91,10 @@ export function SkillTestForm({
       });
       const data = (await res.json().catch(() => ({}))) as {
         id?: string;
-        error?: string;
+        code?: string;
       };
       if (!res.ok || !data.id) {
-        setError(data.error ?? t("saveFailed"));
+        setError(t(`errors.${skillTestFormErrorKey(res.status, data.code)}`));
         setSaving(false);
         return;
       }

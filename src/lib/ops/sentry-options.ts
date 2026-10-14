@@ -11,6 +11,10 @@
  * - `gen_ai.*` / `ai.*` span attributes are removed in case an AI
  *   integration records inputs anyway.
  *
+ * Because console output is not captured, a failure that is handled (a 503,
+ * a skipped save) is sent with `reportFailure` / `reportDegradation`
+ * (`lib/ops/degradation.ts`), tags only.
+ *
  * Sentry is off unless `NEXT_PUBLIC_SENTRY_DSN` is set.
  */
 

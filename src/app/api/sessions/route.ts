@@ -1,3 +1,4 @@
+import { mergeCaseMemory } from "@/lib/case-memory";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prepareMessageRpc } from "@/lib/supabase/admin";
@@ -188,13 +189,21 @@ export async function POST(request: Request) {
 
   // A Training Program patient's persona is written for the ladder (risk on
   // every level), so it is only ever played through a ladder level.
-  if (!ladder && (await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {
+  // loadLadderAvatarIds throws when it cannot read the list: fail closed.
+  try {
+    if (!ladder && (await loadLadderAvatarIds(supabase)).has(avatar.id as string)) {
+      return NextResponse.json(
+        {
+          error: "This patient is part of the Training Program. Start it from the Training Program page.",
+          code: "ladder_patient_only",
+        },
+        { status: 400 },
+      );
+    }
+  } catch {
     return NextResponse.json(
-      {
-        error: "This patient is part of the Training Program. Start it from the Training Program page.",
-        code: "ladder_patient_only",
-      },
-      { status: 400 },
+      { error: "Could not check the Training Program patients", code: "start_check_failed" },
+      { status: 503 },
     );
   }
 
@@ -404,14 +413,26 @@ export async function POST(request: Request) {
     );
   }
   // Session Practice Engine — homework from the previous course session and
-  // PHQ-9 / GAD-7 levels moved by its quality. Best-effort: never blocks start.
+  // PHQ-9 / GAD-7 levels moved by its quality. If the previous session cannot
+  // be read, stop: starting anyway would silently reset the patient's scores.
+  let previousCourseSession: Awaited<
+    ReturnType<typeof loadPreviousCourseSession>
+  > = null;
+  if (course && courseSessionNumber && continuing) {
+    try {
+      previousCourseSession = await loadPreviousCourseSession(supabase, course.id);
+    } catch {
+      return NextResponse.json(
+        { error: "Could not load the previous course session", code: "course_unavailable" },
+        { status: 503 },
+      );
+    }
+  }
   const carryOver =
     course && courseSessionNumber
       ? buildCourseCarryOver({
           core: baseSnapshot.clinical_core,
-          previous: continuing
-            ? await loadPreviousCourseSession(supabase, course.id)
-            : null,
+          previous: previousCourseSession,
         })
       : null;
   const learnerSnapshot: CaseInstanceSnapshot = test
@@ -598,18 +619,17 @@ export async function POST(request: Request) {
           caseInstanceId: newCaseId,
           formulation: caseResult.snapshot.clinical_core?.formulation ?? null,
         });
-      let memory: Record<string, unknown> = {};
-      if (carry.adaptation) {
-        memory = embedAdaptationInMemory(memory, carry.adaptation);
-      }
-      memory = embedMindState(memory, {
-        ...mind,
-        case_instance_id: newCaseId,
-      });
-      void supabase.from("case_memory").upsert({
-        case_instance_id: newCaseId,
-        memory,
-        updated_at: new Date().toISOString(),
+      // Merged into the row the case engine just created (never replaces it).
+      // Awaited: an un-awaited Supabase builder never sends its request.
+      await mergeCaseMemory(supabase, newCaseId, "session_seed", (current) => {
+        let memory: Record<string, unknown> = current;
+        if (carry.adaptation) {
+          memory = embedAdaptationInMemory(memory, carry.adaptation);
+        }
+        return embedMindState(memory, {
+          ...mind,
+          case_instance_id: newCaseId,
+        });
       });
     } catch (err) {
       console.warn("[sessions] clinical intelligence seed soft-fail", {

@@ -51,7 +51,12 @@ export async function runSupervisorAfterAssessment(
       profile = await ensureLearnerProfile(supabase, opts.userId, {
         language: opts.language ?? undefined,
       });
-    } catch {
+    } catch (err) {
+      // Best effort: supervision runs without the ACE profile, but say so.
+      console.warn("[supervisor] learner profile unavailable", {
+        sessionId: opts.sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       profile = null;
     }
 

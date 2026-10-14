@@ -36,19 +36,60 @@ export async function POST(request: Request) {
   }
   const userId = body.userId;
 
-  const { error } = body.grant
-    ? await supabase
+  // RLS can filter a write to zero rows without an error (for example an
+  // admin token without two-step login), so both paths read back what they
+  // changed. "Saved" and the audit event only follow a real change.
+  let error: { message: string } | null = null;
+  let applied = false;
+  if (body.grant) {
+    const upsert = await supabase
+      .from("supervisors")
+      .upsert(
+        { user_id: userId, granted_by: user.id },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+    error = upsert.error;
+    if (!error) {
+      const check = await supabase
         .from("supervisors")
-        .upsert(
-          { user_id: userId, granted_by: user.id },
-          { onConflict: "user_id", ignoreDuplicates: true },
-        )
-    : await supabase.from("supervisors").delete().eq("user_id", userId);
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      error = check.error;
+      applied = Boolean(check.data);
+    }
+  } else {
+    const removed = await supabase
+      .from("supervisors")
+      .delete()
+      .eq("user_id", userId)
+      .select("user_id");
+    error = removed.error;
+    applied = (removed.data?.length ?? 0) > 0;
+  }
 
   if (error) {
+    console.error("[admin/supervisors] update failed", {
+      userId,
+      grant: body.grant,
+      error: error.message,
+    });
     return NextResponse.json(
       { error: clientSafeError("Could not update the supervisor role", error) },
       { status: 500 },
+    );
+  }
+  if (!applied) {
+    console.error("[admin/supervisors] change not applied", {
+      userId,
+      grant: body.grant,
+    });
+    return NextResponse.json(
+      {
+        error: "Could not update the supervisor role",
+        code: "SUPERVISOR_NOT_UPDATED",
+      },
+      { status: 409 },
     );
   }
 

@@ -47,7 +47,10 @@ export async function loadMySkillTests(
   const { data, error } = await supabase.rpc("my_skill_tests", {
     p_assignment_id: assignmentId,
   });
-  if (error) return { ok: false };
+  if (error) {
+    console.warn("[skill-tests] my_skill_tests failed", { assignmentId, error: error.message });
+    return { ok: false };
+  }
   return { ok: true, rows: (data ?? []) as TraineeSkillTest[] };
 }
 
@@ -72,7 +75,13 @@ export async function loadSkillTestStart(
       .from("sessions")
       .select("status, started_at, max_duration_sec")
       .eq("skill_test_assignment_id", assignment.id);
-    if (sErr) return UNAVAILABLE;
+    if (sErr) {
+      console.warn("[skill-tests] sessions load failed", {
+        assignmentId: assignment.id,
+        error: sErr.message,
+      });
+      return UNAVAILABLE;
+    }
     sessions = (rows ?? []) as SkillTestSessionRow[];
   }
 

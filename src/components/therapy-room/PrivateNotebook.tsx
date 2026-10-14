@@ -33,12 +33,17 @@ export function PrivateNotebook({
   function ensureLoaded() {
     if (loaded || pending) return;
     startTransition(async () => {
+      // A failed load must not look like "no notes yet".
       try {
         const res = await fetch(`/api/sessions/${sessionId}/notes`);
-        const data = await res.json();
-        if (res.ok) setNotes(data.notes ?? []);
+        if (res.ok) {
+          const data = await res.json();
+          setNotes(data.notes ?? []);
+        } else {
+          setError(t("loadFailed"));
+        }
       } catch {
-        /* offline notes still local until save */
+        setError(t("loadFailed"));
       } finally {
         setLoaded(true);
       }
@@ -62,12 +67,12 @@ export function PrivateNotebook({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format, body }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? t("saveFailed"));
+        setError(res.status === 429 ? t("rateLimited") : t("saveFailed"));
         setSaving(false);
         return;
       }
+      const data = await res.json();
       setNotes((prev) => [...prev, data.note]);
       setBody(templateForFormat(format));
     } catch {

@@ -68,11 +68,15 @@ export function AccountApprovalActions({
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { code?: string } | null;
         setError(
-          kind === "delete" && data?.code === "SUPERVISED_TESTS"
-            ? t("deleteSupervisedTests")
-            : kind === "delete"
-              ? t("deleteFailed")
-              : t("changeFailed"),
+          res.status === 429
+            ? t("rateLimited")
+            : data?.code === "MFA_REQUIRED"
+              ? t("mfaRequired")
+              : kind === "delete" && data?.code === "SUPERVISED_TESTS"
+                ? t("deleteSupervisedTests")
+                : kind === "delete"
+                  ? t("deleteFailed")
+                  : t("changeFailed"),
         );
         setBusy(null);
         return false;

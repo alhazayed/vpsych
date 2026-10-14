@@ -25,7 +25,14 @@ export async function GET() {
     );
   }
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const curriculum = generateCurriculum(profile);
   const plan = generateLearningPlan(profile);
 
@@ -65,7 +72,14 @@ export async function POST(request: Request) {
     overallScore?: number;
   };
 
-  const profile = await ensureLearnerProfile(supabase, user.id);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, user.id).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
 
   if (body.action === "coach") {
     const coach = generateSupervisorFeedback(profile, {

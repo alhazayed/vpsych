@@ -85,7 +85,14 @@ export async function GET(request: Request) {
 
   const userId =
     targetUserId && me?.role === "admin" ? targetUserId : user.id;
-  const profile = await ensureLearnerProfile(supabase, userId);
+  // A profile that failed to load is not shown as a blank one (already logged).
+  const profile = await ensureLearnerProfile(supabase, userId).catch(() => null);
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Learner profile unavailable", code: "learner_profile_unavailable" },
+      { status: 503 },
+    );
+  }
   const states = statesFromAceCompetencies(profile.competencies, resolved);
   const learnerGraph = getLearnerGraph(profile.id, states, resolved);
 

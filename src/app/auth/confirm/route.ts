@@ -44,6 +44,10 @@ export async function GET(request: Request) {
   });
 
   if (error) {
+    console.warn("[auth/confirm] verifyOtp failed", {
+      status: error.status ?? null,
+      code: error.code ?? null,
+    });
     const dest =
       typeParam === "recovery"
         ? "/login?error=recovery"

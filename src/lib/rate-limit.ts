@@ -142,10 +142,12 @@ export async function rateLimit(
   try {
     return await rateLimitUpstash(key, limit, windowMs, cost);
   } catch (err) {
-    console.warn(
-      "[rate-limit] Upstash unavailable; falling back to memory:",
-      err instanceof Error ? err.message : String(err),
-    );
+    // Limits keep working, but per server instance only (weaker): an error,
+    // not a warning, so it is noticed.
+    console.error("[rate-limit] Upstash unavailable; falling back to memory", {
+      bucket: key.split(":")[0],
+      error: err instanceof Error ? err.message : String(err),
+    });
     return rateLimitMemory(key, limit, windowMs, cost);
   }
 }
