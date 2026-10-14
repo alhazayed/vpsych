@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/AdminUi";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
@@ -113,6 +114,7 @@ export function SessionDetailTabs({
   };
   locale: string;
 }) {
+  const tTabs = useTranslations("admin.sessions");
   const [tab, setTab] = useState<TabId>("overview");
   const statusLabel =
     session.status === "active"
@@ -148,7 +150,7 @@ export function SessionDetailTabs({
     <div>
       <div
         role="tablist"
-        aria-label="Session detail"
+        aria-label={tTabs("detailTabsLabel")}
         className="mb-6 flex flex-wrap gap-1 border-b border-[var(--outline-variant)]"
       >
         {tabs.map((t) => {

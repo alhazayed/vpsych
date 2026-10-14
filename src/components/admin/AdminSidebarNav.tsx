@@ -222,9 +222,10 @@ export function AdminSidebarNav({
 }) {
   const pathname = usePathname();
   const tNav = useTranslations("nav");
+  const tShell = useTranslations("shell");
 
   return (
-    <nav className="flex-1 space-y-3 overflow-y-auto px-2" aria-label="Admin">
+    <nav className="flex-1 space-y-3 overflow-y-auto px-2" aria-label={tShell("sidebar.menuTitle")}>
       {ADMIN_NAV_SECTIONS.map((section) => {
         const open = isSectionOpen(section, pathname);
         const label = section.labelKey

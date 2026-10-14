@@ -333,7 +333,10 @@ export function AppShell({
             toggleSection={toggleSection}
           />
         ) : (
-          <nav className="flex-1 space-y-1 overflow-y-auto px-2">
+          <nav
+            className="flex-1 space-y-1 overflow-y-auto px-2"
+            aria-label={tShell("sidebar.mainNav")}
+          >
             {therapistItems.map((item) => (
               <TherapistNavLink
                 key={item.href}
@@ -550,7 +553,11 @@ export function AppShell({
 
       {/* Five equal columns, labels wrap to two lines and icons stay in one
           row, so the bar fits a 320px screen (400% zoom). */}
-      <nav className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-start justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-1 pt-1 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
+      <nav
+        aria-label={
+          isAdminArea ? tShell("sidebar.menuTitle") : tShell("sidebar.mainNav")
+        }
+        className="fixed bottom-0 start-0 z-50 flex h-20 w-full items-start justify-around border-t border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-1 pt-1 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
         {isAdminArea ? (
           <AdminMobilePrimaryNav />
         ) : (
