@@ -786,13 +786,13 @@ a {
   align-items: center;
 }
 
-/* Keyboard focus inside the room. The site-wide ring (--primary) is dark on
-   the dark room, so it is invisible here (WCAG 2.4.7). A white ring with a
-   dark halo shows on every room theme. */
+/* Keyboard focus inside the room (WCAG 2.4.7): oxblood ring (7.5:1 on the
+   paper sheet) with a white gap, so it still shows around filled oxblood
+   buttons and over the patient portrait. */
 .trm-root :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(11, 18, 32, 0.9);
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
 }
 
 /* "5 minutes left" warning; stays mounted (empty) so it is announced. */
@@ -805,15 +805,17 @@ a {
   max-width: min(90vw, 28rem);
   padding: 0.5rem 0.9rem;
   border-radius: 999px;
-  background: rgba(15, 20, 28, 0.8);
-  border: 1px solid rgba(240, 196, 176, 0.6);
-  color: #ffffff;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--primary);
+  color: var(--on-surface);
   font-size: 0.875rem;
   text-align: center;
+  box-shadow: var(--clinical-shadow-hover);
 }
 .trm-time-warning:empty {
   padding: 0;
   border: 0;
+  box-shadow: none;
 }
 
 /* Floating controls */
