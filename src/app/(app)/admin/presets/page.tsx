@@ -1,11 +1,31 @@
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
-import { listBuiltinPresets } from "@/lib/instructor-presets";
+import { findPresetBySlug, listBuiltinPresets } from "@/lib/instructor-presets";
+import { codeLabel } from "@/lib/admin/ops-text";
 import { InstructorPresetPanel } from "@/components/admin/InstructorPresetPanel";
 
 export default async function AdminPresetsPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.presets");
+  const tPage = await getTranslations("admin.presetsPage");
+  const tEnums = await getTranslations("admin.catalogEnums");
+
+  /**
+   * A built-in preset's name / description in the UI language. Only while the
+   * row still carries the catalogue's own English: a renamed row or a clone
+   * shows its stored text.
+   */
+  function catalogText(
+    slug: string,
+    field: "name" | "description",
+    stored: string | null,
+  ): string | null {
+    const builtin = findPresetBySlug(slug);
+    const key = `catalog.${slug}.${field}`;
+    return builtin && builtin[field] === stored && tPage.has(key)
+      ? tPage(key)
+      : stored;
+  }
 
   const { data: presets, error: presetsError } = await supabase
     .from("instructor_presets")
@@ -68,20 +88,25 @@ export default async function AdminPresetsPage() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="font-medium text-[var(--on-surface)]">
-                  {p.name}
+                  {catalogText(p.slug, "name", p.name)}
                 </span>
                 <span className="text-[11px] text-[var(--on-surface-variant)]">
-                  v{p.version} · {p.enabled ? "enabled" : "draft"}
+                  v{p.version} ·{" "}
+                  {p.enabled ? tPage("enabled") : tPage("draft")}
                 </span>
               </div>
               <p className="mt-1 text-[var(--on-surface-variant)]">
-                {p.target_learner} · {p.primary_objective} · {p.assessment_type}{" "}
-                · {p.language} · {p.difficulty} · {p.time_limit_minutes}min ·{" "}
-                {p.therapy_modality}
+                {codeLabel(tEnums, "targetLearner", p.target_learner)} ·{" "}
+                {codeLabel(tEnums, "objective", p.primary_objective)} ·{" "}
+                {codeLabel(tEnums, "assessmentType", p.assessment_type)} ·{" "}
+                {codeLabel(tEnums, "language", p.language)} ·{" "}
+                {codeLabel(tEnums, "difficulty", p.difficulty)} ·{" "}
+                {tPage("minutes", { count: p.time_limit_minutes })} ·{" "}
+                {codeLabel(tEnums, "modality", p.therapy_modality)}
               </p>
               {p.description && (
                 <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-                  {p.description}
+                  {catalogText(p.slug, "description", p.description)}
                 </p>
               )}
             </li>
@@ -97,10 +122,15 @@ export default async function AdminPresetsPage() {
           presets={list.map((p) => ({
             id: p.id,
             slug: p.slug,
-            name: p.name,
-            language: p.language,
-            difficulty: p.difficulty,
-            primary_objective: p.primary_objective,
+            // Display-only fields: the panel posts `id` alone.
+            name: catalogText(p.slug, "name", p.name) ?? p.name,
+            language: codeLabel(tEnums, "language", p.language),
+            difficulty: codeLabel(tEnums, "difficulty", p.difficulty),
+            primary_objective: codeLabel(
+              tEnums,
+              "objective",
+              p.primary_objective,
+            ),
             target_learner: p.target_learner,
             enabled: p.enabled,
           }))}

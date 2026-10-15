@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel, localizeOpsText } from "@/lib/admin/ops-text";
 
 type Metric = {
   id: string;
@@ -34,6 +36,8 @@ type Payload = {
 };
 
 export function CidpDashboardPanel() {
+  const t = useTranslations("admin.opsUi");
+  const tText = useTranslations("admin.opsText");
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,12 +49,12 @@ export function CidpDashboardPanel() {
         const res = await fetch("/api/admin/ops/cidp");
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load");
+          if (!cancelled) setError(json.error ?? t("loadFailed"));
           return;
         }
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(t("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,10 +62,12 @@ export function CidpDashboardPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
-    return <p className="text-sm text-[var(--on-surface-variant)]">Loading…</p>;
+    return (
+      <p className="text-sm text-[var(--on-surface-variant)]">{t("loading")}</p>
+    );
   }
   if (error) return <p className="text-sm text-[var(--error)]">{error}</p>;
   if (!data) return null;
@@ -73,24 +79,36 @@ export function CidpDashboardPanel() {
           {data.cert_id} · v{data.package_version}
         </p>
         <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-          {data.phi_policy}
+          {localizeOpsText(tText, data.phi_policy)}
         </p>
         <p className="mt-2 text-sm">
-          CIDP: {data.cidp_status ?? "GO"} · GA: {data.ga_status ?? "NO-GO"} ·
-          Health: {data.success_metrics?.overall_health ?? "n/a"}
+          {t("cidpStatus", {
+            status: codeLabel(t, "status", data.cidp_status ?? "GO"),
+          })}{" "}
+          ·{" "}
+          {t("gaStatus", {
+            status: codeLabel(t, "status", data.ga_status ?? "NO-GO"),
+          })}{" "}
+          ·{" "}
+          {t("health", {
+            health: data.success_metrics?.overall_health
+              ? codeLabel(t, "healthLevels", data.success_metrics.overall_health)
+              : t("notAvailable"),
+          })}
         </p>
         <p className="mt-2 text-sm">
-          Open critical feedback:{" "}
+          {t("openCriticalFeedback")}{" "}
           <span className="tabular-nums">
             {data.open_critical_feedback ?? 0}
           </span>
           {" · "}
-          Open high:{" "}
+          {t("openHigh")}{" "}
           <span className="tabular-nums">{data.open_high_feedback ?? 0}</span>
         </p>
         {data.weekly_reports_path ? (
           <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-            Weekly reports: {data.weekly_reports_path}
+            {t("weeklyReports")}{" "}
+            <span dir="ltr">{data.weekly_reports_path}</span>
           </p>
         ) : null}
       </section>
@@ -98,12 +116,12 @@ export function CidpDashboardPanel() {
       {data.success_metrics?.metrics?.length ? (
         <section>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            Success metrics
+            {t("successMetrics")}
           </h2>
           <ul className="mt-3 space-y-1 text-sm">
             {data.success_metrics.metrics.map((m) => (
               <li key={m.id}>
-                {m.label}:{" "}
+                {localizeOpsText(tText, m.label)}:{" "}
                 <span className="tabular-nums">
                   {m.value}
                   {m.unit ?? ""}
@@ -116,12 +134,12 @@ export function CidpDashboardPanel() {
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Executive
+          {t("executive")}
         </h2>
         <ul className="mt-3 space-y-1 text-sm">
           {(data.executive ?? []).map((m) => (
             <li key={m.id}>
-              {m.label}:{" "}
+              {localizeOpsText(tText, m.label)}:{" "}
               <span className="tabular-nums">
                 {m.value}
                 {m.unit ?? ""}
@@ -134,19 +152,19 @@ export function CidpDashboardPanel() {
       {(data.panels ?? []).map((panel) => (
         <section key={panel.id}>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            {panel.title}
+            {localizeOpsText(tText, panel.title)}
           </h2>
           <ul className="mt-3 space-y-1 text-sm">
             {panel.metrics.map((m) => (
               <li key={m.id}>
-                {m.label}:{" "}
+                {localizeOpsText(tText, m.label)}:{" "}
                 <span className="tabular-nums">
                   {m.value}
                   {m.unit ?? ""}
                 </span>
                 {m.note ? (
                   <span className="ms-2 text-xs text-[var(--on-surface-variant)]">
-                    {m.note}
+                    {localizeOpsText(tText, m.note)}
                   </span>
                 ) : null}
               </li>

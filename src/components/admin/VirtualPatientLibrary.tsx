@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   assessVirtualPatientCompleteness,
@@ -12,6 +13,7 @@ import {
   readLifecycleFromRow,
   type VirtualPatientLifecycleStatus,
 } from "@/lib/admin/virtual-patient-lifecycle";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type { Avatar } from "@/lib/types";
 
 export type VirtualPatientListItem = Pick<
@@ -90,6 +92,24 @@ export function VirtualPatientLibrary({
     personalityMissing: string;
   };
 }) {
+  const t = useTranslations("admin.vpLibrary");
+  const tDetail = useTranslations("admin.vpDetail");
+  const tDisorders = useTranslations("skillTests.disorders");
+  const tDefaultDisorders = useTranslations("avatars.defaultDisorders");
+  const tGenders = useTranslations("avatars.genders");
+  // Display only — stored values are untouched.
+  const disorderText = useCallback(
+    (name: string | null | undefined): string =>
+      disorderNameText(name, tDisorders, tDefaultDisorders) ?? name ?? "",
+    [tDisorders, tDefaultDisorders],
+  );
+  const genderText = useCallback(
+    (gender: string | null | undefined): string | null =>
+      gender && tGenders.has(gender) ? tGenders(gender) : (gender ?? null),
+    [tGenders],
+  );
+  const localeName = (code: string): string =>
+    tDetail.has(`localeNames.${code}`) ? tDetail(`localeNames.${code}`) : code;
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortKey>("name");
@@ -124,7 +144,9 @@ export function VirtualPatientLibrary({
         const hay = [
           patient.name,
           patient.disorder,
+          disorderText(patient.disorder),
           patient.gender,
+          genderText(patient.gender),
           patient.slug,
           ...locales,
         ]
@@ -148,8 +170,8 @@ export function VirtualPatientLibrary({
 
     list.sort((a, b) => {
       if (sort === "disorder") {
-        return (a.patient.disorder ?? "").localeCompare(
-          b.patient.disorder ?? "",
+        return disorderText(a.patient.disorder).localeCompare(
+          disorderText(b.patient.disorder),
         );
       }
       if (sort === "status") {
@@ -166,7 +188,7 @@ export function VirtualPatientLibrary({
     });
 
     return list;
-  }, [patients, query, status, sort]);
+  }, [patients, query, status, sort, disorderText, genderText]);
 
   return (
     <div className="space-y-6">
@@ -185,7 +207,7 @@ export function VirtualPatientLibrary({
           </label>
           <label className="block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-              Filter
+              {t("filter")}
             </span>
             <select
               className="mt-1 block rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
@@ -202,7 +224,7 @@ export function VirtualPatientLibrary({
           </label>
           <label className="block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-              Sort
+              {t("sort")}
             </span>
             <select
               className="mt-1 block rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
@@ -239,14 +261,14 @@ export function VirtualPatientLibrary({
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/admin/avatars/new" className="btn-secondary">
-              Open workflow shell
+              {t("openWorkflow")}
             </Link>
             <button
               type="button"
               className="btn-secondary"
               onClick={() => setShowCreateHint(false)}
             >
-              Dismiss
+              {t("dismiss")}
             </button>
           </div>
         </div>
@@ -278,9 +300,9 @@ export function VirtualPatientLibrary({
                       {patient.name}
                     </h2>
                     <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-                      {patient.disorder}
+                      {disorderText(patient.disorder)}
                       {patient.age != null ? ` · ${patient.age}` : ""}
-                      {patient.gender ? ` · ${patient.gender}` : ""}
+                      {patient.gender ? ` · ${genderText(patient.gender)}` : ""}
                     </p>
                   </div>
                   <StatusBadge
@@ -313,19 +335,20 @@ export function VirtualPatientLibrary({
                 </div>
 
                 <p className="mt-3 text-xs text-[var(--on-surface-variant)]">
-                  Languages:{" "}
-                  {locales.length
-                    ? locales.join(", ")
-                    : patient.language || "—"}
+                  {t("languages", {
+                    languages: locales.length
+                      ? locales.map(localeName).join(tDetail("listSeparator"))
+                      : patient.language || "—",
+                  })}
                   {patient.voice_profile_name
-                    ? ` · Voice: ${patient.voice_profile_name}`
+                    ? ` · ${t("voice", { name: patient.voice_profile_name })}`
                     : ""}
                 </p>
 
                 {!completeness.isComplete ? (
                   <ul className="mt-2 list-disc space-y-0.5 ps-5 text-xs text-[var(--secondary)]">
-                    {completeness.incompleteReasons.map((r) => (
-                      <li key={r}>{r}</li>
+                    {completeness.incompleteReasonKeys.map((r) => (
+                      <li key={r}>{t(`incompleteReasons.${r}`)}</li>
                     ))}
                   </ul>
                 ) : null}

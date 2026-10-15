@@ -25,6 +25,7 @@ export function InstructorPresetPanel({
 }) {
   const tErr = useTranslations("admin.actionErrors");
   const t = useTranslations("admin.presets");
+  const tPage = useTranslations("admin.presetsPage");
   const [presetId, setPresetId] = useState(presets[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +152,7 @@ export function InstructorPresetPanel({
     <div className="space-y-4">
       <label className="block text-sm">
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Instructor preset
+          {tPage("presetLabel")}
         </span>
         <select
           className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
@@ -173,7 +174,7 @@ export function InstructorPresetPanel({
           onClick={preview}
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)] disabled:opacity-50"
         >
-          {loading ? "Working…" : "Generate case preview"}
+          {loading ? tPage("working") : tPage("generatePreview")}
         </button>
         <button
           type="button"
@@ -181,7 +182,7 @@ export function InstructorPresetPanel({
           onClick={clonePreset}
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm"
         >
-          Clone
+          {tPage("clone")}
         </button>
         <button
           type="button"
@@ -189,7 +190,7 @@ export function InstructorPresetPanel({
           onClick={versionPreset}
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm"
         >
-          Version
+          {tPage("version")}
         </button>
         <button
           type="button"
@@ -197,7 +198,7 @@ export function InstructorPresetPanel({
           onClick={archivePreset}
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm text-[var(--error)]"
         >
-          Archive
+          {tPage("archive")}
         </button>
         <button
           type="button"
@@ -205,7 +206,7 @@ export function InstructorPresetPanel({
           onClick={download}
           className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm"
         >
-          Export JSON
+          {tPage("exportJson")}
         </button>
       </div>
 

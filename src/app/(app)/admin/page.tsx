@@ -13,7 +13,8 @@ import { readLifecycleFromRow } from "@/lib/admin/virtual-patient-lifecycle";
 import { PACKAGE_VERSION } from "@/lib/ops/versions";
 import { expireStaleSessionsVisible } from "@/lib/session-expiry";
 import { isMissingApprovalColumnError } from "@/lib/account-approval";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 
 function startOfUtcDay(d = new Date()) {
   return new Date(
@@ -30,6 +31,9 @@ function daysAgoIso(days: number) {
 export default async function AdminHomePage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.home");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
+  const locale = await getLocale();
 
   // Best-effort: expire abandoned actives so overview KPIs match operational reality.
   await expireStaleSessionsVisible(supabase);
@@ -344,7 +348,7 @@ export default async function AdminHomePage() {
                       </span>
                       <span className="text-xs text-[var(--on-surface-variant)]">
                         {scores?.overall != null ? `${scores.overall}` : "—"} ·{" "}
-                        {new Date(r.created_at).toLocaleDateString()}
+                        {new Date(r.created_at).toLocaleDateString(locale)}
                       </span>
                     </Link>
                   </li>
@@ -398,7 +402,7 @@ export default async function AdminHomePage() {
                           label={t(`status.${s.status}` as "status.active")}
                           tone={tone}
                         />
-                        {new Date(s.created_at).toLocaleString()}
+                        {new Date(s.created_at).toLocaleString(locale)}
                       </span>
                     </Link>
                   </li>
@@ -420,7 +424,11 @@ export default async function AdminHomePage() {
                     >
                       {a.name}
                     </Link>
-                    <span> — {a.disorder}</span>
+                    <span>
+                      {" — "}
+                      {disorderNameText(a.disorder, tDisorders, tDefaultDisorders) ??
+                        a.disorder}
+                    </span>
                   </li>
                 ))}
               </ul>

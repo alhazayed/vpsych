@@ -41,9 +41,22 @@ export type ReadinessItem = {
   explanation: string;
   /** Stable code for i18n / tests — never raw stack/DB detail. */
   code: string;
+  /**
+   * Message key (relative to `admin.readiness`) for `explanation`, set when
+   * the explanation is one of the fixed educator messages. Absent when the
+   * explanation is a raw validator message; render `fallbackExplanationKey`
+   * in a non-English UI then.
+   */
+  explanationKey?: string;
+  /** Message key (relative to `admin.readiness`) for a generic explanation. */
+  fallbackExplanationKey?: string;
   remediation?: string;
+  /** Message key (relative to `admin.readiness`) for `remediation`. */
+  remediationKey?: string;
   action?: {
     label: string;
+    /** Message key (relative to `admin.readiness`) for `label`. */
+    labelKey?: string;
     href?: string;
     focus?: string;
   };
@@ -59,6 +72,8 @@ export type CaseReadinessResult = {
   overallStatus: ReadinessStatus;
   summary: string;
   nextAction: string | null;
+  /** Message key (relative to `admin.readiness`) for `nextAction`. */
+  nextActionKey: string | null;
   items: ReadinessItem[];
   blockedCount: number;
   warningCount: number;
@@ -116,35 +131,133 @@ function detailHref(avatarId: string | null | undefined, focus: string): string 
   return `/admin/avatars/${avatarId}?focus=${encodeURIComponent(focus)}`;
 }
 
+/** English action labels, keyed by message key (relative to `admin.readiness`). */
+const ACTION_LABELS = {
+  "actions.review": "Review this section",
+  "actions.openPreview": "Open preview",
+  "actions.clinicalPresentation": "Complete clinical presentation",
+  "actions.patientProfile": "Complete patient profile",
+  "actions.symptoms": "Add symptoms",
+  "actions.sessionGoals": "Add session goals",
+  "actions.framework": "Set therapeutic framework",
+  "actions.englishPersonality": "Complete English personality",
+  "actions.arabicAuthoring": "Complete Arabic authoring",
+  "actions.voice": "Assign voice",
+  "actions.validation": "Review validation",
+  "actions.safety": "Complete safety requirements",
+} as const;
+
+type ActionLabelKey = keyof typeof ACTION_LABELS;
+
 function item(
   id: ReadinessSectionId,
   status: ReadinessStatus,
   opts: {
     code: string;
     explanation: string;
+    explanationKey?: string;
+    fallbackExplanationKey?: string;
     remediation?: string;
-    actionLabel?: string;
+    remediationKey?: string;
+    actionLabelKey?: ActionLabelKey;
     avatarId?: string | null;
     focus?: string;
   },
 ): ReadinessItem {
   const focus = opts.focus ?? id;
+  const actionLabelKey = opts.actionLabelKey ?? "actions.review";
   return {
     id,
     status,
     label: SECTION_LABELS[id],
     explanation: opts.explanation,
+    explanationKey: opts.explanationKey,
+    fallbackExplanationKey: opts.fallbackExplanationKey,
     code: opts.code,
     remediation: opts.remediation,
+    remediationKey: opts.remediation ? opts.remediationKey : undefined,
     action:
       status === "COMPLETE"
         ? undefined
         : {
-            label: opts.actionLabel ?? "Review this section",
+            label: ACTION_LABELS[actionLabelKey],
+            labelKey: actionLabelKey,
             href: detailHref(opts.avatarId, focus),
             focus,
           },
   };
+}
+
+/** Educator wording for a validator code: [message key, English text]. */
+function educatorMessage(code: string | undefined): [string, string] | null {
+  if (!code) return null;
+  if (code === "clinical_symptoms_required")
+    return ["explanations.symptomsRequired", "At least one symptom is required."];
+  if (code === "clinical_goals_required")
+    return ["explanations.goalsRequired", "At least one session goal is required."];
+  if (code === "clinical_approach_required")
+    return [
+      "explanations.approachRequired",
+      "A therapeutic approach / framework is required.",
+    ];
+  if (code === "clinical_disorder_required" || code === "clinical_core_required")
+    return [
+      "explanations.presentationRequired",
+      "A clinical presentation (diagnosis label) is required.",
+    ];
+  if (code === "default_disorder_required")
+    return [
+      "explanations.defaultDisorderRequired",
+      "Link an active training presentation (default disorder).",
+    ];
+  if (code === "clinical_age_required" || code === "clinical_gender_required")
+    return [
+      "explanations.ageGenderRequired",
+      "Age and gender are required for the patient profile.",
+    ];
+  if (code === "personality_ar_stub")
+    return ["explanations.arabicStub", "Arabic authoring is incomplete (draft stub)."];
+  if (
+    code === "personality_ar_not_independent" ||
+    code === "personality_ar_name_not_independent"
+  )
+    return [
+      "explanations.arabicNotIndependent",
+      "Arabic content must be independently authored — not copied from English.",
+    ];
+  if (code.startsWith("personality_en") || code.startsWith("human_personality_en"))
+    return [
+      "explanations.englishPersonalityRequired",
+      "English personality must include identity and persona prompt.",
+    ];
+  if (code.startsWith("personality_ar") || code.startsWith("human_personality_ar"))
+    return [
+      "explanations.arabicPersonalityRequired",
+      "Arabic personality must be independently authored.",
+    ];
+  if (
+    code === "voice_required" ||
+    code === "voice_missing" ||
+    code === "voice_not_found" ||
+    code === "voice_inactive"
+  )
+    return ["explanations.voiceRequired", "An active voice profile is required."];
+  if (code === "clinical_risk_required" || code === "clinical_risk_si_required")
+    return [
+      "explanations.riskRequired",
+      "Risk profile (including suicidal ideation level) is required.",
+    ];
+  if (code === "clinical_disclosure_required")
+    return [
+      "explanations.disclosureRequired",
+      "At least one disclosure rule is required.",
+    ];
+  if (code === "schema_version")
+    return [
+      "explanations.schemaVersion",
+      "Preview validation requires schema version 2.",
+    ];
+  return null;
 }
 
 /**
@@ -281,69 +394,52 @@ export function assessCaseReadiness(
     });
   }
 
+  type Explained = {
+    status: ReadinessStatus;
+    code: string;
+    explanation: string;
+    explanationKey?: string;
+    fallbackExplanationKey?: string;
+    remediation?: string;
+    remediationKey?: string;
+  };
+
   function explain(
     matched: ValidationIssue[],
     completeMsg: string,
     fallbackBlocked: string,
-  ): { status: ReadinessStatus; code: string; explanation: string; remediation?: string } {
+    fallbackKey: string,
+  ): Explained {
     const status = statusFromIssues(matched);
     if (status === "COMPLETE") {
       return { status, code: "ok", explanation: completeMsg };
     }
     const prim = primaryIssue(matched);
-    const explanation =
-      prim?.message && !/[A-Z_]{3,}/.test(prim.message)
-        ? prim.message
-        : fallbackBlocked;
+    const usesRawMessage = Boolean(
+      prim?.message && !/[A-Z_]{3,}/.test(prim.message),
+    );
+    const explanation = usesRawMessage && prim ? prim.message : fallbackBlocked;
     // Prefer educator wording over raw validator messages that look like paths.
-    const educator =
-      prim?.code === "clinical_symptoms_required"
-        ? "At least one symptom is required."
-        : prim?.code === "clinical_goals_required"
-          ? "At least one session goal is required."
-          : prim?.code === "clinical_approach_required"
-            ? "A therapeutic approach / framework is required."
-            : prim?.code === "clinical_disorder_required" ||
-                prim?.code === "clinical_core_required"
-              ? "A clinical presentation (diagnosis label) is required."
-              : prim?.code === "default_disorder_required"
-                ? "Link an active training presentation (default disorder)."
-                : prim?.code === "clinical_age_required" ||
-                    prim?.code === "clinical_gender_required"
-                  ? "Age and gender are required for the patient profile."
-                  : prim?.code === "personality_ar_stub"
-                    ? "Arabic authoring is incomplete (draft stub)."
-                    : prim?.code === "personality_ar_not_independent" ||
-                        prim?.code === "personality_ar_name_not_independent"
-                      ? "Arabic content must be independently authored — not copied from English."
-                      : prim?.code?.startsWith("personality_en") ||
-                          prim?.code?.startsWith("human_personality_en")
-                        ? "English personality must include identity and persona prompt."
-                        : prim?.code?.startsWith("personality_ar") ||
-                            prim?.code?.startsWith("human_personality_ar")
-                          ? "Arabic personality must be independently authored."
-                          : prim?.code === "voice_required" ||
-                              prim?.code === "voice_missing" ||
-                              prim?.code === "voice_not_found" ||
-                              prim?.code === "voice_inactive"
-                            ? "An active voice profile is required."
-                            : prim?.code === "clinical_risk_required" ||
-                                prim?.code === "clinical_risk_si_required"
-                              ? "Risk profile (including suicidal ideation level) is required."
-                              : prim?.code === "clinical_disclosure_required"
-                                ? "At least one disclosure rule is required."
-                                : prim?.code === "schema_version"
-                                  ? "Preview validation requires schema version 2."
-                                  : explanation;
+    const educator = educatorMessage(prim?.code);
 
     return {
       status,
       code: prim?.code ?? "blocked",
-      explanation: educator,
+      explanation: educator ? educator[1] : explanation,
+      explanationKey: educator
+        ? educator[0]
+        : usesRawMessage
+          ? undefined
+          : fallbackKey,
+      fallbackExplanationKey: fallbackKey,
       remediation:
         status === "BLOCKED"
           ? "Complete this section, then re-check readiness."
           : "Review and strengthen this section before publish.",
+      remediationKey:
+        status === "BLOCKED"
+          ? "remediations.completeSection"
+          : "remediations.strengthenSection",
     };
   }
 
@@ -351,6 +447,7 @@ export function assessCaseReadiness(
     presentationIssues,
     "Clinical presentation is set.",
     "Clinical presentation is incomplete.",
+    "explanations.presentationIncomplete",
   );
   const profile = explain(
     profileIssues.length
@@ -367,6 +464,7 @@ export function assessCaseReadiness(
         : [],
     "Age and gender are set.",
     "Patient profile is incomplete.",
+    "explanations.profileIncomplete",
   );
   const symptoms = explain(
     symptomIssues.length
@@ -383,6 +481,7 @@ export function assessCaseReadiness(
         : [],
     "Symptom profile includes at least one item.",
     "Symptoms are missing.",
+    "explanations.symptomsMissing",
   );
   const goals = explain(
     goalIssues.length
@@ -399,6 +498,7 @@ export function assessCaseReadiness(
         : [],
     "Session goals are defined.",
     "Session goals are missing.",
+    "explanations.goalsMissing",
   );
   const framework = explain(
     frameworkIssues.length
@@ -415,11 +515,13 @@ export function assessCaseReadiness(
         : [],
     "Therapeutic framework / ideal approach is set.",
     "Therapeutic framework is missing.",
+    "explanations.frameworkMissing",
   );
   const english = explain(
     enIssues,
     "English personality is independently authored.",
     "English personality is incomplete.",
+    "explanations.englishIncomplete",
   );
   let arabic = explain(
     arIssues,
@@ -427,6 +529,7 @@ export function assessCaseReadiness(
     arabicStub
       ? "Arabic authoring is incomplete (draft stub)."
       : "Arabic personality is incomplete.",
+    arabicStub ? "explanations.arabicStub" : "explanations.arabicIncomplete",
   );
   if (arabicStub && arabic.status === "COMPLETE") {
     // Defensive: stub detector in validation should already block; keep UX honest.
@@ -434,19 +537,24 @@ export function assessCaseReadiness(
       status: "BLOCKED",
       code: "personality_ar_stub",
       explanation: "Arabic authoring is incomplete (draft stub).",
+      explanationKey: "explanations.arabicStub",
+      fallbackExplanationKey: "explanations.arabicStub",
       remediation:
         "Author the Arabic patient independently before publish. English generation does not complete Arabic.",
+      remediationKey: "remediations.authorArabicStub",
     };
   }
   const voice = explain(
     voiceIssues,
     "An active voice profile is assigned.",
     "Voice is missing or inactive.",
+    "explanations.voiceMissing",
   );
   const safety = explain(
     safetyIssues,
     "Risk profile and disclosure rules are set.",
     "Safety / content requirements are incomplete.",
+    "explanations.safetyIncomplete",
   );
 
   const previewStatus: ReadinessStatus = previewBlocked
@@ -454,8 +562,18 @@ export function assessCaseReadiness(
     : previewWarnings
       ? "WARNING"
       : "COMPLETE";
+  const previewExplanationKey =
+    schemaVersion < 2
+      ? "explanations.schemaVersion"
+      : previewBlocked
+        ? "explanations.previewBlocked"
+        : arIssues.some((i) => i.severity === "error")
+          ? "explanations.previewEnglishOnly"
+          : "explanations.previewReady";
   const previewItem = item("preview", previewStatus, {
     code: schemaVersion < 2 ? "schema_version" : previewBlocked ? "preview_blocked" : "ok",
+    explanationKey: previewExplanationKey,
+    fallbackExplanationKey: previewExplanationKey,
     explanation:
       schemaVersion < 2
         ? "Preview validation requires schema version 2."
@@ -468,7 +586,8 @@ export function assessCaseReadiness(
       previewStatus === "COMPLETE"
         ? undefined
         : "Finish blocked sections, then use Preview on the patient detail page.",
-    actionLabel: "Open preview",
+    remediationKey: "remediations.finishThenPreview",
+    actionLabelKey: "actions.openPreview",
     avatarId,
     focus: "preview",
   });
@@ -477,42 +596,43 @@ export function assessCaseReadiness(
     validationSectionIssues,
     "Publish validation gates pass.",
     "Publish validation has not passed.",
+    "explanations.validationNotPassed",
   );
 
   const items: ReadinessItem[] = [
     item("clinical_presentation", presentation.status, {
       ...presentation,
-      actionLabel: "Complete clinical presentation",
+      actionLabelKey: "actions.clinicalPresentation",
       avatarId,
       focus: "clinical",
     }),
     item("patient_profile", profile.status, {
       ...profile,
-      actionLabel: "Complete patient profile",
+      actionLabelKey: "actions.patientProfile",
       avatarId,
       focus: "clinical",
     }),
     item("symptoms", symptoms.status, {
       ...symptoms,
-      actionLabel: "Add symptoms",
+      actionLabelKey: "actions.symptoms",
       avatarId,
       focus: "clinical",
     }),
     item("session_goals", goals.status, {
       ...goals,
-      actionLabel: "Add session goals",
+      actionLabelKey: "actions.sessionGoals",
       avatarId,
       focus: "clinical",
     }),
     item("therapeutic_framework", framework.status, {
       ...framework,
-      actionLabel: "Set therapeutic framework",
+      actionLabelKey: "actions.framework",
       avatarId,
       focus: "therapy",
     }),
     item("english_personality", english.status, {
       ...english,
-      actionLabel: "Complete English personality",
+      actionLabelKey: "actions.englishPersonality",
       avatarId,
       focus: "personality",
     }),
@@ -522,26 +642,27 @@ export function assessCaseReadiness(
         arabic.status === "COMPLETE"
           ? undefined
           : "Author Arabic independently. English AI generation does not complete Arabic.",
-      actionLabel: "Complete Arabic authoring",
+      remediationKey: "remediations.authorArabic",
+      actionLabelKey: "actions.arabicAuthoring",
       avatarId,
       focus: "personality",
     }),
     item("voice", voice.status, {
       ...voice,
-      actionLabel: "Assign voice",
+      actionLabelKey: "actions.voice",
       avatarId,
       focus: "voice",
     }),
     previewItem,
     item("validation", validationExplained.status, {
       ...validationExplained,
-      actionLabel: "Review validation",
+      actionLabelKey: "actions.validation",
       avatarId,
       focus: "overview",
     }),
     item("safety", safety.status, {
       ...safety,
-      actionLabel: "Complete safety requirements",
+      actionLabelKey: "actions.safety",
       avatarId,
       focus: "clinical",
     }),
@@ -604,6 +725,20 @@ export function assessCaseReadiness(
             ? "Review warnings, then publish when ready."
             : "Complete remaining requirements to continue.";
 
+  const nextActionKey: string | null = readyToPublish
+    ? "nextActions.readyToPublish"
+    : lifecycleStatus === "published"
+      ? "nextActions.published"
+      : lifecycleStatus === "archived"
+        ? "nextActions.restoreToDraft"
+        : firstBlocked
+          ? (firstBlocked.remediation
+              ? firstBlocked.remediationKey
+              : firstBlocked.explanationKey) ?? null
+          : warningCount > 0
+            ? "nextActions.reviewWarnings"
+            : "nextActions.completeRemaining";
+
   const summary = readyToPublish
     ? "READY TO PUBLISH"
     : lifecycleStatus === "published"
@@ -620,6 +755,7 @@ export function assessCaseReadiness(
     overallStatus,
     summary,
     nextAction,
+    nextActionKey,
     items,
     blockedCount,
     warningCount,

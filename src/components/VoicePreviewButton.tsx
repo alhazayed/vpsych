@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { SessionSpeechLocale } from "@/lib/voice/config";
 
 /**
@@ -27,6 +28,7 @@ export function VoicePreviewButton({
   disorderSlug?: string | null;
   label: string;
 }) {
+  const t = useTranslations("admin.voicePreview");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
@@ -60,8 +62,8 @@ export function VoicePreviewButton({
         };
         setError(
           data.code === "TTS_UNAVAILABLE"
-            ? "ElevenLabs not configured"
-            : data.error ?? "Preview failed",
+            ? t("ttsUnavailable")
+            : data.error ?? t("previewFailed"),
         );
         return;
       }
@@ -77,11 +79,11 @@ export function VoicePreviewButton({
       audio.onerror = () => {
         URL.revokeObjectURL(url);
         audioRef.current = null;
-        setError("Could not play audio");
+        setError(t("playFailed"));
       };
       await audio.play();
     } catch {
-      setError("Network error");
+      setError(t("networkError"));
     } finally {
       setBusy(false);
     }
@@ -98,11 +100,11 @@ export function VoicePreviewButton({
         <span aria-hidden className="material-symbols-outlined text-[18px]">
           {busy ? "hourglass_top" : "play_arrow"}
         </span>
-        {busy ? "Playing…" : label}
+        {busy ? t("playing") : label}
       </button>
       {cached && !error && (
         <p className="text-[11px] text-[var(--on-surface-variant)]">
-          Served from cache
+          {t("cached")}
         </p>
       )}
       {error && (

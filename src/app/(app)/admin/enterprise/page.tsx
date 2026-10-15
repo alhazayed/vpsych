@@ -6,11 +6,13 @@ import { MetricCard } from "@/components/admin/AdminUi";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AdminEnterprisePanel } from "@/components/enterprise/AdminEnterprisePanel";
 import { AdvancedDetails } from "@/components/admin/AdvancedDetails";
+import { codeLabel } from "@/lib/admin/ops-text";
 
 export default async function AdminEnterprisePage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.organization");
   const tHome = await getTranslations("admin.home");
+  const tPage = await getTranslations("admin.enterprisePage");
 
   const [{ data: institutions }, { data: memberships }, { data: sessionCounts }] =
     await Promise.all([
@@ -177,7 +179,10 @@ export default async function AdminEnterprisePage() {
                   <span>
                     {profile?.display_name ?? t("unknownMember")} · {orgName}
                   </span>
-                  <StatusBadge label={String(m.role)} tone="neutral" />
+                  <StatusBadge
+                    label={codeLabel(tPage, "membershipRoles", String(m.role))}
+                    tone="neutral"
+                  />
                 </li>
               );
             })}

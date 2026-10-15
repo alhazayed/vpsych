@@ -173,6 +173,28 @@ describe("Phase 10B case readiness", () => {
     expect(result.publishBlockers.some((b) => /symptom/i.test(b))).toBe(true);
   });
 
+  it("returns stable i18n keys alongside the English text", () => {
+    const input = publishReadyInput();
+    input.clinical_core = clinicalCore({ symptom_profile: [] });
+    const result = assessCaseReadiness(input, publishCtx, {
+      lifecycleStatus: "draft",
+      schemaVersion: 2,
+    });
+    const symptoms = section(result, "symptoms");
+    expect(symptoms?.explanationKey).toBe("explanations.symptomsRequired");
+    expect(symptoms?.fallbackExplanationKey).toBe("explanations.symptomsMissing");
+    expect(symptoms?.remediationKey).toBe("remediations.completeSection");
+    expect(symptoms?.action?.labelKey).toBe("actions.symptoms");
+    expect(symptoms?.action?.label).toBe("Add symptoms");
+    expect(result.nextActionKey).toBe("remediations.completeSection");
+
+    const archived = assessCaseReadiness(publishReadyInput(), publishCtx, {
+      lifecycleStatus: "archived",
+      schemaVersion: 2,
+    });
+    expect(archived.nextActionKey).toBe("nextActions.restoreToDraft");
+  });
+
   it("blocks when session goals are missing", () => {
     const input = publishReadyInput();
     input.clinical_core = clinicalCore({ session_goals: [] });

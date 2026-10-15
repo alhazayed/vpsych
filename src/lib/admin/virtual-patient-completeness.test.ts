@@ -15,6 +15,7 @@ describe("assessVirtualPatientCompleteness", () => {
     });
     expect(result.isComplete).toBe(false);
     expect(result.incompleteReasons.length).toBeGreaterThan(0);
+    expect(result.incompleteReasonKeys).toHaveLength(result.incompleteReasons.length);
   });
 
   it("passes when bilingual personality, voice, and diagnosis present", () => {

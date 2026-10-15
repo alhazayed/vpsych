@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -22,6 +22,7 @@ import {
   type VirtualPatientLifecycleStatus,
 } from "@/lib/admin/virtual-patient-lifecycle";
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 
 type TabId =
@@ -34,15 +35,16 @@ type TabId =
   | "preview"
   | "advanced";
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "clinical", label: "Clinical profile" },
-  { id: "personality", label: "Personality" },
-  { id: "behaviour", label: "Behaviour" },
-  { id: "voice", label: "Voice" },
-  { id: "therapy", label: "Therapy configuration" },
-  { id: "preview", label: "Preview" },
-  { id: "advanced", label: "Advanced" },
+/** Tab labels live under `admin.vpDetail.tabs.<id>`. */
+const TABS: { id: TabId }[] = [
+  { id: "overview" },
+  { id: "clinical" },
+  { id: "personality" },
+  { id: "behaviour" },
+  { id: "voice" },
+  { id: "therapy" },
+  { id: "preview" },
+  { id: "advanced" },
 ];
 
 type PersonalityAvatar = {
@@ -71,6 +73,7 @@ export function VirtualPatientDetail({
   testSessions = [],
   initialReadiness = null,
   readinessLabels = DEFAULT_READINESS_LABELS,
+  locked = false,
   labels,
 }: {
   avatar: Avatar;
@@ -79,6 +82,8 @@ export function VirtualPatientDetail({
   testSessions?: AdminTestSessionRef[];
   initialReadiness?: CaseReadinessResult | null;
   readinessLabels?: CaseReadinessLabels;
+  /** Arrived here from the editor because this patient cannot be edited. */
+  locked?: boolean;
   labels: {
     home: string;
     library: string;
@@ -97,6 +102,21 @@ export function VirtualPatientDetail({
   };
 }) {
   const tTabs = useTranslations("admin.avatars");
+  const t = useTranslations("admin.vpDetail");
+  const tDisorders = useTranslations("skillTests.disorders");
+  const tDefaultDisorders = useTranslations("avatars.defaultDisorders");
+  const tGenders = useTranslations("avatars.genders");
+  const uiLocale = useLocale();
+  // Display only — the stored disorder / gender / locale values are untouched.
+  const disorderText =
+    disorderNameText(avatar.disorder, tDisorders, tDefaultDisorders) ??
+    avatar.disorder;
+  const genderText =
+    avatar.gender && tGenders.has(avatar.gender)
+      ? tGenders(avatar.gender)
+      : avatar.gender;
+  const localeName = (code: string): string =>
+    t.has(`localeNames.${code}`) ? t(`localeNames.${code}`) : code;
   const [tab, setTab] = useState<TabId>("overview");
   // Server-authoritative: page.tsx computes readiness; router.refresh() after
   // lifecycle actions reloads the prop. No client-side authz mirror.
@@ -136,7 +156,7 @@ export function VirtualPatientDetail({
     <main className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">
       <AdminPageHeader
         title={avatar.name}
-        subtitle={`${avatar.disorder}${avatar.age != null ? ` · ${avatar.age}` : ""}${avatar.gender ? ` · ${avatar.gender}` : ""}`}
+        subtitle={`${disorderText}${avatar.age != null ? ` · ${avatar.age}` : ""}${genderText ? ` · ${genderText}` : ""}`}
         breadcrumbs={[
           { label: labels.home, href: "/admin" },
           { label: labels.library, href: "/admin/avatars" },
@@ -146,7 +166,7 @@ export function VirtualPatientDetail({
           <div className="flex flex-col items-end gap-3">
             <div className="flex flex-col items-end gap-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-                Lifecycle
+                {t("lifecycle")}
               </span>
               <StatusBadge
                 label={statusLabel(lifecycleStatus).toUpperCase()}
@@ -204,8 +224,11 @@ export function VirtualPatientDetail({
                 const idx = TABS.findIndex((x) => x.id === tabItem.id);
                 if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                   e.preventDefault();
-                  const dir =
-                    e.key === "ArrowRight" ? 1 : -1;
+                  // Arrow keys follow reading direction (RTL in Arabic).
+                  const forward = uiLocale.startsWith("ar")
+                    ? "ArrowLeft"
+                    : "ArrowRight";
+                  const dir = e.key === forward ? 1 : -1;
                   const next = TABS[(idx + dir + TABS.length) % TABS.length]!;
                   setTab(next.id);
                   queueMicrotask(() =>
@@ -220,11 +243,22 @@ export function VirtualPatientDetail({
                 }
               }}
             >
-              {tabItem.label}
+              {t(`tabs.${tabItem.id}`)}
             </button>
           );
         })}
       </div>
+
+      {locked ? (
+        <p
+          role="status"
+          className="mb-6 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface)]"
+        >
+          {lifecycleStatus === "archived"
+            ? t("lockedArchived")
+            : t("lockedPublished")}
+        </p>
+      ) : null}
 
       {tab === "overview" ? (
         <section
@@ -242,22 +276,24 @@ export function VirtualPatientDetail({
           </div>
           <div className="clinical-card space-y-3 p-5">
             <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-              Languages & voice
+              {t("languagesVoice")}
             </h2>
             <p className="text-sm text-[var(--on-surface)]">
-              {locales.join(", ") || avatar.language || "—"}
+              {locales.map(localeName).join(t("listSeparator")) ||
+                avatar.language ||
+                "—"}
             </p>
             <p className="text-sm text-[var(--on-surface-variant)]">
               {voiceProfile
                 ? `${voiceProfile.voice_name} (${voiceProfile.language}${voiceProfile.dialect ? ` / ${voiceProfile.dialect}` : ""})`
-                : "No registry voice assigned"}
+                : t("noRegistryVoice")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Link href="/admin/voices" className="btn-secondary">
-                Manage voices
+                {t("manageVoices")}
               </Link>
               <Link href="/admin/personality" className="btn-secondary">
-                Open personality editor
+                {t("openPersonalityEditor")}
               </Link>
             </div>
           </div>
@@ -283,7 +319,7 @@ export function VirtualPatientDetail({
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-[var(--on-surface)]">
-                        {new Date(s.startedAt).toLocaleString()}
+                        {new Date(s.startedAt).toLocaleString(uiLocale)}
                       </p>
                       <p className="truncate font-mono text-[11px] text-[var(--on-surface-variant)]">
                         {s.id}
@@ -325,32 +361,30 @@ export function VirtualPatientDetail({
           className="clinical-card space-y-4 p-5"
         >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            Clinical profile
+            {t("tabs.clinical")}
           </h2>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Listed diagnosis
+                {t("listedDiagnosis")}
               </dt>
-              <dd className="mt-1 text-sm">{avatar.disorder}</dd>
+              <dd className="mt-1 text-sm">{disorderText}</dd>
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Default locale
+                {t("defaultLocale")}
               </dt>
               <dd className="mt-1 text-sm">
-                {avatar.default_locale ?? "—"}
+                {avatar.default_locale ? localeName(avatar.default_locale) : "—"}
               </dd>
             </div>
           </dl>
           <p className="text-sm text-[var(--on-surface-variant)]">
-            Session diagnosis is minted per assessment by the case engine and
-            stored on the clinical snapshot — it is not permanently owned by
-            this patient record.
+            {t("sessionDiagnosisNote")}
           </p>
           <AdvancedJson
-            value={clinicalCore ?? { note: "No clinical_core JSON on row" }}
-            title="Advanced: clinical_core"
+            value={clinicalCore ?? { note: t("noClinicalCore") }}
+            title={t("advancedClinicalCore")}
           />
         </section>
       ) : null}
@@ -374,24 +408,20 @@ export function VirtualPatientDetail({
           className="clinical-card space-y-3 p-5"
         >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            Behaviour
+            {t("tabs.behaviour")}
           </h2>
           <p className="text-sm text-[var(--on-surface-variant)]">
-            Disclosure style, resistance, and emotional reaction rules are
-            authored in clinical packages and applied at session time. Editing
-            those packages remains available through Cases / Templates /
-            Presets — this tab consolidates orientation without duplicating
-            engines.
+            {t("behaviourBody")}
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/cases" className="btn-secondary">
-              Cases
+              {t("linkCases")}
             </Link>
             <Link href="/admin/templates" className="btn-secondary">
-              Templates
+              {t("linkTemplates")}
             </Link>
             <Link href="/admin/presets" className="btn-secondary">
-              Presets
+              {t("linkPresets")}
             </Link>
           </div>
         </section>
@@ -405,12 +435,12 @@ export function VirtualPatientDetail({
           className="clinical-card space-y-4 p-5"
         >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            Voice
+            {t("tabs.voice")}
           </h2>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Assigned profile
+                {t("assignedProfile")}
               </dt>
               <dd className="mt-1 text-sm">
                 {voiceProfile?.voice_name ?? "—"}
@@ -418,7 +448,7 @@ export function VirtualPatientDetail({
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Language / dialect
+                {t("languageDialect")}
               </dt>
               <dd className="mt-1 text-sm">
                 {voiceProfile
@@ -434,7 +464,7 @@ export function VirtualPatientDetail({
                 voiceId={avatar.voice_id}
                 voiceProfileId={avatar.voice_profile_id}
                 avatarId={avatar.id}
-                label="Preview English"
+                label={t("previewEnglish")}
               />
             ) : null}
             {avatar.voice_id_ar || avatar.voice_profile_id ? (
@@ -443,14 +473,14 @@ export function VirtualPatientDetail({
                 voiceIdAr={avatar.voice_id_ar}
                 voiceProfileId={avatar.voice_profile_id}
                 avatarId={avatar.id}
-                label="Preview Arabic"
+                label={t("previewArabic")}
               />
             ) : null}
             <Link href="/admin/voices" className="btn-secondary">
-              Open voice library
+              {t("openVoiceLibrary")}
             </Link>
           </div>
-          <AdvancedDetails title="Advanced: voice identifiers">
+          <AdvancedDetails title={t("advancedVoiceIds")}>
             <pre className="overflow-auto text-xs">
               {JSON.stringify(
                 {
@@ -475,22 +505,20 @@ export function VirtualPatientDetail({
           className="clinical-card space-y-3 p-5"
         >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            Therapy configuration
+            {t("tabs.therapy")}
           </h2>
           <p className="text-sm text-[var(--on-surface-variant)]">
-            Modality, difficulty, and objectives are selected when a session
-            starts (or via instructor presets). Use the content libraries to
-            preview configurations.
+            {t("therapyBody")}
           </p>
           <ul className="list-disc space-y-1 ps-5 text-sm">
             <li>
               <Link className="text-[var(--primary)] underline" href="/admin/presets">
-                Instructor presets
+                {t("instructorPresets")}
               </Link>
             </li>
             <li>
               <Link className="text-[var(--primary)] underline" href="/admin/cases">
-                Case preview
+                {t("casePreview")}
               </Link>
             </li>
           </ul>
@@ -505,40 +533,42 @@ export function VirtualPatientDetail({
           className="clinical-card space-y-4 p-5"
         >
           <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-            Patient preview
+            {t("patientPreview")}
           </h2>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Name
+                {t("name")}
               </dt>
               <dd className="mt-1 text-sm">{avatar.name}</dd>
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Diagnosis (catalog)
+                {t("diagnosisCatalog")}
               </dt>
-              <dd className="mt-1 text-sm">{avatar.disorder}</dd>
+              <dd className="mt-1 text-sm">{disorderText}</dd>
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Languages
-              </dt>
-              <dd className="mt-1 text-sm">{locales.join(", ") || "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Voice
+                {t("languages")}
               </dt>
               <dd className="mt-1 text-sm">
-                {voiceProfile?.voice_name ?? "Not assigned"}
+                {locales.map(localeName).join(t("listSeparator")) || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
+                {t("tabs.voice")}
+              </dt>
+              <dd className="mt-1 text-sm">
+                {voiceProfile?.voice_name ?? t("notAssigned")}
               </dd>
             </div>
           </dl>
           {avatar.ideal_guidelines?.session_goals?.length ? (
             <div>
               <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-                Ideal session goals
+                {t("idealSessionGoals")}
               </h3>
               <ul className="mt-2 list-disc space-y-1 ps-5 text-sm">
                 {avatar.ideal_guidelines.session_goals.map((g) => (
@@ -570,7 +600,7 @@ export function VirtualPatientDetail({
               voice_id: avatar.voice_id,
               voice_id_ar: avatar.voice_id_ar,
             }}
-            title="Identifiers & schema"
+            title={t("identifiersSchema")}
           />
           <AdvancedJson
             value={avatar.clinical_core}

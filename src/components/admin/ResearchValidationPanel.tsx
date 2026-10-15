@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel, localizeOpsText } from "@/lib/admin/ops-text";
 
 type DashboardPayload = {
   meta?: {
@@ -65,6 +67,9 @@ function Bar({ value, label }: { value: number; label: string }) {
 }
 
 export function ResearchValidationPanel() {
+  const t = useTranslations("admin.researchPage");
+  const tOps = useTranslations("admin.opsUi");
+  const tText = useTranslations("admin.opsText");
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -76,12 +81,12 @@ export function ResearchValidationPanel() {
         const res = await fetch("/api/admin/validation");
         const json = (await res.json()) as DashboardPayload & { error?: string };
         if (!res.ok) {
-          setError(json.error ?? "Failed to load validation dashboard");
+          setError(json.error ?? t("loadFailed"));
           return;
         }
         setData(json);
       } catch {
-        setError("Network error");
+        setError(tOps("networkError"));
       }
     });
   }
@@ -97,12 +102,12 @@ export function ResearchValidationPanel() {
         });
         const json = (await res.json()) as { error?: string };
         if (!res.ok) {
-          setError(json.error ?? "Compute failed");
+          setError(json.error ?? t("computeFailed"));
           return;
         }
         load();
       } catch {
-        setError("Network error");
+        setError(tOps("networkError"));
       }
     });
   }
@@ -125,7 +130,7 @@ export function ResearchValidationPanel() {
           disabled={pending}
           className="rounded-md border border-[var(--outline-variant)] px-3 py-2 text-sm text-[var(--on-surface)] disabled:opacity-50"
         >
-          Refresh
+          {t("refresh")}
         </button>
         <button
           type="button"
@@ -133,25 +138,25 @@ export function ResearchValidationPanel() {
           disabled={pending}
           className="rounded-md bg-[var(--primary)] px-3 py-2 text-sm text-[var(--on-primary)] disabled:opacity-50"
         >
-          Run observational batch
+          {t("runBatch")}
         </button>
         <a
           href="/api/admin/validation?format=package"
           className="rounded-md border border-[var(--outline-variant)] px-3 py-2 text-sm text-[var(--on-surface)]"
         >
-          Export package
+          {t("exportPackage")}
         </a>
         <a
           href="/api/admin/validation?format=csv"
           className="rounded-md border border-[var(--outline-variant)] px-3 py-2 text-sm text-[var(--on-surface)]"
         >
-          Export CSV
+          {t("exportCsv")}
         </a>
         <a
           href="/api/admin/validation?format=publication"
           className="rounded-md border border-[var(--outline-variant)] px-3 py-2 text-sm text-[var(--on-surface)]"
         >
-          Publication support
+          {t("publicationSupport")}
         </a>
       </div>
 
@@ -162,18 +167,18 @@ export function ResearchValidationPanel() {
       ) : null}
 
       <p className="text-xs text-[var(--on-surface-variant)]">
-        Source: {data?.meta?.source ?? "—"} · v
-        {data?.meta?.validation_version ?? "—"} · Observational only — patient
-        behaviour is never modified. Scores are not clinically validated
-        instruments.
+        {t("sourceLine", {
+          source: data?.meta?.source ?? "—",
+          version: data?.meta?.validation_version ?? "—",
+        })}
       </p>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Runs", d?.n_runs ?? 0],
-          ["Expert ratings", d?.n_ratings ?? 0],
-          ["Realism index", means.realism_index?.toFixed?.(1) ?? "—"],
-          ["Consistency", means.consistency_index?.toFixed?.(1) ?? "—"],
+          [t("statRuns"), d?.n_runs ?? 0],
+          [t("statExpertRatings"), d?.n_ratings ?? 0],
+          [t("statRealism"), means.realism_index?.toFixed?.(1) ?? "—"],
+          [t("statConsistency"), means.consistency_index?.toFixed?.(1) ?? "—"],
         ].map(([label, value]) => (
           <div key={String(label)}>
             <p className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
@@ -188,21 +193,29 @@ export function ResearchValidationPanel() {
 
       <section>
         <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-          Quality metrics
+          {t("qualityMetrics")}
         </h2>
         <div className="max-w-xl">
           {Object.entries(means).map(([k, v]) => (
-            <Bar key={k} label={k.replaceAll("_", " ")} value={v} />
+            <Bar
+              key={k}
+              label={
+                t.has(`metrics.${k}`) ? t(`metrics.${k}`) : k.replaceAll("_", " ")
+              }
+              value={v}
+            />
           ))}
           {!Object.keys(means).length ? (
-            <p className="text-sm text-[var(--on-surface-variant)]">No metrics yet.</p>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {t("noMetrics")}
+            </p>
           ) : null}
         </div>
       </section>
 
       <section>
         <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-          Realism trend
+          {t("realismTrend")}
         </h2>
         <div className="flex h-32 items-end gap-1 overflow-x-auto">
           {trend.map((t, i) => (
@@ -214,7 +227,9 @@ export function ResearchValidationPanel() {
             />
           ))}
           {!trend.length ? (
-            <p className="text-sm text-[var(--on-surface-variant)]">No trend data.</p>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              {t("noTrend")}
+            </p>
           ) : null}
         </div>
       </section>
@@ -222,36 +237,46 @@ export function ResearchValidationPanel() {
       <section className="grid gap-8 lg:grid-cols-2">
         <div>
           <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-            Reliability
+            {t("reliability")}
           </h2>
           <ul className="space-y-2 text-sm text-[var(--on-surface)]">
             {(d?.reliability_plots ?? []).slice(0, 12).map((r, i) => (
               <li key={`${r.domain}-${i}`}>
-                <span className="text-[var(--on-surface-variant)]">{r.domain}</span>
-                {" · "}κ={r.cohen_kappa ?? "null"} · agree=
-                {r.percent_agreement ?? "null"} · ICC={r.icc ?? "null"}
-                {!r.sufficient_for_inference ? " · underpowered" : ""}
+                <span className="text-[var(--on-surface-variant)]">
+                  {codeLabel(t, "domains", r.domain)}
+                </span>
+                {" · "}
+                <bdi>
+                  κ={r.cohen_kappa ?? "null"} · {t("agreement")}=
+                  {r.percent_agreement ?? "null"} · ICC={r.icc ?? "null"}
+                </bdi>
+                {!r.sufficient_for_inference ? ` · ${t("underpowered")}` : ""}
               </li>
             ))}
             {!d?.reliability_plots?.length ? (
-              <li className="text-[var(--on-surface-variant)]">No reliability plots.</li>
+              <li className="text-[var(--on-surface-variant)]">
+                {t("noReliability")}
+              </li>
             ) : null}
           </ul>
         </div>
         <div>
           <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-            Expert ratings
+            {t("expertRatings")}
           </h2>
           <ul className="space-y-2 text-sm">
             {Object.entries(d?.expert_ratings_summary.domains ?? {}).map(
               ([domain, stats]) => (
                 <li key={domain}>
-                  {domain}: n={stats.n}, mean={stats.mean.toFixed(1)}
+                  {codeLabel(t, "domains", domain)}:{" "}
+                  {t("ratingStats", { n: stats.n, mean: stats.mean.toFixed(1) })}
                 </li>
               ),
             )}
             {!d?.expert_ratings_summary.n ? (
-              <li className="text-[var(--on-surface-variant)]">No ratings stored.</li>
+              <li className="text-[var(--on-surface-variant)]">
+                {t("noRatings")}
+              </li>
             ) : null}
           </ul>
         </div>
@@ -259,23 +284,27 @@ export function ResearchValidationPanel() {
 
       <section>
         <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-          Benchmark comparisons
+          {t("benchmarks")}
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] text-left text-sm">
+          <table className="w-full min-w-[480px] text-start text-sm">
             <thead>
               <tr className="text-[var(--on-surface-variant)]">
-                <th className="py-1 font-medium">Metric</th>
+                <th className="py-1 font-medium">{t("colMetric")}</th>
                 <th className="py-1 font-medium">VPsych</th>
-                <th className="py-1 font-medium">Baseline</th>
+                <th className="py-1 font-medium">{t("colBaseline")}</th>
                 <th className="py-1 font-medium">Δ</th>
-                <th className="py-1 font-medium">Source</th>
+                <th className="py-1 font-medium">{t("colSource")}</th>
               </tr>
             </thead>
             <tbody>
               {(d?.benchmark_comparisons ?? []).slice(0, 20).map((b, i) => (
                 <tr key={`${b.metric}-${i}`} className="border-t border-[var(--outline-variant)]/40">
-                  <td className="py-1">{b.metric}</td>
+                  <td className="py-1">
+                    {t.has(`metrics.${b.metric}`)
+                      ? t(`metrics.${b.metric}`)
+                      : b.metric}
+                  </td>
                   <td className="py-1">{b.vpsych ?? "—"}</td>
                   <td className="py-1">{b.baseline ?? "—"}</td>
                   <td className="py-1">{b.delta ?? "—"}</td>
@@ -289,13 +318,16 @@ export function ResearchValidationPanel() {
 
       <section>
         <h2 className="mb-3 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-          Validation history
+          {t("validationHistory")}
         </h2>
         <ul className="space-y-1 text-sm text-[var(--on-surface)]">
           {(data?.recent_runs ?? d?.validation_history ?? []).slice(0, 15).map((r) => (
             <li key={r.id}>
-              {r.id.slice(0, 18)}… · realism=
-              {"realism" in r ? r.realism : r.overall_realism} · {r.created_at}
+              <bdi>{r.id.slice(0, 18)}…</bdi> ·{" "}
+              {t("realismValue", {
+                value: "realism" in r ? r.realism : r.overall_realism,
+              })}{" "}
+              · <bdi>{r.created_at}</bdi>
             </li>
           ))}
         </ul>
@@ -303,11 +335,11 @@ export function ResearchValidationPanel() {
 
       <section>
         <h2 className="mb-2 font-[family-name:var(--font-headline)] text-lg text-[var(--on-surface)]">
-          Limitations
+          {t("limitations")}
         </h2>
         <ul className="list-disc space-y-1 ps-5 text-sm text-[var(--on-surface-variant)]">
           {(d?.limitations ?? []).map((l) => (
-            <li key={l}>{l}</li>
+            <li key={l}>{localizeOpsText(tText, l)}</li>
           ))}
         </ul>
       </section>

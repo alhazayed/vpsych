@@ -1,6 +1,36 @@
 "use client";
 
-import type { CaseReadinessResult, ReadinessStatus } from "@/lib/admin/virtual-patient";
+import { useLocale, useTranslations } from "next-intl";
+import type {
+  CaseReadinessResult,
+  ReadinessItem,
+  ReadinessStatus,
+} from "@/lib/admin/virtual-patient";
+
+type ReadinessTranslator = ReturnType<typeof useTranslations>;
+
+/**
+ * Readiness text from the lib's stable keys (`admin.readiness.*`), falling
+ * back to the lib's English text when a key is absent or has no message.
+ */
+function useReadinessText() {
+  const t: ReadinessTranslator = useTranslations("admin.readiness");
+  const english = useLocale().startsWith("en");
+  const text = (key: string | null | undefined, fallback: string): string =>
+    key && t.has(key) ? t(key) : fallback;
+  return {
+    label: (it: ReadinessItem) => text(`sections.${it.id}`, it.label),
+    explanation: (it: ReadinessItem) =>
+      text(
+        it.explanationKey ?? (english ? undefined : it.fallbackExplanationKey),
+        it.explanation,
+      ),
+    remediation: (it: ReadinessItem) =>
+      it.remediation ? text(it.remediationKey, it.remediation) : null,
+    nextAction: (r: CaseReadinessResult) =>
+      r.nextAction ? text(r.nextActionKey, r.nextAction) : null,
+  };
+}
 
 const STATUS_GLYPH: Record<ReadinessStatus, string> = {
   COMPLETE: "✓",
@@ -73,6 +103,7 @@ export function CaseReadinessPanel({
   compact?: boolean;
   onReview?: () => void;
 }) {
+  const rt = useReadinessText();
   if (!readiness) {
     return (
       <section
@@ -142,19 +173,19 @@ export function CaseReadinessPanel({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-medium text-[var(--on-surface)]">
-                  {it.label}
+                  {rt.label(it)}
                 </span>
                 <span className="sr-only">{statusWord(it.status, labels)}</span>
               </div>
               {it.status !== "COMPLETE" ? (
                 <div className="mt-0.5 space-y-1 text-[var(--on-surface-variant)]">
-                  <p>{it.explanation}</p>
+                  <p>{rt.explanation(it)}</p>
                   {it.remediation ? (
                     <p className="text-xs">
                       <span className="font-medium text-[var(--on-surface)]">
                         {labels.nextAction}:{" "}
                       </span>
-                      {it.remediation}
+                      {rt.remediation(it)}
                     </p>
                   ) : null}
                 </div>
@@ -184,7 +215,7 @@ export function CaseReadinessPanel({
             <span className="font-medium text-[var(--on-surface)]">
               {labels.nextAction}:{" "}
             </span>
-            {readiness.nextAction}
+            {rt.nextAction(readiness)}
           </p>
         ) : null}
         {onReview && !readiness.readyToPublish ? (
@@ -211,6 +242,7 @@ export function PublishReadinessCallout({
   labels?: CaseReadinessLabels;
   onReview?: () => void;
 }) {
+  const rt = useReadinessText();
   if (!readiness) return null;
   if (
     readiness.lifecycleStatus === "published" ||
@@ -233,7 +265,12 @@ export function PublishReadinessCallout({
     );
   }
 
-  const blockers = readiness.publishBlockers.slice(0, 5);
+  // Draft/testing only: publishBlockers are the BLOCKED items' explanations,
+  // so render them from the items to get translated text.
+  const blockers = readiness.items
+    .filter((it) => it.status === "BLOCKED")
+    .map((it) => rt.explanation(it))
+    .slice(0, 5);
   return (
     <div
       className="max-w-sm rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-3 py-2 text-start text-xs"
@@ -248,8 +285,8 @@ export function PublishReadinessCallout({
       </p>
       {blockers.length ? (
         <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[var(--on-surface-variant)]">
-          {blockers.map((b) => (
-            <li key={b}>{b}</li>
+          {blockers.map((b, i) => (
+            <li key={`${i}-${b}`}>{b}</li>
           ))}
         </ul>
       ) : null}

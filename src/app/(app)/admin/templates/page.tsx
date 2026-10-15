@@ -1,11 +1,34 @@
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
-import { listBuiltinTemplates } from "@/lib/scenario-templates/catalog";
+import {
+  findTemplateBySlug,
+  listBuiltinTemplates,
+} from "@/lib/scenario-templates/catalog";
+import { codeLabel } from "@/lib/admin/ops-text";
 import { TemplateEnginePanel } from "@/components/admin/TemplateEnginePanel";
 
 export default async function AdminTemplatesPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.templates");
+  const tPage = await getTranslations("admin.templatesPage");
+  const tEnums = await getTranslations("admin.catalogEnums");
+
+  /**
+   * A built-in template's name / description in the UI language. Only while
+   * the row still carries the catalogue's own English: a renamed row or a
+   * clone shows its stored text.
+   */
+  function catalogText(
+    slug: string,
+    field: "name" | "description",
+    stored: string | null,
+  ): string | null {
+    const builtin = findTemplateBySlug(slug);
+    const key = `catalog.${slug}.${field}`;
+    return builtin && builtin[field] === stored && tPage.has(key)
+      ? tPage(key)
+      : stored;
+  }
 
   const { data: templates } = await supabase
     .from("clinical_templates")
@@ -57,19 +80,24 @@ export default async function AdminTemplatesPage() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="font-medium text-[var(--on-surface)]">
-                  {tpl.name}
+                  {catalogText(tpl.slug, "name", tpl.name)}
                 </span>
                 <span className="text-[11px] text-[var(--on-surface-variant)]">
-                  v{tpl.version} · {tpl.enabled ? "enabled" : "draft"}
+                  v{tpl.version} ·{" "}
+                  {tpl.enabled ? tPage("enabled") : tPage("draft")}
                 </span>
               </div>
               <p className="mt-1 text-[var(--on-surface-variant)]">
-                {tpl.specialty} · {tpl.assessment_type} · {tpl.language} ·{" "}
-                {tpl.difficulty} · {tpl.severity} · {tpl.therapy_modality}
+                {codeLabel(tEnums, "specialty", tpl.specialty)} ·{" "}
+                {codeLabel(tEnums, "assessmentType", tpl.assessment_type)} ·{" "}
+                {codeLabel(tEnums, "language", tpl.language)} ·{" "}
+                {codeLabel(tEnums, "difficulty", tpl.difficulty)} ·{" "}
+                {codeLabel(tEnums, "severity", tpl.severity)} ·{" "}
+                {codeLabel(tEnums, "modality", tpl.therapy_modality)}
               </p>
               {tpl.description && (
                 <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-                  {tpl.description}
+                  {catalogText(tpl.slug, "description", tpl.description)}
                 </p>
               )}
             </li>
@@ -85,10 +113,11 @@ export default async function AdminTemplatesPage() {
           templates={list.map((tpl) => ({
             id: tpl.id,
             slug: tpl.slug,
-            name: tpl.name,
-            specialty: tpl.specialty,
-            language: tpl.language,
-            difficulty: tpl.difficulty,
+            // Display-only fields: the panel posts `id` alone.
+            name: catalogText(tpl.slug, "name", tpl.name) ?? tpl.name,
+            specialty: codeLabel(tEnums, "specialty", tpl.specialty),
+            language: codeLabel(tEnums, "language", tpl.language),
+            difficulty: codeLabel(tEnums, "difficulty", tpl.difficulty),
             enabled: tpl.enabled,
           }))}
         />

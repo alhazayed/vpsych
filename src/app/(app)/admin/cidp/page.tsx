@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { CidpDashboardPanel } from "@/components/enterprise/CidpDashboardPanel";
 import { Phase14ReadinessPanel } from "@/components/enterprise/Phase14ReadinessPanel";
@@ -6,18 +7,16 @@ import { Phase16ExecutionPanel } from "@/components/enterprise/Phase16ExecutionP
 
 export default async function AdminCidpPage() {
   await requireAdmin();
+  const t = await getTranslations("admin.cidpPage");
 
   return (
     <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
       <section className="mb-8">
         <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight">
-          CIDP operations
+          {t("title")}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
-          Controlled Institutional Deployment execution evidence — Phase 16
-          reports Evidence Pending for missing drills, pilots, and outcomes.
-          Never fabricates operational evidence. GO for CIDP · NO-GO for GA
-          until all Phase 16 gates PASS with verified observations.
+          {t("subtitle")}
         </p>
       </section>
       <CidpDashboardPanel />

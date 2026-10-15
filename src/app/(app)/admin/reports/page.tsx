@@ -1,6 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ExportReportsButton } from "@/components/admin/ExportReportsButton";
 import { ErrorState, MetricCard } from "@/components/admin/AdminUi";
@@ -18,6 +19,8 @@ export default async function AdminReportsPage() {
   const tHome = await getTranslations("admin.home");
   const tSessions = await getTranslations("admin.sessions");
   const tCommon = await getTranslations("common");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
   const format = await getFormatter();
 
   const {
@@ -40,6 +43,7 @@ export default async function AdminReportsPage() {
         language,
         skill_test_assignment_id,
         dx_name:clinical_snapshot->primary_diagnosis->>name,
+        dx_slug:clinical_snapshot->primary_diagnosis->>slug,
         profiles ( display_name ),
         avatars ( name, disorder )
       )
@@ -99,6 +103,7 @@ export default async function AdminReportsPage() {
       language?: string | null;
       skill_test_assignment_id?: string | null;
       dx_name?: string | null;
+      dx_slug?: string | null;
       profiles: { display_name: string } | null;
       avatars: { name: string; disorder: string } | null;
     } | null;
@@ -113,7 +118,13 @@ export default async function AdminReportsPage() {
       // The session's own case, not the avatar's default; sealed for skill tests.
       disorder: session?.skill_test_assignment_id
         ? ""
-        : (session?.dx_name ?? session?.avatars?.disorder ?? ""),
+        : session?.dx_slug && tDisorders.has(session.dx_slug)
+          ? tDisorders(session.dx_slug)
+          : (disorderNameText(
+              session?.dx_name ?? session?.avatars?.disorder,
+              tDisorders,
+              tDefaultDisorders,
+            ) ?? ""),
       language: lang,
       score: typeof overall === "number" ? overall : null,
       fallback: isHeuristicReportScores(report.scores),

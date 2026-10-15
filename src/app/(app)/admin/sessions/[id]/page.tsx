@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import { GenerateReportButton } from "@/components/admin/GenerateReportButton";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
@@ -30,6 +31,8 @@ export default async function AdminSessionDetailPage({
   const t = await getTranslations("admin.sessions");
   const tHome = await getTranslations("admin.home");
   const locale = await getLocale();
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
   const { data: sessionRaw, error: sessionRawError } = await supabase
     .from("sessions")
@@ -248,8 +251,17 @@ export default async function AdminSessionDetailPage({
           learnerId,
           patient: avatar?.name ?? t("unknownPatient"),
           // The session's own case (opened for skill tests), not the avatar's default.
+          // Admins see it for skill tests too, so the sealed-case guard is skipped.
           disorder:
-            clinicalSnapshot?.primary_diagnosis?.name ?? avatar?.disorder ?? "",
+            sessionDiagnosisText(
+              {
+                clinical_snapshot: clinicalSnapshot,
+                skill_test_assignment_id: null,
+                avatars: avatar,
+              },
+              tDisorders,
+              tDefaultDisorders,
+            ) ?? "",
           organization: institution?.name ?? null,
           difficulty: session.difficulty,
           modality: session.therapy_modality,

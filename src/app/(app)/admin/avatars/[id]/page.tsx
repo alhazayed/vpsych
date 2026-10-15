@@ -19,10 +19,13 @@ import { getTranslations } from "next-intl/server";
 
 export default async function AdminAvatarDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ locked?: string | string[] }>;
 }) {
   const { id } = await params;
+  const { locked } = await searchParams;
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.avatars");
   const tHome = await getTranslations("admin.home");
@@ -123,6 +126,7 @@ export default async function AdminAvatarDetailPage({
       personalityAvatars={personalityAvatars}
       testSessions={testSessions}
       initialReadiness={initialReadiness}
+      locked={locked === "1"}
       readinessLabels={{
         title: tReady("title"),
         statusComplete: tReady("statusComplete"),

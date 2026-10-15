@@ -6,11 +6,14 @@ import {
   listBuiltinPersonalitySlugs,
   resolveHumanPersonality,
 } from "@/lib/personality-engine";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type { Avatar } from "@/lib/types";
 
 export default async function AdminPersonalityPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.personality");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
@@ -41,6 +44,10 @@ export default async function AdminPersonalityPage() {
       name: avatar.name,
       slug: avatar.slug ?? null,
       disorder: avatar.disorder,
+      // Display only; the editor never sends the disorder back.
+      disorder_label:
+        disorderNameText(avatar.disorder, tDisorders, tDefaultDisorders) ??
+        avatar.disorder,
       is_active: avatar.is_active,
       locales: [...locales],
       profile: profile as unknown as Record<string, unknown>,

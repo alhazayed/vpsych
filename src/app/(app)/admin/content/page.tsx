@@ -1,14 +1,31 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { MetricCard } from "@/components/admin/AdminUi";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
+
+const LIFECYCLE_LABEL_KEY = {
+  draft: "statusDraft",
+  testing: "statusTesting",
+  published: "statusPublished",
+  archived: "statusArchived",
+} as const;
 
 export default async function AdminContentHubPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.contentHub");
   const tHome = await getTranslations("admin.home");
+  const tAvatars = await getTranslations("admin.avatars");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
+  const locale = await getLocale();
+  const lifecycleLabel = (status: string | null): string => {
+    const key =
+      LIFECYCLE_LABEL_KEY[(status ?? "draft") as keyof typeof LIFECYCLE_LABEL_KEY];
+    return key ? tAvatars(key) : String(status);
+  };
 
   const [
     { data: avatars },
@@ -182,12 +199,13 @@ export default async function AdminContentHubPage() {
                       {a.name}
                     </p>
                     <p className="text-xs text-[var(--on-surface-variant)]">
-                      {a.disorder}
+                      {disorderNameText(a.disorder, tDisorders, tDefaultDisorders) ??
+                        a.disorder}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge
-                      label={String(a.lifecycle_status ?? "draft")}
+                      label={lifecycleLabel(a.lifecycle_status)}
                       tone={
                         a.lifecycle_status === "published"
                           ? "active"
@@ -198,7 +216,7 @@ export default async function AdminContentHubPage() {
                     />
                     <span className="text-xs text-[var(--on-surface-variant)]">
                       {a.updated_at
-                        ? new Date(a.updated_at).toLocaleDateString()
+                        ? new Date(a.updated_at).toLocaleDateString(locale)
                         : "—"}
                     </span>
                   </div>

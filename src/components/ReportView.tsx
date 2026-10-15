@@ -1,48 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { SessionReport } from "@/lib/types";
-import { normalizeReportLanguage } from "@/lib/ai/report-locale";
-import type { EvidenceLevel, EvidenceReason, ScoreEvidence } from "@/lib/session-practice";
-
-const EVIDENCE_COPY: Record<
-  "en" | "ar",
-  {
-    heading: string;
-    note: string;
-    level: Record<EvidenceLevel, string>;
-    reason: Record<EvidenceReason, string>;
-  }
-> = {
-  en: {
-    heading: "Evidence",
-    note: "Evidence labels say how much of the transcript backs each score, not whether the score is right. Scores are not validated.",
-    level: { limited: "Limited evidence", some: "Some evidence", strong: "Strong evidence" },
-    reason: {
-      keyword_estimate: "Keyword estimate, not an examiner reading",
-      few_turns: "Too few therapist turns to judge",
-      no_observed_behaviour: "The behaviour this item looks for was not seen in the transcript",
-      observed_behaviour: "Matching behaviour seen in the transcript",
-      examiner_judgement: "Examiner judgement only; no transcript check for this item",
-    },
-  },
-  ar: {
-    heading: "الأدلة",
-    note: "تبيّن تسميات الأدلة مقدار ما يدعم كل درجة من نص الجلسة، لا صحة الدرجة. الدرجات غير مُتحقَّق من صدقها.",
-    level: { limited: "أدلة محدودة", some: "أدلة متوسطة", strong: "أدلة قوية" },
-    reason: {
-      keyword_estimate: "تقدير بالكلمات المفتاحية، لا قراءة مُقيِّم",
-      few_turns: "عدد مداخلات المعالج قليل جدًا للحكم",
-      no_observed_behaviour: "لم يظهر في النص السلوك الذي يقيسه هذا البند",
-      observed_behaviour: "ظهر في النص سلوك مطابق",
-      examiner_judgement: "حكم المُقيِّم فقط؛ لا فحص نصي لهذا البند",
-    },
-  },
-};
-
-/** Rubric item weight, in the report's language (WCAG 1.3.1: not a bare "w3"). */
-const WEIGHT_LABEL: Record<"en" | "ar", (weight: number) => string> = {
-  en: (weight) => `weight ${weight}`,
-  ar: (weight) => `الوزن ${weight}`,
-};
+import { localizeRubricLabel, normalizeReportLanguage } from "@/lib/ai/report-locale";
+import { isAppLocale, localeDirection } from "@/i18n/config";
+import type { EvidenceLevel, ScoreEvidence } from "@/lib/session-practice";
 
 const EVIDENCE_TONE: Record<EvidenceLevel, string> = {
   limited: "border-[var(--outline-variant)] text-[var(--on-surface-variant)]",
@@ -59,52 +19,36 @@ export async function ReportView({
   evidence?: ScoreEvidence[];
 }) {
   const tCommon = await getTranslations("common");
+  const t = await getTranslations("report");
+  // Chrome follows the page locale; the narrative, rationales and excerpts are
+  // stored report content in the session's language and render as written.
+  const rawLocale = await getLocale();
+  const uiLocale = isAppLocale(rawLocale) ? rawLocale : "en";
   const items = report.scores?.items ?? [];
   const overall = report.scores?.overall ?? 0;
   const language = normalizeReportLanguage(report.language);
-  const isAr = language === "ar";
-  const evidenceCopy = EVIDENCE_COPY[isAr ? "ar" : "en"];
+  const contentDir = language === "ar" ? "rtl" : "ltr";
   const evidenceById = new Map((evidence ?? []).map((e) => [e.item_id, e]));
-
-  const labels = isAr
-    ? {
-        confidential: "تقييم سرّي",
-        title: "تقرير الجلسة",
-        overall: "المجموع",
-        narrative: "السرد السريري",
-        rubric: "معايير الكفاءة",
-        excerpts: "مقتطفات أساسية",
-        footer: "للإدارة فقط. لا يُشارك مع المتدرّب أو أطراف خارجية.",
-      }
-    : {
-        confidential: "Confidential assessment",
-        title: "Session report",
-        overall: "Overall",
-        narrative: "Clinical narrative",
-        rubric: "Competency rubric",
-        excerpts: "Key excerpts",
-        footer: "Admin-only. Not shared with the trainee or external parties.",
-      };
 
   return (
     <article
       className="space-y-6"
-      dir={isAr ? "rtl" : "ltr"}
-      lang={language}
+      dir={localeDirection(uiLocale)}
+      lang={uiLocale}
       data-report-language={language}
     >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--outline)]">
-            {labels.confidential}
+            {t("confidential")}
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-headline)] text-3xl font-semibold tracking-tight text-[var(--on-surface)]">
-            {labels.title}
+            {t("title")}
           </h1>
         </div>
         <div className="clinical-card px-5 py-3 text-center">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            {labels.overall}
+            {t("overall")}
           </p>
           <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
             {overall}
@@ -117,9 +61,13 @@ export async function ReportView({
 
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-          {labels.narrative}
+          {t("narrative")}
         </h2>
-        <p className="text-base leading-7 text-[var(--on-surface)]">
+        <p
+          className="text-base leading-7 text-[var(--on-surface)]"
+          lang={language}
+          dir={contentDir}
+        >
           {report.narrative}
         </p>
       </section>
@@ -127,12 +75,12 @@ export async function ReportView({
       <section className="clinical-card overflow-hidden">
         <div className="border-b border-[var(--outline-variant)] bg-[var(--surface-bright)] px-5 py-3">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            {labels.rubric}
+            {t("rubric")}
           </h2>
         </div>
         {evidenceById.size > 0 && (
           <p className="border-b border-[var(--outline-variant)] px-5 py-2 text-xs text-[var(--on-surface-variant)]">
-            {evidenceCopy.note}
+            {t("evidence.note")}
           </p>
         )}
         <ul className="divide-y divide-[var(--surface-container-low)]">
@@ -142,12 +90,12 @@ export async function ReportView({
               <li key={item.id} className="px-5 py-4">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-medium text-[var(--on-surface)]">
-                    {item.label}
+                    {localizeRubricLabel(item.id, item.label, uiLocale)}
                   </p>
                   <p className="font-mono text-sm text-[var(--primary)]">
                     {item.score}/{item.max}
                     <span className="ms-2 text-[var(--on-surface-variant)]">
-                      {WEIGHT_LABEL[isAr ? "ar" : "en"](item.weight)}
+                      {t("weight", { weight: item.weight })}
                     </span>
                   </p>
                 </div>
@@ -157,7 +105,11 @@ export async function ReportView({
                     style={{ width: `${Math.min(100, pct)}%` }}
                   />
                 </div>
-                <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+                <p
+                  className="mt-2 text-sm text-[var(--on-surface-variant)]"
+                  lang={language}
+                  dir={contentDir}
+                >
                   {item.feedback}
                 </p>
                 {(() => {
@@ -169,10 +121,10 @@ export async function ReportView({
                         className={`rounded-full border px-2 py-0.5 font-semibold ${EVIDENCE_TONE[ev.level]}`}
                         data-evidence-level={ev.level}
                       >
-                        {evidenceCopy.level[ev.level]}
+                        {t(`evidence.level.${ev.level}`)}
                       </span>
                       <span className="text-[var(--on-surface-variant)]">
-                        {evidenceCopy.reason[ev.reason]}
+                        {t(`evidence.reason.${ev.reason}`)}
                       </span>
                     </p>
                   );
@@ -186,9 +138,9 @@ export async function ReportView({
       {report.excerpts?.length > 0 && (
         <section className="clinical-card p-5">
           <h2 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-            {labels.excerpts}
+            {t("excerpts")}
           </h2>
-          <ul className="space-y-3">
+          <ul className="space-y-3" lang={language} dir={contentDir}>
             {report.excerpts.map((ex, i) => (
               <li
                 key={`${i}-${ex.slice(0, 12)}`}
@@ -201,7 +153,7 @@ export async function ReportView({
         </section>
       )}
 
-      <p className="text-xs text-[var(--on-surface-variant)]">{labels.footer}</p>
+      <p className="text-xs text-[var(--on-surface-variant)]">{t("adminOnlyNote")}</p>
     </article>
   );
 }

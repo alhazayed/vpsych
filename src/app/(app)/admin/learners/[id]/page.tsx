@@ -18,6 +18,7 @@ import {
 } from "@/lib/admin/session-ops";
 import type { SessionStatus } from "@/lib/types";
 import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import { buildSkillProgress } from "@/lib/skill-progress";
 import { SkillProgressChart } from "@/components/progress/SkillProgressChart";
 
@@ -32,6 +33,8 @@ export default async function AdminLearnerDetailPage({
   const tHome = await getTranslations("admin.home");
   const tSessions = await getTranslations("admin.sessions");
   const locale = await getLocale();
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -164,7 +167,8 @@ export default async function AdminLearnerDetailPage({
       language: String(s.language ?? "en"),
       learner: profile.display_name?.trim() || t("unnamed"),
       patient: avatar?.name ?? tSessions("unknownPatient"),
-      disorder: avatar?.disorder ?? "",
+      disorder:
+        disorderNameText(avatar?.disorder, tDisorders, tDefaultDisorders) ?? "",
       organization: inst?.name ?? null,
       institutionId: s.institution_id,
       durationLabel,

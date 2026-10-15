@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel } from "@/lib/admin/ops-text";
 import type { FeedbackStatus } from "@/lib/enterprise/feedback";
 
 type FeedbackRow = {
@@ -31,6 +33,9 @@ type Summary = {
 };
 
 export function AdminFeedbackPanel() {
+  const t = useTranslations("admin.feedbackPage");
+  const tOps = useTranslations("admin.opsUi");
+  const tForm = useTranslations("feedback");
   const [items, setItems] = useState<FeedbackRow[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export function AdminFeedbackPanel() {
         const json = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setError(json.error ?? "Failed to load");
+          setError(json.error ?? tOps("loadFailed"));
           setLoading(false);
           return;
         }
@@ -55,7 +60,7 @@ export function AdminFeedbackPanel() {
         setLoading(false);
       } catch {
         if (!cancelled) {
-          setError("Network error");
+          setError(tOps("networkError"));
           setLoading(false);
         }
       }
@@ -63,7 +68,7 @@ export function AdminFeedbackPanel() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, tOps]);
 
   async function triage(id: string, status: FeedbackStatus) {
     const res = await fetch("/api/admin/feedback", {
@@ -75,7 +80,11 @@ export function AdminFeedbackPanel() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--on-surface-variant)]">Loading…</p>;
+    return (
+      <p className="text-sm text-[var(--on-surface-variant)]">
+        {tOps("loading")}
+      </p>
+    );
   }
   if (error) return <p className="text-sm text-[var(--error)]">{error}</p>;
 
@@ -83,12 +92,12 @@ export function AdminFeedbackPanel() {
     <div className="space-y-8">
       {summary ? (
         <ul className="flex flex-wrap gap-6 text-sm">
-          <li>Total: {summary.total}</li>
-          <li>Open critical: {summary.open_critical}</li>
+          <li>{t("total", { count: summary.total })}</li>
+          <li>{t("openCritical", { count: summary.open_critical })}</li>
           {summary.by_classification
             ? Object.entries(summary.by_classification).map(([k, v]) => (
                 <li key={k}>
-                  {k}: {v}
+                  {codeLabel(tForm, "severities", k.toLowerCase())}: {v}
                 </li>
               ))
             : null}
@@ -99,13 +108,13 @@ export function AdminFeedbackPanel() {
         <table className="w-full min-w-[720px] text-start text-sm">
           <thead>
             <tr className="border-b border-[var(--outline-variant)] text-[var(--on-surface-variant)]">
-              <th className="py-2 pe-3 font-medium">Severity</th>
-              <th className="py-2 pe-3 font-medium">Priority</th>
-              <th className="py-2 pe-3 font-medium">Status</th>
-              <th className="py-2 pe-3 font-medium">Role</th>
-              <th className="py-2 pe-3 font-medium">Institution</th>
-              <th className="py-2 pe-3 font-medium">Title</th>
-              <th className="py-2 font-medium">Actions</th>
+              <th className="py-2 pe-3 font-medium">{t("colSeverity")}</th>
+              <th className="py-2 pe-3 font-medium">{t("colPriority")}</th>
+              <th className="py-2 pe-3 font-medium">{t("colStatus")}</th>
+              <th className="py-2 pe-3 font-medium">{t("colRole")}</th>
+              <th className="py-2 pe-3 font-medium">{t("colInstitution")}</th>
+              <th className="py-2 pe-3 font-medium">{t("colTitle")}</th>
+              <th className="py-2 font-medium">{t("colActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -114,21 +123,32 @@ export function AdminFeedbackPanel() {
                 key={item.id}
                 className="border-b border-[var(--outline-variant)] align-top"
               >
-                <td className="py-2 pe-3">{item.severity}</td>
-                <td className="py-2 pe-3">{item.priority}</td>
-                <td className="py-2 pe-3">{item.status}</td>
                 <td className="py-2 pe-3">
-                  {item.role_persona ?? item.submitter_role}
+                  {codeLabel(tForm, "severities", item.severity)}
+                </td>
+                <td className="py-2 pe-3">
+                  {codeLabel(t, "priorities", item.priority)}
+                </td>
+                <td className="py-2 pe-3">
+                  {codeLabel(t, "statuses", item.status)}
+                </td>
+                <td className="py-2 pe-3">
+                  {codeLabel(
+                    tForm,
+                    "roles",
+                    item.role_persona ?? item.submitter_role,
+                  )}
                 </td>
                 <td className="py-2 pe-3">
                   {item.institution_name}
                   {item.department ? ` / ${item.department}` : ""}
                 </td>
                 <td className="py-2 pe-3">
-                  <p className="font-medium">{item.title || "(untitled)"}</p>
+                  <p className="font-medium">{item.title || t("untitled")}</p>
                   <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-                    {item.category} · v{item.platform_version} ·{" "}
-                    {item.reproducibility}
+                    {codeLabel(tForm, "categories", item.category)} · v
+                    {item.platform_version} ·{" "}
+                    {codeLabel(tForm, "reproducibility", item.reproducibility)}
                   </p>
                   <p className="mt-1 max-w-md text-xs text-[var(--on-surface-variant)]">
                     {item.body.slice(0, 180)}
@@ -142,21 +162,21 @@ export function AdminFeedbackPanel() {
                       className="text-start text-xs text-[var(--primary)]"
                       onClick={() => void triage(item.id, "triaged")}
                     >
-                      Triage
+                      {t("actionTriage")}
                     </button>
                     <button
                       type="button"
                       className="text-start text-xs text-[var(--primary)]"
                       onClick={() => void triage(item.id, "in_progress")}
                     >
-                      In progress
+                      {t("actionInProgress")}
                     </button>
                     <button
                       type="button"
                       className="text-start text-xs text-[var(--primary)]"
                       onClick={() => void triage(item.id, "resolved")}
                     >
-                      Resolve
+                      {t("actionResolve")}
                     </button>
                   </div>
                 </td>
@@ -166,7 +186,7 @@ export function AdminFeedbackPanel() {
         </table>
         {items.length === 0 ? (
           <p className="mt-4 text-sm text-[var(--on-surface-variant)]">
-            No institutional feedback yet.
+            {t("empty")}
           </p>
         ) : null}
       </div>

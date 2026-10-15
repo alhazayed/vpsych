@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel, localizeOpsText } from "@/lib/admin/ops-text";
 
 type Gate = {
   id: string;
@@ -47,7 +49,17 @@ type Payload = {
   >;
 };
 
+/** `"RISK-P14-01: description"` → id and description, translated separately. */
+function splitResidualRisk(text: string): { id: string; description: string } {
+  const at = text.indexOf(": ");
+  return at > 0
+    ? { id: text.slice(0, at), description: text.slice(at + 2) }
+    : { id: "", description: text };
+}
+
 export function Phase15AuthorizationPanel() {
+  const t = useTranslations("admin.opsUi");
+  const tText = useTranslations("admin.opsText");
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,12 +71,12 @@ export function Phase15AuthorizationPanel() {
         const res = await fetch("/api/admin/ops/phase15");
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load");
+          if (!cancelled) setError(json.error ?? t("loadFailed"));
           return;
         }
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(t("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,12 +84,12 @@ export function Phase15AuthorizationPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
       <p className="text-sm text-[var(--on-surface-variant)]">
-        Loading Phase 15…
+        {t("loadingPhase", { phase: 15 })}
       </p>
     );
   }
@@ -95,41 +107,55 @@ export function Phase15AuthorizationPanel() {
           {data.cert_id} · v{data.package_version}
         </p>
         <h2 className="mt-2 font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Phase 15 — GA Authorization & Clinical Validation
+          {t("phase15Title")}
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-[var(--on-surface-variant)]">
-          {data.ownership}
+          {localizeOpsText(tText, data.ownership)}
         </p>
         <p className="mt-2 text-sm">
-          CIDP: {data.cidp_status ?? "GO"} · GA: {data.ga_status ?? "NO-GO"} ·
-          Authorized version: {data.authorized_version ?? "none"} · Gates PASS:{" "}
-          {data.authorization?.pass_count ?? 0} · Open:{" "}
-          {data.authorization?.fail_or_open_count ?? 0}
+          {t("cidpStatus", {
+            status: codeLabel(t, "status", data.cidp_status ?? "GO"),
+          })}{" "}
+          ·{" "}
+          {t("gaStatus", {
+            status: codeLabel(t, "status", data.ga_status ?? "NO-GO"),
+          })}{" "}
+          ·{" "}
+          {t("authorizedVersion", {
+            version: data.authorized_version ?? t("none"),
+          })}{" "}
+          · {t("gatesPassed", { count: data.authorization?.pass_count ?? 0 })} ·{" "}
+          {t("gatesOpen", {
+            count: data.authorization?.fail_or_open_count ?? 0,
+          })}
         </p>
         <p className="mt-2 text-sm text-[var(--on-surface)]">
-          {data.board_recommendation ?? data.authorization?.decision}
+          {localizeOpsText(
+            tText,
+            data.board_recommendation ?? data.authorization?.decision,
+          )}
         </p>
         <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-          {data.authorization?.motion}
+          {localizeOpsText(tText, data.authorization?.motion)}
         </p>
         {data.disclaimer ? (
           <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-            {data.disclaimer}
+            {localizeOpsText(tText, data.disclaimer)}
           </p>
         ) : null}
       </section>
 
       <section>
         <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-          Board GA gates
+          {t("boardGates")}
         </h3>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[520px] text-start text-sm">
             <thead>
               <tr className="border-b border-[var(--outline-variant)] text-[var(--on-surface-variant)]">
-                <th className="py-2 pe-4 font-medium">Gate</th>
-                <th className="py-2 pe-4 font-medium">Status</th>
-                <th className="py-2 font-medium">Evidence</th>
+                <th className="py-2 pe-4 font-medium">{t("colGate")}</th>
+                <th className="py-2 pe-4 font-medium">{t("colStatus")}</th>
+                <th className="py-2 font-medium">{t("colEvidence")}</th>
               </tr>
             </thead>
             <tbody>
@@ -138,10 +164,14 @@ export function Phase15AuthorizationPanel() {
                   key={g.id}
                   className="border-b border-[var(--outline-variant)]/60"
                 >
-                  <td className="py-2 pe-4">{g.label}</td>
-                  <td className="py-2 pe-4 tabular-nums">{g.status}</td>
+                  <td className="py-2 pe-4">
+                    {localizeOpsText(tText, g.label)}
+                  </td>
+                  <td className="py-2 pe-4 tabular-nums">
+                    {codeLabel(t, "status", g.status)}
+                  </td>
                   <td className="py-2 text-[var(--on-surface-variant)]">
-                    {g.evidence}
+                    <bdi>{g.evidence}</bdi>
                   </td>
                 </tr>
               ))}
@@ -152,38 +182,50 @@ export function Phase15AuthorizationPanel() {
 
       <section>
         <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-          Pilot completion
+          {t("pilotCompletion")}
         </h3>
         <ul className="mt-3 space-y-1 text-sm">
-          <li>Institutions: {data.pilot_completion?.institutions ?? 0}</li>
           <li>
-            Objectives met:{" "}
-            {data.pilot_completion?.objectives_met ? "yes" : "no"}
+            {t("pilotInstitutions", {
+              count: data.pilot_completion?.institutions ?? 0,
+            })}
           </li>
           <li>
-            Simulations completed:{" "}
-            {data.pilot_completion?.simulations_completed ?? 0}
+            {t("objectivesMet", {
+              answer: data.pilot_completion?.objectives_met ? t("yes") : t("no"),
+            })}
           </li>
           <li>
-            Assessments completed:{" "}
-            {data.pilot_completion?.assessments_completed ?? 0}
+            {t("simulationsCompleted", {
+              count: data.pilot_completion?.simulations_completed ?? 0,
+            })}
           </li>
           <li>
-            Mean user satisfaction:{" "}
-            {data.pilot_completion?.mean_user_satisfaction ?? 0}%
+            {t("assessmentsCompleted", {
+              count: data.pilot_completion?.assessments_completed ?? 0,
+            })}
+          </li>
+          <li>
+            {t("meanSatisfaction", {
+              value: data.pilot_completion?.mean_user_satisfaction ?? 0,
+            })}
           </li>
         </ul>
       </section>
 
       <section>
         <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-          Workstream certifications
+          {t("workstreamCertifications")}
         </h3>
         <ul className="mt-3 space-y-1 text-sm">
           {certEntries.map(([key, value]) => (
             <li key={key}>
-              {value.workstream ?? key}:{" "}
-              <span className="tabular-nums">{value.overall ?? "n/a"}</span>
+              {codeLabel(t, "workstream", value.workstream ?? key)}:{" "}
+              <span className="tabular-nums">
+                {value.overall
+                  ? codeLabel(t, "status", value.overall)
+                  : t("notAvailable")}
+              </span>
             </li>
           ))}
         </ul>
@@ -192,12 +234,22 @@ export function Phase15AuthorizationPanel() {
       {data.residual_risks?.length ? (
         <section>
           <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-            Residual risks
+            {t("residualRisks")}
           </h3>
           <ul className="mt-3 space-y-1 text-sm">
-            {data.residual_risks.slice(0, 10).map((r) => (
-              <li key={r}>{r}</li>
-            ))}
+            {data.residual_risks.slice(0, 10).map((r) => {
+              const { id, description } = splitResidualRisk(r);
+              return (
+                <li key={r}>
+                  {id ? (
+                    <span className="tabular-nums text-[var(--on-surface-variant)]">
+                      {id}:{" "}
+                    </span>
+                  ) : null}
+                  {localizeOpsText(tText, description)}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel } from "@/lib/admin/ops-text";
 
 type AvatarRow = {
   id: string;
   name: string;
   slug: string | null;
   disorder: string;
+  /** `disorder` as display text in the UI language. */
+  disorder_label?: string;
   is_active: boolean;
   locales: string[];
   profile: Record<string, unknown>;
@@ -78,6 +82,9 @@ export function PersonalityEnginePanel({
 }: {
   initialAvatars: AvatarRow[];
 }) {
+  const t = useTranslations("admin.personalityPage");
+  const tOps = useTranslations("admin.opsUi");
+  const tEnums = useTranslations("admin.catalogEnums");
   const [avatars, setAvatars] = useState(initialAvatars);
   const [avatarId, setAvatarId] = useState(initialAvatars[0]?.id ?? "");
   const [locale, setLocale] = useState(initialAvatars[0]?.locales[0] ?? "en-US");
@@ -137,7 +144,7 @@ export function PersonalityEnginePanel({
           const data = await res.json();
           if (cancelled) return;
           if (!res.ok) {
-            setError(data.error ?? "Load failed");
+            setError(data.error ?? t("loadFailed"));
             return;
           }
           const profile = data.profile as Record<string, unknown>;
@@ -158,14 +165,14 @@ export function PersonalityEnginePanel({
             asStringArray((profile.vocabulary as { avoids?: string[] })?.avoids),
           );
         } catch {
-          if (!cancelled) setError("Network error");
+          if (!cancelled) setError(tOps("networkError"));
         }
       })();
     });
     return () => {
       cancelled = true;
     };
-  }, [avatarId, effectiveLocale]);
+  }, [avatarId, effectiveLocale, t, tOps]);
 
   function onAvatarChange(nextId: string) {
     setAvatarId(nextId);
@@ -232,7 +239,7 @@ export function PersonalityEnginePanel({
         setError(
           typeof data.error === "string"
             ? data.error
-            : JSON.stringify(data.issues ?? data.error ?? "Preview failed"),
+            : JSON.stringify(data.issues ?? data.error ?? t("previewFailed")),
         );
         setPreview("");
         return;
@@ -241,7 +248,7 @@ export function PersonalityEnginePanel({
         `${data.promptBlock}\n\n--- per-turn ---\n${data.perTurnCue}`,
       );
     } catch {
-      setError("Network error");
+      setError(tOps("networkError"));
     }
   }
 
@@ -263,11 +270,11 @@ export function PersonalityEnginePanel({
         setError(
           typeof data.error === "string"
             ? data.error
-            : JSON.stringify(data.issues ?? data.error ?? "Save failed"),
+            : JSON.stringify(data.issues ?? data.error ?? t("saveFailed")),
         );
         return;
       }
-      setMsg("Personality saved. GPT will receive this profile every turn.");
+      setMsg(t("saved"));
       setAvatars((prev) =>
         prev.map((a) =>
           a.id === avatarId
@@ -280,7 +287,7 @@ export function PersonalityEnginePanel({
         ),
       );
     } catch {
-      setError("Network error");
+      setError(tOps("networkError"));
     }
   }
 
@@ -302,7 +309,7 @@ export function PersonalityEnginePanel({
   if (!selected) {
     return (
       <p className="text-sm text-[var(--on-surface-variant)]">
-        No avatars available.
+        {t("noAvatars")}
       </p>
     );
   }
@@ -311,7 +318,7 @@ export function PersonalityEnginePanel({
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-[var(--outline)]">
-          Avatar
+          {t("avatar")}
           <select
             className="min-w-[200px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--on-surface)]"
             value={avatarId}
@@ -326,7 +333,7 @@ export function PersonalityEnginePanel({
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-[var(--outline)]">
-          Locale
+          {t("locale")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--on-surface)]"
             value={effectiveLocale}
@@ -336,7 +343,7 @@ export function PersonalityEnginePanel({
               new Set([...(selected.locales ?? []), "en-US", "ar-JO"]),
             ).map((l) => (
               <option key={l} value={l}>
-                {l}
+                {codeLabel(tEnums, "language", l)}
               </option>
             ))}
           </select>
@@ -344,33 +351,34 @@ export function PersonalityEnginePanel({
       </div>
 
       <p className="text-sm text-[var(--on-surface-variant)]">
-        {selected.disorder} · traits are independent of diagnosis — two MDD
-        patients can still feel like different people.
-        {pending ? " Loading…" : ""}
+        {t("independenceNote", {
+          disorder: selected.disorder_label ?? selected.disorder,
+        })}
+        {pending ? ` ${tOps("loading")}` : ""}
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
         {(
           [
-            ["temperament", "Temperament"],
-            ["education", "Education"],
-            ["occupation", "Occupation"],
-            ["culture", "Culture"],
-            ["religion", "Religion"],
-            ["speech_style", "Speech style"],
-            ["treatment_expectations", "Treatment expectations"],
-            ["attachment_notes", "Attachment notes"],
-            ["coping_notes", "Coping notes"],
-            ["humor_notes", "Humor notes"],
-            ["trust_notes", "Trust notes"],
-            ["emotional_regulation_notes", "Emotional regulation notes"],
+            "temperament",
+            "education",
+            "occupation",
+            "culture",
+            "religion",
+            "speech_style",
+            "treatment_expectations",
+            "attachment_notes",
+            "coping_notes",
+            "humor_notes",
+            "trust_notes",
+            "emotional_regulation_notes",
           ] as const
-        ).map(([key, label]) => (
+        ).map((key) => (
           <label
             key={key}
             className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]"
           >
-            {label}
+            {t(`fields.${key}`)}
             <textarea
               className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--on-surface)]"
               value={String(draft[key] ?? "")}
@@ -382,7 +390,7 @@ export function PersonalityEnginePanel({
 
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Attachment style
+          {t("attachmentStyle")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={String(draft.attachment_style ?? "anxious_preoccupied")}
@@ -390,13 +398,13 @@ export function PersonalityEnginePanel({
           >
             {ATTACHMENT.map((v) => (
               <option key={v} value={v}>
-                {v}
+                {codeLabel(t, "attachment", v)}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Coping style
+          {t("copingStyle")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={String(draft.coping_style ?? "mixed")}
@@ -404,13 +412,13 @@ export function PersonalityEnginePanel({
           >
             {COPING.map((v) => (
               <option key={v} value={v}>
-                {v}
+                {codeLabel(t, "coping", v)}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Humor
+          {t("humor")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={String(draft.humor ?? "none")}
@@ -418,13 +426,13 @@ export function PersonalityEnginePanel({
           >
             {HUMOR.map((v) => (
               <option key={v} value={v}>
-                {v}
+                {codeLabel(t, "humorStyles", v)}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Emotional regulation
+          {t("emotionalRegulation")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={String(draft.emotional_regulation ?? "mixed")}
@@ -432,7 +440,7 @@ export function PersonalityEnginePanel({
           >
             {REGULATION.map((v) => (
               <option key={v} value={v}>
-                {v}
+                {codeLabel(t, "regulation", v)}
               </option>
             ))}
           </select>
@@ -442,7 +450,7 @@ export function PersonalityEnginePanel({
             key={key}
             className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]"
           >
-            {key.replace(/_/g, " ")} (1–5)
+            {t("scaleLabel", { trait: t(`scales.${key}`) })}
             <input
               type="number"
               min={1}
@@ -457,7 +465,7 @@ export function PersonalityEnginePanel({
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Intelligence band
+          {t("intelligenceBand")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={
@@ -467,13 +475,13 @@ export function PersonalityEnginePanel({
           >
             {["average", "above_average", "high", "very_high"].map((v) => (
               <option key={v} value={v}>
-                {v}
+                {codeLabel(t, "bands", v)}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Intelligence style
+          {t("intelligenceStyle")}
           <input
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={(draft.intelligence as { style?: string })?.style ?? ""}
@@ -481,7 +489,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Intelligence strengths (one per line)
+          {t("intelligenceStrengths")}
           <textarea
             className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={intelStrengths}
@@ -489,7 +497,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Vocabulary register
+          {t("vocabularyRegister")}
           <select
             className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={
@@ -500,14 +508,14 @@ export function PersonalityEnginePanel({
             {["concrete", "everyday", "educated", "technical", "mixed"].map(
               (v) => (
                 <option key={v} value={v}>
-                  {v}
+                  {codeLabel(t, "registers", v)}
                 </option>
               ),
             )}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Vocabulary markers (one per line)
+          {t("vocabularyMarkers")}
           <textarea
             className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={vocabMarkers}
@@ -515,7 +523,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Vocabulary avoids (one per line)
+          {t("vocabularyAvoids")}
           <textarea
             className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={vocabAvoids}
@@ -523,7 +531,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Preferred topics (one per line)
+          {t("preferredTopics")}
           <textarea
             className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={preferredTopics}
@@ -531,7 +539,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Avoidant topics (one per line)
+          {t("avoidantTopics")}
           <textarea
             className="min-h-[72px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={avoidantTopics}
@@ -542,7 +550,7 @@ export function PersonalityEnginePanel({
 
       <fieldset className="space-y-3 rounded-lg border border-[var(--outline-variant)] p-4">
         <legend className="px-1 text-xs font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Memory of therapist
+          {t("memoryOfTherapist")}
         </legend>
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2">
@@ -556,7 +564,7 @@ export function PersonalityEnginePanel({
                 setNested("memory_of_therapist", "remembers_name", e.target.checked)
               }
             />
-            Remembers name
+            {t("remembersName")}
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -576,10 +584,10 @@ export function PersonalityEnginePanel({
                 )
               }
             />
-            Remembers prior sessions
+            {t("remembersPriorSessions")}
           </label>
           <label className="flex items-center gap-2">
-            Alliance sensitivity
+            {t("allianceSensitivity")}
             <input
               type="number"
               min={1}
@@ -603,7 +611,7 @@ export function PersonalityEnginePanel({
           </label>
         </div>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Rupture style
+          {t("ruptureStyle")}
           <textarea
             className="min-h-[56px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={
@@ -616,7 +624,7 @@ export function PersonalityEnginePanel({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-[var(--outline)]">
-          Memory notes
+          {t("memoryNotes")}
           <textarea
             className="min-h-[56px] rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
             value={
@@ -635,14 +643,14 @@ export function PersonalityEnginePanel({
           onClick={() => void previewPrompt()}
           className="rounded-lg bg-[var(--surface-container-high)] px-4 py-2 text-sm font-semibold text-[var(--on-surface)]"
         >
-          Preview prompt block
+          {t("previewPrompt")}
         </button>
         <button
           type="button"
           onClick={() => void save()}
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--on-primary)]"
         >
-          Save personality
+          {t("save")}
         </button>
       </div>
 
@@ -658,7 +666,10 @@ export function PersonalityEnginePanel({
       ) : null}
 
       {preview ? (
-        <pre className="max-h-[420px] overflow-auto rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-xs whitespace-pre-wrap text-[var(--on-surface)]">
+        <pre
+          dir="auto"
+          className="max-h-[420px] overflow-auto rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-xs whitespace-pre-wrap text-[var(--on-surface)]"
+        >
           {preview}
         </pre>
       ) : null}

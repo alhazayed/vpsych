@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useTranslations } from "next-intl";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import type { AvatarPersonality, ClinicalCore, VoiceProfile } from "@/lib/types";
 import type { HumanPersonalityProfile } from "@/lib/personality-engine/types";
@@ -1035,6 +1036,7 @@ function ValidationPanel({
   publishReady: boolean;
 }) {
   const t = useTranslations("admin.avatars.wizard");
+  const tGates = useTranslations("admin.readiness.gates");
   if (!validation) {
     return (
       <p className="text-sm text-[var(--on-surface-variant)]">
@@ -1077,7 +1079,9 @@ function ValidationPanel({
               {gate.ok ? "check_circle" : "warning"}
             </span>
             <span>
-              <span className="font-medium">{gate.label}</span>
+              <span className="font-medium">
+                {tGates.has(key) ? tGates(key) : gate.label}
+              </span>
               <span className="text-[var(--on-surface-variant)]">
                 {" "}
                 — {gate.ok ? t("gateOk") : t("gateNeedsWork")}
@@ -1151,6 +1155,8 @@ export function VirtualPatientWizard({
   onDirtyChange?: (dirty: boolean) => void;
 }) {
   const t = useTranslations("admin.avatars.wizard");
+  const tDisorders = useTranslations("skillTests.disorders");
+  const tDefaultDisorders = useTranslations("avatars.defaultDisorders");
   const [step, setStep] = useState<StepId>("identity");
   const [form, setForm] = useState<FormState>(createInitialForm);
   const [baselineSnapshot, setBaselineSnapshot] = useState(() =>
@@ -1787,7 +1793,11 @@ export function VirtualPatientWizard({
                 <option value="">{t("disorderNone")}</option>
                 {activeDisorders.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.name} ({d.slug})
+                    {(tDisorders.has(d.slug)
+                      ? tDisorders(d.slug)
+                      : disorderNameText(d.name, tDisorders, tDefaultDisorders)) ??
+                      d.name}{" "}
+                    ({d.slug})
                   </option>
                 ))}
               </select>

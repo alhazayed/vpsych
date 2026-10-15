@@ -21,6 +21,7 @@ export default async function AdminAnalyticsPage({
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.analytics");
   const tHome = await getTranslations("admin.home");
+  const tCommon = await getTranslations("common");
   const sp = await searchParams;
   const rangeKey: RangeKey =
     sp.range === "7d" || sp.range === "90d" ? sp.range : "30d";
@@ -223,7 +224,13 @@ export default async function AdminAnalyticsPage({
                     key={row.language}
                     className="flex justify-between gap-2 border-b border-[var(--surface-container)] py-2"
                   >
-                    <span className="uppercase">{row.language}</span>
+                    {row.language === "en" || row.language === "ar" ? (
+                      <span>
+                        {tCommon(row.language === "en" ? "english" : "arabic")}
+                      </span>
+                    ) : (
+                      <span className="uppercase">{row.language}</span>
+                    )}
                     <span className="font-semibold tabular-nums">
                       {row.count}
                     </span>

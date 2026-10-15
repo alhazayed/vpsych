@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState, ErrorState, MetricCard } from "@/components/admin/AdminUi";
@@ -19,6 +19,7 @@ export default async function AdminLearnersPage({
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.learners");
   const tHome = await getTranslations("admin.home");
+  const locale = await getLocale();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const requestedPage = parsePositiveInt(sp.page, 1);
@@ -285,7 +286,7 @@ export default async function AdminLearnersPage({
                       </td>
                       <td className="px-4 py-3 text-[var(--on-surface-variant)]">
                         {r.lastActiveAt
-                          ? new Date(r.lastActiveAt).toLocaleString()
+                          ? new Date(r.lastActiveAt).toLocaleString(locale)
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-end md:px-6">

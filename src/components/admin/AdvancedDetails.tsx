@@ -1,13 +1,14 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 /**
  * Progressive disclosure for technical / JSON / diagnostic content.
  * Default collapsed so clinical administrators are not forced to read internals.
  */
 export function AdvancedDetails({
-  title = "Advanced details",
+  title,
   children,
   defaultOpen = false,
   className = "",
@@ -17,6 +18,7 @@ export function AdvancedDetails({
   defaultOpen?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("admin.advancedDetails");
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
 
@@ -35,10 +37,10 @@ export function AdvancedDetails({
           <span aria-hidden className="material-symbols-outlined text-[18px] text-[var(--on-surface-variant)]">
             {open ? "expand_less" : "expand_more"}
           </span>
-          {title}
+          {title ?? t("defaultTitle")}
         </span>
         <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
-          {open ? "Hide" : "Show"}
+          {open ? t("hide") : t("show")}
         </span>
       </button>
       {open ? (
@@ -56,7 +58,7 @@ export function AdvancedDetails({
 /** Pretty-print JSON inside AdvancedDetails. */
 export function AdvancedJson({
   value,
-  title = "Raw JSON",
+  title,
 }: {
   value: unknown;
   title?: string;
@@ -66,8 +68,9 @@ export function AdvancedJson({
       ? value
       : JSON.stringify(value, null, 2) ?? "";
 
+  const t = useTranslations("admin.advancedDetails");
   return (
-    <AdvancedDetails title={title}>
+    <AdvancedDetails title={title ?? t("rawJson")}>
       <pre className="max-h-[480px] overflow-auto rounded-md bg-[var(--surface-container-lowest)] p-3 text-xs leading-relaxed text-[var(--on-surface)]">
         {text || "—"}
       </pre>
