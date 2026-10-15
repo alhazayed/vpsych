@@ -59,7 +59,7 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     pattern:
       /what brings you|what brought you|what('?s| has) been (going on|troubling you|bothering you)|how can i help|tell me (a bit |a little )?about what|شو اللي جابك|شو جابك|ايش اللي جابك|ما الذي جاء بك|شو صاير معك|كيف بقدر اساعدك|كيف بقدر أساعدك|كيف أقدر أساعدك/iu,
     arabic:
-      /(شو|ايش|ما) (اللي )?(جابك|جاء بك|دفعك|خلاك تيجي)|شو (صاير|عم يصير) معك|(كيف|بشو) (بقدر|اقدر|ممكن) (اساعدك|اخدمك)|احكيلي (شو|عن)|ما الذي يزعجك/u,
+      /(شو|ايش|ما) (اللي )?(جابك|جاء بك|دفعك|خلاك تيجي)|شو (صاير|عم يصير) معك|(كيف|بشو) (بقدر|اقدر|ممكن) (اساعدك|اخدمك)|احكيلي (شو|عن)|ما الذي يزعجك|(ما|ماذا|شو) (الذي |اللي |هو الذي )?(اتي|جاء|جاءت|اتت) بك|المشكله (التي|اللي) (جاءت|اتت) بك|(ما|ماذا) (يزعجك|يقلقك|يضايقك|تعاني منه)|كيف (يمكنني|استطيع|اقدر) (ان )?(اساعدك|مساعدتك)/u,
   },
   {
     id: "history",
@@ -68,7 +68,7 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     pattern:
       /when did (this|it|that|these|you first)|how long (has|have|did)|(first|ever) (start|notice|began|felt)|happened before|in the past|أول مرة|اول مرة|من قديش|من متى|من إيمتى|من امتى|قديش صارلك|كم صار لك|قبل هيك|من زمان/iu,
     arabic:
-      /(اول|اخر) مره|من (قديش|متي|امتي|ايمتي|وقتيش)|قديش (صارلك|صار لك)|كم (صارلك|صار لك|مده)|قبل هيك|من زمان|بدايه (المشكله|الاعراض)/u,
+      /(اول|اخر) مره|من (قديش|متي|امتي|ايمتي|وقتيش)|قديش (صارلك|صار لك)|كم (صارلك|صار لك|مده)|قبل هيك|من زمان|بدايه (المشكله|الاعراض)|منذ (متي|كم)|متي (بدا|بدات|ظهر|ظهرت|لاحظت|شعرت|بدا ذلك|بدا هذا)|كم (من الوقت|مضي)|(هل )?(حدث|حصل) (هذا|ذلك|معك هذا) (من )?قبل|في الماضي/u,
   },
   {
     id: "social_context",
@@ -112,9 +112,9 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     group: "consent",
     window: "opening",
     pattern:
-      /(is that|does that sound) (ok|okay|alright|all right)|any questions (before|about)|do you have (any )?questions|are you (ok|okay|comfortable) (with|to)|your (consent|permission)|موافق|موافقة|عندك أي سؤال|عندك اي سؤال|مرتاح نكمل|مرتاحة نكمل/iu,
+      /(is that|does that sound) (ok|okay|alright|all right)|any questions (before|about)|do you have (any )?questions|are you (ok|okay|comfortable) (with|to)|is it (ok|okay|alright|all right) (to|if|with you)|(ok|okay|happy|comfortable) to (continue|go ahead|carry on|proceed|start|begin|get started)|(shall|can) we (begin|start|continue|get started)|your (consent|permission)|موافق|موافقة|عندك أي سؤال|عندك اي سؤال|مرتاح نكمل|مرتاحة نكمل/iu,
     arabic:
-      /موافق|موافقه|عندك (اي )?(سوال|اسئله)|(مرتاح|مرتاحه) (نكمل|نبلش|نبدا)|(بنبلش|نبلش|نبدا)[؟?]|بتسمحلي|اذا بتسمح/u,
+      /موافق|موافقه|عندك (اي )?(سوال|اسئله)|(مرتاح|مرتاحه) (نكمل|نبلش|نبدا)|(بنبلش|نبلش|نبدا)[؟?]|بتسمحلي|اذا بتسمح|(توافق|توافقين|تسمح|تسمحين|نتفق) (ان |علي ان |اننا )?(نكمل|نبدا|نتابع|نستمر|نمضي)|(هل )?(هذا|ذلك) (مناسب|مقبول) (لك|بالنسبه لك)|هل (انت|انتي) (مرتاح|مرتاحه)|هل لديك (اي )?(سوال|اسئله|استفسار)/u,
   },
   // ── Session structure ─────────────────────────────────────────────────
   {
@@ -178,7 +178,7 @@ export const PRACTICE_PATTERNS: readonly PracticePattern[] = [
     pattern:
       /how (was|did) (this|today'?s?|the) session|how did (that|today|this) (feel|go) for you|any feedback|what was (helpful|unhelpful|useful)|anything (i said|i did|about today) that|كيف كانت الجلسة|شو كان مفيد|شو اللي ساعدك اليوم|في إشي ضايقك|في اشي ضايقك|رأيك بالجلسة|رأيك بجلسة اليوم/iu,
     arabic:
-      /كيف (كانت|لقيت|وجدت|شفت|حسيت) (الجلسه|جلسه اليوم|بالجلسه)|رايك (بالجلسه|في الجلسه|بجلسه اليوم)|(شو|ايش|ما) (كان|اللي كان|الذي كان) مفيد|(شو|ايش) (ساعدك|استفدت)|في (اشي|شي) (ضايقك|ما عجبك|بدك تغيره)|ملاحظات(ك)? علي الجلسه/u,
+      /كيف (كانت|لقيت|وجدت|شفت|حسيت|شعرت|رايت) (ب|في |ل)?(الجلسه|جلسه اليوم|جلستنا|هذه الجلسه)|(ما|شو) رايك (في |ب)?(الجلسه|جلسه اليوم|جلستنا)|هل لديك (اي )?ملاحظات|رايك (بالجلسه|في الجلسه|بجلسه اليوم)|(شو|ايش|ما) (كان|اللي كان|الذي كان) مفيد|(شو|ايش) (ساعدك|استفدت)|في (اشي|شي) (ضايقك|ما عجبك|بدك تغيره)|ملاحظات(ك)? علي الجلسه/u,
   },
   // ── Safety planning (Stanley-Brown) ───────────────────────────────────
   {
