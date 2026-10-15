@@ -69,6 +69,19 @@ export function applyHeardText(
   return heard ? `${heard} … ${marker}` : marker;
 }
 
+/**
+ * The conversation as the patient lived it. A reply the therapist never heard
+ * (heard_chars 0: the patient yielded the floor before speaking) was never
+ * said, so the patient must not remember saying it. Without this, a therapist
+ * who added to their question while the patient was thinking would get an
+ * answer to the addition only, as if the first part had been answered.
+ */
+export function spokenConversation<
+  T extends { role: SessionMessage["role"]; heard_chars?: number | null },
+>(rows: T[]): T[] {
+  return rows.filter((m) => !(m.role === "assistant" && m.heard_chars === 0));
+}
+
 export type AssessmentMessage = Pick<
   SessionMessage,
   "role" | "content" | "created_at" | "heard_chars"
