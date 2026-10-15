@@ -7,7 +7,7 @@ import {
 } from "@/lib/avatars/localized-name";
 import { expireStaleSessionsForTherapist } from "@/lib/session-expiry";
 import { isAdminTestSnapshot } from "@/lib/admin/admin-test-session";
-import { sessionDiagnosis } from "@/lib/sessions/diagnosis-label";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
 import type { TherapySession } from "@/lib/types";
 import { ErrorState } from "@/components/admin/AdminUi";
 import { isCourseSchemaMissing } from "@/lib/therapy-course";
@@ -96,13 +96,11 @@ export default async function SessionsListPage() {
   });
   const tCourse = await getTranslations("course");
   const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
   const format = await getFormatter();
   // The session's own case, never the avatar's legacy default diagnosis.
-  const diagnosisLabel = (s: Parameters<typeof sessionDiagnosis>[0]) => {
-    const dx = sessionDiagnosis(s);
-    if (!dx) return null;
-    return dx.slug && tDisorders.has(dx.slug) ? tDisorders(dx.slug) : dx.name;
-  };
+  const diagnosisLabel = (s: Parameters<typeof sessionDiagnosisText>[0]) =>
+    sessionDiagnosisText(s, tDisorders, tDefaultDisorders);
 
   function statusLabel(status: string) {
     if (status === "active") return t("status.active");
