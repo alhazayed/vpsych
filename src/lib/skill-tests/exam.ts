@@ -12,6 +12,13 @@
  *   - the session screen receives a patient stripped of prompts and labels.
  * The server opens the sealed values (see ./seal.ts) to run the Patient Agent
  * and the assessment exactly as before.
+ *
+ * A training ladder level is sealed the same way, with less hidden: the
+ * program already shows the patient, the primary presentation and the level,
+ * so the row keeps those in `clinical_snapshot` and seals the rest (the
+ * level's comorbidities, risk, history and formulation) into `sealed_case`,
+ * bound to the session id. Unlike a test it keeps its case_instances row,
+ * which the patient's in-session memory is keyed on.
  */
 
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
@@ -90,36 +97,93 @@ export function traineeVisibleSnapshot(opts: {
   } as unknown as CaseInstanceSnapshot;
 }
 
+/** Seal a training ladder level's full case, bound to its session. */
+export function sealLadderCase(
+  sessionId: string,
+  snapshot: CaseInstanceSnapshot,
+): string | null {
+  return sealSkillTestValue("ladder", sessionId, snapshot);
+}
+
+export function openLadderCase(
+  sessionId: string,
+  sealed: string | null | undefined,
+): CaseInstanceSnapshot | null {
+  const snap = openSkillTestValue<CaseInstanceSnapshot>(
+    "ladder",
+    sessionId,
+    sealed,
+  );
+  if (!snap || typeof snap !== "object" || !snap.primary_diagnosis) return null;
+  return snap;
+}
+
+/**
+ * What a ladder session row stores in `clinical_snapshot`: only what the
+ * program already shows the trainee (primary presentation and level), plus a
+ * marker so a reader that skipped `sealed_case` fails instead of running the
+ * patient without the case.
+ */
+export function ladderVisibleSnapshot(
+  snapshot: CaseInstanceSnapshot,
+): CaseInstanceSnapshot {
+  return {
+    locale: snapshot.locale,
+    primary_diagnosis: snapshot.primary_diagnosis,
+    difficulty: snapshot.difficulty,
+    case_sealed: true,
+  } as unknown as CaseInstanceSnapshot;
+}
+
 type SessionWithCase = {
+  id?: string | null;
   skill_test_assignment_id?: string | null;
   sealed_case?: string | null;
   clinical_snapshot?: CaseInstanceSnapshot | null;
 };
 
+function hasSealedMarker(snapshot: CaseInstanceSnapshot | null | undefined) {
+  return (snapshot as { case_sealed?: unknown } | null | undefined)?.case_sealed === true;
+}
+
+/** True when the session row keeps its case sealed: a skill test or a ladder level. */
+export function isCaseSealed(session: SessionWithCase): boolean {
+  return Boolean(
+    session.skill_test_assignment_id ||
+      session.sealed_case ||
+      hasSealedMarker(session.clinical_snapshot),
+  );
+}
+
+/** The full case of a sealed session (skill test or ladder level), or null. */
+export function openSealedCase(
+  session: Omit<SessionWithCase, "clinical_snapshot">,
+): CaseInstanceSnapshot | null {
+  if (session.skill_test_assignment_id) {
+    return openSkillTestCase(session.skill_test_assignment_id, session.sealed_case);
+  }
+  if (session.id && session.sealed_case) {
+    return openLadderCase(session.id, session.sealed_case);
+  }
+  return null;
+}
+
 /**
  * Server-side view of a session with the full case. Practice sessions pass
- * through unchanged. A test session whose sealed case cannot be opened is an
- * error, never a silent run without the case.
+ * through unchanged. A skill test or ladder session whose sealed case cannot
+ * be opened is an error, never a silent run without the case.
  */
 export function withSkillTestCase<T extends SessionWithCase>(
   session: T,
 ): { ok: true; session: T } | { ok: false } {
-  if (!session.skill_test_assignment_id) return { ok: true, session };
-  const full = openSkillTestCase(
-    session.skill_test_assignment_id,
-    session.sealed_case,
-  );
+  if (!isCaseSealed(session)) return { ok: true, session };
+  const full = openSealedCase(session);
   if (!full) return { ok: false };
-  return {
-    ok: true,
-    session: {
-      ...session,
-      clinical_snapshot: {
-        ...full,
-        therapy_course: session.clinical_snapshot?.therapy_course ?? null,
-      },
-    },
-  };
+  // A test row keeps its visit context in the clear; a ladder level has none.
+  const clinical_snapshot = session.skill_test_assignment_id
+    ? { ...full, therapy_course: session.clinical_snapshot?.therapy_course ?? null }
+    : full;
+  return { ok: true, session: { ...session, clinical_snapshot } };
 }
 
 /** Voice pace and energy for the patient, without naming the disorder. */
@@ -131,8 +195,8 @@ export function examSpeechHint(snapshot: CaseInstanceSnapshot | null | undefined
 }
 
 /**
- * The patient as the trainee's browser sees it during a test: name, portrait,
- * language and voice. Prompts, rubric, clinical core, disorder label and
+ * The patient as the trainee's browser sees it during a test or ladder level:
+ * name, portrait, language and voice. Prompts, rubric, clinical core, disorder label and
  * locale case notes stay on the server.
  */
 export function traineeSafeAvatar(avatar: ResolvedAvatar): ResolvedAvatar {
@@ -166,7 +230,7 @@ export function traineeSafeAvatar(avatar: ResolvedAvatar): ResolvedAvatar {
   };
 }
 
-/** The test session row as the trainee's browser sees it. */
+/** A sealed session row as the trainee's browser sees it. */
 export function traineeSafeSession<T extends SessionWithCase>(session: T): T {
   return { ...session, sealed_case: null };
 }

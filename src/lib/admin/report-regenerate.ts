@@ -121,10 +121,11 @@ async function loadAndAssess(
   if (!session || !(session as { avatars?: unknown }).avatars) {
     return fail(404, "session_not_found", "Session not found");
   }
-  // A skill test session keeps its case sealed; open it for the assessment.
+  // A skill test or ladder session keeps its case sealed; open it for the
+  // assessment.
   const opened = withSkillTestCase(session as TherapySession & { avatars: Avatar });
   if (!opened.ok) {
-    return fail(500, "db_error", "Could not open the test case");
+    return fail(500, "db_error", "Could not open the sealed case");
   }
   const typed = opened.session;
   if (typed.status === "active") {

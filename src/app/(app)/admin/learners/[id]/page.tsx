@@ -267,6 +267,12 @@ export default async function AdminLearnerDetailPage({
             >
               {t("viewSessions")}
             </Link>
+            <Link
+              href={`/admin/training/${profile.id}`}
+              className="btn-secondary"
+            >
+              {t("viewTraining")}
+            </Link>
           </div>
         }
       />

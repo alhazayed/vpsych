@@ -104,11 +104,12 @@ export default async function AdminSessionDetailPage({
 
   if (!session) notFound();
 
-  // Skill test sessions keep the case sealed in the row; open it for admins.
+  // Skill test and ladder sessions keep the case sealed in the row; open it
+  // for admins.
   const openedCase = withSkillTestCase(
     session as unknown as Pick<
       TherapySession,
-      "skill_test_assignment_id" | "sealed_case" | "clinical_snapshot"
+      "id" | "skill_test_assignment_id" | "sealed_case" | "clinical_snapshot"
     >,
   );
   const clinicalSnapshot = openedCase.ok

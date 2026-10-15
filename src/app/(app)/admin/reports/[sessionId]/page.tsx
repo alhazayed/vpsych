@@ -23,7 +23,7 @@ import {
   reportAssessmentMode,
   type AllianceRating,
 } from "@/lib/session-practice";
-import { openSkillTestCase } from "@/lib/skill-tests";
+import { openSealedCase } from "@/lib/skill-tests";
 import type {
   ClinicalCore,
   CourseSelfReport,
@@ -73,6 +73,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
   });
 
   const session = report.sessions as unknown as {
+    id: string;
     started_at: string;
     ended_at: string | null;
     case_instance_id: string | null;
@@ -95,10 +96,9 @@ export default async function AdminReportDetailPage({ params }: Props) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
-  // Skill test sessions keep the case sealed in the row; open it for admins.
-  const testCase = session?.skill_test_assignment_id
-    ? openSkillTestCase(session.skill_test_assignment_id, session.sealed_case)
-    : null;
+  // Skill test and ladder sessions keep the case sealed in the row; open it
+  // for admins.
+  const testCase = session ? openSealedCase(session) : null;
   const core =
     testCase?.clinical_core ?? session?.clinical_snapshot?.clinical_core ?? null;
   // The session's own case (opened for skill tests), not the avatar's default.

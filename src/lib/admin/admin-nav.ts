@@ -46,8 +46,9 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionDef[] = [
         href: "/admin/learners",
         labelKey: "learners",
         icon: "group",
-        keywords: ["learners", "students", "trainees", "directory"],
-        match: (p) => p.startsWith("/admin/learners"),
+        // Each trainee's Training Program ladder opens from the learners.
+        keywords: ["learners", "students", "trainees", "directory", "training", "ladder"],
+        match: (p) => p.startsWith("/admin/learners") || p.startsWith("/admin/training"),
       },
       {
         // Every new sign-up waits here, so it needs a permanent entry point.

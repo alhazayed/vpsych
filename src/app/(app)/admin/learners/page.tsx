@@ -176,6 +176,11 @@ export default async function AdminLearnersPage({
           { label: tHome("title"), href: "/admin" },
           { label: t("title") },
         ]}
+        actions={
+          <Link href="/admin/training" className="btn-secondary">
+            {t("trainingLink")}
+          </Link>
+        }
       />
 
       <section className="grid gap-4 sm:grid-cols-2">

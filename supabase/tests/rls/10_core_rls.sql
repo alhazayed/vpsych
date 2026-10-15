@@ -227,6 +227,46 @@ select pg_temp.expect_error('anon cannot read sessions', null,
 select pg_temp.expect_error('anon cannot read reports', null,
   'select count(*) from public.session_reports', '%permission denied%');
 
+-- ── training ladder: a sealed level's case ─────────────────────────────────
+-- A's session a1 uses case c1 in the clear. A's ladder session a3 keeps its
+-- case (c2) sealed in the row, so A may not read c2's case_instances row, but
+-- the patient's memory for c2 keeps working.
+insert into public.case_instances (id, assessment_id, avatar_id, primary_disorder_id, clinical_snapshot, created_by)
+  select v.id, v.assessment_id, a.id, d.id, '{}'::jsonb, 'aaaaaaaa-0000-4000-8000-000000000001'
+  from (values ('c1000000-0000-4000-8000-000000000000'::uuid, 'RLS-CASE-1'),
+               ('c2000000-0000-4000-8000-000000000000'::uuid, 'RLS-CASE-2')) v (id, assessment_id),
+       (select id from public.avatars order by id limit 1) a,
+       (select id from public.disorders order by id limit 1) d;
+insert into public.case_memory (case_instance_id) values
+  ('c1000000-0000-4000-8000-000000000000'), ('c2000000-0000-4000-8000-000000000000');
+update public.sessions set case_instance_id = 'c1000000-0000-4000-8000-000000000000'
+  where id = 'a1000000-0000-4000-8000-000000000000';
+insert into public.sessions (id, therapist_id, avatar_id, case_instance_id, sealed_case)
+  select 'a3000000-0000-4000-8000-000000000000', 'aaaaaaaa-0000-4000-8000-000000000001', id,
+         'c2000000-0000-4000-8000-000000000000', 'v1.r.sealed'
+  from public.avatars order by id limit 1;
+
+select pg_temp.expect_count('trainee reads the case of an ordinary session',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select count(*) from public.case_instances where id = 'c1000000-0000-4000-8000-000000000000'$q$, 1);
+select pg_temp.expect_count('trainee cannot read a sealed ladder case',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select count(*) from public.case_instances where id = 'c2000000-0000-4000-8000-000000000000'$q$, 0);
+select pg_temp.expect_count('admin reads a sealed ladder case',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$select count(*) from public.case_instances where id = 'c2000000-0000-4000-8000-000000000000'$q$, 1);
+select pg_temp.expect_count('trainee keeps the patient memory of a sealed case',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$with u as (update public.case_memory set memory = '{"turns": []}'::jsonb
+     where case_instance_id = 'c2000000-0000-4000-8000-000000000000' returning 1) select count(*) from u$q$, 1);
+select pg_temp.expect_count('trainee cannot read another trainee''s case memory',
+  'bbbbbbbb-0000-4000-8000-000000000002', 'select count(*) from public.case_memory', 0);
+select pg_temp.expect_error('trainee cannot unseal a ladder session',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$update public.sessions set sealed_case = null
+     where id = 'a3000000-0000-4000-8000-000000000000'$q$,
+  '%Cannot change skill test link%');
+
 -- ── message writes ─────────────────────────────────────────────────────────
 select pg_temp.expect_ok('trainee can add a therapist message to own active session',
   'aaaaaaaa-0000-4000-8000-000000000001',
@@ -358,7 +398,7 @@ select set_config('vpsych.test_aal', 'aal2', true);
 select pg_temp.expect_count('admin with two-step can read learner profiles',
   'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.learner_profiles', 1);
 select pg_temp.expect_count('admin with two-step can read trainee sessions',
-  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.sessions', 3);
+  'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.sessions', 4);
 select pg_temp.expect_ok('admin with two-step can list account approvals',
   'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.list_account_approvals()');
 

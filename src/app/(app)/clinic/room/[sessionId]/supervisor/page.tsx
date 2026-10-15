@@ -9,6 +9,7 @@ import {
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { getLocale, getTranslations } from "next-intl/server";
 import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
+import { isCaseSealed } from "@/lib/skill-tests";
 import { SupervisorOffice } from "@/components/therapy-room/SupervisorOffice";
 
 type Props = { params: Promise<{ sessionId: string }> };
@@ -21,7 +22,7 @@ export default async function ClinicSupervisorPage({ params }: Props) {
   const { data: session } = await supabase
     .from("sessions")
     .select(
-      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, avatars(name, disorder)",
+      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, sealed_case, avatars(name, disorder)",
     )
     .eq("id", sessionId)
     .maybeSingle();
@@ -29,9 +30,9 @@ export default async function ClinicSupervisorPage({ params }: Props) {
   if (!session || session.therapist_id !== user.id) {
     redirect("/clinic");
   }
-  // A skill test's results are for the supervisor; the trainee gets the
-  // exam's own completion page.
-  if (session.skill_test_assignment_id) {
+  // A sealed case (skill test or ladder level) stays sealed after the
+  // session too; the trainee gets the session's own completion page.
+  if (isCaseSealed(session)) {
     redirect(`/sessions/${sessionId}/complete`);
   }
 

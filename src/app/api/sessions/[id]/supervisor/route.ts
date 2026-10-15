@@ -10,6 +10,7 @@ import {
 import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import { getLocale, getTranslations } from "next-intl/server";
 import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
+import { isCaseSealed } from "@/lib/skill-tests";
 import type { TherapySession } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
@@ -44,7 +45,7 @@ export async function GET(_request: Request, { params }: Props) {
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
     .select(
-      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, avatars(name, disorder)",
+      "id, therapist_id, clinical_snapshot, skill_test_assignment_id, sealed_case, avatars(name, disorder)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -61,11 +62,12 @@ export async function GET(_request: Request, { params }: Props) {
   }
 
   // Skill test results (and the case) are for the assigning supervisor and
-  // admins only, so the trainee gets no coaching view of a test session.
+  // admins only, so the trainee gets no coaching view of a test session. A
+  // ladder level's case stays sealed after the session too.
   if (
     !session ||
     session.therapist_id !== user.id ||
-    session.skill_test_assignment_id
+    isCaseSealed(session)
   ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
