@@ -136,6 +136,9 @@ export default async function AdminDiagnosticsPage() {
             <li key={l.href}>
               <Link
                 href={l.href}
+                // API links return JSON; prefetching them would run the live
+                // OpenAI health check (and spend its rate budget) on every visit.
+                prefetch={l.href.startsWith("/api/") ? false : undefined}
                 className="text-sm font-medium text-[var(--primary)] hover:underline"
               >
                 {l.label}
