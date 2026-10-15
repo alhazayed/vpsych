@@ -35,7 +35,7 @@ export function fakeSupabase(
     owner?: string;
     snapshot?: Record<string, unknown> | null;
     /** Earlier transcript rows already in the session. */
-    history?: Array<{ role: string; content: string }>;
+    history?: Array<{ role: string; content: string; heard_chars?: number | null }>;
     /** Extra session columns (e.g. a skill test's assignment and sealed case). */
     sessionExtra?: Record<string, unknown>;
   } = {},
@@ -73,7 +73,10 @@ export function fakeSupabase(
         return { data: row, error: null };
       }
       if (table === "session_messages" && op === "select") {
-        return { data: messages.map((m) => ({ role: m.role, content: m.content })), error: null };
+        return {
+          data: messages.map((m) => ({ role: m.role, content: m.content, heard_chars: m.heard_chars ?? null })),
+          error: null,
+        };
       }
       return { data: null, error: null };
     };

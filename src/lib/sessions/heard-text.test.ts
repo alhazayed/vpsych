@@ -4,6 +4,7 @@ import {
   heardCharsFromFraction,
   loadAssessmentMessages,
   playbackFraction,
+  spokenConversation,
   withHeardText,
 } from "./heard-text";
 
@@ -119,5 +120,25 @@ describe("loadAssessmentMessages", () => {
     const out = await loadAssessmentMessages(c, "s1");
     expect(out).toEqual({ data: rows, error: null });
     expect(selects[1]).toBe("role, content, created_at");
+  });
+});
+
+describe("spokenConversation", () => {
+  it("leaves out only replies the therapist never heard", () => {
+    const rows = [
+      { role: "user" as const, content: "q1" },
+      { role: "assistant" as const, content: "never said", heard_chars: 0 },
+      { role: "user" as const, content: "q2" },
+      { role: "assistant" as const, content: "cut short", heard_chars: 4 },
+      { role: "assistant" as const, content: "fully heard", heard_chars: null },
+      { role: "assistant" as const, content: "legacy row" },
+    ];
+    expect(spokenConversation(rows).map((m) => m.content)).toEqual([
+      "q1",
+      "q2",
+      "cut short",
+      "fully heard",
+      "legacy row",
+    ]);
   });
 });

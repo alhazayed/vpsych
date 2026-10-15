@@ -352,3 +352,66 @@ describe("two-stage endpointing — FSM", () => {
     expect(serialized).not.toMatch(/transcript|content|text/i);
   });
 });
+
+describe("floor control — FSM", () => {
+  it("the patient yields: WAITING_GPT → LISTENING and the yielded turn goes stale", () => {
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    fsm.dispatch("SPEECH_END");
+    fsm.dispatch("STT_OK");
+    const gen = fsm.getGeneration();
+    expect(fsm.getState()).toBe("WAITING_GPT");
+    expect(fsm.dispatch("THERAPIST_RESUMED").ok).toBe(true);
+    expect(fsm.getState()).toBe("LISTENING");
+    expect(micAllowed(fsm.getState())).toBe(true);
+    // The yielded reply must never reach AVATAR_SPEAKING through GPT_OK.
+    expect(fsm.isCurrent(gen)).toBe(false);
+    expect(fsm.dispatch("GPT_OK").ok).toBe(false);
+  });
+
+  it("a held reply plays only from LISTENING, under a new generation", () => {
+    const fsm = createConversationFsm();
+    fsm.dispatch("START");
+    const gen = fsm.getGeneration();
+    expect(fsm.dispatch("HELD_REPLY").ok).toBe(true);
+    expect(fsm.getState()).toBe("AVATAR_SPEAKING");
+    expect(fsm.isCurrent(gen)).toBe(false);
+    // Barge-in still works on a held reply.
+    expect(fsm.dispatch("BARGE_IN").ok).toBe(true);
+    expect(fsm.getState()).toBe("LISTENING");
+  });
+
+  it("floor control cannot fire outside its window", () => {
+    for (const from of [
+      "IDLE",
+      "LISTENING",
+      "ENDPOINT_PENDING",
+      "PROCESSING_STT",
+      "AVATAR_SPEAKING",
+      "PAUSED",
+      "ERROR",
+    ] as const) {
+      expect(canTransition(from, "THERAPIST_RESUMED")).toBe(false);
+    }
+    for (const from of [
+      "IDLE",
+      "ENDPOINT_PENDING",
+      "PROCESSING_STT",
+      "WAITING_GPT",
+      "AVATAR_SPEAKING",
+      "PAUSED",
+      "ERROR",
+    ] as const) {
+      expect(canTransition(from, "HELD_REPLY")).toBe(false);
+    }
+  });
+
+  it("floor telemetry is counters and codes only", () => {
+    const tel = createConversationTelemetry();
+    tel.record("floor_yield");
+    tel.record("held_reply_played");
+    tel.record("held_reply_dropped", { code: "superseded" });
+    const serialized = JSON.stringify(tel.summarize());
+    expect(serialized).not.toMatch(/transcript|content|text/i);
+  });
+});

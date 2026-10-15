@@ -37,7 +37,14 @@ export type ConversationEvent =
   /** Silence after speech: possible end of thought (stage 1). */
   | "PAUSE_DETECTED"
   /** Therapist kept talking during ENDPOINT_PENDING. */
-  | "SPEECH_RESUMED";
+  | "SPEECH_RESUMED"
+  /**
+   * Floor control: the therapist started speaking again while the patient
+   * reply was still being generated, so the patient yields (no overlap).
+   */
+  | "THERAPIST_RESUMED"
+  /** Voice a reply that was held while the therapist had the floor. */
+  | "HELD_REPLY";
 
 /** Human-readable status keys — map to therapyRoom.status.* i18n. */
 export type ConversationStatusKey =
@@ -62,6 +69,7 @@ const TRANSITIONS: Record<
   LISTENING: {
     SPEECH_END: "PROCESSING_STT",
     PAUSE_DETECTED: "ENDPOINT_PENDING",
+    HELD_REPLY: "AVATAR_SPEAKING",
     PAUSE: "PAUSED",
     ERROR: "ERROR",
     END: "IDLE",
@@ -85,6 +93,7 @@ const TRANSITIONS: Record<
   },
   WAITING_GPT: {
     GPT_OK: "AVATAR_SPEAKING",
+    THERAPIST_RESUMED: "LISTENING",
     GPT_FAIL: "ERROR",
     ERROR: "ERROR",
     PAUSE: "PAUSED",
@@ -224,6 +233,8 @@ export function createConversationFsm(
           event === "RESUME" ||
           event === "RETRY" ||
           event === "BARGE_IN" ||
+          event === "THERAPIST_RESUMED" ||
+          event === "HELD_REPLY" ||
           event === "END" ||
           event === "PAUSE"
         ) {

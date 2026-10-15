@@ -29,6 +29,10 @@ import {
   createConversationTelemetry,
   createImmersionTracker,
   DEFAULT_THERAPY_ROOM_THEME,
+  FLOOR_TAKE_MIN_SPEECH_MS,
+  floorControlEnabled,
+  floorReplyAction,
+  heldReplyPlayable,
   HANDS_FREE_PERF_BUDGETS,
   remainingThinkingMs,
   shouldPatientInterruptTherapist,
@@ -45,6 +49,7 @@ import {
   type ConversationTelemetry,
   type ImmersionTracker,
   type PatientBehaviorState,
+  type PendingFloorTake,
   type TherapyRoomSettings,
   type VadController,
 } from "@/lib/therapy-room";
@@ -82,6 +87,7 @@ import { ENDPOINT_TIMING } from "@/lib/voice/endpointing";
 import {
   heardCharsFromFraction,
   playbackFraction,
+  spokenConversation,
   type PlaybackProgress,
 } from "@/lib/sessions/heard-text";
 import {
@@ -116,6 +122,9 @@ import type {
  * Interrupt control works either way.
  */
 const BARGE_IN_ENABLED = process.env.NEXT_PUBLIC_VOICE_BARGE_IN !== "false";
+
+/** A patient reply as saved server-side. */
+type SavedReply = { messageId: string; text: string };
 
 /**
  * Stream the patient's reply (/message/stream): the first sentence the server
@@ -264,7 +273,10 @@ export function TherapyRoomSession({
     ],
   );
 
-  const [messages, setMessages] = useState(initialMessages);
+  // A reply the therapist never heard (the patient yielded) was never said.
+  const [messages, setMessages] = useState(() =>
+    spokenConversation(initialMessages),
+  );
   /** Minutes-left mark last announced (5, then 1); the session ends at 0. */
   const lastTimeWarningRef = useRef<number | null>(null);
   const [timeWarning, setTimeWarning] = useState<number | null>(null);
@@ -335,6 +347,18 @@ export function TherapyRoomSession({
   const endpointRef = useRef<EndpointController | null>(null);
   /** Open mic + captured onset from a voice barge-in, for the next listen. */
   const bargeInHandoffRef = useRef<BargeInHandoff | null>(null);
+  /**
+   * Floor control: the mic watched while the reply is generating, the
+   * floor-take whose reply is still owed, and that reply once saved (voiced
+   * only if the therapist's floor-take turned out empty).
+   */
+  const floorStopRef = useRef<(() => void) | null>(null);
+  const floorTakeRef = useRef<PendingFloorTake | null>(null);
+  const heldReplyRef = useRef<{ reply: SavedReply; heldAt: number } | null>(
+    null,
+  );
+  /** Settles once an unvoiced reply is recorded as unheard. */
+  const unheardPendingRef = useRef<Promise<unknown> | null>(null);
   /**
    * Latency of the current turn, for the diagnostics panel: the silence the
    * endpoint waited, when the turn was committed, and when TTS was requested.
@@ -412,15 +436,22 @@ export function TherapyRoomSession({
     notesRef.current = notes;
   }, [notes]);
 
+  const stopFloorMonitor = useCallback(() => {
+    floorStopRef.current?.();
+    floorStopRef.current = null;
+  }, []);
+
   const dispatch = useCallback(
     (event: Parameters<ConversationFsm["dispatch"]>[0]) => {
       const result = fsmRef.current.dispatch(event);
       if (result.ok) {
+        // The floor-control mic is open only while the reply is generating.
+        if (result.to !== "WAITING_GPT") stopFloorMonitor();
         syncUiRef.current();
       }
       return result;
     },
-    [],
+    [stopFloorMonitor],
   );
 
   const setPresence = useCallback(
@@ -552,6 +583,21 @@ export function TherapyRoomSession({
     setEnding(true);
     dispatch("END");
     setStatusKey("ending");
+    // A reply held during a floor-take was never voiced.
+    const held = heldReplyRef.current;
+    heldReplyRef.current = null;
+    floorTakeRef.current = null;
+    if (held) {
+      telemetryRef.current.record("held_reply_dropped", { code: "ended" });
+    }
+    // Recorded before /end so assessment sees it.
+    const heldUnheard = held
+      ? reportHeardPortion({
+          sessionId: session.id,
+          messageId: held.reply.messageId,
+          heardChars: 0,
+        })
+      : null;
     vadRef.current?.cancel();
     vadRef.current = null;
     endpointRef.current?.cancel();
@@ -568,6 +614,7 @@ export function TherapyRoomSession({
     telemetryRef.current.record("session_end");
     const immersion = immersionRef.current.finalize();
     await persistSessionMeta(immersion);
+    await heldUnheard;
     try {
       const res = await fetch(`/api/sessions/${session.id}/end`, {
         method: "POST",
@@ -1043,6 +1090,183 @@ export function TherapyRoomSession({
     [],
   );
 
+  /**
+   * Floor control: a reply the therapist never heard (they took the floor
+   * and then said something real, or it went stale). Recorded as heard_chars
+   * 0 so assessment does not judge words that were never spoken aloud.
+   */
+  const markReplyUnheard = useCallback(
+    (reply: SavedReply, code: "superseded" | "stale") => {
+      telemetryRef.current.record("held_reply_dropped", { code });
+      voiceLog("TURN", "held_reply_dropped", { code });
+      // Never said, so it leaves the room transcript too.
+      setMessages((prev) => prev.filter((m) => String(m.id) !== reply.messageId));
+      // The next turn waits for this, so the patient answers the earlier
+      // question together with the new words.
+      unheardPendingRef.current = reportHeardPortion({
+        sessionId: session.id,
+        messageId: reply.messageId,
+        heardChars: 0,
+      }).then((ok) => {
+        if (!ok) voiceLog("TURN", "held_reply_unheard_not_recorded", {});
+      });
+    },
+    [session.id],
+  );
+
+  /** Voice the held reply. False when there is none or it is too old. */
+  const playHeldReply = useCallback((): boolean => {
+    const held = heldReplyRef.current;
+    heldReplyRef.current = null;
+    if (!held || endingRef.current) return false;
+    if (!heldReplyPlayable({ heldAt: held.heldAt, now: performance.now() })) {
+      markReplyUnheard(held.reply, "stale");
+      return false;
+    }
+    if (!dispatch("HELD_REPLY").ok) {
+      heldReplyRef.current = held;
+      return false;
+    }
+    telemetryRef.current.record("held_reply_played");
+    voiceLog("TURN", "held_reply_played", {});
+    setLastPatientText(held.reply.text);
+    const generation = fsmRef.current.getGeneration();
+    void speakPatient(
+      { kind: "text", text: held.reply.text, messageId: held.reply.messageId },
+      generation,
+    ).then(() => {
+      if (
+        fsmRef.current.isCurrent(generation) &&
+        !endingRef.current &&
+        fsmRef.current.getState() === "LISTENING"
+      ) {
+        listenLoopRef.current();
+      }
+    });
+    return true;
+  }, [dispatch, markReplyUnheard, speakPatient]);
+
+  /**
+   * A capture produced no usable speech. If it was a floor-take, the patient
+   * answers after all (held reply), otherwise keep listening.
+   */
+  const resumeAfterEmptyCapture = useCallback(() => {
+    if (floorTakeRef.current) floorTakeRef.current.captureEnded = true;
+    if (playHeldReply()) return;
+    listenLoopRef.current();
+  }, [playHeldReply]);
+
+  /** The reply of a turn the patient yielded has been saved (or failed). */
+  const onFloorTakeReply = useCallback(
+    (reply: SavedReply | null, generation: number) => {
+      const pending = floorTakeRef.current;
+      if (!reply) {
+        if (pending?.generation === generation) floorTakeRef.current = null;
+        return;
+      }
+      if (endingRef.current) return;
+      const action = floorReplyAction({
+        pending,
+        replyGeneration: generation,
+        state: fsmRef.current.getState(),
+        openCaptureSpeechMs: vadRef.current ? vadRef.current.speechMs() : null,
+      });
+      if (action === "unheard") {
+        markReplyUnheard(reply, "superseded");
+        return;
+      }
+      floorTakeRef.current = null;
+      heldReplyRef.current = { reply, heldAt: performance.now() };
+      if (action === "play") {
+        // The therapist is waiting in silence: close the empty capture.
+        vadRef.current?.cancel();
+        vadRef.current = null;
+        endpointRef.current?.cancel();
+        endpointRef.current = null;
+        playHeldReply();
+      }
+    },
+    [markReplyUnheard, playHeldReply],
+  );
+
+  /**
+   * Watch the mic while the reply is generating. If the therapist starts
+   * speaking again, the patient yields instead of answering over them: the
+   * room goes back to listening with the captured onset, and the reply (still
+   * saved) is held. Follows the "Interrupt the patient by speaking" setting.
+   */
+  const startFloorMonitor = useCallback(
+    (generation: number, reply: Promise<SavedReply | null>, onYield?: () => void) => {
+      if (
+        !floorControlEnabled({
+          bargeInEnabled: BARGE_IN_ENABLED,
+          bargeInByVoice: bargeInByVoiceRef.current,
+        }) ||
+        endingRef.current ||
+        !fsmRef.current.isCurrent(generation) ||
+        fsmRef.current.getState() !== "WAITING_GPT"
+      ) {
+        return;
+      }
+      stopFloorMonitor();
+      let disposed = false;
+      let stopMic: (() => void) | null = null;
+      const stop = () => {
+        disposed = true;
+        stopMic?.();
+        stopMic = null;
+      };
+      floorStopRef.current = stop;
+      void startBargeInMonitor({
+        minSpeechMs: FLOOR_TAKE_MIN_SPEECH_MS,
+        onBargeIn: (handoff) => {
+          if (
+            disposed ||
+            endingRef.current ||
+            !fsmRef.current.isCurrent(generation) ||
+            fsmRef.current.getState() !== "WAITING_GPT"
+          ) {
+            handoff.release();
+            return;
+          }
+          // The mic now belongs to the handoff.
+          disposed = true;
+          stopMic = null;
+          if (floorStopRef.current === stop) floorStopRef.current = null;
+          if (!dispatch("THERAPIST_RESUMED").ok) {
+            handoff.release();
+            return;
+          }
+          floorTakeRef.current = { generation, captureEnded: false };
+          onYield?.();
+          telemetryRef.current.record("floor_yield");
+          voiceLog("TURN", "floor_yield", { speech_ms: Math.round(handoff.speechMs) });
+          setVoiceDiag((d) =>
+            markVoiceStage(d, "audio", "skipped", { audio_mode: "floor_yield" }),
+          );
+          setTherapistPending(false);
+          bargeInHandoffRef.current?.release();
+          bargeInHandoffRef.current = handoff;
+          setPresence("listening", "floor");
+          setStatusKey("listening");
+          void reply.then(
+            (saved) => onFloorTakeReply(saved, generation),
+            () => onFloorTakeReply(null, generation),
+          );
+          listenLoopRef.current();
+        },
+      })
+        .then((stopFn) => {
+          if (disposed) stopFn();
+          else stopMic = stopFn;
+        })
+        .catch(() => {
+          if (floorStopRef.current === stop) floorStopRef.current = null;
+        });
+    },
+    [dispatch, onFloorTakeReply, setPresence, stopFloorMonitor],
+  );
+
   const processTherapistAudio = useCallback(
     async (
       wav: Blob,
@@ -1099,7 +1323,9 @@ export function TherapyRoomSession({
         `think-${turnIndexRef.current}`,
       );
 
-      turnAbortRef.current?.abort();
+      // A pending floor-take keeps the yielded request alive so its reply can
+      // be saved and held.
+      if (!floorTakeRef.current) turnAbortRef.current?.abort();
       const abort = new AbortController();
       turnAbortRef.current = abort;
 
@@ -1168,7 +1394,7 @@ export function TherapyRoomSession({
           );
           dispatch("STT_EMPTY");
           setPresence("listening", "retry");
-          listenLoopRef.current();
+          resumeAfterEmptyCapture();
           return;
         }
         setVoiceDiag((d) =>
@@ -1205,11 +1431,18 @@ export function TherapyRoomSession({
         );
         dispatch("STT_EMPTY");
         setPresence("listening", "empty");
-        listenLoopRef.current();
+        resumeAfterEmptyCapture();
         return;
       }
 
       if (!dispatch("STT_OK").ok) return;
+
+      // A real new therapist turn supersedes a reply held during a floor-take
+      // (and one still on its way): it was never voiced.
+      floorTakeRef.current = null;
+      const superseded = heldReplyRef.current;
+      heldReplyRef.current = null;
+      if (superseded) markReplyUnheard(superseded.reply, "superseded");
 
       // The therapist's words are visible the moment STT returns — before the
       // message API, and independent of TTS / playback.
@@ -1248,6 +1481,15 @@ export function TherapyRoomSession({
       // the transcript and the patient engines keep strict turn order.
       if (streamInFlightRef.current) {
         await streamInFlightRef.current;
+        if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      }
+      // A yielded reply that just arrived is marked unheard (same tick as the
+      // save) before this turn is sent, so the patient answers both parts.
+      await Promise.resolve();
+      const unheard = unheardPendingRef.current;
+      unheardPendingRef.current = null;
+      if (unheard) {
+        await unheard;
         if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
       }
 
@@ -1332,6 +1574,7 @@ export function TherapyRoomSession({
             return { messageId: String(reply.id), text: reply.content };
           });
           streamInFlightRef.current = saved.then(() => undefined);
+          startFloorMonitor(generation, saved);
 
           const first = await Promise.race([
             firstSentence,
@@ -1433,16 +1676,36 @@ export function TherapyRoomSession({
         }
       }
 
+      const submitted = submitConversationTurn({
+        sessionId: session.id,
+        message: transcript,
+        signal: abort.signal,
+      });
+      // The next turn waits for this one to be saved (strict turn order).
+      streamInFlightRef.current = submitted.then(
+        () => undefined,
+        () => undefined,
+      );
+      let yielded = false;
+      startFloorMonitor(
+        generation,
+        submitted.then(
+          (r): SavedReply | null =>
+            r.ok
+              ? {
+                  messageId: String(r.data.assistantMessage.id),
+                  text: r.data.assistantMessage.content,
+                }
+              : null,
+          () => null,
+        ),
+        () => {
+          yielded = true;
+        },
+      );
       let turn;
       try {
-        const [, result] = await Promise.all([
-          thinkPromise,
-          submitConversationTurn({
-            sessionId: session.id,
-            message: transcript,
-            signal: abort.signal,
-          }),
-        ]);
+        const [, result] = await Promise.all([thinkPromise, submitted]);
         turn = result;
       } catch {
         if (abort.signal.aborted) return;
@@ -1459,7 +1722,13 @@ export function TherapyRoomSession({
         return;
       }
 
-      if (!fsmRef.current.isCurrent(generation) || endingRef.current) return;
+      if (!fsmRef.current.isCurrent(generation) || endingRef.current) {
+        // The patient yielded: the saved turn still joins the transcript.
+        if (yielded && turn.ok) {
+          appendTurnMessages(turn.data.userMessage, turn.data.assistantMessage);
+        }
+        return;
+      }
 
       const messageMs = telemetryRef.current.elapsed(gptStarted);
       telemetryRef.current.record("gpt_latency_ms", { valueMs: messageMs });
@@ -1536,10 +1805,13 @@ export function TherapyRoomSession({
       dispatch,
       endSession,
       locale,
+      markReplyUnheard,
+      resumeAfterEmptyCapture,
       session.id,
       session.language,
       setPresence,
       speakPatient,
+      startFloorMonitor,
       ttsVoice,
     ],
   );
@@ -1761,9 +2033,9 @@ export function TherapyRoomSession({
         return;
       }
       if (!wav) {
-        // Empty — keep listening.
+        // Empty — keep listening (or voice a reply held for a floor-take).
         if (after === "ENDPOINT_PENDING") dispatch("SPEECH_RESUMED");
-        listenLoopRef.current();
+        resumeAfterEmptyCapture();
         return;
       }
 
@@ -1843,6 +2115,7 @@ export function TherapyRoomSession({
     disorderSlug,
     locale,
     processTherapistAudio,
+    resumeAfterEmptyCapture,
     session.id,
     session.language,
     setPresence,
@@ -1905,6 +2178,8 @@ export function TherapyRoomSession({
       endingRef.current = true;
       const fsm = fsmRef.current;
       fsm.reset("IDLE");
+      floorStopRef.current?.();
+      floorStopRef.current = null;
       vadRef.current?.cancel();
       vadRef.current = null;
       endpointRef.current?.cancel();
