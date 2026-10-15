@@ -43,8 +43,22 @@ export function sessionDiagnosisText(
 }
 
 function normalize(text: string): string {
-  return text.trim().replace(/\s+/g, " ").toLowerCase();
+  return text
+    .toLowerCase()
+    .replace(/[,;.()/-]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
+
+/**
+ * Stored wordings (avatars.disorder, older case names) that say the same
+ * thing as a catalogue label in different words.
+ */
+const SLUG_ALIASES: Record<string, string> = {
+  "Major Depressive Disorder, recurrent episode, moderate": "mdd-recurrent-moderate",
+  "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult":
+    "adult-adhd",
+};
 
 function keysByText(entries: Record<string, string>): Map<string, string> {
   return new Map(
@@ -52,7 +66,12 @@ function keysByText(entries: Record<string, string>): Map<string, string> {
   );
 }
 
-const SLUG_BY_ENGLISH_NAME = keysByText(enMessages.skillTests.disorders);
+const SLUG_BY_ENGLISH_NAME = new Map([
+  ...keysByText(enMessages.skillTests.disorders),
+  ...Object.entries(SLUG_ALIASES).map(
+    ([text, slug]) => [normalize(text), slug] as const,
+  ),
+]);
 const DEFAULT_KEY_BY_ENGLISH_NAME = keysByText(
   enMessages.avatars.defaultDisorders,
 );

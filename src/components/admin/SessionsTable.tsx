@@ -343,7 +343,12 @@ export function SessionsTable({
                     <td className="hidden px-4 py-3 text-[var(--on-surface-variant)] lg:table-cell">
                       {r.organization ?? labels.unassignedOrg}
                     </td>
-                    <td className="px-4 py-3 text-[var(--on-surface-variant)]">
+                    {/* Server and browser format dates with different ICU data and time
+                        zones; the browser's local time is the one we want. */}
+                    <td
+                      className="px-4 py-3 text-[var(--on-surface-variant)]"
+                      suppressHydrationWarning
+                    >
                       {new Date(r.startedAt).toLocaleString(locale)}
                     </td>
                     <td className="hidden px-4 py-3 text-[var(--on-surface-variant)] md:table-cell">

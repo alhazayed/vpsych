@@ -318,7 +318,10 @@ export function VirtualPatientDetail({
                     className="flex flex-wrap items-center justify-between gap-3 py-2"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--on-surface)]">
+                      <p
+                        className="text-sm font-medium text-[var(--on-surface)]"
+                        suppressHydrationWarning
+                      >
                         {new Date(s.startedAt).toLocaleString(uiLocale)}
                       </p>
                       <p className="truncate font-mono text-[11px] text-[var(--on-surface-variant)]">

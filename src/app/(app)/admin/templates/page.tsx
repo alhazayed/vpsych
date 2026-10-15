@@ -22,10 +22,17 @@ export default async function AdminTemplatesPage() {
     slug: string,
     field: "name" | "description",
     stored: string | null,
+    rowName?: string | null,
   ): string | null {
     const builtin = findTemplateBySlug(slug);
     const key = `catalog.${slug}.${field}`;
-    return builtin && builtin[field] === stored && tPage.has(key)
+    // The seeded description can differ from the code catalogue's wording,
+    // so an un-renamed built-in row counts as untouched for its description.
+    const untouched =
+      builtin &&
+      (builtin[field] === stored ||
+        (field === "description" && builtin.name === rowName));
+    return untouched && tPage.has(key)
       ? tPage(key)
       : stored;
   }
@@ -97,7 +104,7 @@ export default async function AdminTemplatesPage() {
               </p>
               {tpl.description && (
                 <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-                  {catalogText(tpl.slug, "description", tpl.description)}
+                  {catalogText(tpl.slug, "description", tpl.description, tpl.name)}
                 </p>
               )}
             </li>
