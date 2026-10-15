@@ -28,7 +28,14 @@ export type ConversationTelemetryKind =
   /** Speculative STT transcript reused for the message API (code = completeness). */
   | "speculative_stt_reused"
   /** Turn committed → first audible patient sound (ms). */
-  | "first_audio_latency_ms";
+  | "first_audio_latency_ms"
+  /* Floor control: counters only. */
+  /** Patient yielded: the therapist spoke while the reply was generating. */
+  | "floor_yield"
+  /** A held reply was voiced (the therapist's floor-take was empty). */
+  | "held_reply_played"
+  /** A held reply was never voiced (code = superseded | stale | ended). */
+  | "held_reply_dropped";
 
 export type ConversationTelemetryEvent = {
   kind: ConversationTelemetryKind;

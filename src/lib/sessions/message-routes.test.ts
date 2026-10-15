@@ -470,3 +470,67 @@ describe("streamed vs classic turn — identical clinical turn", () => {
     expect(streamed.events[firstSentence]!.payload.text).toBe("A few months, I guess.");
   });
 });
+
+/**
+ * Floor control: when the therapist adds to their question while the patient
+ * is still thinking, the patient yields and its first reply is never spoken
+ * (heard_chars 0). The next reply must answer both parts, so the unspoken
+ * reply is left out of what the patient remembers saying.
+ */
+describe("a reply the therapist never heard is not in the patient's memory", () => {
+  const HISTORY = [
+    { role: "user", content: "How have you been feeling this week?" },
+    { role: "assistant", content: "Honestly, pretty low.", heard_chars: 0 },
+  ];
+  const ADDITION = "And how has your sleep been?";
+
+  function expectBothQuestionsOpen(input: Record<string, unknown>) {
+    const history = input.history as Array<{ role: string; content: string }>;
+    expect(history.some((m) => m.content === "Honestly, pretty low.")).toBe(false);
+    expect(history.at(-2)).toMatchObject({ role: "user", content: HISTORY[0]!.content });
+    expect(history.at(-1)).toMatchObject({ role: "user", content: ADDITION });
+  }
+
+  it("classic /message", async () => {
+    const db = fakeSupabase({ history: HISTORY });
+    state.supabase = db.client;
+    const inputs: Array<Record<string, unknown>> = [];
+    state.detailed.push((i) => (inputs.push(i), { text: "Low, and I barely sleep.", aiSource: "gpt" }));
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    const res = await POST(post("message", { message: ADDITION }), ctx);
+    expect(res.status).toBe(200);
+    expectBothQuestionsOpen(inputs[0]!);
+  });
+
+  it("streamed /message/stream", async () => {
+    vi.stubEnv("FEATURE_REALTIME_SIMULATION", "");
+    vi.stubEnv("FEATURE_REALTIME_STREAMING", "");
+    const db = fakeSupabase({ history: HISTORY });
+    state.supabase = db.client;
+    const inputs: Array<Record<string, unknown>> = [];
+    state.stream = async (input) => {
+      inputs.push(input);
+      return { text: "Low, and I barely sleep.", aiSource: "gpt", model: "gpt-5", interrupted: false };
+    };
+    const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
+    const res = await POST(post("message/stream", { message: ADDITION }), ctx);
+    await readSse(res);
+    expectBothQuestionsOpen(inputs[0]!);
+  });
+
+  it("keeps a partly heard (barge-in) reply as it was", async () => {
+    const db = fakeSupabase({
+      history: [
+        { role: "user", content: "How have you been feeling this week?" },
+        { role: "assistant", content: "Honestly, pretty low.", heard_chars: 9 },
+      ],
+    });
+    state.supabase = db.client;
+    const inputs: Array<Record<string, unknown>> = [];
+    state.detailed.push((i) => (inputs.push(i), { text: "Yeah.", aiSource: "gpt" }));
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    await POST(post("message", { message: ADDITION }), ctx);
+    const history = inputs[0]!.history as Array<{ content: string }>;
+    expect(history.some((m) => m.content === "Honestly, pretty low.")).toBe(true);
+  });
+});
