@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel, localizeOpsText } from "@/lib/admin/ops-text";
 
 type EvidenceValue = {
   label: string;
@@ -54,14 +56,17 @@ type Payload = {
   weekly_report?: { markdown?: string; period_ending?: string };
 };
 
-function fmt(ev?: EvidenceValue): string {
+function fmt(ev: EvidenceValue | undefined, pendingLabel: string): string {
   if (!ev || ev.state === "EVIDENCE_PENDING" || ev.value === null) {
-    return "Evidence Pending";
+    return pendingLabel;
   }
   return `${ev.value}${ev.unit ?? ""}`;
 }
 
 export function Phase16ExecutionPanel() {
+  const t = useTranslations("admin.opsUi");
+  const tText = useTranslations("admin.opsText");
+  const pendingLabel = codeLabel(t, "status", "EVIDENCE_PENDING");
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,12 +78,12 @@ export function Phase16ExecutionPanel() {
         const res = await fetch("/api/admin/ops/phase16");
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load");
+          if (!cancelled) setError(json.error ?? t("loadFailed"));
           return;
         }
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(t("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -86,12 +91,12 @@ export function Phase16ExecutionPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
       <p className="text-sm text-[var(--on-surface-variant)]">
-        Loading Phase 16…
+        {t("loadingPhase", { phase: 16 })}
       </p>
     );
   }
@@ -105,44 +110,62 @@ export function Phase16ExecutionPanel() {
           {data.cert_id} · v{data.package_version}
         </p>
         <h2 className="mt-2 font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Phase 16 — Institutional Pilot Execution & Evidence
+          {t("phase16Title")}
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-[var(--on-surface-variant)]">
-          {data.ownership}
+          {localizeOpsText(tText, data.ownership)}
         </p>
         <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-          {data.fabrication_policy}
+          {localizeOpsText(tText, data.fabrication_policy)}
         </p>
         <p className="mt-2 text-sm">
-          CIDP: {data.cidp_status ?? "GO"} · GA: {data.ga_status ?? "NO-GO"} ·
-          Authorized: {data.authorized_version ?? "none"} · Gates PASS:{" "}
-          {data.ga?.pass_count ?? 0}
+          {t("cidpStatus", {
+            status: codeLabel(t, "status", data.cidp_status ?? "GO"),
+          })}{" "}
+          ·{" "}
+          {t("gaStatus", {
+            status: codeLabel(t, "status", data.ga_status ?? "NO-GO"),
+          })}{" "}
+          ·{" "}
+          {t("authorized", {
+            version: data.authorized_version ?? t("none"),
+          })}{" "}
+          · {t("gatesPassed", { count: data.ga?.pass_count ?? 0 })}
         </p>
-        <p className="mt-2 text-sm">{data.board_recommendation}</p>
+        <p className="mt-2 text-sm">
+          {localizeOpsText(tText, data.board_recommendation)}
+        </p>
         {data.disclaimer ? (
           <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-            {data.disclaimer}
+            {localizeOpsText(tText, data.disclaimer)}
           </p>
         ) : null}
       </section>
 
       <section>
         <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-          Institutional pilot registry
+          {t("pilotRegistry")}
         </h3>
         <p className="mt-2 text-sm">
-          Registry state: {data.institutions?.registry_state ?? "n/a"} ·
-          Institutions: {fmt(data.institutions?.institutions_registered)}
+          {t("registryState", {
+            state: data.institutions?.registry_state
+              ? codeLabel(t, "status", data.institutions.registry_state)
+              : t("notAvailable"),
+          })}{" "}
+          ·{" "}
+          {t("institutionsCount", {
+            value: fmt(data.institutions?.institutions_registered, pendingLabel),
+          })}
         </p>
         {data.note_on_institutions ? (
           <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-            {data.note_on_institutions}
+            {localizeOpsText(tText, data.note_on_institutions)}
           </p>
         ) : null}
         <ul className="mt-3 space-y-1 text-sm">
           {(data.institutions?.aggregates ?? []).map((a) => (
             <li key={a.label}>
-              {a.label}: {fmt(a)}
+              {localizeOpsText(tText, a.label)}: {fmt(a, pendingLabel)}
             </li>
           ))}
         </ul>
@@ -150,14 +173,17 @@ export function Phase16ExecutionPanel() {
 
       <section>
         <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-          Unmet GA gates
+          {t("unmetGates")}
         </h3>
         <ul className="mt-3 space-y-2 text-sm">
           {(data.ga?.unmet ?? data.ga?.gates?.filter((g) => g.status !== "PASS") ?? []).map(
             (g) => (
               <li key={g.id}>
-                <span className="tabular-nums">{g.status}</span> — {g.label}:{" "}
-                {g.detail}
+                <span className="tabular-nums">
+                  {codeLabel(t, "status", g.status)}
+                </span>{" "}
+                — {localizeOpsText(tText, g.label)}:{" "}
+                {localizeOpsText(tText, g.detail)}
               </li>
             ),
           )}
@@ -167,15 +193,15 @@ export function Phase16ExecutionPanel() {
       {(data.dashboards?.dashboards ?? []).map((d) => (
         <section key={d.id}>
           <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-            {d.title}{" "}
+            {localizeOpsText(tText, d.title)}{" "}
             <span className="text-sm font-normal text-[var(--on-surface-variant)]">
-              ({d.overall_state})
+              ({codeLabel(t, "status", d.overall_state)})
             </span>
           </h3>
           <ul className="mt-3 space-y-1 text-sm">
             {d.metrics.map((m) => (
               <li key={m.label}>
-                {m.label}: {fmt(m)}
+                {localizeOpsText(tText, m.label)}: {fmt(m, pendingLabel)}
               </li>
             ))}
           </ul>
@@ -185,10 +211,10 @@ export function Phase16ExecutionPanel() {
       {data.weekly_report?.period_ending ? (
         <section>
           <h3 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
-            Weekly report ({data.weekly_report.period_ending})
+            {t("weeklyReport", { period: data.weekly_report.period_ending })}
           </h3>
           <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-            Full markdown available via API response field weekly_report.markdown
+            {t("weeklyReportHint")}
           </p>
         </section>
       ) : null}

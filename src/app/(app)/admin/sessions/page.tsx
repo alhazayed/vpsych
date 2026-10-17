@@ -16,6 +16,8 @@ import {
   totalPages,
 } from "@/lib/admin/learner-ops";
 import { expireStaleSessionsVisible } from "@/lib/session-expiry";
+import { sessionDiagnosisText } from "@/lib/sessions/diagnosis-label";
+import type { CaseInstanceSnapshot } from "@/lib/case-engine/types";
 import type { SessionStatus } from "@/lib/types";
 
 type StatusFilter = "all" | SessionStatus;
@@ -45,6 +47,8 @@ export default async function AdminSessionsPage({
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.sessions");
   const tHome = await getTranslations("admin.home");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
   const sp = await searchParams;
 
   await expireStaleSessionsVisible(supabase);
@@ -164,12 +168,19 @@ export default async function AdminSessionsPage({
       patient: avatar?.name ?? t("unknownPatient"),
       // The session's own case, not the avatar's default. Skill test rows keep
       // the case sealed, so the list leaves their diagnosis blank.
-      disorder: s.skill_test_assignment_id
-        ? ""
-        : ((s.clinical_snapshot as { primary_diagnosis?: { name?: string } } | null)
-            ?.primary_diagnosis?.name ??
-          avatar?.disorder ??
-          ""),
+      disorder:
+        sessionDiagnosisText(
+          {
+            clinical_snapshot: s.clinical_snapshot as Pick<
+              CaseInstanceSnapshot,
+              "primary_diagnosis"
+            > | null,
+            skill_test_assignment_id: s.skill_test_assignment_id,
+            avatars: avatar,
+          },
+          tDisorders,
+          tDefaultDisorders,
+        ) ?? "",
       organization: institution?.name ?? null,
       institutionId: s.institution_id,
       durationLabel,

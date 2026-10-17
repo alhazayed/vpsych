@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/AdminUi";
 import {
@@ -79,6 +80,7 @@ export function SessionsTable({
     searchSubmit?: string;
   };
 }) {
+  const locale = useLocale();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | SessionStatus>("all");
   const [report, setReport] = useState<"all" | "available" | "none">("all");
@@ -341,8 +343,13 @@ export function SessionsTable({
                     <td className="hidden px-4 py-3 text-[var(--on-surface-variant)] lg:table-cell">
                       {r.organization ?? labels.unassignedOrg}
                     </td>
-                    <td className="px-4 py-3 text-[var(--on-surface-variant)]">
-                      {new Date(r.startedAt).toLocaleString()}
+                    {/* Server and browser format dates with different ICU data and time
+                        zones; the browser's local time is the one we want. */}
+                    <td
+                      className="px-4 py-3 text-[var(--on-surface-variant)]"
+                      suppressHydrationWarning
+                    >
+                      {new Date(r.startedAt).toLocaleString(locale)}
                     </td>
                     <td className="hidden px-4 py-3 text-[var(--on-surface-variant)] md:table-cell">
                       {r.durationLabel ?? "—"}

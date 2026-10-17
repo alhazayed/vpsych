@@ -1,11 +1,26 @@
 import type { Avatar } from "@/lib/types";
 
+export type VirtualPatientIncompleteReason =
+  | "missingEnglishPersonality"
+  | "missingArabicPersonality"
+  | "voiceNotAssigned"
+  | "clinicalIncomplete";
+
+const INCOMPLETE_REASON_TEXT: Record<VirtualPatientIncompleteReason, string> = {
+  missingEnglishPersonality: "Missing English personality",
+  missingArabicPersonality: "Missing Arabic personality",
+  voiceNotAssigned: "Voice not assigned",
+  clinicalIncomplete: "Clinical profile incomplete",
+};
+
 export type VirtualPatientCompleteness = {
   hasEnPersonality: boolean;
   hasArPersonality: boolean;
   hasVoice: boolean;
   hasClinical: boolean;
   incompleteReasons: string[];
+  /** Stable i18n keys, parallel to `incompleteReasons`. */
+  incompleteReasonKeys: VirtualPatientIncompleteReason[];
   isComplete: boolean;
 };
 
@@ -57,11 +72,14 @@ export function assessVirtualPatientCompleteness(
         Object.keys(avatar.clinical_core).length > 0),
   );
 
-  const incompleteReasons: string[] = [];
-  if (!hasEnPersonality) incompleteReasons.push("Missing English personality");
-  if (!hasArPersonality) incompleteReasons.push("Missing Arabic personality");
-  if (!hasVoice) incompleteReasons.push("Voice not assigned");
-  if (!hasClinical) incompleteReasons.push("Clinical profile incomplete");
+  const incompleteReasonKeys: VirtualPatientIncompleteReason[] = [];
+  if (!hasEnPersonality) incompleteReasonKeys.push("missingEnglishPersonality");
+  if (!hasArPersonality) incompleteReasonKeys.push("missingArabicPersonality");
+  if (!hasVoice) incompleteReasonKeys.push("voiceNotAssigned");
+  if (!hasClinical) incompleteReasonKeys.push("clinicalIncomplete");
+  const incompleteReasons = incompleteReasonKeys.map(
+    (k) => INCOMPLETE_REASON_TEXT[k],
+  );
 
   return {
     hasEnPersonality,
@@ -69,6 +87,7 @@ export function assessVirtualPatientCompleteness(
     hasVoice,
     hasClinical,
     incompleteReasons,
+    incompleteReasonKeys,
     isComplete: incompleteReasons.length === 0,
   };
 }

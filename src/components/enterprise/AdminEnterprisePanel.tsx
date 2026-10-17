@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { codeLabel, localizeOpsText } from "@/lib/admin/ops-text";
 
 type EnterpriseAdminPayload = {
   enterprise_version?: string;
@@ -34,6 +36,9 @@ type EnterpriseAdminPayload = {
 };
 
 export function AdminEnterprisePanel() {
+  const t = useTranslations("admin.enterprisePage");
+  const tOps = useTranslations("admin.opsUi");
+  const tText = useTranslations("admin.opsText");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<EnterpriseAdminPayload | null>(null);
@@ -45,12 +50,12 @@ export function AdminEnterprisePanel() {
         const res = await fetch("/api/admin/enterprise");
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json.error ?? "Failed to load");
+          if (!cancelled) setError(json.error ?? tOps("loadFailed"));
           return;
         }
         if (!cancelled) setData(json);
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) setError(tOps("networkError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,10 +63,14 @@ export function AdminEnterprisePanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tOps]);
 
   if (loading) {
-    return <p className="text-sm text-[var(--on-surface-variant)]">Loading…</p>;
+    return (
+      <p className="text-sm text-[var(--on-surface-variant)]">
+        {tOps("loading")}
+      </p>
+    );
   }
   if (error) return <p className="text-sm text-[var(--error)]">{error}</p>;
   if (!data) return null;
@@ -70,24 +79,26 @@ export function AdminEnterprisePanel() {
     <div className="space-y-10">
       <section>
         <p className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
-          Enterprise Platform v{data.enterprise_version}
+          {t("platformVersion", { version: data.enterprise_version ?? "" })}
         </p>
         <p className="mt-2 max-w-3xl text-sm text-[var(--on-surface)]">
-          {data.ownership}
+          {localizeOpsText(tText, data.ownership)}
         </p>
         <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-          {data.disclaimer}
+          {localizeOpsText(tText, data.disclaimer)}
         </p>
       </section>
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Tenant types
+          {t("tenantTypes")}
         </h2>
         <ul className="mt-3 flex flex-wrap gap-3 text-sm">
-          {(data.tenant_types ?? []).map((t) => (
-            <li key={t} className="text-[var(--on-surface)]">
-              {t.replaceAll("_", " ")}
+          {(data.tenant_types ?? []).map((type) => (
+            <li key={type} className="text-[var(--on-surface)]">
+              {t.has(`tenantTypeLabels.${type}`)
+                ? t(`tenantTypeLabels.${type}`)
+                : type.replaceAll("_", " ")}
             </li>
           ))}
         </ul>
@@ -95,23 +106,25 @@ export function AdminEnterprisePanel() {
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Organization hierarchy
+          {t("hierarchy")}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[var(--on-surface-variant)]">
-          {(data.hierarchy_labels ?? []).join(" · ")}
+          {(data.hierarchy_labels ?? [])
+            .map((label) => localizeOpsText(tText, label))
+            .join(" · ")}
         </p>
       </section>
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          RBAC roles
+          {t("rbacRoles")}
         </h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[420px] text-start text-sm">
             <thead>
               <tr className="border-b border-[var(--outline-variant)] text-[var(--on-surface-variant)]">
-                <th className="py-2 pe-4 font-medium">Role</th>
-                <th className="py-2 font-medium">Permissions</th>
+                <th className="py-2 pe-4 font-medium">{t("colRole")}</th>
+                <th className="py-2 font-medium">{t("colPermissions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -120,7 +133,9 @@ export function AdminEnterprisePanel() {
                   key={r.role}
                   className="border-b border-[var(--outline-variant)]"
                 >
-                  <td className="py-2 pe-4">{r.role}</td>
+                  <td className="py-2 pe-4">
+                    {codeLabel(t, "membershipRoles", r.role)}
+                  </td>
                   <td className="py-2 tabular-nums">{r.permission_count}</td>
                 </tr>
               ))}
@@ -131,12 +146,12 @@ export function AdminEnterprisePanel() {
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Executive analytics
+          {t("executiveAnalytics")}
         </h2>
         <ul className="mt-3 space-y-1 text-sm">
           {(data.analytics?.kpis ?? []).map((k) => (
             <li key={k.id}>
-              {k.label}:{" "}
+              {localizeOpsText(tText, k.label)}:{" "}
               <span className="tabular-nums">
                 {k.value}
                 {k.unit ?? ""}
@@ -145,31 +160,55 @@ export function AdminEnterprisePanel() {
           ))}
         </ul>
         <p className="mt-2 text-xs text-[var(--on-surface-variant)]">
-          Scopes: {(data.analytics_scopes ?? []).join(", ")}
+          {t("scopes", {
+            scopes: (data.analytics_scopes ?? [])
+              .map((scope) => codeLabel(t, "scopeLabels", scope))
+              .join(t("listSeparator")),
+          })}
         </p>
       </section>
 
       <section className="grid gap-8 md:grid-cols-2">
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            Security center
+            {t("securityCenter")}
           </h2>
           <ul className="mt-3 space-y-1 text-sm">
-            <li>SSO: {data.security?.sso_enabled ? "enabled" : "off"}</li>
-            <li>MFA required: {data.security?.mfa_required ? "yes" : "no"}</li>
             <li>
-              Isolation: {data.security?.isolation_ok ? "verified" : "check"}
+              {t("sso", {
+                state: data.security?.sso_enabled ? t("ssoOn") : t("ssoOff"),
+              })}
+            </li>
+            <li>
+              {t("mfaRequired", {
+                answer: data.security?.mfa_required ? tOps("yes") : tOps("no"),
+              })}
+            </li>
+            <li>
+              {t("isolation", {
+                state: data.security?.isolation_ok
+                  ? t("isolationVerified")
+                  : t("isolationCheck"),
+              })}
             </li>
           </ul>
         </div>
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            Observability
+            {t("observability")}
           </h2>
           <ul className="mt-3 space-y-1 text-sm">
-            <li>Health: {data.observability?.health}</li>
             <li>
-              p95 latency:{" "}
+              {t("health", {
+                health: codeLabel(
+                  t,
+                  "healthLabels",
+                  data.observability?.health,
+                ),
+              })}
+            </li>
+            <li>
+              {t("p95Latency")}{" "}
               <span className="tabular-nums">
                 {data.observability?.api_latency_p95_ms} ms
               </span>
@@ -183,27 +222,28 @@ export function AdminEnterprisePanel() {
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Performance envelope
+          {t("performanceEnvelope")}
         </h2>
         <p className="mt-2 text-sm">
-          {data.performance_envelope?.organizations} orgs ·{" "}
-          {data.performance_envelope?.users.toLocaleString()} users ·{" "}
-          {data.performance_envelope?.concurrent_sessions.toLocaleString()}{" "}
-          concurrent sessions
+          {t("envelope", {
+            orgs: data.performance_envelope?.organizations ?? 0,
+            users: data.performance_envelope?.users ?? 0,
+            sessions: data.performance_envelope?.concurrent_sessions ?? 0,
+          })}
         </p>
       </section>
 
       <section>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Integrations
+          {t("integrations")}
         </h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[520px] text-start text-sm">
             <thead>
               <tr className="border-b border-[var(--outline-variant)] text-[var(--on-surface-variant)]">
-                <th className="py-2 pe-4 font-medium">Kind</th>
-                <th className="py-2 pe-4 font-medium">Status</th>
-                <th className="py-2 font-medium">Notes</th>
+                <th className="py-2 pe-4 font-medium">{t("colKind")}</th>
+                <th className="py-2 pe-4 font-medium">{t("colStatus")}</th>
+                <th className="py-2 font-medium">{t("colNotes")}</th>
               </tr>
             </thead>
             <tbody>
@@ -213,7 +253,9 @@ export function AdminEnterprisePanel() {
                   className="border-b border-[var(--outline-variant)]"
                 >
                   <td className="py-2 pe-4 uppercase">{i.kind}</td>
-                  <td className="py-2 pe-4">{i.status}</td>
+                  <td className="py-2 pe-4">
+                    {codeLabel(t, "integrationStatus", i.status)}
+                  </td>
                   <td className="py-2 text-[var(--on-surface-variant)]">
                     {i.notes}
                   </td>

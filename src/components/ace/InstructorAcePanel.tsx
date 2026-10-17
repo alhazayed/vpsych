@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type LearnerRow = {
   id: string;
@@ -19,6 +20,8 @@ type LearnerRow = {
 };
 
 export function InstructorAcePanel() {
+  const t = useTranslations("admin.curriculum.panel");
+  const tDifficulty = useTranslations("skillTests.difficulty");
   const [learners, setLearners] = useState<LearnerRow[]>([]);
   const [selected, setSelected] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -61,10 +64,10 @@ export function InstructorAcePanel() {
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? "Update failed");
+      setError(data.error ?? t("updateFailed"));
       return;
     }
-    setMsg("Instructor controls saved");
+    setMsg(t("saved"));
   }
 
   async function loadAnalytics() {
@@ -76,7 +79,7 @@ export function InstructorAcePanel() {
     );
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? "Analytics failed");
+      setError(data.error ?? t("analyticsFailed"));
       return;
     }
     setAnalytics(JSON.stringify(data, null, 2));
@@ -86,12 +89,11 @@ export function InstructorAcePanel() {
     <div className="space-y-6">
       <section className="clinical-card p-5">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Learners
+          {t("learners")}
         </h2>
         {learners.length === 0 ? (
           <p className="text-sm text-[var(--on-surface-variant)]">
-            No learner profiles yet. Profiles are created when a therapist
-            completes an assessment with ACE enabled.
+            {t("empty")}
           </p>
         ) : (
           <ul className="space-y-2 text-sm">
@@ -105,7 +107,7 @@ export function InstructorAcePanel() {
                     setAdaptiveMode(l.adaptive_mode);
                     setMaxDifficulty(l.max_difficulty);
                   }}
-                  className={`w-full rounded-lg border px-3 py-2 text-left ${
+                  className={`w-full rounded-lg border px-3 py-2 text-start ${
                     selected === l.id
                       ? "border-[var(--primary)] bg-[var(--surface-container)]"
                       : "border-[var(--outline-variant)]"
@@ -114,9 +116,11 @@ export function InstructorAcePanel() {
                   <span className="font-medium">
                     {l.profession.replace(/_/g, " ")}
                   </span>
-                  <span className="ml-2 text-[11px] text-[var(--on-surface-variant)]">
-                    {l.training_level} · cases {l.completed_case_count} · conf{" "}
-                    {l.confidence_score} · {l.certification_status}
+                  <span className="ms-2 text-[11px] text-[var(--on-surface-variant)]">
+                    {l.training_level} ·{" "}
+                    {t("cases", { count: l.completed_case_count })} ·{" "}
+                    {t("confidence", { score: l.confidence_score })} ·{" "}
+                    {l.certification_status}
                   </span>
                 </button>
               </li>
@@ -127,7 +131,7 @@ export function InstructorAcePanel() {
 
       <section className="clinical-card space-y-3 p-5">
         <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Instructor controls
+          {t("controls")}
         </h2>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -135,10 +139,10 @@ export function InstructorAcePanel() {
             checked={adaptiveMode}
             onChange={(e) => setAdaptiveMode(e.target.checked)}
           />
-          Adaptive mode ON
+          {t("adaptiveMode")}
         </label>
         <label className="block text-sm">
-          Min competency threshold
+          {t("minThreshold")}
           <input
             type="number"
             min={0}
@@ -149,16 +153,16 @@ export function InstructorAcePanel() {
           />
         </label>
         <label className="block text-sm">
-          Max difficulty
+          {t("maxDifficulty")}
           <select
             value={maxDifficulty}
             onChange={(e) => setMaxDifficulty(e.target.value)}
             className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
           >
-            <option value="beginner">beginner</option>
-            <option value="intermediate">intermediate</option>
-            <option value="advanced">advanced</option>
-            <option value="expert">expert</option>
+            <option value="beginner">{tDifficulty("beginner")}</option>
+            <option value="intermediate">{tDifficulty("intermediate")}</option>
+            <option value="advanced">{tDifficulty("advanced")}</option>
+            <option value="expert">{tDifficulty("expert")}</option>
           </select>
         </label>
         <div className="flex flex-wrap gap-2">
@@ -167,14 +171,14 @@ export function InstructorAcePanel() {
             onClick={saveControls}
             className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm text-[var(--on-primary)]"
           >
-            Save controls
+            {t("save")}
           </button>
           <button
             type="button"
             onClick={loadAnalytics}
             className="rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm"
           >
-            View analytics
+            {t("viewAnalytics")}
           </button>
         </div>
         {msg && <p className="text-sm text-[var(--primary)]">{msg}</p>}

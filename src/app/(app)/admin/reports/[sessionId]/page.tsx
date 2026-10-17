@@ -24,6 +24,7 @@ import {
   type AllianceRating,
 } from "@/lib/session-practice";
 import { openSealedCase } from "@/lib/skill-tests";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type {
   ClinicalCore,
   CourseSelfReport,
@@ -37,6 +38,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
   const { sessionId } = await params;
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.reportDetail");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
   const { data: report, error: reportError } = await supabase
     .from("session_reports")
@@ -78,7 +81,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
     ended_at: string | null;
     case_instance_id: string | null;
     clinical_snapshot: {
-      primary_diagnosis?: { name?: string | null } | null;
+      primary_diagnosis?: { slug?: string | null; name?: string | null } | null;
       clinical_core?: ClinicalCore | null;
       therapy_course?: TherapyCourseSessionContext | null;
     } | null;
@@ -102,11 +105,17 @@ export default async function AdminReportDetailPage({ params }: Props) {
   const core =
     testCase?.clinical_core ?? session?.clinical_snapshot?.clinical_core ?? null;
   // The session's own case (opened for skill tests), not the avatar's default.
+  // Admins see it for skill tests too.
+  const primaryDx =
+    testCase?.primary_diagnosis ?? session?.clinical_snapshot?.primary_diagnosis;
   const diagnosis =
-    testCase?.primary_diagnosis?.name ??
-    session?.clinical_snapshot?.primary_diagnosis?.name ??
-    session?.avatars?.disorder ??
-    "—";
+    (primaryDx?.slug && tDisorders.has(primaryDx.slug)
+      ? tDisorders(primaryDx.slug)
+      : disorderNameText(
+          primaryDx?.name ?? session?.avatars?.disorder,
+          tDisorders,
+          tDefaultDisorders,
+        )) ?? "—";
   const practice = evaluateSessionPractice({
     messages: (messages ?? []) as Array<{ role: string; content: string }>,
     sessionNumber: session?.course_session_number ?? null,

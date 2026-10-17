@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ContextualHelp } from "@/components/admin/help/ContextualHelp";
 import { findDisorderBySlug } from "@/lib/case-engine/catalog";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import {
   getComorbidityCompatibility,
   listCompatibleComorbiditySlugs,
@@ -59,6 +60,15 @@ export function CaseEnginePanel({
   disorders: DisorderOption[];
 }) {
   const t = useTranslations("admin.cases");
+  const tDisorders = useTranslations("skillTests.disorders");
+  const tDefaultDisorders = useTranslations("avatars.defaultDisorders");
+  const tDifficulty = useTranslations("skillTests.difficulty");
+  const comorbidityLabelId = useId();
+  // Display only — option values and the preview request keep slugs/codes.
+  const disorderText = (d: DisorderOption): string =>
+    tDisorders.has(d.slug)
+      ? tDisorders(d.slug)
+      : (disorderNameText(d.name, tDisorders, tDefaultDisorders) ?? d.name);
   const [avatarId, setAvatarId] = useState(avatars[0]?.id ?? "");
   const [disorderSlug, setDisorderSlug] = useState(disorders[0]?.slug ?? "");
   const [comorbid, setComorbid] = useState("");
@@ -107,8 +117,10 @@ export function CaseEnginePanel({
   );
 
   const comorbidityBlocked = Boolean(comorbid) && !compat.previewAllowed;
-  const comorbidityLabel =
-    disorderBySlug.get(comorbid)?.name ?? comorbid;
+  const comorbidDisorder = disorderBySlug.get(comorbid);
+  const comorbidityLabel = comorbidDisorder
+    ? disorderText(comorbidDisorder)
+    : comorbid;
 
   function onPrimaryChange(next: string) {
     setDisorderSlug(next);
@@ -192,14 +204,17 @@ export function CaseEnginePanel({
           >
             {previewableDisorders.map((d) => (
               <option key={d.id} value={d.slug}>
-                {d.name}
+                {disorderText(d)}
               </option>
             ))}
           </select>
         </label>
         <div className="block text-sm">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+            <span
+              id={comorbidityLabelId}
+              className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]"
+            >
               {t("comorbidity")}
             </span>
             <ContextualHelp
@@ -221,6 +236,7 @@ export function CaseEnginePanel({
               setJson("");
               setError(null);
             }}
+            aria-labelledby={comorbidityLabelId}
             aria-invalid={comorbidityBlocked || undefined}
             aria-describedby={
               comorbidityBlocked ? "case-engine-comorbidity-status" : undefined
@@ -229,7 +245,7 @@ export function CaseEnginePanel({
             <option value="">{t("comorbidityNone")}</option>
             {compatibleOptions.map((d) => (
               <option key={d.id} value={d.slug}>
-                {d.name}
+                {disorderText(d)}
               </option>
             ))}
             {/* Preserve an unsupported selection without silent clear */}
@@ -298,7 +314,7 @@ export function CaseEnginePanel({
           >
             {DIFFICULTIES.map((d) => (
               <option key={d} value={d}>
-                {d}
+                {tDifficulty(d)}
               </option>
             ))}
           </select>
@@ -316,7 +332,7 @@ export function CaseEnginePanel({
           >
             {THERAPIES.map((d) => (
               <option key={d} value={d}>
-                {d}
+                {t(`modalities.${d}`)}
               </option>
             ))}
           </select>
@@ -334,7 +350,7 @@ export function CaseEnginePanel({
           >
             {LOCALES.map((d) => (
               <option key={d} value={d}>
-                {d}
+                {t(`locales.${d}`)}
               </option>
             ))}
           </select>

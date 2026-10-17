@@ -139,3 +139,30 @@ describe("diagnosis display text on Arabic pages", () => {
     ).toBeNull();
   });
 });
+
+describe("disorderNameText on stored avatar wordings", () => {
+  function translator(labels: Record<string, string>) {
+    return Object.assign((k: string) => labels[k], {
+      has: (k: string) => k in labels,
+    });
+  }
+  const catalogueAr = translator(arMessages.skillTests.disorders);
+  const defaultsAr = translator(arMessages.avatars.defaultDisorders);
+  // Every avatars.disorder value in production on 2026-10-15.
+  const stored = [
+    "Generalized Anxiety Disorder, with panic attacks",
+    "Panic Disorder",
+    "Major Depressive Disorder, recurrent episode, moderate",
+    "Bipolar I Disorder, current manic episode",
+    "Alcohol Use Disorder",
+    "Schizophrenia",
+    "Attention-Deficit/Hyperactivity Disorder, predominantly inattentive, adult",
+    "Major Depressive Disorder, recurrent episode, with anxious distress",
+    "Complex PTSD",
+    "Posttraumatic Stress Disorder",
+    "Borderline Personality Disorder",
+  ];
+  it.each(stored)("reads %s in Arabic", (name) => {
+    expect(disorderNameText(name, catalogueAr, defaultsAr)).not.toMatch(/[A-Za-z]{3}/);
+  });
+});

@@ -24,6 +24,7 @@ export function TemplateEnginePanel({
 }) {
   const tErr = useTranslations("admin.actionErrors");
   const t = useTranslations("admin.templates");
+  const tPage = useTranslations("admin.templatesPage");
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +101,7 @@ export function TemplateEnginePanel({
     <div className="space-y-4">
       <label className="block text-sm">
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
-          Template
+          {tPage("templateLabel")}
         </span>
         <select
           className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2"
@@ -122,7 +123,7 @@ export function TemplateEnginePanel({
           disabled={loading || !templateId}
           onClick={() => void preview()}
         >
-          {loading ? "Generating…" : "Generate sample patient"}
+          {loading ? tPage("generating") : t("preview")}
         </button>
         <button
           type="button"
@@ -130,7 +131,7 @@ export function TemplateEnginePanel({
           disabled={!json}
           onClick={download}
         >
-          Export patient JSON
+          {tPage("exportPatientJson")}
         </button>
         <button
           type="button"
@@ -138,7 +139,7 @@ export function TemplateEnginePanel({
           disabled={loading || !templateId}
           onClick={() => void cloneTemplate()}
         >
-          Clone template
+          {tPage("cloneTemplate")}
         </button>
       </div>
 

@@ -1,4 +1,4 @@
--- Arabic voice catalogue: Anas (new) + Noura (activated).
+-- Arabic voice catalogue: Noura (activated). Anas is deliberately not added.
 --
 -- Makes the intended Arabic catalogue state reproducible from git. Noura was
 -- activated in production by a controlled admin-equivalent data write before
@@ -14,28 +14,10 @@
 -- Scope: voice_profiles catalogue rows only. No avatar, no assignment, no
 -- English row, no default, and no existing catalogue row is rewritten.
 
--- Anas — new row. Clinical delivery params are intentionally omitted so the
--- table defaults apply; no metadata is asserted beyond what ElevenLabs
--- publishes as structured labels (language ar, accent modern standard, male).
-INSERT INTO public.voice_profiles (
-  id, provider, voice_name, voice_id, language, dialect, gender, is_active
-) VALUES (
-  'a1000000-0000-4000-8000-000000000005',
-  'elevenlabs',
-  'Anas',
-  'R6nda3uM038xEEKi7GFl',
-  'ar',
-  'Modern Standard Arabic',
-  'male',
-  true
-)
-ON CONFLICT (provider, voice_id) DO UPDATE
-SET
-  voice_name = EXCLUDED.voice_name,
-  language = EXCLUDED.language,
-  dialect = EXCLUDED.dialect,
-  gender = EXCLUDED.gender,
-  is_active = EXCLUDED.is_active;
+-- Anas: not added. This migration was never applied in production, and the
+-- production Arabic catalogue (Hiba, Noura, Fadi, Omars, Ahmad, Jamal) was
+-- settled without Anas, so the row is left out to keep git and production in
+-- step (2026-10-15).
 
 -- Noura — existing seeded row (a1000000-0000-4000-8000-000000000004), set
 -- inactive by 20260801160000_premade_elevenlabs_voices.sql. Reactivate it and

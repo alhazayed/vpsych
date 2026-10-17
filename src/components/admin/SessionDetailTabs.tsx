@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/AdminUi";
 import { AdvancedDetails, AdvancedJson } from "@/components/admin/AdvancedDetails";
 import { sessionStatusTone } from "@/lib/admin/session-ops";
+import { localizeRubricLabel } from "@/lib/ai/report-locale";
 import type { MessageRole, SessionStatus } from "@/lib/types";
 
 type TabId = "overview" | "conversation" | "assessment" | "report" | "technical";
@@ -349,7 +350,13 @@ export function SessionDetailTabs({
                     return (
                       <li key={item.id} className="px-5 py-4">
                         <div className="flex items-baseline justify-between gap-3">
-                          <p className="font-medium">{item.label}</p>
+                          <p className="font-medium">
+                            {localizeRubricLabel(
+                              item.id,
+                              item.label,
+                              locale === "ar" ? "ar" : "en",
+                            )}
+                          </p>
                           <p className="font-mono text-sm text-[var(--primary)]">
                             {item.score}/{item.max}
                           </p>

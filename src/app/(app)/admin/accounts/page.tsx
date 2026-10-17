@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { resolveApprovalStatus } from "@/lib/account-approval";
 import { AccountApprovalActions } from "@/components/admin/AccountApprovalActions";
@@ -30,7 +30,7 @@ export default async function AdminAccountsPage() {
   const pending = accounts.filter((a) => a.status === "pending");
   const others = accounts.filter((a) => a.status !== "pending");
 
-  const dateFmt = new Intl.DateTimeFormat(undefined, {
+  const dateFmt = new Intl.DateTimeFormat(await getLocale(), {
     dateStyle: "medium",
     timeStyle: "short",
   });

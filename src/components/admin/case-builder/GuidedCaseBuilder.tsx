@@ -37,6 +37,7 @@ import {
 import { educatorAdminError } from "@/lib/admin/admin-product-errors";
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import type { SymptomProfileItem } from "@/lib/types";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import {
   isPatientGender,
   PATIENT_GENDERS,
@@ -96,7 +97,26 @@ export function GuidedCaseBuilder({
   const t = useTranslations("admin.caseBuilder");
   const tReady = useTranslations("admin.avatars.readiness");
   const tErrors = useTranslations("admin.productErrors");
+  const tCat = useTranslations("admin.caseBuilderCatalog");
+  const tDisorders = useTranslations("skillTests.disorders");
+  const tDefaultDisorders = useTranslations("avatars.defaultDisorders");
   const isEdit = mode === "edit";
+
+  // Display only: drafts keep the catalogue's English labels/names, which is
+  // what is saved and sent to the server.
+  function catalogText(key: string, fallback: string): string {
+    return tCat.has(key) ? tCat(key) : fallback;
+  }
+  function goalText(g: { id: string; label: string }): string {
+    return catalogText(`goals.${g.id}`, g.label);
+  }
+  function presentationText(
+    slug: string | null | undefined,
+    name: string | null | undefined,
+  ): string {
+    if (slug && tDisorders.has(slug)) return tDisorders(slug);
+    return disorderNameText(name, tDisorders, tDefaultDisorders) ?? name ?? "";
+  }
   const steps = isEdit ? EDIT_GUIDED_STEPS : GUIDED_STEPS;
 
   function mapError(error: unknown, fallback: string): string {
@@ -135,8 +155,9 @@ export function GuidedCaseBuilder({
 
   function frameworkLabel(modality: string | null | undefined): string {
     if (!modality) return t("reviewEmpty");
-    return (
-      THERAPY_FRAMEWORKS.find((f) => f.modality === modality)?.label ?? modality
+    return catalogText(
+      `frameworks.${modality}.label`,
+      THERAPY_FRAMEWORKS.find((f) => f.modality === modality)?.label ?? modality,
     );
   }
 
@@ -676,7 +697,9 @@ export function GuidedCaseBuilder({
               {groupedPresentations.map(([cat, items]) => (
                 <div key={cat}>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--outline)]">
-                    {cat}
+                    {items[0]
+                      ? catalogText(`categories.${items[0].category}`, cat)
+                      : cat}
                   </h3>
                   <ul className="space-y-1">
                     {items.map((p) => {
@@ -692,9 +715,11 @@ export function GuidedCaseBuilder({
                             }`}
                             onClick={() => selectPresentation(p)}
                           >
-                            <div className="font-medium">{p.name}</div>
+                            <div className="font-medium">
+                              {presentationText(p.slug, p.name)}
+                            </div>
                             <div className="text-xs text-[var(--on-surface-variant)]">
-                              {p.dsm5_code ? `DSM-5 ${p.dsm5_code}` : "DSM optional"}
+                              {p.dsm5_code ? `DSM-5 ${p.dsm5_code}` : tCat("dsmOptional")}
                               {p.icd11_code ? ` · ICD-11 ${p.icd11_code}` : ""}
                             </div>
                           </button>
@@ -821,9 +846,13 @@ export function GuidedCaseBuilder({
             />
             <div className="max-h-72 space-y-2 overflow-y-auto">
               {catalogues.goals
-                .filter((g) =>
-                  g.label.toLowerCase().includes(searchGoal.trim().toLowerCase()),
-                )
+                .filter((g) => {
+                  const q = searchGoal.trim().toLowerCase();
+                  return (
+                    g.label.toLowerCase().includes(q) ||
+                    goalText(g).toLowerCase().includes(q)
+                  );
+                })
                 .map((g) => {
                   const checked = draft.goals.some((x) => x.id === g.id || x.label === g.label);
                   return (
@@ -851,7 +880,7 @@ export function GuidedCaseBuilder({
                         }}
                       />
                       <span>
-                        {g.label}
+                        {goalText(g)}
                         {g.custom ? (
                           <span className="ms-1 text-xs text-[var(--outline)]">
                             ({t("custom")})
@@ -958,7 +987,10 @@ export function GuidedCaseBuilder({
                                   return s.salience;
                                 }
                               })()
-                            : s.uiCategory}
+                            : catalogText(
+                                `symptomCategories.${s.uiCategory}`,
+                                s.uiCategory,
+                              )}
                           )
                         </span>
                       </span>
@@ -1205,9 +1237,11 @@ export function GuidedCaseBuilder({
                     }}
                   />
                   <span>
-                    <span className="font-medium">{f.label}</span>
+                    <span className="font-medium">
+                      {catalogText(`frameworks.${f.modality}.label`, f.label)}
+                    </span>
                     <span className="mt-0.5 block text-xs text-[var(--on-surface-variant)]">
-                      {f.summary}
+                      {catalogText(`frameworks.${f.modality}.summary`, f.summary)}
                     </span>
                   </span>
                 </label>
@@ -1461,7 +1495,12 @@ export function GuidedCaseBuilder({
                     {t("steps.presentation")}
                   </dt>
                   <dd>
-                    {draft.presentationName || t("reviewEmpty")}
+                    {draft.presentationName
+                      ? presentationText(
+                          draft.presentationSlug,
+                          draft.presentationName,
+                        )
+                      : t("reviewEmpty")}
                     {draft.dsm5Code ? ` (${draft.dsm5Code})` : ""}
                   </dd>
                 </div>
@@ -1482,7 +1521,7 @@ export function GuidedCaseBuilder({
                   </dt>
                   <dd>
                     {draft.goals.length
-                      ? draft.goals.map((g) => g.label).join("; ")
+                      ? draft.goals.map((g) => goalText(g)).join(tCat("listSeparator"))
                       : t("reviewEmpty")}
                   </dd>
                 </div>

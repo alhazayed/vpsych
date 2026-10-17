@@ -44,7 +44,8 @@ export default async function AdminEditVirtualPatientPage({
   const typed = avatar as Avatar;
   const lifecycleStatus = readLifecycleStatus(typed);
   if (!isEditableLifecycle(lifecycleStatus)) {
-    redirect(`/admin/avatars/${id}`);
+    // The detail page explains why editing is unavailable.
+    redirect(`/admin/avatars/${id}?locked=1`);
   }
 
   const [{ data: voiceRows }, { data: disorderRows }, { data: persona }] =

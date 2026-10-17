@@ -530,7 +530,7 @@ export function AppShell({
               </p>
               <p className="text-[10px] uppercase tracking-wider text-[var(--on-surface-variant)]">
                 {profile.role === "admin"
-                  ? tShell("role.clinicalSupervisor")
+                  ? tShell("role.admin")
                   : tShell("role.therapist")}
               </p>
             </div>

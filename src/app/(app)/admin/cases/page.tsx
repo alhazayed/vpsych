@@ -2,10 +2,27 @@ import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { getBuiltinCatalog } from "@/lib/case-engine/catalog";
 import { CaseEnginePanel } from "@/components/admin/CaseEnginePanel";
+import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 
 export default async function AdminCasesPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("admin.cases");
+  const tDisorders = await getTranslations("skillTests.disorders");
+  const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
+  const tDifficulty = await getTranslations("skillTests.difficulty");
+  // Display only — stored names / slugs are never rewritten.
+  const disorderText = (
+    slug: string | null | undefined,
+    name: string | null | undefined,
+  ): string | null =>
+    slug && tDisorders.has(slug)
+      ? tDisorders(slug)
+      : disorderNameText(name, tDisorders, tDefaultDisorders);
+  const optionText = (
+    group: "modalities" | "locales",
+    value: string | null,
+  ): string =>
+    value && t.has(`${group}.${value}`) ? t(`${group}.${value}`) : (value ?? "—");
 
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
@@ -69,9 +86,14 @@ export default async function AdminCasesPage() {
               key={d.id}
               className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--outline-variant)] pb-2 last:border-0"
             >
-              <span className="font-medium text-[var(--on-surface)]">{d.name}</span>
+              <span className="font-medium text-[var(--on-surface)]">
+                {disorderText(d.slug, d.name) ?? d.name}
+              </span>
               <span className="text-[var(--on-surface-variant)]">
-                DSM-5 {d.dsm5_code ?? "—"} · ICD-11 {d.icd11_code ?? "—"}
+                {t("codes", {
+                  dsm: d.dsm5_code ?? "—",
+                  icd: d.icd11_code ?? "—",
+                })}
               </span>
             </li>
           ))}
@@ -102,7 +124,7 @@ export default async function AdminCasesPage() {
           <ul className="space-y-3 text-sm">
             {recent.map((c) => {
               const snap = c.clinical_snapshot as {
-                primary_diagnosis?: { name?: string };
+                primary_diagnosis?: { name?: string; slug?: string };
                 persona?: { display_name?: string };
               } | null;
               return (
@@ -111,12 +133,21 @@ export default async function AdminCasesPage() {
                   className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-3"
                 >
                   <div className="font-medium text-[var(--on-surface)]">
-                    {snap?.persona?.display_name ?? "Persona"} ·{" "}
-                    {snap?.primary_diagnosis?.name ?? "Diagnosis"}
+                    {snap?.persona?.display_name ?? t("personaFallback")} ·{" "}
+                    {disorderText(
+                      snap?.primary_diagnosis?.slug,
+                      snap?.primary_diagnosis?.name,
+                    ) ?? t("diagnosisFallback")}
                   </div>
                   <div className="mt-1 text-[var(--on-surface-variant)]">
-                    {c.assessment_id} · {c.locale} · {c.difficulty} ·{" "}
-                    {c.therapy_modality} · {c.severity}
+                    {c.assessment_id} · {optionText("locales", c.locale)} ·{" "}
+                    {c.difficulty && tDifficulty.has(c.difficulty)
+                      ? tDifficulty(c.difficulty)
+                      : c.difficulty}{" "}
+                    · {optionText("modalities", c.therapy_modality)} ·{" "}
+                    {c.severity && t.has(`severities.${c.severity}`)
+                      ? t(`severities.${c.severity}`)
+                      : c.severity}
                   </div>
                 </li>
               );

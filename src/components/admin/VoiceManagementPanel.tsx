@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { codeLabel } from "@/lib/admin/ops-text";
 import { VoicePreviewButton } from "@/components/VoicePreviewButton";
 import type { Avatar, VoiceProfile } from "@/lib/types";
 import { normalizeSpeechLocale } from "@/lib/voice/config";
@@ -28,6 +29,13 @@ type ClinicalDraft = {
   emotion_modulation: boolean;
   pronunciation_ar: string;
   pronunciation_en: string;
+};
+
+/** Dialect text stored on seeded voice rows → `admin.voicesPage.dialects` key. */
+const DIALECT_KEYS: Record<string, string> = {
+  "Modern Standard Arabic": "msa",
+  "Levantine Arabic": "levantine",
+  "Gulf Arabic": "gulf",
 };
 
 const EMOTIONS: ClinicalEmotion[] = [
@@ -62,6 +70,7 @@ export function VoiceManagementPanel({
 }) {
   const t = useTranslations("admin.voices");
   const tCommon = useTranslations("common");
+  const tPage = useTranslations("admin.voicesPage");
   const router = useRouter();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [avatarMap, setAvatarMap] = useState(() =>
@@ -238,7 +247,9 @@ export function VoiceManagementPanel({
                     {t("columns.gender")}
                   </dt>
                   <dd className="mt-0.5 font-medium capitalize text-[var(--on-surface)]">
-                    {profile.gender ?? "—"}
+                    {profile.gender
+                      ? codeLabel(tPage, "genders", profile.gender)
+                      : "—"}
                   </dd>
                 </div>
                 <div>
@@ -256,7 +267,12 @@ export function VoiceManagementPanel({
                     {t("columns.dialect")}
                   </dt>
                   <dd className="mt-0.5 font-medium text-[var(--on-surface)]">
-                    {profile.dialect ?? "—"}
+                    {profile.dialect
+                      ? DIALECT_KEYS[profile.dialect] &&
+                        tPage.has(`dialects.${DIALECT_KEYS[profile.dialect]}`)
+                        ? tPage(`dialects.${DIALECT_KEYS[profile.dialect]}`)
+                        : profile.dialect
+                      : "—"}
                   </dd>
                 </div>
                 <div>
@@ -265,7 +281,7 @@ export function VoiceManagementPanel({
                   </dt>
                   <dd className="mt-0.5 font-medium text-[var(--on-surface)]">
                     {(profile.speech_rate ?? 1).toFixed(2)}× ·{" "}
-                    {profile.energy ?? "moderate"}
+                    {codeLabel(tPage, "energy", profile.energy ?? "moderate")}
                   </dd>
                 </div>
               </dl>
@@ -362,10 +378,10 @@ export function VoiceManagementPanel({
                         }
                         className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
                       >
-                        <option value="low">low</option>
-                        <option value="moderate">moderate</option>
-                        <option value="high">high</option>
-                        <option value="labile">labile</option>
+                        <option value="low">{tPage("energy.low")}</option>
+                        <option value="moderate">{tPage("energy.moderate")}</option>
+                        <option value="high">{tPage("energy.high")}</option>
+                        <option value="labile">{tPage("energy.labile")}</option>
                       </select>
                     </label>
                     <label className="block text-xs">
@@ -383,12 +399,12 @@ export function VoiceManagementPanel({
                         }
                         className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
                       >
-                        <option value="flat">flat</option>
-                        <option value="measured">measured</option>
-                        <option value="anxious_edge">anxious_edge</option>
-                        <option value="pressured">pressured</option>
-                        <option value="fragmented">fragmented</option>
-                        <option value="labile">labile</option>
+                        <option value="flat">{tPage("prosody.flat")}</option>
+                        <option value="measured">{tPage("prosody.measured")}</option>
+                        <option value="anxious_edge">{tPage("prosody.anxious_edge")}</option>
+                        <option value="pressured">{tPage("prosody.pressured")}</option>
+                        <option value="fragmented">{tPage("prosody.fragmented")}</option>
+                        <option value="labile">{tPage("prosody.labile")}</option>
                       </select>
                     </label>
                     <label className="block text-xs">
@@ -406,11 +422,11 @@ export function VoiceManagementPanel({
                         }
                         className="mt-1 w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface)] px-3 py-2 text-sm"
                       >
-                        <option value="calm">calm</option>
-                        <option value="short">short</option>
-                        <option value="deep">deep</option>
-                        <option value="irregular">irregular</option>
-                        <option value="held">held</option>
+                        <option value="calm">{tPage("breathing.calm")}</option>
+                        <option value="short">{tPage("breathing.short")}</option>
+                        <option value="deep">{tPage("breathing.deep")}</option>
+                        <option value="irregular">{tPage("breathing.irregular")}</option>
+                        <option value="held">{tPage("breathing.held")}</option>
                       </select>
                     </label>
                     <label className="block text-xs">

@@ -365,6 +365,24 @@ select pg_temp.expect_count('trainee cannot delete own messages',
   $q$with d as (delete from public.session_messages
      where session_id = 'a1000000-0000-4000-8000-000000000000' returning 1) select count(*) from d$q$, 0);
 
+-- ── policies read the caller once per statement ───────────────────────────
+-- A bare auth.uid() in a policy is re-evaluated for every row; wrapped as
+-- (select auth.uid()) it runs once (Supabase lint auth_rls_initplan).
+do $$
+declare bad text;
+begin
+  select string_agg(tablename || ': ' || policyname, ', ') into bad
+  from pg_policies
+  where schemaname = 'public'
+    and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''),
+                       'select\s+auth\.(uid|role|jwt)\(\)', '', 'gi')
+        ~* 'auth\.(uid|role|jwt)\(\)';
+  if bad is not null then
+    raise exception 'FAIL policies call auth.*() per row; wrap in (select ...): %', bad;
+  end if;
+  raise notice 'ok   every policy wraps auth.*() in (select ...)';
+end $$;
+
 -- ── admin two-step login ───────────────────────────────────────────────────
 -- An admin signed in with a password only (aal1) gets no admin powers in the
 -- database, the same as the app's admin pages.
