@@ -768,7 +768,8 @@
       "close": "Close transcript",
       "empty": "Conversation will appear here.",
       "you": "You",
-      "patient": "Patient"
+      "patient": "Patient",
+      "patientFemale": "Patient"
     },
     "timer": {
       "remainingAria": "Time remaining {time}",
@@ -814,6 +815,7 @@
     "voiceTurn": {
       "you": "You",
       "patient": "Patient",
+      "patientFemale": "Patient",
       "fallbackReply": "Fallback reply (AI unavailable)",
       "audioUnavailable": "Patient audio unavailable.",
       "playAudio": "Play patient audio",
@@ -4132,6 +4134,7 @@
     "networkError": "Network error. Check your connection and try again.",
     "attemptsTitle": "Previous attempts",
     "attemptsEmpty": "No attempts yet.",
+    "scoringHint": "If a result stays on “Waiting for the report”, the automatic report could not be prepared. An administrator regenerates it, and your result appears then.",
     "attempts": {
       "level": "Level",
       "attempt": "Attempt",
@@ -4157,7 +4160,7 @@
       "remains": "{level} stays active.",
       "retry": "Review your feedback and try again.",
       "scoringTitle": "Scoring this level",
-      "scoringBody": "The level result appears once the report for this session is ready.",
+      "scoringBody": "The level result appears once the report for this session is ready. If the automatic report could not be prepared, an administrator regenerates it, and your result appears then.",
       "scoreLine": "Score: {score}%",
       "toPatient": "Back to {name}"
     }

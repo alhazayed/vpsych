@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { patientLabelKey } from "@/lib/therapy-room/patient-label";
 import type { SessionMessage } from "@/lib/types";
 import { usePanelFocus } from "@/components/therapy-room/usePanelFocus";
 
@@ -9,10 +10,13 @@ export function LiveTranscript({
   open,
   messages,
   onClose,
+  patientGender,
 }: {
   open: boolean;
   messages: SessionMessage[];
   onClose: () => void;
+  /** Picks the gendered Arabic label (المريض / المريضة). */
+  patientGender?: string | null;
 }) {
   const t = useTranslations("therapyRoom.transcript");
   const locale = useLocale();
@@ -46,7 +50,7 @@ export function LiveTranscript({
                 {time.format(new Date(m.created_at))}
               </time>
               <span className="trm-transcript__role">
-                {m.role === "user" ? t("you") : t("patient")}
+                {m.role === "user" ? t("you") : t(patientLabelKey(patientGender))}
               </span>
             </span>
             <span className="trm-transcript__text" dir="auto">

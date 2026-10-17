@@ -72,7 +72,7 @@ export default async function TrainingPage() {
               <thead className="text-xs uppercase tracking-wider text-[var(--on-surface-variant)]">
                 <tr className="border-b border-[var(--outline-variant)]">
                   <th scope="col" className="px-4 py-3 text-start">{t("table.patient")}</th>
-                  <th scope="col" className="px-4 py-3 text-start">{t("table.primary")}</th>
+                  <th scope="col" className="hidden px-4 py-3 text-start sm:table-cell">{t("table.primary")}</th>
                   <th scope="col" className="px-4 py-3 text-start">{t("table.level")}</th>
                   <th scope="col" className="px-4 py-3 text-start">{t("table.status")}</th>
                 </tr>
@@ -87,7 +87,7 @@ export default async function TrainingPage() {
                           {t("patientTitle", { n: pad(p.patient.slot), name: p.avatar.display_name })}
                         </Link>
                       </td>
-                      <td className="px-4 py-3">{disorderLabel(p.patient.primaryDisorderSlug)}</td>
+                      <td className="hidden px-4 py-3 sm:table-cell">{disorderLabel(p.patient.primaryDisorderSlug)}</td>
                       <td className="px-4 py-3">
                         <LadderLevelList progress={p.progress} compact />
                         <span className="mt-1 block text-xs text-[var(--on-surface-variant)]">
