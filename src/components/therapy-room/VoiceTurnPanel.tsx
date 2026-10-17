@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { patientLabelKey } from "@/lib/therapy-room/patient-label";
 import {
   VOICE_STAGES,
   voiceErrorCause,
@@ -34,6 +35,7 @@ export function VoiceTurnPanel({
   diagnostics,
   debug,
   onPlayAudio,
+  patientGender,
 }: {
   therapistText: string | null;
   /** True while the therapist line is not yet saved by /message. */
@@ -44,6 +46,8 @@ export function VoiceTurnPanel({
   diagnostics: VoiceTurnDiagnostics;
   debug: boolean;
   onPlayAudio?: () => void;
+  /** Picks the gendered Arabic label (المريض / المريضة). */
+  patientGender?: string | null;
 }) {
   const t = useTranslations("therapyRoom.voiceTurn");
   const error = diagnostics.error;
@@ -78,7 +82,7 @@ export function VoiceTurnPanel({
             className="trm-captions__line trm-captions__line--patient"
             data-testid="caption-patient"
           >
-            <span className="trm-captions__who">{t("patient")}</span>
+            <span className="trm-captions__who">{t(patientLabelKey(patientGender))}</span>
             <span dir="auto">{patientText}</span>
             {patientFallback && (
               <span className="trm-captions__tag">{t("fallbackReply")}</span>

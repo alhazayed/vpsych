@@ -2614,6 +2614,7 @@ export function TherapyRoomSession({
           patientFallback={patientFallback}
           diagnostics={voiceDiag}
           debug={voiceDebug}
+          patientGender={avatar.gender}
           onPlayAudio={
             voiceDiag.audioUnavailable && lastPatientText
               ? () => handleControl("repeat")
@@ -2666,6 +2667,7 @@ export function TherapyRoomSession({
         <LiveTranscript
           open={transcriptOpen}
           messages={messages}
+          patientGender={avatar.gender}
           onClose={() => {
             immersionRef.current.track("transcript_closed");
             setTranscriptOpen(false);

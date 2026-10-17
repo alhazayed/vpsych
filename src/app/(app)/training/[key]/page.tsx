@@ -186,6 +186,9 @@ export default async function TrainingPatientPage({ params }: Props) {
             </tbody>
           </table>
         )}
+        {attempts.some((a) => attemptOutcome(a) === "scoring") && (
+          <p className="mt-3 text-xs text-[var(--on-surface-variant)]">{t("scoringHint")}</p>
+        )}
       </section>
     </main>
   );

@@ -18,6 +18,7 @@ import {
 } from "@/lib/avatars/localized-name";
 import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
 import { withSkillTestCase } from "@/lib/skill-tests";
+import { patientLabelKey } from "@/lib/therapy-room/patient-label";
 import {
   buildTraineeChecklist,
   caseHasRisk,
@@ -38,7 +39,7 @@ export default async function SessionCompletePage({ params }: Props) {
   const localName = avatarLocalNameSelect(await getLocale());
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .select(`*, avatars(name, disorder, ${localName})`)
+    .select(`*, avatars(name, disorder, gender, ${localName})`)
     .eq("id", id)
     .maybeSingle();
 
@@ -52,7 +53,12 @@ export default async function SessionCompletePage({ params }: Props) {
   }
   if (!session) notFound();
   const typed = session as unknown as TherapySession & {
-    avatars: { name: string; disorder: string; local_name: string | null };
+    avatars: {
+      name: string;
+      disorder: string;
+      gender: string | null;
+      local_name: string | null;
+    };
   };
   if (typed.therapist_id !== user.id && profile.role !== "admin") {
     redirect("/avatars");
@@ -238,7 +244,7 @@ export default async function SessionCompletePage({ params }: Props) {
                 >
                   {m.role === "user"
                     ? tTranscript("you")
-                    : tTranscript("patient")}
+                    : tTranscript(patientLabelKey(typed.avatars?.gender))}
                 </span>
                 <span className="text-[var(--on-surface)]" dir="auto">
                   {m.content}
