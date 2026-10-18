@@ -142,6 +142,8 @@ export function VirtualPatientDetail({
       ? (avatar.clinical_core as Record<string, unknown>)
       : null;
 
+  const displayName = avatar.name?.trim() || t("untitledPatient");
+
   const reviewReadiness = () => {
     setTab("overview");
     if (typeof document !== "undefined") {
@@ -155,12 +157,12 @@ export function VirtualPatientDetail({
   return (
     <main className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">
       <AdminPageHeader
-        title={avatar.name}
+        title={displayName}
         subtitle={`${disorderText}${avatar.age != null ? ` · ${avatar.age}` : ""}${genderText ? ` · ${genderText}` : ""}`}
         breadcrumbs={[
           { label: labels.home, href: "/admin" },
           { label: labels.library, href: "/admin/avatars" },
-          { label: avatar.name },
+          { label: displayName },
         ]}
         actions={
           <div className="flex flex-col items-end gap-3">
@@ -543,7 +545,7 @@ export function VirtualPatientDetail({
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">
                 {t("name")}
               </dt>
-              <dd className="mt-1 text-sm">{avatar.name}</dd>
+              <dd className="mt-1 text-sm">{displayName}</dd>
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--outline)]">

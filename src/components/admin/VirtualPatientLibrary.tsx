@@ -297,7 +297,7 @@ export function VirtualPatientLibrary({
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-                      {patient.name}
+                      {patient.name?.trim() || tDetail("untitledPatient")}
                     </h2>
                     <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                       {disorderText(patient.disorder)}

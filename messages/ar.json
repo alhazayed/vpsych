@@ -2430,6 +2430,7 @@
       }
     },
     "vpDetail": {
+      "untitledPatient": "مريض بلا اسم",
       "tabs": {
         "overview": "نظرة عامة",
         "clinical": "الملف السريري",

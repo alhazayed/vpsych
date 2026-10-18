@@ -31,6 +31,7 @@ export default async function AdminEditVirtualPatientPage({
   const t = await getTranslations("admin.avatars");
   const tHome = await getTranslations("admin.home");
   const tBuilder = await getTranslations("admin.caseBuilder");
+  const tDetail = await getTranslations("admin.vpDetail");
 
   const { data: avatar, error: avatarError } = await supabase
     .from("avatars")
@@ -74,18 +75,20 @@ export default async function AdminEditVirtualPatientPage({
   const mapped = avatarToGuidedDraft(typed, persona);
   const readiness = assessCaseReadinessFromAvatar(typed, persona);
 
+  const displayName = typed.name?.trim() || tDetail("untitledPatient");
+
   return (
     <main className="mx-auto max-w-[960px] px-4 py-8 md:px-8">
       <AdminPageHeader
         title={t("continueAuthoring")}
         subtitle={tBuilder("editPageSubtitle", {
-          name: typed.name ?? id,
+          name: displayName,
         })}
         breadcrumbs={[
           { label: tHome("title"), href: "/admin" },
           { label: t("title"), href: "/admin/avatars" },
           {
-            label: typed.name ?? id,
+            label: displayName,
             href: `/admin/avatars/${id}`,
           },
           { label: t("continueAuthoring") },
@@ -97,7 +100,7 @@ export default async function AdminEditVirtualPatientPage({
         disorders={disorders}
         caseIdentity={{
           id: typed.id,
-          name: typed.name ?? typed.slug ?? id,
+          name: displayName,
           slug: typed.slug ?? "",
           lifecycleStatus,
         }}

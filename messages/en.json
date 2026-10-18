@@ -2430,6 +2430,7 @@
       }
     },
     "vpDetail": {
+      "untitledPatient": "Untitled patient",
       "tabs": {
         "overview": "Overview",
         "clinical": "Clinical profile",
