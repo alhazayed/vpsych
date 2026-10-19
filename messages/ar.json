@@ -197,7 +197,16 @@
         "instructorMode": "وضع المشرف",
         "nodeState": "{stage} · الدرجة {score} · الثقة {confidence}",
         "requires": "تتطلّب: {list}",
-        "showingSome": "عرض 8 من {total}. اختر «عرض الكل» لرؤية المسار كاملاً."
+        "showingSome": "عرض 8 من {total}. اختر «عرض الكل» لرؤية المسار كاملاً.",
+        "domains": {
+          "alliance": "التحالف",
+          "assessment": "التقييم",
+          "diagnosis": "التشخيص",
+          "treatment": "العلاج",
+          "safety": "السلامة",
+          "therapy": "العلاج النفسي",
+          "professional": "الممارسة المهنية"
+        }
       }
     },
     "supervisor": {
@@ -206,7 +215,42 @@
       "loading": "جارٍ تحميل الإشراف…",
       "loadFailed": "تعذّر تحميل الإشراف. حاول مرة أخرى.",
       "rateLimited": "طلبات كثيرة. انتظر بضع دقائق ثم حاول مرة أخرى.",
-      "networkError": "خطأ في الشبكة. تحقّق من اتصالك وحاول مرة أخرى."
+      "networkError": "خطأ في الشبكة. تحقّق من اتصالك وحاول مرة أخرى.",
+      "band": "مستوى الإشراف · {band}",
+      "disclaimer": "إشراف تعليمي فقط. الدرجات ليست أدوات سريرية مُتحقَّقًا منها. المشرف لا يغيّر حالة المريض أبدًا.",
+      "heatmapTitle": "خريطة الكفاءات",
+      "heatmapSubtitle": "مهارات المعالج الملاحَظة مصنّفة حسب مستويات دريفوس.",
+      "strengths": "نقاط القوة",
+      "growthAreas": "مجالات التطوير",
+      "certificationTitle": "متابعة الاعتماد",
+      "boardReady": "جاهز للبورد (تعليميًا)",
+      "met": "مُحقَّق",
+      "pending": "قيد الانتظار",
+      "recommendationsTitle": "توصيات التعلّم",
+      "reflectiveTitle": "الممارسة التأمّلية",
+      "biasNotes": "ملاحظات حول التحيّز",
+      "portfolioTitle": "الملف · الحالات الأخيرة",
+      "emptyCaseLog": "أكمل جلسة ليظهر سجل الحالات.",
+      "levels": {
+        "novice": "مبتدئ",
+        "advanced_beginner": "مبتدئ متقدّم",
+        "competent": "كفء",
+        "proficient": "متمكّن",
+        "expert": "خبير",
+        "master": "متمرّس"
+      },
+      "bands": {
+        "beginner": "مبتدئ",
+        "intermediate": "متوسط",
+        "advanced": "متقدّم",
+        "consultant": "استشاري",
+        "board": "البورد"
+      },
+      "priority": {
+        "high": "عالية",
+        "medium": "متوسطة",
+        "low": "منخفضة"
+      }
     },
     "dashboard": {
       "loading": "جارٍ التحميل…",
@@ -227,6 +271,42 @@
       "generateNext": "إنشاء الحالة التكيّفية التالية",
       "achievements": "الإنجازات",
       "rateLimited": "طلبات كثيرة. انتظر بضع دقائق ثم حاول مرة أخرى."
+    },
+    "competencies": {
+      "clinical_communication": "التواصل السريري",
+      "diagnostic_interview": "المقابلة التشخيصية",
+      "mental_status_examination": "فحص الحالة العقلية",
+      "dsm5_reasoning": "الاستدلال التشخيصي وفق DSM-5",
+      "icd11_reasoning": "الاستدلال التشخيصي وفق ICD-11",
+      "differential_diagnosis": "التشخيص التفريقي",
+      "case_formulation": "صياغة الحالة",
+      "diagnostic_formulation": "الصياغة التشخيصية",
+      "treatment_planning": "تخطيط العلاج",
+      "medication_management": "إدارة الأدوية",
+      "follow_up_planning": "تخطيط المتابعة",
+      "risk_screening": "فحص الخطورة",
+      "risk_assessment": "تقييم الخطورة",
+      "suicide_assessment": "تقييم خطر الانتحار",
+      "violence_assessment": "تقييم خطر العنف",
+      "safety_planning": "خطة السلامة",
+      "emergency_psychiatry": "الطب النفسي الطارئ",
+      "therapeutic_alliance": "التحالف العلاجي",
+      "empathy": "التعاطف",
+      "cbt_skills": "مهارات العلاج المعرفي السلوكي",
+      "dbt_skills": "مهارات العلاج السلوكي الجدلي",
+      "act_skills": "مهارات علاج القبول والالتزام",
+      "psychodynamic_interviewing": "المقابلة الديناميكية النفسية",
+      "supportive_therapy": "العلاج الداعم",
+      "motivational_interviewing": "المقابلة التحفيزية",
+      "psychoeducation": "التثقيف النفسي",
+      "documentation": "التوثيق السريري",
+      "case_summary": "ملخص الحالة",
+      "treatment_documentation": "توثيق العلاج",
+      "professional_communication": "التواصل المهني",
+      "time_management": "إدارة الوقت",
+      "ethical_decision_making": "اتخاذ القرار الأخلاقي",
+      "cultural_competence": "الكفاءة الثقافية",
+      "family_interviewing": "مقابلة الأسرة"
     }
   },
   "landing": {

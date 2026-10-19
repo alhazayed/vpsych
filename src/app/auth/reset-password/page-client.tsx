@@ -135,9 +135,10 @@ export default function ResetPasswordPage() {
               >
                 {sessionError}
               </p>
+              {/* text colour needs "!": the unlayered `a { color: inherit }` in globals.css beats utilities */}
               <Link
                 href="/login"
-                className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--primary)] text-sm font-semibold uppercase tracking-wider text-white"
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--primary)] text-sm font-semibold uppercase tracking-wider text-white!"
               >
                 {t("backToLogin")}
               </Link>

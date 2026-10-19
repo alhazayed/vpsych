@@ -21,9 +21,10 @@ export default async function NotFound() {
         >
           {t("home")}
         </Link>
+        {/* text colour needs "!": the unlayered `a { color: inherit }` in globals.css beats utilities */}
         <Link
           href="/avatars"
-          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
+          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]!"
         >
           {t("patientLibrary")}
         </Link>
