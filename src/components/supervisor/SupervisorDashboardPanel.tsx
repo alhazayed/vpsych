@@ -8,6 +8,7 @@ type Rec = { id: string; title: string; priority: string; practice_suggestion: s
 
 export function SupervisorDashboardPanel() {
   const t = useTranslations("learning.supervisor");
+  const tSkill = useTranslations("admin.supervisorPage.skills");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -87,28 +88,32 @@ export function SupervisorDashboardPanel() {
 
   const heat = data.heatmap ?? [];
   const cert = data.certification;
+  // Engine values are English snake_case ids; show the translated label.
+  const named = (group: "bands" | "levels" | "priority", id?: string) =>
+    !id ? "—" : t.has(`${group}.${id}`) ? t(`${group}.${id}`) : id.replace(/_/g, " ");
+  const skillName = (id: string) =>
+    tSkill.has(id) ? tSkill(id) : id.replace(/_/g, " ");
 
   return (
     <div className="space-y-10">
       <section className="fade-in-up">
         <p className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
-          Supervision band · {data.feedback?.band?.replace(/_/g, " ") ?? "—"}
+          {t("band", { band: named("bands", data.feedback?.band) })}
         </p>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--on-surface)]">
           {data.feedback?.summary}
         </p>
         <p className="mt-3 text-xs text-[var(--on-surface-variant)]">
-          Educational supervision only. Scores are not validated clinical instruments.
-          Supervisor never changes patient state.
+          {t("disclaimer")}
         </p>
       </section>
 
       <section className="fade-in-up" style={{ animationDelay: "80ms" }}>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]">
-          Competency heatmap
+          {t("heatmapTitle")}
         </h2>
         <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-          Observable therapist skills mapped to Dreyfus levels.
+          {t("heatmapSubtitle")}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
           {heat.map((cell) => (
@@ -120,13 +125,13 @@ export function SupervisorDashboardPanel() {
               }}
             >
               <div className="text-[11px] uppercase tracking-wide text-[var(--on-surface-variant)]">
-                {cell.id.replace(/_/g, " ")}
+                {skillName(cell.id)}
               </div>
               <div className="mt-1 text-lg font-semibold tabular-nums">
                 {cell.score}
               </div>
               <div className="text-[11px] text-[var(--on-surface-variant)]">
-                {cell.level.replace(/_/g, " ")}
+                {named("levels", cell.level)}
               </div>
             </div>
           ))}
@@ -136,7 +141,7 @@ export function SupervisorDashboardPanel() {
       <section className="fade-in-up grid gap-8 md:grid-cols-2" style={{ animationDelay: "120ms" }}>
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            Strengths
+            {t("strengths")}
           </h2>
           <ul className="mt-3 space-y-2 text-sm">
             {(data.feedback?.strengths ?? []).map((s) => (
@@ -148,7 +153,7 @@ export function SupervisorDashboardPanel() {
         </div>
         <div>
           <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-            Growth areas
+            {t("growthAreas")}
           </h2>
           <ul className="mt-3 space-y-2 text-sm">
             {(data.feedback?.growth_areas ?? []).map((s) => (
@@ -162,11 +167,11 @@ export function SupervisorDashboardPanel() {
 
       <section className="fade-in-up" style={{ animationDelay: "160ms" }}>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Certification tracker
+          {t("certificationTitle")}
         </h2>
         <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
-          {cert?.progress_pct ?? 0}% · {cert?.current_band?.replace(/_/g, " ")}
-          {cert?.board_ready ? " · board-ready (educational)" : ""}
+          {cert?.progress_pct ?? 0}% · {named("bands", cert?.current_band)}
+          {cert?.board_ready ? ` · ${t("boardReady")}` : ""}
         </p>
         <div className="mt-3 h-2 w-full bg-[var(--surface-container)]">
           <div
@@ -177,7 +182,7 @@ export function SupervisorDashboardPanel() {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
             <h3 className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
-              Met
+              {t("met")}
             </h3>
             <ul className="mt-2 space-y-1 text-sm">
               {(cert?.milestones_met ?? []).map((m) => (
@@ -187,7 +192,7 @@ export function SupervisorDashboardPanel() {
           </div>
           <div>
             <h3 className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
-              Pending
+              {t("pending")}
             </h3>
             <ul className="mt-2 space-y-1 text-sm">
               {(cert?.milestones_pending ?? []).map((m) => (
@@ -200,7 +205,7 @@ export function SupervisorDashboardPanel() {
 
       <section className="fade-in-up" style={{ animationDelay: "200ms" }}>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Learning recommendations
+          {t("recommendationsTitle")}
         </h2>
         <ul className="mt-3 space-y-3">
           {(data.recommendations ?? []).map((r) => (
@@ -208,7 +213,7 @@ export function SupervisorDashboardPanel() {
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-medium">{r.title}</span>
                 <span className="text-[11px] uppercase text-[var(--on-surface-variant)]">
-                  {r.priority}
+                  {named("priority", r.priority)}
                 </span>
               </div>
               <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
@@ -221,7 +226,7 @@ export function SupervisorDashboardPanel() {
 
       <section className="fade-in-up" style={{ animationDelay: "240ms" }}>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Reflective practice
+          {t("reflectiveTitle")}
         </h2>
         <ul className="mt-3 space-y-2 text-sm">
           {(data.reflective?.reflection_questions ?? []).slice(0, 5).map((q) => (
@@ -231,7 +236,7 @@ export function SupervisorDashboardPanel() {
         {(data.reflective?.bias_detection?.length ?? 0) > 0 && (
           <div className="mt-4">
             <h3 className="text-xs uppercase tracking-wide text-[var(--on-surface-variant)]">
-              Bias notes
+              {t("biasNotes")}
             </h3>
             <ul className="mt-2 space-y-1 text-sm">
               {data.reflective!.bias_detection.map((b) => (
@@ -244,7 +249,7 @@ export function SupervisorDashboardPanel() {
 
       <section className="fade-in-up" style={{ animationDelay: "280ms" }}>
         <h2 className="font-[family-name:var(--font-headline)] text-xl font-semibold">
-          Portfolio · recent cases
+          {t("portfolioTitle")}
         </h2>
         <ul className="mt-3 space-y-2 text-sm">
           {(data.portfolio?.case_log ?? []).slice(-5).reverse().map((c) => (
@@ -260,7 +265,7 @@ export function SupervisorDashboardPanel() {
           ))}
           {(data.portfolio?.case_log?.length ?? 0) === 0 && (
             <li className="text-[var(--on-surface-variant)]">
-              Complete a session to populate the case log.
+              {t("emptyCaseLog")}
             </li>
           )}
         </ul>
