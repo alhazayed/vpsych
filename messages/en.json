@@ -197,7 +197,16 @@
         "instructorMode": "instructor mode",
         "nodeState": "{stage} · score {score} · confidence {confidence}",
         "requires": "Requires: {list}",
-        "showingSome": "Showing 8 of {total}. Select “Show all” to see the full pathway."
+        "showingSome": "Showing 8 of {total}. Select “Show all” to see the full pathway.",
+        "domains": {
+          "alliance": "Alliance",
+          "assessment": "Assessment",
+          "diagnosis": "Diagnosis",
+          "treatment": "Treatment",
+          "safety": "Safety",
+          "therapy": "Therapy",
+          "professional": "Professional practice"
+        }
       }
     },
     "supervisor": {
@@ -206,7 +215,42 @@
       "loading": "Loading supervision…",
       "loadFailed": "Couldn't load supervision. Please try again.",
       "rateLimited": "Too many requests. Wait a few minutes and try again.",
-      "networkError": "Network error. Check your connection and try again."
+      "networkError": "Network error. Check your connection and try again.",
+      "band": "Supervision band · {band}",
+      "disclaimer": "Educational supervision only. Scores are not validated clinical instruments. Supervisor never changes patient state.",
+      "heatmapTitle": "Competency heatmap",
+      "heatmapSubtitle": "Observable therapist skills mapped to Dreyfus levels.",
+      "strengths": "Strengths",
+      "growthAreas": "Growth areas",
+      "certificationTitle": "Certification tracker",
+      "boardReady": "board-ready (educational)",
+      "met": "Met",
+      "pending": "Pending",
+      "recommendationsTitle": "Learning recommendations",
+      "reflectiveTitle": "Reflective practice",
+      "biasNotes": "Bias notes",
+      "portfolioTitle": "Portfolio · recent cases",
+      "emptyCaseLog": "Complete a session to populate the case log.",
+      "levels": {
+        "novice": "novice",
+        "advanced_beginner": "advanced beginner",
+        "competent": "competent",
+        "proficient": "proficient",
+        "expert": "expert",
+        "master": "master"
+      },
+      "bands": {
+        "beginner": "beginner",
+        "intermediate": "intermediate",
+        "advanced": "advanced",
+        "consultant": "consultant",
+        "board": "board"
+      },
+      "priority": {
+        "high": "high",
+        "medium": "medium",
+        "low": "low"
+      }
     },
     "dashboard": {
       "loading": "Loading…",
@@ -227,6 +271,42 @@
       "generateNext": "Generate adaptive next case",
       "achievements": "Achievements",
       "rateLimited": "Too many requests. Wait a few minutes and try again."
+    },
+    "competencies": {
+      "clinical_communication": "Clinical Communication",
+      "diagnostic_interview": "Diagnostic Interview",
+      "mental_status_examination": "Mental Status Examination",
+      "dsm5_reasoning": "DSM-5 Diagnostic Reasoning",
+      "icd11_reasoning": "ICD-11 Diagnostic Reasoning",
+      "differential_diagnosis": "Differential Diagnosis",
+      "case_formulation": "Case Formulation",
+      "diagnostic_formulation": "Diagnostic Formulation",
+      "treatment_planning": "Treatment Planning",
+      "medication_management": "Medication Management",
+      "follow_up_planning": "Follow-up Planning",
+      "risk_screening": "Risk Screening",
+      "risk_assessment": "Risk Assessment",
+      "suicide_assessment": "Suicide Assessment",
+      "violence_assessment": "Violence Assessment",
+      "safety_planning": "Safety Planning",
+      "emergency_psychiatry": "Emergency Psychiatry",
+      "therapeutic_alliance": "Therapeutic Alliance",
+      "empathy": "Empathy",
+      "cbt_skills": "CBT Skills",
+      "dbt_skills": "DBT Skills",
+      "act_skills": "ACT Skills",
+      "psychodynamic_interviewing": "Psychodynamic Interviewing",
+      "supportive_therapy": "Supportive Therapy",
+      "motivational_interviewing": "Motivational Interviewing",
+      "psychoeducation": "Psychoeducation",
+      "documentation": "Clinical Documentation",
+      "case_summary": "Case Summary",
+      "treatment_documentation": "Treatment Documentation",
+      "professional_communication": "Professional Communication",
+      "time_management": "Time Management",
+      "ethical_decision_making": "Ethical Decision Making",
+      "cultural_competence": "Cultural Competence",
+      "family_interviewing": "Family Interviewing"
     }
   },
   "landing": {

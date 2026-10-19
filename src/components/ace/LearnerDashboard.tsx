@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCompetencyName } from "@/components/use-competency-name";
 
 type RadarItem = { competency_id: string; score: number };
 
 export function LearnerDashboard() {
   const t = useTranslations("learning.dashboard");
+  const competencyName = useCompetencyName();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -146,7 +148,9 @@ export function LearnerDashboard() {
         <p className="text-sm text-[var(--on-surface-variant)]">
           {t("primaryFocus")}{" "}
           <span className="text-[var(--on-surface)]">
-            {(data?.plan?.primary_focus ?? "—").replace(/_/g, " ")}
+            {data?.plan?.primary_focus
+              ? competencyName(data.plan.primary_focus)
+              : "—"}
           </span>
           {" · "}
           {t("sessionsToThreshold", {
@@ -221,6 +225,7 @@ function CompetencyBars({
   items: RadarItem[];
   accent?: boolean;
 }) {
+  const competencyName = useCompetencyName();
   return (
     <div>
       <p className="mb-2 text-xs font-medium text-[var(--on-surface-variant)]">
@@ -230,7 +235,7 @@ function CompetencyBars({
         {items.map((item) => (
           <li key={item.competency_id}>
             <div className="mb-1 flex justify-between text-[11px]">
-              <span>{item.competency_id.replace(/_/g, " ")}</span>
+              <span>{competencyName(item.competency_id)}</span>
               <span>{item.score}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded bg-[var(--surface-container)]">

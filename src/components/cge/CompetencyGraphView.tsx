@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCompetencyName } from "@/components/use-competency-name";
 
 type Node = {
   id: string;
@@ -22,6 +23,9 @@ type LearnerNode = {
 
 export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
   const t = useTranslations("learning.graph.view");
+  const competencyName = useCompetencyName();
+  const domainName = (d: string) =>
+    t.has(`domains.${d}`) ? t(`domains.${d}`) : d;
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [learnerNodes, setLearnerNodes] = useState<LearnerNode[]>([]);
@@ -69,7 +73,11 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
     if (domain !== "all" && n.domain !== domain) return false;
     if (!filter) return true;
     const q = filter.toLowerCase();
-    return n.name.toLowerCase().includes(q) || n.id.includes(q);
+    return (
+      n.name.toLowerCase().includes(q) ||
+      competencyName(n.id, n.name).toLowerCase().includes(q) ||
+      n.id.includes(q)
+    );
   });
 
   const stateById = useMemo(() => {
@@ -129,7 +137,7 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
         >
           {domains.map((d) => (
             <option key={d} value={d}>
-              {d === "all" ? t("allDomains") : d}
+              {d === "all" ? t("allDomains") : domainName(d)}
             </option>
           ))}
         </select>
@@ -189,13 +197,15 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
                 }}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium">{n.name}</span>
+                  <span className="text-sm font-medium">
+                    {competencyName(n.id, n.name)}
+                  </span>
                   <span className="text-[10px] uppercase tracking-wide text-[var(--on-surface-variant)]">
                     {n.difficulty}
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-[var(--on-surface-variant)]">
-                  {n.domain}
+                  {domainName(n.domain)}
                   {" · "}
                   {st
                     ? t("nodeState", {
@@ -208,7 +218,7 @@ export function CompetencyGraphView({ admin = false }: { admin?: boolean }) {
                 {expanded === n.id && prereqs.length > 0 && (
                   <p className="mt-2 text-[11px] text-[var(--on-surface-variant)]">
                     {t("requires", {
-                      list: prereqs.map((p) => p.replace(/_/g, " ")).join(", "),
+                      list: prereqs.map((p) => competencyName(p)).join(", "),
                     })}
                   </p>
                 )}
