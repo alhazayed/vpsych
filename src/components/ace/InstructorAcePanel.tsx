@@ -22,6 +22,10 @@ type LearnerRow = {
 export function InstructorAcePanel() {
   const t = useTranslations("admin.curriculum.panel");
   const tDifficulty = useTranslations("skillTests.difficulty");
+  const tProfession = useTranslations("admin.catalogEnums.targetLearner");
+  // Engine values are English snake_case ids; show the translated label.
+  const named = (group: "trainingLevels" | "certification", id: string) =>
+    t.has(`${group}.${id}`) ? t(`${group}.${id}`) : id.replace(/_/g, " ");
   const [learners, setLearners] = useState<LearnerRow[]>([]);
   const [selected, setSelected] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -114,13 +118,15 @@ export function InstructorAcePanel() {
                   }`}
                 >
                   <span className="font-medium">
-                    {l.profession.replace(/_/g, " ")}
+                    {tProfession.has(l.profession)
+                      ? tProfession(l.profession)
+                      : l.profession.replace(/_/g, " ")}
                   </span>
                   <span className="ms-2 text-[11px] text-[var(--on-surface-variant)]">
-                    {l.training_level} ·{" "}
+                    {named("trainingLevels", l.training_level)} ·{" "}
                     {t("cases", { count: l.completed_case_count })} ·{" "}
                     {t("confidence", { score: l.confidence_score })} ·{" "}
-                    {l.certification_status}
+                    {named("certification", l.certification_status)}
                   </span>
                 </button>
               </li>
