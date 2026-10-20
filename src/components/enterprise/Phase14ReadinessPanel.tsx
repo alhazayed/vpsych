@@ -164,7 +164,7 @@ export function Phase14ReadinessPanel() {
                     {codeLabel(t, "status", g.status)}
                   </td>
                   <td className="py-2 text-[var(--on-surface-variant)]">
-                    <bdi>{g.evidence}</bdi>
+                    <bdi>{localizeOpsText(tText, g.evidence)}</bdi>
                   </td>
                 </tr>
               ))}

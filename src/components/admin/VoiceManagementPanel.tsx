@@ -35,6 +35,8 @@ type ClinicalDraft = {
 const DIALECT_KEYS: Record<string, string> = {
   "Modern Standard Arabic": "msa",
   "Levantine Arabic": "levantine",
+  "Levantine Arabic (Syrian)": "levantineSyrian",
+  "Levantine Arabic (Lebanese)": "levantineLebanese",
   "Gulf Arabic": "gulf",
 };
 

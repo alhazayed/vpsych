@@ -312,7 +312,7 @@ export default async function AdminHomePage() {
             </h2>
             <Link
               href="/admin/reports"
-              className="text-xs font-medium text-[var(--primary)] hover:underline"
+              className="inline-flex min-h-6 items-center text-xs font-medium text-[var(--primary)] hover:underline"
             >
               {t("viewAll")}
               {reportsTotal != null ? ` (${reportsTotal})` : ""}
@@ -365,7 +365,7 @@ export default async function AdminHomePage() {
             </h2>
             <Link
               href="/admin/sessions"
-              className="text-xs font-medium text-[var(--primary)] hover:underline"
+              className="inline-flex min-h-6 items-center text-xs font-medium text-[var(--primary)] hover:underline"
             >
               {t("viewAll")}
             </Link>

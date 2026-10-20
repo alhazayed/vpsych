@@ -24,6 +24,7 @@ import {
 import type { CaseReadinessResult } from "@/lib/admin/virtual-patient";
 import { disorderNameText } from "@/lib/sessions/diagnosis-label";
 import type { Avatar, VoiceProfile } from "@/lib/types";
+import { tabKeyTarget } from "./tab-keys";
 
 type TabId =
   | "overview"
@@ -223,26 +224,19 @@ export function VirtualPatientDetail({
               }`}
               onClick={() => setTab(tabItem.id)}
               onKeyDown={(e) => {
-                const idx = TABS.findIndex((x) => x.id === tabItem.id);
-                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                  e.preventDefault();
-                  // Arrow keys follow reading direction (RTL in Arabic).
-                  const forward = uiLocale.startsWith("ar")
-                    ? "ArrowLeft"
-                    : "ArrowRight";
-                  const dir = e.key === forward ? 1 : -1;
-                  const next = TABS[(idx + dir + TABS.length) % TABS.length]!;
-                  setTab(next.id);
-                  queueMicrotask(() =>
-                    document.getElementById(`vp-tab-${next.id}`)?.focus(),
-                  );
-                } else if (e.key === "Home") {
-                  e.preventDefault();
-                  setTab(TABS[0]!.id);
-                } else if (e.key === "End") {
-                  e.preventDefault();
-                  setTab(TABS[TABS.length - 1]!.id);
-                }
+                const target = tabKeyTarget(
+                  e.key,
+                  TABS.findIndex((x) => x.id === tabItem.id),
+                  TABS.length,
+                  uiLocale.startsWith("ar"),
+                );
+                if (target === null) return;
+                e.preventDefault();
+                const next = TABS[target]!;
+                setTab(next.id);
+                queueMicrotask(() =>
+                  document.getElementById(`vp-tab-${next.id}`)?.focus(),
+                );
               }}
             >
               {t(`tabs.${tabItem.id}`)}

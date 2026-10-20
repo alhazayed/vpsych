@@ -69,6 +69,7 @@ export default async function TrainingPage() {
         <>
           <section className="clinical-card cf-sheet mb-6 overflow-x-auto">
             <table className="w-full text-start text-sm">
+              <caption className="sr-only">{t("title")}</caption>
               <thead className="text-xs uppercase tracking-wider text-[var(--on-surface-variant)]">
                 <tr className="border-b border-[var(--outline-variant)]">
                   <th scope="col" className="px-4 py-3 text-start">{t("table.patient")}</th>
@@ -143,6 +144,7 @@ export default async function TrainingPage() {
                       stairs
                     </span>
                     {t("open")}
+                    <span className="sr-only"> — {p.avatar.display_name}</span>
                   </Link>
                 </div>
               </article>

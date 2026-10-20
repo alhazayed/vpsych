@@ -857,7 +857,8 @@
       "toggleMode": "Switch elapsed / remaining",
       "hide": "Hide timer",
       "show": "Show timer",
-      "warning": "{minutes, plural, one {1 minute} other {# minutes}} left. The session ends automatically when time runs out."
+      "warning": "{minutes, plural, one {1 minute} other {# minutes}} left. The session ends automatically when time runs out.",
+      "toggleModeWithTime": "{time}, switch elapsed / remaining"
     },
     "settings": {
       "title": "Room settings",
@@ -1551,7 +1552,22 @@
         "viewAnalytics": "View analytics",
         "saved": "Instructor controls saved",
         "updateFailed": "Update failed",
-        "analyticsFailed": "Analytics failed"
+        "analyticsFailed": "Analytics failed",
+        "trainingLevels": {
+          "undergraduate": "Undergraduate",
+          "postgraduate": "Postgraduate",
+          "residency": "Residency",
+          "fellowship": "Fellowship",
+          "continuing_education": "Continuing education",
+          "certification_track": "Certification track"
+        },
+        "certification": {
+          "not_started": "Not started",
+          "in_progress": "In progress",
+          "eligible": "Eligible",
+          "certified": "Certified",
+          "expired": "Expired"
+        }
       }
     },
     "graph": {
@@ -3203,7 +3219,9 @@
       "dialects": {
         "msa": "Modern Standard Arabic",
         "levantine": "Levantine Arabic",
-        "gulf": "Gulf Arabic"
+        "gulf": "Gulf Arabic",
+        "levantineSyrian": "Levantine Arabic (Syrian)",
+        "levantineLebanese": "Levantine Arabic (Lebanese)"
       },
       "energy": {
         "low": "low",
@@ -3572,7 +3590,9 @@
       "detailPenTestRows": "{count} pen-test evidence row(s)",
       "detailCriticalOpen": "{count} critical item(s) open",
       "riskSummaryCritical": "{count} critical-tier risk(s) unresolved — GA blocked.",
-      "riskSummaryOpen": "{count} open/mitigating risk(s); no critical-tier open — continue CIDP observation."
+      "riskSummaryOpen": "{count} open/mitigating risk(s); no critical-tier open — continue CIDP observation.",
+      "evidenceFeedbackRisk": "Institutional feedback + risk register",
+      "evidenceMetricsPortfolio": "CIDP success metrics + pilot portfolio"
     }
   },
   "validation": {
@@ -4244,7 +4264,8 @@
       "scoringBody": "The level result appears once the report for this session is ready. If the automatic report could not be prepared, an administrator regenerates it, and your result appears then.",
       "scoreLine": "Score: {score}%",
       "toPatient": "Back to {name}"
-    }
+    },
+    "noScore": "No score yet"
   },
   "feedback": {
     "title": "Institutional feedback",

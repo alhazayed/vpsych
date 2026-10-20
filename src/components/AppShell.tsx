@@ -482,7 +482,12 @@ export function AppShell({
             </div>
             <div
               className="flex-1 overflow-y-auto py-3"
-              onClick={() => setMobileDrawerOpen(false)}
+              onClick={(e) => {
+                // Close after following a link; section toggles stay open.
+                if ((e.target as HTMLElement).closest("a")) {
+                  setMobileDrawerOpen(false);
+                }
+              }}
             >
               <AdminSidebarNav
                 collapsed={false}

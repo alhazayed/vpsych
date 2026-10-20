@@ -28,6 +28,8 @@ export const OPS_TEXT = {
   p15MotionNoGo: "Motion: Refuse GA; continue CIDP pilots; close open Phase 15 gates with signed evidence; re-convene Board.",
   p15Disclaimer: "Phase 15 final GA authorization package. Empty DR/PITR/pilot evidence keeps GA at NO-GO. Clinical Core unchanged. Competency scores are not validated.",
   evidencePending: "Evidence Pending",
+  evidenceFeedbackRisk: "institutional_feedback + risk register",
+  evidenceMetricsPortfolio: "CIDP success metrics + pilot portfolio",
   detailResidualsClosed: "Residuals closed",
   detailObjectivesMet: "Objectives met from observed pilots",
   detailZeroCritical: "Zero open critical feedback/risks (observed)",

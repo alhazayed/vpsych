@@ -223,7 +223,11 @@ export default async function SessionCompletePage({ params }: Props) {
             {tTranscript("empty")}
           </p>
         ) : (
-          <ol className="max-h-80 overflow-auto text-sm">
+          <ol
+            className="max-h-80 overflow-auto text-sm"
+            tabIndex={0}
+            aria-label={tRoom("transcriptTitle")}
+          >
             {transcript.map((m) => (
               <li
                 key={m.id}
