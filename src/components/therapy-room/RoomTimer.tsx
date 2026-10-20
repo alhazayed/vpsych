@@ -53,7 +53,7 @@ export function RoomTimer({
         className="trm-timer__value"
         onClick={onToggleMode}
         title={t("toggleMode")}
-        aria-label={t("toggleMode")}
+        aria-label={t("toggleModeWithTime", { time })}
       >
         {time}
       </button>

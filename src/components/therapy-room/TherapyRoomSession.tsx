@@ -2129,8 +2129,9 @@ export function TherapyRoomSession({
 
   // Timer
   useEffect(() => {
+    // Keeps running while paused: the server's 40-minute limit does, so the
+    // timer, the 5- and 1-minute warnings and the auto-end must too.
     const tick = () => {
-      if (fsmRef.current.getState() === "PAUSED") return;
       const left = remainingSeconds(
         session.started_at,
         session.max_duration_sec,

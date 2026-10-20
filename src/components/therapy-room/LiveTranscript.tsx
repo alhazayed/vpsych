@@ -39,7 +39,8 @@ export function LiveTranscript({
           <span aria-hidden className="material-symbols-outlined">close</span>
         </button>
       </header>
-      <ul className="trm-transcript__list">
+      {/* Focusable so keyboard users can scroll it (Safari won't otherwise). */}
+      <ul className="trm-transcript__list" tabIndex={0} aria-label={t("title")}>
         {visible.length === 0 && (
           <li className="trm-transcript__empty">{t("empty")}</li>
         )}
