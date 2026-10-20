@@ -33,7 +33,7 @@ export function AdminPageHeader({
               {crumb.href ? (
                 <Link
                   href={crumb.href}
-                  className="hover:text-[var(--primary)] hover:underline"
+                  className="inline-flex min-h-6 items-center hover:text-[var(--primary)] hover:underline"
                 >
                   {crumb.label}
                 </Link>

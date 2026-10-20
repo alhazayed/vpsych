@@ -387,14 +387,14 @@ export function SessionsTable({
                       <div className="flex flex-wrap justify-end gap-2">
                         <Link
                           href={`/admin/sessions/${r.id}`}
-                          className="text-xs font-medium text-[var(--primary)] hover:underline"
+                          className="inline-flex min-h-6 items-center text-xs font-medium text-[var(--primary)] hover:underline"
                         >
                           {labels.actionView}
                         </Link>
                         {r.reportStatus === "available" ? (
                           <Link
                             href={`/admin/reports/${r.id}`}
-                            className="text-xs font-medium text-[var(--primary)] hover:underline"
+                            className="inline-flex min-h-6 items-center text-xs font-medium text-[var(--primary)] hover:underline"
                           >
                             {labels.actionReport}
                           </Link>
