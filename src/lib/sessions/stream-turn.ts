@@ -322,6 +322,16 @@ export async function runStreamingClinicalTurn(params: {
   logAssistantReply(turn, replyMeta, "stream");
 
   const saved = await deps.persist(turn, replyMeta.text);
+  if (!saved.ok && saved.sessionEnded) {
+    // Ended mid-generation: the client already stopped listening, so this is
+    // an interruption, not a failure. Nothing is persisted.
+    emit("interrupted", {
+      reason: "session_ended",
+      stage: "persist",
+      assistantPersisted: false,
+    });
+    return "interrupted";
+  }
   if (!saved.ok) {
     emit("error", {
       message: clientSafeError("Failed to save reply", saved.error),

@@ -38,6 +38,8 @@ export function fakeSupabase(
     history?: Array<{ role: string; content: string; heard_chars?: number | null }>;
     /** Extra session columns (e.g. a skill test's assignment and sealed case). */
     sessionExtra?: Record<string, unknown>;
+    /** insert_assistant_message fails with this message (e.g. the session ended). */
+    assistantRpcError?: string;
   } = {},
 ) {
   const rpcCalls: RpcCall[] = [];
@@ -116,6 +118,9 @@ export function fakeSupabase(
       rpc: async (name: string, args: Record<string, unknown>) => {
         rpcCalls.push({ name, args });
         if (name === "insert_assistant_message") {
+          if (opts.assistantRpcError) {
+            return { data: null, error: { message: opts.assistantRpcError } };
+          }
           return {
             data: {
               id: "assistant-msg-1",
