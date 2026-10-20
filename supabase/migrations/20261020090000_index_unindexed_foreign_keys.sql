@@ -1,0 +1,54 @@
+-- Supabase performance advisor 0001 (unindexed_foreign_keys): one btree index
+-- per foreign key that had none (49 on 2026-10-20). Additive and idempotent;
+-- speeds up joins and the FK checks run on parent deletes (e.g. account delete).
+-- Revert: drop index if exists public.<name>; for each index below.
+
+create index if not exists adaptive_rules_trigger_competency_id_fk_idx on public.adaptive_rules (trigger_competency_id);
+create index if not exists assignment_completions_session_id_fk_idx on public.assignment_completions (session_id);
+create index if not exists certifications_competency_id_fk_idx on public.certifications (competency_id);
+create index if not exists cge_decay_competency_id_fk_idx on public.cge_decay (competency_id);
+create index if not exists cge_graph_versions_created_by_fk_idx on public.cge_graph_versions (created_by);
+create index if not exists cge_mastery_history_competency_id_fk_idx on public.cge_mastery_history (competency_id);
+create index if not exists cge_remediation_plans_root_cause_id_fk_idx on public.cge_remediation_plans (root_cause_id);
+create index if not exists classes_cohort_id_fk_idx on public.classes (cohort_id);
+create index if not exists classes_program_id_fk_idx on public.classes (program_id);
+create index if not exists classes_term_id_fk_idx on public.classes (term_id);
+create index if not exists clinic_appointments_avatar_id_fk_idx on public.clinic_appointments (avatar_id);
+create index if not exists cohorts_academic_year_id_fk_idx on public.cohorts (academic_year_id);
+create index if not exists cohorts_program_id_fk_idx on public.cohorts (program_id);
+create index if not exists departments_campus_id_fk_idx on public.departments (campus_id);
+create index if not exists enterprise_audit_events_actor_user_id_fk_idx on public.enterprise_audit_events (actor_user_id);
+create index if not exists enterprise_case_library_entries_institution_id_fk_idx on public.enterprise_case_library_entries (institution_id);
+create index if not exists enterprise_case_library_entries_library_id_fk_idx on public.enterprise_case_library_entries (library_id);
+create index if not exists enterprise_clinical_rotations_course_id_fk_idx on public.enterprise_clinical_rotations (course_id);
+create index if not exists enterprise_clinical_rotations_institution_id_fk_idx on public.enterprise_clinical_rotations (institution_id);
+create index if not exists enterprise_clinical_rotations_program_id_fk_idx on public.enterprise_clinical_rotations (program_id);
+create index if not exists enterprise_course_lessons_institution_id_fk_idx on public.enterprise_course_lessons (institution_id);
+create index if not exists enterprise_course_modules_institution_id_fk_idx on public.enterprise_course_modules (institution_id);
+create index if not exists enterprise_courses_created_by_fk_idx on public.enterprise_courses (created_by);
+create index if not exists enterprise_courses_program_id_fk_idx on public.enterprise_courses (program_id);
+create index if not exists enterprise_graduation_requirements_institution_id_fk_idx on public.enterprise_graduation_requirements (institution_id);
+create index if not exists enterprise_graduation_requirements_program_id_fk_idx on public.enterprise_graduation_requirements (program_id);
+create index if not exists enterprise_research_studies_lead_institution_id_fk_idx on public.enterprise_research_studies (lead_institution_id);
+create index if not exists enterprise_webhooks_institution_id_fk_idx on public.enterprise_webhooks (institution_id);
+create index if not exists institution_memberships_campus_id_fk_idx on public.institution_memberships (campus_id);
+create index if not exists institution_memberships_cohort_id_fk_idx on public.institution_memberships (cohort_id);
+create index if not exists institution_memberships_department_id_fk_idx on public.institution_memberships (department_id);
+create index if not exists institution_memberships_program_id_fk_idx on public.institution_memberships (program_id);
+create index if not exists institutional_feedback_session_id_fk_idx on public.institutional_feedback (session_id);
+create index if not exists institutional_feedback_submitter_id_fk_idx on public.institutional_feedback (submitter_id);
+create index if not exists learning_assignments_class_id_fk_idx on public.learning_assignments (class_id);
+create index if not exists learning_assignments_cohort_id_fk_idx on public.learning_assignments (cohort_id);
+create index if not exists learning_assignments_created_by_fk_idx on public.learning_assignments (created_by);
+create index if not exists profiles_approval_decided_by_fk_idx on public.profiles (approval_decided_by);
+create index if not exists profiles_primary_institution_id_fk_idx on public.profiles (primary_institution_id);
+create index if not exists programs_department_id_fk_idx on public.programs (department_id);
+create index if not exists quality_benchmarks_ledger_id_fk_idx on public.quality_benchmarks (ledger_id);
+create index if not exists quality_events_ledger_id_fk_idx on public.quality_events (ledger_id);
+create index if not exists session_private_notes_therapist_id_fk_idx on public.session_private_notes (therapist_id);
+create index if not exists supervisors_granted_by_fk_idx on public.supervisors (granted_by);
+create index if not exists terms_academic_year_id_fk_idx on public.terms (academic_year_id);
+create index if not exists training_ladder_attempts_patient_key_fk_idx on public.training_ladder_attempts (patient_key);
+create index if not exists training_ladder_patients_avatar_id_fk_idx on public.training_ladder_patients (avatar_id);
+create index if not exists validation_expert_ratings_rater_id_fk_idx on public.validation_expert_ratings (rater_id);
+create index if not exists validation_expert_ratings_session_id_fk_idx on public.validation_expert_ratings (session_id);

@@ -165,6 +165,9 @@ export function VirtualPatientLibrary({
     ) {
       list = list.filter((r) => r.lifecycle === status);
     }
+    // "All" is the working list: archived patients show only under their own
+    // filter, so retired test records don't crowd it.
+    if (status === "all") list = list.filter((r) => r.lifecycle !== "archived");
     if (status === "incomplete")
       list = list.filter((r) => !r.completeness.isComplete);
 

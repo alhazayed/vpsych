@@ -98,6 +98,7 @@ function harness(opts: {
   classicText?: string;
   streamThrows?: boolean;
   persistFails?: boolean;
+  sessionEndedOnPersist?: boolean;
   abortAfterTokens?: number;
 }) {
   const events: Recorded[] = [];
@@ -106,7 +107,16 @@ function harness(opts: {
   const controller = new AbortController();
   const persist = vi.fn(async (turn: PreparedClinicalTurn, content: string) => {
     log.push("persist");
-    if (opts.persistFails) return { ok: false as const, error: { message: "boom" } };
+    if (opts.sessionEndedOnPersist) {
+      return {
+        ok: false as const,
+        error: { message: "Session is not active" },
+        sessionEnded: true,
+      };
+    }
+    if (opts.persistFails) {
+      return { ok: false as const, error: { message: "boom" }, sessionEnded: false };
+    }
     return {
       ok: true as const,
       assistantMsg: {
@@ -345,6 +355,20 @@ describe("runStreamingClinicalTurn", () => {
     expect(h.events.at(-1)!.payload.assistantPersisted).toBe(false);
     expect(ofType(h.events, "done")).toHaveLength(0);
     expect(ofType(h.events, "sentence")).toHaveLength(0);
+  });
+
+  it("session ended during generation → interrupted (session_ended), not an error", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const h = harness({ drafts: [["I'm 34."]], sessionEndedOnPersist: true });
+    expect(await h.run()).toBe("interrupted");
+    const last = h.events.at(-1)!;
+    expect(last.type).toBe("interrupted");
+    expect(last.payload.reason).toBe("session_ended");
+    expect(last.payload.assistantPersisted).toBe(false);
+    expect(ofType(h.events, "done")).toHaveLength(0);
+    expect(ofType(h.events, "error")).toHaveLength(0);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it("CBE direct reply skips the model but still validates, persists and speaks", async () => {

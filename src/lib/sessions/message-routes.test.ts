@@ -120,6 +120,22 @@ describe("POST /api/sessions/:id/message (classic regression)", () => {
     expect(typeof rpc[0]!.args.p_sig).toBe("string");
   });
 
+  it("session ended while the reply generated → 409 Session is not active, not a 500", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = fakeSupabase({ assistantRpcError: "Session is not active" });
+    state.supabase = db.client;
+    state.detailed.push(() => ({ text: "I worry all the time.", aiSource: "gpt" }));
+    const { POST } = await import("@/app/api/sessions/[id]/message/route");
+    const res = await POST(post("message", { message: "How are you?" }), ctx);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "Session is not active" });
+    expect(errorSpy).not.toHaveBeenCalledWith(
+      "[sessions/message] assistant message save failed",
+      expect.anything(),
+    );
+  });
+
   it("regenerates once with the correction cue when the canonical gate rejects", async () => {
     // CBE may legitimately answer a confrontational line with a direct stall;
     // turn it off so this test exercises the model + canonical gate path.
@@ -359,6 +375,29 @@ describe("POST /api/sessions/:id/message/stream", () => {
     expect(db.rpcCalls.filter((c) => c.name === "insert_assistant_message")).toHaveLength(0);
     // The therapist turn itself was persisted exactly once.
     expect(db.inserts.filter((i) => i.table === "session_messages")).toHaveLength(1);
+  });
+
+  it("session ended while streaming → interrupted (session_ended), never an error event", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = fakeSupabase({ assistantRpcError: "Session is not active" });
+    state.supabase = db.client;
+    state.stream = async (input) => {
+      const onToken = input.onToken as (t: string, full: string) => void;
+      onToken("I worry.", "I worry.");
+      return { text: "I worry.", aiSource: "gpt", interrupted: false };
+    };
+    const { POST } = await import("@/app/api/sessions/[id]/message/stream/route");
+    const res = await POST(post("message/stream", { message: "Tell me more" }), ctx);
+    const events = await readSse(res);
+    const last = events.at(-1)!;
+    expect(last.type).toBe("interrupted");
+    expect(last.payload.reason).toBe("session_ended");
+    expect(events.some((e) => e.type === "error" || e.type === "done")).toBe(false);
+    expect(errorSpy).not.toHaveBeenCalledWith(
+      "[sessions/message] assistant message save failed",
+      expect.anything(),
+    );
   });
 
   it("answers pre-generation failures with JSON before persisting anything", async () => {

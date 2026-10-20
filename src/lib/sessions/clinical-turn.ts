@@ -849,12 +849,24 @@ export function logAssistantReply(
  * message. Only a validated reply may reach this function — never a partial
  * stream.
  */
+/** insert_assistant_message raises this when the session is no longer active. */
+export function isSessionNotActiveError(
+  error: { message?: string } | null | undefined,
+): boolean {
+  return /session is not active/i.test(error?.message ?? "");
+}
+
 export async function persistAssistantReply(
   turn: Pick<PreparedClinicalTurn, "supabase" | "sessionId" | "userMsg">,
   content: string,
 ): Promise<
   | { ok: true; assistantMsg: SessionMessage }
-  | { ok: false; error: { message?: string } | null }
+  | {
+      ok: false;
+      error: { message?: string } | null;
+      /** The session ended (or expired) while the reply was generating. */
+      sessionEnded: boolean;
+    }
 > {
   const { supabase, sessionId, userMsg } = turn;
   const { data: assistantMsg, error: assistantError } = await (async () => {
@@ -874,11 +886,20 @@ export async function persistAssistantReply(
   })();
 
   if (assistantError || !assistantMsg) {
+    // The trainee ended the session (or it expired) while the reply was still
+    // generating. insert_assistant_message refuses inactive sessions, which is
+    // right: the transcript closed at end. Expected, so not logged as an error.
+    if (isSessionNotActiveError(assistantError)) {
+      console.info("[sessions/message] reply not saved: session ended during generation", {
+        sessionId,
+      });
+      return { ok: false, error: assistantError, sessionEnded: true };
+    }
     console.error("[sessions/message] assistant message save failed", {
       sessionId,
       error: assistantError?.message,
     });
-    return { ok: false, error: assistantError ?? null };
+    return { ok: false, error: assistantError ?? null, sessionEnded: false };
   }
   return { ok: true, assistantMsg: assistantMsg as SessionMessage };
 }

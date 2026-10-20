@@ -106,6 +106,12 @@ export async function POST(request: Request, { params }: Params) {
   logAssistantReply(turn, replyMeta, "classic");
 
   const saved = await persistAssistantReply(turn, replyMeta.text);
+  if (!saved.ok && saved.sessionEnded) {
+    return NextResponse.json(
+      { error: "Session is not active" },
+      { status: 409 },
+    );
+  }
   if (!saved.ok) {
     return NextResponse.json(
       { error: clientSafeError("Failed to save reply", saved.error) },
