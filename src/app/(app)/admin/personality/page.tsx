@@ -7,6 +7,7 @@ import {
   resolveHumanPersonality,
 } from "@/lib/personality-engine";
 import { disorderNameText } from "@/lib/sessions/diagnosis-label";
+import { readLifecycleFromRow } from "@/lib/admin/virtual-patient-lifecycle";
 import type { Avatar } from "@/lib/types";
 
 export default async function AdminPersonalityPage() {
@@ -18,41 +19,47 @@ export default async function AdminPersonalityPage() {
   const { data: avatars, error: avatarsError } = await supabase
     .from("avatars")
     .select(
-      "id, name, slug, disorder, age, gender, is_active, human_personality, personalities, schema_version, default_locale, clinical_core, persona_prompt, ideal_guidelines, rubric, portrait_url, created_at, updated_at",
+      "id, name, slug, disorder, age, gender, is_active, lifecycle_status, human_personality, personalities, schema_version, default_locale, clinical_core, persona_prompt, ideal_guidelines, rubric, portrait_url, created_at, updated_at",
     )
     .order("name");
   if (avatarsError) {
-    console.error("[admin/personality] list failed", { error: avatarsError.message });
+    console.error("[admin/personality] list failed", {
+      error: avatarsError.message,
+    });
     throw new Error("personality_list_unavailable");
   }
 
-  const list = ((avatars as Avatar[] | null) ?? []).map((avatar) => {
-    const locale =
-      avatar.default_locale ??
-      (avatar.personalities && Object.keys(avatar.personalities)[0]) ??
-      "en-US";
-    const profile = resolveHumanPersonality({ avatar, locale });
-    const locales = Object.keys(avatar.human_personality ?? {}).length
-      ? Object.keys(avatar.human_personality ?? {})
-      : avatar.slug && listBuiltinPersonalitySlugs().includes(avatar.slug)
-        ? (["en-US", "ar-JO"] as const).filter((l) =>
-            Boolean(getBuiltinPersonality(avatar.slug!, l)),
-          )
-        : [locale];
-    return {
-      id: avatar.id,
-      name: avatar.name,
-      slug: avatar.slug ?? null,
-      disorder: avatar.disorder,
-      // Display only; the editor never sends the disorder back.
-      disorder_label:
-        disorderNameText(avatar.disorder, tDisorders, tDefaultDisorders) ??
-        avatar.disorder,
-      is_active: avatar.is_active,
-      locales: [...locales],
-      profile: profile as unknown as Record<string, unknown>,
-    };
-  });
+  // Archived patients are retired test or draft records; they stay restorable
+  // from the Patients page but are not offered for personality editing.
+  const list = ((avatars as Avatar[] | null) ?? [])
+    .filter((avatar) => readLifecycleFromRow(avatar) !== "archived")
+    .map((avatar) => {
+      const locale =
+        avatar.default_locale ??
+        (avatar.personalities && Object.keys(avatar.personalities)[0]) ??
+        "en-US";
+      const profile = resolveHumanPersonality({ avatar, locale });
+      const locales = Object.keys(avatar.human_personality ?? {}).length
+        ? Object.keys(avatar.human_personality ?? {})
+        : avatar.slug && listBuiltinPersonalitySlugs().includes(avatar.slug)
+          ? (["en-US", "ar-JO"] as const).filter((l) =>
+              Boolean(getBuiltinPersonality(avatar.slug!, l)),
+            )
+          : [locale];
+      return {
+        id: avatar.id,
+        name: avatar.name,
+        slug: avatar.slug ?? null,
+        disorder: avatar.disorder,
+        // Display only; the editor never sends the disorder back.
+        disorder_label:
+          disorderNameText(avatar.disorder, tDisorders, tDefaultDisorders) ??
+          avatar.disorder,
+        is_active: avatar.is_active,
+        locales: [...locales],
+        profile: profile as unknown as Record<string, unknown>,
+      };
+    });
 
   return (
     <main className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">

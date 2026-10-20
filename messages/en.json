@@ -1227,7 +1227,7 @@
       "voiceProfile": "Voice profile",
       "voiceLegacyNote": "Legacy voice_id columns kept in sync for compatibility",
       "search": "Search",
-      "filterAll": "All",
+      "filterAll": "All (not archived)",
       "filterDraft": "Draft",
       "filterTesting": "Testing",
       "filterPublished": "Published",
