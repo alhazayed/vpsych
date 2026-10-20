@@ -204,6 +204,7 @@ export default async function AvatarsPage() {
                 <LadderLevelList progress={p.progress} compact />
                 <Link href={`/training/${p.patient.key}`} className="btn-primary w-full">
                   {tTraining("open")}
+                  <span className="sr-only"> — {p.avatar.display_name}</span>
                 </Link>
               </article>
             ))}

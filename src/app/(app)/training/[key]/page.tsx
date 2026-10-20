@@ -166,7 +166,14 @@ export default async function TrainingPatientPage({ params }: Props) {
                     <td className="py-2">{levelName(a.level)}</td>
                     <td className="py-2 text-end tabular-nums">{a.attemptNumber}</td>
                     <td className="py-2 text-end tabular-nums">
-                      {a.score === null ? "—" : t("score", { score: a.score })}
+                      {a.score === null ? (
+                        <>
+                          <span aria-hidden>—</span>
+                          <span className="sr-only">{t("noScore")}</span>
+                        </>
+                      ) : (
+                        t("score", { score: a.score })
+                      )}
                     </td>
                     <td className="py-2 ps-4">
                       <span aria-hidden>
