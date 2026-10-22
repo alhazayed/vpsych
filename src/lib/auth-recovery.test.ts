@@ -62,6 +62,18 @@ describe("password recovery flow", () => {
     expect(login).not.toMatch(/auth\/callback\?next=\/login/);
   });
 
+  it("reset page sends two-step-login accounts through the code check first", () => {
+    const reset = readFileSync(
+      join(root, "src/app/auth/reset-password/page-client.tsx"),
+      "utf8",
+    );
+    // Supabase refuses updateUser({ password }) with insufficient_aal on a
+    // recovery session when the account has a verified TOTP factor.
+    expect(reset).toMatch(/getAuthenticatorAssuranceLevel/);
+    expect(reset).toMatch(/insufficient_aal/);
+    expect(reset).toMatch(/adminMfaChallengeHref\(RESET_PATH\)/);
+  });
+
   it("middleware keeps /auth/* public and only bounces login/signup", () => {
     const mw = readFileSync(
       join(root, "src/lib/supabase/middleware.ts"),
