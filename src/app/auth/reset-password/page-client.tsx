@@ -12,6 +12,9 @@ import {
   passwordChecks,
   passwordStrengthLevel,
 } from "@/lib/password-policy";
+import { adminMfaChallengeHref } from "@/lib/admin-mfa";
+
+const RESET_PATH = "/auth/reset-password";
 
 function strengthMeta(level: ReturnType<typeof passwordStrengthLevel>) {
   if (!level) return { width: "0%", color: "var(--primary)" };
@@ -54,13 +57,26 @@ export default function ResetPasswordPage() {
         setReady(true);
         return;
       }
+      // An account with two-step login must verify its code first: Supabase
+      // refuses a password change on a recovery (aal1) session for it.
+      const { data: aal, error: aalError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (cancelled) return;
+      if (aalError) {
+        console.warn("[reset-password] assurance level read failed", {
+          code: aalError.code ?? null,
+        });
+      } else if (aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+        router.replace(adminMfaChallengeHref(RESET_PATH));
+        return;
+      }
       setReady(true);
     }
     void ensureSession();
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [router, t]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -83,6 +99,10 @@ export default function ResetPasswordPage() {
     });
     if (updateError) {
       setLoading(false);
+      if (updateError.code === "insufficient_aal") {
+        router.push(adminMfaChallengeHref(RESET_PATH));
+        return;
+      }
       setError(t("updateFailed"));
       return;
     }
