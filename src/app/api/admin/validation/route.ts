@@ -63,7 +63,7 @@ export async function GET(request: Request) {
       headers: {
         "content-type": "text/csv; charset=utf-8",
         "content-disposition":
-          'attachment; filename="vpsych-validation-export.csv"',
+          'attachment; filename="vtraining-validation-export.csv"',
         "X-Export-Source": source,
       },
     });

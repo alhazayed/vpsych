@@ -1,6 +1,6 @@
-# vpsych
+# Vtraining
 
-Therapist training platform: practice voice therapy with preset patient avatars (disorder-specific personas), then generate an admin-only performance report after each session.
+Vtraining (Virtual Training; formerly VPsych) is a therapist training platform: practice voice therapy with preset patient avatars (disorder-specific personas), then generate an admin-only performance report after each session.
 
 ## Features (MVP)
 
@@ -89,12 +89,12 @@ Activation (dashboard): verify a sending domain and set `AUTH_EMAIL_FROM`; enabl
 Authentication → Hooks → _Send Email_ pointing at
 `https://rrzudbkxigeavfdnidnm.supabase.co/functions/v1/send-email-hook`; then set
 edge-function secrets `RESEND_API_KEY`, `SEND_EMAIL_HOOK_SECRET`, `AUTH_EMAIL_FROM`,
-and optionally `APP_URL=https://vpsych.vercel.app`. Until enabled, Supabase's
+and optionally `APP_URL=https://www.vtraining.app`. Until enabled, Supabase's
 default mailer is used, so the live signup flow is unaffected.
 
 Also set Authentication → URL Configuration **Site URL** to
-`https://vpsych.vercel.app` (not `http://localhost:3000`) and allow
-`https://vpsych.vercel.app/**` in Redirect URLs — required for any flow that still
+`https://www.vtraining.app` (not `http://localhost:3000`) and allow
+`https://www.vtraining.app/**` in Redirect URLs — required for any flow that still
 uses GoTrue `/auth/v1/verify` redirects (default mailer / PKCE callback).
 
 ## Security notes

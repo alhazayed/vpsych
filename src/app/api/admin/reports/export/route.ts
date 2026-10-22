@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="vpsych-reports-${date}.csv"`,
+      "Content-Disposition": `attachment; filename="vtraining-reports-${date}.csv"`,
       "Cache-Control": "no-store",
       "X-Export-Rows": String(rows.length),
       "X-Export-Truncated": truncated ? "1" : "0",

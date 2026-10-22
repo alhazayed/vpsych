@@ -1,11 +1,11 @@
 {
   "meta": {
-    "title": "VPsych — Clinical Assessment Platform",
+    "title": "Vtraining — Clinical Assessment Platform",
     "description": "Practice therapy with preset patient avatars and receive admin-only performance assessments."
   },
   "common": {
     "loading": "Loading…",
-    "vpsych": "VPsych",
+    "vpsych": "Vtraining",
     "active": "Active",
     "inactive": "Inactive",
     "outOf100": "/100",
@@ -103,7 +103,7 @@
       "mainNav": "Main navigation"
     },
     "commandPalette": {
-      "title": "Search VPsych",
+      "title": "Search Vtraining",
       "placeholder": "Search pages, learners, reports…",
       "trigger": "Search",
       "empty": "No matching destinations.",
@@ -376,7 +376,7 @@
       }
     },
     "how": {
-      "title": "How VPsych Works",
+      "title": "How Vtraining Works",
       "steps": {
         "1": {
           "title": "Choose a Patient",
@@ -409,7 +409,7 @@
         },
         "4": {
           "q": "Does the platform support Arabic?",
-          "a": "Yes. VPsych supports Arabic and English across the UI, with automatic right-to-left layout when Arabic is selected."
+          "a": "Yes. Vtraining supports Arabic and English across the UI, with automatic right-to-left layout when Arabic is selected."
         }
       }
     },
@@ -422,7 +422,7 @@
       "faq": "FAQ",
       "signIn": "Sign in",
       "getStarted": "Get Started",
-      "copyright": "© {year} VPsych. All rights reserved.",
+      "copyright": "© {year} Vtraining. All rights reserved.",
       "howItWorks": "How it works"
     },
     "facts": {
@@ -443,7 +443,7 @@
   "auth": {
     "loading": "Loading…",
     "login": {
-      "platformName": "VPsych Clinical Assessment Platform",
+      "platformName": "Vtraining Clinical Assessment Platform",
       "requestAccess": "Request Access",
       "heroTitle": "Simulated patients for supervised practice.",
       "heroBody": "Each session is a {minutes}-minute appointment. Your supervisor reviews the report.",
@@ -468,7 +468,7 @@
       "createAccount": "Create Account",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
-      "copyright": "© {year} VPsych",
+      "copyright": "© {year} Vtraining",
       "stamp": "Training use only",
       "facts": {
         "lengthLabel": "Session length",
@@ -480,7 +480,7 @@
       }
     },
     "resetPassword": {
-      "platformName": "VPsych Clinical Assessment Platform",
+      "platformName": "Vtraining Clinical Assessment Platform",
       "title": "Choose a new password",
       "subtitle": "Enter a strong password to finish resetting your account.",
       "checking": "Verifying your reset link…",
@@ -496,7 +496,7 @@
       "backToLogin": "Back to sign in"
     },
     "mfa": {
-      "platformName": "VPsych Clinical Assessment Platform",
+      "platformName": "Vtraining Clinical Assessment Platform",
       "challengeTitle": "Two-Factor Authentication",
       "challengeBody": "Enter the six-digit code from your authenticator app to continue to the admin console.",
       "enrollTitle": "Set up two-factor authentication",
@@ -587,7 +587,7 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign In",
       "footer": {
-        "copyright": "© {year} VPsych. All rights reserved.",
+        "copyright": "© {year} Vtraining. All rights reserved.",
         "terms": "Terms of Service",
         "privacy": "Privacy Policy"
       },
@@ -607,9 +607,9 @@
     },
     "pending": {
       "title": "Your account is awaiting approval",
-      "body": "An administrator must approve new accounts before they can use VPsych. You can sign in again later, or check now if you were told it has been approved.",
+      "body": "An administrator must approve new accounts before they can use Vtraining. You can sign in again later, or check now if you were told it has been approved.",
       "rejectedTitle": "Your account was not approved",
-      "rejectedBody": "An administrator did not approve this account, so it cannot use VPsych. Contact your program administrator if you think this is a mistake.",
+      "rejectedBody": "An administrator did not approve this account, so it cannot use Vtraining. Contact your program administrator if you think this is a mistake.",
       "unknownTitle": "We could not check your account",
       "unknownBody": "Your account status could not be loaded. Check your connection and try again.",
       "signedInAs": "Signed in as",
@@ -953,7 +953,7 @@
     }
   },
   "analysis": {
-    "brandAi": "VPsych AI",
+    "brandAi": "Vtraining AI",
     "title": "Analyzing Your Clinical Performance",
     "subtitle": "Our AI is reviewing your therapeutic communication, empathy, diagnostic reasoning, rapport building, interviewing techniques, intervention quality, and overall clinical competency.",
     "estimatedTime": "Estimated time: Approximately 20–60 seconds",
@@ -1478,11 +1478,11 @@
       "comorbidity": "Comorbidity (optional)",
       "comorbidityNone": "None",
       "comorbidityHelpLabel": "About comorbidities",
-      "comorbidityHelp": "Comorbidities are limited to combinations for which VPsych has an authored training scenario or validated case-engine configuration. A clinically possible combination is not necessarily available as a simulation case.",
+      "comorbidityHelp": "Comorbidities are limited to combinations for which Vtraining has an authored training scenario or validated case-engine configuration. A clinically possible combination is not necessarily available as a simulation case.",
       "comorbidityNoneAvailable": "No authored comorbidities are available for this primary diagnosis. Continue with the primary diagnosis only, or choose another primary.",
       "comorbidityUnavailable": "{name} is not currently available as a comorbidity for this training case.",
       "comorbidityIncompatible": "{name} is authored as incompatible with this primary diagnosis and cannot be previewed.",
-      "comorbidityNeedsAuthoring": "Requires case authoring — clinical plausibility alone is not enough for a VPsych simulation case.",
+      "comorbidityNeedsAuthoring": "Requires case authoring — clinical plausibility alone is not enough for a Vtraining simulation case.",
       "comorbidityUnsupportedOption": "{name} (not available for this primary)",
       "comorbidityRemove": "Remove comorbidity",
       "comorbidityChooseSupported": "Or choose another supported comorbidity from the list.",
@@ -1762,7 +1762,7 @@
     },
     "home": {
       "title": "Overview",
-      "subtitle": "What is happening in VPsych right now, and what needs your attention?",
+      "subtitle": "What is happening in Vtraining right now, and what needs your attention?",
       "greetingHint": "Operational snapshot from live platform data.",
       "kpiRegion": "Key metrics",
       "statActive": "Published virtual patients",
@@ -2345,7 +2345,7 @@
     },
     "accounts": {
       "title": "Account approvals",
-      "intro": "Nobody can use VPsych until you approve their account. New sign-ups wait here; rejected or revoked accounts cannot open any page. You can also edit or delete any account except your own.",
+      "intro": "Nobody can use Vtraining until you approve their account. New sign-ups wait here; rejected or revoked accounts cannot open any page. You can also edit or delete any account except your own.",
       "loadError": "Accounts could not be loaded. Refresh the page to try again.",
       "pendingCount": "{count, plural, =0 {No accounts waiting} one {# account waiting for approval} other {# accounts waiting for approval}}",
       "noPending": "No one is waiting for approval.",
@@ -2363,7 +2363,7 @@
       "saved": "Saved",
       "changeFailed": "The account could not be updated. Please try again.",
       "networkError": "Network error. Check your connection and try again.",
-      "rejectConfirm": "Reject {name}'s account? They will not be able to open VPsych.",
+      "rejectConfirm": "Reject {name}'s account? They will not be able to open Vtraining.",
       "revokeConfirm": "Revoke access for {name}? They will be signed out of every page until you approve them again.",
       "youBadge": "You",
       "edit": "Edit",
@@ -3360,7 +3360,7 @@
       "p14RecommendationNoGo": "Remain on Controlled Institutional Deployment (1.0.0-rc.1). GO for CIDP. NO-GO for GA.",
       "p14Disclaimer": "Phase 14 operational evidence package. Competency scores are not validated. GA remains NO-GO until all gates PASS and Release Board authorizes v1.0.0.",
       "p15Ownership": "Phase 15 owns final GA authorization evaluation and Board evidence packaging only. Never writes Clinical Core, patient cognition, Emotion, Adaptation, Assessment formulas, Supervisor decision logic, or Enterprise tenancy rules.",
-      "p15DecisionGo": "AUTHORIZE VPsych Version 1.0.0 General Availability.",
+      "p15DecisionGo": "AUTHORIZE Vtraining Version 1.0.0 General Availability.",
       "p15DecisionNoGo": "NO-GO for General Availability. Remain on Controlled Institutional Deployment (1.0.0-rc.1).",
       "p15MotionGo": "Motion: Tag v1.0.0, bump package.json to 1.0.0, publish Final Release Notes, append authorizing RDL.",
       "p15MotionNoGo": "Motion: Refuse GA; continue CIDP pilots; close open Phase 15 gates with signed evidence; re-convene Board.",
@@ -3603,7 +3603,7 @@
     "hero": {
       "eyebrow": "Professional Preview · Expert evaluation",
       "title": "Clinical validation study",
-      "body": "You are invited to evaluate whether VPsych’s simulated patients and training workflow are suitable for professional education — not whether the product is ready for unsupervised public launch."
+      "body": "You are invited to evaluate whether Vtraining’s simulated patients and training workflow are suitable for professional education — not whether the product is ready for unsupervised public launch."
     },
     "purpose": {
       "title": "Study purpose",
@@ -3674,7 +3674,7 @@
   "legal": {
     "privacy": {
       "title": "Privacy Policy",
-      "body": "VPsych is a clinical training platform that uses fictional patient personas. We do not collect or store real patient health information in simulations.",
+      "body": "Vtraining is a clinical training platform that uses fictional patient personas. We do not collect or store real patient health information in simulations.",
       "points": {
         "1": "Account data (email, display name, role) is used to authenticate learners and administrators.",
         "2": "Session transcripts and competency scores support training and supervisor review under role-based access control.",
@@ -3683,7 +3683,7 @@
     },
     "terms": {
       "title": "Terms of Service",
-      "body": "By using VPsych you agree to use the platform only for authorized clinical education and training purposes.",
+      "body": "By using Vtraining you agree to use the platform only for authorized clinical education and training purposes.",
       "points": {
         "1": "Simulated patients are fictional and must not be treated as real clinical records.",
         "2": "Assessment reports may be restricted to administrators depending on institutional policy.",
@@ -3692,7 +3692,7 @@
     },
     "clinical": {
       "title": "Clinical disclaimer",
-      "body": "VPsych provides simulated patients for education only. It is not a medical device, does not provide clinical advice, and must not be used for diagnosis or treatment of real patients."
+      "body": "Vtraining provides simulated patients for education only. It is not a medical device, does not provide clinical advice, and must not be used for diagnosis or treatment of real patients."
     },
     "educational": {
       "title": "Educational disclaimer",

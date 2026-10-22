@@ -189,7 +189,7 @@ export function evaluatePhase15Authorization(
     pass_count,
     fail_or_open_count,
     decision: allPass
-      ? "AUTHORIZE VPsych Version 1.0.0 General Availability."
+      ? "AUTHORIZE Vtraining Version 1.0.0 General Availability."
       : "NO-GO for General Availability. Remain on Controlled Institutional Deployment (1.0.0-rc.1).",
     motion: allPass
       ? "Motion: Tag v1.0.0, bump package.json to 1.0.0, publish Final Release Notes, append authorizing RDL."

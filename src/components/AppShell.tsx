@@ -277,8 +277,8 @@ export function AppShell({
               className={`flex min-w-0 items-center gap-3 ${collapsed ? "justify-center" : ""}`}
             >
               <Image
-                src="/vpsych-logo.png"
-                alt={collapsed ? "VPsych" : ""}
+                src="/vtraining-logo.png"
+                alt={collapsed ? "Vtraining" : ""}
                 width={40}
                 height={40}
                 className="h-10 w-10 shrink-0 rounded-lg object-cover"
@@ -287,7 +287,7 @@ export function AppShell({
               {!collapsed ? (
                 <div className="min-w-0">
                   <p className="font-[family-name:var(--font-headline)] text-lg font-bold tracking-tight text-[var(--primary)]">
-                    VPsych
+                    Vtraining
                   </p>
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)]">
                     {isAdminArea ? tShell("adminTagline") : tShell("tagline")}
@@ -413,14 +413,14 @@ export function AppShell({
             className="flex items-center gap-2"
           >
             <Image
-              src="/vpsych-logo.png"
+              src="/vtraining-logo.png"
               alt=""
               width={32}
               height={32}
               className="h-8 w-8 rounded-md object-cover"
             />
             <span className="font-[family-name:var(--font-headline)] text-lg font-bold text-[var(--primary)]">
-              VPsych
+              Vtraining
             </span>
           </Link>
         </div>
@@ -466,7 +466,7 @@ export function AppShell({
           >
             <div className="flex items-center justify-between border-b border-[var(--outline-variant)] px-4 py-3">
               <p className="font-[family-name:var(--font-headline)] font-bold text-[var(--primary)]">
-                VPsych
+                Vtraining
               </p>
               <button
                 type="button"

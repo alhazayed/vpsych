@@ -59,7 +59,7 @@ const CTSR_SOURCES: Record<CtsrItemId, Source> = {
 };
 
 export const CTSR_LIMITATIONS = [
-  "Indicative mapping from VPsych rubric scores and transcript checks; not a CTS-R rating by a trained rater.",
+  "Indicative mapping from Vtraining rubric scores and transcript checks; not a CTS-R rating by a trained rater.",
   "Not validated. Do not quote as a CTS-R score or compare with published CTS-R thresholds.",
 ] as const;
 

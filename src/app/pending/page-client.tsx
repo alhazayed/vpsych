@@ -61,15 +61,15 @@ export default function PendingApprovalScreen({
       <header className="absolute start-0 top-0 z-50 flex w-full items-center justify-between px-4 py-4 md:px-10">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/vpsych-logo.png"
-            alt="VPsych"
+            src="/vtraining-logo.png"
+            alt="Vtraining"
             width={40}
             height={40}
             className="h-10 w-10 rounded-lg object-cover"
             priority
           />
           <span className="hidden font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--primary)] sm:inline">
-            VPsych
+            Vtraining
           </span>
         </Link>
         <LanguageSwitcher />

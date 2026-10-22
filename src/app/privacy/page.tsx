@@ -11,7 +11,7 @@ export default async function PrivacyPage() {
     >
       <p className="mb-2 text-sm text-[var(--on-surface-variant)]">
         <Link href="/" className="text-[var(--primary)] hover:underline">
-          VPsych
+          Vtraining
         </Link>
       </p>
       <h1 className="font-[family-name:var(--font-headline)] text-3xl font-semibold text-[var(--primary)]">

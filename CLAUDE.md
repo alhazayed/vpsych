@@ -4,7 +4,7 @@ Guidance for AI assistants working in this repository.
 
 ## What this is
 
-**vpsych** — a therapist-training platform. A trainee ("therapist") runs a
+**Vtraining** (Virtual Training; formerly VPsych, repo `alhazayed/vpsych`) — a therapist-training platform. Production: https://www.vtraining.app. A trainee ("therapist") runs a
 voice or text psychotherapy session against an AI standardized patient, and the
 platform generates an **admin-only** performance report afterwards. Sessions are
 bilingual (English / Arabic) and each locale's patient personality is *natively

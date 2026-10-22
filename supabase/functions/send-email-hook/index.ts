@@ -8,10 +8,10 @@
 //   RESEND_API_KEY          — a Resend API key with send permission
 //   SEND_EMAIL_HOOK_SECRET  — the signing secret generated when you create the
 //                             hook (looks like `v1,whsec_...`)
-//   AUTH_EMAIL_FROM         — verified sender, e.g. `vpsych <no-reply@yourdomain>`
+//   AUTH_EMAIL_FROM         — verified sender, e.g. `Vtraining <no-reply@vtraining.app>`
 // Optional:
 //   APP_URL                 — canonical https app origin for confirm links
-//                             (default https://vpsych.vercel.app). Links never
+//                             (default https://www.vtraining.app). Links never
 //                             take their origin from the request's redirect_to
 //                             or site_url, so neither a misconfigured Auth Site
 //                             URL (http://localhost:3000, a blank page) nor a
@@ -43,8 +43,8 @@ type HookPayload = {
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET") ?? "";
 const EMAIL_FROM =
-  Deno.env.get("AUTH_EMAIL_FROM") ?? "vpsych <no-reply@example.com>";
-const DEFAULT_APP_URL = "https://vpsych.vercel.app";
+  Deno.env.get("AUTH_EMAIL_FROM") ?? "Vtraining <no-reply@example.com>";
+const DEFAULT_APP_URL = "https://www.vtraining.app";
 
 // Copy per auth action. `signup` covers new-account confirmation.
 const COPY: Record<
@@ -52,35 +52,35 @@ const COPY: Record<
   { subject: string; heading: string; intro: string; cta: string }
 > = {
   signup: {
-    subject: "Confirm your vpsych account",
+    subject: "Confirm your Vtraining account",
     heading: "Confirm your email",
     intro:
-      "Welcome to vpsych. Confirm your email address to activate your therapist account and start practicing.",
+      "Welcome to Vtraining. Confirm your email address to activate your therapist account and start practicing.",
     cta: "Confirm email",
   },
   invite: {
-    subject: "You've been invited to vpsych",
+    subject: "You've been invited to Vtraining",
     heading: "Accept your invitation",
-    intro: "You've been invited to vpsych. Accept the invitation to get started.",
+    intro: "You've been invited to Vtraining. Accept the invitation to get started.",
     cta: "Accept invitation",
   },
   magiclink: {
-    subject: "Your vpsych sign-in link",
-    heading: "Sign in to vpsych",
+    subject: "Your Vtraining sign-in link",
+    heading: "Sign in to Vtraining",
     intro: "Use the button below to sign in. This link can only be used once.",
     cta: "Sign in",
   },
   recovery: {
-    subject: "Reset your vpsych password",
+    subject: "Reset your Vtraining password",
     heading: "Reset your password",
     intro:
       "We received a request to reset your password. If this wasn't you, you can safely ignore this email.",
     cta: "Reset password",
   },
   email_change: {
-    subject: "Confirm your new vpsych email",
+    subject: "Confirm your new Vtraining email",
     heading: "Confirm your new email",
-    intro: "Confirm this address to finish updating your vpsych email.",
+    intro: "Confirm this address to finish updating your Vtraining email.",
     cta: "Confirm email",
   },
 };
@@ -125,7 +125,7 @@ function nextPathForAction(action: string): string {
 }
 
 /**
- * App-hosted confirm URL. The browser hits vpsych directly with token_hash;
+ * App-hosted confirm URL. The browser hits Vtraining directly with token_hash;
  * /auth/confirm calls verifyOtp — no GoTrue redirect allow-list involved.
  */
 function confirmUrl(data: EmailData): string {
@@ -149,7 +149,7 @@ function renderHtml(
       <tr>
         <td align="center">
           <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#fffdf8;border:1px solid #d5ddd6;border-radius:16px;padding:32px;">
-            <tr><td style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">vpsych</td></tr>
+            <tr><td style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">Vtraining</td></tr>
             <tr><td style="padding-top:20px;font-size:22px;font-weight:600;">${copy.heading}</td></tr>
             <tr><td style="padding-top:12px;font-size:15px;line-height:1.6;color:#5f6f6c;">${copy.intro}</td></tr>
             <tr>

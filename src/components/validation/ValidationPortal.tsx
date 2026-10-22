@@ -120,7 +120,7 @@ export function ValidationPortal({
             href="/"
             className="font-[family-name:var(--font-headline)] text-xl font-bold tracking-tight text-[var(--primary)]"
           >
-            VPsych
+            Vtraining
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSwitcher compact />
@@ -348,7 +348,7 @@ export function ValidationPortal({
       <footer className="border-t border-[color-mix(in_srgb,var(--outline-variant)_25%,transparent)] px-6 py-8 text-center text-sm text-[var(--on-surface-variant)]">
         <p>{t("footer.disclaimer")}</p>
         <p className="mt-2">
-          © {year} VPsych ·{" "}
+          © {year} Vtraining ·{" "}
           <Link href="/privacy" className="hover:underline">
             {t("footer.privacy")}
           </Link>
