@@ -45,7 +45,7 @@ const REGISTRY: MetricDefinition[] = [
   {
     id: "AVI",
     name: "Assessment Validity Index",
-    description: "Whether VPsych evaluates the competencies it claims",
+    description: "Whether Vtraining evaluates the competencies it claims",
     version: AVI_VERSION,
     domain: "assessment",
     enabled: true,

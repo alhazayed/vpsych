@@ -15,7 +15,7 @@ import type {
 } from "@/lib/validation/types";
 
 const DISCLAIMER =
-  "VPsych scientific validation metrics are observational educational/research " +
+  "Vtraining scientific validation metrics are observational educational/research " +
   "fidelity measures. Competency and realism scores are not clinically validated " +
   "instruments. No statistical significance is claimed without a registered study protocol.";
 

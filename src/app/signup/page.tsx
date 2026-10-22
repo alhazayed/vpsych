@@ -173,14 +173,14 @@ function SignupForm() {
         <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-10">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/vpsych-logo.png"
+              src="/vtraining-logo.png"
               alt=""
               width={32}
               height={32}
               className="h-8 w-8 rounded-md object-cover"
             />
             <span className="font-[family-name:var(--font-headline)] text-xl font-bold text-[var(--primary)]">
-              VPsych
+              Vtraining
             </span>
           </Link>
           <div className="flex items-center gap-4 md:gap-6">
@@ -615,7 +615,7 @@ function SignupForm() {
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-3 px-4 md:flex-row md:px-10">
           <div className="flex items-center gap-2">
             <span className="font-[family-name:var(--font-headline)] text-sm font-bold">
-              VPsych
+              Vtraining
             </span>
             <span className="text-xs text-[var(--on-surface-variant)]">
               {t("footer.copyright", { year: new Date().getFullYear() })}

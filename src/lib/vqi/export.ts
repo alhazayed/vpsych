@@ -92,7 +92,7 @@ export function exportVqiPdfPayload(
 ): Record<string, unknown> {
   return {
     format: "vpsych-vqi-pdf-payload",
-    title: "VPsych Quality Index Report",
+    title: "Vtraining Quality Index Report",
     certificate,
     overall: vqi.overall,
     maturity: vqi.maturity,

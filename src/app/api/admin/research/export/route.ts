@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       headers: {
         "content-type": "text/csv; charset=utf-8",
         "content-disposition":
-          'attachment; filename="vpsych-research-export.csv"',
+          'attachment; filename="vtraining-research-export.csv"',
         "X-Export-Source": source,
       },
     });

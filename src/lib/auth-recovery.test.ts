@@ -14,7 +14,7 @@ describe("password recovery flow", () => {
     expect(hook).toMatch(/\/auth\/confirm/);
     expect(hook).toMatch(/token_hash: data\.token_hash/);
     expect(hook).toMatch(/isLoopbackHost/);
-    expect(hook).toMatch(/vpsych\.vercel\.app/);
+    expect(hook).toMatch(/www\.vtraining\.app/);
     // Must not build a GoTrue verify URL in code (comments may mention it).
     expect(hook).not.toMatch(
       /return `\$\{SUPABASE_URL\}\/auth\/v1\/verify/,

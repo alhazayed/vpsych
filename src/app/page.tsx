@@ -46,7 +46,7 @@ export default async function HomePage() {
               href="/"
               className="font-[family-name:var(--font-headline)] text-xl font-bold tracking-tight text-[var(--primary)]"
             >
-              VPsych
+              Vtraining
             </Link>
             <nav className="hidden items-center gap-6 md:flex">
               <a
@@ -230,7 +230,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-[1280px] gap-8 px-6 md:grid-cols-4 md:px-8">
           <div>
             <div className="mb-4 font-[family-name:var(--font-headline)] text-lg font-bold text-[var(--primary)]">
-              VPsych
+              Vtraining
             </div>
             <p className="max-w-xs text-sm text-[var(--on-surface-variant)]">
               {t("footer.tagline")}

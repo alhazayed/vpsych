@@ -23,7 +23,7 @@ export function ExportReportsButton() {
       }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
-      const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "vpsych-reports.csv";
+      const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "vtraining-reports.csv";
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

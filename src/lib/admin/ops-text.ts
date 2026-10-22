@@ -22,7 +22,7 @@ export const OPS_TEXT = {
   p14RecommendationNoGo: "Remain on Controlled Institutional Deployment (1.0.0-rc.1). GO for CIDP. NO-GO for GA.",
   p14Disclaimer: "Phase 14 operational evidence package. Competency scores are not validated. GA remains NO-GO until all gates PASS and Release Board authorizes v1.0.0.",
   p15Ownership: "Phase 15 owns final GA authorization evaluation and Board evidence packaging only. Never writes Clinical Core, patient cognition, Emotion, Adaptation, Assessment formulas, Supervisor decision logic, or Enterprise tenancy rules.",
-  p15DecisionGo: "AUTHORIZE VPsych Version 1.0.0 General Availability.",
+  p15DecisionGo: "AUTHORIZE Vtraining Version 1.0.0 General Availability.",
   p15DecisionNoGo: "NO-GO for General Availability. Remain on Controlled Institutional Deployment (1.0.0-rc.1).",
   p15MotionGo: "Motion: Tag v1.0.0, bump package.json to 1.0.0, publish Final Release Notes, append authorizing RDL.",
   p15MotionNoGo: "Motion: Refuse GA; continue CIDP pilots; close open Phase 15 gates with signed evidence; re-convene Board.",

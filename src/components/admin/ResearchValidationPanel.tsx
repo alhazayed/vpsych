@@ -291,7 +291,7 @@ export function ResearchValidationPanel() {
             <thead>
               <tr className="text-[var(--on-surface-variant)]">
                 <th className="py-1 font-medium">{t("colMetric")}</th>
-                <th className="py-1 font-medium">VPsych</th>
+                <th className="py-1 font-medium">Vtraining</th>
                 <th className="py-1 font-medium">{t("colBaseline")}</th>
                 <th className="py-1 font-medium">Δ</th>
                 <th className="py-1 font-medium">{t("colSource")}</th>

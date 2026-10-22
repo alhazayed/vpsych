@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 const ORIGIN =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-  "https://vpsych.vercel.app";
+  "https://www.vtraining.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
