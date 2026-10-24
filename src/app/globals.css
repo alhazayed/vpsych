@@ -1675,3 +1675,26 @@ a.cf-tab:hover {
   margin: 0;
   word-break: break-all;
 }
+
+/* Pass certificate (/admin/certificates): the designer portals a copy of the
+   sheet into <body>; printing shows only that copy, one A4 landscape page. */
+.certificate-print-root {
+  display: none;
+}
+@media print {
+  body:has(> .certificate-print-root) {
+    margin: 0;
+    background: #fff;
+  }
+  body:has(> .certificate-print-root) > :not(.certificate-print-root) {
+    display: none !important;
+  }
+  .certificate-print-root {
+    display: block;
+    width: 297mm;
+    height: 210mm;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
