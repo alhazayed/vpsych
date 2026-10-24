@@ -178,9 +178,14 @@ export default async function AdminLearnersPage({
           { label: t("title") },
         ]}
         actions={
-          <Link href="/admin/training" className="btn-secondary">
-            {t("trainingLink")}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/training" className="btn-secondary">
+              {t("trainingLink")}
+            </Link>
+            <Link href="/admin/certificates" className="btn-secondary">
+              {t("certificatesLink")}
+            </Link>
+          </div>
         }
       />
 
