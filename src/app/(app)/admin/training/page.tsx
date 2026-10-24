@@ -31,6 +31,11 @@ export default async function AdminTrainingPage() {
       title={t("title")}
       subtitle={t("subtitle")}
       breadcrumbs={[{ label: tHome("title"), href: "/admin" }, { label: t("title") }]}
+      actions={
+        <Link href="/admin/certificates" className="btn-secondary">
+          {t("certificatesLink")}
+        </Link>
+      }
     />
   );
 

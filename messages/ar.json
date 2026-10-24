@@ -169,7 +169,8 @@
     "skillTestsAdmin": "اختبارات المهارات",
     "training": "برنامج التدريب",
     "recordTabs": "سجلّاتك",
-    "accountApprovals": "الموافقة على الحسابات"
+    "accountApprovals": "الموافقة على الحسابات",
+    "certificates": "الشهادات"
   },
   "learning": {
     "title": "التعلّم التكيفي",
@@ -2110,7 +2111,8 @@
       "identityNote": "المتدربون التعليميون هم حسابات بدور المعالج (profiles.role = therapist). تُستبعد حسابات مسؤولي المنصة من هذا الدليل.",
       "viewTraining": "مستويات برنامج التدريب",
       "trainingLink": "تقدّم برنامج التدريب",
-      "detailTabsLabel": "ملف المتدرب"
+      "detailTabsLabel": "ملف المتدرب",
+      "certificatesLink": "الشهادات"
     },
     "contextualHelp": {
       "close": "إغلاق",
@@ -2440,7 +2442,8 @@
       "unnamed": "متدرّب بلا اسم",
       "notStarted": "لم يبدأ",
       "report": "التقرير",
-      "session": "الجلسة"
+      "session": "الجلسة",
+      "certificatesLink": "الشهادات"
     },
     "readiness": {
       "sections": {
@@ -3593,6 +3596,69 @@
       "riskSummaryOpen": "{count, plural, one {خطر واحد مفتوح أو قيد التخفيف} two {خطران مفتوحان أو قيد التخفيف} few {# مخاطر مفتوحة أو قيد التخفيف} many {# خطراً مفتوحاً أو قيد التخفيف} other {# خطر مفتوح أو قيد التخفيف}}؛ لا مخاطر حرجة مفتوحة — واصل مراقبة النشر المؤسسي المضبوط.",
       "evidenceFeedbackRisk": "ملاحظات المؤسسات + سجل المخاطر",
       "evidenceMetricsPortfolio": "مؤشرات نجاح النشر المؤسسي المضبوط + ملف التجربة"
+    },
+    "certificates": {
+      "title": "الشهادات",
+      "subtitle": "صمّم شهادة اجتياز، واعرضها قبل طباعتها أو حفظها بصيغة PDF. اختر متدرّبًا لترى تقدّمه في برنامج التدريب.",
+      "formLabel": "إعدادات الشهادة",
+      "languageTitle": "لغة الشهادة",
+      "languageEn": "الإنجليزية",
+      "languageAr": "العربية",
+      "languageHint": "لكل لغة نصوصها الخاصة، أمّا الشعارات وصور التواقيع فمشتركة بينهما.",
+      "recipientTitle": "صاحب الشهادة",
+      "trainee": "المتدرّب",
+      "traineeNone": "اختر متدرّبًا (اختياري)",
+      "traineeOption": "{name} · المرضى المكتملون {completed}/{patients}",
+      "traineeProgress": "برنامج التدريب: المرضى المكتملون {completed} من {patients}، والمستويات المجتازة {cleared} من {levels}.",
+      "traineeEmpty": "لم يبدأ أي متدرّب برنامج التدريب بعد. يمكنك كتابة الاسم يدويًا.",
+      "unnamed": "متدرّب بلا اسم",
+      "traineesFailed": "تعذّر تحميل تقدّم المتدرّبين. ما زال بإمكانك كتابة الاسم والطباعة.",
+      "recipientName": "الاسم على الشهادة",
+      "recipientHint": "اكتبه كما يجب أن يُطبع، بالعربية أو الإنجليزية.",
+      "date": "التاريخ",
+      "reference": "رقم الشهادة",
+      "referenceNew": "رقم جديد",
+      "wordingTitle": "النصوص ({language})",
+      "heading": "العنوان",
+      "intro": "السطر قبل الاسم",
+      "achievement": "السطر بعد الاسم",
+      "wordingReset": "استعادة النصوص الأصلية",
+      "instituteTitle": "المؤسسة",
+      "instituteName": "اسم المؤسسة",
+      "instituteHint": "اختياري. يظهر بجانب Vtraining في أعلى الشهادة. اتركه فارغًا لشهادة باسم Vtraining وحدها.",
+      "instituteLogo": "شعار المؤسسة",
+      "signatoriesTitle": "التواقيع",
+      "signatoryN": "الموقّع {n}",
+      "signatoryRemove": "حذف الموقّع {n}",
+      "signatoryName": "الاسم",
+      "signatoryTitle": "المنصب",
+      "signatoryImage": "صورة التوقيع",
+      "signatoryAdd": "إضافة موقّع",
+      "signatoriesHint": "حتى 3 موقّعين. إن لم تُرفع صورة، يبقى السطر فارغًا للتوقيع باليد.",
+      "imageChoose": "اختيار صورة",
+      "imageRemove": "حذف",
+      "imageType": "استخدم صورة بصيغة PNG أو JPEG أو WebP.",
+      "imageSize": "الصورة كبيرة جدًا. استخدم صورة أصغر من 512 كيلوبايت.",
+      "imageRead": "تعذّرت قراءة الصورة. جرّب ملفًا آخر.",
+      "saveFailed": "تعذّر حفظ هذه الإعدادات في هذا المتصفح، غالبًا لأن الصور كبيرة. العرض والطباعة ما زالا يعملان.",
+      "previewTitle": "معاينة",
+      "print": "طباعة أو حفظ بصيغة PDF",
+      "printNeedsName": "أضف الاسم على الشهادة لتتمكّن من الطباعة.",
+      "printHint": "في نافذة الطباعة اختر A4 وبالعرض، وفعّل طباعة الخلفيات. واختر «حفظ بصيغة PDF» للحصول على ملف.",
+      "notStored": "تُحفظ الإعدادات في هذا المتصفح فقط. الشهادات المطبوعة لا تُسجَّل، لذا لا يمكن التحقق من رقمها عبر الإنترنت بعد.",
+      "defaults": {
+        "heading": "شهادة إتمام",
+        "intro": "تُمنح هذه الشهادة إلى",
+        "achievement": "تقديرًا لإتمام برنامج Vtraining للتدريب على العلاج النفسي بالمحاكاة بنجاح.",
+        "signatoryTitle": "مدير البرنامج"
+      },
+      "sheet": {
+        "date": "التاريخ",
+        "reference": "رقم الشهادة",
+        "inPartnershipWith": "بالتعاون مع",
+        "disclaimer": "شهادة تدريبية تعليمية، وليست ترخيصًا لمزاولة المهنة.",
+        "signature": "التوقيع"
+      }
     }
   },
   "validation": {

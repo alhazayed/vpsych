@@ -169,7 +169,8 @@
     "skillTestsAdmin": "Skill tests",
     "training": "Training Program",
     "recordTabs": "Your records",
-    "accountApprovals": "Account approvals"
+    "accountApprovals": "Account approvals",
+    "certificates": "Certificates"
   },
   "learning": {
     "title": "Adaptive Learning",
@@ -2110,7 +2111,8 @@
       "identityNote": "Educational learners are therapist-role accounts (profiles.role = therapist). Platform admin accounts are excluded from this directory.",
       "viewTraining": "Training Program ladder",
       "trainingLink": "Training Program progress",
-      "detailTabsLabel": "Learner profile"
+      "detailTabsLabel": "Learner profile",
+      "certificatesLink": "Certificates"
     },
     "contextualHelp": {
       "close": "Close",
@@ -2440,7 +2442,8 @@
       "unnamed": "Unnamed trainee",
       "notStarted": "Not started",
       "report": "Report",
-      "session": "Session"
+      "session": "Session",
+      "certificatesLink": "Certificates"
     },
     "readiness": {
       "sections": {
@@ -3593,6 +3596,69 @@
       "riskSummaryOpen": "{count} open/mitigating risk(s); no critical-tier open — continue CIDP observation.",
       "evidenceFeedbackRisk": "Institutional feedback + risk register",
       "evidenceMetricsPortfolio": "CIDP success metrics + pilot portfolio"
+    },
+    "certificates": {
+      "title": "Certificates",
+      "subtitle": "Design a pass certificate, preview it and print it or save it as a PDF. Choose a trainee to see their Training Program progress.",
+      "formLabel": "Certificate settings",
+      "languageTitle": "Certificate language",
+      "languageEn": "English",
+      "languageAr": "Arabic",
+      "languageHint": "Each language keeps its own wording. Logos and signature images are shared.",
+      "recipientTitle": "Recipient",
+      "trainee": "Trainee",
+      "traineeNone": "Choose a trainee (optional)",
+      "traineeOption": "{name} · {completed}/{patients} patients completed",
+      "traineeProgress": "Training Program: {completed} of {patients} patients completed, {cleared} of {levels} levels cleared.",
+      "traineeEmpty": "No trainee has started the Training Program yet. You can still type a name.",
+      "unnamed": "Unnamed trainee",
+      "traineesFailed": "Trainee progress could not be loaded. You can still type a name and print.",
+      "recipientName": "Name on the certificate",
+      "recipientHint": "Type it as it should be printed, in Arabic or English.",
+      "date": "Date",
+      "reference": "Certificate number",
+      "referenceNew": "New number",
+      "wordingTitle": "Wording ({language})",
+      "heading": "Heading",
+      "intro": "Line above the name",
+      "achievement": "Line below the name",
+      "wordingReset": "Reset wording",
+      "instituteTitle": "Institute",
+      "instituteName": "Institute name",
+      "instituteHint": "Optional. Shown next to Vtraining at the top. Leave empty for a Vtraining-only certificate.",
+      "instituteLogo": "Institute logo",
+      "signatoriesTitle": "Signatures",
+      "signatoryN": "Signatory {n}",
+      "signatoryRemove": "Remove signatory {n}",
+      "signatoryName": "Name",
+      "signatoryTitle": "Position",
+      "signatoryImage": "Signature image",
+      "signatoryAdd": "Add a signatory",
+      "signatoriesHint": "Up to 3. Without an image, the line stays blank for a hand signature.",
+      "imageChoose": "Choose image",
+      "imageRemove": "Remove",
+      "imageType": "Use a PNG, JPEG or WebP image.",
+      "imageSize": "The image is too large. Use one under 512 KB.",
+      "imageRead": "The image could not be read. Try another file.",
+      "saveFailed": "These settings could not be kept in this browser, probably because the images are too large. The preview and printing still work.",
+      "previewTitle": "Preview",
+      "print": "Print or save as PDF",
+      "printNeedsName": "Add the name on the certificate to print.",
+      "printHint": "In the print window choose A4, landscape, and turn on background graphics. Choose \"Save as PDF\" to get a file.",
+      "notStored": "Settings are kept in this browser only. Printed certificates are not recorded, so the number cannot be checked online yet.",
+      "defaults": {
+        "heading": "Certificate of Completion",
+        "intro": "This certificate is awarded to",
+        "achievement": "for successfully completing the Vtraining simulated psychotherapy training program.",
+        "signatoryTitle": "Program Director"
+      },
+      "sheet": {
+        "date": "Date",
+        "reference": "Certificate no.",
+        "inPartnershipWith": "In partnership with",
+        "disclaimer": "Educational training certificate. Not a licence to practise.",
+        "signature": "Signature"
+      }
     }
   },
   "validation": {
