@@ -31,6 +31,75 @@ export type VadController = {
   speechMs: () => number;
 };
 
+/**
+ * One microphone stream kept open for a whole session. Opening and stopping
+ * the mic at every turn makes iOS/iPadOS (WebKit, every browser there) drop
+ * and re-open the audio session each time, which the trainee sees as the mic
+ * disconnecting and reconnecting. Listen turns and the barge-in / floor
+ * monitors borrow this stream instead and never stop its tracks; only
+ * `close()` (pause, session end) does. A track that ended on its own (the OS
+ * took the mic, the tab was backgrounded) is replaced on the next `acquire()`.
+ */
+export type SessionMic = {
+  /** The live shared stream, opened on first use or after it ended. */
+  acquire: () => Promise<MediaStream>;
+  /** Stop the tracks. The next acquire() opens a fresh stream. */
+  close: () => void;
+};
+
+function streamIsLive(stream: MediaStream): boolean {
+  const tracks = stream.getAudioTracks();
+  return tracks.length > 0 && tracks.every((t) => t.readyState === "live");
+}
+
+export function createSessionMic(
+  open: () => Promise<MediaStream> = () =>
+    navigator.mediaDevices.getUserMedia({ audio: HANDS_FREE_AUDIO_CONSTRAINTS }),
+): SessionMic {
+  let stream: MediaStream | null = null;
+  let pending: Promise<MediaStream> | null = null;
+  // Bumped by close() so an open still in flight is not kept afterwards.
+  let epoch = 0;
+
+  const stopTracks = (s: MediaStream) => {
+    s.getTracks().forEach((t) => t.stop());
+  };
+
+  return {
+    acquire() {
+      if (stream && streamIsLive(stream)) return Promise.resolve(stream);
+      if (stream) {
+        stopTracks(stream);
+        stream = null;
+      }
+      if (pending) return pending;
+      const opening = epoch;
+      pending = open().then(
+        (opened) => {
+          pending = null;
+          if (opening !== epoch) {
+            stopTracks(opened);
+            throw new DOMException("Microphone closed", "AbortError");
+          }
+          stream = opened;
+          return opened;
+        },
+        (err: unknown) => {
+          pending = null;
+          throw err;
+        },
+      );
+      return pending;
+    },
+    close() {
+      epoch += 1;
+      pending = null;
+      if (stream) stopTracks(stream);
+      stream = null;
+    },
+  };
+}
+
 export type HandsFreeVadOptions = {
   /** Silence duration (ms) after speech that ends the turn. */
   silenceMs?: number;
@@ -59,6 +128,11 @@ export type HandsFreeVadOptions = {
   stream?: MediaStream;
   /** When true, do not stop tracks on finish (caller owns the stream). */
   retainStream?: boolean;
+  /**
+   * Session-long mic. Used when no `stream` is passed. With it set, the turn
+   * never stops any tracks (a passed stream is borrowed from this mic).
+   */
+  mic?: SessionMic;
   /**
    * Audio already captured while the therapist started speaking (barge-in).
    * Seeds the recording and starts the turn in the speaking state.
@@ -255,13 +329,17 @@ export async function startHandsFreeVad(
   const twoStage = options.twoStage;
   const resumeMinMs = twoStage?.resumeMinMs ?? 150;
 
-  // A passed stream is adopted (stopped on finish) unless the caller retains it.
-  const ownsStream = !options.stream || !options.retainStream;
+  // A passed stream is adopted (stopped on finish) unless the caller retains
+  // it. With a session mic, any passed stream is a handoff borrowed from it,
+  // and the turn never stops it.
+  const ownsStream = !options.mic && (!options.stream || !options.retainStream);
   const stream =
     options.stream ??
-    (await navigator.mediaDevices.getUserMedia({
-      audio: HANDS_FREE_AUDIO_CONSTRAINTS,
-    }));
+    (options.mic
+      ? await options.mic.acquire()
+      : await navigator.mediaDevices.getUserMedia({
+          audio: HANDS_FREE_AUDIO_CONSTRAINTS,
+        }));
 
   const audioContext = new AudioContext();
   if (audioContext.state === "suspended") {
@@ -571,13 +649,18 @@ export async function startBargeInMonitor(
     onBargeIn: (handoff: BargeInHandoff) => void;
     /** The mic could not be opened, so speaking will not interrupt. */
     onUnavailable?: (reason: string) => void;
+    /** Session-long mic to borrow; its tracks are never stopped here. */
+    mic?: SessionMic;
   },
 ): Promise<() => void> {
   let stream: MediaStream;
+  const ownsStream = !opts.mic;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: BARGE_IN_AUDIO_CONSTRAINTS,
-    });
+    stream = opts.mic
+      ? await opts.mic.acquire()
+      : await navigator.mediaDevices.getUserMedia({
+          audio: BARGE_IN_AUDIO_CONSTRAINTS,
+        });
   } catch (err) {
     opts.onUnavailable?.(err instanceof Error ? err.name : "getUserMedia_failed");
     return () => undefined;
@@ -654,7 +737,7 @@ export async function startBargeInMonitor(
       release: () => {
         if (released) return;
         released = true;
-        stream.getTracks().forEach((t) => t.stop());
+        if (ownsStream) stream.getTracks().forEach((t) => t.stop());
       },
     });
   };
@@ -668,6 +751,6 @@ export async function startBargeInMonitor(
     if (stopped) return;
     stopped = true;
     teardownGraph();
-    stream.getTracks().forEach((t) => t.stop());
+    if (ownsStream) stream.getTracks().forEach((t) => t.stop());
   };
 }

@@ -36,6 +36,7 @@ import {
   HANDS_FREE_PERF_BUDGETS,
   remainingThinkingMs,
   shouldPatientInterruptTherapist,
+  createSessionMic,
   startBargeInMonitor,
   startHandsFreeVad,
   startRoomAmbience,
@@ -48,6 +49,7 @@ import {
   type ConversationStatusKey,
   type ConversationTelemetry,
   type ImmersionTracker,
+  type SessionMic,
   type PatientBehaviorState,
   type PendingFloorTake,
   type TherapyRoomSettings,
@@ -348,6 +350,12 @@ export function TherapyRoomSession({
   /** Open mic + captured onset from a voice barge-in, for the next listen. */
   const bargeInHandoffRef = useRef<BargeInHandoff | null>(null);
   /**
+   * One mic for the whole session, shared by listen turns and the barge-in /
+   * floor monitors, so the mic is not dropped and re-opened at every turn.
+   * Closed on pause and session end.
+   */
+  const sessionMicRef = useRef<SessionMic>(createSessionMic());
+  /**
    * Floor control: the mic watched while the reply is generating, the
    * floor-take whose reply is still owed, and that reply once saved (voiced
    * only if the therapist's floor-take turned out empty).
@@ -603,6 +611,7 @@ export function TherapyRoomSession({
     endpointRef.current?.cancel();
     endpointRef.current = null;
     releaseBargeInHandoff();
+    sessionMicRef.current.close();
     cancelTurnWork();
     streamAbortRef.current?.abort();
     liveSttRef.current?.close();
@@ -853,7 +862,11 @@ export function TherapyRoomSession({
               }),
             );
           };
-          void startBargeInMonitor({ onBargeIn, onUnavailable: bargeInUnavailable })
+          void startBargeInMonitor({
+            onBargeIn,
+            onUnavailable: bargeInUnavailable,
+            mic: sessionMicRef.current,
+          })
             .then((stop) => {
               if (abort.signal.aborted || playbackAbortRef.current !== abort) {
                 stop();
@@ -1218,6 +1231,7 @@ export function TherapyRoomSession({
       };
       floorStopRef.current = stop;
       void startBargeInMonitor({
+        mic: sessionMicRef.current,
         minSpeechMs: FLOOR_TAKE_MIN_SPEECH_MS,
         onBargeIn: (handoff) => {
           if (
@@ -1930,6 +1944,7 @@ export function TherapyRoomSession({
         // After a voice barge-in, keep listening on the same open mic and
         // keep the words already spoken, so the turn starts at its first word.
         stream: handoff?.stream,
+        mic: sessionMicRef.current,
         preroll: handoff
           ? {
               samples: handoff.preroll,
@@ -2186,6 +2201,8 @@ export function TherapyRoomSession({
       endpointRef.current?.cancel();
       endpointRef.current = null;
       releaseBargeInHandoff();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- same mic object for the component's life
+      sessionMicRef.current.close();
       cancelTurnWork();
       streamAbortRef.current?.abort();
       liveSttRef.current?.close();
@@ -2245,6 +2262,8 @@ export function TherapyRoomSession({
           endpointRef.current?.cancel();
           endpointRef.current = null;
           releaseBargeInHandoff();
+          // Paused means the mic is off; resume opens it again.
+          sessionMicRef.current.close();
           cancelTurnWork();
           stopPlayback();
           dispatch("PAUSE");
