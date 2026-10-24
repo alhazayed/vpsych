@@ -61,6 +61,7 @@ import {
   deriveNonverbalBehavior,
   type AnimationScheduler,
 } from "@/lib/nbe";
+import { unlockPatientAudio } from "@/lib/voice/patient-audio-element";
 import {
   playPatientSpeech,
   playPatientSpeechSegments,
@@ -2212,6 +2213,21 @@ export function TherapyRoomSession({
       ambienceRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- boot once
+  }, []);
+
+  // iOS/iPadOS only lets patient audio play on its own after a tap has played
+  // the shared audio element once. Any tap or key press in the room does it.
+  useEffect(() => {
+    const events = ["click", "touchend", "keydown"] as const;
+    const unlock = () => unlockPatientAudio();
+    for (const e of events) {
+      document.addEventListener(e, unlock, { capture: true, passive: true });
+    }
+    return () => {
+      for (const e of events) {
+        document.removeEventListener(e, unlock, { capture: true });
+      }
+    };
   }, []);
 
   // Ambience toggle
