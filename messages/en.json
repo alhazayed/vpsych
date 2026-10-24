@@ -318,7 +318,7 @@
       "getStarted": "Get Started"
     },
     "hero": {
-      "badge": "Next-Gen Clinical Training",
+      "badge": "The patient is virtual. The skill is real.",
       "title": "Practice Psychotherapy with AI Patients",
       "body": "Train your interviewing, diagnostic reasoning, psychotherapy techniques, and therapeutic communication using highly realistic AI patient simulations.",
       "startFree": "Request access",
@@ -446,6 +446,7 @@
     "login": {
       "platformName": "Vtraining Clinical Assessment Platform",
       "requestAccess": "Request Access",
+      "slogan": "The patient is virtual. The skill is real.",
       "heroTitle": "Simulated patients for supervised practice.",
       "heroBody": "Each session is a {minutes}-minute appointment. Your supervisor reviews the report.",
       "welcome": "Welcome Back",

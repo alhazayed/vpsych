@@ -148,6 +148,9 @@ export default function LoginPage() {
         {/* Case file sign-in: a typographic referral sheet instead of a picture. */}
         <section className="hidden items-center justify-center border-e border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-16 md:flex md:w-[60%]">
           <div className="w-full max-w-xl fade-in-up">
+            <p className="mb-4 text-sm font-semibold text-[var(--primary)]">
+              {t("slogan")}
+            </p>
             <p className="max-w-[16ch] font-[family-name:var(--font-headline)] text-4xl font-semibold leading-tight tracking-tight text-[var(--on-surface)] lg:text-5xl">
               {t("heroTitle")}
             </p>
