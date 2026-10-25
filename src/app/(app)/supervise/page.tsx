@@ -21,8 +21,9 @@ const STATUS_CHIP: Record<SkillTestAssignment["status"], string> = {
 
 /** Supervisor workspace: skill tests this supervisor assigned (admins: all). */
 export default async function SupervisePage() {
-  const { supabase, isAdmin } = await requireSupervisor();
+  const { supabase, isAdmin, user } = await requireSupervisor();
   const t = await getTranslations("skillTests.supervise");
+  const tTrainees = await getTranslations("supervisorReviews.trainees");
   const tStatus = await getTranslations("skillTests.status");
   const locale = await getLocale();
 
@@ -52,6 +53,20 @@ export default async function SupervisePage() {
     dateStyle: "medium",
   });
 
+  // Trainees linked to this supervisor (admins: their own links only; they
+  // read every report under Admin > Reports).
+  const { data: linkRows, error: linksError } = await supabase
+    .from("supervisor_trainees")
+    .select("trainee_id, trainee:profiles!supervisor_trainees_trainee_id_fkey(display_name)")
+    .eq("supervisor_id", user.id);
+  if (linksError) console.error("[supervise] linked trainees:", linksError.message);
+  const trainees = ((linkRows ?? []) as unknown as Array<{
+    trainee_id: string;
+    trainee: { display_name: string } | null;
+  }>).sort((a, b) =>
+    (a.trainee?.display_name ?? "").localeCompare(b.trainee?.display_name ?? "", locale),
+  );
+
   return (
     <main className="mx-auto max-w-[1080px] px-4 py-8 md:px-8">
       <section className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -71,6 +86,44 @@ export default async function SupervisePage() {
         </Link>
       </section>
 
+      <section className="mb-8" aria-labelledby="supervised-trainees">
+        <h2
+          id="supervised-trainees"
+          className="font-[family-name:var(--font-headline)] text-xl font-semibold"
+        >
+          {tTrainees("title")}
+        </h2>
+        <p className="mb-3 mt-1 max-w-2xl text-sm text-[var(--on-surface-variant)]">
+          {tTrainees("intro")}
+        </p>
+        {linksError ? (
+          <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
+            {tTrainees("loadError")}
+          </p>
+        ) : trainees.length === 0 ? (
+          <p className="clinical-card p-5 text-sm text-[var(--on-surface-variant)]">
+            {tTrainees("empty")}
+          </p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {trainees.map((row) => (
+              <li key={row.trainee_id}>
+                <Link
+                  href={`/supervise/trainees/${row.trainee_id}`}
+                  className="clinical-card clinical-card-interactive flex items-center justify-between gap-3 p-4"
+                >
+                  <span className="font-semibold">{row.trainee?.display_name ?? "—"}</span>
+                  <span className="text-sm text-[var(--primary)]">{tTrainees("view")}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <h2 className="mb-3 font-[family-name:var(--font-headline)] text-xl font-semibold">
+        {t(isAdmin ? "testsTitleAdmin" : "testsTitle")}
+      </h2>
       {error ? (
         <p role="alert" className="clinical-card p-5 text-sm text-[var(--error)]">
           {t("loadError")}

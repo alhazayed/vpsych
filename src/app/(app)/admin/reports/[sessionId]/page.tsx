@@ -11,6 +11,8 @@ import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { extractAdaptationFromMemory } from "@/lib/adaptation";
 import { AllianceRatingPanel } from "@/components/admin/AllianceRatingPanel";
 import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
+import { ReportReviewPanel } from "@/components/supervise/ReportReviewPanel";
+import { loadReportReviews } from "@/lib/supervisor-reviews";
 import {
   buildAllianceRating,
   buildIndicativeCtsr,
@@ -36,7 +38,7 @@ type Props = { params: Promise<{ sessionId: string }> };
 
 export default async function AdminReportDetailPage({ params }: Props) {
   const { sessionId } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const t = await getTranslations("admin.reportDetail");
   const tDisorders = await getTranslations("skillTests.disorders");
   const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
@@ -92,6 +94,10 @@ export default async function AdminReportDetailPage({ params }: Props) {
     profiles: { display_name: string } | null;
     avatars: { name: string; disorder: string } | null;
   } | null;
+
+  // Supervisor reviews sit beside the AI report; a load failure is shown on
+  // the panel and never hides the report.
+  const reviewsResult = await loadReportReviews(supabase, [sessionId]);
 
   const { data: messages } = await supabase
     .from("session_messages")
@@ -207,6 +213,16 @@ export default async function AdminReportDetailPage({ params }: Props) {
       ) : null}
       <div className="mt-6">
         <ReportView report={report as SessionReport} evidence={evidence} />
+      </div>
+      <div className="mt-6">
+        <ReportReviewPanel
+          sessionId={sessionId}
+          aiOverall={(report as SessionReport).scores?.overall ?? 0}
+          reviews={reviewsResult.reviews}
+          loadFailed={reviewsResult.failed}
+          currentUserId={user.id}
+          canEdit={false}
+        />
       </div>
       <div className="mt-6">
         <AllianceRatingPanel rating={alliance} />

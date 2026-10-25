@@ -56,11 +56,13 @@ export PGHOST=127.0.0.1 PGPORT="$DB_PORT" PGUSER=postgres PGPASSWORD=postgres PG
 apply_schema
 psql -X -q -c "notify pgrst, 'reload schema'"
 
-# Fresh accounts: a trainee and an admin, both approved.
+# Fresh accounts: a trainee, an admin, and a supervisor linked to the
+# trainee, all approved.
 E2E_PASSWORD="E2e-$(openssl rand -hex 12)-Pw!"
 E2E_TRAINEE_EMAIL="trainee-$RANDOM@e2e.invalid"
 E2E_ADMIN_EMAIL="admin-$RANDOM@e2e.invalid"
-for email in "$E2E_TRAINEE_EMAIL" "$E2E_ADMIN_EMAIL"; do
+E2E_SUPERVISOR_EMAIL="supervisor-$RANDOM@e2e.invalid"
+for email in "$E2E_TRAINEE_EMAIL" "$E2E_ADMIN_EMAIL" "$E2E_SUPERVISOR_EMAIL"; do
   curl -fsS -o /dev/null -X POST "$API_URL/auth/v1/admin/users" \
     -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
     -H "Content-Type: application/json" \
@@ -69,13 +71,19 @@ done
 # The approval and role guards only let an admin change these; fixtures
 # bypass triggers instead.
 psql -X -q -v ON_ERROR_STOP=1 \
-  -v trainee="$E2E_TRAINEE_EMAIL" -v admin="$E2E_ADMIN_EMAIL" <<'SQL'
+  -v trainee="$E2E_TRAINEE_EMAIL" -v admin="$E2E_ADMIN_EMAIL" \
+  -v supervisor="$E2E_SUPERVISOR_EMAIL" <<'SQL'
 begin;
 set local session_replication_role = replica;
 update public.profiles p set approval_status = 'approved'
-  from auth.users u where u.id = p.id and u.email in (:'trainee', :'admin');
+  from auth.users u where u.id = p.id and u.email in (:'trainee', :'admin', :'supervisor');
 update public.profiles p set role = 'admin'
   from auth.users u where u.id = p.id and u.email = :'admin';
+insert into public.supervisors (user_id)
+  select id from auth.users where email = :'supervisor';
+insert into public.supervisor_trainees (supervisor_id, trainee_id)
+  select s.id, t.id from auth.users s, auth.users t
+  where s.email = :'supervisor' and t.email = :'trainee';
 commit;
 SQL
 
@@ -92,7 +100,8 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 
-export E2E_BASE_URL="http://127.0.0.1:$APP_PORT" E2E_PASSWORD E2E_TRAINEE_EMAIL E2E_ADMIN_EMAIL
+export E2E_BASE_URL="http://127.0.0.1:$APP_PORT" E2E_PASSWORD E2E_TRAINEE_EMAIL E2E_ADMIN_EMAIL \
+  E2E_SUPERVISOR_EMAIL
 if ! npx playwright test "$@"; then
   echo "---- app log (tail) ----" >&2
   tail -50 "$WORKDIR/app.log" >&2

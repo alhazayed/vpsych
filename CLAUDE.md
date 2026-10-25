@@ -204,7 +204,11 @@ Write rules that RLS enforces and application code must respect:
 - Roles live in `profiles.role`, never in `user_metadata`.
 - Supervisors are rows in `public.supervisors` (admin-written). Skill test
   results are readable only by the assigning supervisor and admins; see
-  `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`.
+  `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`. Practice reports
+  are also readable by supervisors linked to the trainee
+  (`supervisor_trainees`, admin-written). Supervisor comments and adjusted
+  scores live in `session_report_reviews`, never in `session_reports`; see
+  `docs/SUPERVISOR_REVIEWS.md`.
 - New RLS policies must wrap `auth.uid()` / `is_admin()` in `(select …)` so they
   evaluate once per statement rather than per row.
 - Accounts awaiting approval read only their own `profiles` row. Every other
