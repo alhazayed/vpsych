@@ -12,6 +12,7 @@ import {
   summarizeTraineeLadders,
 } from "@/lib/training-ladder";
 import type { CertificateLocale } from "@/lib/certificate-template";
+import { loadIssuedCertificates } from "@/lib/certificate-registry";
 
 async function certificateTemplate(locale: CertificateLocale) {
   const t = await getTranslations({ locale, namespace: "admin.certificates" });
@@ -28,6 +29,7 @@ async function certificateTemplate(locale: CertificateLocale) {
       inPartnershipWith: t("sheet.inPartnershipWith"),
       disclaimer: t("sheet.disclaimer"),
       signature: t("sheet.signature"),
+      verify: t("sheet.verify"),
     },
   };
 }
@@ -35,8 +37,9 @@ async function certificateTemplate(locale: CertificateLocale) {
 /**
  * Pass certificate designer: the admin sets the wording, institute and
  * signatories, previews the sheet and prints it. Trainees are offered with
- * their Training Program progress so the admin can see who passed; nothing
- * is written to the database.
+ * their Training Program progress. Certificates are recorded (automatically
+ * when a trainee clears the program, or issued here) so every printed number
+ * can be checked at /verify; the wording itself stays in the admin's browser.
  */
 export default async function AdminCertificatesPage() {
   const { supabase } = await requireAdmin();
@@ -45,11 +48,12 @@ export default async function AdminCertificatesPage() {
   const tLearners = await getTranslations("admin.learners");
   const uiLocale = (await getLocale()) === "ar" ? "ar" : "en";
 
-  const [en, ar, loaded, institutes] = await Promise.all([
+  const [en, ar, loaded, institutes, registry] = await Promise.all([
     certificateTemplate("en"),
     certificateTemplate("ar"),
     loadAllLadderAttempts(supabase),
     supabase.from("institutions").select("name").eq("is_active", true).order("name").limit(200),
+    loadIssuedCertificates(supabase),
   ]);
   if (institutes.error) {
     console.warn("[admin/certificates] institutions load failed", { error: institutes.error.message });
@@ -108,6 +112,7 @@ export default async function AdminCertificatesPage() {
         }}
         institutions={(institutes.data ?? []).map((r) => r.name).filter(Boolean)}
         initialLocale={uiLocale}
+        registry={registry}
       />
     </main>
   );

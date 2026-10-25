@@ -46,6 +46,8 @@ function isPublicPath(path: string): boolean {
   if (path === "/validation" || path.startsWith("/validation/")) return true;
   if (path === "/api/validation/invite") return true;
   if (path === "/api/enterprise/certificates/verify") return true;
+  // Public certificate check (printed number / QR link).
+  if (path === "/verify") return true;
   if (path === "/robots.txt" || path === "/sitemap.xml") return true;
   if (path === "/manifest.webmanifest" || path === "/manifest.json") return true;
   if (path === "/rss.xml" || path === "/feed.xml") return true;
