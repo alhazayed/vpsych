@@ -1,4 +1,10 @@
 /** Normalize session / profile language tags to report language (`en` | `ar`). */
+/** Reminder of the trainee_feedback shape, appended to both examiner prompts. */
+const TRAINEE_FEEDBACK_KEYS_NOTE_EN =
+  '\n- Shape: "trainee_feedback": {"strengths": [], "missed": [], "next_steps": []}.';
+const TRAINEE_FEEDBACK_KEYS_NOTE_AR =
+  '\n- الشكل: "trainee_feedback": {"strengths": [], "missed": [], "next_steps": []}، والمفاتيح بالإنجليزية كما هي.';
+
 export function normalizeReportLanguage(
   input?: string | null,
 ): "en" | "ar" {
@@ -102,7 +108,13 @@ export function buildExaminerSystemPrompt(params: {
 - clinical_formulation: صياغة حالة متماسكة من أدلة النص.
 - differential_diagnosis: تفريقات واستبعادات صريحة.
 - risk_formulation: تقييم منظم للمخاطر (وليس مجرد كلمة سلامة نعم/لا).
-- educational_competency: ربط عمل المقابلة بأهداف التعلم / الكفاءات المعلنة.`;
+- educational_competency: ربط عمل المقابلة بأهداف التعلم / الكفاءات المعلنة.
+
+ملاحظات للمتدرّب (trainee_feedback) — يقرؤها المتدرّب نفسه بعد الجلسة:
+- أرجع trainee_feedback ككائن فيه ثلاث قوائم: strengths (ما أحسنه)، missed (ما فاته)، next_steps (ما يجرّبه في المرة القادمة).
+- من بند إلى ثلاثة بنود في كل قائمة، جملة قصيرة واحدة لكل بند، موجّهة إلى المتدرّب مباشرة («سألتَ…»، «جرّب…»)، ومبنية على ما حدث فعلاً في النص.
+- ممنوع ذكر أي درجة أو رقم تقييم أو نسبة أو اسم بند من بنود التقييم.
+- ممنوع ذكر التشخيص أو اسم الاضطراب أو أي اضطراب مصاحب أو رموز DSM/ICD؛ صِف السلوك والأعراض كما ظهرت فقط.${TRAINEE_FEEDBACK_KEYS_NOTE_AR}`;
   }
 
   return `You are a clinical skills examiner assessing a trainee therapist in a simulated session.
@@ -134,7 +146,13 @@ Additional Wave-3 educational dimensions — when present:
 - clinical_formulation: coherent case conceptualization from transcript evidence.
 - differential_diagnosis: explicit differentials and rule-outs.
 - risk_formulation: structured risk appraisal (not only a yes/no safety word).
-- educational_competency: links interview work to stated learning objectives / competencies.`;
+- educational_competency: links interview work to stated learning objectives / competencies.
+
+Trainee feedback (trainee_feedback) — the trainee reads this after the session:
+- Return trainee_feedback as an object with three lists: strengths (what they did well), missed (what they missed), next_steps (what to try next time).
+- One to three items per list, one short sentence each, addressed to the trainee ("You asked…", "Try…"), grounded in what actually happened in the transcript.
+- Never mention a score, a rating number, a percentage, or a rubric item name.
+- Never name the diagnosis, the disorder, any comorbidity, or DSM/ICD codes; describe only the behaviour and symptoms as they appeared.${TRAINEE_FEEDBACK_KEYS_NOTE_EN}`;
 }
 
 export function heuristicCopy(

@@ -706,6 +706,14 @@
         "error": "The performance report could not be prepared yet. Your transcript is saved.",
         "retry": "Try again"
       },
+      "feedback": {
+        "title": "Feedback on this session",
+        "subtitle": "Written from your transcript to help your next session. It is training feedback, not a grade.",
+        "strengths": "What went well",
+        "missed": "What you missed",
+        "next_steps": "Try next time",
+        "unavailable": "Detailed feedback is not available for this session. Your checklist below still shows which practices you covered."
+      },
       "checklist": {
         "title": "Practice checklist",
         "subtitle": "Green: covered in this session. Red: not performed this time.",
