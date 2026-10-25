@@ -3657,7 +3657,7 @@
         "date": "Date",
         "reference": "Certificate no.",
         "inPartnershipWith": "In partnership with",
-        "disclaimer": "Educational training certificate. Not a licence to practise.",
+        "disclaimer": "Educational training certificate. Levels are cleared by a progression rule, not a validated measure of competence. Not a licence to practise.",
         "signature": "Signature"
       }
     }
@@ -4293,7 +4293,7 @@
     "nextObjective": "Next objective",
     "completeTitle": "Patient completed",
     "completeBody": "You cleared every level with this patient. You can replay any level for practice.",
-    "passMark": "Pass mark: a report score above 55%.",
+    "passMark": "Progression rule: a report score above 55% unlocks the next level. It is a practice rule, not a measure of clinical competence.",
     "start": "Start {level}",
     "replay": "Replay {level}",
     "resume": "Resume session",
@@ -4324,7 +4324,7 @@
       "nextComplexity": "The next encounter brings more clinical complexity.",
       "completedBody": "That was the last level. You have completed this patient.",
       "notClearedTitle": "Level not cleared",
-      "required": "Required: more than 55%",
+      "required": "Progression rule: more than 55% unlocks the next level",
       "remains": "{level} stays active.",
       "retry": "Review your feedback and try again.",
       "scoringTitle": "Scoring this level",
