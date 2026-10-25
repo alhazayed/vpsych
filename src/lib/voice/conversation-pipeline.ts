@@ -20,6 +20,11 @@ import {
   PLAYBACK_WATCHDOG_INTERVAL_MS,
   playbackVerdict,
 } from "@/lib/voice/playback-watchdog";
+import {
+  notePatientAudioPlayed,
+  patientAudioElement,
+  setPatientClipActive,
+} from "@/lib/voice/patient-audio-element";
 import type { AudioStreamHandle } from "@/lib/voice/stream-playback";
 import { transcribeWithOpenAI } from "@/lib/voice/transcribe-client";
 import type { SessionMessage, SessionSpeechLocale } from "@/lib/voice/pipeline-types";
@@ -408,7 +413,14 @@ export async function playPatientSpeech(params: {
     objectUrl: string,
     stream?: AudioStreamHandle,
   ): Promise<PlaybackOutcome | { fallback: string; started: boolean }> => {
-    const audio = new Audio(objectUrl);
+    // One element for the whole session, so iOS keeps it unlocked after the
+    // first tap (see patient-audio-element.ts).
+    const audio = patientAudioElement();
+    setPatientClipActive(true);
+    audio.onplaying = null;
+    audio.onended = null;
+    audio.onerror = null;
+    audio.src = objectUrl;
     diag({ event: "audio_created" });
     if (params.audioRef) params.audioRef.current = audio;
     if (stream) {
@@ -429,6 +441,7 @@ export async function playPatientSpeech(params: {
       ) => {
         if (settled) return;
         settled = true;
+        setPatientClipActive(false);
         if (mode === "interrupted") stream?.cancel();
         if (watchdog != null) clearInterval(watchdog);
         params.signal?.removeEventListener("abort", onAbort);
@@ -538,7 +551,10 @@ export async function playPatientSpeech(params: {
         playPromise = Promise.reject(err);
       }
       void Promise.resolve(playPromise)
-        .then(() => diag({ event: "audio_play_resolved" }))
+        .then(() => {
+          notePatientAudioPlayed();
+          diag({ event: "audio_play_resolved" });
+        })
         .catch((err: unknown) => {
           if (params.signal?.aborted || settled) {
             finish("interrupted");

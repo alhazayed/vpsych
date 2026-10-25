@@ -81,6 +81,7 @@ export {
 export {
   startHandsFreeVad,
   startBargeInMonitor,
+  createSessionMic,
   createBargeInDetector,
   BARGE_IN_DEFAULTS,
   evaluateVadFrame,
@@ -88,6 +89,7 @@ export {
   rms,
   type VadController,
   type HandsFreeVadOptions,
+  type SessionMic,
   type BargeInHandoff,
   type BargeInDetectorOptions,
 } from "./vad";
