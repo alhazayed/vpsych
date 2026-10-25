@@ -9,7 +9,8 @@ const SECTIONS: ReadonlyArray<{
 }> = [
   { key: "strengths", icon: "thumb_up", tone: "text-emerald-700" },
   { key: "missed", icon: "error", tone: "text-[var(--error)]" },
-  { key: "next_steps", icon: "arrow_forward", tone: "text-[var(--primary)]" },
+  // The arrow points the reading direction: mirrored in Arabic.
+  { key: "next_steps", icon: "arrow_forward", tone: "text-[var(--primary)] rtl:rotate-180" },
 ];
 
 /**
