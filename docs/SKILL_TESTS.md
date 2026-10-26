@@ -4,7 +4,7 @@ Trainees see patients in two ways:
 
 | Mode | Where | Who picks the case | Who sees results |
 |---|---|---|---|
-| Practice | Patient library (`/avatars`): therapy courses with a patient, or a practice scenario by disorder | The trainee | Reports stay admin-only, as before |
+| Practice | Patient library (`/avatars`): therapy courses with a patient, or a practice scenario by disorder | The trainee | Admins, and supervisors linked to the trainee (`docs/SUPERVISOR_REVIEWS.md`) |
 | Skill test | `/tests` | A supervisor | The assigning supervisor and the superadmin only |
 
 Code: `src/lib/skill-tests/` · migration `20261005110000_supervisor_skill_tests.sql`
@@ -17,6 +17,8 @@ Code: `src/lib/skill-tests/` · migration `20261005110000_supervisor_skill_tests
 - **Supervisor**: a row in `public.supervisors` (written by admins only). A
   supervisor keeps the trainee menu and also gets **Supervise** (`/supervise`).
   Revoking the role removes access to the results of their old assignments.
+  The superadmin can also link a supervisor to trainees, to read and review
+  their practice reports (`docs/SUPERVISOR_REVIEWS.md`).
 
 ## Supervisor-designed patient (`skill_test_assignments`)
 

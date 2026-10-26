@@ -267,6 +267,59 @@ select pg_temp.expect_error('trainee cannot unseal a ladder session',
      where id = 'a3000000-0000-4000-8000-000000000000'$q$,
   '%Cannot change skill test link%');
 
+-- ── trainee feedback (my_session_feedback) ────────────────────────────────
+-- A's finished session a2 gets a report with scores and words for the
+-- trainee. A reads the words only; nobody else gets a row.
+set local session_replication_role = replica;
+update public.session_reports
+  set scores = '{"overall": 72, "items": [{"id": "alliance", "score": 4}],
+                 "trainee_feedback": {"strengths": ["You asked open questions."],
+                                      "missed": [], "next_steps": []},
+                 "scientific_provenance": {"assessment_mode": "llm_examiner"}}'::jsonb
+  where session_id = 'a2000000-0000-4000-8000-000000000000';
+set local session_replication_role = origin;
+
+select pg_temp.expect_count('trainee reads the feedback words of own report',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_feedback('a2000000-0000-4000-8000-000000000000')
+     where feedback -> 'strengths' ->> 0 = 'You asked open questions.'
+       and assessment_mode = 'llm_examiner'$q$, 1);
+select pg_temp.expect_count('feedback carries no scores',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_feedback('a2000000-0000-4000-8000-000000000000')
+     where feedback ? 'overall' or feedback ? 'items'$q$, 0);
+select pg_temp.expect_count('trainee cannot read another trainee''s feedback',
+  'bbbbbbbb-0000-4000-8000-000000000002',
+  $q$select count(*) from public.my_session_feedback('a2000000-0000-4000-8000-000000000000')$q$, 0);
+select pg_temp.expect_count('trainee still cannot read the report itself',
+  'aaaaaaaa-0000-4000-8000-000000000001', 'select count(*) from public.session_reports', 0);
+select pg_temp.expect_error('anon cannot read feedback', null,
+  $q$select count(*) from public.my_session_feedback('a2000000-0000-4000-8000-000000000000')$q$,
+  '%permission denied%');
+do $$
+declare args text[];
+begin
+  select proargnames into args from pg_proc
+  where oid = 'public.my_session_feedback(uuid)'::regprocedure;
+  if args is distinct from array['p_session_id', 'feedback', 'assessment_mode'] then
+    raise exception 'FAIL my_session_feedback returns more than feedback words: %', args;
+  end if;
+  raise notice 'ok   my_session_feedback returns only feedback and assessment_mode';
+end $$;
+-- A skill test session never shows feedback (results go to the supervisor).
+-- Triggers and FK checks are off while the link is faked and restored.
+set local session_replication_role = replica;
+update public.sessions set skill_test_assignment_id = 'e1000000-0000-4000-8000-000000000000'
+  where id = 'a2000000-0000-4000-8000-000000000000';
+set local session_replication_role = origin;
+select pg_temp.expect_count('no feedback for a skill test session',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_feedback('a2000000-0000-4000-8000-000000000000')$q$, 0);
+set local session_replication_role = replica;
+update public.sessions set skill_test_assignment_id = null
+  where id = 'a2000000-0000-4000-8000-000000000000';
+set local session_replication_role = origin;
+
 -- ── message writes ─────────────────────────────────────────────────────────
 select pg_temp.expect_ok('trainee can add a therapist message to own active session',
   'aaaaaaaa-0000-4000-8000-000000000001',

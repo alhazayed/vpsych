@@ -200,11 +200,19 @@ Write rules that RLS enforces and application code must respect:
   finalized by the learner's complete page via `/end`, or by an admin via
   `POST /api/admin/reports/[sessionId]/generate`.
 - Reads of `session_reports` are gated on `is_admin()`. Never expose reports on
-  a therapist-facing API.
+  a therapist-facing API. The one trainee-facing slice is
+  `my_session_feedback()`: the owner's `scores->'trainee_feedback'` words
+  (strengths, missed, next steps; no scores) for a practice session, never a
+  skill test. The complete page filters score-like text and, on a sealed ladder
+  level, any item naming the diagnosis (`lib/sessions/trainee-feedback.ts`).
 - Roles live in `profiles.role`, never in `user_metadata`.
 - Supervisors are rows in `public.supervisors` (admin-written). Skill test
   results are readable only by the assigning supervisor and admins; see
-  `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`.
+  `docs/SKILL_TESTS.md` and `scripts/test-skill-test-rls.sh`. Practice reports
+  are also readable by supervisors linked to the trainee
+  (`supervisor_trainees`, admin-written). Supervisor comments and adjusted
+  scores live in `session_report_reviews`, never in `session_reports`; see
+  `docs/SUPERVISOR_REVIEWS.md`.
 - New RLS policies must wrap `auth.uid()` / `is_admin()` in `(select …)` so they
   evaluate once per statement rather than per row.
 - Accounts awaiting approval read only their own `profiles` row. Every other

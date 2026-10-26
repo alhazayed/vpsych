@@ -5,8 +5,11 @@
 /** Patient-avatar system prompt template version (see prompt-engine.ts header). */
 export const PROMPT_ENGINE_VERSION = "2.0.0";
 
-/** Examiner assessment structured output / scoring schema version. */
-export const ASSESSMENT_SCHEMA_VERSION = "1.1.0";
+/**
+ * Examiner assessment structured output / scoring schema version.
+ * 1.2.0: optional `trainee_feedback` (words only); scoring unchanged.
+ */
+export const ASSESSMENT_SCHEMA_VERSION = "1.2.0";
 
 /** CaseInstance snapshot schema version (types.CaseInstanceSnapshot.version). */
 export const CASE_SNAPSHOT_VERSION = 2 as const;
