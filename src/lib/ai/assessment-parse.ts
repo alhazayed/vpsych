@@ -36,6 +36,9 @@ export const assessmentSchema = z.object({
   narrative: z.string(),
   // Do not .max(5) here — that rejected valid AI JSON. Truncate after parse.
   excerpts: z.array(z.string()).catch([]),
+  // Words for the trainee (no scores). Optional and never fatal: shaped and
+  // filtered by normalizeTraineeFeedback() before it is stored.
+  trainee_feedback: z.unknown().optional(),
 });
 
 export type AssessmentModelOutput = z.infer<typeof assessmentSchema>;

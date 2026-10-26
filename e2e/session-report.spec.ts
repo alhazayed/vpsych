@@ -91,6 +91,28 @@ test("trainee session ends in a report only an admin can read", async ({
     await expect(page.getByText(OPENING)).toBeVisible();
   });
 
+  await test.step("the trainee sees the feedback card, never a score", async () => {
+    // The report exists once /end returned. It is heuristic here (no AI key),
+    // so the card says detailed feedback is not available.
+    await page.reload();
+    const card = page.locator("section", {
+      has: page.getByRole("heading", { name: "Feedback on this session" }),
+    });
+    await expect(card).toBeVisible();
+    await expect(
+      card.getByText("Detailed feedback is not available for this session."),
+    ).toBeVisible();
+    await expect(card).not.toContainText(/\d+\s*\/\s*\d+|%/);
+
+    await page.context().addCookies([{ name: "locale", value: "ar", url: baseURL! }]);
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "ملاحظات على هذه الجلسة" }),
+    ).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await page.context().addCookies([{ name: "locale", value: "en", url: baseURL! }]);
+  });
+
   await test.step("the trainee cannot open the admin report", async () => {
     await page.goto(`/admin/reports/${sessionId}`);
     await expect(page).not.toHaveURL(/\/admin\//);

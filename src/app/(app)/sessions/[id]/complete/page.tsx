@@ -17,6 +17,13 @@ import {
   avatarLocalNameSelect,
 } from "@/lib/avatars/localized-name";
 import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
+import { TraineeSessionFeedback } from "@/components/TraineeSessionFeedback";
+import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
+import { normalizeReportLanguage } from "@/lib/ai/report-locale";
+import {
+  traineeFeedbackView,
+  type MySessionFeedbackRow,
+} from "@/lib/sessions/trainee-feedback";
 import { withSkillTestCase } from "@/lib/skill-tests";
 import { patientLabelKey } from "@/lib/therapy-room/patient-label";
 import {
@@ -153,6 +160,33 @@ export default async function SessionCompletePage({ params }: Props) {
     needsReport = Boolean(hasReportError) || hasReport === false;
   }
 
+  // Feedback in words from the owner's own report (no scores; the report
+  // itself stays admin-only). A ladder level keeps its case sealed, so items
+  // naming the diagnosis are dropped. A failed read only hides the card.
+  let feedbackRow: MySessionFeedbackRow | null = null;
+  if (typed.therapist_id === user.id && !needsReport) {
+    const { data: feedbackData, error: feedbackError } = await supabase
+      .rpc("my_session_feedback", { p_session_id: id })
+      .maybeSingle<MySessionFeedbackRow>();
+    if (feedbackError) {
+      console.warn("[sessions/complete] my_session_feedback failed", {
+        sessionId: id,
+        error: feedbackError.message,
+      });
+    }
+    feedbackRow = feedbackData ?? null;
+  }
+  // A sealed case that cannot be opened shows no feedback (fail closed).
+  const feedbackView =
+    typed.sealed_case && !opened.ok
+      ? ({ kind: "none" } as const)
+      : traineeFeedbackView(
+          feedbackRow,
+          typed.sealed_case && opened.ok
+            ? sealedDiagnosisLabels(opened.session.clinical_snapshot)
+            : [],
+        );
+
   // Ladder attempts lead back to that patient's levels, not the library.
   const { data: ladderAttempt } = await supabase
     .from("training_ladder_attempts")
@@ -197,6 +231,11 @@ export default async function SessionCompletePage({ params }: Props) {
         supabase={supabase}
         courseId={typed.therapy_course_id}
         sessionNumber={typed.course_session_number}
+      />
+
+      <TraineeSessionFeedback
+        view={feedbackView}
+        language={normalizeReportLanguage(typed.language)}
       />
 
       {checklist.length > 0 ? (

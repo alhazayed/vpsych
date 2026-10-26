@@ -43,11 +43,13 @@ import {
 } from "@/lib/avi";
 import { withHeardText } from "@/lib/sessions/heard-text";
 import { fenceTranscript } from "@/lib/ai/prompt-fence";
+import { normalizeTraineeFeedback } from "@/lib/sessions/trainee-feedback";
 import type {
   ResolvedAvatar,
   RubricItem,
   ScoreEntry,
   SessionMessage,
+  TraineeFeedback,
 } from "@/lib/types";
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
@@ -300,6 +302,8 @@ export type SessionAssessment = {
   scores: {
     overall: number;
     items: ScoreEntry[];
+    /** Words for the trainee, no scores (read via my_session_feedback()). */
+    trainee_feedback?: TraineeFeedback;
     /** Scientific reproducibility / disclosure (Mission 19). */
     scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
     assessment_schema_version?: string;
@@ -504,15 +508,15 @@ export async function assessSession(params: {
   });
   const userPrompt =
     language === "ar"
-      ? `نص المحادثة:\n${transcript}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts فقط.`
-      : `Transcript:\n${transcript}\n\nReturn JSON with keys items, narrative, and excerpts only.`;
+      ? `نص المحادثة:\n${transcript}\n\nأرجع JSON بالمفاتيح items و narrative و excerpts و trainee_feedback فقط.`
+      : `Transcript:\n${transcript}\n\nReturn JSON with keys items, narrative, excerpts, and trainee_feedback only.`;
 
   const viaOpenAi = async (model?: string): Promise<ModelAttempt> => {
     const result = await openAIService.chat({
       messages: [
         {
           role: "system",
-          content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown). Keys: items, narrative, excerpts.`,
+          content: `${systemPrompt}\n\nRespond with a single JSON object only (no markdown). Keys: items, narrative, excerpts, trainee_feedback.`,
         },
         { role: "user", content: userPrompt },
       ],
@@ -600,11 +604,15 @@ export async function assessSession(params: {
     });
 
     const overall = weightedOverall(items);
+    const traineeFeedback = normalizeTraineeFeedback(
+      "trainee_feedback" in output ? output.trainee_feedback : undefined,
+    );
     return {
       language,
       scores: {
         overall,
         items,
+        ...(traineeFeedback ? { trainee_feedback: traineeFeedback } : {}),
         scientific_provenance: buildAssessmentProvenance({
           aiSource,
           model,

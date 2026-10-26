@@ -561,12 +561,24 @@ export type ScoreEntry = {
   feedback: string;
 };
 
+/**
+ * Feedback in words for the trainee after a practice session. No scores:
+ * stored inside `session_reports.scores` and read only through
+ * `my_session_feedback()` (owner, never a skill test).
+ */
+export type TraineeFeedback = {
+  strengths: string[];
+  missed: string[];
+  next_steps: string[];
+};
+
 export type SessionReport = {
   id: string;
   session_id: string;
   scores: {
     overall: number;
     items: ScoreEntry[];
+    trainee_feedback?: TraineeFeedback;
   };
   narrative: string;
   excerpts: string[];
