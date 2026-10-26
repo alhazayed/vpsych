@@ -215,6 +215,7 @@ export function AppShell({
       | "pageTitle.overview"
       | "pageTitle.patientLibrary"
       | "pageTitle.training"
+      | "pageTitle.certificates"
       | "pageTitle.systemHealth"
       | "pageTitle.reportsLibrary"
       | "pageTitle.sessions"
