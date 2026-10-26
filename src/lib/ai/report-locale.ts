@@ -96,8 +96,17 @@ export function buildExaminerSystemPrompt(params: {
 النهج المثالي: ${approach}
 أهداف الجلسة: ${goals}
 مدة الجلسة بالثواني: ${durationSec}.
-بنود التقييم (درجة من 0 إلى 5 لكل id): ${rubricLines}.
+بنود التقييم ومراسيها السلوكية (درجة من 0 إلى 5 لكل id). اختر لكل بند الدرجة التي يطابق وصفُها ما يُظهره الدليل في النص:
+${rubricLines}
 أرجع عنصراً واحداً لكل معرف rubric.
+
+الدليل و«تعذّر التقييم» — إلزامي:
+- أدوار المحادثة مرقّمة، مثل <turn n="7" speaker="therapist">.
+- لكل بند مُقيَّم، استشهد بدليل واحد إلى ثلاثة أدلة بالشكل {"turn": رقم الدور, "quote": "..."}. الاقتباس منسوخ حرفياً من ذلك الدور كما ورد، بلغته الأصلية ودون ترجمة أو إعادة صياغة (عبارة أو جملة قصيرة).
+- اقتبس كلام المعالج أساساً، ولا تقتبس من دور المريض إلا لتُظهر ما كان المعالج يستجيب له. كل اقتباس لا يوجد في الدور المذكور يُحذف من التقرير.
+- إذا أتاحت الجلسة فرصة عادلة لإظهار مهارة ولم يستثمرها المتدرّب فهذا دليل: أعطِ درجة منخفضة (0 أو 1) واستشهد بالدور الذي ضاعت فيه الفرصة.
+- استخدم "status": "cannot_score" فقط حين لا يقدّم النص أي أساس عادل للبند، كأن تنتهي الجلسة قبل أن يحين وقته أو تكون الأدوار أقل من أن يُحكم عليها. عندها اجعل "score": null و"evidence": [] واكتب في "reason" جملة واحدة بالعربية تشرح السبب. لا تستخدم cannot_score أبداً لتتجنّب إعطاء درجة منخفضة.
+- شكل كل عنصر: {"id", "status": "scored" أو "cannot_score", "score": من 0 إلى 5 أو null, "feedback", "evidence": [{"turn", "quote"}], "reason"}، والمفاتيح بالإنجليزية كما هي.
 
 الترميز المزدوج — عند وجود dsm_reasoning و/أو icd_reasoning:
 - قيّم التفكير التشخيصي وفق DSM-5 بشكل منفصل عن ICD-11.
@@ -134,8 +143,17 @@ Patient avatar: ${patientName} (${disorder}).
 Ideal approach: ${approach}
 Session goals: ${goals}
 Duration seconds: ${durationSec}.
-Rubric item ids to score (0–5 each): ${rubricLines}.
+Rubric items with behavioural anchors (score 0–5 each). For each item pick the score whose anchor best matches what the transcript evidence shows:
+${rubricLines}
 Return one score entry per rubric id.
+
+Evidence and "cannot score" — mandatory:
+- Transcript turns are numbered, e.g. <turn n="7" speaker="therapist">.
+- For every scored item, cite one to three pieces of evidence as {"turn": n, "quote": "..."}. Each quote is copied word for word from that turn, in its original language, never translated or paraphrased (a short phrase or sentence).
+- Quote mainly the therapist; quote a patient turn only to show what the therapist was responding to. Any quote not found in the cited turn is removed from the report.
+- If the session gave a fair chance to show a skill and the trainee did not take it, that is evidence: score it low (0 or 1) and cite the turn where the chance was missed.
+- Use "status": "cannot_score" only when the transcript gives no fair basis for the item at all, for example the session ended before it could arise or there are too few turns to judge. Then set "score": null and "evidence": [], and give a one-sentence "reason" in English. Never use cannot_score to avoid giving a low score.
+- Shape of each item: {"id", "status": "scored" | "cannot_score", "score": 0–5 or null, "feedback", "evidence": [{"turn", "quote"}], "reason"}.
 
 Dual-coding education — when rubric includes dsm_reasoning and/or icd_reasoning:
 - Score DSM-5 diagnostic reasoning separately from ICD-11 diagnostic reasoning.

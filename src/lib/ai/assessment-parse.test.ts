@@ -44,6 +44,30 @@ describe("assessment JSON parsing", () => {
     }
   });
 
+  it("accepts a null score only on a cannot_score item", () => {
+    for (const status of ["cannot_score", "Cannot score", "insufficient-evidence"]) {
+      const ok = {
+        ...valid,
+        items: [{ id: "alliance", status, score: null, feedback: "", reason: "Too short." }],
+      };
+      const out = parseAssessmentModelText(JSON.stringify(ok));
+      expect(out.items[0]).toMatchObject({ status: "cannot_score", score: undefined, reason: "Too short." });
+    }
+    const bad = { ...valid, items: [{ id: "alliance", status: "scored", score: null, feedback: "x" }] };
+    expect(() => parseAssessmentModelText(JSON.stringify(bad))).toThrow(/score/);
+  });
+
+  it("treats an unknown or missing status as scored and keeps evidence for checking", () => {
+    const out = parseAssessmentModelText(
+      JSON.stringify({
+        ...valid,
+        items: [{ id: "alliance", status: "maybe", score: 4, feedback: "x", evidence: [{ turn: 1, quote: "q" }] }],
+      }),
+    );
+    expect(out.items[0]).toMatchObject({ status: "scored", score: 4, evidence: [{ turn: 1, quote: "q" }] });
+    expect(parseAssessmentModelText(JSON.stringify(valid)).items[0]?.status).toBe("scored");
+  });
+
   it("rejects empty responses", () => {
     expect(() => parseAssessmentModelText("   ")).toThrow(/empty/i);
   });

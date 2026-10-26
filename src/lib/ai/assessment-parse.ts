@@ -5,8 +5,12 @@ export const assessmentStructuredSchema = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      score: z.number().min(0).max(5),
+      status: z.enum(["scored", "cannot_score"]),
+      // null only with status "cannot_score".
+      score: z.number().min(0).max(5).nullable(),
       feedback: z.string(),
+      evidence: z.array(z.object({ turn: z.number().int(), quote: z.string() })),
+      reason: z.string().nullable(),
     }),
   ),
   narrative: z.string(),
@@ -18,20 +22,44 @@ export const assessmentStructuredSchema = z.object({
  * GPT often returns >5 excerpts or out-of-range / string scores; rejecting those
  * previously forced heuristicAssessment for every report.
  */
+/** "cannot_score" in the spellings models use; anything else is "scored". */
+function normalizeItemStatus(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  const t = v.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (/^(cannot_score|can_?not_be_scored|not_scorable|unscorable|insufficient_evidence)$/.test(t)) {
+    return "cannot_score";
+  }
+  return t;
+}
+
 export const assessmentSchema = z.object({
   items: z.array(
-    z.object({
-      id: z.string(),
-      // A null or blank score is a missing score, not a 0: Number(null) === 0
-      // would otherwise turn it into a real-looking failing mark.
-      score: z
-        .preprocess(
-          (v) => (v === null || (typeof v === "string" && !v.trim()) ? undefined : v),
-          z.coerce.number(),
-        )
-        .transform((n) => Math.min(5, Math.max(0, n))),
-      feedback: z.string().catch(""),
-    }),
+    z
+      .object({
+        id: z.string(),
+        // "cannot_score": the transcript gave no fair basis for this item.
+        status: z
+          .preprocess(normalizeItemStatus, z.enum(["scored", "cannot_score"]))
+          .catch("scored"),
+        // A null or blank score is a missing score, not a 0: Number(null) === 0
+        // would otherwise turn it into a real-looking failing mark. It is
+        // allowed only on a "cannot_score" item (refined below).
+        score: z
+          .preprocess(
+            (v) => (v === null || (typeof v === "string" && !v.trim()) ? undefined : v),
+            z.union([z.undefined(), z.coerce.number()]),
+          )
+          .transform((n) => (n === undefined ? undefined : Math.min(5, Math.max(0, n)))),
+        feedback: z.string().catch(""),
+        // Citations, checked against the transcript by verifyEvidence().
+        evidence: z.unknown().optional(),
+        reason: z.string().optional().catch(undefined),
+      })
+      .superRefine((item, ctx) => {
+        if (item.status === "scored" && item.score === undefined) {
+          ctx.addIssue({ code: "custom", path: ["score"], message: "score is required" });
+        }
+      }),
   ),
   narrative: z.string(),
   // Do not .max(5) here — that rejected valid AI JSON. Truncate after parse.
