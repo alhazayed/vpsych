@@ -13,10 +13,13 @@ const EVIDENCE_TONE: Record<EvidenceLevel, string> = {
 export async function ReportView({
   report,
   evidence,
+  audience = "admin",
 }: {
   report: SessionReport;
   /** Optional per-item evidence labels (admin / supervisor views). */
   evidence?: ScoreEvidence[];
+  /** Who reads this page; sets the privacy note at the foot. */
+  audience?: "admin" | "supervisor";
 }) {
   const tCommon = await getTranslations("common");
   const t = await getTranslations("report");
@@ -153,7 +156,7 @@ export async function ReportView({
         </section>
       )}
 
-      <p className="text-xs text-[var(--on-surface-variant)]">{t("adminOnlyNote")}</p>
+      <p className="text-xs text-[var(--on-surface-variant)]">{t(audience === "supervisor" ? "supervisorOnlyNote" : "adminOnlyNote")}</p>
     </article>
   );
 }

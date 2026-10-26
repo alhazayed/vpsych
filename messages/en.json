@@ -1009,7 +1009,8 @@
         "observed_behaviour": "Matching behaviour seen in the transcript",
         "examiner_judgement": "Examiner judgement only; no transcript check for this item"
       }
-    }
+    },
+    "supervisorOnlyNote": "Shared with admins and this trainee's supervisors only. Not shared with the trainee."
   },
   "admin": {
     "nav": {
@@ -4196,11 +4197,13 @@
       "cancelClosed": "This test is already closed.",
       "cancelNotFound": "This test no longer exists. Refresh the page.",
       "cancelForbidden": "Only the supervisor who assigned this test, or an admin, can cancel it.",
-      "rateLimited": "Too many requests in the last hour. Wait a few minutes and try again."
+      "rateLimited": "Too many requests in the last hour. Wait a few minutes and try again.",
+      "testsTitle": "Skill tests you assigned",
+      "testsTitleAdmin": "All skill tests"
     },
     "admin": {
       "title": "Supervisors",
-      "intro": "Supervisors design test patients and assign them to trainees. They see results only for the tests they assigned.",
+      "intro": "Supervisors design test patients and assign them to trainees, and see results only for the tests they assigned. Link trainees to a supervisor to let them read and review those trainees' practice reports.",
       "loadError": "Users could not be loaded. Refresh the page to try again.",
       "empty": "There are no therapist accounts yet.",
       "count": "{count, plural, =0 {No supervisors yet} one {# supervisor} other {# supervisors}}",
@@ -4417,6 +4420,93 @@
       "signedOut": "Your sign-in has expired. Sign in again, then resend.",
       "failed": "Your feedback couldn't be sent. Try again in a moment.",
       "network": "Network error. Check your connection and try again."
+    }
+  },
+  "supervisorReviews": {
+    "panel": {
+      "title": "Supervisor review",
+      "intro": "The AI score stays as it is. A supervisor's comment and adjusted score are saved beside it, with their name and the time.",
+      "aiScore": "AI score: {score}/100",
+      "adjusted": "Adjusted score: {score}/100",
+      "flagged": "Flagged for follow-up",
+      "byline": "{name} · {date}",
+      "edited": "edited {date}",
+      "you": "You",
+      "anotherSupervisor": "Another supervisor",
+      "deletedAccount": "Deleted account",
+      "others": "Other reviews",
+      "none": "No supervisor review yet.",
+      "loadError": "Supervisor reviews could not be loaded. Refresh the page to try again."
+    },
+    "form": {
+      "yourReview": "Your review",
+      "comment": "Comment",
+      "commentHint": "Up to 4,000 characters. Needed when you change the score.",
+      "adjusted": "Adjusted overall score (0–100)",
+      "adjustedHint": "Leave empty to keep the AI score of {score}.",
+      "flag": "Flag this session for follow-up",
+      "save": "Save review",
+      "saving": "Saving…",
+      "saved": "Review saved",
+      "remove": "Remove my review",
+      "removeConfirm": "Remove your review of this report?",
+      "removed": "Review removed",
+      "networkError": "Network error. Check your connection and try again."
+    },
+    "errors": {
+      "commentTooLong": "The comment is longer than 4,000 characters.",
+      "scoreInvalid": "Enter a whole number from 0 to 100, or leave the score empty.",
+      "commentRequired": "Add a comment that explains the adjusted score.",
+      "reviewEmpty": "Add a comment, an adjusted score or a flag.",
+      "forbidden": "You cannot review this report. Your access may have changed; refresh the page.",
+      "notFound": "This review no longer exists. Refresh the page.",
+      "signedOut": "Your sign-in has expired. Sign in again.",
+      "rateLimited": "Too many changes in the last hour. Wait a few minutes and try again.",
+      "failed": "The review could not be saved. Please try again."
+    },
+    "trainees": {
+      "title": "Trainees you supervise",
+      "intro": "You can read and review their practice session reports. Skill test results stay with the supervisor who assigned the test.",
+      "empty": "No trainees are linked to you yet. The superadmin links trainees under Admin › Supervisors.",
+      "loadError": "Your trainees could not be loaded. Refresh the page to try again.",
+      "view": "Practice reports"
+    },
+    "trainee": {
+      "back": "Back to Supervise",
+      "title": "{name}: practice sessions",
+      "intro": "Practice sessions only. Open a report to read it and add your review.",
+      "empty": "No practice sessions yet.",
+      "colAi": "AI score",
+      "noReport": "No report yet",
+      "notReviewed": "Not reviewed",
+      "reviewed": "Reviewed",
+      "adjustedTo": "Adjusted to {score}",
+      "flagged": "Flagged",
+      "open": "Open report"
+    },
+    "session": {
+      "back": "Back to {name}",
+      "meta": "{trainee} · {patient} · {date}",
+      "noReport": "This session has no report yet.",
+      "traineeLabel": "Trainee",
+      "transcript": "Transcript ({count, plural, one {# turn} other {# turns}})"
+    },
+    "links": {
+      "title": "Linked trainees",
+      "none": "No trainees linked.",
+      "choose": "Choose a trainee",
+      "add": "Link trainee",
+      "remove": "Unlink",
+      "removeConfirm": "Unlink {name}? {supervisor} will no longer see this trainee's practice reports.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "loadError": "Linked trainees could not be loaded. Refresh the page to try again.",
+      "networkError": "Network error. Check your connection and try again.",
+      "mfaRequired": "Sign in with two-step login before changing links.",
+      "notSupervisor": "This person is no longer a supervisor. Refresh the page.",
+      "notApplied": "The change did not save. Refresh the page and try again.",
+      "rateLimited": "Too many changes in the last hour. Wait a few minutes and try again.",
+      "changeFailed": "The link could not be changed. Please try again."
     }
   }
 }

@@ -416,6 +416,32 @@ export type SkillTestAssignment = {
   updated_at: string;
 };
 
+/** Row of public.supervisor_trainees — a trainee a supervisor oversees. */
+export type SupervisorTraineeLink = {
+  supervisor_id: string;
+  trainee_id: string;
+  linked_by: string | null;
+  created_at: string;
+};
+
+/**
+ * Row of public.session_report_reviews — a supervisor's comment, flag and
+ * adjusted overall score for one report. The AI scores in session_reports
+ * are never changed; the adjusted score sits beside them.
+ */
+export type SessionReportReview = {
+  id: string;
+  session_id: string;
+  /** Null once the reviewer's account is deleted. */
+  reviewer_id: string | null;
+  comment: string | null;
+  /** 0–100, or null when the supervisor did not change the score. */
+  adjusted_overall: number | null;
+  flagged: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TherapyCourseStatus = "active" | "completed";
 
 export type TherapyCourseCompletionReason = "terminated" | "course_length";

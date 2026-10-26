@@ -8,6 +8,8 @@ import { ReportView } from "@/components/ReportView";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
 import { CancelSkillTestButton } from "@/components/skill-tests/CancelSkillTestButton";
+import { ReportReviewPanel } from "@/components/supervise/ReportReviewPanel";
+import { loadReportReviews, reviewsBySession } from "@/lib/supervisor-reviews";
 import {
   buildIndicativeCtsr,
   buildScoreEvidence,
@@ -42,7 +44,7 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
   const { id } = await params;
   const { created } = await searchParams;
   if (!isUuid(id)) notFound();
-  const { supabase } = await requireSupervisor();
+  const { supabase, user } = await requireSupervisor();
   const t = await getTranslations("skillTests.supervise");
   const tStatus = await getTranslations("skillTests.status");
   const tD = await getTranslations("skillTests.disorders");
@@ -106,6 +108,8 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
     ((reportRows ?? []) as SessionReport[]).map((r) => [r.session_id, r]),
   );
   const messages = (messageRows ?? []) as SessionMessage[];
+  const reviewsResult = await loadReportReviews(supabase, [...reports.keys()]);
+  const reviews = reviewsBySession(reviewsResult.reviews);
 
   const pinnedCase = test.sealed_case
     ? openSkillTestCase(test.id, test.sealed_case)
@@ -247,7 +251,17 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
                   </span>
                 </div>
                 {report ? (
-                  <ReportView report={report} evidence={evidence} />
+                  <>
+                    <ReportView report={report} evidence={evidence} audience="supervisor" />
+                    <ReportReviewPanel
+                      sessionId={s.id}
+                      aiOverall={report.scores?.overall ?? 0}
+                      reviews={reviews.get(s.id) ?? []}
+                      loadFailed={reviewsResult.failed}
+                      currentUserId={user.id}
+                      canEdit
+                    />
+                  </>
                 ) : (
                   <p className="clinical-card p-4 text-sm text-[var(--on-surface-variant)]">
                     {s.status === "active" ? t("sessionRunning") : t("reportPending")}
