@@ -61,8 +61,13 @@ psql -X -q -c "notify pgrst, 'reload schema'"
 E2E_PASSWORD="E2e-$(openssl rand -hex 12)-Pw!"
 E2E_TRAINEE_EMAIL="trainee-$RANDOM@e2e.invalid"
 E2E_ADMIN_EMAIL="admin-$RANDOM@e2e.invalid"
+# Certificates spec: its own admin (enrolls its own second factor) and a
+# trainee who has already cleared the Training Program.
+E2E_CERT_ADMIN_EMAIL="cert-admin-$RANDOM@e2e.invalid"
+E2E_GRADUATE_EMAIL="graduate-$RANDOM@e2e.invalid"
 E2E_SUPERVISOR_EMAIL="supervisor-$RANDOM@e2e.invalid"
-for email in "$E2E_TRAINEE_EMAIL" "$E2E_ADMIN_EMAIL" "$E2E_SUPERVISOR_EMAIL"; do
+for email in "$E2E_TRAINEE_EMAIL" "$E2E_ADMIN_EMAIL" "$E2E_SUPERVISOR_EMAIL" \
+  "$E2E_CERT_ADMIN_EMAIL" "$E2E_GRADUATE_EMAIL"; do
   curl -fsS -o /dev/null -X POST "$API_URL/auth/v1/admin/users" \
     -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
     -H "Content-Type: application/json" \
@@ -72,19 +77,44 @@ done
 # bypass triggers instead.
 psql -X -q -v ON_ERROR_STOP=1 \
   -v trainee="$E2E_TRAINEE_EMAIL" -v admin="$E2E_ADMIN_EMAIL" \
-  -v supervisor="$E2E_SUPERVISOR_EMAIL" <<'SQL'
+  -v supervisor="$E2E_SUPERVISOR_EMAIL" \
+  -v cert_admin="$E2E_CERT_ADMIN_EMAIL" -v graduate="$E2E_GRADUATE_EMAIL" <<'SQL'
 begin;
 set local session_replication_role = replica;
 update public.profiles p set approval_status = 'approved'
-  from auth.users u where u.id = p.id and u.email in (:'trainee', :'admin', :'supervisor');
+  from auth.users u where u.id = p.id
+    and u.email in (:'trainee', :'admin', :'supervisor', :'cert_admin', :'graduate');
 update public.profiles p set role = 'admin'
-  from auth.users u where u.id = p.id and u.email = :'admin';
+  from auth.users u where u.id = p.id and u.email in (:'admin', :'cert_admin');
+update public.profiles p set display_name = 'Grace Graduate'
+  from auth.users u where u.id = p.id and u.email = :'graduate';
 insert into public.supervisors (user_id)
   select id from auth.users where email = :'supervisor';
 insert into public.supervisor_trainees (supervisor_id, trainee_id)
   select s.id, t.id from auth.users s, auth.users t
   where s.email = :'supervisor' and t.email = :'trainee';
 commit;
+-- The graduate passed every level of every program patient. Marking the
+-- attempts passed is what the report trigger does; it issues the certificate.
+select set_config('e2e.graduate', id::text, false) from auth.users where email = :'graduate';
+do $$
+declare g uuid := current_setting('e2e.graduate')::uuid; p record; s uuid;
+begin
+  for p in select key, avatar_id from public.training_ladder_patients where is_active loop
+    for lvl in 1..5 loop
+      s := gen_random_uuid();
+      insert into public.sessions (id, therapist_id, avatar_id) values (s, g, p.avatar_id);
+      update public.sessions set status = 'completed', ended_at = now() where id = s;
+      insert into public.training_ladder_attempts (session_id, therapist_id, patient_key, level)
+        values (s, g, p.key, lvl);
+    end loop;
+  end loop;
+  update public.training_ladder_attempts set status = 'passed', score = 80
+    where therapist_id = g;
+  if not exists (select 1 from public.enterprise_certificates where user_id = g) then
+    raise exception 'e2e fixture: clearing the ladder issued no certificate';
+  end if;
+end $$;
 SQL
 
 export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
@@ -101,7 +131,7 @@ for _ in $(seq 1 60); do
 done
 
 export E2E_BASE_URL="http://127.0.0.1:$APP_PORT" E2E_PASSWORD E2E_TRAINEE_EMAIL E2E_ADMIN_EMAIL \
-  E2E_SUPERVISOR_EMAIL
+  E2E_SUPERVISOR_EMAIL E2E_CERT_ADMIN_EMAIL E2E_GRADUATE_EMAIL
 if ! npx playwright test "$@"; then
   echo "---- app log (tail) ----" >&2
   tail -50 "$WORKDIR/app.log" >&2

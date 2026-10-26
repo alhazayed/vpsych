@@ -1,8 +1,8 @@
 /**
  * Printable pass certificate: the draft an admin edits on
  * /admin/certificates, its limits, and how it is kept in the admin's browser.
- * Pure. Nothing here is stored on the server or verifiable yet; the printed
- * reference only identifies the sheet.
+ * Pure. Issued certificates and their numbers are recorded separately
+ * (`lib/certificate-registry.ts`); this file only shapes the printed sheet.
  */
 
 export const CERTIFICATE_LOCALES = ["en", "ar"] as const;
@@ -39,6 +39,8 @@ export type CertificateSheetLabels = {
   inPartnershipWith: string;
   disclaimer: string;
   signature: string;
+  /** Label before the verify link printed under the number. */
+  verify: string;
 };
 
 /** Defaults for one language, from `admin.certificates.defaults`. */
@@ -179,8 +181,9 @@ export function certificateImageProblem(file: {
 const REFERENCE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
- * Printed sheet reference, `VT-YYYYMMDD-XXXXXX`. Identifies a printout only;
- * it is not recorded anywhere, so it cannot be verified.
+ * Unrecorded sheet reference, `VT-YYYYMMDD-XXXXXX`, used only while the
+ * certificate records are not set up. It identifies a printout and cannot be
+ * verified; recorded certificates use `VT-XXXX-XXXX-XXXX` from the database.
  */
 export function certificateReference(
   issuedOn: string,

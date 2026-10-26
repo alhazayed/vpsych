@@ -473,4 +473,119 @@ select pg_temp.expect_count('admin with two-step can read trainee sessions',
 select pg_temp.expect_ok('admin with two-step can list account approvals',
   'cccccccc-0000-4000-8000-000000000003', 'select count(*) from public.list_account_approvals()');
 
+-- ── training certificates ──────────────────────────────────────────────────
+-- B clears the top level of every active program patient; the grade trigger's
+-- update issues one certificate automatically.
+do $$
+declare p record; s uuid;
+begin
+  for p in select key, avatar_id from public.training_ladder_patients where is_active loop
+    s := gen_random_uuid();
+    insert into public.sessions (id, therapist_id, avatar_id) values
+      (s, 'bbbbbbbb-0000-4000-8000-000000000002', p.avatar_id);
+    update public.sessions set status = 'completed', ended_at = now() where id = s;
+    insert into public.training_ladder_attempts (session_id, therapist_id, patient_key, level)
+      values (s, 'bbbbbbbb-0000-4000-8000-000000000002', p.key, 5);
+  end loop;
+  if not found then
+    raise exception 'FAIL fixtures: no active ladder patients';
+  end if;
+  update public.training_ladder_attempts set status = 'passed'
+    where therapist_id = 'bbbbbbbb-0000-4000-8000-000000000002';
+  if (select count(*) from public.enterprise_certificates
+      where user_id = 'bbbbbbbb-0000-4000-8000-000000000002'
+        and program = 'training_program' and source = 'training_ladder'
+        and verification_code ~ '^VT-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$') <> 1 then
+    raise exception 'FAIL certificate: clearing the ladder did not issue one certificate';
+  end if;
+  -- Passing a top level again does not issue a second one.
+  update public.training_ladder_attempts set status = 'failed'
+    where id = (select id from public.training_ladder_attempts
+                where therapist_id = 'bbbbbbbb-0000-4000-8000-000000000002' limit 1);
+  update public.training_ladder_attempts set status = 'passed'
+    where therapist_id = 'bbbbbbbb-0000-4000-8000-000000000002';
+  if (select count(*) from public.enterprise_certificates
+      where user_id = 'bbbbbbbb-0000-4000-8000-000000000002') <> 1 then
+    raise exception 'FAIL certificate: a replayed pass issued a second certificate';
+  end if;
+  -- A has not cleared the ladder.
+  if exists (select 1 from public.enterprise_certificates
+             where user_id = 'aaaaaaaa-0000-4000-8000-000000000001') then
+    raise exception 'FAIL certificate: issued without clearing the ladder';
+  end if;
+  raise notice 'ok   clearing the ladder issues one certificate, once';
+end $$;
+
+create temp table cert_b as
+  select id, verification_code from public.enterprise_certificates
+  where user_id = 'bbbbbbbb-0000-4000-8000-000000000002';
+grant select on cert_b to anon, authenticated;
+
+select pg_temp.expect_count('anyone can verify a certificate number', null,
+  'select count(*) from public.verify_training_certificate((select lower(verification_code) from cert_b))', 1);
+select pg_temp.expect_count('an unknown certificate number verifies as nothing', null,
+  $q$select count(*) from public.verify_training_certificate('VT-0000-0000-0000')$q$, 0);
+select pg_temp.expect_count('trainee reads own certificate',
+  'bbbbbbbb-0000-4000-8000-000000000002', 'select count(*) from public.enterprise_certificates', 1);
+select pg_temp.expect_count('trainee cannot read another trainee''s certificate',
+  'aaaaaaaa-0000-4000-8000-000000000001', 'select count(*) from public.enterprise_certificates', 0);
+select pg_temp.expect_error('trainee cannot issue a certificate',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$select public.admin_issue_training_certificate('aaaaaaaa-0000-4000-8000-000000000001', 'A')$q$,
+  '%forbidden%');
+select pg_temp.expect_error('trainee cannot write a certificate row directly',
+  'aaaaaaaa-0000-4000-8000-000000000001',
+  $q$insert into public.enterprise_certificates (user_id, kind, title, verification_code, qr_payload)
+     values ('aaaaaaaa-0000-4000-8000-000000000001', 'course', 'x', 'VT-FAKE-FAKE-FAKE', 'x')$q$,
+  '%row-level security%');
+select pg_temp.expect_error('trainee cannot revoke a certificate',
+  'bbbbbbbb-0000-4000-8000-000000000002',
+  'select public.admin_revoke_training_certificate((select id from cert_b))', '%forbidden%');
+select pg_temp.expect_error('anon cannot issue a certificate', null,
+  $q$select public.admin_issue_training_certificate('aaaaaaaa-0000-4000-8000-000000000001', 'A')$q$,
+  '%permission denied%');
+select set_config('vpsych.test_aal', 'aal1', true);
+select pg_temp.expect_error('admin without two-step cannot issue a certificate',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$select public.admin_issue_training_certificate('aaaaaaaa-0000-4000-8000-000000000001', 'A')$q$,
+  '%forbidden%');
+select set_config('vpsych.test_aal', 'aal2', true);
+select pg_temp.expect_error('admin cannot issue a second active certificate',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$select public.admin_issue_training_certificate('bbbbbbbb-0000-4000-8000-000000000002', 'B')$q$,
+  '%already_issued%');
+select pg_temp.expect_ok('admin can issue a certificate',
+  'cccccccc-0000-4000-8000-000000000003',
+  $q$select public.admin_issue_training_certificate('aaaaaaaa-0000-4000-8000-000000000001', 'Trainee A', 'Institute', 'ar')$q$);
+
+-- Revoking: verification reports it, the ladder does not re-issue it, and an
+-- admin may issue a new one.
+do $$
+begin
+  perform pg_temp.become('cccccccc-0000-4000-8000-000000000003');
+  perform public.admin_revoke_training_certificate((select id from cert_b), 'wrong name');
+  perform pg_temp.unbecome();
+  perform pg_temp.become(null);
+  if not (select v.revoked from public.verify_training_certificate((select verification_code from cert_b)) v) then
+    raise exception 'FAIL certificate: revoked certificate verifies as valid';
+  end if;
+  perform pg_temp.unbecome();
+  update public.training_ladder_attempts set status = 'failed'
+    where id = (select id from public.training_ladder_attempts
+                where therapist_id = 'bbbbbbbb-0000-4000-8000-000000000002' limit 1);
+  update public.training_ladder_attempts set status = 'passed'
+    where therapist_id = 'bbbbbbbb-0000-4000-8000-000000000002';
+  if exists (select 1 from public.enterprise_certificates
+             where user_id = 'bbbbbbbb-0000-4000-8000-000000000002' and not revoked) then
+    raise exception 'FAIL certificate: the ladder re-issued a revoked certificate';
+  end if;
+  perform pg_temp.become('cccccccc-0000-4000-8000-000000000003');
+  perform public.admin_issue_training_certificate('bbbbbbbb-0000-4000-8000-000000000002', 'Trainee B');
+  perform pg_temp.unbecome();
+  raise notice 'ok   revoked certificates verify as revoked and are not re-issued automatically';
+end $$;
+select pg_temp.expect_error('a certificate cannot be revoked twice',
+  'cccccccc-0000-4000-8000-000000000003',
+  'select public.admin_revoke_training_certificate((select id from cert_b))', '%already_revoked%');
+
 rollback;

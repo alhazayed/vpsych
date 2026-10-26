@@ -18,6 +18,7 @@ export function CertificateSheet({
   recipient,
   issuedOn,
   reference,
+  verifyLink,
   instituteLogo,
   signatures,
 }: {
@@ -27,6 +28,8 @@ export function CertificateSheet({
   recipient: string;
   issuedOn: string;
   reference: string;
+  /** Printed under the number when the certificate is recorded. */
+  verifyLink?: string | null;
   instituteLogo: string | null;
   signatures: Array<string | null>;
 }) {
@@ -122,8 +125,15 @@ export function CertificateSheet({
                 {labels.date}: {formatCertificateDate(issuedOn, locale)}
               </span>
               <span className="max-w-[50%] text-[1cqw] text-[#6b7280]">{labels.disclaimer}</span>
-              <span>
-                {labels.reference}: <span dir="ltr">{reference}</span>
+              <span className="text-end">
+                <span className="block">
+                  {labels.reference}: <span dir="ltr">{reference}</span>
+                </span>
+                {verifyLink ? (
+                  <span className="block text-[0.95cqw] text-[#6b7280]">
+                    {labels.verify}: <span dir="ltr">{verifyLink}</span>
+                  </span>
+                ) : null}
               </span>
             </div>
           </footer>

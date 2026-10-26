@@ -76,7 +76,7 @@ describe("updateSession: signed out", () => {
   });
 
   it("lets public pages through", async () => {
-    for (const path of ["/", "/login", "/signup", "/auth/callback", "/privacy"]) {
+    for (const path of ["/", "/login", "/signup", "/auth/callback", "/privacy", "/verify"]) {
       const res = await updateSession(request(path, { locale: "en" }));
       expect(res.headers.get("location"), path).toBeNull();
       expect(res.status, path).toBe(200);
