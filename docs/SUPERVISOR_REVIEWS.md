@@ -6,7 +6,7 @@ score. The AI report is never changed. The adjusted score is stored on its own,
 with its author and time, and shown beside the AI score.
 
 Code: `src/lib/supervisor-reviews/` · migration
-`20261025213000_supervisor_report_reviews.sql` · database checks
+`20261026051005_supervisor_report_reviews.sql` · database checks
 `supabase/tests/rls/20_supervisor_reviews.sql`.
 
 ## Who sees what

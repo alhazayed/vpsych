@@ -1,4 +1,4 @@
--- Supervisor review of session reports (20261025213000), run against a
+-- Supervisor review of session reports (20261026051005), run against a
 -- database built from every migration (see scripts/test-db-rls.sh). One
 -- transaction, rolled back; a failed check raises.
 
