@@ -174,7 +174,12 @@ export async function ReportView({
                               speaker: t(`quotes.speaker.${q.speaker}`),
                             })}
                           </span>
-                          <q className="text-[var(--on-surface)]" lang={language} dir="auto">
+                          <q
+                            className="text-[var(--on-surface)]"
+                            lang={language}
+                            dir="auto"
+                            style={language === "ar" ? { quotes: '"«" "»"' } : undefined}
+                          >
                             {q.quote}
                           </q>
                         </li>
