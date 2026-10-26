@@ -2,11 +2,14 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { SupervisorRoleToggle } from "@/components/skill-tests/SupervisorRoleToggle";
+import { SupervisorTraineeLinks } from "@/components/skill-tests/SupervisorTraineeLinks";
+import type { SupervisorTraineeLink } from "@/lib/types";
 
 /** Superadmin grants and revokes the supervisor role. */
 export default async function AdminSupervisorsPage() {
   const { supabase } = await requireAdmin();
   const t = await getTranslations("skillTests.admin");
+  const tLinks = await getTranslations("supervisorReviews.links");
 
   const { data, error } = await supabase.rpc("list_skill_test_trainees");
   if (error) console.warn("[admin/supervisors] list:", error.message);
@@ -17,6 +20,14 @@ export default async function AdminSupervisorsPage() {
     is_supervisor: boolean;
   }>;
   const supervisors = users.filter((u) => u.is_supervisor);
+
+  // Which trainees each supervisor oversees (practice report review).
+  const { data: linkRows, error: linksError } = await supabase
+    .from("supervisor_trainees")
+    .select("supervisor_id, trainee_id");
+  if (linksError) console.error("[admin/supervisors] links:", linksError.message);
+  const links = (linkRows ?? []) as Pick<SupervisorTraineeLink, "supervisor_id" | "trainee_id">[];
+  const byId = new Map(users.map((u) => [u.id, u]));
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 md:px-8">
@@ -52,7 +63,7 @@ export default async function AdminSupervisorsPage() {
           </p>
           <ul className="clinical-card divide-y divide-[var(--outline-variant)]">
             {users.map((u) => (
-              <li key={u.id} className="flex items-center justify-between gap-3 p-4">
+              <li key={u.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <p className="font-semibold">
                     {u.display_name}
@@ -71,6 +82,33 @@ export default async function AdminSupervisorsPage() {
                   isSupervisor={u.is_supervisor}
                   name={u.display_name}
                 />
+                {u.is_supervisor &&
+                  (linksError ? (
+                    <p role="alert" className="basis-full text-sm text-[var(--error)]">
+                      {tLinks("loadError")}
+                    </p>
+                  ) : (
+                    <div className="basis-full">
+                      <SupervisorTraineeLinks
+                        supervisor={{ id: u.id, display_name: u.display_name }}
+                        linked={links
+                          .filter((l) => l.supervisor_id === u.id)
+                          .map((l) => ({
+                            id: l.trainee_id,
+                            display_name: byId.get(l.trainee_id)?.display_name ?? "—",
+                          }))}
+                        candidates={users
+                          .filter(
+                            (c) =>
+                              c.id !== u.id &&
+                              !links.some(
+                                (l) => l.supervisor_id === u.id && l.trainee_id === c.id,
+                              ),
+                          )
+                          .map((c) => ({ id: c.id, display_name: c.display_name }))}
+                      />
+                    </div>
+                  ))}
               </li>
             ))}
           </ul>

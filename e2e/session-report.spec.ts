@@ -2,17 +2,21 @@ import { expect, test, type Page } from "@playwright/test";
 import { msLeftInWindow, totp } from "./totp";
 
 // The core loop: a trainee signs in, runs a typed Therapy Room session, ends
-// it, and the admin-only report exists for an admin but not for the trainee.
+// it, and the report exists for an admin but not for the trainee. The
+// trainee's linked supervisor reads it and adds a review with an adjusted
+// score; the AI score stays as it was.
 // There is no OpenAI key in this environment, so the patient answers with a
 // persona fallback line and the report comes from the heuristic assessment.
 
 const PASSWORD = process.env.E2E_PASSWORD ?? "";
 const TRAINEE = process.env.E2E_TRAINEE_EMAIL ?? "";
 const ADMIN = process.env.E2E_ADMIN_EMAIL ?? "";
+const SUPERVISOR = process.env.E2E_SUPERVISOR_EMAIL ?? "";
+const REVIEW_COMMENT = "Did not ask about sleep or risk.";
 const OPENING = "Hello, I'm Dr. Test. What brings you in today?";
 
 test.beforeAll(() => {
-  if (!PASSWORD || !TRAINEE || !ADMIN) {
+  if (!PASSWORD || !TRAINEE || !ADMIN || !SUPERVISOR) {
     throw new Error("Run through scripts/test-e2e.sh (E2E_* env not set).");
   }
 });
@@ -94,6 +98,48 @@ test("trainee session ends in a report only an admin can read", async ({
     expect(api.status()).toBe(403);
   });
 
+  await test.step("the trainee cannot review the report", async () => {
+    const res = await page.request.put(`/api/supervise/reviews/${sessionId}`, {
+      data: { comment: "self-review" },
+    });
+    expect(res.status()).toBe(403);
+  });
+
+  await test.step("the linked supervisor reviews the report", async () => {
+    const supContext = await browser.newContext({ baseURL, bypassCSP: true });
+    await supContext.addCookies([
+      { name: "locale", value: "en", url: baseURL! },
+    ]);
+    const sup = await supContext.newPage();
+    await signIn(sup, SUPERVISOR);
+    await sup.goto("/supervise");
+    await sup.getByRole("link", { name: /Practice reports/ }).first().click();
+    await sup.waitForURL(/\/supervise\/trainees\/[0-9a-f-]{36}$/);
+    await sup.getByRole("link", { name: "Open report" }).first().click();
+    await sup.waitForURL(`**/supervise/sessions/${sessionId}`);
+
+    const aiScore = sup.getByText(/^AI score: \d+\/100$/);
+    const aiText = await aiScore.innerText();
+    await sup.getByLabel("Comment").fill(REVIEW_COMMENT);
+    await sup.getByLabel("Adjusted overall score (0–100)").fill("42");
+    await sup.getByLabel("Flag this session for follow-up").check();
+    const saved = sup.waitForResponse(
+      (r) =>
+        r.request().method() === "PUT" &&
+        new URL(r.url()).pathname === `/api/supervise/reviews/${sessionId}`,
+    );
+    await sup.getByRole("button", { name: "Save review" }).click();
+    expect((await saved).status()).toBe(200);
+    await expect(sup.getByText("Review saved")).toBeVisible();
+
+    await sup.reload();
+    await expect(sup.getByLabel("Adjusted overall score (0–100)")).toHaveValue("42");
+    await expect(sup.getByLabel("Comment")).toHaveValue(REVIEW_COMMENT);
+    // The adjusted score sits beside the AI score; the AI score is unchanged.
+    await expect(sup.getByText(aiText)).toBeVisible();
+    await supContext.close();
+  });
+
   await test.step("an admin can read the report", async () => {
     // browser.newContext() does not inherit the config's `use` options.
     const adminContext = await browser.newContext({ baseURL, bypassCSP: true });
@@ -115,6 +161,10 @@ test("trainee session ends in a report only an admin can read", async ({
     await expect(
       admin.getByText("Therapeutic alliance & empathy").first(),
     ).toBeVisible();
+    // The supervisor's review shows beside the report, read-only.
+    await expect(admin.getByText("Adjusted score: 42/100")).toBeVisible();
+    await expect(admin.getByText(REVIEW_COMMENT)).toBeVisible();
+    await expect(admin.getByRole("button", { name: "Save review" })).toHaveCount(0);
     await adminContext.close();
   });
 });
