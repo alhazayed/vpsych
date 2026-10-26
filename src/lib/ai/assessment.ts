@@ -16,7 +16,11 @@ import {
   parseAssessmentModelText,
   type AssessmentModelOutput,
 } from "@/lib/ai/assessment-parse";
-import { verifyEvidence, type EvidenceTurn } from "@/lib/ai/assessment-evidence";
+import {
+  unscoredLeftOutOfOverall,
+  verifyEvidence,
+  type EvidenceTurn,
+} from "@/lib/ai/assessment-evidence";
 import { formatRubricWithAnchors } from "@/lib/ai/rubric-anchors";
 import { openAIService } from "@/lib/ai/openai";
 import {
@@ -279,7 +283,9 @@ function weightedOverall(
   const scoredWeight = items.reduce((s, i) => s + i.weight, 0);
   const unscoredWeight = unscored.reduce((s, i) => s + i.weight, 0);
   const totalWeight =
-    (scoredWeight >= unscoredWeight ? scoredWeight : scoredWeight + unscoredWeight) || 1;
+    (unscoredLeftOutOfOverall(items, unscored)
+      ? scoredWeight
+      : scoredWeight + unscoredWeight) || 1;
   const sum = items.reduce(
     (s, i) => s + (i.score / i.max) * 100 * (i.weight / totalWeight),
     0,

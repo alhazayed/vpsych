@@ -19,6 +19,8 @@ import {
 } from "@/lib/admin/session-ops";
 import { expireStaleSession } from "@/lib/session-expiry";
 import type { MessageRole, SessionStatus, TherapySession } from "@/lib/types";
+import { storedUnscored } from "@/lib/ai/assessment-evidence";
+import { localizeRubricLabel } from "@/lib/ai/report-locale";
 import { withSkillTestCase } from "@/lib/skill-tests";
 
 export default async function AdminSessionDetailPage({
@@ -143,12 +145,26 @@ export default async function AdminSessionDetailPage({
     scores: {
       overall?: number;
       items?: SessionDetailScoreItem[];
+      unscored_items?: unknown;
     } | null;
     narrative: string | null;
     language: string | null;
     created_at: string;
   }> | null;
   const reportRow = Array.isArray(reports) ? reports[0] : null;
+
+  // Items the examiner could not score are not in `items`; name them so
+  // the rubric list never silently shows fewer rows.
+  const unscoredNote = (raw: unknown): string | null => {
+    const unscored = storedUnscored(raw);
+    if (unscored.length === 0) return null;
+    const lang = locale === "ar" ? "ar" : "en";
+    return t("unscored", {
+      items: unscored
+        .map((u) => localizeRubricLabel(u.id, u.label, lang))
+        .join(lang === "ar" ? "، " : ", "),
+    });
+  };
 
   const report = reportRow
     ? {
@@ -161,6 +177,7 @@ export default async function AdminSessionDetailPage({
         items: Array.isArray(reportRow.scores?.items)
           ? reportRow.scores.items
           : [],
+        unscoredNote: unscoredNote(reportRow.scores?.unscored_items),
         language: reportRow.language,
         createdAt: reportRow.created_at,
       }

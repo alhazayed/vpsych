@@ -1010,6 +1010,21 @@
         "examiner_judgement": "Examiner judgement only; no transcript check for this item"
       }
     },
+    "quotes": {
+      "label": "Evidence from the transcript",
+      "turn": "Turn {turn} · {speaker}",
+      "speaker": {
+        "therapist": "Therapist",
+        "patient": "Patient"
+      },
+      "none": "No quote for this score could be found in the transcript."
+    },
+    "unscored": {
+      "title": "Could not be scored",
+      "badge": "Cannot score",
+      "leftOut": "{count, plural, one {# item could not be scored and is} other {# items could not be scored and are}} left out of the overall.",
+      "countedZero": "Less than half the rubric could be scored, so the items that could not be scored count as zero in the overall."
+    },
     "supervisorOnlyNote": "Shared with admins and this trainee's supervisors only. Not shared with the trainee."
   },
   "admin": {
@@ -1955,7 +1970,8 @@
         "errorNetwork": "Network error. Check your connection and try again.",
         "errorGeneric": "Could not generate the report. Try again."
       },
-      "detailTabsLabel": "Session detail"
+      "detailTabsLabel": "Session detail",
+      "unscored": "Could not be scored: {items}"
     },
     "contentHub": {
       "title": "Content library",

@@ -9,7 +9,7 @@
  * a report never shows an invented quote.
  */
 
-import type { TurnEvidence } from "@/lib/types";
+import type { TurnEvidence, UnscoredEntry } from "@/lib/types";
 
 export const MAX_EVIDENCE_PER_ITEM = 3;
 export const MAX_QUOTE_CHARS = 300;
@@ -137,6 +137,39 @@ export function storedEvidence(raw: unknown): TurnEvidence[] {
       out.push({ turn: r.turn, speaker: r.speaker, quote: r.quote });
     }
     if (out.length >= MAX_EVIDENCE_PER_ITEM) break;
+  }
+  return out;
+}
+
+/**
+ * True when items the examiner could not score are left out of the overall
+ * (at least half the rubric weight was scored). Otherwise they count as zero,
+ * so a session too thin to judge cannot pass on one or two items.
+ */
+export function unscoredLeftOutOfOverall(
+  scored: { weight: number }[],
+  unscored: { weight: number }[],
+): boolean {
+  const scoredWeight = scored.reduce((s, i) => s + i.weight, 0);
+  const unscoredWeight = unscored.reduce((s, i) => s + i.weight, 0);
+  return scoredWeight >= unscoredWeight;
+}
+
+/** Read stored "cannot score" items back from report JSON (shape-checked). */
+export function storedUnscored(raw: unknown): UnscoredEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const out: UnscoredEntry[] = [];
+  for (const e of raw) {
+    if (!e || typeof e !== "object") continue;
+    const r = e as Record<string, unknown>;
+    if (typeof r.id !== "string") continue;
+    out.push({
+      id: r.id,
+      label: typeof r.label === "string" ? r.label : r.id,
+      max: typeof r.max === "number" ? r.max : 5,
+      weight: typeof r.weight === "number" ? r.weight : 0,
+      reason: typeof r.reason === "string" ? r.reason : "",
+    });
   }
   return out;
 }

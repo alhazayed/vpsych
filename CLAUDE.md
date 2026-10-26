@@ -288,6 +288,11 @@ client — a fallback reply must never be presented as a model reply.
 
 Canonical session overall score is the private `weightedOverall()` helper inside
 `lib/ai/assessment.ts` (0–100). Do not fork a second copy of that formula.
+Rubric items the examiner marks `cannot_score` live in `scores.unscored_items`,
+never in `scores.items`; `weightedOverall()` leaves them out while at least half
+the rubric weight was scored and counts them as zero below that. Each scored
+item carries transcript-verified `evidence` quotes. See
+`docs/ASSESSMENT_EVIDENCE.md`.
 A shared `weightedOverallScore` / `reliability.ts` module is planned for `[v1.1]`
 reliability work and is **not** on main today.
 
