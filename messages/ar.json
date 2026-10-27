@@ -101,7 +101,9 @@
       "openMenu": "فتح التنقل",
       "closeMenu": "إغلاق التنقل",
       "menuTitle": "تنقّل الإدارة",
-      "mainNav": "التنقل الرئيسي"
+      "mainNav": "التنقل الرئيسي",
+      "more": "المزيد",
+      "moreTitle": "صفحات أخرى"
     },
     "commandPalette": {
       "title": "بحث في Vtraining",
