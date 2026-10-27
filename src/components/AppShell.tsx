@@ -15,7 +15,8 @@ import {
 } from "@/components/admin/AdminSidebarNav";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
-import { flattenAdminNav } from "@/lib/admin/admin-nav";
+import { findAdminNavItem, flattenAdminNav } from "@/lib/admin/admin-nav";
+import { ADMIN_MOBILE_BAR_HREFS, splitMobileNav } from "@/lib/mobile-nav";
 
 type NavItem = {
   href: string;
@@ -194,13 +195,23 @@ export function AppShell({
       ? [
           {
             href: "/admin",
-            label: tNav("overview"),
+            label: tShell("adminConsole"),
             icon: "admin_panel_settings",
             match: (p: string) => p.startsWith("/admin"),
           } satisfies NavItem,
         ]
       : []),
   ];
+
+  // Phone bar: an admin has six destinations, so the admin console keeps its
+  // slot and the overflow moves behind "More" instead of being cut off.
+  const mobileNav = splitMobileNav(therapistItems, ["/admin"]);
+  const showMore = isAdminArea || mobileNav.overflow.length > 0;
+  const moreActive = isAdminArea
+    ? !ADMIN_MOBILE_BAR_HREFS.includes(findAdminNavItem(pathname)?.href ?? "")
+    : mobileNav.overflow.some((item) =>
+        item.match ? item.match(pathname) : pathname === item.href,
+      );
 
   async function signOut() {
     const supabase = createClient();
@@ -397,19 +408,8 @@ export function AppShell({
 
       {/* Mobile top bar */}
       <header className="fixed start-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 shadow-sm md:hidden">
+        {/* The admin menu opens from "More" in the bottom bar. */}
         <div className="flex items-center gap-2">
-          {isAdminArea ? (
-            <button
-              type="button"
-              className="rounded-lg p-2 text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)]"
-              aria-label={tShell("sidebar.openMenu")}
-              onClick={() => setMobileDrawerOpen(true)}
-            >
-              <span className="material-symbols-outlined" aria-hidden>
-                menu
-              </span>
-            </button>
-          ) : null}
           <Link
             href={isAdminArea ? "/admin" : "/avatars"}
             className="flex items-center gap-2"
@@ -450,8 +450,9 @@ export function AppShell({
         </div>
       </header>
 
-      {/* Mobile admin drawer */}
-      {isAdminArea && mobileDrawerOpen ? (
+      {/* Mobile menu: the whole admin console, or the trainee pages that do
+          not fit the bottom bar. */}
+      {mobileDrawerOpen ? (
         <div className="fixed inset-0 z-[70] md:hidden" role="presentation">
           <button
             type="button"
@@ -463,7 +464,11 @@ export function AppShell({
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label={tShell("sidebar.menuTitle")}
+            aria-label={
+              isAdminArea
+                ? tShell("sidebar.menuTitle")
+                : tShell("sidebar.moreTitle")
+            }
             className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-[var(--surface-container-lowest)] shadow-lg"
           >
             <div className="flex items-center justify-between border-b border-[var(--outline-variant)] px-4 py-3">
@@ -491,12 +496,42 @@ export function AppShell({
                 }
               }}
             >
-              <AdminSidebarNav
-                collapsed={false}
-                isSectionOpen={isSectionOpen}
-                toggleSection={toggleSection}
-              />
+              {isAdminArea ? (
+                <AdminSidebarNav
+                  collapsed={false}
+                  isSectionOpen={isSectionOpen}
+                  toggleSection={toggleSection}
+                  expandAll
+                />
+              ) : (
+                <nav
+                  className="space-y-1 px-2"
+                  aria-label={tShell("sidebar.moreTitle")}
+                >
+                  {mobileNav.overflow.map((item) => (
+                    <TherapistNavLink
+                      key={item.href}
+                      item={item}
+                      pathname={pathname}
+                    />
+                  ))}
+                </nav>
+              )}
             </div>
+            {isAdminArea ? (
+              <div className="border-t border-[var(--outline-variant)] p-3">
+                <Link
+                  href="/avatars"
+                  className="btn-secondary w-full"
+                  onClick={() => setMobileDrawerOpen(false)}
+                >
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                    school
+                  </span>
+                  {tShell("therapistWorkspace")}
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -566,7 +601,7 @@ export function AppShell({
         {isAdminArea ? (
           <AdminMobilePrimaryNav />
         ) : (
-          therapistItems.slice(0, 5).map((item) => (
+          mobileNav.bar.map((item) => (
             <TherapistNavLink
               key={item.href}
               item={item}
@@ -575,6 +610,30 @@ export function AppShell({
             />
           ))
         )}
+        {showMore ? (
+          <button
+            type="button"
+            onClick={() => setMobileDrawerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={mobileDrawerOpen}
+            className={`flex min-w-0 flex-1 basis-0 flex-col items-center gap-1 rounded-lg px-0.5 py-2 text-[10px] transition-colors duration-200 ${
+              moreActive
+                ? "bg-[var(--surface-container)] font-semibold text-[var(--primary)]"
+                : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--primary)]"
+            }`}
+          >
+            <span
+              className="material-symbols-outlined text-[22px]"
+              style={moreActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              aria-hidden
+            >
+              menu
+            </span>
+            <span className="max-w-full break-words text-center font-medium leading-tight tracking-wide">
+              {tShell("sidebar.more")}
+            </span>
+          </button>
+        ) : null}
       </nav>
     </div>
   );
