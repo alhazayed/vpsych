@@ -9,6 +9,7 @@ import {
   type AdminNavItemDef,
   type AdminNavSectionDef,
 } from "@/lib/admin/admin-nav";
+import { ADMIN_MOBILE_BAR_HREFS } from "@/lib/mobile-nav";
 
 const COLLAPSED_KEY = "vpsych.admin.sidebar.collapsed";
 const EXPANDED_KEY = "vpsych.admin.nav.expanded";
@@ -215,10 +216,13 @@ export function AdminSidebarNav({
   collapsed,
   isSectionOpen,
   toggleSection,
+  expandAll = false,
 }: {
   collapsed: boolean;
   isSectionOpen: (section: AdminNavSectionDef, pathname: string) => boolean;
   toggleSection: (id: string, fallback: boolean) => void;
+  /** Phone menu: every section open, headers are plain labels. */
+  expandAll?: boolean;
 }) {
   const pathname = usePathname();
   const tNav = useTranslations("nav");
@@ -227,7 +231,7 @@ export function AdminSidebarNav({
   return (
     <nav className="flex-1 space-y-3 overflow-y-auto px-2" aria-label={tShell("sidebar.menuTitle")}>
       {ADMIN_NAV_SECTIONS.map((section) => {
-        const open = isSectionOpen(section, pathname);
+        const open = expandAll || isSectionOpen(section, pathname);
         const label = section.labelKey
           ? tNav(section.labelKey as "sectionContent")
           : "";
@@ -249,7 +253,23 @@ export function AdminSidebarNav({
 
         return (
           <div key={section.id}>
-            {collapsed ? (
+            {expandAll ? (
+              <>
+                <p className="mb-1 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--outline)]">
+                  {label}
+                </p>
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <AdminNavLink
+                      key={item.href}
+                      item={item}
+                      pathname={pathname}
+                      collapsed={false}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : collapsed ? (
               <div className="mb-1 space-y-1">
                 {section.items.map((item) => (
                   <AdminNavLink
@@ -305,15 +325,7 @@ export function AdminMobilePrimaryNav() {
   const pathname = usePathname();
   const items = useMemo(() => {
     const flat = ADMIN_NAV_SECTIONS.flatMap((s) => s.items);
-    const pick = [
-      "/admin",
-      "/admin/sessions",
-      "/admin/reports",
-      "/admin/content",
-      "/admin/diagnostics",
-    ];
-    return pick
-      .map((href) => flat.find((i) => i.href === href))
+    return ADMIN_MOBILE_BAR_HREFS.map((href) => flat.find((i) => i.href === href))
       .filter((x): x is AdminNavItemDef => Boolean(x));
   }, []);
 

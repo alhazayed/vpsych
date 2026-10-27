@@ -101,7 +101,9 @@
       "openMenu": "Open navigation",
       "closeMenu": "Close navigation",
       "menuTitle": "Admin navigation",
-      "mainNav": "Main navigation"
+      "mainNav": "Main navigation",
+      "more": "More",
+      "moreTitle": "More pages"
     },
     "commandPalette": {
       "title": "Search Vtraining",
