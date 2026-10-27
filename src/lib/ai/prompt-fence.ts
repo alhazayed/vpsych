@@ -17,18 +17,26 @@ export function neutralizeFenceTags(text: string): string {
   return text.replace(/</g, "‹").replace(/>/g, "›");
 }
 
-/** One turn: `<turn speaker="therapist">…</turn>`. */
-export function fenceTurn(speaker: FencedSpeaker, content: string): string {
-  return `<turn speaker="${speaker}">${neutralizeFenceTags(content)}</turn>`;
+/**
+ * One turn: `<turn speaker="therapist">…</turn>`, or with a platform-set turn
+ * number `<turn n="3" speaker="therapist">…</turn>` so the examiner can cite it.
+ */
+export function fenceTurn(
+  speaker: FencedSpeaker,
+  content: string,
+  n?: number,
+): string {
+  const num = typeof n === "number" ? `n="${n}" ` : "";
+  return `<turn ${num}speaker="${speaker}">${neutralizeFenceTags(content)}</turn>`;
 }
 
 /** The whole transcript inside `<transcript>…</transcript>`. */
 export function fenceTranscript(
-  turns: { speaker: FencedSpeaker; content: string }[],
+  turns: { speaker: FencedSpeaker; content: string; n?: number }[],
 ): string {
   if (turns.length === 0) return "<transcript></transcript>";
   return `<transcript>\n${turns
-    .map((t) => fenceTurn(t.speaker, t.content))
+    .map((t) => fenceTurn(t.speaker, t.content, t.n))
     .join("\n")}\n</transcript>`;
 }
 

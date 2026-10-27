@@ -552,6 +552,17 @@ export type SessionMessage = {
   heard_chars?: number | null;
 };
 
+/**
+ * A quote the examiner cited for a rubric score, checked against the
+ * transcript before storage. `turn` is the 1-based turn number the examiner
+ * saw (every message, in order).
+ */
+export type TurnEvidence = {
+  turn: number;
+  speaker: "therapist" | "patient";
+  quote: string;
+};
+
 export type ScoreEntry = {
   id: string;
   label: string;
@@ -559,6 +570,20 @@ export type ScoreEntry = {
   max: number;
   weight: number;
   feedback: string;
+  /** Verified transcript quotes behind the score (examiner reports only). */
+  evidence?: TurnEvidence[];
+};
+
+/**
+ * A rubric item the examiner could not score: the transcript gave no fair
+ * basis for it. Kept out of `items` so no consumer reads it as a 0.
+ */
+export type UnscoredEntry = {
+  id: string;
+  label: string;
+  max: number;
+  weight: number;
+  reason: string;
 };
 
 /**
@@ -578,6 +603,8 @@ export type SessionReport = {
   scores: {
     overall: number;
     items: ScoreEntry[];
+    /** Items the examiner could not score (left out of `items`). */
+    unscored_items?: UnscoredEntry[];
     trainee_feedback?: TraineeFeedback;
   };
   narrative: string;

@@ -8,8 +8,10 @@ export const PROMPT_ENGINE_VERSION = "2.0.0";
 /**
  * Examiner assessment structured output / scoring schema version.
  * 1.2.0: optional `trainee_feedback` (words only); scoring unchanged.
+ * 1.3.0: 0–5 behavioural anchors in the prompt, verified turn-cited
+ *        `evidence` per item, and `unscored_items` for "cannot score".
  */
-export const ASSESSMENT_SCHEMA_VERSION = "1.2.0";
+export const ASSESSMENT_SCHEMA_VERSION = "1.3.0";
 
 /** CaseInstance snapshot schema version (types.CaseInstanceSnapshot.version). */
 export const CASE_SNAPSHOT_VERSION = 2 as const;

@@ -11,10 +11,17 @@ import {
   normalizeReportLanguage,
 } from "@/lib/ai/report-locale";
 import {
+  assessmentSchema,
   assessmentStructuredSchema,
   parseAssessmentModelText,
   type AssessmentModelOutput,
 } from "@/lib/ai/assessment-parse";
+import {
+  unscoredLeftOutOfOverall,
+  verifyEvidence,
+  type EvidenceTurn,
+} from "@/lib/ai/assessment-evidence";
+import { formatRubricWithAnchors } from "@/lib/ai/rubric-anchors";
 import { openAIService } from "@/lib/ai/openai";
 import {
   isOpenAIServiceError,
@@ -50,6 +57,7 @@ import type {
   ScoreEntry,
   SessionMessage,
   TraineeFeedback,
+  UnscoredEntry,
 } from "@/lib/types";
 
 function defaultRubric(language: "en" | "ar"): RubricItem[] {
@@ -263,8 +271,21 @@ function heuristicAssessment(
   };
 }
 
-function weightedOverall(items: ScoreEntry[]) {
-  const totalWeight = items.reduce((s, i) => s + i.weight, 0) || 1;
+/**
+ * Items the examiner could not score are left out of the overall while at
+ * least half the rubric weight was scored. Below that they count as zero, so
+ * a session too thin to judge cannot reach a pass on one or two items.
+ */
+function weightedOverall(
+  items: ScoreEntry[],
+  unscored: Pick<UnscoredEntry, "weight">[] = [],
+) {
+  const scoredWeight = items.reduce((s, i) => s + i.weight, 0);
+  const unscoredWeight = unscored.reduce((s, i) => s + i.weight, 0);
+  const totalWeight =
+    (unscoredLeftOutOfOverall(items, unscored)
+      ? scoredWeight
+      : scoredWeight + unscoredWeight) || 1;
   const sum = items.reduce(
     (s, i) => s + (i.score / i.max) * 100 * (i.weight / totalWeight),
     0,
@@ -302,6 +323,8 @@ export type SessionAssessment = {
   scores: {
     overall: number;
     items: ScoreEntry[];
+    /** Items the examiner could not score; never mixed into `items` as a 0. */
+    unscored_items?: UnscoredEntry[];
     /** Words for the trainee, no scores (read via my_session_feedback()). */
     trainee_feedback?: TraineeFeedback;
     /** Scientific reproducibility / disclosure (Mission 19). */
@@ -480,23 +503,24 @@ export async function assessSession(params: {
     return heuristicAssessment(rubric, messages, language, "unconfigured");
   }
 
-  // Each turn is fenced with a platform-set speaker so trainee text cannot
-  // pose as the patient, the system, or the examiner's instructions.
-  const transcript = fenceTranscript(
-    messages.map((m) => ({
-      speaker:
-        m.role === "user"
-          ? "therapist"
-          : m.role === "assistant"
-            ? "patient"
-            : "system",
-      content: m.content,
-    })),
-  );
+  // Each turn is fenced with a platform-set speaker and number so trainee
+  // text cannot pose as the patient, the system, or the examiner's
+  // instructions, and so cited evidence can be checked against its turn.
+  const turns: EvidenceTurn[] = messages.map((m, i) => ({
+    n: i + 1,
+    speaker:
+      m.role === "user"
+        ? "therapist"
+        : m.role === "assistant"
+          ? "patient"
+          : "system",
+    content: m.content,
+  }));
+  const transcript = fenceTranscript(turns);
 
   const goals = avatar.ideal_guidelines?.session_goals?.join("; ") ?? "";
   const approach = avatar.ideal_guidelines?.ideal_approach ?? "";
-  const rubricLines = rubric.map((r) => `${r.id} — ${r.label}`).join("; ");
+  const rubricLines = formatRubricWithAnchors(rubric, language);
   const systemPrompt = buildExaminerSystemPrompt({
     language,
     patientName: avatar.name,
@@ -521,8 +545,9 @@ export async function assessSession(params: {
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      // Reasoning models spend completion budget on hidden tokens; keep headroom for JSON.
-      maxCompletionTokens: 2500,
+      // Reasoning models spend completion budget on hidden tokens; keep
+      // headroom for JSON with cited quotes per item.
+      maxCompletionTokens: 4000,
       model,
       json: true,
       timeoutMs: ASSESSMENT_TIMEOUT_MS,
@@ -558,7 +583,8 @@ export async function assessSession(params: {
     if (!generated.output) {
       throw new Error("gateway assessment returned empty structured output");
     }
-    return { output: generated.output, model };
+    // Same rules as the OpenAI path (null score only on "cannot_score").
+    return { output: assessmentSchema.parse(generated.output), model };
   };
 
   const toAssessment = (
@@ -582,9 +608,25 @@ export async function assessSession(params: {
       });
       throw new Error(`assessment missing rubric items: ${missing.join(",")}`);
     }
-    const items: ScoreEntry[] = rubric.map((r) => {
+    const items: ScoreEntry[] = [];
+    const unscored: UnscoredEntry[] = [];
+    for (const r of rubric) {
       const found = output.items.find((i) => i.id === r.id)!;
-      return {
+      if (found.status === "cannot_score" || found.score === undefined) {
+        unscored.push({
+          id: r.id,
+          label: r.label,
+          max: r.max,
+          weight: r.weight,
+          reason:
+            found.reason?.trim() ||
+            (language === "ar"
+              ? "لم يقدّم النص أساساً عادلاً لتقييم هذا البند."
+              : "The transcript gave no fair basis to score this item."),
+        });
+        continue;
+      }
+      items.push({
         id: r.id,
         label: r.label,
         score: Math.min(r.max, Math.max(0, found.score)),
@@ -593,17 +635,22 @@ export async function assessSession(params: {
         feedback:
           found.feedback ||
           (language === "ar" ? "لا توجد ملاحظات." : "No feedback provided."),
-      };
-    });
+        evidence: verifyEvidence(found.evidence, turns),
+      });
+    }
 
     console.info("[assessment]", {
       event: "assessment_ok",
       aiSource,
       model,
       errorKind: errorKind ?? null,
+      unscored: unscored.map((u) => u.id),
+      unverifiedEvidenceItems: items
+        .filter((i) => (i.evidence?.length ?? 0) === 0)
+        .map((i) => i.id),
     });
 
-    const overall = weightedOverall(items);
+    const overall = weightedOverall(items, unscored);
     const traineeFeedback = normalizeTraineeFeedback(
       "trainee_feedback" in output ? output.trainee_feedback : undefined,
     );
@@ -612,6 +659,7 @@ export async function assessSession(params: {
       scores: {
         overall,
         items,
+        ...(unscored.length > 0 ? { unscored_items: unscored } : {}),
         ...(traineeFeedback ? { trainee_feedback: traineeFeedback } : {}),
         scientific_provenance: buildAssessmentProvenance({
           aiSource,

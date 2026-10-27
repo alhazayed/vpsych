@@ -64,6 +64,8 @@ export function SessionDetailTabs({
     overall: number | null;
     narrative: string | null;
     items: SessionDetailScoreItem[];
+    /** "Could not be scored: …" when the examiner left items unscored. */
+    unscoredNote?: string | null;
     language: string | null;
     createdAt: string | null;
   } | null;
@@ -401,6 +403,11 @@ export function SessionDetailTabs({
                     })}
                   </ul>
                 </div>
+              ) : null}
+              {report.unscoredNote ? (
+                <p className="clinical-card px-5 py-3 text-sm text-[var(--on-surface-variant)]" data-unscored-note>
+                  {report.unscoredNote}
+                </p>
               ) : null}
             </section>
           )
