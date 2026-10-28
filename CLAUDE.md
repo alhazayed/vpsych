@@ -360,3 +360,25 @@ contracts, state machine), `docs/ARCHITECTURE_CERTIFICATION.md`,
 `docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
 constraints above, including the specific regressions that motivated the
 guardrail tests.
+
+## Optional: oh-my-claudecode
+
+[oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) (OMC) is a
+multi-agent orchestration plugin some contributors run. It is a per-user
+install, not a project dependency — nothing in the repo requires it, and CI
+does not use it:
+
+```
+/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode
+/plugin install oh-my-claudecode
+```
+
+- OMC keeps plans, logs, and session state in `.omc/` at the repo root. That
+  directory (and the `.omc-workspace` marker) is gitignored — never commit it.
+- Shared skills belong in `.claude/skills/` (see `VENDORED.md` there), not in
+  `.omc/skills/`.
+- Keep OMC's outbound integrations (OpenClaw, Jev, Telegram/Slack/Discord stop
+  callbacks) off when working here: they forward session content, which can
+  include transcripts and clinical case material, to third parties.
+- Agents OMC spawns are still bound by everything above — the guardrail tests,
+  the seven CI checks before pushing, and the never-commit-secrets rule.
