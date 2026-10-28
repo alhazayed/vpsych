@@ -146,6 +146,7 @@ export default async function SupervisedSessionPage({ params }: Props) {
             loadFailed={reviewsResult.failed}
             currentUserId={user.id}
             canEdit
+            traineeSeesComments
           />
         </div>
       ) : (

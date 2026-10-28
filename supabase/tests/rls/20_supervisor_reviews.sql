@@ -357,4 +357,61 @@ begin
   raise notice 'ok   revoking the role removes the links and keeps the reviews';
 end $$;
 
+-- ── trainee reads supervisor comments (my_session_review_comments) ─────────
+-- trainee_visible is set by the review route; the function adds the
+-- practice-only, owner-only and adjusted-score checks itself.
+set local session_replication_role = replica;
+delete from public.session_report_reviews;
+insert into public.session_report_reviews (session_id, reviewer_id, comment, adjusted_overall, flagged, trainee_visible) values
+  ('d1000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-0000000000aa', 'Good pacing; ask about sleep earlier.', 65, true, true),
+  ('d1000000-0000-4000-8000-000000000001', '51000000-0000-4000-8000-000000000001', 'Raised to ٦٥ for the safety plan.', 65, false, true),
+  ('d1000000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000002', 'Not marked for the trainee.', null, false, false),
+  ('d3000000-0000-4000-8000-000000000003', '52000000-0000-4000-8000-000000000002', 'Exam comment', null, false, true),
+  ('d4000000-0000-4000-8000-000000000004', 'a1000000-0000-4000-8000-0000000000aa', 'Comment for T2', null, false, true);
+set local session_replication_role = origin;
+select pg_temp.expect_count('trainee reads only the marked comment that does not quote its adjusted score',
+  '71000000-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_review_comments('d1000000-0000-4000-8000-000000000001')
+     where comment = 'Good pacing; ask about sleep earlier.'$q$, 1);
+select pg_temp.expect_count('trainee gets no other comment on that session',
+  '71000000-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_review_comments('d1000000-0000-4000-8000-000000000001')$q$, 1);
+select pg_temp.expect_count('trainee gets no comment on their skill test session',
+  '71000000-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_review_comments('d3000000-0000-4000-8000-000000000003')$q$, 0);
+select pg_temp.expect_count('trainee gets no comment on another trainee''s session',
+  '71000000-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_review_comments('d4000000-0000-4000-8000-000000000004')$q$, 0);
+select pg_temp.expect_count('trainee still cannot read reviews directly',
+  '71000000-0000-4000-8000-000000000001', 'select count(*) from public.session_report_reviews', 0);
+select pg_temp.expect_error('trainee cannot mark a comment visible',
+  '71000000-0000-4000-8000-000000000001',
+  $q$insert into public.session_report_reviews (session_id, reviewer_id, comment, trainee_visible)
+     values ('d1000000-0000-4000-8000-000000000001', '71000000-0000-4000-8000-000000000001', 'self', true)$q$,
+  '%row-level security%');
+set local session_replication_role = replica;
+update public.profiles set approval_status = 'pending'
+  where id = '71000000-0000-4000-8000-000000000001';
+set local session_replication_role = origin;
+select pg_temp.expect_count('unapproved trainee gets no comment',
+  '71000000-0000-4000-8000-000000000001',
+  $q$select count(*) from public.my_session_review_comments('d1000000-0000-4000-8000-000000000001')$q$, 0);
+set local session_replication_role = replica;
+update public.profiles set approval_status = 'approved'
+  where id = '71000000-0000-4000-8000-000000000001';
+set local session_replication_role = origin;
+do $$
+declare args text;
+begin
+  select pg_get_function_result(oid) into args from pg_proc
+  where oid = 'public.my_session_review_comments(uuid)'::regprocedure;
+  if args ~* '(adjusted|flag|score|overall|visible)' then
+    raise exception 'FAIL my_session_review_comments returns more than comments: %', args;
+  end if;
+  if has_function_privilege('anon', 'public.my_session_review_comments(uuid)', 'execute') then
+    raise exception 'FAIL anon can execute my_session_review_comments';
+  end if;
+  raise notice 'ok   my_session_review_comments returns comment, name and time only';
+end $$;
+
 rollback;
