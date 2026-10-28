@@ -33,25 +33,32 @@ export async function NumberedTranscript({
       {turns.length === 0 ? (
         <p className="mt-3 text-sm text-[var(--on-surface-variant)]">{emptyLabel}</p>
       ) : (
-        <ol className="mt-3 space-y-3 text-sm">
-          {turns.map((m) => (
-            <li
-              key={m.id}
-              id={turnAnchorId(m.turn, scope)}
-              tabIndex={-1}
-              className="scroll-mt-24 rounded-md px-2 py-1 target:bg-[var(--surface-container)] target:outline target:outline-2 target:outline-[var(--primary)]"
-            >
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                <span className="tabular-nums">{t("turnShort", { turn: m.turn })}</span>
-                {" · "}
-                {m.role === "user" ? traineeLabel : patientLabel}
-              </span>
-              <span className="whitespace-pre-wrap" dir="auto">
-                {m.content}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <>
+          {turns[0]!.turn > 1 && (
+            <p className="mt-3 text-xs text-[var(--on-surface-variant)]">
+              {t("startNote", { first: turns[0]!.turn })}
+            </p>
+          )}
+          <ol className="mt-3 space-y-3 text-sm">
+            {turns.map((m) => (
+              <li
+                key={m.id}
+                id={turnAnchorId(m.turn, scope)}
+                tabIndex={-1}
+                className="scroll-mt-24 rounded-md px-2 py-1 target:bg-[var(--surface-container)] target:outline target:outline-2 target:outline-[var(--primary)]"
+              >
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+                  <span className="tabular-nums">{t("turnShort", { turn: m.turn })}</span>
+                  {" · "}
+                  {m.role === "user" ? traineeLabel : patientLabel}
+                </span>
+                <span className="whitespace-pre-wrap" dir="auto">
+                  {m.content}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </details>
   );

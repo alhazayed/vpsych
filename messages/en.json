@@ -1024,6 +1024,7 @@
       "turn": "Turn {turn} · {speaker}",
       "turnShort": "Turn {turn}",
       "jump": "Show turn {turn} in the transcript",
+      "startNote": "Turn numbers match the report's evidence. Turn 1 is the session start, so the conversation begins at turn {first}.",
       "speaker": {
         "therapist": "Therapist",
         "patient": "Patient"
