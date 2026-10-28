@@ -46,6 +46,7 @@ export async function ReportView({
   const evidenceById = new Map((evidence ?? []).map((e) => [e.item_id, e]));
   const unscored = storedUnscored(report.scores?.unscored_items);
   const unscoredLeftOut = unscoredLeftOutOfOverall(items, unscored);
+  const tooShort = report.scores?.too_short === true;
 
   return (
     <article
@@ -67,16 +68,25 @@ export async function ReportView({
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
             {t("overall")}
           </p>
-          <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
-            {overall}
-            <span className="text-base font-semibold text-[var(--on-surface-variant)]">
-              {tCommon("outOf100")}
-            </span>
-          </p>
+          {tooShort ? (
+            <p
+              className="font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--on-surface)]"
+              data-report-too-short
+            >
+              {t("tooShort.score")}
+            </p>
+          ) : (
+            <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
+              {overall}
+              <span className="text-base font-semibold text-[var(--on-surface-variant)]">
+                {tCommon("outOf100")}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 
-      {unscored.length > 0 && (
+      {unscored.length > 0 && !tooShort && (
         <p
           className="clinical-card border-s-4 border-[var(--outline)] px-5 py-3 text-sm text-[var(--on-surface)]"
           data-unscored-rule={unscoredLeftOut ? "left_out" : "counted_zero"}

@@ -9,6 +9,7 @@ import {
   heuristicCopy,
   localizeRubricLabel,
   normalizeReportLanguage,
+  tooShortCopy,
 } from "@/lib/ai/report-locale";
 import {
   assessmentSchema,
@@ -271,6 +272,62 @@ function heuristicAssessment(
   };
 }
 
+/** True when at least one therapist turn has words in it. */
+export function hasTherapistTurn(
+  messages: readonly Pick<SessionMessage, "role" | "content">[],
+): boolean {
+  return messages.some((m) => m.role === "user" && m.content.trim().length > 0);
+}
+
+/**
+ * Report for a session with no therapist turn: nothing to assess, so no model
+ * is called and no item is scored. Labelled persona_fallback because no
+ * examiner ran; `too_short` tells it apart from a provider outage.
+ */
+function tooShortAssessment(
+  rubric: RubricItem[],
+  language: "en" | "ar",
+): SessionAssessment {
+  const copy = tooShortCopy(language);
+  const unscored: UnscoredEntry[] = rubric.map((r) => ({
+    id: r.id,
+    label: r.label,
+    max: r.max,
+    weight: r.weight,
+    reason: copy.reason,
+  }));
+  const overall = weightedOverall([], unscored);
+  console.info("[assessment]", { event: "assessment_too_short", aiSource: "persona_fallback" });
+  const reliability = {
+    overall,
+    items: [] as ScoreEntry[],
+    narrative: copy.narrative,
+    excerpts: [] as string[],
+    language,
+    assessment_mode: "heuristic_fallback" as const,
+    model: null,
+  };
+  return {
+    language,
+    scores: {
+      overall,
+      items: [],
+      unscored_items: unscored,
+      too_short: true,
+      scientific_provenance: buildAssessmentProvenance({
+        aiSource: "persona_fallback",
+        model: null,
+      }),
+      assessment_schema_version: ASSESSMENT_SCHEMA_VERSION,
+      educational_reliability: attachEducationalReliability(reliability),
+      assessment_validity: attachAssessmentValidity(reliability),
+    },
+    narrative: copy.narrative,
+    excerpts: [],
+    aiSource: "persona_fallback",
+  };
+}
+
 /**
  * Items the examiner could not score are left out of the overall while at
  * least half the rubric weight was scored. Below that they count as zero, so
@@ -327,6 +384,12 @@ export type SessionAssessment = {
     unscored_items?: UnscoredEntry[];
     /** Words for the trainee, no scores (read via my_session_feedback()). */
     trainee_feedback?: TraineeFeedback;
+    /**
+     * The therapist said nothing, so nothing was assessed (no model call).
+     * A Training Program attempt with this report is graded "too_short",
+     * not "failed", and the learning hooks skip it.
+     */
+    too_short?: boolean;
     /** Scientific reproducibility / disclosure (Mission 19). */
     scientific_provenance?: ReturnType<typeof buildAssessmentProvenance>;
     assessment_schema_version?: string;
@@ -504,6 +567,12 @@ export async function assessSession(params: {
       label: localizeRubricLabel(r.id, r.label, language),
     }),
   );
+
+  // Nothing the therapist said: there is nothing to assess, with or without
+  // a model. Never send an empty transcript to the examiner.
+  if (!hasTherapistTurn(messages)) {
+    return tooShortAssessment(rubric, language);
+  }
 
   if (!hasAnyAiKey()) {
     return heuristicAssessment(rubric, messages, language, "unconfigured");

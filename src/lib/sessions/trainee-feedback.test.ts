@@ -102,6 +102,20 @@ describe("traineeFeedbackView", () => {
     ).toEqual({ kind: "unavailable" });
   });
 
+  it("says too short when the therapist said nothing, whatever the report", () => {
+    for (const assessment_mode of ["heuristic_fallback", "llm_examiner"]) {
+      expect(
+        traineeFeedbackView(
+          { feedback: { next_steps: ["Open with a greeting."] }, assessment_mode },
+          [],
+          { therapistSpoke: false },
+        ),
+      ).toEqual({ kind: "too_short" });
+    }
+    // No report yet: still nothing.
+    expect(traineeFeedbackView(null, [], { therapistSpoke: false })).toEqual({ kind: "none" });
+  });
+
   it("shows nothing for an older report without feedback", () => {
     expect(
       traineeFeedbackView({ feedback: null, assessment_mode: "llm_examiner" }),

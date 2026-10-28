@@ -14,7 +14,9 @@ export type LadderAttemptStatus =
   | "in_progress"
   | "awaiting_score"
   | "passed"
-  | "failed";
+  | "failed"
+  /** Nothing the therapist said was recorded: the attempt does not count. */
+  | "too_short";
 
 export type LadderAttemptRow = {
   id: string;
@@ -77,6 +79,7 @@ export type AttemptOutcome =
   | "passed"
   | "failed"
   | "scoring"
+  | "too_short"
   | "in_session"
   | "no_report";
 
@@ -90,6 +93,7 @@ export function attemptOutcome(
   if (attempt.status === "passed") return "passed";
   if (attempt.status === "failed") return "failed";
   if (attempt.status === "awaiting_score") return "scoring";
+  if (attempt.status === "too_short") return "too_short";
   return attempt.session_status === "active" ? "in_session" : "no_report";
 }
 

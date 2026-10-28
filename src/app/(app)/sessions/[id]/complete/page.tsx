@@ -187,6 +187,7 @@ export default async function SessionCompletePage({ params }: Props) {
           typed.sealed_case && opened.ok
             ? sealedDiagnosisLabels(opened.session.clinical_snapshot)
             : [],
+          { therapistSpoke: transcript.some((m) => m.role === "user" && m.content.trim()) },
         );
 
   // The supervisor's words on this practice session (no scores or flags).
