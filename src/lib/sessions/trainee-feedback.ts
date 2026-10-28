@@ -93,18 +93,23 @@ export type MySessionFeedbackRow = {
 export type TraineeFeedbackView =
   | { kind: "feedback"; feedback: TraineeFeedback }
   | { kind: "unavailable" }
+  | { kind: "too_short" }
   | { kind: "none" };
 
 /**
  * Decide what the complete page shows from the `my_session_feedback()` row:
- * the feedback, a "not available" note for heuristic reports (keyword counts,
- * not an examiner reading), or nothing (no report yet, older report, exam).
+ * the feedback, a "too short" note when the therapist said nothing (nothing
+ * was assessed), a "not available" note for heuristic reports (keyword
+ * counts, not an examiner reading), or nothing (no report yet, older report,
+ * exam).
  */
 export function traineeFeedbackView(
   row: MySessionFeedbackRow | null | undefined,
   sealedLabels: readonly string[] = [],
+  opts: { therapistSpoke?: boolean } = {},
 ): TraineeFeedbackView {
   if (!row) return { kind: "none" };
+  if (opts.therapistSpoke === false) return { kind: "too_short" };
   if (row.assessment_mode === "heuristic_fallback") return { kind: "unavailable" };
   const feedback = feedbackForTrainee(row.feedback, sealedLabels);
   return feedback ? { kind: "feedback", feedback } : { kind: "none" };

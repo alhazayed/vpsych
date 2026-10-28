@@ -715,7 +715,8 @@
         "strengths": "What went well",
         "missed": "What you missed",
         "next_steps": "Try next time",
-        "unavailable": "Detailed feedback is not available for this session. Your checklist below still shows which practices you covered."
+        "unavailable": "Detailed feedback is not available for this session. Your checklist below still shows which practices you covered.",
+        "tooShort": "Nothing you said was recorded in this session, so there is nothing to assess. If you were speaking, check that the browser is allowed to use your microphone, or type your reply."
       },
       "checklist": {
         "title": "Practice checklist",
@@ -1043,7 +1044,10 @@
       "leftOut": "{count, plural, one {# item could not be scored and is} other {# items could not be scored and are}} left out of the overall.",
       "countedZero": "Less than half the rubric could be scored, so the items that could not be scored count as zero in the overall."
     },
-    "supervisorOnlyNote": "Shared with admins and this trainee's supervisors only. Not shared with the trainee."
+    "supervisorOnlyNote": "Shared with admins and this trainee's supervisors only. Not shared with the trainee.",
+    "tooShort": {
+      "score": "Too short to assess"
+    }
   },
   "admin": {
     "nav": {
@@ -4412,7 +4416,8 @@
       "failed": "Not passed",
       "scoring": "Waiting for the report",
       "in_session": "In session",
-      "no_report": "No report yet"
+      "no_report": "No report yet",
+      "too_short": "Too short to assess"
     },
     "score": "{score}%",
     "result": {
@@ -4428,7 +4433,10 @@
       "scoringTitle": "Scoring this level",
       "scoringBody": "The level result appears once the report for this session is ready. If the automatic report could not be prepared, an administrator regenerates it, and your result appears then.",
       "scoreLine": "Score: {score}%",
-      "toPatient": "Back to {name}"
+      "toPatient": "Back to {name}",
+      "tooShortTitle": "Too short to assess",
+      "tooShortBody": "Nothing you said was recorded in this session, so this attempt does not count. {level} is still open to you.",
+      "tooShortMic": "If you were speaking, check that the browser is allowed to use your microphone, or type your reply instead."
     },
     "noScore": "No score yet"
   },

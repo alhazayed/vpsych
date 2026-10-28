@@ -173,6 +173,25 @@ Trainee feedback (trainee_feedback) — the trainee reads this after the session
 - Never name the diagnosis, the disorder, any comorbidity, or DSM/ICD codes; describe only the behaviour and symptoms as they appeared.${TRAINEE_FEEDBACK_KEYS_NOTE_EN}`;
 }
 
+/** Report copy for a session with no therapist turn (nothing to assess). */
+export function tooShortCopy(language: "en" | "ar"): {
+  narrative: string;
+  reason: string;
+} {
+  if (language === "ar") {
+    return {
+      narrative:
+        "الجلسة قصيرة جداً للتقييم: لم تُسجَّل أي مداخلة للمعالج، فلم يُقيَّم أي بند ولم يُستخدم الذكاء الاصطناعي.",
+      reason: "لم تُسجَّل أي مداخلة للمعالج.",
+    };
+  }
+  return {
+    narrative:
+      "Too short to assess: no therapist turn was recorded, so no item was scored and no AI examiner was used.",
+    reason: "No therapist turn was recorded.",
+  };
+}
+
 export function heuristicCopy(
   language: "en" | "ar",
   turnCount: number,

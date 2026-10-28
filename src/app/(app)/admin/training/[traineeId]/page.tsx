@@ -125,7 +125,10 @@ export default async function AdminTraineeLadderPage({ params }: Props) {
                     {rows.map((a) => {
                       const outcome = attemptOutcome(a);
                       const hasReport =
-                        outcome === "passed" || outcome === "failed" || outcome === "scoring";
+                        outcome === "passed" ||
+                        outcome === "failed" ||
+                        outcome === "scoring" ||
+                        outcome === "too_short";
                       return (
                         <tr key={a.id} className="border-b border-[var(--outline-variant)] last:border-0">
                           <td className="py-2">{levelName(a.level)}</td>

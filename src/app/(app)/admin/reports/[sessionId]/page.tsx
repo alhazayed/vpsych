@@ -215,7 +215,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
           ? ` · ${(report as SessionReport).language}`
           : ""}
       </p>
-      {isHeuristicReportScores(report.scores) ? (
+      {isHeuristicReportScores(report.scores) &&
+      (report as SessionReport).scores?.too_short !== true ? (
         <div className="mt-6">
           <FallbackReportNotice sessionId={sessionId} />
         </div>
