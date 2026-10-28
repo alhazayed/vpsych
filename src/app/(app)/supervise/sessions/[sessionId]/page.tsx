@@ -6,6 +6,8 @@ import { isUuid, openSealedCase } from "@/lib/skill-tests";
 import { loadReportReviews } from "@/lib/supervisor-reviews";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { ReportView } from "@/components/ReportView";
+import { NumberedTranscript } from "@/components/NumberedTranscript";
+import { numberTranscriptTurns } from "@/lib/sessions/transcript-turns";
 import { ReportReviewPanel } from "@/components/supervise/ReportReviewPanel";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
@@ -79,14 +81,16 @@ export default async function SupervisedSessionPage({ params }: Props) {
       .from("session_messages")
       .select("id, session_id, role, content, created_at")
       .eq("session_id", sessionId)
-      .in("role", ["user", "assistant"])
       .order("created_at", { ascending: true }),
     loadReportReviews(supabase, [sessionId]),
   ]);
   if (reportError) throw loadFailed("report", sessionId, reportError);
   if (messagesError) throw loadFailed("transcript", sessionId, messagesError);
   const report = reportRow as SessionReport | null;
-  const transcript = (messageRows ?? []) as SessionMessage[];
+  // Numbered over every stored line, as the examiner numbered them, so a
+  // report's "Turn 7" is line 7 here; the system line is then hidden.
+  const turns = numberTranscriptTurns((messageRows ?? []) as SessionMessage[]);
+  const transcript: SessionMessage[] = turns;
 
   // Ladder sessions keep the case sealed in the row; open it server-side for
   // the risk checks.
@@ -134,7 +138,7 @@ export default async function SupervisedSessionPage({ params }: Props) {
 
       {report ? (
         <div className="mt-6 space-y-6">
-          <ReportView report={report} evidence={evidence} audience="supervisor" />
+          <ReportView report={report} evidence={evidence} audience="supervisor" linkTurns />
           <ReportReviewPanel
             sessionId={sessionId}
             aiOverall={report.scores?.overall ?? 0}
@@ -161,29 +165,15 @@ export default async function SupervisedSessionPage({ params }: Props) {
         </div>
       )}
 
-      <details className="clinical-card mt-6 p-4">
-        <summary className="cursor-pointer text-sm font-semibold">
-          {t("transcript", { count: transcript.length })}
-        </summary>
-        {transcript.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--on-surface-variant)]">{tTranscript("empty")}</p>
-        ) : (
-          <ul className="mt-3 space-y-3 text-sm">
-            {transcript.map((m) => (
-              <li key={m.id}>
-                <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                  {m.role === "user"
-                    ? session.profiles?.display_name ?? t("traineeLabel")
-                    : session.avatars?.name ?? tTranscript("patient")}
-                </span>
-                <span className="whitespace-pre-wrap" dir="auto">
-                  {m.content}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </details>
+      <div className="mt-6">
+        <NumberedTranscript
+          turns={turns}
+          summary={t("transcript", { count: transcript.length })}
+          traineeLabel={session.profiles?.display_name ?? t("traineeLabel")}
+          patientLabel={session.avatars?.name ?? tTranscript("patient")}
+          emptyLabel={tTranscript("empty")}
+        />
+      </div>
     </main>
   );
 }

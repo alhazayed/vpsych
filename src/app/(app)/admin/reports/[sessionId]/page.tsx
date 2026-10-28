@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReportView } from "@/components/ReportView";
+import { NumberedTranscript } from "@/components/NumberedTranscript";
+import { numberTranscriptTurns } from "@/lib/sessions/transcript-turns";
 import { FallbackReportNotice } from "@/components/admin/FallbackReportNotice";
 import { isHeuristicReportScores } from "@/lib/admin/report-regenerate";
 import { requireAdmin } from "@/lib/auth";
@@ -40,6 +42,8 @@ export default async function AdminReportDetailPage({ params }: Props) {
   const { sessionId } = await params;
   const { supabase, user } = await requireAdmin();
   const t = await getTranslations("admin.reportDetail");
+  const tTranscript = await getTranslations("therapyRoom.transcript");
+  const tTranscriptSummary = await getTranslations("supervisorReviews.session");
   const tDisorders = await getTranslations("skillTests.disorders");
   const tDefaultDisorders = await getTranslations("avatars.defaultDisorders");
 
@@ -99,11 +103,16 @@ export default async function AdminReportDetailPage({ params }: Props) {
   // the panel and never hides the report.
   const reviewsResult = await loadReportReviews(supabase, [sessionId]);
 
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from("session_messages")
-    .select("role, content")
+    .select("id, role, content")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
+  throwOnLoadError(messagesError, "admin-report-transcript");
+  // Numbered as the examiner numbered them, so evidence links land on the turn.
+  const turns = numberTranscriptTurns(
+    (messages ?? []) as Array<{ id: string; role: string; content: string }>,
+  );
 
   // Skill test and ladder sessions keep the case sealed in the row; open it
   // for admins.
@@ -212,7 +221,7 @@ export default async function AdminReportDetailPage({ params }: Props) {
         </div>
       ) : null}
       <div className="mt-6">
-        <ReportView report={report as SessionReport} evidence={evidence} />
+        <ReportView report={report as SessionReport} evidence={evidence} linkTurns />
       </div>
       <div className="mt-6">
         <ReportReviewPanel
@@ -239,6 +248,15 @@ export default async function AdminReportDetailPage({ params }: Props) {
           selfReport={selfReport}
           trajectory={trajectory}
           currentSessionNumber={session?.course_session_number ?? null}
+        />
+      </div>
+      <div className="mt-6">
+        <NumberedTranscript
+          turns={turns}
+          summary={tTranscriptSummary("transcript", { count: turns.length })}
+          traineeLabel={session?.profiles?.display_name ?? tTranscriptSummary("traineeLabel")}
+          patientLabel={session?.avatars?.name ?? tTranscript("patient")}
+          emptyLabel={tTranscript("empty")}
         />
       </div>
     </main>

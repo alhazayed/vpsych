@@ -696,10 +696,10 @@
     "complete": {
       "badge": "Simulation completed",
       "title": "Session complete",
-      "body": "Your session with {name} ({disorder}) has ended. An admin-only performance report is being prepared from your transcript.",
+      "body": "Your session with {name} ({disorder}) has ended. A performance report for your instructors is being prepared from your transcript.",
       "nextTitle": "What happens next",
       "next1": "Your session transcript is shown above and remains listed under My Sessions.",
-      "next2": "Practice again with another persona to keep building clinical skills. Submit expert feedback through the channel named in your invitation.",
+      "next2": "Practice again with another patient to keep building your clinical skills. To tell us what to improve, use Institutional Feedback in the menu.",
       "practiceAgain": "Practice again",
       "mySessions": "My sessions",
       "viewReport": "View report",
@@ -724,7 +724,13 @@
         "missed": "not performed",
         "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
       },
-      "bodyNoDisorder": "Your session with {name} has ended. An admin-only performance report is being prepared from your transcript."
+      "bodyNoDisorder": "Your session with {name} has ended. A performance report for your instructors is being prepared from your transcript."
+    },
+    "focus": {
+      "title": "Your focus for this session",
+      "subtitle": "From the feedback on your last practice session ({date}). Try these before anything new.",
+      "subtitleNoDate": "From the feedback on your last practice session. Try these before anything new.",
+      "open": "See that session's feedback"
     },
     "loadErrorTitle": "Sessions unavailable",
     "loadErrorDescription": "Could not load your session history. Reload the page to try again."
@@ -1016,6 +1022,9 @@
     "quotes": {
       "label": "Evidence from the transcript",
       "turn": "Turn {turn} · {speaker}",
+      "turnShort": "Turn {turn}",
+      "jump": "Show turn {turn} in the transcript",
+      "startNote": "Turn numbers match the report's evidence. Turn 1 is the session start, so the conversation begins at turn {first}.",
       "speaker": {
         "therapist": "Therapist",
         "patient": "Patient"

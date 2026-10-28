@@ -28,6 +28,8 @@ import {
 } from "@/lib/training-ladder";
 import { LadderLevelList } from "@/components/training/LadderLevelList";
 import { PatientPortrait } from "@/components/training/PatientPortrait";
+import { PracticeFocusCard } from "@/components/PracticeFocusCard";
+import { loadPracticeFocus } from "@/lib/sessions/practice-focus";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -100,6 +102,7 @@ export default async function AvatarsPage() {
   // The Training Program comes first; its patients are played only through
   // their levels, so they are left out of free practice below.
   const program = await loadLadderOverview(supabase, profile.id, locale);
+  const focus = await loadPracticeFocus(supabase, profile.id);
   const ladderAvatarIds = await loadLadderAvatarIds(supabase);
   const list = withoutLadderAvatars(
     (avatars as
@@ -138,6 +141,8 @@ export default async function AvatarsPage() {
           {t("intro")}
         </p>
       </section>
+
+      <PracticeFocusCard focus={focus} className="mb-8 max-w-2xl" />
 
       <section className="mb-12 fade-in-up" aria-labelledby="program-title">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
