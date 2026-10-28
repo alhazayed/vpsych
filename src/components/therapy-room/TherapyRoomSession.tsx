@@ -1867,6 +1867,7 @@ export function TherapyRoomSession({
     if (LIVE_TRANSCRIPT_ENABLED && !liveSttRef.current) {
       liveSttRef.current = createLiveTranscriber({
         locale: session.language ?? locale,
+        sessionId: session.id,
         onEvent: (event, facts) => voiceLog("STT", event, facts ?? {}),
       });
     }

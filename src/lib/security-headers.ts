@@ -18,13 +18,18 @@ export const PERMISSIONS_POLICY = [
 
 /**
  * Content-Security-Policy tuned for the App Router + Supabase + voice APIs.
- * `'unsafe-inline'` / `'unsafe-eval'` are required by Next.js client runtime
- * today; tighten further once nonces are wired.
+ * `'unsafe-inline'` is required by the Next.js client runtime today; tighten
+ * further once nonces are wired. `'unsafe-eval'` is only needed by the dev
+ * server (React Refresh), so production builds leave it out: injected script
+ * cannot turn strings into code with eval() or new Function().
  */
 export function buildContentSecurityPolicy(options?: {
   /** Extra connect-src hosts (e.g. analytics). */
   extraConnectSrc?: string[];
+  /** Allow eval (dev server only). Defaults to true outside production. */
+  allowEval?: boolean;
 }): string {
+  const allowEval = options?.allowEval ?? process.env.NODE_ENV !== "production";
   const connect = [
     "'self'",
     "https://*.supabase.co",
@@ -42,7 +47,7 @@ export function buildContentSecurityPolicy(options?: {
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    `script-src 'self' 'unsafe-inline'${allowEval ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
