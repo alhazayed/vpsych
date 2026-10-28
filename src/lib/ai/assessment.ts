@@ -50,7 +50,7 @@ import {
 } from "@/lib/avi";
 import { withHeardText } from "@/lib/sessions/heard-text";
 import { fenceTranscript } from "@/lib/ai/prompt-fence";
-import { normalizeTraineeFeedback } from "@/lib/sessions/trainee-feedback";
+import { feedbackForTrainee } from "@/lib/sessions/trainee-feedback";
 import type {
   ResolvedAvatar,
   RubricItem,
@@ -486,6 +486,12 @@ export async function assessSession(params: {
   durationSec: number;
   /** Session / therapist language (e.g. en, ar, en-US, ar-JO). */
   language?: string | null;
+  /**
+   * Labels of a sealed case (ladder level): trainee feedback items naming
+   * them are dropped before the report is stored, so the trainee cannot read
+   * the diagnosis through `my_session_feedback()`.
+   */
+  sealedDiagnosisLabels?: readonly string[];
 }): Promise<SessionAssessment> {
   const language = normalizeReportLanguage(params.language);
   const { avatar, durationSec } = params;
@@ -651,8 +657,9 @@ export async function assessSession(params: {
     });
 
     const overall = weightedOverall(items, unscored);
-    const traineeFeedback = normalizeTraineeFeedback(
+    const traineeFeedback = feedbackForTrainee(
       "trainee_feedback" in output ? output.trainee_feedback : undefined,
+      params.sealedDiagnosisLabels ?? [],
     );
     return {
       language,

@@ -30,6 +30,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { withSkillTestCase } from "@/lib/skill-tests";
 import { loadAssessmentMessages } from "@/lib/sessions/heard-text";
 import type { Avatar, TherapySession } from "@/lib/types";
+import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
 
 type ScoresLike = {
   scientific_provenance?: { assessment_mode?: unknown; ai_source?: unknown } | null;
@@ -166,6 +167,9 @@ async function loadAndAssess(
     messages: rows,
     durationSec,
     language,
+    sealedDiagnosisLabels: typed.sealed_case
+      ? sealedDiagnosisLabels(typed.clinical_snapshot)
+      : [],
   });
 
   console.info("[report-regenerate] assessment", {

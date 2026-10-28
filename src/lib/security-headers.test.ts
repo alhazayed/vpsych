@@ -28,6 +28,15 @@ describe("securityHeaders", () => {
 });
 
 describe("buildContentSecurityPolicy", () => {
+  it("leaves out unsafe-eval in production and keeps it for the dev server", () => {
+    const prod = buildContentSecurityPolicy({ allowEval: false });
+    expect(prod).toContain("script-src 'self' 'unsafe-inline';");
+    expect(prod).not.toContain("unsafe-eval");
+    expect(buildContentSecurityPolicy({ allowEval: true })).toContain(
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    );
+  });
+
   it("denies framing and objects", () => {
     const csp = buildContentSecurityPolicy();
     expect(csp).toContain("frame-ancestors 'none'");

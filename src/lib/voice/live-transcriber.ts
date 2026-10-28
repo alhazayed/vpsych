@@ -40,6 +40,8 @@ type SocketLike = {
 
 export type LiveTranscriberOptions = {
   locale: string;
+  /** The room's session: the server mints a key only for an active one. */
+  sessionId?: string;
   /** POST /api/voice/live-transcript (injectable for tests). */
   fetchToken?: (locale: string) => Promise<{ clientSecret: string; url: string } | null>;
   openSocket?: (url: string, protocols: string[]) => SocketLike;
@@ -64,11 +66,11 @@ class LiveTokenError extends Error {
   }
 }
 
-async function defaultFetchToken(locale: string) {
+async function defaultFetchToken(locale: string, sessionId?: string) {
   const res = await fetch("/api/voice/live-transcript", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale }),
+    body: JSON.stringify({ locale, sessionId }),
   });
   // 404 / 501: live transcription is off here, so stop asking. Anything else
   // is a failed attempt that counts toward MAX_CONNECT_FAILURES.
@@ -85,7 +87,8 @@ async function defaultFetchToken(locale: string) {
 }
 
 export function createLiveTranscriber(opts: LiveTranscriberOptions): LiveTranscriber {
-  const fetchToken = opts.fetchToken ?? defaultFetchToken;
+  const fetchToken =
+    opts.fetchToken ?? ((locale: string) => defaultFetchToken(locale, opts.sessionId));
   const openSocket =
     opts.openSocket ?? ((url, protocols) => new WebSocket(url, protocols) as SocketLike);
   const now = opts.now ?? (() => performance.now());

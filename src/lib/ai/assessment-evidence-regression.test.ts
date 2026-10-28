@@ -272,6 +272,31 @@ describe("assessSession turn-cited evidence and cannot score", () => {
     expect(r.scores.trainee_feedback?.strengths).toEqual(["You opened with a warm, open question."]);
     expect(r.scores.trainee_feedback?.missed ?? []).toEqual([]);
   });
+
+  it("drops feedback naming a sealed diagnosis before the report is stored", async () => {
+    chatMock.mockResolvedValue({
+      text: JSON.stringify({
+        ...JSON.parse(withItems({})),
+        trainee_feedback: {
+          strengths: ["You opened with a warm, open question."],
+          missed: ["You did not screen for major depressive disorder."],
+          next_steps: ["Ask how long the low mood has lasted."],
+        },
+      }),
+      model: "gpt-5",
+    });
+    const { assessSession } = await import("@/lib/ai/assessment");
+    const r = await assessSession({
+      avatar,
+      messages,
+      durationSec: 120,
+      language: "en",
+      sealedDiagnosisLabels: ["major depressive disorder", "depression"],
+    });
+    expect(r.scores.trainee_feedback?.strengths).toEqual(["You opened with a warm, open question."]);
+    expect(r.scores.trainee_feedback?.missed ?? []).toEqual([]);
+    expect(r.scores.trainee_feedback?.next_steps).toEqual(["Ask how long the low mood has lasted."]);
+  });
 });
 
 describe("assessSession gateway structured output", () => {

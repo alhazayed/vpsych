@@ -8,6 +8,8 @@ import {
   OpenAIServiceError,
 } from "@/lib/ai/openai";
 import { openAISpeechLanguage, sttProviderFailure } from "@/lib/voice/stt";
+import { isUuid } from "@/lib/therapy-room/input-validation";
+import { remainingSeconds } from "@/lib/session-timer";
 import {
   isLiveTranscriptEnabled,
   LIVE_TRANSCRIPT_WS_URL,
@@ -16,7 +18,7 @@ import {
 /**
  * Live transcript credential (Therapy Room).
  *
- * POST { locale } → { clientSecret, expiresAt, model, url }
+ * POST { locale, sessionId } → { clientSecret, expiresAt, model, url }
  *
  * Mints a short-lived OpenAI Realtime client secret for a transcription-only
  * session (same STT model as /api/voice/transcribe). The browser streams the
@@ -25,8 +27,9 @@ import {
  *
  * The secret only opens a session for ~60 s, but OpenAI lets the client
  * override session settings, so it is not a hard transcription-only scope:
- * approved accounts only, and minting is rate-limited (one per room
- * connection; reconnects are rare).
+ * approved accounts only, one of the caller's own sessions that is still
+ * active and in time, and minting is rate-limited (one per room connection;
+ * reconnects are rare).
  *
  * `VOICE_LIVE_TRANSCRIPT=false` turns it off (404 → the client uses the
  * classic STT path).
@@ -69,11 +72,45 @@ export async function POST(request: Request) {
   }
 
   let locale = "en";
+  let sessionId: unknown;
   try {
-    const body = (await request.json()) as { locale?: unknown };
+    const body = (await request.json()) as { locale?: unknown; sessionId?: unknown };
     if (typeof body.locale === "string") locale = body.locale.slice(0, 16);
+    sessionId = body.sessionId;
   } catch {
-    /* empty body → English */
+    /* empty body → no session */
+  }
+  if (!isUuid(sessionId)) {
+    return NextResponse.json(
+      { error: "sessionId is required", code: "LIVE_TRANSCRIPT_SESSION" },
+      { status: 400, headers },
+    );
+  }
+
+  // A key only for a room the caller is in right now: their own session,
+  // still active and inside its time limit.
+  const { data: session, error: sessionError } = await auth.supabase
+    .from("sessions")
+    .select("id, status, started_at, max_duration_sec")
+    .eq("id", sessionId)
+    .eq("therapist_id", auth.user.id)
+    .maybeSingle();
+  if (sessionError) {
+    console.warn("[stt-live] session lookup failed", { requestId });
+    return NextResponse.json(
+      { error: "Live transcript is unavailable.", code: "STT_LIVE_FAILED" },
+      { status: 503, headers },
+    );
+  }
+  if (
+    !session ||
+    session.status !== "active" ||
+    remainingSeconds(session.started_at, session.max_duration_sec) <= 0
+  ) {
+    return NextResponse.json(
+      { error: "Session is not active", code: "SESSION_NOT_ACTIVE" },
+      { status: 409, headers },
+    );
   }
 
   try {

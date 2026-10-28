@@ -27,6 +27,7 @@ import {
 import type { Avatar, SessionMessage, TherapySession } from "@/lib/types";
 import { withSkillTestCase } from "@/lib/skill-tests";
 import { reportFailure } from "@/lib/ops/degradation";
+import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
 
 async function sealLedgerBestEffort(opts: {
   supabase: Parameters<typeof sealAssessmentQualityLedger>[0];
@@ -347,6 +348,9 @@ export async function POST(_request: Request, { params }: Params) {
     messages,
     durationSec,
     language: reportLanguage,
+    sealedDiagnosisLabels: typed.sealed_case
+      ? sealedDiagnosisLabels(typed.clinical_snapshot)
+      : [],
   });
 
   console.info("[sessions/end] assessment", {
