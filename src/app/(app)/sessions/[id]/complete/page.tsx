@@ -18,6 +18,8 @@ import {
 } from "@/lib/avatars/localized-name";
 import { TraineePracticeChecklist } from "@/components/TraineePracticeChecklist";
 import { TraineeSessionFeedback } from "@/components/TraineeSessionFeedback";
+import { SupervisorCommentsCard } from "@/components/SupervisorCommentsCard";
+import { loadTraineeReviewComments } from "@/lib/supervisor-reviews/trainee-comments";
 import { sealedDiagnosisLabels } from "@/lib/ai/diagnosis-labels";
 import { normalizeReportLanguage } from "@/lib/ai/report-locale";
 import {
@@ -187,6 +189,19 @@ export default async function SessionCompletePage({ params }: Props) {
             : [],
         );
 
+  // The supervisor's words on this practice session (no scores or flags).
+  // A sealed case that cannot be opened shows none (fail closed).
+  const supervisorComments =
+    typed.therapist_id !== user.id || (typed.sealed_case && !opened.ok)
+      ? []
+      : await loadTraineeReviewComments(
+          supabase,
+          id,
+          typed.sealed_case && opened.ok
+            ? sealedDiagnosisLabels(opened.session.clinical_snapshot)
+            : [],
+        );
+
   // Ladder attempts lead back to that patient's levels, not the library.
   const { data: ladderAttempt } = await supabase
     .from("training_ladder_attempts")
@@ -237,6 +252,8 @@ export default async function SessionCompletePage({ params }: Props) {
         view={feedbackView}
         language={normalizeReportLanguage(typed.language)}
       />
+
+      <SupervisorCommentsCard comments={supervisorComments} />
 
       {checklist.length > 0 ? (
         <TraineePracticeChecklist groups={checklist} />

@@ -14,6 +14,7 @@ export async function ReportReviewPanel({
   loadFailed,
   currentUserId,
   canEdit,
+  traineeSeesComments = false,
 }: {
   sessionId: string;
   aiOverall: number;
@@ -21,6 +22,8 @@ export async function ReportReviewPanel({
   loadFailed: boolean;
   currentUserId: string | null;
   canEdit: boolean;
+  /** Practice session: the trainee reads the comments (no scores or flags). */
+  traineeSeesComments?: boolean;
 }) {
   const t = await getTranslations("supervisorReviews.panel");
   const locale = await getLocale();
@@ -110,6 +113,7 @@ export async function ReportReviewPanel({
             <ReportReviewForm
               sessionId={sessionId}
               aiOverall={aiOverall}
+              traineeSeesComments={traineeSeesComments}
               initial={
                 mine
                   ? {

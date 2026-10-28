@@ -724,7 +724,13 @@
         "missed": "not performed",
         "note": "Based on the words in your transcript. It shows whether a practice was attempted, not how well, and it is not a grade."
       },
-      "bodyNoDisorder": "Your session with {name} has ended. A performance report for your instructors is being prepared from your transcript."
+      "bodyNoDisorder": "Your session with {name} has ended. A performance report for your instructors is being prepared from your transcript.",
+      "supervisorComments": {
+        "title": "Comments from your supervisor",
+        "subtitle": "Written by a supervisor who read this session. Use them alongside the feedback above.",
+        "byline": "{name} · {date}",
+        "supervisor": "Your supervisor"
+      }
     },
     "focus": {
       "title": "Your focus for this session",
@@ -910,7 +916,7 @@
       "immersionScore": "Immersion index: {score}",
       "transcriptTitle": "Session transcript",
       "notesTitle": "Your private notes",
-      "debriefNote": "Competency scores, supervisor feedback, and ACE analysis remain in the admin report."
+      "debriefNote": "Competency scores stay in your instructors' report."
     },
     "voiceTurn": {
       "you": "You",
@@ -4546,6 +4552,8 @@
       "yourReview": "Your review",
       "comment": "Comment",
       "commentHint": "Up to 4,000 characters. Needed when you change the score.",
+      "traineeSees": "The trainee reads this comment, with your name, on their session page. Your adjusted score and flag stay private. A comment that mentions a score, or names the diagnosis on a Training Program level, is not shown to them.",
+      "hiddenScore": "This comment mentions a score, so the trainee will not see it. Remove the number or the word \"score\" if you want them to read it.",
       "adjusted": "Adjusted overall score (0–100)",
       "adjustedHint": "Leave empty to keep the AI score of {score}.",
       "flag": "Flag this session for follow-up",
