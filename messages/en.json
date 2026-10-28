@@ -1016,6 +1016,8 @@
     "quotes": {
       "label": "Evidence from the transcript",
       "turn": "Turn {turn} · {speaker}",
+      "turnShort": "Turn {turn}",
+      "jump": "Show turn {turn} in the transcript",
       "speaker": {
         "therapist": "Therapist",
         "patient": "Patient"

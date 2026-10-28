@@ -1016,6 +1016,8 @@
     "quotes": {
       "label": "أدلة من نص الجلسة",
       "turn": "الدور {turn} · {speaker}",
+      "turnShort": "الدور {turn}",
+      "jump": "عرض الدور {turn} في نص الجلسة",
       "speaker": {
         "therapist": "المعالج",
         "patient": "المريض"
