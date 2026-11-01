@@ -3,6 +3,7 @@ import { mergeCaseMemory } from "@/lib/case-memory";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prepareMessageRpc } from "@/lib/supabase/admin";
+import { createSessionRow } from "@/lib/sessions/create-session-row";
 import { normalizeAvatarLocale } from "@/lib/avatars/resolve";
 import { createCaseForSession } from "@/lib/case-engine/persist";
 import type {
@@ -512,57 +513,8 @@ export async function POST(request: Request) {
     insertPayload.course_session_number = courseSessionNumber;
   }
 
-  let { data: session, error } = await supabase
-    .from("sessions")
-    .insert(insertPayload)
-    .select("id")
-    .single();
-
-  // Backward compatible: if new columns are missing (migration not applied), retry legacy insert
-  // A skill test or ladder session is never retried without its case.
-  if (
-    error &&
-    !test &&
-    !ladder &&
-    /clinical_snapshot|case_instance_id|difficulty|therapy_modality|instructor_preset|interaction_mode/i.test(
-      error.message,
-    )
-  ) {
-    const withoutPreset = { ...insertPayload };
-    delete withoutPreset.instructor_preset_id;
-    delete withoutPreset.interaction_mode;
-    const retry = await supabase
-      .from("sessions")
-      .insert(withoutPreset)
-      .select("id")
-      .single();
-    if (
-      retry.error &&
-      /clinical_snapshot|case_instance_id|difficulty|therapy_modality|interaction_mode/i.test(
-        retry.error.message,
-      )
-    ) {
-      // Legacy schema fallback still stamps tenancy from the server profile.
-      // Never omit institution_id when the column exists (M23+).
-      const legacy = await supabase
-        .from("sessions")
-        .insert({
-          therapist_id: user.id,
-          avatar_id: body.avatarId,
-          status: "active",
-          max_duration_sec: maxDurationSec,
-          language: caseResult.snapshot.locale || effectiveLocale,
-          institution_id: profile?.primary_institution_id ?? null,
-        })
-        .select("id")
-        .single();
-      session = legacy.data;
-      error = legacy.error;
-    } else {
-      session = retry.data;
-      error = retry.error;
-    }
-  }
+  // Signed RPC: the database refuses a trainee session it did not get from here.
+  const { data: session, error } = await createSessionRow(supabase, insertPayload);
 
   const testRejection = test ? skillTestDbError(error?.message) : null;
   if (testRejection) {

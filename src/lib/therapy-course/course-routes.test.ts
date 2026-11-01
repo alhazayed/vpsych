@@ -132,7 +132,13 @@ function startDb(opts: { course?: Course | null; courseSessions?: number; course
     client: {
       auth: { getUser: async () => ({ data: { user: { id: USER_ID } } }) },
       from,
-      rpc: async () => ({ data: null, error: null }),
+      rpc: async (name: string, args: Record<string, unknown>) => {
+        if (name === "create_signed_session") {
+          inserted.push({ table: "sessions", row: JSON.parse(String(args.p_row)) });
+          return { data: "session-new", error: null };
+        }
+        return { data: null, error: null };
+      },
     },
   };
 }

@@ -89,12 +89,14 @@ begin
 end $$;
 
 -- ── fixtures ───────────────────────────────────────────────────────────────
--- T is a trainee, U another trainee, A an admin, M manages institute I.
+-- T is a trainee, U another trainee, A an admin, M manages institute I,
+-- P an account still awaiting approval.
 insert into auth.users (id, email, aud, role) values
   ('81000000-0000-4000-8000-000000000001', 'hard-t@rls.invalid', 'authenticated', 'authenticated'),
   ('82000000-0000-4000-8000-000000000002', 'hard-u@rls.invalid', 'authenticated', 'authenticated'),
   ('83000000-0000-4000-8000-000000000003', 'hard-m@rls.invalid', 'authenticated', 'authenticated'),
-  ('8a000000-0000-4000-8000-0000000000aa', 'hard-a@rls.invalid', 'authenticated', 'authenticated');
+  ('8a000000-0000-4000-8000-0000000000aa', 'hard-a@rls.invalid', 'authenticated', 'authenticated'),
+  ('84000000-0000-4000-8000-000000000004', 'hard-p@rls.invalid', 'authenticated', 'authenticated');
 
 set local session_replication_role = replica;
 update public.profiles set approval_status = 'approved'
@@ -117,35 +119,122 @@ set local session_replication_role = origin;
 create temp table hard_avatar as select id from public.avatars order by id limit 1;
 grant select on hard_avatar to authenticated;
 
--- ── inserts: the database sets status, start time and institute ────────────
+-- ── inserts: only signed rows from the server (20261101170000) ─────────────
+-- The vault key the server signs with; created here if the database has none.
+do $$
+begin
+  if not exists (select 1 from vault.decrypted_secrets where name = 'report_write_key') then
+    perform vault.create_secret('rls-test-report-key', 'report_write_key');
+  end if;
+end $$;
+
+-- SQL that calls create_signed_session with `row_text`, signed (as postgres,
+-- before the role switch) the way POST /api/sessions signs it.
+create function pg_temp.signed(row_text text) returns text language sql as $$
+  select format('select public.create_signed_session(%L, %L)', row_text,
+    encode(extensions.hmac('session' || E'\n' || row_text,
+      (select decrypted_secret from vault.decrypted_secrets where name = 'report_write_key' limit 1),
+      'sha256'), 'hex'))
+$$;
+
+-- A session row for therapist `uid` as the start route builds it, plus `extra`.
+create function pg_temp.row_for(uid uuid, extra jsonb default '{}'::jsonb) returns text language sql as $$
+  select (jsonb_build_object('therapist_id', uid, 'avatar_id', (select id from hard_avatar),
+    'status', 'active', 'max_duration_sec', 2400, 'language', 'en-US',
+    'clinical_snapshot', '{"locale":"en-US"}'::jsonb) || extra)::text
+$$;
+
+select pg_temp.expect_error('trainee cannot insert a session directly',
+  '81000000-0000-4000-8000-000000000001',
+  $q$insert into public.sessions (therapist_id, avatar_id, max_duration_sec, clinical_snapshot)
+     select '81000000-0000-4000-8000-000000000001', id, 2400, '{"persona_prompt":"my own patient"}'::jsonb
+     from hard_avatar$q$,
+  '%session_insert_requires_signature%');
+select pg_temp.expect_error('trainee cannot call the create function without a signature',
+  '81000000-0000-4000-8000-000000000001',
+  format('select public.create_signed_session(%L)', pg_temp.row_for('81000000-0000-4000-8000-000000000001')),
+  '%session_signature_invalid%');
+select pg_temp.expect_error('a signature for another row is refused',
+  '81000000-0000-4000-8000-000000000001',
+  replace(pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001')),
+    '"language": "en-US"', '"language": "ar-JO"'),
+  '%session_signature_invalid%');
+select pg_temp.expect_error('a signed row for someone else is refused',
+  '81000000-0000-4000-8000-000000000001',
+  pg_temp.signed(pg_temp.row_for('82000000-0000-4000-8000-000000000002')),
+  '%Not authorized%');
+select pg_temp.expect_error('a signed row with a column the server never writes is refused',
+  '81000000-0000-4000-8000-000000000001',
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001',
+    jsonb_build_object('ended_at', now()))),
+  '%session_row_invalid%');
+select pg_temp.expect_error('an account awaiting approval cannot start a session',
+  '84000000-0000-4000-8000-000000000004',
+  pg_temp.signed(pg_temp.row_for('84000000-0000-4000-8000-000000000004')),
+  '%awaiting approval%');
+select pg_temp.expect_error('anon cannot call the create function',
+  null,
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001')),
+  '%permission denied%');
+
+-- The guard's own checks still run on a signed row.
 select pg_temp.expect_error('trainee cannot insert a session with no time limit',
   '81000000-0000-4000-8000-000000000001',
-  $q$insert into public.sessions (therapist_id, avatar_id, max_duration_sec)
-     select '81000000-0000-4000-8000-000000000001', id, 999999 from hard_avatar$q$,
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001', '{"max_duration_sec": 999999}')),
   '%session_time_limit_out_of_range%');
 select pg_temp.expect_error('trainee cannot insert a session without a time limit',
   '81000000-0000-4000-8000-000000000001',
-  $q$insert into public.sessions (therapist_id, avatar_id, max_duration_sec)
-     select '81000000-0000-4000-8000-000000000001', id, null from hard_avatar$q$,
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001', '{"max_duration_sec": null}')),
   '%session_time_limit_out_of_range%');
-select pg_temp.expect_count('a forged start time, status, end and institute are replaced',
-  '81000000-0000-4000-8000-000000000001',
-  $q$with s as (
-       insert into public.sessions (therapist_id, avatar_id, max_duration_sec, status, started_at, ended_at, institution_id)
-       select '81000000-0000-4000-8000-000000000001', id, 2400, 'completed', now() + interval '10 years',
-              now(), '8e000000-0000-4000-8000-00000000000e' from hard_avatar
-       returning status, started_at, ended_at, institution_id)
-     select count(*) from s
-     where status = 'active' and started_at <= now() and ended_at is null and institution_id is null$q$, 1);
 select pg_temp.expect_error('trainee cannot attach someone else''s therapy course',
   '81000000-0000-4000-8000-000000000001',
-  $q$insert into public.sessions (therapist_id, avatar_id, max_duration_sec, therapy_course_id, course_session_number)
-     select '81000000-0000-4000-8000-000000000001', id, 2400, '8c000000-0000-4000-8000-00000000000c', 2 from hard_avatar$q$,
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001',
+    '{"therapy_course_id": "8c000000-0000-4000-8000-00000000000c", "course_session_number": 2}')),
   '%therapy_course_id not owned%');
 select pg_temp.expect_ok('the 90-minute preset still starts',
   '81000000-0000-4000-8000-000000000001',
+  pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001', '{"max_duration_sec": 5400}')));
+
+-- A forged status and institute in a signed row are replaced by the database.
+do $$
+declare
+  v_stmt text := pg_temp.signed(pg_temp.row_for('81000000-0000-4000-8000-000000000001',
+    '{"status": "completed", "institution_id": "8e000000-0000-4000-8000-00000000000e"}'));
+  v_id uuid;
+  v_ok boolean;
+begin
+  perform pg_temp.become('81000000-0000-4000-8000-000000000001');
+  execute v_stmt into v_id;
+  select status = 'active' and started_at <= now() and ended_at is null and institution_id is null
+    into v_ok from public.sessions where id = v_id;
+  perform pg_temp.unbecome();
+  if v_ok is not true then
+    raise exception 'FAIL a forged status and institute are replaced';
+  end if;
+  raise notice 'ok   a forged status and institute are replaced';
+end $$;
+
+-- The service role creates sessions without a signature (server without the key).
+do $$
+declare
+  v_row text := pg_temp.row_for('81000000-0000-4000-8000-000000000001');
+  v_id uuid;
+begin
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  perform set_config('role', 'service_role', true);
+  select public.create_signed_session(v_row) into v_id;
+  perform pg_temp.unbecome();
+  if v_id is null then
+    raise exception 'FAIL service role create';
+  end if;
+  raise notice 'ok   service role creates a session without a signature';
+end $$;
+
+-- An admin (two-step login) still inserts admin test sessions directly.
+select pg_temp.expect_ok('admin can still insert a session directly',
+  '8a000000-0000-4000-8000-0000000000aa',
   $q$insert into public.sessions (therapist_id, avatar_id, max_duration_sec)
-     select '81000000-0000-4000-8000-000000000001', id, 5400 from hard_avatar$q$);
+     select '8a000000-0000-4000-8000-0000000000aa', id, 2400 from hard_avatar$q$);
 
 -- ── updates on a running session ───────────────────────────────────────────
 select pg_temp.expect_error('trainee cannot move their session into an institute',
