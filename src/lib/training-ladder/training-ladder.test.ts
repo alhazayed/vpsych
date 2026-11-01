@@ -307,6 +307,7 @@ describe("progress", () => {
     expect(attemptOutcome({ status: "passed" })).toBe("passed");
     expect(attemptOutcome({ status: "failed" })).toBe("failed");
     expect(attemptOutcome({ status: "awaiting_score" })).toBe("scoring");
+    expect(attemptOutcome({ status: "too_short" })).toBe("too_short");
     expect(attemptOutcome({ status: "in_progress", session_status: "active" })).toBe("in_session");
     expect(attemptOutcome({ status: "in_progress", session_status: "completed" })).toBe("no_report");
   });

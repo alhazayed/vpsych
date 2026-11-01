@@ -14,6 +14,8 @@ import {
 import { LadderLevelList } from "@/components/training/LadderLevelList";
 import { PatientPortrait } from "@/components/training/PatientPortrait";
 import { StartLadderLevelButton } from "@/components/training/StartLadderLevelButton";
+import { PracticeFocusCard } from "@/components/PracticeFocusCard";
+import { loadPracticeFocus } from "@/lib/sessions/practice-focus";
 
 type Props = { params: Promise<{ key: string }> };
 
@@ -43,6 +45,7 @@ export default async function TrainingPatientPage({ params }: Props) {
   const entry = overview.patients.find((p) => p.patient.key === key);
   if (!entry) notFound();
   const { patient, avatar, progress } = entry;
+  const focus = progress.completed ? null : await loadPracticeFocus(supabase, user.id);
 
   const slug = patient.primaryDisorderSlug;
   const disorder = tDisorders.has(slug) ? tDisorders(slug) : slug;
@@ -93,6 +96,8 @@ export default async function TrainingPatientPage({ params }: Props) {
       <section className="clinical-card mb-6 p-5">
         <LadderLevelList progress={progress} />
       </section>
+
+      <PracticeFocusCard focus={focus} className="mb-6" />
 
       <section className="clinical-card mb-6 space-y-3 p-5">
         {progress.completed ? (

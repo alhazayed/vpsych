@@ -40,7 +40,11 @@ export async function TraineeSessionFeedback({
       >
         {t("title")}
       </h2>
-      {view.kind === "unavailable" ? (
+      {view.kind === "too_short" ? (
+        <p className="mt-2 text-sm text-[var(--on-surface-variant)]" data-feedback-too-short>
+          {t("tooShort")}
+        </p>
+      ) : view.kind === "unavailable" ? (
         <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
           {t("unavailable")}
         </p>

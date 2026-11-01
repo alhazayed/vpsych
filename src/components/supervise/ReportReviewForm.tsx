@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { MAX_REVIEW_COMMENT } from "@/lib/supervisor-reviews/validation";
 import { reviewErrorKey } from "@/lib/supervisor-reviews/client-errors";
+import {
+  citesAdjustedScore,
+  commentHiddenReason,
+} from "@/lib/supervisor-reviews/comment-visibility";
 
 type Initial = {
   comment: string;
@@ -18,10 +22,13 @@ export function ReportReviewForm({
   sessionId,
   aiOverall,
   initial,
+  traineeSeesComments = false,
 }: {
   sessionId: string;
   aiOverall: number;
   initial: Initial;
+  /** Practice session: the trainee will read this comment. */
+  traineeSeesComments?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("supervisorReviews.form");
@@ -37,6 +44,14 @@ export function ReportReviewForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  // Tell the supervisor before saving when the trainee would not see it.
+  const scoreTyped = /^\d{1,3}$/.test(score.trim()) ? Number(score.trim()) : null;
+  const hiddenFromTrainee =
+    traineeSeesComments && comment.trim() !== ""
+      ? commentHiddenReason(comment, {
+          citesReviewNumber: scoreTyped !== null && citesAdjustedScore(comment, scoreTyped),
+        })
+      : null;
 
   async function send(method: "PUT" | "DELETE") {
     if (method === "DELETE" && !window.confirm(t("removeConfirm"))) return;
@@ -104,7 +119,13 @@ export function ReportReviewForm({
         />
         <p id={`${id}-comment-hint`} className="mt-1 text-xs text-[var(--on-surface-variant)]">
           {t("commentHint")}
+          {traineeSeesComments ? ` ${t("traineeSees")}` : ""}
         </p>
+        {hiddenFromTrainee === "score" && (
+          <p role="status" className="mt-1 text-xs font-medium text-[var(--error)]">
+            {t("hiddenScore")}
+          </p>
+        )}
       </div>
       <div>
         <label htmlFor={`${id}-score`} className="block text-sm font-medium">

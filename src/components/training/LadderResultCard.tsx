@@ -90,6 +90,18 @@ export async function LadderResultCard({
     );
   }
 
+  if (outcome === "too_short") {
+    return (
+      <section className="clinical-card mb-4 p-5 fade-in-up" aria-live="polite" data-ladder-too-short>
+        <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">
+          {t("result.tooShortTitle")}
+        </h2>
+        <p className="mt-2 text-sm">{t("result.tooShortBody", { level: levelName })}</p>
+        <p className="text-sm text-[var(--on-surface-variant)]">{t("result.tooShortMic")}</p>
+      </section>
+    );
+  }
+
   return (
     <section className="clinical-card mb-4 p-5 fade-in-up" aria-live="polite">
       <h2 className="font-[family-name:var(--font-headline)] text-lg font-semibold">

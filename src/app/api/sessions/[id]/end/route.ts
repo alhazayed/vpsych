@@ -481,9 +481,12 @@ export async function POST(_request: Request, { params }: Params) {
   // Skill test results are for the assigning supervisor and admins only, so
   // they never feed the trainee-facing learning, coach, or end payload.
   const isSkillTest = Boolean(typed.skill_test_assignment_id);
+  // Nothing was said, so nothing was assessed: a 0 must not reach the
+  // learner model, the coach, or institute analytics either.
+  const tooShort = assessment.scores.too_short === true;
 
   // Stage 7 Education + ACE — best-effort; never blocks report; never touches patient mind.
-  const education = isSkillTest
+  const education = tooShort || isSkillTest
     ? SKIPPED_EDUCATION
     : await runEducationAfterAssessment(supabase, {
     userId: user.id,
@@ -518,7 +521,7 @@ export async function POST(_request: Request, { params }: Params) {
   }
 
   // Stage 9 Supervisor AI — evaluates therapist only; soft-fail; never touches patient mind.
-  const supervisor = isSkillTest
+  const supervisor = tooShort || isSkillTest
     ? SKIPPED_SUPERVISOR
     : await runSupervisorAfterAssessment(supabase, {
     userId: user.id,
@@ -540,7 +543,7 @@ export async function POST(_request: Request, { params }: Params) {
   // Stage 10 Enterprise Platform — tenancy analytics only; soft-fail; never touches patient mind.
   // Skipped for tests: its certificate count would tell the trainee whether
   // they scored 85 or higher.
-  const enterprise = isSkillTest
+  const enterprise = tooShort || isSkillTest
     ? SKIPPED_ENTERPRISE
     : await runEnterpriseAfterAssessment(supabase, {
     userId: user.id,

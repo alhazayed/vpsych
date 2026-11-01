@@ -200,11 +200,14 @@ Write rules that RLS enforces and application code must respect:
   finalized by the learner's complete page via `/end`, or by an admin via
   `POST /api/admin/reports/[sessionId]/generate`.
 - Reads of `session_reports` are gated on `is_admin()`. Never expose reports on
-  a therapist-facing API. The one trainee-facing slice is
+  a therapist-facing API. One trainee-facing slice is
   `my_session_feedback()`: the owner's `scores->'trainee_feedback'` words
   (strengths, missed, next steps; no scores) for a practice session, never a
   skill test. The complete page filters score-like text and, on a sealed ladder
   level, any item naming the diagnosis (`lib/sessions/trainee-feedback.ts`).
+  The other is `my_session_review_comments()`: supervisor comments (name and
+  date, no adjusted score or flag) on the owner's practice session, filtered by
+  `lib/supervisor-reviews/trainee-comments.ts`; see `docs/SUPERVISOR_REVIEWS.md`.
 - Roles live in `profiles.role`, never in `user_metadata`.
 - Supervisors are rows in `public.supervisors` (admin-written). Skill test
   results are readable only by the assigning supervisor and admins; see
@@ -360,3 +363,25 @@ contracts, state machine), `docs/ARCHITECTURE_CERTIFICATION.md`,
 `docs/FUNCTIONAL_CERTIFICATION.md` record the audits behind many of the
 constraints above, including the specific regressions that motivated the
 guardrail tests.
+
+## Optional: oh-my-claudecode
+
+[oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) (OMC) is a
+multi-agent orchestration plugin some contributors run. It is a per-user
+install, not a project dependency — nothing in the repo requires it, and CI
+does not use it:
+
+```
+/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode
+/plugin install oh-my-claudecode
+```
+
+- OMC keeps plans, logs, and session state in `.omc/` at the repo root. That
+  directory (and the `.omc-workspace` marker) is gitignored — never commit it.
+- Shared skills belong in `.claude/skills/` (see `VENDORED.md` there), not in
+  `.omc/skills/`.
+- Keep OMC's outbound integrations (OpenClaw, Jev, Telegram/Slack/Discord stop
+  callbacks) off when working here: they forward session content, which can
+  include transcripts and clinical case material, to third parties.
+- Agents OMC spawns are still bound by everything above — the guardrail tests,
+  the seven CI checks before pushing, and the never-commit-secrets rule.

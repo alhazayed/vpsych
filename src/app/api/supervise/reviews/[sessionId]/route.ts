@@ -5,6 +5,7 @@ import { logSecurityEvent } from "@/lib/security-audit";
 import { requireApiSupervisor } from "@/lib/skill-tests/access";
 import { isUuid } from "@/lib/skill-tests";
 import { validateReviewInput } from "@/lib/supervisor-reviews";
+import { traineeMayReadComment } from "@/lib/supervisor-reviews/trainee-comments";
 
 type Params = { params: Promise<{ sessionId: string }> };
 
@@ -62,6 +63,28 @@ export async function PUT(request: Request, { params }: Params) {
   }
   const { comment, adjustedOverall, flagged } = parsed.value;
 
+  // Whether the trainee may read this comment is decided here, on the
+  // server, because a sealed ladder case can only be opened here. A session
+  // the caller cannot read gets no review either (RLS refuses the upsert).
+  const { data: sessionRow, error: sessionError } = await supabase
+    .from("sessions")
+    .select("id, skill_test_assignment_id, sealed_case, clinical_snapshot")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (sessionError) {
+    console.error("[supervise/reviews] session load failed", {
+      sessionId,
+      code: sessionError.code,
+      error: sessionError.message,
+    });
+    return NextResponse.json(
+      { error: clientSafeError("Could not save the review", sessionError) },
+      { status: 500 },
+    );
+  }
+  if (!sessionRow) return forbidden();
+  const traineeVisible = traineeMayReadComment(sessionRow, comment, adjustedOverall);
+
   const { data, error } = await supabase
     .from("session_report_reviews")
     .upsert(
@@ -71,6 +94,7 @@ export async function PUT(request: Request, { params }: Params) {
         comment,
         adjusted_overall: adjustedOverall,
         flagged,
+        trainee_visible: traineeVisible,
       },
       { onConflict: "session_id,reviewer_id" },
     )

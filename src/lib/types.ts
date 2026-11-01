@@ -606,6 +606,8 @@ export type SessionReport = {
     /** Items the examiner could not score (left out of `items`). */
     unscored_items?: UnscoredEntry[];
     trainee_feedback?: TraineeFeedback;
+    /** No therapist turn: nothing was assessed (lib/ai/assessment.ts). */
+    too_short?: boolean;
   };
   narrative: string;
   excerpts: string[];

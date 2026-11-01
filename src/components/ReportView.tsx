@@ -8,6 +8,7 @@ import {
   storedUnscored,
   unscoredLeftOutOfOverall,
 } from "@/lib/ai/assessment-evidence";
+import { turnAnchorId } from "@/lib/sessions/transcript-turns";
 
 const EVIDENCE_TONE: Record<EvidenceLevel, string> = {
   limited: "border-[var(--outline-variant)] text-[var(--on-surface-variant)]",
@@ -19,12 +20,18 @@ export async function ReportView({
   report,
   evidence,
   audience = "admin",
+  turnScope,
+  linkTurns = false,
 }: {
   report: SessionReport;
   /** Optional per-item evidence labels (admin / supervisor views). */
   evidence?: ScoreEvidence[];
   /** Who reads this page; sets the privacy note at the foot. */
   audience?: "admin" | "supervisor";
+  /** Link each quote's turn to a NumberedTranscript on the same page. */
+  linkTurns?: boolean;
+  /** The NumberedTranscript's scope, when the page lists several sessions. */
+  turnScope?: string;
 }) {
   const tCommon = await getTranslations("common");
   const t = await getTranslations("report");
@@ -39,6 +46,7 @@ export async function ReportView({
   const evidenceById = new Map((evidence ?? []).map((e) => [e.item_id, e]));
   const unscored = storedUnscored(report.scores?.unscored_items);
   const unscoredLeftOut = unscoredLeftOutOfOverall(items, unscored);
+  const tooShort = report.scores?.too_short === true;
 
   return (
     <article
@@ -60,16 +68,25 @@ export async function ReportView({
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
             {t("overall")}
           </p>
-          <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
-            {overall}
-            <span className="text-base font-semibold text-[var(--on-surface-variant)]">
-              {tCommon("outOf100")}
-            </span>
-          </p>
+          {tooShort ? (
+            <p
+              className="font-[family-name:var(--font-headline)] text-lg font-semibold text-[var(--on-surface)]"
+              data-report-too-short
+            >
+              {t("tooShort.score")}
+            </p>
+          ) : (
+            <p className="font-[family-name:var(--font-headline)] text-3xl font-bold text-[var(--primary)]">
+              {overall}
+              <span className="text-base font-semibold text-[var(--on-surface-variant)]">
+                {tCommon("outOf100")}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 
-      {unscored.length > 0 && (
+      {unscored.length > 0 && !tooShort && (
         <p
           className="clinical-card border-s-4 border-[var(--outline)] px-5 py-3 text-sm text-[var(--on-surface)]"
           data-unscored-rule={unscoredLeftOut ? "left_out" : "counted_zero"}
@@ -168,12 +185,26 @@ export async function ReportView({
                           key={`${q.turn}-${q.quote.slice(0, 16)}`}
                           className="border-s-2 border-[var(--outline-variant)] ps-3 text-sm"
                         >
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
-                            {t("quotes.turn", {
-                              turn: q.turn,
-                              speaker: t(`quotes.speaker.${q.speaker}`),
-                            })}
-                          </span>
+                          {linkTurns ? (
+                            <a
+                              href={`#${turnAnchorId(q.turn, turnScope)}`}
+                              data-turn-link
+                              aria-label={t("quotes.jump", { turn: q.turn })}
+                              className="block text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] underline-offset-2 hover:underline"
+                            >
+                              {t("quotes.turn", {
+                                turn: q.turn,
+                                speaker: t(`quotes.speaker.${q.speaker}`),
+                              })}
+                            </a>
+                          ) : (
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--outline)]">
+                              {t("quotes.turn", {
+                                turn: q.turn,
+                                speaker: t(`quotes.speaker.${q.speaker}`),
+                              })}
+                            </span>
+                          )}
                           <q
                             className="text-[var(--on-surface)]"
                             lang={language}

@@ -5,6 +5,8 @@ import { requireSupervisor } from "@/lib/skill-tests/access";
 import { isUuid, openSkillTestCase } from "@/lib/skill-tests";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { ReportView } from "@/components/ReportView";
+import { NumberedTranscript } from "@/components/NumberedTranscript";
+import { numberTranscriptTurns } from "@/lib/sessions/transcript-turns";
 import { SessionPracticePanel } from "@/components/admin/SessionPracticePanel";
 import { CrisisHandlingPanel } from "@/components/admin/CrisisHandlingPanel";
 import { CancelSkillTestButton } from "@/components/skill-tests/CancelSkillTestButton";
@@ -95,7 +97,6 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
           .from("session_messages")
           .select("id, session_id, role, content, created_at")
           .in("session_id", sessionIds)
-          .in("role", ["user", "assistant"])
           .order("created_at", { ascending: true }),
       ])
     : [
@@ -223,7 +224,12 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
       ) : (
         <div className="space-y-8">
           {sessions.map((s, index) => {
-            const transcript = messages.filter((m) => m.session_id === s.id);
+            // Numbered over every stored line, as the examiner numbered
+            // them; the system line is then hidden.
+            const turns = numberTranscriptTurns(
+              messages.filter((m) => m.session_id === s.id),
+            );
+            const transcript: SessionMessage[] = turns;
             const report = reports.get(s.id);
             const practice = evaluateSessionPractice({
               messages: transcript,
@@ -252,7 +258,13 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
                 </div>
                 {report ? (
                   <>
-                    <ReportView report={report} evidence={evidence} audience="supervisor" />
+                    <ReportView
+                      report={report}
+                      evidence={evidence}
+                      audience="supervisor"
+                      linkTurns
+                      turnScope={s.id}
+                    />
                     <ReportReviewPanel
                       sessionId={s.id}
                       aiOverall={report.scores?.overall ?? 0}
@@ -273,29 +285,14 @@ export default async function SkillTestResultsPage({ params, searchParams }: Pro
                 {transcript.length > 0 && (crisis || caseHasRisk(core?.risk_profile)) && (
                   <CrisisHandlingPanel crisis={crisis} />
                 )}
-                <details className="clinical-card p-4">
-                  <summary className="cursor-pointer text-sm font-semibold">
-                    {t("transcript", { count: transcript.length })}
-                  </summary>
-                  {transcript.length === 0 ? (
-                    <p className="mt-3 text-sm text-[var(--on-surface-variant)]">
-                      {tTranscript("empty")}
-                    </p>
-                  ) : (
-                    <ul className="mt-3 space-y-3 text-sm">
-                      {transcript.map((m) => (
-                        <li key={m.id}>
-                          <span className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
-                            {m.role === "user"
-                              ? test.trainee?.display_name ?? t("traineeLabel")
-                              : test.avatars?.name ?? tTranscript("patient")}
-                          </span>
-                          <span className="whitespace-pre-wrap">{m.content}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </details>
+                <NumberedTranscript
+                  turns={turns}
+                  scope={s.id}
+                  summary={t("transcript", { count: transcript.length })}
+                  traineeLabel={test.trainee?.display_name ?? t("traineeLabel")}
+                  patientLabel={test.avatars?.name ?? tTranscript("patient")}
+                  emptyLabel={tTranscript("empty")}
+                />
               </section>
             );
           })}
