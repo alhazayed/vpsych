@@ -403,12 +403,12 @@ select pg_temp.expect_error('pending account cannot start a session',
   format($q$insert into public.sessions (therapist_id, avatar_id)
      values ('dddddddd-0000-4000-8000-000000000004', %L)$q$,
      (select id from public.avatars order by id limit 1)),
-  '%row-level security%');
+  '%session_insert_requires_signature%');
 select pg_temp.expect_error('trainee cannot start a session for someone else',
   'aaaaaaaa-0000-4000-8000-000000000001',
   $q$insert into public.sessions (therapist_id, avatar_id)
      select 'bbbbbbbb-0000-4000-8000-000000000002', id from public.avatars limit 1$q$,
-  '%row-level security%');
+  '%session_insert_requires_signature%');
 select pg_temp.expect_count('trainee cannot touch another trainee''s session',
   'aaaaaaaa-0000-4000-8000-000000000001',
   $q$with u as (update public.sessions set status = 'completed'

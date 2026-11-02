@@ -109,9 +109,16 @@ describe("architecture invariants", () => {
     const create = readFileSync(join(root, "app/api/sessions/route.ts"), "utf8");
     expect(create).toMatch(/institution_id:\s*profile\?\.primary_institution_id/);
     expect(create).not.toMatch(/body\.institution_id/);
-    // Legacy create fallback must also stamp tenancy (Phase 5).
-    expect(create).toMatch(
-      /legacy[\s\S]*institution_id:\s*profile\?\.primary_institution_id/,
+    // Every create goes through the signed RPC (no legacy insert path), and
+    // the database stamps tenancy from the profile on it too (Phase 5).
+    expect(create).toContain("await createSessionRow(supabase, insertPayload)");
+    expect(create).not.toMatch(/\.from\("sessions"\)\s*\.insert\(/);
+    const guard = readFileSync(
+      join(root, "../supabase/migrations/20261101170000_signed_session_create.sql"),
+      "utf8",
+    );
+    expect(guard).toMatch(
+      /SELECT p\.primary_institution_id INTO NEW\.institution_id/,
     );
   });
 
