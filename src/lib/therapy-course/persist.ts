@@ -12,6 +12,7 @@ import type {
 } from "@/lib/types";
 import { DEFAULT_PLANNED_SESSIONS } from "./gate";
 import { asTreatmentPlan } from "./validation";
+import { createCourseRow } from "./create-course-row";
 
 export const COURSE_COLUMNS =
   "id, therapist_id, avatar_id, case_instance_id, clinical_snapshot, language, max_duration_sec, status, planned_sessions, treatment_plan, plan_submitted_at, plan_updated_at, completed_at, completion_reason, created_at, updated_at";
@@ -138,22 +139,29 @@ export async function createCourse(
   // Never pin per-session course context onto the course's base snapshot.
   const base: CaseInstanceSnapshot = { ...opts.snapshot };
   delete base.therapy_course;
+  // Signed: a later session is built from this row, so the database takes
+  // only a course the server wrote (create_signed_therapy_course).
+  const created = await createCourseRow(supabase, {
+    therapist_id: opts.therapistId,
+    avatar_id: opts.avatarId,
+    case_instance_id: opts.caseInstanceId,
+    clinical_snapshot: base,
+    language: opts.language,
+    max_duration_sec: opts.maxDurationSec,
+    status: "active",
+    planned_sessions: DEFAULT_PLANNED_SESSIONS,
+  });
+  if (created.error || !created.id) {
+    console.warn("[therapy-course] create:", created.error?.message ?? "no row");
+    return null;
+  }
   const { data, error } = await supabase
     .from("therapy_courses")
-    .insert({
-      therapist_id: opts.therapistId,
-      avatar_id: opts.avatarId,
-      case_instance_id: opts.caseInstanceId,
-      clinical_snapshot: base,
-      language: opts.language,
-      max_duration_sec: opts.maxDurationSec,
-      status: "active",
-      planned_sessions: DEFAULT_PLANNED_SESSIONS,
-    })
     .select(COURSE_COLUMNS)
-    .single();
+    .eq("id", created.id)
+    .maybeSingle();
   if (error || !data) {
-    console.warn("[therapy-course] create:", error?.message ?? "no row");
+    console.warn("[therapy-course] create read-back:", error?.message ?? "no row");
     return null;
   }
   return normalizeCourseRow(data as Record<string, unknown>);

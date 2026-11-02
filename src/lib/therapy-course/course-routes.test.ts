@@ -78,6 +78,7 @@ type Course = Record<string, unknown>;
 function startDb(opts: { course?: Course | null; courseSessions?: number; coursesTable?: boolean }) {
   const inserted: Array<{ table: string; row: Record<string, unknown> }> = [];
   const coursesTable = opts.coursesTable ?? true;
+  let createdCourse: Course | null = null;
   const from = (table: string) => {
     let op = "select";
     let payload: Record<string, unknown> | null = null;
@@ -97,7 +98,7 @@ function startDb(opts: { course?: Course | null; courseSessions?: number; course
           inserted.push({ table, row: payload });
           return { data: { id: "course-new", ...payload, treatment_plan: null }, error: null };
         }
-        return { data: opts.course ?? null, error: null };
+        return { data: createdCourse ?? opts.course ?? null, error: null };
       }
       if (table === "sessions" && op === "insert" && payload) {
         inserted.push({ table, row: payload });
@@ -136,6 +137,18 @@ function startDb(opts: { course?: Course | null; courseSessions?: number; course
         if (name === "create_signed_session") {
           inserted.push({ table: "sessions", row: JSON.parse(String(args.p_row)) });
           return { data: "session-new", error: null };
+        }
+        if (name === "create_signed_therapy_course") {
+          if (!coursesTable) {
+            return {
+              data: null,
+              error: { code: "PGRST202", message: "Could not find the function public.create_signed_therapy_course" },
+            };
+          }
+          const row = JSON.parse(String(args.p_row)) as Record<string, unknown>;
+          inserted.push({ table: "therapy_courses", row });
+          createdCourse = { id: "course-new", ...row, treatment_plan: null };
+          return { data: "course-new", error: null };
         }
         return { data: null, error: null };
       },

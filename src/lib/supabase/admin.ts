@@ -33,6 +33,9 @@ import {
  * - Writer for `create_signed_session` in `POST /api/sessions`, only when
  *   `REPORT_WRITE_KEY` is unset (otherwise the user client signs the row;
  *   see `lib/sessions/create-session-row.ts`)
+ * - Writer for `create_signed_therapy_course` in `POST /api/sessions`, only
+ *   when `REPORT_WRITE_KEY` is unset (otherwise the user client signs the
+ *   row; see `lib/therapy-course/create-course-row.ts`)
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
