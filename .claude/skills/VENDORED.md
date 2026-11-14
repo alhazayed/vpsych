@@ -20,6 +20,15 @@ commit and review the change in a PR.
 
 All bundled scripts use the Python standard library only: no network calls, no subprocesses.
 
+## Other upstreams
+
+| Skill | Upstream | Commit | Licence |
+|---|---|---|---|
+| `webapp-testing` | [anthropics/skills](https://github.com/anthropics/skills) `skills/webapp-testing` | `2c5958e` (2026-11-06) | Apache-2.0 (`webapp-testing/LICENSE.txt`) |
+
+`webapp-testing` writes and runs Python Playwright scripts. Point it only at a local build
+signed in with synthetic accounts (as `scripts/test-e2e.sh` creates), never at production.
+
 ## Local changes
 
 - `security-guidance` and its security reminder hook were vendored in #305 and removed on
