@@ -24,6 +24,7 @@ describe("sessionStartErrorKey", () => {
     expect(sessionStartErrorKey(403, "ladder_level_locked")).toBe("ladderLocked");
     expect(sessionStartErrorKey(409, "treatment_plan_required")).toBe("treatmentPlanRequired");
     expect(sessionStartErrorKey(409, "skill_test_sessions_used")).toBe("testSessionsUsed");
+    expect(sessionStartErrorKey(403, "patient_not_assigned")).toBe("patientNotAssigned");
     expect(sessionStartErrorKey(409, "something_new")).toBe("patientUnavailable");
     expect(sessionStartErrorKey(500, "toString")).toBe("failed");
   });
