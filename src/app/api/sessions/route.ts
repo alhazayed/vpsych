@@ -22,6 +22,10 @@ import {
 import { embedAdaptationInMemory } from "@/lib/adaptation";
 import { MAX_SESSION_SECONDS, type Avatar } from "@/lib/types";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  assignedPatientStartError,
+  loadAssignedPatientIds,
+} from "@/lib/assigned-patients";
 import { clientSafeError } from "@/lib/api-errors";
 import { closeFailedSessionStart } from "@/lib/session-expiry";
 import { NEW_SESSION_INTERACTION_MODE } from "@/lib/therapy-room";
@@ -214,17 +218,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const typedAvatar = avatar as Avatar;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("preferred_language, primary_institution_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // Therapy course — a plain "see this patient again" start continues the
-  // open course with the same pinned case. Explicit case/preset requests stay
-  // standalone sessions, exactly as before courses existed.
   const requestsSpecificCase = Boolean(
     test ||
       ladder ||
@@ -237,6 +230,49 @@ export async function POST(request: Request) {
       body.presetSlug ||
       body.disorderSlugOverride,
   );
+
+  // Assigned patients (for example a paid 3-patient course): such a trainee
+  // practises only with those patients, always as a therapy course. A failed
+  // read stops the start rather than skipping the restriction.
+  const assigned = await loadAssignedPatientIds(supabase, user.id);
+  if (!assigned.ok) {
+    console.error("[sessions] assigned patients read failed", {
+      userId: user.id,
+      code: assigned.code,
+    });
+    return NextResponse.json(
+      { error: "Could not check your assigned patients", code: "start_check_failed" },
+      { status: 503 },
+    );
+  }
+  const notAssigned = assignedPatientStartError({
+    assigned: assigned.ids,
+    avatarId: avatar.id as string,
+    skillTest: Boolean(test),
+    ladder: Boolean(ladder),
+    specificCase: requestsSpecificCase && !test,
+  });
+  if (notAssigned) {
+    return NextResponse.json(
+      {
+        error: "Your course includes only the patients assigned to you.",
+        code: notAssigned,
+      },
+      { status: 403 },
+    );
+  }
+
+  const typedAvatar = avatar as Avatar;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("preferred_language, primary_institution_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // Therapy course — a plain "see this patient again" start continues the
+  // open course with the same pinned case. Explicit case/preset requests stay
+  // standalone sessions, exactly as before courses existed.
   const courseLookup = requestsSpecificCase
     ? ({ available: false } as const)
     : await loadActiveCourse(supabase, {

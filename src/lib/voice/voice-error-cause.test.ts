@@ -28,7 +28,7 @@ describe("voiceErrorCause", () => {
 
   it("has an EN and AR string for every cause and stage", () => {
     const causes: VoiceErrorCause[] = [
-      "rateLimited", "signedOut", "dailyLimit", "serviceSetup", "serviceFailed",
+      "rateLimited", "signedOut", "dailyLimit", "courseLimit", "serviceSetup", "serviceFailed",
       "noSpeech", "recordingRejected", "micDenied", "micMissing", "micFailed",
       "autoplayBlocked", "playbackFailed", "network", "generic",
     ];

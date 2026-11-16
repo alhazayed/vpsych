@@ -13,7 +13,8 @@ export type Degradation =
   | "assessment_heuristic_fallback"
   | "tts_provider_failed"
   | "tts_voice_substituted"
-  | "tts_voice_lookup_failed";
+  | "tts_voice_lookup_failed"
+  | "tts_course_budget_unavailable";
 
 export function reportDegradation(
   event: Degradation,

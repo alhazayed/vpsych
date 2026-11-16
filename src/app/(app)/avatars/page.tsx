@@ -30,6 +30,7 @@ import { LadderLevelList } from "@/components/training/LadderLevelList";
 import { PatientPortrait } from "@/components/training/PatientPortrait";
 import { PracticeFocusCard } from "@/components/PracticeFocusCard";
 import { loadPracticeFocus } from "@/lib/sessions/practice-focus";
+import { loadAssignedPatientIds } from "@/lib/assigned-patients";
 
 export default async function AvatarsPage() {
   const { supabase, profile } = await requireProfile();
@@ -104,7 +105,17 @@ export default async function AvatarsPage() {
   const program = await loadLadderOverview(supabase, profile.id, locale);
   const focus = await loadPracticeFocus(supabase, profile.id);
   const ladderAvatarIds = await loadLadderAvatarIds(supabase);
-  const list = withoutLadderAvatars(
+  // Assigned patients (for example a paid course): only those are offered,
+  // and the Training Program and practice scenarios are hidden because the
+  // server refuses them for this account.
+  const assignedResult = await loadAssignedPatientIds(supabase, profile.id);
+  if (!assignedResult.ok) {
+    console.error("[avatars] assigned patients load failed", {
+      code: assignedResult.code,
+    });
+  }
+  const assigned = assignedResult.ok ? assignedResult.ids : null;
+  const allList = withoutLadderAvatars(
     (avatars as
       | (Omit<
           Avatar,
@@ -113,6 +124,7 @@ export default async function AvatarsPage() {
       | null) ?? [],
     ladderAvatarIds,
   ).map((a) => ({ ...a, name: avatarDisplayName(a) }));
+  const list = assigned ? allList.filter((a) => assigned.has(a.id)) : allList;
 
   // Practice scenarios: every active disorder with the patients who can
   // present with it (age and gender limits from the Case Engine).
@@ -144,6 +156,20 @@ export default async function AvatarsPage() {
 
       <PracticeFocusCard focus={focus} className="mb-8 max-w-2xl" />
 
+      {assigned ? (
+        <section
+          className="clinical-card mb-8 max-w-2xl space-y-1 p-5 fade-in-up"
+          aria-labelledby="assigned-title"
+        >
+          <h2
+            id="assigned-title"
+            className="font-[family-name:var(--font-headline)] text-xl font-semibold text-[var(--on-surface)]"
+          >
+            {t("assigned.title")}
+          </h2>
+          <p className="text-sm text-[var(--on-surface-variant)]">{t("assigned.intro")}</p>
+        </section>
+      ) : (
       <section className="mb-12 fade-in-up" aria-labelledby="program-title">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -216,6 +242,7 @@ export default async function AvatarsPage() {
           </div>
         )}
       </section>
+      )}
 
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
@@ -349,6 +376,7 @@ export default async function AvatarsPage() {
         ))}
       </div>
 
+      {!assigned && (
       <section className="mt-12 fade-in-up" aria-labelledby="practice-title">
         <h2
           id="practice-title"
@@ -364,6 +392,7 @@ export default async function AvatarsPage() {
           patients={list.map((a) => ({ id: a.id, name: a.name }))}
         />
       </section>
+      )}
     </main>
   );
 }

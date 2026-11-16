@@ -97,6 +97,34 @@ existing report scores: the overall score plus each rubric item rescaled to
 out and counted. Trainees do not see it (reports stay admin-only). Scores are
 not validated.
 
+## Patient voice per course
+
+`therapy_courses.voice_chars_used` counts the patient-voice (ElevenLabs)
+characters spoken in a course. `POST /api/voice/tts` finds the trainee's most
+recently started active session that belongs to a course (server-side, so a
+client cannot leave it out) and charges it through `charge_course_voice()`,
+an atomic SECURITY DEFINER function. Past `COURSE_VOICE_CHARS` (100,000
+characters, about $8 at ElevenLabs Multilingual v2 list price) the route answers
+403 `TTS_COURSE_LIMIT` and the patient speaks with the browser voice; the
+session itself carries on. Previews and sessions outside a course are covered
+by the daily allowance only (`lib/voice/tts-budget.ts`). If the count cannot be
+read or written the voice goes through and a `tts_course_budget_unavailable`
+degradation is reported. Code: `lib/voice/course-voice-budget.ts`.
+
+## Assigned patients (paid courses)
+
+An admin can give a trainee a fixed set of patients on Account approvals
+(`trainee_patient_assignments`, admin-written, the trainee reads their own).
+A trainee with any assigned patient may start practice only with those
+patients and only as a plain course session: Training Program levels and
+chosen disorders, cases, templates or presets are refused with
+`patient_not_assigned`, because they run outside a course and its voice
+allowance. Supervisor skill tests still start. The Patient Library shows only
+the assigned patients and hides the Training Program and practice scenarios.
+A trainee with no assignment is unchanged. Code: `lib/assigned-patients.ts`,
+enforced in `POST /api/sessions` (the only way a trainee's session or course
+reaches the database).
+
 ## Not in this version
 
 - The 5 Ps rating is not part of the session report or any score.

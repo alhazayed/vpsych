@@ -16,6 +16,10 @@ import {
   chargeDailyTtsChars,
   TTS_DAILY_LIMIT_CODE,
 } from "@/lib/voice/tts-budget";
+import {
+  chargeCourseVoiceChars,
+  TTS_COURSE_LIMIT_CODE,
+} from "@/lib/voice/course-voice-budget";
 import { reportDegradation } from "@/lib/ops/degradation";
 import { resolveRequestId, requestIdHeaders } from "@/lib/request-id";
 import {
@@ -129,6 +133,30 @@ export async function POST(request: Request) {
         },
       },
     );
+  }
+
+  // Patient voice per therapy course. Voice previews never belong to a course.
+  if (!body.preview) {
+    const course = await chargeCourseVoiceChars(supabase, user.id, text);
+    if (!course.ok) {
+      return NextResponse.json(
+        {
+          error: "This course's patient-voice allowance is used up",
+          code: TTS_COURSE_LIMIT_CODE,
+        },
+        // Not 429: the allowance does not renew, so there is nothing to retry.
+        { status: 403, headers: requestIdHeaders(requestId) },
+      );
+    }
+    if ("unavailable" in course) {
+      console.error("[tts] course voice allowance unavailable", {
+        courseId: course.courseId,
+        code: course.unavailable,
+      });
+      reportDegradation("tts_course_budget_unavailable", {
+        code: course.unavailable,
+      });
+    }
   }
 
   try {
