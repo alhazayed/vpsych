@@ -48,8 +48,8 @@ local Supabase auth + DB + REST, the production build pointed at it, two fresh
 accounts (trainee, admin), then Playwright. No AI or ElevenLabs keys there, so
 the patient reply must come back as `persona_fallback` and the report is the
 heuristic one. The admin enrolls TOTP on the way in (`e2e/totp.ts`). The browser
-context uses `bypassCSP` because the production CSP only allows
-`*.supabase.co`. Locally, set `PLAYWRIGHT_CHROMIUM_PATH` if the bundled browser
+context uses `bypassCSP` because the production CSP only allows the
+configured Supabase project host (`NEXT_PUBLIC_SUPABASE_URL`, https only). Locally, set `PLAYWRIGHT_CHROMIUM_PATH` if the bundled browser
 differs from `@playwright/test`'s.
 
 `npm run test:migrations` also compares `supabase_migrations.schema_migrations`
