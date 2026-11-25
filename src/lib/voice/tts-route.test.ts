@@ -13,6 +13,7 @@ import {
   COURSE_VOICE_CHARS,
   TTS_COURSE_LIMIT_CODE,
 } from "@/lib/voice/course-voice-budget";
+import { normalizeSpeechLocale, previewSampleText } from "@/lib/voice/config";
 
 const USER = "11111111-1111-4111-8111-111111111111";
 
@@ -151,6 +152,24 @@ describe("/api/voice/tts course allowance", () => {
   it("does not touch a course when no course session is active", async () => {
     const res = await tts("Hello.");
     expect(res.status).toBe(200);
+    expect(state.rpcCalls).toEqual([]);
+  });
+
+  it("speaks only the sample sentence for a preview, whatever text it carries", async () => {
+    state.activeCourse = COURSE;
+    const res = await POST(
+      new Request("http://localhost/api/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preview: true,
+          locale: "en-US",
+          text: "A whole patient reply smuggled in as a preview.",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(state.synthesized).toEqual([previewSampleText(normalizeSpeechLocale("en-US"))]);
     expect(state.rpcCalls).toEqual([]);
   });
 });

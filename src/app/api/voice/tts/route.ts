@@ -104,10 +104,15 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as TtsBody;
   const locale: SessionSpeechLocale = normalizeSpeechLocale(body.locale);
-  const text = (body.text?.trim() ||
-    (body.preview ? previewSampleText(locale) : "")) as string;
+  // A voice preview always speaks the fixed sample sentence and ignores any
+  // `text`: previews skip the course voice allowance, so letting them carry
+  // their own text would let a trainee bypass it (security review 2026-11-25).
+  const preview = body.preview === true;
+  const text: string = preview
+    ? previewSampleText(locale)
+    : (body.text?.trim() ?? "");
 
-  if (progressive && (body.preview || text.length > PROGRESSIVE_TTS_MAX_CHARS)) {
+  if (progressive && (preview || text.length > PROGRESSIVE_TTS_MAX_CHARS)) {
     return NextResponse.json(
       {
         error: `progressive chunk too long (max ${PROGRESSIVE_TTS_MAX_CHARS} characters)`,
@@ -136,7 +141,7 @@ export async function POST(request: Request) {
   }
 
   // Patient voice per therapy course. Voice previews never belong to a course.
-  if (!body.preview) {
+  if (!preview) {
     const course = await chargeCourseVoiceChars(supabase, user.id, text);
     if (!course.ok) {
       return NextResponse.json(
