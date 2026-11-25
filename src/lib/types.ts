@@ -425,6 +425,18 @@ export type SupervisorTraineeLink = {
 };
 
 /**
+ * Row of public.trainee_patient_assignments — a patient an admin assigned to a
+ * trainee (for example a paid course). Any row limits the trainee's practice
+ * to the assigned patients; see lib/assigned-patients.ts.
+ */
+export type TraineePatientAssignment = {
+  trainee_id: string;
+  avatar_id: string;
+  assigned_by: string | null;
+  created_at: string;
+};
+
+/**
  * Row of public.session_report_reviews — a supervisor's comment, flag and
  * adjusted overall score for one report. The AI scores in session_reports
  * are never changed; the adjusted score sits beside them.

@@ -2,6 +2,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { resolveApprovalStatus } from "@/lib/account-approval";
 import { AccountApprovalActions } from "@/components/admin/AccountApprovalActions";
+import { AssignedPatientsEditor } from "@/components/admin/AssignedPatientsEditor";
+import {
+  avatarDisplayName,
+  avatarLocalNameSelect,
+} from "@/lib/avatars/localized-name";
+import { loadLadderAvatarIds } from "@/lib/training-ladder";
+import type { TraineePatientAssignment } from "@/lib/types";
 
 type AccountRow = {
   id: string;
@@ -30,7 +37,46 @@ export default async function AdminAccountsPage() {
   const pending = accounts.filter((a) => a.status === "pending");
   const others = accounts.filter((a) => a.status !== "pending");
 
-  const dateFmt = new Intl.DateTimeFormat(await getLocale(), {
+  const locale = await getLocale();
+  const tPatients = await getTranslations("admin.accounts.patients");
+
+  // Course patients: published free-practice patients (Training Program
+  // patients are only played through their levels) and who has which.
+  const [{ data: avatarRows, error: avatarsError }, { data: assignmentRows, error: assignmentsError }] =
+    await Promise.all([
+      supabase
+        .from("avatars")
+        .select(`id, name, ${avatarLocalNameSelect(locale)}`)
+        .eq("is_active", true)
+        .order("name"),
+      supabase.from("trainee_patient_assignments").select("trainee_id, avatar_id"),
+    ]);
+  let ladderIds = new Set<string>();
+  let ladderError = false;
+  try {
+    ladderIds = await loadLadderAvatarIds(supabase);
+  } catch {
+    ladderError = true;
+  }
+  if (avatarsError || assignmentsError || ladderError) {
+    console.error("[admin/accounts] course patients load failed", {
+      avatars: avatarsError?.code,
+      assignments: assignmentsError?.code,
+      ladder: ladderError,
+    });
+  }
+  const patientsUnavailable = Boolean(avatarsError || assignmentsError || ladderError);
+  const patients = (
+    (avatarRows ?? []) as unknown as Array<{ id: string; name: string; local_name?: string | null }>
+  ).map((a) => ({ id: a.id, name: avatarDisplayName(a) }));
+  const patientName = new Map(patients.map((p) => [p.id, p.name]));
+  const freePatients = patients.filter((p) => !ladderIds.has(p.id));
+  const assignments = (assignmentRows ?? []) as Pick<
+    TraineePatientAssignment,
+    "trainee_id" | "avatar_id"
+  >[];
+
+  const dateFmt = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -74,6 +120,32 @@ export default async function AdminAccountsPage() {
           role={a.role === "admin" ? "admin" : "therapist"}
           isSelf={a.id === user.id}
         />
+        {a.status === "approved" && a.role !== "admin" && (
+          <div className="basis-full">
+            {patientsUnavailable ? (
+              <p role="alert" className="text-sm text-[var(--error)]">
+                {tPatients("loadError")}
+              </p>
+            ) : (
+              (() => {
+                const mine = assignments
+                  .filter((x) => x.trainee_id === a.id)
+                  .map((x) => ({
+                    id: x.avatar_id,
+                    name: patientName.get(x.avatar_id) ?? "—",
+                  }));
+                const mineIds = new Set(mine.map((p) => p.id));
+                return (
+                  <AssignedPatientsEditor
+                    trainee={{ id: a.id, name: a.display_name }}
+                    assigned={mine}
+                    candidates={freePatients.filter((p) => !mineIds.has(p.id))}
+                  />
+                );
+              })()
+            )}
+          </div>
+        )}
       </li>
     );
   }

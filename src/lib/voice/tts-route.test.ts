@@ -9,15 +9,45 @@ import {
   TTS_DAILY_CHARS,
   TTS_DAILY_LIMIT_CODE,
 } from "@/lib/voice/tts-budget";
+import {
+  COURSE_VOICE_CHARS,
+  TTS_COURSE_LIMIT_CODE,
+} from "@/lib/voice/course-voice-budget";
+import { normalizeSpeechLocale, previewSampleText } from "@/lib/voice/config";
 
 const USER = "11111111-1111-4111-8111-111111111111";
 
-const state = vi.hoisted(() => ({ synthesized: [] as string[] }));
+const state = vi.hoisted(() => ({
+  synthesized: [] as string[],
+  /** therapy_course_id of the trainee's active session (null: none). */
+  activeCourse: null as string | null,
+  /** What charge_course_voice answers. */
+  courseCharged: true,
+  rpcCalls: [] as unknown[],
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: { id: USER } } }) },
-  }),
+  createClient: async () => {
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      not: () => chain,
+      order: () => chain,
+      limit: () => chain,
+      maybeSingle: async () => ({
+        data: state.activeCourse ? { therapy_course_id: state.activeCourse } : null,
+        error: null,
+      }),
+    };
+    return {
+      auth: { getUser: async () => ({ data: { user: { id: USER } } }) },
+      from: () => chain,
+      rpc: async (_fn: string, args: unknown) => {
+        state.rpcCalls.push(args);
+        return { data: state.courseCharged, error: null };
+      },
+    };
+  },
 }));
 vi.mock("@/lib/voice/resolve-tts-voice", () => ({
   resolveTtsVoice: async () => ({
@@ -61,6 +91,9 @@ function tts(text: string, progressive = false) {
 beforeEach(() => {
   resetRateLimitMemory();
   state.synthesized = [];
+  state.activeCourse = null;
+  state.courseCharged = true;
+  state.rpcCalls = [];
 });
 afterEach(() => resetRateLimitMemory());
 
@@ -91,5 +124,52 @@ describe("/api/voice/tts daily allowance", () => {
     const tooLong = await tts("y".repeat(401), true);
     expect(tooLong.status).toBe(400);
     expect((await tts("z".repeat(400), true)).status).toBe(200);
+  });
+});
+
+describe("/api/voice/tts course allowance", () => {
+  const COURSE = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+
+  it("charges the active course and speaks while its allowance lasts", async () => {
+    state.activeCourse = COURSE;
+    const res = await tts("I keep waking at four.");
+    expect(res.status).toBe(200);
+    expect(state.rpcCalls).toEqual([
+      { p_course_id: COURSE, p_chars: "I keep waking at four.".length, p_cap: COURSE_VOICE_CHARS },
+    ]);
+    expect(state.synthesized).toEqual(["I keep waking at four."]);
+  });
+
+  it("refuses with TTS_COURSE_LIMIT once the course's allowance is spent, without calling ElevenLabs", async () => {
+    state.activeCourse = COURSE;
+    state.courseCharged = false;
+    const res = await tts("Some more of my story.", true);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: TTS_COURSE_LIMIT_CODE });
+    expect(state.synthesized).toEqual([]);
+  });
+
+  it("does not touch a course when no course session is active", async () => {
+    const res = await tts("Hello.");
+    expect(res.status).toBe(200);
+    expect(state.rpcCalls).toEqual([]);
+  });
+
+  it("speaks only the sample sentence for a preview, whatever text it carries", async () => {
+    state.activeCourse = COURSE;
+    const res = await POST(
+      new Request("http://localhost/api/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preview: true,
+          locale: "en-US",
+          text: "A whole patient reply smuggled in as a preview.",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(state.synthesized).toEqual([previewSampleText(normalizeSpeechLocale("en-US"))]);
+    expect(state.rpcCalls).toEqual([]);
   });
 });

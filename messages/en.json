@@ -650,6 +650,10 @@
     "personas": "personas",
     "loadErrorTitle": "Patients unavailable",
     "loadErrorDescription": "Could not load the patient library. Reload the page to try again.",
+    "assigned": {
+      "title": "Your course patients",
+      "intro": "These are the patients assigned to you. Each one is a therapy course of planned sessions; continue each course from its card."
+    },
     "genders": {
       "female": "Female",
       "male": "Male"
@@ -812,7 +816,8 @@
       "testSessionsUsed": "All required sessions for this test have been held.",
       "testUnavailable": "This test can't be started right now. Ask your supervisor to check it.",
       "startCheckFailed": "Could not check this patient right now. Try again in a moment.",
-      "courseUnavailable": "Could not load this course's previous session. Try again in a moment."
+      "courseUnavailable": "Could not load this course's previous session. Try again in a moment.",
+      "patientNotAssigned": "Your course includes only the patients assigned to you. Start a session with one of them from the Patient Library."
     },
     "timer": {
       "ariaLabel": "Time remaining {time}"
@@ -942,6 +947,7 @@
         "rateLimited": "too many requests in a short time. Wait a few minutes and try again.",
         "signedOut": "your sign-in has expired. Sign in again.",
         "dailyLimit": "today's patient-voice allowance is used up. It renews within a day; you can keep going in text.",
+        "courseLimit": "this course's patient-voice allowance is used up. You can keep going with the browser voice or in text.",
         "serviceSetup": "the voice service is not set up correctly. You can continue in text; tell your administrator.",
         "serviceFailed": "the service did not respond properly. Try again, or continue in text.",
         "noSpeech": "no speech was heard. Speak a little louder and try again.",
@@ -2394,6 +2400,24 @@
       "voiceGenderHint": "Only voices that match the patient's gender are shown. A female patient has a female voice and a male patient a male voice."
     },
     "accounts": {
+      "patients": {
+        "title": "Course patients",
+        "none": "No assigned patients: this account can practise with every patient.",
+        "restricted": "This account practises only with these patients, as therapy courses. The Training Program and practice scenarios are closed to it.",
+        "choose": "Choose a patient",
+        "add": "Assign patient",
+        "remove": "Remove",
+        "removeConfirm": "Remove {patient} from {name}'s course patients? If it was the last one, {name} can practise with every patient again.",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "loadError": "Course patients could not be loaded. Refresh the page to try again.",
+        "networkError": "Network error. Check your connection and try again.",
+        "mfaRequired": "Sign in with two-step login before changing course patients.",
+        "patientUnavailable": "That patient is not published. Refresh the page.",
+        "notApplied": "The change did not save. Refresh the page and try again.",
+        "rateLimited": "Too many changes in the last hour. Wait a few minutes and try again.",
+        "changeFailed": "The course patients could not be changed. Please try again."
+      },
       "title": "Account approvals",
       "intro": "Nobody can use Vtraining until you approve their account. New sign-ups wait here; rejected or revoked accounts cannot open any page. You can also edit or delete any account except your own.",
       "loadError": "Accounts could not be loaded. Refresh the page to try again.",

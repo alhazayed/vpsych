@@ -20,6 +20,7 @@ export type SessionStartErrorKey =
   | "testUnavailable"
   | "startCheckFailed"
   | "courseUnavailable"
+  | "patientNotAssigned"
   | "failed";
 
 const CODE_KEYS: Record<string, SessionStartErrorKey> = {
@@ -38,6 +39,7 @@ const CODE_KEYS: Record<string, SessionStartErrorKey> = {
   skill_test_unavailable: "testUnavailable",
   start_check_failed: "startCheckFailed",
   course_unavailable: "courseUnavailable",
+  patient_not_assigned: "patientNotAssigned",
 };
 
 export function sessionStartErrorKey(
