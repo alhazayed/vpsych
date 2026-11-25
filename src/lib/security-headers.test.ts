@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildContentSecurityPolicy,
+  supabaseConnectSources,
   PERMISSIONS_POLICY,
   securityHeaders,
 } from "./security-headers";
@@ -45,8 +46,10 @@ describe("buildContentSecurityPolicy", () => {
   });
 
   it("allows Supabase and voice provider connect targets", () => {
-    const csp = buildContentSecurityPolicy();
-    expect(csp).toContain("https://*.supabase.co");
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: "https://abcdefghijklmnop.supabase.co",
+    });
+    expect(csp).toContain("https://abcdefghijklmnop.supabase.co");
     expect(csp).toContain("https://api.elevenlabs.io");
     expect(csp).toContain("https://api.openai.com");
     // Live transcript socket — OpenAI only, not a wildcard wss:.
@@ -59,5 +62,31 @@ describe("buildContentSecurityPolicy", () => {
     expect(buildContentSecurityPolicy()).toContain(
       "https://*.ingest.de.sentry.io",
     );
+  });
+});
+
+describe("supabaseConnectSources", () => {
+  it("pins connect-src to the configured project host, not every Supabase project", () => {
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: "https://abcdefghijklmnop.supabase.co/",
+    });
+    expect(csp).toContain(
+      "https://abcdefghijklmnop.supabase.co wss://abcdefghijklmnop.supabase.co",
+    );
+    expect(csp).not.toContain("*.supabase.co");
+  });
+
+  it("keeps a custom Supabase domain as-is", () => {
+    expect(supabaseConnectSources("https://db.example.org")).toEqual([
+      "https://db.example.org",
+      "wss://db.example.org",
+    ]);
+  });
+
+  it("falls back to the wildcard when the URL is unset, invalid or local", () => {
+    const wildcard = ["https://*.supabase.co", "wss://*.supabase.co"];
+    expect(supabaseConnectSources("")).toEqual(wildcard);
+    expect(supabaseConnectSources("not a url")).toEqual(wildcard);
+    expect(supabaseConnectSources("http://127.0.0.1:54321")).toEqual(wildcard);
   });
 });
