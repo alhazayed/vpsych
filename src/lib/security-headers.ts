@@ -17,6 +17,27 @@ export const PERMISSIONS_POLICY = [
 ].join(", ");
 
 /**
+ * Browser connect targets for this project's Supabase API and Realtime socket.
+ * Pinned to the configured project host (`NEXT_PUBLIC_SUPABASE_URL`) so an
+ * injected script cannot send data to some other Supabase project. Falls back
+ * to the `*.supabase.co` wildcard only when the URL is unset or not https
+ * (local dev against a loopback stack; e2e bypasses CSP).
+ */
+export function supabaseConnectSources(
+  supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+): string[] {
+  try {
+    const url = new URL((supabaseUrl ?? "").trim());
+    if (url.protocol === "https:" && url.hostname && !url.port) {
+      return [`https://${url.hostname}`, `wss://${url.hostname}`];
+    }
+  } catch {
+    // fall through to the wildcard
+  }
+  return ["https://*.supabase.co", "wss://*.supabase.co"];
+}
+
+/**
  * Content-Security-Policy tuned for the App Router + Supabase + voice APIs.
  * `'unsafe-inline'` is required by the Next.js client runtime today; tighten
  * further once nonces are wired. `'unsafe-eval'` is only needed by the dev
@@ -28,12 +49,13 @@ export function buildContentSecurityPolicy(options?: {
   extraConnectSrc?: string[];
   /** Allow eval (dev server only). Defaults to true outside production. */
   allowEval?: boolean;
+  /** Supabase project URL; defaults to NEXT_PUBLIC_SUPABASE_URL. */
+  supabaseUrl?: string;
 }): string {
   const allowEval = options?.allowEval ?? process.env.NODE_ENV !== "production";
   const connect = [
     "'self'",
-    "https://*.supabase.co",
-    "wss://*.supabase.co",
+    ...supabaseConnectSources(options?.supabaseUrl),
     "https://api.openai.com",
     // Live transcript: Realtime transcription socket (ephemeral key).
     "wss://api.openai.com",
